@@ -445,16 +445,29 @@
     });
   }
 
-  function renderAll() {
-    // Rebind base els in case of swaps
-    state.bases.forEach(resolveBaseEls);
+function renderAll() {
+  if (state._isRendering) return;        // 🔒 блок від рекурсії
+  state._isRendering = true;
 
-    state.bases.forEach(updateBaseCard);
-    state.bases.forEach(updateBoardCol);
-    updatePlayerRows();
+  try {
+    if (typeof PNS.renderPlayersTableFromState === 'function') {
+      PNS.renderPlayersTableFromState();
+    }
 
-    if (typeof PNS.applyPlayerTableFilters === 'function') PNS.applyPlayerTableFilters();
+    if (typeof PNS.renderBases === 'function') {
+      PNS.renderBases();
+    }
+
+    if (typeof PNS.applyColumnVisibility === 'function') {
+      PNS.applyColumnVisibility(state.showAllColumns);
+    }
+
+  } catch (e) {
+    console.error('[renderAll error]', e);
   }
+
+  state._isRendering = false;
+}
 
   function renderPlayersTableFromState() {
     const table = getPlayersTable();
