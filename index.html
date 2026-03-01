@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Puzzle &amp; Survival — Tower Planner (HTML/CSS Layout)</title>
+
+    <link href="css/styles.css" rel="stylesheet" />
+    <link href="css/header.css" rel="stylesheet" />
+    <link href="css/base.css" rel="stylesheet" />
+    <link href="css/layout.css" rel="stylesheet" />
+    <link href="css/tables.css" rel="stylesheet" />
+    <link href="css/modals.css" rel="stylesheet" />
+    <link href="css/components.css" rel="stylesheet" />
+    <link href="css/language.css" rel="stylesheet" />
+
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  </head>
+
+  <body>
+    <a id="top"></a>
+
+    <!-- HEADER -->
+    <header
+      hx-get="partials/header.partial.html"
+      hx-trigger="load"
+      hx-swap="outerHTML"
+    ></header>
+
+    <!-- MAIN LAYOUT -->
+    <main class="layout container">
+      <!-- LEFT -->
+      <section
+        hx-get="partials/players.partial.html"
+        hx-trigger="load"
+        hx-swap="outerHTML"
+      ></section>
+
+      <!-- RIGHT -->
+      <aside
+        hx-get="partials/bases.partial.html"
+        hx-trigger="load"
+        hx-swap="outerHTML"
+      ></aside>
+    </main>
+
+    <!-- FOOTER -->
+    <footer
+      hx-get="partials/footer.partial.html"
+      hx-trigger="load"
+      hx-swap="outerHTML"
+    ></footer>
+
+    <!-- MODALS (ALL IN ONE PARTIAL) -->
+    <div
+      hx-get="partials/modals.partial.html"
+      hx-trigger="load"
+      hx-swap="outerHTML"
+    ></div>
+
+    <!-- libs -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- твої js -->
+    <script src="js/ns.js" defer></script>
+    <script src="js/storage.js" defer></script>
+    <script src="js/modals_shift.js" defer></script>
+    <script src="js/players_parse.js" defer></script>
+    <script src="js/bases_parse.js" defer></script>
+    <script src="js/assignments.js" defer></script>
+    <script src="js/autofill.js" defer></script>
+    <script src="js/render.js" defer></script>
+    <script src="js/filters.js" defer></script>
+    <script src="js/import.js" defer></script>
+    <script src="js/init_bind.js" defer></script>
+    <script src="js/dom.js" defer></script>
+    <script src="js/table.js" defer></script>
+    <script src="js/modals.js" defer></script>
+    <script src="js/language.js" defer></script>
+  </body>
+</html>

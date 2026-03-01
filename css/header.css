@@ -1,0 +1,291 @@
+/* ===== HEADER full width + centered inner ===== */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  width: 100%;
+  max-width: 100%;
+  background: rgba(14, 18, 28, 0.45);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  margin-top: 15px;
+}
+
+.app-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 150, 60, 0.35),
+    rgba(255, 90, 70, 0.22),
+    rgba(170, 210, 235, 0.22),
+    transparent
+  );
+}
+
+/* ВАЖЛИВО: тут НЕ треба wrap */
+.app-header .header-inner {
+  margin: 0 auto;
+  padding: 14px var(--app-pad);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+}
+
+/* BRAND */
+.app-header .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-width: unset;
+}
+
+/* logo */
+.brand-badge.brand-logo {
+  width: 170px;
+  height: 170px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.6));
+}
+
+/* title styling (ти хотів “King” підсвітити) */
+.brand-text h1 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: 0.2px;
+
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 1),
+    rgba(255, 170, 90, 0.95),
+    rgba(170, 210, 235, 0.9)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.app-header .brand-text{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  width: min(680px, 55vw);
+  pointer-events: none; /* щоб кліки проходили на кнопки справа */
+}
+
+/* keep text centered */
+.app-header .brand-text h1,
+.app-header .brand-text p{
+  text-align: center;
+}
+.brand-text h1 span {
+  color: rgba(255, 170, 90, 0.95);
+  background: none;
+  -webkit-text-fill-color: rgba(255, 170, 90, 0.95);
+  text-shadow: 0 10px 26px rgba(255, 150, 60, 0.2);
+}
+
+.brand-text p {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: rgba(220, 230, 255, 0.68);
+  letter-spacing: 0.25px;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* центрує по горизонталі */
+  text-align: center; /* центрує текст */
+}
+
+.brand-text h1,
+.brand-text p {
+  text-align: center;
+}
+
+/* DESKTOP ACTIONS (always one row) */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+/* Burger button stays in same row (right side) */
+.burger-btn {
+  margin-left: 10px;
+  flex: 0 0 auto;
+
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 14, 22, 0.55);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0;
+}
+
+.burger-btn span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 2px;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.burger-btn.is-open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.burger-btn.is-open span:nth-child(2) {
+  opacity: 0;
+}
+.burger-btn.is-open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ===== Drawer (full height like your 2nd screenshot) ===== */
+.drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: none; /* open -> flex */
+}
+
+.drawer.is-open {
+  display: flex;
+}
+
+.drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.drawer-panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100vh;
+  width: min(420px, 92vw);
+
+  background: rgba(10, 12, 18, 0.92);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: -18px 0 50px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
+
+  display: flex;
+  flex-direction: column;
+
+  transform: translateX(110%);
+  transition: transform 0.22s ease;
+}
+
+.drawer.is-open .drawer-panel {
+  transform: translateX(0);
+}
+
+.drawer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.drawer-title {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.drawer-close {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+}
+
+.drawer-body {
+  padding: 14px 16px 18px;
+  display: grid;
+  gap: 12px;
+}
+
+/* make buttons inside drawer look ровно */
+.drawer .btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+  padding: 14px 14px;
+  border-radius: 16px;
+}
+
+/* ===== Responsive: on small screens -> hide actions, show burger ===== */
+@media (max-width: 980px) {
+  .header-actions {
+    display: none;
+  }
+  .burger-btn {
+    display: flex;
+  }
+
+  /* keep brand in one row with burger */
+  .brand-badge.brand-logo {
+    width: 140px;
+    height: 140px;
+  }
+  .brand-text h1 {
+    font-size: 20px;
+  }
+    .app-header .brand{
+    flex: 1 1 auto;
+  }
+
+  .app-header .brand-text{
+    position: static;
+    transform: none;
+    width: auto;
+    pointer-events: auto;
+
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .app-header .brand-text h1,
+  .app-header .brand-text p{
+    text-align: left;
+  }
+}

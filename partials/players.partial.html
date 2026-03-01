@@ -1,0 +1,212 @@
+<section class="panel players-panel">
+  <div class="panel-head">
+    <div>
+      <h2>Гравці</h2>
+      <p class="muted">
+        Імпорт CSV / Excel / Google Sheets link + розподіл по 5 базах
+      </p>
+    </div>
+    <div class="panel-actions">
+      <button
+        aria-pressed="false"
+        class="btn btn-sm"
+        id="showAllDataBtn"
+        type="button"
+      >
+        Показати всі дані
+      </button>
+      <button class="btn btn-sm" id="openImportQuickBtn" type="button">
+        Імпорт CSV/XLSX/URL
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <article class="stat-card">
+      <span>Всього гравців</span>
+      <strong>0</strong>
+    </article>
+    <article class="stat-card">
+      <span>Капітанів готові</span>
+      <strong>0</strong>
+    </article>
+    <article class="stat-card">
+      <span>Shooter / Fighter / Rider</span>
+      <strong>0 / 0 / 0</strong>
+    </article>
+  </div>
+
+  <div class="filters-row">
+    <label>
+      <span>Пошук</span>
+      <input
+        id="topSearchFilter"
+        placeholder="Пошук по ніку / альянсу"
+        type="text"
+      />
+    </label>
+
+    <label>
+      <span>Роль</span>
+      <select id="topRoleFilter">
+        <option>Усі</option>
+        <option>Shooter</option>
+        <option>Fighter</option>
+        <option>Rider</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Shift</span>
+      <select id="topShiftFilter">
+        <option value="all">Усі</option>
+        <option value="shift1">Shift 1 (+Both)</option>
+        <option value="shift2">Shift 2 (+Both)</option>
+        <option value="both">Both only</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Статус</span>
+      <select id="topStatusFilter">
+        <option>Усі</option>
+        <option>Вільні</option>
+        <option>У базі</option>
+        <option>Капітани</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Tier</span>
+      <select id="topTierFilter">
+        <option value="all">Усі</option>
+        <option>T14</option>
+        <option>T13</option>
+        <option>T12</option>
+        <option>T11</option>
+        <option>T10</option>
+        <option>T9</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Rows</span>
+      <select id="pageSizeSelect">
+        <option>20</option>
+        <option>50</option>
+        <option>100</option>
+        <option>300</option>
+      </select>
+    </label>
+
+    <button
+      class="btn btn-sm reset-filters-btn"
+      id="resetFiltersBtn"
+      type="button"
+    >
+      Скинути фільтри
+    </button>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table" id="playersDataTable">
+      <thead>
+        <tr>
+          <th data-field="name">Player name</th>
+          <th
+            class="optional-col is-hidden-col"
+            data-col-key="alliance"
+            data-field="alliance"
+          >
+            Alliance
+          </th>
+          <th data-field="role">Focus troop</th>
+          <th data-field="tier">
+            Tier
+            <button
+              class="sort-btn"
+              data-sort="tier"
+              type="button"
+              title="Sort by Tier"
+              aria-label="Sort by Tier"
+            >
+              ↓
+            </button>
+          </th>
+          <th data-field="march">March size</th>
+
+          <th
+            class="optional-col is-hidden-col"
+            data-col-key="rally_size"
+            data-field="rally"
+          >
+            Rally size
+            <button
+              class="sort-btn"
+              data-sort="rally"
+              type="button"
+              title="Sort by Rally size"
+              aria-label="Sort by Rally size"
+            >
+              ↓
+            </button>
+          </th>
+
+          <th
+            class="optional-col is-hidden-col"
+            data-col-key="lair_level"
+            data-field="lair"
+          >
+            Lair
+          </th>
+          <th
+            class="optional-col is-hidden-col"
+            data-col-key="secondary_role"
+            data-field="secondary_role"
+          >
+            2nd role
+          </th>
+          <th
+            class="optional-col is-hidden-col"
+            data-col-key="secondary_tier"
+            data-field="secondary_tier"
+          >
+            2nd tier
+          </th>
+          <th
+            class="optional-col is-hidden-col"
+            data-col-key="troop_200k"
+            data-field="troop_200k"
+          >
+            200k types
+          </th>
+
+          <th
+            class="optional-col"
+            data-col-key="captain_ready"
+            data-field="captainReady"
+          >
+            Captain
+          </th>
+          <th data-field="shiftLabel">Shift</th>
+
+          <th
+            class="optional-col is-hidden-col"
+            data-col-key="notes"
+            data-field="notes"
+          >
+            Notes
+          </th>
+          <th data-col-key="actions" data-field="actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="table-pagination">
+    <button class="btn btn-sm" id="pagePrevBtn" type="button">◀</button>
+    <span id="pageInfoText">Page 1 / 1</span>
+    <button class="btn btn-sm" id="pageNextBtn" type="button">▶</button>
+  </div>
+</section>

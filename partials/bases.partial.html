@@ -1,0 +1,281 @@
+<aside class="panel bases-panel">
+  <div class="panel-head">
+    <div>
+      <h2>5 баз (головна сторінка)</h2>
+      <p class="muted">
+        Живий розподіл: Captain / Helper, auto-fill, без змішування типів
+        військ
+      </p>
+    </div>
+    <div class="panel-actions wrap">
+      <button class="btn btn-sm" id="autoFillAllBasesBtn" type="button">
+        Auto-fill all
+      </button>
+      <button class="btn btn-sm" id="clearCurrentShiftBtn" type="button">
+        Очистити поточний Shift
+      </button>
+      <button class="btn btn-sm shift-tab" data-shift-tab="shift1" type="button">
+        Shift 1
+      </button>
+      <button
+        class="btn btn-sm shift-tab active"
+        data-shift-tab="shift2"
+        type="button"
+      >
+        Shift 2
+      </button>
+    </div>
+  </div>
+
+  <div class="bases-grid">
+    <!-- Central base -->
+    <section class="base-card shooter-theme" data-shift="both">
+      <header class="base-card-head">
+        <div>
+          <h3>Техно-Центр / Central Base</h3>
+          <p class="base-type">Тип бази: автоматично по капітану</p>
+        </div>
+        <span class="base-role badge is-auto">Auto</span>
+      </header>
+
+      <div class="captain-box">
+        <div class="captain-title">Капітан</div>
+        <div class="captain-main">
+          <div class="captain-name captain-empty">— Капітан не обраний —</div>
+          <div class="captain-meta">Type auto by captain · Both</div>
+        </div>
+      </div>
+
+      <div class="limit-grid">
+        <div><span>Captain march</span><strong>0</strong></div>
+        <div><span>Helpers Σ</span><strong>0</strong></div>
+        <div><span>Total Σ</span><strong>0</strong></div>
+        <div><span>Limit (Rally)</span><strong>0</strong></div>
+      </div>
+
+      <div class="quota-row">
+        <span>Auto-fill:</span>
+        <span class="quota-summary">Tier min march: auto (not set)</span>
+        <span class="quota-max">Max helpers: 29</span>
+      </div>
+
+      <div class="helpers-table-wrap">
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Ally</th>
+              <th>Tier</th>
+              <th>March</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="muted" colspan="4">No helpers assigned</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- North tower -->
+    <section class="base-card fighter-theme" data-shift="both">
+      <header class="base-card-head">
+        <div>
+          <h3>Північна башня / North Tower</h3>
+          <p class="base-type">Тип бази: автоматично по капітану</p>
+        </div>
+        <span class="base-role badge is-auto">Auto</span>
+      </header>
+
+      <div class="captain-box">
+        <div class="captain-title">Капітан</div>
+        <div class="captain-main">
+          <div class="captain-name captain-empty">— Капітан не обраний —</div>
+          <div class="captain-meta">Type auto by captain · Both</div>
+        </div>
+      </div>
+
+      <div class="limit-grid">
+        <div><span>Captain march</span><strong>0</strong></div>
+        <div><span>Helpers Σ</span><strong>0</strong></div>
+        <div><span>Total Σ</span><strong>0</strong></div>
+        <div><span>Limit (Rally)</span><strong>0</strong></div>
+      </div>
+
+      <div class="quota-row">
+        <span>Auto-fill:</span>
+        <span class="quota-summary">Tier min march: auto (not set)</span>
+        <span class="quota-max">Max helpers: 29</span>
+      </div>
+
+      <div class="helpers-table-wrap">
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Ally</th>
+              <th>Tier</th>
+              <th>March</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="muted" colspan="4">No helpers assigned</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- West tower -->
+    <section class="base-card fighter-theme" data-shift="both">
+      <header class="base-card-head">
+        <div>
+          <h3>Західна башня / West Tower</h3>
+          <p class="base-type">Тип бази: автоматично по капітану</p>
+        </div>
+        <span class="base-role badge is-auto">Auto</span>
+      </header>
+
+      <div class="captain-box">
+        <div class="captain-title">Капітан</div>
+        <div class="captain-main">
+          <div class="captain-name captain-empty">— Капітан не обраний —</div>
+          <div class="captain-meta">Type auto by captain · Both</div>
+        </div>
+      </div>
+
+      <div class="limit-grid">
+        <div><span>Captain march</span><strong>0</strong></div>
+        <div><span>Helpers Σ</span><strong>0</strong></div>
+        <div><span>Total Σ</span><strong>0</strong></div>
+        <div><span>Limit (Rally)</span><strong>0</strong></div>
+      </div>
+
+      <div class="quota-row">
+        <span>Auto-fill:</span>
+        <span class="quota-summary">Tier min march: auto (not set)</span>
+        <span class="quota-max">Max helpers: 29</span>
+      </div>
+
+      <div class="helpers-table-wrap">
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Ally</th>
+              <th>Tier</th>
+              <th>March</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="muted" colspan="4">No helpers assigned</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- East tower -->
+    <section class="base-card rider-theme" data-shift="both">
+      <header class="base-card-head">
+        <div>
+          <h3>Східна башня / East Tower</h3>
+          <p class="base-type">Тип бази: автоматично по капітану</p>
+        </div>
+        <span class="base-role badge is-auto">Auto</span>
+      </header>
+
+      <div class="captain-box">
+        <div class="captain-title">Капітан</div>
+        <div class="captain-main">
+          <div class="captain-name captain-empty">— Капітан не обраний —</div>
+          <div class="captain-meta">Type auto by captain · Both</div>
+        </div>
+      </div>
+
+      <div class="limit-grid">
+        <div><span>Captain march</span><strong>0</strong></div>
+        <div><span>Helpers Σ</span><strong>0</strong></div>
+        <div><span>Total Σ</span><strong>0</strong></div>
+        <div><span>Limit (Rally)</span><strong>0</strong></div>
+      </div>
+
+      <div class="quota-row">
+        <span>Auto-fill:</span>
+        <span class="quota-summary">Tier min march: auto (not set)</span>
+        <span class="quota-max">Max helpers: 29</span>
+      </div>
+
+      <div class="helpers-table-wrap">
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Ally</th>
+              <th>Tier</th>
+              <th>March</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="muted" colspan="4">No helpers assigned</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- South tower -->
+    <section class="base-card rider-theme" data-shift="both">
+      <header class="base-card-head">
+        <div>
+          <h3>Південна башня / South Tower</h3>
+          <p class="base-type">Тип бази: автоматично по капітану</p>
+        </div>
+        <span class="base-role badge is-auto">Auto</span>
+      </header>
+
+      <div class="captain-box">
+        <div class="captain-title">Капітан</div>
+        <div class="captain-main">
+          <div class="captain-name captain-empty">— Капітан не обраний —</div>
+          <div class="captain-meta">Type auto by captain · Both</div>
+        </div>
+      </div>
+
+      <div class="limit-grid">
+        <div><span>Captain march</span><strong>0</strong></div>
+        <div><span>Helpers Σ</span><strong>0</strong></div>
+        <div><span>Total Σ</span><strong>0</strong></div>
+        <div><span>Limit (Rally)</span><strong>0</strong></div>
+      </div>
+
+      <div class="quota-row">
+        <span>Auto-fill:</span>
+        <span class="quota-summary">Tier min march: auto (not set)</span>
+        <span class="quota-max">Max helpers: 29</span>
+      </div>
+
+      <div class="helpers-table-wrap">
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Ally</th>
+              <th>Tier</th>
+              <th>March</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="muted" colspan="4">No helpers assigned</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</aside>

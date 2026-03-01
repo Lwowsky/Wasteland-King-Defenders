@@ -1,0 +1,282 @@
+:root {
+  --bg: #0b1020;
+  --bg-0: #0c111e;
+  --bg-1: #121a2b;
+  --bg-2: #1b2436;
+
+  --panel: rgba(12, 16, 26, 0.5);
+  --panel-border: rgba(255, 255, 255, 0.07);
+
+  --accent-ember: rgba(255, 170, 90, 0.3); /* orange */
+  --accent-red: rgba(255, 90, 70, 0.2); /* red */
+  --accent-steel: rgba(170, 210, 235, 0.2); /* steel */
+
+  --glow-ember: rgba(255, 150, 60, 0.22);
+  --glow-steel: rgba(120, 180, 255, 0.18);
+  --panel-2: #0f1628;
+  --line: rgba(255, 255, 255, 0.08);
+  --text: #eef2ff;
+  --muted: #9aa7c2;
+  --accent: #4f8cff;
+  --accent-2: #8d6bff;
+  --good: #2ad38b;
+  --warn: #f4b94a;
+  --danger: #ff6f7e;
+  --shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  --shooter: #5ab7ff;
+  --fighter: #ffb247;
+  --rider: #8ed37b;
+
+  --app-max: 1320px; /* макс ширина сайту */
+  --app-pad: 16px; /* бокові відступи */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background:
+    radial-gradient(
+      1200px 760px at 15% 12%,
+      rgba(255, 170, 90, 0.3),
+      transparent 62%
+    ),
+    radial-gradient(
+      1000px 640px at 75% 18%,
+      rgba(255, 90, 70, 0.2),
+      transparent 60%
+    ),
+    radial-gradient(
+      1200px 900px at 50% 110%,
+      rgba(170, 210, 235, 0.2),
+      transparent 66%
+    ),
+    linear-gradient(180deg, #1b2436 0%, #121a2b 55%, #0c111e 100%);
+  background-attachment: fixed;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+html::before {
+  content: "";
+  position: fixed;
+  inset: -25%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.75;
+  background:
+    radial-gradient(
+      900px 520px at 25% 20%,
+      rgba(255, 170, 90, 0.22),
+      transparent 62%
+    ),
+    radial-gradient(
+      820px 560px at 80% 25%,
+      rgba(255, 90, 70, 0.16),
+      transparent 64%
+    ),
+    radial-gradient(
+      980px 760px at 55% 80%,
+      rgba(170, 210, 235, 0.16),
+      transparent 68%
+    );
+  filter: blur(18px) saturate(1.2);
+  animation: dustDrift 22s ease-in-out infinite alternate;
+}
+
+.container {
+  max-width: var(--app-max);
+  margin: 0 auto;
+  padding: 0 var(--app-pad);
+  width: 100%;
+}
+body {
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Arial,
+    sans-serif;
+  background: transparent;
+  background-attachment: fixed;
+  color: var(--text);
+  position: relative;
+  isolation: isolate;
+}
+
+/* Великий м'який рух світла */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1; /* <- КЛЮЧ: шар під контентом, але над background */
+  opacity: 0.75;
+
+  background:
+    radial-gradient(
+      900px 520px at 25% 20%,
+      rgba(255, 170, 90, 0.2),
+      transparent 62%
+    ),
+    radial-gradient(
+      820px 560px at 80% 25%,
+      rgba(255, 90, 70, 0.16),
+      transparent 64%
+    ),
+    radial-gradient(
+      980px 760px at 55% 80%,
+      rgba(170, 210, 235, 0.16),
+      transparent 68%
+    );
+  filter: blur(14px);
+  mix-blend-mode: screen;
+  animation: dustDrift 28s ease-in-out infinite alternate;
+  transform: translateZ(0);
+}
+
+/* Дрібніший "пил" поверх (дуже тонко) */
+body::after {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.35;
+
+  background:
+    radial-gradient(
+      320px 240px at 35% 35%,
+      rgba(255, 170, 90, 0.1),
+      transparent 70%
+    ),
+    radial-gradient(
+      260px 220px at 70% 40%,
+      rgba(255, 90, 70, 0.08),
+      transparent 72%
+    ),
+    radial-gradient(
+      300px 260px at 55% 70%,
+      rgba(170, 210, 235, 0.08),
+      transparent 74%
+    );
+  filter: blur(10px);
+  animation: dustFloat 30s ease-in-out infinite alternate;
+}
+
+
+@keyframes dustDrift{
+  0%   { transform: translate3d(-3%, -2%, 0) scale(1.05); }
+  50%  { transform: translate3d( 2.5%, -1%, 0) scale(1.08); }
+  100% { transform: translate3d( 1%,  3%, 0) scale(1.05); }
+}
+
+@keyframes dustFloat {
+  0% {
+    transform: translate3d(2%, 1%, 0) scale(1.02);
+  }
+  100% {
+    transform: translate3d(-2%, -1.5%, 0) scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body::after {
+    animation: none;
+  }
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+
+.muted {
+  color: var(--muted);
+}
+.small {
+  font-size: 12px;
+}
+.row {
+  display: flex;
+  align-items: center;
+}
+.gap {
+  gap: 10px;
+}
+.wrap {
+  flex-wrap: wrap;
+}
+.top-space {
+  margin-top: 10px;
+}
+.stack {
+  display: grid;
+  gap: 10px;
+}
+.stack.compact {
+  gap: 8px;
+}
+.grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  padding: 14px 0; /* без бокового, бо padding вже в container */
+}
+.layout > section,
+.layout > aside,
+.layout > * {
+  min-width: 0;
+}
+input,
+select,
+textarea {
+  background: rgba(14, 18, 28, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: rgba(255, 150, 60, 0.35);
+  box-shadow: 0 0 0 3px rgba(255, 150, 60, 0.1);
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --app-pad: 24px;
+  }
+}
+
+/* На дуже малих — менше */
+@media (max-width: 430px) {
+  :root {
+    --app-pad: 12px;
+  }
+}
