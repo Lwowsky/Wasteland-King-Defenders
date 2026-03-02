@@ -433,3 +433,142 @@
     border-radius: 10px;
   }
 }
+
+
+/* ===== FIX v3 (no display: contents) =====
+   Requires HTML change: move .brand-text out of .brand so header-inner children are:
+   .brand (logo) | .brand-text (title) | .header-actions (lang + burger) */
+@media (min-width: 641px) {
+  .app-header .header-inner {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 14px;
+    min-height: 154px;
+    padding-right: var(--app-pad);
+  }
+
+  .app-header .brand {
+    display: flex !important;
+    grid-column: 1;
+    justify-self: start;
+    align-items: center;
+    gap: 0;
+    min-width: 0;
+    flex: 0 0 auto;
+  }
+
+  .app-header .brand-badge.brand-logo {
+    width: clamp(108px, 15vw, 170px);
+    height: clamp(108px, 15vw, 170px);
+  }
+
+  .app-header .brand-text {
+    grid-column: 2;
+    justify-self: center;
+    align-self: center;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    width: min(700px, calc(100vw - 390px));
+    max-width: 100%;
+    min-width: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .app-header .brand-text h1,
+  .app-header .brand-text p {
+    text-align: center;
+  }
+
+  .app-header .header-actions {
+    grid-column: 3;
+    justify-self: end;
+    align-self: center;
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    margin-left: 0 !important;
+    white-space: nowrap;
+    position: relative;
+    z-index: 2;
+  }
+
+  .app-header .header-actions .lang {
+    display: block !important;
+    position: static;
+  }
+
+  .app-header .burger-btn {
+    display: flex;
+    position: static;
+    margin-left: 0;
+  }
+}
+
+/* tablet (761-980): keep both visible, just slightly tighter */
+@media (max-width: 980px) and (min-width: 761px) {
+  .app-header .brand-badge.brand-logo {
+    width: 112px;
+    height: 112px;
+  }
+
+  .app-header .brand-text {
+    width: min(520px, calc(100vw - 330px));
+  }
+
+  .app-header .brand-text h1 {
+    font-size: 18px;
+  }
+
+  .app-header .brand-text p {
+    font-size: 11px;
+  }
+}
+
+/* narrow tablet (641-760): compact actions, hide only lang label */
+@media (max-width: 760px) and (min-width: 641px) {
+  .app-header .header-inner {
+    min-height: 132px;
+    column-gap: 10px;
+  }
+
+  .app-header .brand-badge.brand-logo {
+    width: 88px;
+    height: 88px;
+  }
+
+  .app-header .brand-text {
+    width: min(360px, calc(100vw - 250px));
+  }
+
+  .app-header .brand-text h1 {
+    font-size: 16px;
+    line-height: 1.15;
+  }
+
+  .app-header .brand-text p {
+    font-size: 10px;
+    margin-top: 3px;
+  }
+
+  .app-header .header-actions .lang .lang-label {
+    display: none;
+  }
+
+  .app-header .header-actions .lang .lang-btn {
+    height: 40px;
+    padding: 0 10px;
+    gap: 8px;
+  }
+
+  .app-header .header-actions .burger-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+}
