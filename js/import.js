@@ -523,9 +523,8 @@
 
     if (typeof PNS.renderPlayersTableFromState === 'function') PNS.renderPlayersTableFromState();
     if (typeof PNS.buildRowActions === 'function') PNS.buildRowActions();
-    if (typeof PNS.renderAll === 'function') PNS.renderAll();
-
     if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift);
+    if (typeof PNS.renderAll === 'function') PNS.renderAll();
     setImportStatus(`Imported ${players.length} players successfully.`, 'good');
     setImportLoadedInfo(`${state.importData.sourceName || 'source'} • imported ${players.length} players`);
   }
