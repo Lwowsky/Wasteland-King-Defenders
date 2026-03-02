@@ -9,7 +9,7 @@
     if (!raw) return 'Unknown';
     if (/(shoot|стрел|стріл|стріле|shooter|marksman|tirador|射手|弓兵|狙撃|狙击|사수)/i.test(raw)) return 'Shooter';
     if (/(fight|infantry|боец|боєц|fighter|пехот|піхот|战士|步兵|歩兵|전투)/i.test(raw)) return 'Fighter';
-    if (/(ride|rider|наезд|наїзд|cavalry|кавал|骑|骑兵|騎兵|ライダー|기병|라이더)/i.test(raw)) return 'Rider';
+    if (/(ride|rider|наезд|наїзд|cavalry|кавал|骑|骑兵|騎兵|기병|ライダー)/i.test(raw)) return 'Rider';
     return raw;
   }
 

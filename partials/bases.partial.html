@@ -8,26 +8,38 @@
       </p>
     </div>
     <div class="panel-actions wrap">
-      <button class="btn btn-sm" id="autoFillAllBasesBtn" type="button">
-        Auto-fill all
-      </button>
-      <button class="btn btn-sm" id="clearCurrentShiftBtn" type="button">
-        Очистити поточний Shift
-      </button>
-      <button class="btn btn-sm shift-tab" data-shift-tab="shift1" type="button">
-        Shift 1
-      </button>
-      <button
-        class="btn btn-sm shift-tab active"
-        data-shift-tab="shift2"
-        type="button"
-      >
-        Shift 2
-      </button>
+      <span class="muted small">Налаштування перенесені в першу колонку нижче</span>
     </div>
   </div>
 
   <div class="bases-grid">
+
+    <section class="base-settings-card" id="basesSettingsCard" data-settings-card="1" data-shift="both">
+      <header class="base-card-head">
+        <div>
+          <h3>Налаштування / Settings</h3>
+          <p class="base-type">Тип бази: автоматично по капітану</p>
+        </div>
+        <span class="base-role badge is-auto">Auto</span>
+      </header>
+
+      <div class="captain-box settings-tools-box">
+        <div class="captain-title">Shift plan</div>
+        <div class="row gap wrap">
+          <button class="btn btn-sm shift-tab" data-shift-tab="shift1" type="button">Shift 1</button>
+          <button class="btn btn-sm shift-tab active" data-shift-tab="shift2" type="button">Shift 2</button>
+          <button class="btn btn-sm" id="toggleTowerFocusBtn" data-action="toggle-towers-view" type="button">Приховати інші</button>
+          <button class="btn btn-sm" id="openTowerPickerBtn" data-action="open-tower-picker" type="button">5 башень</button>
+        </div>
+        <div class="row gap wrap top-space">
+          <button class="btn btn-sm" id="autoFillAllBasesBtn" type="button">Auto-fill all</button>
+          <button class="btn btn-sm" id="clearCurrentShiftBtn" type="button">Очистити поточний Shift</button>
+          <button class="btn btn-sm" id="openBoardFromSettingsColBtn" data-action="open-board" type="button">Final Board View</button>
+        </div>
+        <div class="muted small top-space">Shift 1 / Shift 2 — окремі плани. Auto-fill не дублює гравців між ними.</div>
+      </div>
+    </section>
+
     <!-- Central base -->
     <section class="base-card shooter-theme" data-shift="both">
       <header class="base-card-head">
@@ -39,10 +51,21 @@
       </header>
 
       <div class="captain-box">
-        <div class="captain-title">Капітан</div>
-        <div class="captain-main">
-          <div class="captain-name captain-empty">— Капітан не обраний —</div>
-          <div class="captain-meta">Type auto by captain · Both</div>
+        <div class="captain-grid">
+          <div class="captain-col">
+            <div class="captain-title">Капітан</div>
+            <div class="captain-main">
+              <div class="captain-name captain-empty">— Капітан не обраний —</div>
+              <div class="captain-meta">Type auto by captain · Both</div>
+            </div>
+          </div>
+          <div class="captain-col captain-col-right">
+            <div class="captain-title">План / Plan</div>
+            <div class="captain-main">
+              <div class="captain-name captain-shift">—</div>
+              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -50,7 +73,8 @@
         <div><span>Captain march</span><strong>0</strong></div>
         <div><span>Helpers Σ</span><strong>0</strong></div>
         <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Limit (Rally)</span><strong>0</strong></div>
+        <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Free space</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
@@ -67,11 +91,12 @@
               <th>Ally</th>
               <th>Tier</th>
               <th>March</th>
+              <th class="edit-col">✎</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="4">No helpers assigned</td>
+              <td class="muted" colspan="5">No helpers assigned</td>
             </tr>
           </tbody>
         </table>
@@ -89,10 +114,21 @@
       </header>
 
       <div class="captain-box">
-        <div class="captain-title">Капітан</div>
-        <div class="captain-main">
-          <div class="captain-name captain-empty">— Капітан не обраний —</div>
-          <div class="captain-meta">Type auto by captain · Both</div>
+        <div class="captain-grid">
+          <div class="captain-col">
+            <div class="captain-title">Капітан</div>
+            <div class="captain-main">
+              <div class="captain-name captain-empty">— Капітан не обраний —</div>
+              <div class="captain-meta">Type auto by captain · Both</div>
+            </div>
+          </div>
+          <div class="captain-col captain-col-right">
+            <div class="captain-title">План / Plan</div>
+            <div class="captain-main">
+              <div class="captain-name captain-shift">—</div>
+              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -100,7 +136,8 @@
         <div><span>Captain march</span><strong>0</strong></div>
         <div><span>Helpers Σ</span><strong>0</strong></div>
         <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Limit (Rally)</span><strong>0</strong></div>
+        <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Free space</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
@@ -117,11 +154,12 @@
               <th>Ally</th>
               <th>Tier</th>
               <th>March</th>
+              <th class="edit-col">✎</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="4">No helpers assigned</td>
+              <td class="muted" colspan="5">No helpers assigned</td>
             </tr>
           </tbody>
         </table>
@@ -139,10 +177,21 @@
       </header>
 
       <div class="captain-box">
-        <div class="captain-title">Капітан</div>
-        <div class="captain-main">
-          <div class="captain-name captain-empty">— Капітан не обраний —</div>
-          <div class="captain-meta">Type auto by captain · Both</div>
+        <div class="captain-grid">
+          <div class="captain-col">
+            <div class="captain-title">Капітан</div>
+            <div class="captain-main">
+              <div class="captain-name captain-empty">— Капітан не обраний —</div>
+              <div class="captain-meta">Type auto by captain · Both</div>
+            </div>
+          </div>
+          <div class="captain-col captain-col-right">
+            <div class="captain-title">План / Plan</div>
+            <div class="captain-main">
+              <div class="captain-name captain-shift">—</div>
+              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -150,7 +199,8 @@
         <div><span>Captain march</span><strong>0</strong></div>
         <div><span>Helpers Σ</span><strong>0</strong></div>
         <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Limit (Rally)</span><strong>0</strong></div>
+        <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Free space</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
@@ -167,11 +217,12 @@
               <th>Ally</th>
               <th>Tier</th>
               <th>March</th>
+              <th class="edit-col">✎</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="4">No helpers assigned</td>
+              <td class="muted" colspan="5">No helpers assigned</td>
             </tr>
           </tbody>
         </table>
@@ -189,10 +240,21 @@
       </header>
 
       <div class="captain-box">
-        <div class="captain-title">Капітан</div>
-        <div class="captain-main">
-          <div class="captain-name captain-empty">— Капітан не обраний —</div>
-          <div class="captain-meta">Type auto by captain · Both</div>
+        <div class="captain-grid">
+          <div class="captain-col">
+            <div class="captain-title">Капітан</div>
+            <div class="captain-main">
+              <div class="captain-name captain-empty">— Капітан не обраний —</div>
+              <div class="captain-meta">Type auto by captain · Both</div>
+            </div>
+          </div>
+          <div class="captain-col captain-col-right">
+            <div class="captain-title">План / Plan</div>
+            <div class="captain-main">
+              <div class="captain-name captain-shift">—</div>
+              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -200,7 +262,8 @@
         <div><span>Captain march</span><strong>0</strong></div>
         <div><span>Helpers Σ</span><strong>0</strong></div>
         <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Limit (Rally)</span><strong>0</strong></div>
+        <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Free space</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
@@ -217,11 +280,12 @@
               <th>Ally</th>
               <th>Tier</th>
               <th>March</th>
+              <th class="edit-col">✎</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="4">No helpers assigned</td>
+              <td class="muted" colspan="5">No helpers assigned</td>
             </tr>
           </tbody>
         </table>
@@ -239,10 +303,21 @@
       </header>
 
       <div class="captain-box">
-        <div class="captain-title">Капітан</div>
-        <div class="captain-main">
-          <div class="captain-name captain-empty">— Капітан не обраний —</div>
-          <div class="captain-meta">Type auto by captain · Both</div>
+        <div class="captain-grid">
+          <div class="captain-col">
+            <div class="captain-title">Капітан</div>
+            <div class="captain-main">
+              <div class="captain-name captain-empty">— Капітан не обраний —</div>
+              <div class="captain-meta">Type auto by captain · Both</div>
+            </div>
+          </div>
+          <div class="captain-col captain-col-right">
+            <div class="captain-title">План / Plan</div>
+            <div class="captain-main">
+              <div class="captain-name captain-shift">—</div>
+              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -250,7 +325,8 @@
         <div><span>Captain march</span><strong>0</strong></div>
         <div><span>Helpers Σ</span><strong>0</strong></div>
         <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Limit (Rally)</span><strong>0</strong></div>
+        <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Free space</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
@@ -267,11 +343,12 @@
               <th>Ally</th>
               <th>Tier</th>
               <th>March</th>
+              <th class="edit-col">✎</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="4">No helpers assigned</td>
+              <td class="muted" colspan="5">No helpers assigned</td>
             </tr>
           </tbody>
         </table>

@@ -87,7 +87,7 @@
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 12px;
 }
@@ -342,6 +342,19 @@ select:disabled {
   font-size: 12px;
   margin-top: 2px;
 }
+.captain-grid{
+  display:grid;
+  grid-template-columns: minmax(0,1.2fr) minmax(160px,.8fr);
+  gap:10px;
+  align-items:start;
+}
+.captain-col-right{
+  border-left:1px dashed rgba(255,255,255,.08);
+  padding-left:10px;
+}
+.captain-col-right .captain-name{
+  font-weight:700;
+}
 
 .limit-grid {
   display: grid;
@@ -414,4 +427,9 @@ select:disabled {
   border-top: 1px solid transparent;
   color: #d5def5;
   font-size: 13px;
+}
+
+.mini-table th.edit-col, .mini-table td:last-child{
+  width: 44px;
+  text-align:center;
 }

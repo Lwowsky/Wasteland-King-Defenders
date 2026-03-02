@@ -167,11 +167,10 @@
     const quick = document.getElementById('openImportQuickBtn');
     const openSettings = document.getElementById('openSettingsBtn');
 
-    if (quick) {
+    if (quick && openSettings) {
       safeOn(quick, 'quickOpen', 'click', (e) => {
         e.preventDefault();
-        if (window.PNS?.openModal) { window.PNS.openModal('settings'); return; }
-        if (openSettings) openSettings.click();
+        window.PNS?.openModal?.('settings');
       });
     }
 

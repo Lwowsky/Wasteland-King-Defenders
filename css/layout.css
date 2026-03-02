@@ -317,3 +317,20 @@
 #playersDataTable thead th .sort-btn[data-sort="rally"]:hover {
   background: rgba(93, 127, 255, 0.28);
 }
+
+
+/* Bases grid layout with settings column */
+.bases-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 16px;
+  max-height: none;
+  overflow: visible;
+}
+.bases-grid .base-settings-card{
+  grid-column: 1 / 2;
+}
+@media (max-width: 1100px){
+  .bases-grid{ grid-template-columns: 1fr; }
+  .bases-grid .base-settings-card{ grid-column: auto; }
+}

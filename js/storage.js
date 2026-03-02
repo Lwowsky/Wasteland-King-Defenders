@@ -137,6 +137,65 @@
     el.textContent = msg || 'No file loaded yet.';
   }
 
+  // ===== Players dataset store (persist imported/current players across refresh) =====
+  const KEY_PLAYERS_STORE = 'pns_players_store_v1';
+  const KEY_SHIFT_PLANS_STORE = 'pns_shift_plans_store_v1';
+
+  function serializePlayerForStore(p) {
+    if (!p) return null;
+    return {
+      id: p.id || '',
+      name: p.name || '',
+      playerExternalId: p.playerExternalId || '',
+      alliance: p.alliance || '',
+      role: p.role || '',
+      tier: p.tier || '',
+      tierRank: Number(p.tierRank || 0) || 0,
+      march: Number(p.march || 0) || 0,
+      rally: Number(p.rally || 0) || 0,
+      captainReady: !!p.captainReady,
+      shift: p.shift || 'both',
+      shiftLabel: p.shiftLabel || (typeof PNS.formatShiftLabelForCell === 'function' ? PNS.formatShiftLabelForCell(p.shift || 'both') : 'Both'),
+      lairLevel: p.lairLevel || '',
+      secondaryRole: p.secondaryRole || '',
+      secondaryTier: p.secondaryTier || '',
+      troop200k: p.troop200k || '',
+      notes: p.notes || '',
+      raw: p.raw || null,
+      assignment: null,
+    };
+  }
+
+  function savePlayersStore() {
+    const rows = Array.isArray(state.players) ? state.players.map(serializePlayerForStore).filter(Boolean) : [];
+    safeWriteJSON(KEY_PLAYERS_STORE, { v: 1, players: rows });
+  }
+
+  function loadPlayersStore() {
+    const payload = safeReadJSON(KEY_PLAYERS_STORE, null);
+    const arr = Array.isArray(payload?.players) ? payload.players : null;
+    if (!arr || !arr.length) return false;
+    state.players = arr.map((p, idx) => ({ ...p, id: p.id || `p${idx+1}`, rowEl: null, actionCellEl: null, assignment: null }));
+    state.playerById = new Map(state.players.map(p => [p.id, p]));
+    return true;
+  }
+
+  function clearPlayersStore() { safeWriteJSON(KEY_PLAYERS_STORE, null); }
+
+  function saveShiftPlansStore() {
+    const plans = state.shiftPlans && typeof state.shiftPlans === 'object' ? state.shiftPlans : {};
+    safeWriteJSON(KEY_SHIFT_PLANS_STORE, plans);
+  }
+  function loadShiftPlansStore() {
+    const plans = safeReadJSON(KEY_SHIFT_PLANS_STORE, null);
+    state.shiftPlans = (plans && typeof plans === 'object' && !Array.isArray(plans)) ? plans : { shift1: null, shift2: null };
+    return state.shiftPlans;
+  }
+  function clearShiftPlansStore() {
+    state.shiftPlans = { shift1: null, shift2: null };
+    saveShiftPlansStore();
+  }
+
   // expose
   PNS.safeReadBool = safeReadBool;
   PNS.safeWriteBool = safeWriteBool;
@@ -159,5 +218,12 @@
 
   PNS.setImportStatus = setImportStatus;
   PNS.setImportLoadedInfo = setImportLoadedInfo;
+
+  PNS.savePlayersStore = savePlayersStore;
+  PNS.loadPlayersStore = loadPlayersStore;
+  PNS.clearPlayersStore = clearPlayersStore;
+  PNS.saveShiftPlansStore = saveShiftPlansStore;
+  PNS.loadShiftPlansStore = loadShiftPlansStore;
+  PNS.clearShiftPlansStore = clearShiftPlansStore;
 
 })();

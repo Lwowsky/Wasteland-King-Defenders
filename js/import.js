@@ -519,10 +519,17 @@
     if (!players.length) { setImportStatus('No player rows found after import (check mapping / empty rows).', 'danger'); return; }
 
     state.players = players;
+    state.playerById = new Map(players.map(p => [p.id, p]));
+
+    // new import replaces players/shift plans, but keeps settings templates/visibility/etc.
     resetAssignmentsForImportedData();
+    state.shiftPlans = { shift1: null, shift2: null };
+    if (typeof PNS.clearShiftPlansStore === 'function') PNS.clearShiftPlansStore();
+    if (typeof PNS.savePlayersStore === 'function') PNS.savePlayersStore();
 
     if (typeof PNS.renderPlayersTableFromState === 'function') PNS.renderPlayersTableFromState();
     if (typeof PNS.buildRowActions === 'function') PNS.buildRowActions();
+
     if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift);
     if (typeof PNS.renderAll === 'function') PNS.renderAll();
     setImportStatus(`Imported ${players.length} players successfully.`, 'good');

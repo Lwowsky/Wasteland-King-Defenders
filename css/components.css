@@ -8,12 +8,14 @@ body.modal-open { overflow: hidden; }
 /* --- Minimal JS demo assign controls --- */
 .row-actions {
   display: grid;
-  grid-template-columns: 1fr auto auto auto;
+  grid-template-columns: auto auto auto auto;
   gap: 6px;
   align-items: center;
 }
 .row-actions select {
-  min-width: 160px;
+  width: auto;
+  min-width: 0;
+  max-width: 18ch;
   padding: 7px 8px;
   font-size: 12px;
 }
@@ -221,4 +223,34 @@ body.modal-open { overflow: hidden; }
 /* v4.1.4 right card captain box emphasis */
 .base-card .captain-box{
   background: rgba(255,255,255,.02);
+}
+
+
+.icon-edit-btn{
+  padding: 4px 7px !important;
+  min-width: 28px;
+}
+.base-settings-card{
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel-2);
+  padding: 12px;
+  position: relative;
+}
+.base-settings-card::before{
+  content:"";
+  position:absolute; inset:0 0 auto 0; height:3px;
+  border-radius:16px 16px 0 0;
+  background: linear-gradient(90deg, var(--warn), #7cc3ff);
+  opacity:.9;
+}
+.bases-grid.focus-current-tower .base-card:not(.is-focused-tower){ display:none; }
+.bases-grid .base-settings-card{ align-self:start; }
+.settings-tools-box .top-space{ margin-top:10px; }
+
+#pnsActionModal .stack label{
+  display:grid; gap:6px; margin-bottom:10px;
+}
+#pnsActionModal .stack input,#pnsActionModal .stack select{
+  width:100%;
 }

@@ -35,7 +35,7 @@
   PNS.$$ = $$;
 
   // ---- State ----
-  const state = (PNS.state = PNS.state || {
+  const state = {
     activeModal: null,
     showAllColumns: false,
     activeShift: 'shift2',
@@ -53,13 +53,65 @@
     _jsonTemplateUIBound: false,
     fieldLabelOverrides: {},
     baseTowerRules: {},
-  });
+  };
+  PNS.state = state;
 
-  // ---- Cached nodes (keep same refs) ----
-  const modals = (PNS.modals = PNS.modals || { settings: null, board: null });
-  const buttons = (PNS.buttons = PNS.buttons || {});
-  const controls = (PNS.controls = PNS.controls || {});
-  const shiftTabs = (PNS.shiftTabs = PNS.shiftTabs || []); // keep same array ref
+  // ---- Cached nodes ----
+  const modals = { settings: $('#settings-modal'), board: $('#board-modal') };
+  const buttons = {
+    openSettings: $('#openSettingsBtn'),
+    openBoard: $('#openBoardBtn'),
+    showAllData: $('#showAllDataBtn'),
+    showAllColumns: $('#showAllColumnsBtn'),
+    autoFillAllHeader: $('#autoFillAllHeaderBtn'),
+    autoFillAllBases: $('#autoFillAllBasesBtn'),
+    clearCurrentShift: $('#clearCurrentShiftBtn'),
+    copyShift1ToShift2: $('#copyShift1ToShift2Btn'),
+    copyShift2ToShift1: $('#copyShift2ToShift1Btn'),
+    applyQuotaSettings: $('#applyQuotaSettingsBtn'),
+    resetQuotaSettings: $('#resetQuotaSettingsBtn'),
+    savePreset: $('#savePresetBtn'),
+    overwritePreset: $('#overwritePresetBtn'),
+    loadPreset: $('#loadPresetBtn'),
+    deletePreset: $('#deletePresetBtn'),
+    exportPng: $('#exportPngBtn'),
+    exportPdf: $('#exportPdfBtn'),
+    saveTemplateMock: $('#saveTemplateMockBtn'),
+    applyImportMock: $('#applyImportMockBtn'),
+    fileInputMock: $('#fileInputMock'),
+    urlInputMock: $('#urlInputMock'),
+    loadUrlMock: $('#loadUrlMockBtn'),
+    useTemplateMock: $('#useTemplateMockBtn'),
+    detectColumnsMock: $('#detectColumnsMockBtn'),
+    saveVisibleColumnsMock: $('#saveVisibleColumnsMockBtn'),
+    loadDemoImportBtn: $('#loadDemoImportBtn'),
+  };
+  const shiftTabs = $$('[data-shift-tab]');
+  const controls = {
+    quotaT14: $('#quotaT14Input'),
+    quotaT13: $('#quotaT13Input'),
+    quotaT12: $('#quotaT12Input'),
+    quotaT11: $('#quotaT11Input'),
+    quotaT10: $('#quotaT10Input'),
+    quotaT9: $('#quotaT9Input'),
+    maxHelpers: $('#maxHelpersInput'),
+    quotaScope: $('#quotaScopeSelect'),
+    quotaStatus: $('#quotaSettingsStatus'),
+    presetName: $('#presetNameInput'),
+    presetSelect: $('#presetSelect'),
+    presetStatus: $('#presetStatus'),
+    requiredMappingContainer: $('#requiredMappingContainer'),
+    optionalMappingContainer: $('#optionalMappingContainer'),
+    columnVisibilityChecks: $('#columnVisibilityChecks'),
+    importLoadedInfo: $('#importLoadedInfo'),
+    importStatusInfo: $('#importStatusInfo'),
+    playersDataTable: $('#playersDataTable'),
+  };
+
+  PNS.modals = modals;
+  PNS.buttons = buttons;
+  PNS.shiftTabs = shiftTabs;
+  PNS.controls = controls;
 
   // ---- Utils ----
   function toast(msg) { try { console.log('[PNS]', msg); } catch {} }
@@ -82,115 +134,10 @@
       .replace(/"/g, '&quot;');
   }
 
-  // swap-safe binding helper:
-  // bindOnce(el, 'boundOpenSettings', 'click', fn)
-  function bindOnce(el, key, evt, fn, opts) {
-    if (!el) return false;
-    const k = `pns_${key}`;
-    if (el.dataset[k]) return false;
-    el.dataset[k] = '1';
-    el.addEventListener(evt, fn, opts);
-    return true;
-  }
-
   PNS.toast = toast;
   PNS.clampInt = clampInt;
   PNS.formatNum = formatNum;
   PNS.parseNumber = parseNumber;
   PNS.escapeHtml = escapeHtml;
-  PNS.bindOnce = bindOnce;
-
-  // ---- Refresh DOM cache (works with htmx partial swaps) ----
-  function refreshDomCache() {
-    // modals
-    modals.settings = $('#settings-modal');
-    modals.board = $('#board-modal');
-
-    // buttons
-    buttons.openSettings = $('#openSettingsBtn');
-    buttons.openBoard = $('#openBoardBtn');
-    buttons.showAllData = $('#showAllDataBtn');
-    buttons.showAllColumns = $('#showAllColumnsBtn');
-    buttons.autoFillAllHeader = $('#autoFillAllHeaderBtn');
-    buttons.autoFillAllBases = $('#autoFillAllBasesBtn');
-    buttons.clearCurrentShift = $('#clearCurrentShiftBtn');
-
-    buttons.copyShift1ToShift2 = $('#copyShift1ToShift2Btn');
-    buttons.copyShift2ToShift1 = $('#copyShift2ToShift1Btn');
-
-    buttons.applyQuotaSettings = $('#applyQuotaSettingsBtn');
-    buttons.resetQuotaSettings = $('#resetQuotaSettingsBtn');
-
-    buttons.savePreset = $('#savePresetBtn');
-    buttons.overwritePreset = $('#overwritePresetBtn');
-    buttons.loadPreset = $('#loadPresetBtn');
-    buttons.deletePreset = $('#deletePresetBtn');
-
-    buttons.exportPng = $('#exportPngBtn');
-    buttons.exportPdf = $('#exportPdfBtn');
-
-    // import wizard buttons/inputs
-    buttons.saveTemplateMock = $('#saveTemplateMockBtn');
-    buttons.applyImportMock = $('#applyImportMockBtn');
-    buttons.fileInputMock = $('#fileInputMock');
-    buttons.urlInputMock = $('#urlInputMock');
-    buttons.loadUrlMock = $('#loadUrlMockBtn');
-    buttons.useTemplateMock = $('#useTemplateMockBtn');
-    buttons.detectColumnsMock = $('#detectColumnsMockBtn');
-    buttons.saveVisibleColumnsMock = $('#saveVisibleColumnsMockBtn');
-    buttons.loadDemoImportBtn = $('#loadDemoImportBtn');
-
-    // controls
-    controls.quotaT14 = $('#quotaT14Input');
-    controls.quotaT13 = $('#quotaT13Input');
-    controls.quotaT12 = $('#quotaT12Input');
-    controls.quotaT11 = $('#quotaT11Input');
-    controls.quotaT10 = $('#quotaT10Input');
-    controls.quotaT9 = $('#quotaT9Input');
-    controls.maxHelpers = $('#maxHelpersInput');
-    controls.quotaScope = $('#quotaScopeSelect');
-    controls.quotaStatus = $('#quotaSettingsStatus');
-
-    controls.presetName = $('#presetNameInput');
-    controls.presetSelect = $('#presetSelect');
-    controls.presetStatus = $('#presetStatus');
-
-    controls.requiredMappingContainer = $('#requiredMappingContainer');
-    controls.optionalMappingContainer = $('#optionalMappingContainer');
-    controls.columnVisibilityChecks = $('#columnVisibilityChecks');
-    controls.importLoadedInfo = $('#importLoadedInfo');
-    controls.importStatusInfo = $('#importStatusInfo');
-    controls.playersDataTable = $('#playersDataTable');
-
-    // shiftTabs (mutate same array ref)
-    shiftTabs.length = 0;
-    $$('[data-shift-tab]').forEach((el) => shiftTabs.push(el));
-  }
-
-  function emitDomRefreshed() {
-    try { document.dispatchEvent(new CustomEvent('pns:dom:refreshed')); } catch {}
-  }
-
-  PNS.refreshDomCache = refreshDomCache;
-
-  function initDomCache() {
-    refreshDomCache();
-    emitDomRefreshed();
-  }
-
-  // initial cache build
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initDomCache);
-  } else {
-    initDomCache();
-  }
-
-  // htmx: after partial swap, refresh cache again
-  document.addEventListener('htmx:afterSwap', () => {
-    initDomCache();
-  });
-  document.addEventListener('htmx:afterSettle', () => {
-    initDomCache();
-  });
 
 })();

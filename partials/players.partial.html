@@ -15,9 +15,9 @@
       >
         Показати всі дані
       </button>
-      <a class="btn btn-sm" id="openImportQuickBtn" href="#settings-modal">
+      <button class="btn btn-sm" id="openImportQuickBtn" type="button">
         Імпорт CSV/XLSX/URL
-      </a>
+      </button>
     </div>
   </div>
 
@@ -92,10 +92,10 @@
     <label>
       <span>Rows</span>
       <select id="pageSizeSelect">
+        <option selected>10</option>
         <option>20</option>
         <option>50</option>
-        <option>100</option>
-        <option>300</option>
+        <option value="all">Усі</option>
       </select>
     </label>
 

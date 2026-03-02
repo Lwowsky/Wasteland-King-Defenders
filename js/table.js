@@ -4,7 +4,7 @@
 
   const state = {
     page: 1,
-    pageSize: 20,
+    pageSize: 10,
     sortField: '',
     sortDir: 'desc',
     _raf: 0,
@@ -14,28 +14,18 @@
     const m = String(v || '').replace(/[^\d]/g, '');
     return m ? Number(m) : 0;
   }
-
   function getTbody() { return $('#playersDataTable tbody'); }
   function getRowsAll() { return $$('#playersDataTable tbody tr'); }
-
   function tierText(tr) {
-    return (tr.querySelector('td[data-field="tier"]')?.textContent || $$('td', tr)[3]?.textContent || '')
-      .trim().toUpperCase();
+    return (tr.querySelector('td[data-field="tier"]')?.textContent || $$('td', tr)[3]?.textContent || '').trim().toUpperCase();
   }
-
   function rallyVal(tr) {
-    return parseNum(
-      tr.querySelector('td[data-field="rally"]')?.textContent ||
-      tr.querySelector('td[data-col-key="rally_size"]')?.textContent ||
-      '0'
-    );
+    return parseNum(tr.querySelector('td[data-field="rally"]')?.textContent || tr.querySelector('td[data-col-key="rally_size"]')?.textContent || '0');
   }
-
   function getSortValue(tr, field) {
     if (field === 'rally') return rallyVal(tr);
     if (field === 'tier') {
-      const t = tierText(tr);
-      const m = String(t || '').match(/T?(\d+)/i);
+      const m = tierText(tr).match(/T?(\d+)/i);
       return m ? Number(m[1]) : 0;
     }
     return 0;
@@ -47,36 +37,40 @@
       const th = document.querySelector(`#playersDataTable thead th[data-field="${field}"]`);
       if (!th || th.querySelector('.sort-btn')) return;
       const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'sort-btn';
-      btn.dataset.sort = field;
-      btn.setAttribute('aria-label', `Sort by ${label}`);
-      btn.title = `Sort by ${label}`;
-      btn.textContent = '↓';
-      th.appendChild(document.createTextNode(' '));
-      th.appendChild(btn);
+      btn.type = 'button'; btn.className = 'sort-btn'; btn.dataset.sort = field;
+      btn.setAttribute('aria-label', `Sort by ${label}`); btn.title = `Sort by ${label}`; btn.textContent = '↓';
+      th.appendChild(document.createTextNode(' ')); th.appendChild(btn);
     });
   }
-
   function updateSortButtons() {
     ensureSortButtons();
-    $$('.sort-btn').filter(btn => ['tier', 'rally'].includes(btn.dataset.sort)).forEach(btn => {
+    $$('.sort-btn').forEach((btn) => {
       const f = btn.dataset.sort;
-      btn.textContent = (state.sortField === f ? (state.sortDir === 'desc' ? '↓' : '↑') : '↓');
+      if (!['tier', 'rally'].includes(f)) return;
+      btn.textContent = (state.sortField === f) ? (state.sortDir === 'desc' ? '↓' : '↑') : '↓';
     });
   }
 
   function currentTierFilter() {
     const el = $('#topTierFilter');
     if (!el) return 'all';
-    const v = String(el.value || 'all').trim().toUpperCase();
+    const raw = String(el.value || 'all').trim();
+    const v = raw.toUpperCase();
     return (v === 'ALL' || v === 'УСІ' || v === 'ВСІ') ? 'all' : v;
   }
 
   function visibleRows() {
     const tier = currentTierFilter();
     const rows = getRowsAll().filter(tr => !tr.hidden);
-    return tier === 'all' ? rows : rows.filter(tr => tierText(tr) === tier);
+    if (tier === 'all') return rows;
+    return rows.filter(tr => tierText(tr) === tier);
+  }
+
+  function getSelectedPageSize() {
+    const raw = String($('#pageSizeSelect')?.value || state.pageSize || '10').trim().toLowerCase();
+    if (raw === 'all' || raw === 'усі' || raw === 'всі') return 'all';
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : 10;
   }
 
   function applySortAndPager() {
@@ -94,33 +88,36 @@
       rows.forEach(tr => tbody.appendChild(tr));
     }
 
-    const pageSize = Number($('#pageSizeSelect')?.value || state.pageSize || 20);
+    const pageSize = getSelectedPageSize();
     state.pageSize = pageSize;
-    const pages = Math.max(1, Math.ceil(rows.length / pageSize));
-    state.page = Math.min(Math.max(1, state.page), pages);
-    const start = (state.page - 1) * pageSize;
-    const end = start + pageSize;
+    const pages = pageSize === 'all' ? 1 : Math.max(1, Math.ceil(rows.length / pageSize));
+    if (state.page > pages) state.page = pages;
+    if (state.page < 1) state.page = 1;
 
+    const start = pageSize === 'all' ? 0 : (state.page - 1) * pageSize;
+    const end = pageSize === 'all' ? Infinity : (start + pageSize);
+
+    const rowsSet = new Set(rows);
+    let idxVisible = 0;
     getRowsAll().forEach(tr => {
       tr.classList.remove('page-hidden');
       if (tr.hidden) { tr.classList.add('page-hidden'); return; }
-      const tier = currentTierFilter();
-      if (tier !== 'all' && tierText(tr) !== tier) { tr.classList.add('page-hidden'); return; }
-      const idx = rows.indexOf(tr);
-      if (idx < start || idx >= end) tr.classList.add('page-hidden');
+      if (!rowsSet.has(tr)) { tr.classList.add('page-hidden'); return; }
+      if (idxVisible < start || idxVisible >= end) tr.classList.add('page-hidden');
+      idxVisible++;
     });
 
     const info = $('#pageInfoText');
-    if (info) info.textContent = `Page ${state.page} / ${pages} • ${rows.length} shown`;
-    const prev = $('#pagePrevBtn');
-    const next = $('#pageNextBtn');
-    if (prev) prev.disabled = state.page <= 1;
-    if (next) next.disabled = state.page >= pages;
+    if (info) info.textContent = pageSize === 'all'
+      ? `Page 1 / 1 • ${rows.length} shown`
+      : `Page ${state.page} / ${pages} • ${rows.length} shown`;
+    const prev = $('#pagePrevBtn'); const next = $('#pageNextBtn');
+    if (prev) prev.disabled = pageSize === 'all' || state.page <= 1;
+    if (next) next.disabled = pageSize === 'all' || state.page >= pages;
     updateSortButtons();
   }
 
-  function scheduleRecalc(resetPage = false) {
-    if (resetPage) state.page = 1;
+  function scheduleRecalc() {
     if (state._raf) cancelAnimationFrame(state._raf);
     state._raf = requestAnimationFrame(() => { state._raf = 0; ensureSortButtons(); applySortAndPager(); });
   }
@@ -132,31 +129,49 @@
     el.addEventListener(evt, fn);
   }
 
+  function resetAllFiltersUI() {
+    const search = $('#topSearchFilter'); if (search) search.value = '';
+    const role = $('#topRoleFilter'); if (role) role.selectedIndex = 0;
+    const shift = $('#topShiftFilter'); if (shift) shift.value = 'all';
+    const status = $('#topStatusFilter'); if (status) status.selectedIndex = 0;
+    const tier = $('#topTierFilter'); if (tier) tier.value = 'all';
+    const rows = $('#pageSizeSelect'); if (rows) rows.value = '10';
+
+    const PNS = window.PNS;
+    if (PNS?.state?.topFilters) {
+      PNS.state.topFilters.search = '';
+      PNS.state.topFilters.role = 'all';
+      PNS.state.topFilters.shift = 'all';
+      PNS.state.topFilters.status = 'all';
+      if (typeof PNS.saveTopFilters === 'function') PNS.saveTopFilters();
+    }
+    if (typeof PNS?.applyShiftFilter === 'function') PNS.applyShiftFilter('all');
+    if (typeof PNS?.applyPlayerTableFilters === 'function') PNS.applyPlayerTableFilters();
+  }
+
   function bind() {
     ensureSortButtons();
-    bindOnce($('#topTierFilter'), 'v4boundTier', () => scheduleRecalc(true), 'change');
-    bindOnce($('#pageSizeSelect'), 'v4boundPageSize', () => scheduleRecalc(true), 'change');
-    bindOnce($('#resetFiltersBtn'), 'v4boundReset', () => setTimeout(() => { state.sortField = ''; state.sortDir = 'desc'; scheduleRecalc(true); }, 0), 'click');
-
-    bindOnce(document.documentElement, 'v4boundSortDelegated', (e) => {
-      const btn = e.target.closest('.sort-btn');
-      if (!btn) return;
-      const f = btn.dataset.sort;
-      if (f !== 'tier' && f !== 'rally') return;
-      if (state.sortField !== f) { state.sortField = f; state.sortDir = 'desc'; }
-      else state.sortDir = (state.sortDir === 'desc') ? 'asc' : 'desc';
-      scheduleRecalc(true);
+    bindOnce($('#topTierFilter'), 'v4boundTier', () => { state.page = 1; scheduleRecalc(); }, 'change');
+    bindOnce($('#pageSizeSelect'), 'v4boundPageSize', () => { state.page = 1; scheduleRecalc(); }, 'change');
+    bindOnce($('#resetFiltersBtn'), 'v4boundReset', () => {
+      resetAllFiltersUI();
+      state.sortField = ''; state.sortDir = 'desc'; state.page = 1;
+      setTimeout(scheduleRecalc, 0);
     }, 'click');
-
+    bindOnce(document.documentElement, 'v4boundSortDelegated', (e) => {
+      const btn = e.target.closest('.sort-btn'); if (!btn) return;
+      const f = btn.dataset.sort; if (!['tier','rally'].includes(f)) return;
+      if (state.sortField !== f) { state.sortField = f; state.sortDir = 'desc'; }
+      else state.sortDir = state.sortDir === 'desc' ? 'asc' : 'desc';
+      state.page = 1; scheduleRecalc();
+    }, 'click');
     bindOnce($('#pagePrevBtn'), 'v4boundPrev', () => { state.page = Math.max(1, state.page - 1); scheduleRecalc(); }, 'click');
     bindOnce($('#pageNextBtn'), 'v4boundNext', () => { state.page = state.page + 1; scheduleRecalc(); }, 'click');
   }
 
   function init() { bind(); scheduleRecalc(); }
-
   document.addEventListener('players-table-rendered', init);
   document.addEventListener('htmx:afterSwap', init);
   document.addEventListener('htmx:afterSettle', init);
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

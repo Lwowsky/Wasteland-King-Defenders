@@ -152,6 +152,10 @@
 
     cards.forEach((card, idx) => {
       const titleText = $('h3', card)?.textContent.trim() || `Base ${idx + 1}`;
+      const titleNorm = String(titleText || '').toLowerCase();
+      if (card.classList.contains('settings-card') || card.dataset.settingsCard === '1' || /налаштування|settings/.test(titleNorm)) {
+        return; // не парсимо службову картку налаштувань як башню
+      }
 
       // shift: якщо в HTML є data-shift, беремо його, інакше both
       const shift = card.dataset.shift || 'both';

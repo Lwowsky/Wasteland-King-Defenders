@@ -101,6 +101,12 @@
     const commonCandidates = () => (state.players || [])
       .filter((p) => p && p.id !== captain.id)
       .filter((p) => !p.assignment)
+      .filter((p) => {
+        const usedElsewhere = (typeof PNS.getPlayersUsedInOtherShiftPlans === 'function')
+          ? PNS.getPlayersUsedInOtherShiftPlans(state.activeShift)
+          : new Set();
+        return !usedElsewhere.has(p.id);
+      })
       .filter((p) => p.role === captain.role)
       .filter((p) => ignoreShift ? true : PNS.matchesShift(p.shift, state.activeShift))
       .filter((p) => ignoreShift ? true : (base.shift === 'both' || p.shift === 'both' || p.shift === base.shift))
