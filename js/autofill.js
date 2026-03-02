@@ -5,16 +5,16 @@
   function num(x) { return Number.isFinite(+x) ? +x : 0; }
   function uniqPush(arr, id) { if (!arr.includes(id)) arr.push(id); }
 
-  function getBaseTierMinMarch(base, tierKey) {
+  function getBaseTierMaxMarch(base, tierKey) {
     const k = String(tierKey || '').toUpperCase();
     return PNS.clampInt(base?.tierMinMarch?.[k], 0);
   }
 
-  function passesBaseTierMinMarch(base, player) {
+  function passesBaseTierMaxMarch(base, player) {
     if (!base || !player) return true;
-    const threshold = getBaseTierMinMarch(base, player.tier);
+    const threshold = getBaseTierMaxMarch(base, player.tier);
     if (!threshold) return true;
-    return num(player.march) >= threshold;
+    return num(player.march) <= threshold;
   }
 
   function calcRallyLimit(captain) {
@@ -36,7 +36,7 @@
 
     const byActiveShift = sameRole.filter((p) => PNS.matchesShift(p.shift, state.activeShift));
     const byBaseShift = byActiveShift.filter((p) => base.shift === 'both' || p.shift === 'both' || p.shift === base.shift);
-    const passTierMin = byBaseShift.filter((p) => passesBaseTierMinMarch(base, p));
+    const passTierMin = byBaseShift.filter((p) => passesBaseTierMaxMarch(base, p));
 
     const limit = calcRallyLimit(captain);
     const usedHelpers = helpersSumMarch(base);
@@ -101,16 +101,10 @@
     const commonCandidates = () => (state.players || [])
       .filter((p) => p && p.id !== captain.id)
       .filter((p) => !p.assignment)
-      .filter((p) => {
-        const usedElsewhere = (typeof PNS.getPlayersUsedInOtherShiftPlans === 'function')
-          ? PNS.getPlayersUsedInOtherShiftPlans(state.activeShift)
-          : new Set();
-        return !usedElsewhere.has(p.id);
-      })
       .filter((p) => p.role === captain.role)
       .filter((p) => ignoreShift ? true : PNS.matchesShift(p.shift, state.activeShift))
       .filter((p) => ignoreShift ? true : (base.shift === 'both' || p.shift === 'both' || p.shift === base.shift))
-      .filter((p) => passesBaseTierMinMarch(base, p))
+      .filter((p) => passesBaseTierMaxMarch(base, p))
       .sort((a, b) =>
         (num(b.tierRank) - num(a.tierRank)) ||
         (num(b.march) - num(a.march)) ||
@@ -145,7 +139,7 @@
       if (!d.sameRole) reason = `No free ${captain.role} players.`;
       else if (!ignoreShift && !d.byActiveShift) reason = `No ${captain.role} players for active filter (${state.activeShift}).`;
       else if (!ignoreShift && !d.byBaseShift) reason = `No ${captain.role} players match tower shift.`;
-      else if (!d.passTierMin) reason = 'No candidates pass per-tier min march rules.';
+      else if (!d.passTierMin) reason = 'No candidates pass per-tier max march rules.';
       else if ((base.maxHelpers || 0) > 0 && base.helperIds.length >= base.maxHelpers) reason = `Max helpers reached (${base.maxHelpers}).`;
       else if (room !== Infinity && d.fitRoom === 0) reason = `No players fit remaining rally room (${PNS.formatNum?.(Math.max(0, d.room)) ?? Math.max(0, d.room)}).`;
       else reason = 'No eligible candidates after checks.';
@@ -197,8 +191,11 @@
     }
   }
 
-  PNS.getBaseTierMinMarch = getBaseTierMinMarch;
-  PNS.passesBaseTierMinMarch = passesBaseTierMinMarch;
+  PNS.getBaseTierMaxMarch = getBaseTierMaxMarch;
+  PNS.passesBaseTierMaxMarch = passesBaseTierMaxMarch;
+  // backward-compat names
+  PNS.getBaseTierMinMarch = getBaseTierMaxMarch;
+  PNS.passesBaseTierMinMarch = passesBaseTierMaxMarch;
 
   PNS.autoFillDiagnostics = autoFillDiagnostics;
   PNS.autoFillBase = autoFillBase;

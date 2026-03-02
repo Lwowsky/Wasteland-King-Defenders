@@ -40,18 +40,8 @@
 
 
   function captainCrossShiftConflict(player, base) {
-    if (!player || !base) return '';
-    const curShift = state.activeShift;
-    if (curShift !== 'shift1' && curShift !== 'shift2') return '';
-    const otherShift = curShift === 'shift1' ? 'shift2' : 'shift1';
-    const otherPlan = state.shiftPlans?.[otherShift];
-    const otherAssign = otherPlan?.players?.[player.id];
-    if (!otherAssign || otherAssign.kind !== 'captain') return '';
-    if (otherAssign.baseId === base.id) return ''; // same captain on same tower in both shifts is allowed
-
-    const otherBase = state.baseById?.get?.(otherAssign.baseId);
-    const otherTitle = (otherBase?.title || otherAssign.baseId || 'інша башня').split('/')[0].trim();
-    return `Captain already selected in ${otherShift.toUpperCase()} for "${otherTitle}". You can reuse the same captain only for the same tower in both shifts.`;
+    // Cross-shift captain reuse is allowed (same player may captain in Shift 1 and Shift 2 on different towers).
+    return '';
   }
 
   function validateAssign(player, base, kind) {
@@ -78,6 +68,11 @@
     }
 
     if (kind === 'helper') {
+      const tierCap = Number(base?.tierMinMarch?.[String(player.tier||'').toUpperCase()] || 0) || 0;
+      if (tierCap > 0 && Number(player.march || 0) > tierCap) {
+        return `Tier max exceeded: ${player.tier} ${PNS.formatNum(player.march)} > ${PNS.formatNum(tierCap)}.`;
+      }
+
       const helperCountAfter = base.helperIds.filter((id) => id !== player.id).length + 1;
       if (Number.isFinite(base.maxHelpers) && base.maxHelpers > 0 && helperCountAfter > base.maxHelpers) {
         return `Max helpers reached: ${helperCountAfter}/${base.maxHelpers}.`;
@@ -247,6 +242,28 @@
 
         const removeBtn = e.target.closest('[data-base-remove-player]');
         if (removeBtn) { e.preventDefault(); removePlayerFromSpecificBase(removeBtn.dataset.baseRemovePlayer, removeBtn.dataset.playerId); return; }
+
+        const navBtn = e.target.closest('[data-base-editor-nav]');
+        if (navBtn) {
+          e.preventDefault();
+          const baseId = navBtn.dataset.baseId;
+          const base = state.baseById.get(baseId);
+          const editor = base?.cardEl ? base.cardEl.querySelector('.base-editor') : null;
+          const sel = editor ? editor.querySelector(`select[data-base-editor-select="${baseId}"]`) : null;
+          if (!sel || sel.options.length <= 1) return;
+          const dir = navBtn.dataset.baseEditorNav === 'prev' ? -1 : 1;
+          let idx = Math.max(0, sel.selectedIndex);
+          const start = idx;
+          do {
+            idx += dir;
+            if (idx < 1) idx = sel.options.length - 1;
+            if (idx >= sel.options.length) idx = 1;
+            if (idx === start) break;
+          } while (false);
+          sel.selectedIndex = idx;
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+          return;
+        }
 
         const editorActionBtn = e.target.closest('[data-base-editor-action]');
         if (editorActionBtn) {

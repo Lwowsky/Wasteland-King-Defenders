@@ -433,3 +433,25 @@ select:disabled {
   width: 44px;
   text-align:center;
 }
+
+
+.quota-row .quota-max{margin-left:auto;}
+.limit-grid.limit-grid-compact{grid-template-columns:repeat(4,minmax(0,1fr));}
+.base-settings-card .settings-focus-inline{display:block;min-width:240px;max-width:320px;flex:1 1 260px;}
+.base-settings-card .settings-focus-inline select{width:100%;}
+
+
+/* step6 tweaks */
+.base-settings-card .settings-tools-box > .row:first-of-type{align-items:center;}
+.base-settings-card .settings-focus-select{min-width:150px;max-width:185px;flex:0 0 180px;height:38px;padding:8px 10px;font-size:14px;}
+.base-settings-card .settings-tools-box > .row:first-of-type .btn{white-space:nowrap;}
+.captain-col-right .captain-main{display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
+.captain-col-right .captain-name{font-size:18px;color:#cfe0ff;font-weight:700;letter-spacing:.01em;}
+.captain-col-right .captain-meta{color:#9fb0d8;}
+.captain-edit-btn{margin-top:6px;align-self:flex-start;}
+.base-card .captain-col .captain-main{position:relative;}
+.base-card .captain-col .captain-edit-btn{position:absolute;top:0;right:0;}
+.base-editor .editor-select-wrap{display:grid;grid-template-columns:36px minmax(0,1fr) 36px;gap:6px;align-items:center;min-width:0;flex:1 1 260px;}
+.base-editor .editor-select-wrap select{min-width:0;width:100%;}
+#towerPlayerEditModal .modal-card .modal-grid input, #towerPlayerEditModal .modal-card .modal-grid select{color:#eef3ff !important;}
+#towerPlayerEditModal .modal-card .modal-grid option{color:#eef3ff;background:#071231;}

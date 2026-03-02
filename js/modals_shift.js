@@ -24,18 +24,74 @@
     };
   }
 
+  function syncBodyModalLock() {
+    const anyOpen = !!document.querySelector('.modal.is-open');
+    document.body.classList.toggle('modal-open', anyOpen);
+  }
+
+  function ensureStep4Styles() {
+    if (document.getElementById('pns-step4-inline-styles')) return;
+    const st = document.createElement('style');
+    st.id = 'pns-step4-inline-styles';
+    st.textContent = `
+      .bases-grid > .base-settings-card{align-self:stretch;height:100%;}
+      .base-settings-card .settings-tools-box{flex:1;display:flex;flex-direction:column;justify-content:flex-start;}
+      .tower-picker-modal .modal-card{width:min(1280px, calc(100vw - 28px));}
+      .tower-picker-head{display:grid;grid-template-columns:minmax(0,1fr) auto 44px;align-items:center;gap:10px;}
+      .tower-picker-head-center{display:flex;align-items:center;justify-content:center;gap:8px;justify-self:center;}
+      .tower-picker-head-left{text-align:left;}
+      .tower-picker-head .btn.shift-mini{min-width:84px;padding:7px 10px;}
+      .tower-picker-detail .picker-topline{display:grid;grid-template-columns:minmax(180px,360px) auto;gap:10px;align-items:center;}
+      .tower-picker-detail .picker-topline > select{min-width:180px;max-width:360px;width:100%;}
+      .tower-picker-detail .picker-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+      .tower-picker-detail details.tower-collapsible{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02);} 
+      .tower-picker-detail details.tower-collapsible>summary{cursor:pointer;list-style:none;padding:10px;font-weight:600;}
+      .tower-picker-detail details.tower-collapsible>summary::-webkit-details-marker{display:none;}
+      .tower-picker-detail details.tower-collapsible .inner{padding:0 10px 10px;}
+      .tower-picker-detail .picker-limits-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;}
+      .tower-picker-detail .picker-limits-head label{display:grid;gap:6px;min-width:220px;}
+      .tower-picker-detail .picker-manual-row{display:grid;grid-template-columns:minmax(140px,1.3fr) minmax(110px,.8fr) minmax(130px,.9fr);gap:8px;align-items:end;}
+      .tower-picker-detail .picker-manual-row2{display:grid;grid-template-columns:100px 140px auto;gap:8px;align-items:end;}
+      .tower-picker-detail .tower-picker-item.active{border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.08);} 
+      #towerPlayerEditModal .modal-card{width:min(540px, calc(100vw - 24px));}
+      #towerPlayerEditModal .modal-grid{grid-template-columns:minmax(0,1fr);}
+      #towerPlayerEditModal .modal-grid > .panel{max-width:100%;}
+      .tower-picker-modal input,.tower-picker-modal select,#towerPlayerEditModal input,#towerPlayerEditModal select{color:#e9efff !important;}
+      #towerPlayerEditModal input::placeholder{color:#8e9ab8;}
+      .settings-focus-inline,.settings-focus-select{min-width:150px;max-width:190px;flex:0 0 180px;display:block;}
+      .settings-focus-inline select,.settings-focus-select{height:38px;min-width:0;padding:8px 10px;font-size:14px;}
+      .quota-row .quota-max{margin-left:auto;}
+      @media (max-width: 900px){
+        .tower-picker-modal .modal-grid{grid-template-columns:1fr !important;}
+        .tower-picker-head{grid-template-columns:1fr 44px;}
+        .tower-picker-head-center{grid-column:1 / -1; justify-content:center;}
+        .tower-picker-detail .picker-topline{grid-template-columns:1fr;}
+        .tower-picker-detail .picker-manual-row,.tower-picker-detail .picker-manual-row2{grid-template-columns:1fr;}
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  function syncSettingsShiftBadge() {
+    const badge = document.getElementById('settingsShiftBadge');
+    if (!badge) return;
+    const label = state.activeShift === 'shift1' ? 'Shift 1' : state.activeShift === 'shift2' ? 'Shift 2' : 'All';
+    badge.textContent = label;
+  }
+
   function openModal(name) {
     closeModal();
     const modal = getModals()[name];
     if (!modal) return;
     modal.classList.add('is-open');
-    document.body.classList.add('modal-open');
+    updateShiftTabButtons();
+    syncBodyModalLock();
     state.activeModal = name;
   }
   function closeModal() {
     const modals = getModals();
     Object.values(modals).forEach((m) => m && m.classList.remove('is-open'));
-    document.body.classList.remove('modal-open');
+    syncBodyModalLock();
     state.activeModal = null;
   }
 
@@ -231,16 +287,21 @@
     const sel = getButtons().focusTowerSelect || document.querySelector('#focusTowerSelect');
     if (!sel) return;
     const bases = (state.bases || []).slice();
-    const byId = new Map(bases.map(b => [String(b.id), b]));
     const old = sel.value;
     const cards = getTowerCards();
     sel.innerHTML = '';
     cards.forEach((card, idx) => {
-      const id = String(card.dataset.baseId || card.dataset.baseid || '');
-      const base = byId.get(id);
+      let id = String(card.dataset.baseId || card.dataset.baseid || '');
+      let base = id ? state.baseById?.get?.(id) : null;
+      if (!base && bases[idx]) {
+        base = bases[idx];
+        id = String(base.id || id || `card-${idx}`);
+        if (!card.dataset.baseId) card.dataset.baseId = id;
+      }
       const title = (base?.title || card.querySelector('h3')?.textContent || `Башня ${idx+1}`).split('/')[0].trim();
       const opt = document.createElement('option');
       opt.value = id || `card-${idx}`;
+      opt.dataset.towerTitle = title;
       opt.textContent = title;
       sel.appendChild(opt);
     });
@@ -339,41 +400,48 @@
       <div class="stack">
         <h3>${title}</h3>
         <div class="muted small">Shift: ${(state.activeShift || '').toUpperCase()}</div>
-        <div class="row gap wrap">
-          <select id="towerPickerCaptainSelect" class="input-like" style="min-width:260px">
+        <div class="picker-topline top-space">
+          <select id="towerPickerCaptainSelect" class="input-like" aria-label="Вибір капітана" style="max-width:320px;">
             <option value="">${captain ? 'Змінити капітана…' : 'Вибрати капітана…'}</option>
             ${caps.map(p => `<option value="${p.id}" ${captain && captain.id===p.id ? 'selected' : ''}>${String(p.name||'')} · ${String(p.role||'')} · ${Number(p.march||0).toLocaleString('en-US')}</option>`).join('')}
           </select>
-          <button class="btn btn-sm" type="button" data-picker-set-captain="${base.id}">Set captain</button>
-          <button class="btn btn-sm" type="button" data-picker-autofill="${base.id}">Auto-fill</button>
-          <button class="btn btn-sm" type="button" data-picker-clear-helpers="${base.id}">Clear helpers</button>
-          <button class="btn btn-sm" type="button" data-picker-clear-base="${base.id}">Clear base</button>
-        </div>
-        <div class="row gap wrap">
-          <button class="btn btn-sm" type="button" data-picker-focus-right="${base.id}">Показати справа</button>
-        </div>
-        <div class="panel subpanel" style="padding:10px">
-          <div class="row gap wrap">
-            <label><span class="muted small">Max helpers</span><input id="pickerMaxHelpers" type="number" min="0" value="${rule.maxHelpers}" /></label>
-          </div>
-          <div class="row gap wrap top-space">
-            ${['T14','T13','T12','T11','T10','T9'].map(t => `<label><span class="muted small">${t}</span><input type="number" min="0" data-picker-tier="${t}" value="${rule.tierMinMarch[t]||0}" style="width:90px" /></label>`).join('')}
-            <button class="btn btn-sm" type="button" data-picker-save-rule="${base.id}">Зберегти ліміти</button>
+          <div class="picker-actions">
+            <button class="btn btn-sm" type="button" data-picker-set-captain="${base.id}">Set captain</button>
+            <button class="btn btn-sm" type="button" data-picker-autofill="${base.id}">Auto-fill</button>
+            <button class="btn btn-sm" type="button" data-picker-clear-base="${base.id}">Clear base</button>
+            <button class="btn btn-sm" type="button" data-picker-focus-right="${base.id}">Показати справа</button>
           </div>
         </div>
-        <div class="panel subpanel" style="padding:10px">
-          <div class="row gap wrap">
-            <strong>Manual add helper</strong>
+
+        <details class="tower-collapsible top-space" id="towerPickerLimitsBlock">
+          <summary>Налаштування башні · ліміти по тірам (макс. March)</summary>
+          <div class="inner stack">
+            <div class="picker-limits-head">
+              <label><span class="muted small">Max helpers</span><input id="pickerMaxHelpers" type="number" min="0" value="${rule.maxHelpers}" /></label>
+              <button class="btn btn-sm" type="button" data-picker-save-rule="${base.id}">Зберегти ліміти</button>
+            </div>
+            <div class="row gap wrap">
+              ${['T14','T13','T12','T11','T10','T9'].map(t => `<label><span class="muted small">${t}</span><input type="number" min="0" data-picker-tier="${t}" value="${rule.tierMinMarch[t]||0}" style="width:90px" /></label>`).join('')}
+            </div>
           </div>
-          <div class="row gap wrap top-space">
-            <input id="pickerManualName" placeholder="Нік" />
-            <input id="pickerManualAlly" placeholder="Альянс" style="max-width:110px"/>
-            <select id="pickerManualRole"><option>Shooter</option><option>Fighter</option><option>Rider</option></select>
-            <input id="pickerManualTier" placeholder="T14" style="max-width:90px"/>
-            <input id="pickerManualMarch" placeholder="March" type="number" min="0" style="max-width:140px"/>
-            <button class="btn btn-sm" type="button" data-picker-add-manual="${base.id}">Add helper</button>
+        </details>
+
+        <details class="tower-collapsible" id="towerPickerManualBlock">
+          <summary>Manual add helper</summary>
+          <div class="inner stack">
+            <div class="picker-manual-row">
+              <input id="pickerManualName" placeholder="Нік" />
+              <input id="pickerManualAlly" placeholder="Альянс" />
+              <select id="pickerManualRole"><option>Shooter</option><option>Fighter</option><option>Rider</option></select>
+            </div>
+            <div class="picker-manual-row2">
+              <input id="pickerManualTier" placeholder="T14" />
+              <input id="pickerManualMarch" placeholder="March" type="number" min="0" />
+              <button class="btn btn-sm" type="button" data-picker-add-manual="${base.id}">Add helper</button>
+            </div>
           </div>
-        </div>
+        </details>
+
         <div class="panel subpanel" style="padding:10px">
           <div class="row gap wrap" style="justify-content:space-between"><strong>Гравці в башні</strong><span class="muted small">${captain ? 'Captain + helpers' : 'No captain'}</span></div>
           <div class="helpers-table-wrap top-space">
@@ -388,7 +456,6 @@
           </div>
         </div>
       </div>`;
-
     const sel = modal.querySelector('.tower-picker-list [data-pick-tower-id].active');
     modal.querySelectorAll('.tower-picker-list [data-pick-tower-id]').forEach(b=>b.classList.toggle('active', b===sel));
   }
@@ -423,15 +490,15 @@
       modal.className = 'modal';
       modal.innerHTML = `
         <div class="modal-backdrop" data-close-tower-player-edit></div>
-        <div class="modal-card" role="dialog" aria-modal="true">
+        <div class="modal-card" role="dialog" aria-modal="true" style="width:min(560px, calc(100vw - 24px));">
           <div class="modal-head"><div><h2>Редагування гравця</h2><p class="muted">Зміна даних / видалення з башні</p></div><button class="btn btn-icon" type="button" data-close-tower-player-edit>✕</button></div>
-          <div class="modal-grid">
-            <section class="panel subpanel stack">
-              <input id="tpeName" placeholder="Нік" />
-              <input id="tpeAlly" placeholder="Альянс" />
-              <select id="tpeRole"><option>Shooter</option><option>Fighter</option><option>Rider</option></select>
-              <input id="tpeTier" placeholder="T14" />
-              <input id="tpeMarch" type="number" min="0" placeholder="March" />
+          <div class="modal-grid" style="grid-template-columns:minmax(0,1fr);">
+            <section class="panel subpanel stack" style="max-width:100%;">
+              <input id="tpeName" placeholder="Нік" style="color:#eef3ff" />
+              <input id="tpeAlly" placeholder="Альянс" style="color:#eef3ff" />
+              <select id="tpeRole" style="color:#eef3ff"><option>Shooter</option><option>Fighter</option><option>Rider</option></select>
+              <input id="tpeTier" placeholder="T14" style="color:#eef3ff" />
+              <input id="tpeMarch" type="number" min="0" placeholder="March" style="color:#eef3ff" />
               <div class="row gap wrap">
                 <button class="btn btn-primary" type="button" id="tpeSaveBtn">Зберегти</button>
                 <button class="btn" type="button" id="tpeRemoveBtn">Видалити з башні</button>
@@ -449,7 +516,7 @@
     modal.querySelector('#tpeTier').value = p?.tier || 'T10';
     modal.querySelector('#tpeMarch').value = p?.march || '';
     modal.classList.add('is-open');
-    document.body.classList.add('modal-open');
+    syncBodyModalLock();
   }
 
   function saveTowerPlayerEditModal() {
@@ -483,12 +550,13 @@
     }
     try { PNS.renderAll?.(); } catch {}
     modal.classList.remove('is-open');
-    document.body.classList.remove('modal-open');
+    syncBodyModalLock();
     refreshTowerPickerModalList();
     updateTowerPickerDetail();
   }
 
   function openTowerPickerModal() {
+    ensureStep4Styles();
     let modal = document.getElementById('towerPickerModal');
     if (!modal) {
       modal = document.createElement('div');
@@ -497,8 +565,12 @@
       modal.innerHTML = `
         <div class="modal-backdrop" data-close-tower-picker></div>
         <div class="modal-card" role="dialog" aria-modal="true">
-          <div class="modal-head">
-            <div><h2>5 башень</h2><p class="muted">Оберіть башню зліва, налаштовуй справа</p></div>
+          <div class="modal-head tower-picker-head">
+            <div class="tower-picker-head-left"><h2 style="margin:0">5 башень</h2><p class="muted" style="margin-top:2px">Оберіть башню зліва, налаштуй справа</p></div>
+            <div class="tower-picker-head-center">
+              <button class="btn btn-sm shift-mini" type="button" data-picker-shift-tab="shift1" data-shift-tab="shift1">Shift 1</button>
+              <button class="btn btn-sm shift-mini" type="button" data-picker-shift-tab="shift2" data-shift-tab="shift2">Shift 2</button>
+            </div>
             <button class="btn btn-icon" type="button" data-close-tower-picker>✕</button>
           </div>
           <div class="modal-grid" style="grid-template-columns: 280px minmax(0,1fr); gap:12px;">
@@ -509,7 +581,8 @@
       document.body.appendChild(modal);
     }
     modal.classList.add('is-open');
-    document.body.classList.add('modal-open');
+    syncBodyModalLock();
+    updateShiftTabButtons();
     state.towerPickerSelectedBaseId = getTowerPickerSelectedBaseId();
     refreshTowerPickerModalList();
     updateTowerPickerDetail();
@@ -518,6 +591,13 @@
   function updateShiftTabButtons() {
     getShiftTabs().forEach((btn) => {
       const isActive = btn.dataset.shiftTab === state.activeShift;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-pressed', String(isActive));
+    });
+    syncSettingsShiftBadge();
+    document.querySelectorAll('[data-picker-shift-tab]').forEach((btn) => {
+      const target = btn.dataset.pickerShiftTab;
+      const isActive = target === state.activeShift;
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-pressed', String(isActive));
     });
@@ -557,7 +637,7 @@
 
 state.towerViewMode = state.towerViewMode || 'focus';
     // respect tower view mode after rerender/filtering
-    setTimeout(() => { applyTowerVisibilityMode(); syncTowerViewToggleButton(); syncFocusedTowerSelect(); }, 0);
+    setTimeout(() => { applyTowerVisibilityMode(); syncTowerViewToggleButton(); syncFocusedTowerSelect(); try { refreshTowerPickerModalList(); updateTowerPickerDetail(); } catch {} }, 0);
     saveCurrentShiftPlanSnapshot();
   }
   function handleShiftTabClick(e) {
@@ -602,7 +682,7 @@ state.towerViewMode = state.towerViewMode || 'focus';
       if (e.target.closest('[data-close-tower-picker]')) {
         e.preventDefault();
         document.getElementById('towerPickerModal')?.classList.remove('is-open');
-        document.body.classList.remove('modal-open');
+        syncBodyModalLock();
         return;
       }
 
@@ -635,7 +715,7 @@ state.towerViewMode = state.towerViewMode || 'focus';
       if (pickerClrB) { e.preventDefault(); try { PNS.clearBase?.(pickerClrB.dataset.pickerClearBase, false); } catch {} setTimeout(()=>{refreshTowerPickerModalList(); updateTowerPickerDetail();},40); return; }
 
       const pickerFocusRight = e.target.closest('[data-picker-focus-right]');
-      if (pickerFocusRight) { e.preventDefault(); focusTowerById(pickerFocusRight.dataset.pickerFocusRight); document.getElementById('towerPickerModal')?.classList.remove('is-open'); document.body.classList.remove('modal-open'); return; }
+      if (pickerFocusRight) { e.preventDefault(); focusTowerById(pickerFocusRight.dataset.pickerFocusRight); document.getElementById('towerPickerModal')?.classList.remove('is-open'); syncBodyModalLock(); return; }
 
       const pickerSaveRule = e.target.closest('[data-picker-save-rule]');
       if (pickerSaveRule) {
@@ -677,8 +757,7 @@ state.towerViewMode = state.towerViewMode || 'focus';
       if (e.target.closest('[data-close-tower-player-edit]')) {
         e.preventDefault();
         document.getElementById('towerPlayerEditModal')?.classList.remove('is-open');
-        document.body.classList.add(document.getElementById('towerPickerModal')?.classList.contains('is-open') ? 'modal-open' : '');
-        if (!document.getElementById('towerPickerModal')?.classList.contains('is-open')) document.body.classList.remove('modal-open');
+        syncBodyModalLock();
         return;
       }
 
@@ -692,7 +771,7 @@ state.towerViewMode = state.towerViewMode || 'focus';
         const playerId = em?.dataset.playerId || '';
         if (baseId && playerId) { try { PNS.removePlayerFromSpecificBase?.(baseId, playerId); } catch {} }
         em?.classList.remove('is-open');
-        if (!document.getElementById('towerPickerModal')?.classList.contains('is-open')) document.body.classList.remove('modal-open');
+        if (!document.getElementById('towerPickerModal')?.classList.contains('is-open')) syncBodyModalLock();
         setTimeout(()=>{ refreshTowerPickerModalList(); updateTowerPickerDetail(); },40);
         return;
       }
@@ -741,11 +820,27 @@ state.towerViewMode = state.towerViewMode || 'focus';
       if ((state.towerViewMode || 'all') === 'focus') setTimeout(applyTowerVisibilityMode, 0);
     });
 
+    function _handleFocusSelect(sel){
+      if (!sel) return;
+      const id = String(sel.value || '');
+      const before = state.focusedBaseId || '';
+      focusTowerById(id);
+      if ((state.focusedBaseId || '') === before) {
+        const cards = getTowerCards();
+        const card = cards[sel.selectedIndex];
+        if (card) { markFocusedCard(card); state.towerViewMode = 'focus'; applyTowerVisibilityMode(); syncFocusedTowerSelect(); }
+      }
+    }
     document.addEventListener('change', (e) => {
       const sel = e.target.closest('#focusTowerSelect');
       if (!sel) return;
       e.preventDefault?.();
-      focusTowerById(sel.value);
+      _handleFocusSelect(sel);
+    });
+    document.addEventListener('input', (e) => {
+      const sel = e.target.closest('#focusTowerSelect');
+      if (!sel) return;
+      _handleFocusSelect(sel);
     });
 
     // If user assigned/cleared someone while in focus mode, move to next incomplete tower automatically
@@ -771,6 +866,7 @@ state.towerViewMode = state.towerViewMode || 'focus';
   }
 
   function resyncUIAfterSwap() {
+    ensureStep4Styles();
     // refresh cached refs for old modules
     if (PNS.modals) {
       const m = getModals();

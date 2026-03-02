@@ -334,3 +334,14 @@
   .bases-grid{ grid-template-columns: 1fr; }
   .bases-grid .base-settings-card{ grid-column: auto; }
 }
+
+/* step5 modal/editor alignment fixes */
+.tower-settings-box .tower-setting-line{display:flex !important;align-items:center !important;justify-content:space-between !important;gap:10px !important;}
+.tower-settings-box .tower-setting-line input[type=number]{width:96px !important;min-width:96px !important;}
+.base-settings-card .captain-box.settings-tools-box{min-height:560px;}
+@media (max-width: 1200px){.base-settings-card .captain-box.settings-tools-box{min-height:auto;}}
+
+
+/* step6 settings row compact */
+.base-settings-card .settings-tools-box > .row:first-of-type{display:flex;flex-wrap:wrap;gap:10px;}
+.base-settings-card .settings-focus-select{height:38px;}

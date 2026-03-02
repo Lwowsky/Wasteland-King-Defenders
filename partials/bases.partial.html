@@ -14,13 +14,13 @@
 
   <div class="bases-grid">
 
-    <section class="base-settings-card" id="basesSettingsCard" data-settings-card="1" data-shift="both">
+    <section class="base-settings-card" id="basesSettingsCard" data-settings-card="1" data-shift="both" style="display:flex;flex-direction:column;min-height:100%;">
       <header class="base-card-head">
         <div>
           <h3>Налаштування / Settings</h3>
           <p class="base-type">Тип бази: автоматично по капітану</p>
         </div>
-        <span class="base-role badge is-auto">Auto</span>
+        <span class="base-role badge is-auto" id="settingsShiftBadge">Shift 2</span>
       </header>
 
       <div class="captain-box settings-tools-box">
@@ -30,6 +30,7 @@
           <button class="btn btn-sm shift-tab active" data-shift-tab="shift2" type="button">Shift 2</button>
           <button class="btn btn-sm" id="toggleTowerFocusBtn" data-action="toggle-towers-view" type="button">Приховати інші</button>
           <button class="btn btn-sm" id="openTowerPickerBtn" data-action="open-tower-picker" type="button">5 башень</button>
+          <select id="focusTowerSelect" class="settings-focus-select" aria-label="Башня справа"></select>
         </div>
         <div class="row gap wrap top-space">
           <button class="btn btn-sm" id="autoFillAllBasesBtn" type="button">Auto-fill all</button>
@@ -69,17 +70,16 @@
         </div>
       </div>
 
-      <div class="limit-grid">
+      <div class="limit-grid limit-grid-compact">
         <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Helpers Σ</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Free space</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
-        <span class="quota-summary">Tier min march: auto (not set)</span>
+        <span class="quota-summary">Tier max march: auto (not set)</span>
         <span class="quota-max">Max helpers: 29</span>
       </div>
 
@@ -132,17 +132,16 @@
         </div>
       </div>
 
-      <div class="limit-grid">
+      <div class="limit-grid limit-grid-compact">
         <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Helpers Σ</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Free space</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
-        <span class="quota-summary">Tier min march: auto (not set)</span>
+        <span class="quota-summary">Tier max march: auto (not set)</span>
         <span class="quota-max">Max helpers: 29</span>
       </div>
 
@@ -195,17 +194,16 @@
         </div>
       </div>
 
-      <div class="limit-grid">
+      <div class="limit-grid limit-grid-compact">
         <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Helpers Σ</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Free space</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
-        <span class="quota-summary">Tier min march: auto (not set)</span>
+        <span class="quota-summary">Tier max march: auto (not set)</span>
         <span class="quota-max">Max helpers: 29</span>
       </div>
 
@@ -258,17 +256,16 @@
         </div>
       </div>
 
-      <div class="limit-grid">
+      <div class="limit-grid limit-grid-compact">
         <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Helpers Σ</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Free space</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
-        <span class="quota-summary">Tier min march: auto (not set)</span>
+        <span class="quota-summary">Tier max march: auto (not set)</span>
         <span class="quota-max">Max helpers: 29</span>
       </div>
 
@@ -321,17 +318,16 @@
         </div>
       </div>
 
-      <div class="limit-grid">
+      <div class="limit-grid limit-grid-compact">
         <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Helpers Σ</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Free space</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
-        <span class="quota-summary">Tier min march: auto (not set)</span>
+        <span class="quota-summary">Tier max march: auto (not set)</span>
         <span class="quota-max">Max helpers: 29</span>
       </div>
 

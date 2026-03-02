@@ -21,13 +21,13 @@
 
     const activeRules = [];
     ['T14','T13','T12','T11','T10','T9'].forEach((k) => {
-      const minM = PNS.clampInt(base?.tierMinMarch?.[k], 0);
-      if (minM > 0) activeRules.push(`${k}≥${PNS.formatNum(minM)}`);
+      const maxM = PNS.clampInt(base?.tierMinMarch?.[k], 0);
+      if (maxM > 0) activeRules.push(`${k}≤${PNS.formatNum(maxM)}`);
     });
 
     const summary = document.createElement('span');
     summary.className = 'quota-summary';
-    summary.textContent = activeRules.length ? `Tier min march: ${activeRules.join(' · ')}` : 'Tier min march: auto (not set)';
+    summary.textContent = activeRules.length ? `Tier max march: ${activeRules.join(' · ')}` : 'Tier max march: auto (not set)';
     row.appendChild(summary);
 
     const mh = document.createElement('span');
@@ -147,7 +147,7 @@
       editor.className = 'base-editor';
       editor.innerHTML = `
         <div class="editor-row">
-          <select data-base-editor-select="${base.id}" aria-label="Base editor player select"></select>
+          <div class="editor-select-wrap"><button class="btn btn-xs" type="button" data-base-editor-nav="prev" data-base-id="${base.id}">‹</button><select data-base-editor-select="${base.id}" aria-label="Base editor player select"></select><button class="btn btn-xs" type="button" data-base-editor-nav="next" data-base-id="${base.id}">›</button></div>
           <button class="btn btn-sm" type="button" data-base-editor-action="captain" data-base-id="${base.id}">Set captain</button>
           <button class="btn btn-sm" type="button" data-base-editor-action="helper" data-base-id="${base.id}">Add helper</button>
           <button class="btn btn-sm" type="button" data-base-editor-action="remove" data-base-id="${base.id}">Remove selected</button>
@@ -175,6 +175,13 @@
 
     const sel = $(`select[data-base-editor-select="${base.id}"]`, editor);
     const statusEl = $(`[data-base-editor-status="${base.id}"]`, editor);
+    if (sel && !sel.closest('.editor-select-wrap')) {
+      const wrap = document.createElement('div');
+      wrap.className = 'editor-select-wrap';
+      const prev = document.createElement('button'); prev.type='button'; prev.className='btn btn-xs'; prev.dataset.baseEditorNav='prev'; prev.dataset.baseId=base.id; prev.textContent='‹';
+      const next = document.createElement('button'); next.type='button'; next.className='btn btn-xs'; next.dataset.baseEditorNav='next'; next.dataset.baseId=base.id; next.textContent='›';
+      sel.parentNode.insertBefore(wrap, sel); wrap.append(prev, sel, next);
+    }
     const chipList = $(`[data-base-chip-list="${base.id}"]`, editor);
 
     if (statusEl) {
@@ -272,14 +279,43 @@
 
     const statDivs = $$('.limit-grid > div', card);
     if (statDivs[0]) $('strong', statDivs[0]).textContent = PNS.formatNum(captainMarch);
-    if (statDivs[1]) $('strong', statDivs[1]).textContent = PNS.formatNum(helpersSum);
+    if (statDivs[1]) $('strong', statDivs[1]).textContent = PNS.formatNum(limit);
     if (statDivs[2]) $('strong', statDivs[2]).textContent = PNS.formatNum(total);
-    if (statDivs[3]) $('strong', statDivs[3]).textContent = PNS.formatNum(limit);
-    if (statDivs[4]) $('strong', statDivs[4]).textContent = PNS.formatNum(freeSpace);
+    if (statDivs[3]) $('strong', statDivs[3]).textContent = PNS.formatNum(freeSpace);
+
+    const planShiftEl = $('.captain-shift', card);
+    const planCountEl = $('.captain-count', card);
+    if (planShiftEl) {
+      planShiftEl.textContent = captain ? (state.activeShift === 'shift1' ? 'Shift 1' : state.activeShift === 'shift2' ? 'Shift 2' : 'Both') : '—';
+      planShiftEl.classList.toggle('captain-empty', !captain);
+    }
+    if (planCountEl) planCountEl.textContent = String((captain ? 1 : 0) + helpers.length);
+
+    const captainMain = card.querySelector('.captain-col .captain-main');
+    if (captainMain) {
+      let editBtn = captainMain.querySelector('[data-captain-edit-btn]');
+      if (!editBtn) {
+        editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'btn btn-xs captain-edit-btn';
+        editBtn.dataset.captainEditBtn = '1';
+        captainMain.appendChild(editBtn);
+      }
+      if (captain) {
+        editBtn.textContent = '✎';
+        editBtn.dataset.pickerEditPlayer = captain.id;
+        editBtn.dataset.pickerEditBase = base.id;
+        editBtn.hidden = false;
+      } else {
+        editBtn.hidden = true;
+        delete editBtn.dataset.pickerEditPlayer;
+        delete editBtn.dataset.pickerEditBase;
+      }
+    }
 
     card.classList.toggle('is-over-limit', over);
     if (statDivs[2]) $('strong', statDivs[2]).classList.toggle('warn-text', over);
-    if (statDivs[3]) $('strong', statDivs[3]).classList.toggle('warn-text', over);
+    if (statDivs[1]) $('strong', statDivs[1]).classList.toggle('warn-text', over);
 
     const tbody = $('.helpers-table-wrap tbody', card);
     if (tbody) {
@@ -291,7 +327,7 @@
       } else {
         helpers.slice().sort((a, b) => b.tierRank - a.tierRank || b.march - a.march).forEach((p) => {
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${PNS.escapeHtml(p.name)}</td><td>${PNS.escapeHtml(p.alliance)}</td><td>${PNS.escapeHtml(p.tier)}</td><td>${PNS.formatNum(p.march)}</td>`;
+          tr.innerHTML = `<td>${PNS.escapeHtml(p.name)}</td><td>${PNS.escapeHtml(p.alliance)}</td><td>${PNS.escapeHtml(p.tier)}</td><td>${PNS.formatNum(p.march)}</td><td><button class="btn btn-xs" type="button" data-picker-edit-player="${p.id}" data-picker-edit-base="${base.id}">✎</button></td>`;
           tbody.appendChild(tr);
         });
       }
@@ -391,7 +427,6 @@
       <th class="optional-col" data-col-key="secondary_tier" data-field="secondary_tier">2nd tier</th>
       <th class="optional-col" data-col-key="troop_200k" data-field="troop_200k">200k types</th>
       <th class="optional-col" data-col-key="captain_ready" data-field="captainReady">Captain</th>
-      <th data-field="captainPlan">Captain plan</th>
       <th data-field="shiftLabel">Shift</th>
       <th class="optional-col" data-col-key="notes" data-field="notes">Notes</th>
       <th data-col-key="actions" data-field="actions">Actions</th>`;
