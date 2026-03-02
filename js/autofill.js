@@ -5,22 +5,21 @@
   function num(x) { return Number.isFinite(+x) ? +x : 0; }
   function uniqPush(arr, id) { if (!arr.includes(id)) arr.push(id); }
 
-  function getBaseTierMaxMarch(base, tierKey) {
+  function getBaseTierMinMarch(base, tierKey) {
     const k = String(tierKey || '').toUpperCase();
     return PNS.clampInt(base?.tierMinMarch?.[k], 0);
   }
 
-  function passesBaseTierMaxMarch(base, player) {
+  function passesBaseTierMinMarch(base, player) {
     if (!base || !player) return true;
-    const threshold = getBaseTierMaxMarch(base, player.tier);
-    if (!threshold) return true;
-    return num(player.march) <= threshold;
+    const cap = getBaseTierMinMarch(base, player.tier);
+    if (!cap) return true;
+    return num(player.march) <= cap;
   }
 
   function calcRallyLimit(captain) {
-    // в тебе місцями rally + march, місцями rally || march
-    // залишаю як було у тебе (плюс/плюс, або fallback)
-    return (num(captain?.rally) + num(captain?.march)) || num(captain?.march) || 0;
+    // Rally size only (без +march)
+    return num(captain?.rally) || 0;
   }
 
   function helpersSumMarch(base) {
@@ -36,7 +35,7 @@
 
     const byActiveShift = sameRole.filter((p) => PNS.matchesShift(p.shift, state.activeShift));
     const byBaseShift = byActiveShift.filter((p) => base.shift === 'both' || p.shift === 'both' || p.shift === base.shift);
-    const passTierMin = byBaseShift.filter((p) => passesBaseTierMaxMarch(base, p));
+    const passTierMin = byBaseShift.filter((p) => passesBaseTierMinMarch(base, p));
 
     const limit = calcRallyLimit(captain);
     const usedHelpers = helpersSumMarch(base);
@@ -104,7 +103,7 @@
       .filter((p) => p.role === captain.role)
       .filter((p) => ignoreShift ? true : PNS.matchesShift(p.shift, state.activeShift))
       .filter((p) => ignoreShift ? true : (base.shift === 'both' || p.shift === 'both' || p.shift === base.shift))
-      .filter((p) => passesBaseTierMaxMarch(base, p))
+      .filter((p) => passesBaseTierMinMarch(base, p))
       .sort((a, b) =>
         (num(b.tierRank) - num(a.tierRank)) ||
         (num(b.march) - num(a.march)) ||
@@ -191,11 +190,8 @@
     }
   }
 
-  PNS.getBaseTierMaxMarch = getBaseTierMaxMarch;
-  PNS.passesBaseTierMaxMarch = passesBaseTierMaxMarch;
-  // backward-compat names
-  PNS.getBaseTierMinMarch = getBaseTierMaxMarch;
-  PNS.passesBaseTierMinMarch = passesBaseTierMaxMarch;
+  PNS.getBaseTierMinMarch = getBaseTierMinMarch;
+  PNS.passesBaseTierMinMarch = passesBaseTierMinMarch;
 
   PNS.autoFillDiagnostics = autoFillDiagnostics;
   PNS.autoFillBase = autoFillBase;

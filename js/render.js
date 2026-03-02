@@ -57,11 +57,32 @@
     const tierEl = $(`[data-manual-tier="${base.id}"]`, editor);
     const marchEl = $(`[data-manual-march="${base.id}"]`, editor);
     if (!nameEl || !allyEl || !tierEl || !marchEl) return;
-    if (!p) return;
-    nameEl.value = String(p.name || '');
-    allyEl.value = String(p.alliance || '');
-    tierEl.value = String(p.tier || 'T10');
-    marchEl.value = String(PNS.parseNumber(p.march || 0) || '');
+    fillManualInputsFromPlayer(base, p);
+  }
+
+
+  function fillManualInputsFromPlayer(base, player) {
+    const editor = base?.cardEl ? $('.base-editor', base.cardEl) : null;
+    if (!editor) return;
+    const nameEl = $(`[data-manual-name="${base.id}"]`, editor);
+    const allyEl = $(`[data-manual-alliance="${base.id}"]`, editor);
+    const tierEl = $(`[data-manual-tier="${base.id}"]`, editor);
+    const marchEl = $(`[data-manual-march="${base.id}"]`, editor);
+    const statusEl = $(`[data-manual-status="${base.id}"]`, editor);
+    if (!nameEl || !allyEl || !tierEl || !marchEl) return;
+    if (!player) {
+      nameEl.value = '';
+      allyEl.value = '';
+      tierEl.value = 'T10';
+      marchEl.value = '';
+      if (statusEl) statusEl.textContent = 'Select player to edit march/tier (T1–T14), or enter a new player and save.';
+      return;
+    }
+    nameEl.value = String(player.name || '');
+    allyEl.value = String(player.alliance || '');
+    tierEl.value = String(player.tier || 'T10');
+    marchEl.value = String(PNS.parseNumber(player.march || 0) || '');
+    if (statusEl) statusEl.textContent = `Loaded ${player.name} for edit`;
   }
 
   function saveManualPlayerFromBaseEditor(baseId) {
@@ -220,10 +241,25 @@
         sel.dataset.manualBound = '1';
         sel.addEventListener('change', () => syncManualInputsFromSelected(base));
       }
-      syncManualInputsFromSelected(base);
+      // keep manual block empty by default; user can fill manually or click a chip/select a player
+      sel.value = '';
+      fillManualInputsFromPlayer(base, null);
     }
 
     if (chipList) {
+      if (!chipList.dataset.pickBind) {
+        chipList.dataset.pickBind = '1';
+        chipList.addEventListener('click', (ev) => {
+          if (ev.target.closest('[data-base-remove-player]')) return;
+          const chip = ev.target.closest('[data-base-pick-player]');
+          if (!chip) return;
+          const pid = chip.dataset.basePickPlayer || '';
+          const selEl = editor.querySelector(`select[data-base-editor-select="${base.id}"]`);
+          if (selEl && Array.from(selEl.options).some(o => o.value === pid)) selEl.value = pid;
+          const pp = state.playerById.get(pid);
+          fillManualInputsFromPlayer(base, pp || null);
+        });
+      }
       chipList.innerHTML = '';
       const captain = base.captainId ? state.playerById.get(base.captainId) : null;
       const helpers = (base.helperIds || []).map((id) => state.playerById.get(id)).filter(Boolean);
@@ -231,12 +267,16 @@
       if (captain) {
         const chip = document.createElement('div');
         chip.className = 'mini-chip captain';
+        chip.dataset.basePickPlayer = captain.id;
+        chip.dataset.baseId = base.id;
         chip.innerHTML = `<span>Captain: ${PNS.escapeHtml(captain.name)} (${PNS.escapeHtml(captain.tier)})</span><button type="button" data-base-remove-player="${base.id}" data-player-id="${captain.id}" aria-label="Remove captain">×</button>`;
         chipList.appendChild(chip);
       }
       helpers.forEach((p) => {
         const chip = document.createElement('div');
         chip.className = 'mini-chip';
+        chip.dataset.basePickPlayer = p.id;
+        chip.dataset.baseId = base.id;
         chip.innerHTML = `<span>${PNS.escapeHtml(p.name)} (${PNS.escapeHtml(p.tier)})</span><button type="button" data-base-remove-player="${base.id}" data-player-id="${p.id}" aria-label="Remove helper">×</button>`;
         chipList.appendChild(chip);
       });
@@ -273,7 +313,7 @@
     const captainMarch = captain?.march || 0;
     const helpersSum = helpers.reduce((s, p) => s + (p.march || 0), 0);
     const total = captainMarch + helpersSum;
-    const limit = captain ? (((captain.rally || 0) + (captain.march || 0)) || captain.march || 0) : 0;
+    const limit = captain ? (Number(captain.rally || 0) || 0) : 0;
     const freeSpace = limit ? Math.max(0, limit - total) : 0;
     const over = !!(limit && total > limit);
 
@@ -286,10 +326,16 @@
     const planShiftEl = $('.captain-shift', card);
     const planCountEl = $('.captain-count', card);
     if (planShiftEl) {
-      planShiftEl.textContent = captain ? (state.activeShift === 'shift1' ? 'Shift 1' : state.activeShift === 'shift2' ? 'Shift 2' : 'Both') : '—';
+      const shiftLabel = captain ? (state.activeShift === 'shift1' ? 'Shift 1' : state.activeShift === 'shift2' ? 'Shift 2' : 'Both') : '—';
+      planShiftEl.innerHTML = captain
+        ? `<span class="plan-pill"><span class="plan-ico">🕒</span>${PNS.escapeHtml(shiftLabel)}</span>`
+        : `<span class="plan-pill is-empty">—</span>`;
       planShiftEl.classList.toggle('captain-empty', !captain);
     }
-    if (planCountEl) planCountEl.textContent = String((captain ? 1 : 0) + helpers.length);
+    if (planCountEl) {
+      const n = (captain ? 1 : 0) + helpers.length;
+      planCountEl.innerHTML = `<span class="plan-count-pill"><span class="plan-ico">👥</span>${n}</span>`;
+    }
 
     const captainMain = card.querySelector('.captain-col .captain-main');
     if (captainMain) {
@@ -341,7 +387,7 @@
     const captain = base.captainId ? state.playerById.get(base.captainId) : null;
     const helpers = base.helperIds.map((id) => state.playerById.get(id)).filter(Boolean);
     const total = (captain?.march || 0) + helpers.reduce((s, p) => s + p.march, 0);
-    const limit = captain ? (((captain.rally || 0) + (captain.march || 0)) || captain.march || 0) : 0;
+    const limit = captain ? (Number(captain.rally || 0) || 0) : 0;
 
     PNS.setRoleTheme(col, captain?.role || null, false);
     const sub = $('.board-sub', col);
@@ -480,6 +526,7 @@
 
   PNS.getBaseEditorCandidates = getBaseEditorCandidates;
   PNS.syncManualInputsFromSelected = syncManualInputsFromSelected;
+  PNS.fillManualInputsFromPlayer = fillManualInputsFromPlayer;
   PNS.saveManualPlayerFromBaseEditor = saveManualPlayerFromBaseEditor;
   PNS.renderBaseEditor = renderBaseEditor;
 

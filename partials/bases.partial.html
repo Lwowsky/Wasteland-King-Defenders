@@ -25,12 +25,16 @@
 
       <div class="captain-box settings-tools-box">
         <div class="captain-title">Shift plan</div>
-        <div class="row gap wrap">
+        <div class="row gap wrap settings-top-row">
           <button class="btn btn-sm shift-tab" data-shift-tab="shift1" type="button">Shift 1</button>
           <button class="btn btn-sm shift-tab active" data-shift-tab="shift2" type="button">Shift 2</button>
           <button class="btn btn-sm" id="toggleTowerFocusBtn" data-action="toggle-towers-view" type="button">Приховати інші</button>
           <button class="btn btn-sm" id="openTowerPickerBtn" data-action="open-tower-picker" type="button">5 башень</button>
-          <select id="focusTowerSelect" class="settings-focus-select" aria-label="Башня справа"></select>
+          <div class="settings-focus-inline compact" title="Башня справа">
+            <button class="btn btn-xs" id="focusTowerPrevBtn" type="button" aria-label="Попередня башня">‹</button>
+            <select id="focusTowerSelect" class="settings-focus-select" aria-label="Башня справа"></select>
+            <button class="btn btn-xs" id="focusTowerNextBtn" type="button" aria-label="Наступна башня">›</button>
+          </div>
         </div>
         <div class="row gap wrap top-space">
           <button class="btn btn-sm" id="autoFillAllBasesBtn" type="button">Auto-fill all</button>
@@ -72,7 +76,7 @@
 
       <div class="limit-grid limit-grid-compact">
         <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Rally size</span><strong>0</strong></div>
         <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Free space</span><strong>0</strong></div>
       </div>
@@ -134,7 +138,7 @@
 
       <div class="limit-grid limit-grid-compact">
         <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Rally size</span><strong>0</strong></div>
         <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Free space</span><strong>0</strong></div>
       </div>
@@ -196,7 +200,7 @@
 
       <div class="limit-grid limit-grid-compact">
         <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Rally size</span><strong>0</strong></div>
         <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Free space</span><strong>0</strong></div>
       </div>
@@ -258,7 +262,7 @@
 
       <div class="limit-grid limit-grid-compact">
         <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Rally size</span><strong>0</strong></div>
         <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Free space</span><strong>0</strong></div>
       </div>
@@ -320,7 +324,7 @@
 
       <div class="limit-grid limit-grid-compact">
         <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Limit (Rally+March)</span><strong>0</strong></div>
+        <div><span>Rally size</span><strong>0</strong></div>
         <div><span>Total Σ</span><strong>0</strong></div>
         <div><span>Free space</span><strong>0</strong></div>
       </div>

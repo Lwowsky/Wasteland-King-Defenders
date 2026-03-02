@@ -27,6 +27,7 @@
   function syncBodyModalLock() {
     const anyOpen = !!document.querySelector('.modal.is-open');
     document.body.classList.toggle('modal-open', anyOpen);
+    if (!anyOpen) { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }
   }
 
   function ensureStep4Styles() {
@@ -36,13 +37,16 @@
     st.textContent = `
       .bases-grid > .base-settings-card{align-self:stretch;height:100%;}
       .base-settings-card .settings-tools-box{flex:1;display:flex;flex-direction:column;justify-content:flex-start;}
-      .tower-picker-modal .modal-card{width:min(1280px, calc(100vw - 28px));}
-      .tower-picker-head{display:grid;grid-template-columns:minmax(0,1fr) auto 44px;align-items:center;gap:10px;}
-      .tower-picker-head-center{display:flex;align-items:center;justify-content:center;gap:8px;justify-self:center;}
+      .tower-picker-modal .modal-card{width:min(1080px, calc(100vw - 18px));max-height:92vh;overflow:auto;border-radius:16px;}
+      .tower-picker-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;position:relative;}
+      .tower-picker-head-center{display:flex;align-items:center;justify-content:center;gap:8px;justify-self:center;grid-column:2;}
       .tower-picker-head-left{text-align:left;}
+      .tower-picker-head-left h2{margin:0;line-height:1.15;}
+      .tower-picker-head-left p{margin:4px 0 0;}
       .tower-picker-head .btn.shift-mini{min-width:84px;padding:7px 10px;}
-      .tower-picker-detail .picker-topline{display:grid;grid-template-columns:minmax(180px,360px) auto;gap:10px;align-items:center;}
-      .tower-picker-detail .picker-topline > select{min-width:180px;max-width:360px;width:100%;}
+      .tower-picker-head>[data-close-tower-picker]{justify-self:end;grid-column:3;}
+      .tower-picker-detail .picker-topline{display:grid;grid-template-columns:minmax(150px,280px) auto;gap:10px;align-items:center;}
+      .tower-picker-detail .picker-topline > select{min-width:150px;max-width:280px;width:100%;}
       .tower-picker-detail .picker-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
       .tower-picker-detail details.tower-collapsible{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02);} 
       .tower-picker-detail details.tower-collapsible>summary{cursor:pointer;list-style:none;padding:10px;font-weight:600;}
@@ -58,13 +62,18 @@
       #towerPlayerEditModal .modal-grid > .panel{max-width:100%;}
       .tower-picker-modal input,.tower-picker-modal select,#towerPlayerEditModal input,#towerPlayerEditModal select{color:#e9efff !important;}
       #towerPlayerEditModal input::placeholder{color:#8e9ab8;}
-      .settings-focus-inline,.settings-focus-select{min-width:150px;max-width:190px;flex:0 0 180px;display:block;}
-      .settings-focus-inline select,.settings-focus-select{height:38px;min-width:0;padding:8px 10px;font-size:14px;}
+      .settings-focus-inline{display:grid;grid-template-columns:30px minmax(0,1fr) 30px;align-items:center;gap:6px;min-width:150px;max-width:240px;flex:1 1 210px;}
+      .settings-focus-inline .btn{padding:0;min-width:30px;width:30px;height:30px;border-radius:9px;}
+      .settings-focus-select{display:block;height:38px;min-width:0;width:100%;padding:7px 10px;font-size:13px;line-height:1.2;}
       .quota-row .quota-max{margin-left:auto;}
       @media (max-width: 900px){
-        .tower-picker-modal .modal-grid{grid-template-columns:1fr !important;}
-        .tower-picker-head{grid-template-columns:1fr 44px;}
-        .tower-picker-head-center{grid-column:1 / -1; justify-content:center;}
+        .tower-picker-modal .modal-card{width:calc(100vw - 10px);max-height:94vh;border-radius:14px;}
+        .tower-picker-modal .modal-head{padding:8px 10px;}
+        .tower-picker-modal .modal-grid{padding:8px !important;gap:8px !important;grid-template-columns:1fr !important;}
+        .tower-picker-head{grid-template-columns:1fr 44px;grid-template-areas:'title close' 'center center';align-items:start;}
+        .tower-picker-head-left{grid-area:title;}
+        .tower-picker-head-center{grid-area:center;grid-column:auto; justify-content:center; margin-top:4px;}
+        .tower-picker-head > [data-close-tower-picker]{grid-area:close;justify-self:end;}
         .tower-picker-detail .picker-topline{grid-template-columns:1fr;}
         .tower-picker-detail .picker-manual-row,.tower-picker-detail .picker-manual-row2{grid-template-columns:1fr;}
       }
@@ -258,6 +267,7 @@
     try { current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch {}
   }
   function maybeAdvanceFocusedTower() {
+    if (!state.autoAdvanceTowerOnAssign) return;
     if ((state.towerViewMode || 'focus') !== 'focus') return;
     const current = getFocusedCard();
     if (!current) { applyTowerVisibilityMode(); return; }
@@ -551,6 +561,7 @@
     try { PNS.renderAll?.(); } catch {}
     modal.classList.remove('is-open');
     syncBodyModalLock();
+    if (!document.querySelector('.modal.is-open')) { document.body.classList.remove('modal-open'); document.body.style.overflow=''; document.documentElement.style.overflow=''; }
     refreshTowerPickerModalList();
     updateTowerPickerDetail();
   }
@@ -566,14 +577,14 @@
         <div class="modal-backdrop" data-close-tower-picker></div>
         <div class="modal-card" role="dialog" aria-modal="true">
           <div class="modal-head tower-picker-head">
-            <div class="tower-picker-head-left"><h2 style="margin:0">5 башень</h2><p class="muted" style="margin-top:2px">Оберіть башню зліва, налаштуй справа</p></div>
+            <div class="tower-picker-head-left"><h2>5 башень</h2><p class="muted">Оберіть башню зліва, налаштуй справа</p></div>
             <div class="tower-picker-head-center">
               <button class="btn btn-sm shift-mini" type="button" data-picker-shift-tab="shift1" data-shift-tab="shift1">Shift 1</button>
               <button class="btn btn-sm shift-mini" type="button" data-picker-shift-tab="shift2" data-shift-tab="shift2">Shift 2</button>
             </div>
             <button class="btn btn-icon" type="button" data-close-tower-picker>✕</button>
           </div>
-          <div class="modal-grid" style="grid-template-columns: 280px minmax(0,1fr); gap:12px;">
+          <div class="modal-grid" style="grid-template-columns: 220px minmax(0,1fr); gap:10px;">
             <section class="panel subpanel"><div class="stack tower-picker-list"></div></section>
             <section class="panel subpanel tower-picker-detail"></section>
           </div>
@@ -669,6 +680,27 @@ state.towerViewMode = state.towerViewMode || 'focus';
       const btnPick = e.target.closest('#openTowerPickerBtn,[data-action="open-tower-picker"]');
       if (btnPick) { e.preventDefault(); openTowerPickerModal(); return; }
 
+      const focusPrev = e.target.closest('#focusTowerPrevBtn');
+      if (focusPrev) {
+        e.preventDefault();
+        const sel = document.getElementById('focusTowerSelect');
+        if (sel && sel.options.length) {
+          sel.selectedIndex = (sel.selectedIndex <= 0 ? sel.options.length - 1 : sel.selectedIndex - 1);
+          _handleFocusSelect(sel);
+        }
+        return;
+      }
+      const focusNext = e.target.closest('#focusTowerNextBtn');
+      if (focusNext) {
+        e.preventDefault();
+        const sel = document.getElementById('focusTowerSelect');
+        if (sel && sel.options.length) {
+          sel.selectedIndex = (sel.selectedIndex >= sel.options.length - 1 ? 0 : sel.selectedIndex + 1);
+          _handleFocusSelect(sel);
+        }
+        return;
+      }
+
       const pickItem = e.target.closest('[data-pick-tower-id]');
       if (pickItem) {
         e.preventDefault();
@@ -758,6 +790,7 @@ state.towerViewMode = state.towerViewMode || 'focus';
         e.preventDefault();
         document.getElementById('towerPlayerEditModal')?.classList.remove('is-open');
         syncBodyModalLock();
+        if (!document.querySelector('.modal.is-open')) { document.body.classList.remove('modal-open'); document.body.style.overflow=''; document.documentElement.style.overflow=''; }
         return;
       }
 
@@ -823,13 +856,24 @@ state.towerViewMode = state.towerViewMode || 'focus';
     function _handleFocusSelect(sel){
       if (!sel) return;
       const id = String(sel.value || '');
-      const before = state.focusedBaseId || '';
-      focusTowerById(id);
-      if ((state.focusedBaseId || '') === before) {
-        const cards = getTowerCards();
-        const card = cards[sel.selectedIndex];
-        if (card) { markFocusedCard(card); state.towerViewMode = 'focus'; applyTowerVisibilityMode(); syncFocusedTowerSelect(); }
+      const cards = getTowerCards();
+      let card = null;
+      if (id) {
+        const esc = (window.CSS && CSS.escape) ? CSS.escape(id) : id;
+        card = document.querySelector(`.bases-grid .base-card[data-base-id="${esc}"]`) || document.querySelector(`.bases-grid .base-card[data-baseid="${esc}"]`);
       }
+      if (!card) card = cards[Math.max(0, sel.selectedIndex)] || null;
+      if (!card) return;
+      if (!card.dataset.baseId && state.bases?.[Math.max(0, sel.selectedIndex)]?.id) card.dataset.baseId = state.bases[Math.max(0, sel.selectedIndex)].id;
+      state.focusedBaseId = String(card.dataset.baseId || card.dataset.baseid || id || state.focusedBaseId || '');
+      state.towerViewMode = 'focus';
+      // force show chosen card even if it was hidden before
+      cards.forEach(c => { c.hidden = false; c.classList.remove('is-focused-tower'); });
+      markFocusedCard(card);
+      cards.forEach(c => { c.hidden = c !== card; });
+      syncTowerViewToggleButton();
+      syncFocusedTowerSelect();
+      try { card.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch {}
     }
     document.addEventListener('change', (e) => {
       const sel = e.target.closest('#focusTowerSelect');
@@ -883,6 +927,7 @@ state.towerViewMode = state.towerViewMode || 'focus';
     updateShiftTabButtons();
     updateBoardTitle();
     bindSettingsAndTowerButtonsOnce();
+    if (typeof state.autoAdvanceTowerOnAssign !== 'boolean') state.autoAdvanceTowerOnAssign = false;
 state.towerViewMode = state.towerViewMode || 'focus';
     setTimeout(() => { applyTowerVisibilityMode(); syncTowerViewToggleButton(); syncFocusedTowerSelect(); }, 0);
 

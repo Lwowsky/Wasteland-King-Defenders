@@ -78,7 +78,7 @@
         return `Max helpers reached: ${helperCountAfter}/${base.maxHelpers}.`;
       }
       const captain = state.playerById.get(base.captainId);
-      const limit = captain ? (((captain.rally || 0) + (captain.march || 0)) || captain.march || 0) : 0;
+      const limit = captain ? (Number(captain.rally || 0) || 0) : 0;
       const helpersSum = base.helperIds.reduce((sum, id) => {
         if (id === player.id) return sum;
         return sum + (state.playerById.get(id)?.march || 0);
@@ -123,7 +123,7 @@
         base.helperIds = [];
       }
 
-      const captainLimit = player.rally || player.march || 0;
+      const captainLimit = Number(player.rally || 0) || 0;
       let helperSum = 0;
       const kept = [];
       for (const hid of base.helperIds) {
