@@ -119,6 +119,56 @@
     safeWriteJSON(KEYS.KEY_IMPORT_VISIBLE_COLUMNS, Array.from(new Set(state.visibleOptionalColumns || [])));
   }
 
+  // ===== Players snapshot (persist imported players across page refresh) =====
+  const KEY_PLAYERS_SNAPSHOT = 'pns_layout_players_snapshot_v1';
+
+  function normalizePlayerSnapshotItem(src, idx) {
+    const p = src || {};
+    const shift = p.shift || 'both';
+    const tierText = p.tier || '';
+    return {
+      id: String(p.id || `p${idx+1}`),
+      name: String(p.name || ''),
+      playerExternalId: String(p.playerExternalId || ''),
+      alliance: String(p.alliance || ''),
+      role: String(p.role || ''),
+      tier: String(tierText || ''),
+      tierRank: Number.isFinite(p.tierRank) ? p.tierRank : (typeof PNS.tierRank === 'function' ? PNS.tierRank(tierText) : 0),
+      march: Number(p.march || 0),
+      rally: Number(p.rally || 0),
+      captainReady: !!p.captainReady,
+      shift,
+      shiftLabel: typeof PNS.formatShiftLabelForCell === 'function' ? PNS.formatShiftLabelForCell(shift) : String(p.shiftLabel || ''),
+      lairLevel: String(p.lairLevel || ''),
+      secondaryRole: String(p.secondaryRole || ''),
+      secondaryTier: String(p.secondaryTier || ''),
+      troop200k: String(p.troop200k || ''),
+      notes: String(p.notes || ''),
+      raw: p.raw && typeof p.raw === 'object' ? p.raw : {},
+      rowEl: null,
+      actionCellEl: null,
+      assignment: p.assignment || null,
+    };
+  }
+
+  function savePlayersSnapshot(players) {
+    const arr = Array.isArray(players) ? players : state.players;
+    if (!Array.isArray(arr) || !arr.length) return false;
+    const payload = arr.map((p, i) => normalizePlayerSnapshotItem(p, i));
+    safeWriteJSON(KEY_PLAYERS_SNAPSHOT, payload);
+    return true;
+  }
+
+  function loadPlayersSnapshot() {
+    const raw = safeReadJSON(KEY_PLAYERS_SNAPSHOT, null);
+    if (!Array.isArray(raw) || !raw.length) return null;
+    return raw.map((p, i) => normalizePlayerSnapshotItem(p, i));
+  }
+
+  function clearPlayersSnapshot() {
+    try { localStorage.removeItem(KEY_PLAYERS_SNAPSHOT); } catch {}
+  }
+
   // ===== Status helpers (swap-safe) =====
   function setImportStatus(msg, tone) {
     const el = resolveControl('importStatusInfo', 'importStatusInfo');
@@ -135,65 +185,6 @@
     const el = resolveControl('importLoadedInfo', 'importLoadedInfo');
     if (!el) return;
     el.textContent = msg || 'No file loaded yet.';
-  }
-
-  // ===== Players dataset store (persist imported/current players across refresh) =====
-  const KEY_PLAYERS_STORE = 'pns_players_store_v1';
-  const KEY_SHIFT_PLANS_STORE = 'pns_shift_plans_store_v1';
-
-  function serializePlayerForStore(p) {
-    if (!p) return null;
-    return {
-      id: p.id || '',
-      name: p.name || '',
-      playerExternalId: p.playerExternalId || '',
-      alliance: p.alliance || '',
-      role: p.role || '',
-      tier: p.tier || '',
-      tierRank: Number(p.tierRank || 0) || 0,
-      march: Number(p.march || 0) || 0,
-      rally: Number(p.rally || 0) || 0,
-      captainReady: !!p.captainReady,
-      shift: p.shift || 'both',
-      shiftLabel: p.shiftLabel || (typeof PNS.formatShiftLabelForCell === 'function' ? PNS.formatShiftLabelForCell(p.shift || 'both') : 'Both'),
-      lairLevel: p.lairLevel || '',
-      secondaryRole: p.secondaryRole || '',
-      secondaryTier: p.secondaryTier || '',
-      troop200k: p.troop200k || '',
-      notes: p.notes || '',
-      raw: p.raw || null,
-      assignment: null,
-    };
-  }
-
-  function savePlayersStore() {
-    const rows = Array.isArray(state.players) ? state.players.map(serializePlayerForStore).filter(Boolean) : [];
-    safeWriteJSON(KEY_PLAYERS_STORE, { v: 1, players: rows });
-  }
-
-  function loadPlayersStore() {
-    const payload = safeReadJSON(KEY_PLAYERS_STORE, null);
-    const arr = Array.isArray(payload?.players) ? payload.players : null;
-    if (!arr || !arr.length) return false;
-    state.players = arr.map((p, idx) => ({ ...p, id: p.id || `p${idx+1}`, rowEl: null, actionCellEl: null, assignment: null }));
-    state.playerById = new Map(state.players.map(p => [p.id, p]));
-    return true;
-  }
-
-  function clearPlayersStore() { safeWriteJSON(KEY_PLAYERS_STORE, null); }
-
-  function saveShiftPlansStore() {
-    const plans = state.shiftPlans && typeof state.shiftPlans === 'object' ? state.shiftPlans : {};
-    safeWriteJSON(KEY_SHIFT_PLANS_STORE, plans);
-  }
-  function loadShiftPlansStore() {
-    const plans = safeReadJSON(KEY_SHIFT_PLANS_STORE, null);
-    state.shiftPlans = (plans && typeof plans === 'object' && !Array.isArray(plans)) ? plans : { shift1: null, shift2: null };
-    return state.shiftPlans;
-  }
-  function clearShiftPlansStore() {
-    state.shiftPlans = { shift1: null, shift2: null };
-    saveShiftPlansStore();
   }
 
   // expose
@@ -216,14 +207,11 @@
   PNS.loadVisibleOptionalColumns = loadVisibleOptionalColumns;
   PNS.saveVisibleOptionalColumns = saveVisibleOptionalColumns;
 
+  PNS.savePlayersSnapshot = savePlayersSnapshot;
+  PNS.loadPlayersSnapshot = loadPlayersSnapshot;
+  PNS.clearPlayersSnapshot = clearPlayersSnapshot;
+
   PNS.setImportStatus = setImportStatus;
   PNS.setImportLoadedInfo = setImportLoadedInfo;
-
-  PNS.savePlayersStore = savePlayersStore;
-  PNS.loadPlayersStore = loadPlayersStore;
-  PNS.clearPlayersStore = clearPlayersStore;
-  PNS.saveShiftPlansStore = saveShiftPlansStore;
-  PNS.loadShiftPlansStore = loadShiftPlansStore;
-  PNS.clearShiftPlansStore = clearShiftPlansStore;
 
 })();

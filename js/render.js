@@ -2,6 +2,12 @@
   const PNS = window.PNS; if (!PNS) return;
   const { state, $, $$ } = PNS;
 
+  function helperMarchForBase(base, player) {
+    if (!player) return 0;
+    if (typeof PNS.getTowerEffectiveMarch === 'function') return PNS.getTowerEffectiveMarch(base, player);
+    return PNS.parseNumber ? PNS.parseNumber(player.march) : (Number(player.march || 0) || 0);
+  }
+
   function roleTagClass(role) {
     const r = PNS.normalizeRole(role).toLowerCase();
     if (r.includes('shoot')) return 'shooter';
@@ -21,13 +27,13 @@
 
     const activeRules = [];
     ['T14','T13','T12','T11','T10','T9'].forEach((k) => {
-      const maxM = PNS.clampInt(base?.tierMinMarch?.[k], 0);
-      if (maxM > 0) activeRules.push(`${k}≤${PNS.formatNum(maxM)}`);
+      const minM = PNS.clampInt(base?.tierMinMarch?.[k], 0);
+      if (minM > 0) activeRules.push(`${k}≥${PNS.formatNum(minM)}`);
     });
 
     const summary = document.createElement('span');
     summary.className = 'quota-summary';
-    summary.textContent = activeRules.length ? `Tier max march: ${activeRules.join(' · ')}` : 'Tier max march: auto (not set)';
+    summary.textContent = activeRules.length ? `Tier min march: ${activeRules.join(' · ')}` : 'Tier min march: auto (not set)';
     row.appendChild(summary);
 
     const mh = document.createElement('span');
@@ -57,32 +63,11 @@
     const tierEl = $(`[data-manual-tier="${base.id}"]`, editor);
     const marchEl = $(`[data-manual-march="${base.id}"]`, editor);
     if (!nameEl || !allyEl || !tierEl || !marchEl) return;
-    fillManualInputsFromPlayer(base, p);
-  }
-
-
-  function fillManualInputsFromPlayer(base, player) {
-    const editor = base?.cardEl ? $('.base-editor', base.cardEl) : null;
-    if (!editor) return;
-    const nameEl = $(`[data-manual-name="${base.id}"]`, editor);
-    const allyEl = $(`[data-manual-alliance="${base.id}"]`, editor);
-    const tierEl = $(`[data-manual-tier="${base.id}"]`, editor);
-    const marchEl = $(`[data-manual-march="${base.id}"]`, editor);
-    const statusEl = $(`[data-manual-status="${base.id}"]`, editor);
-    if (!nameEl || !allyEl || !tierEl || !marchEl) return;
-    if (!player) {
-      nameEl.value = '';
-      allyEl.value = '';
-      tierEl.value = 'T10';
-      marchEl.value = '';
-      if (statusEl) statusEl.textContent = 'Select player to edit march/tier (T1–T14), or enter a new player and save.';
-      return;
-    }
-    nameEl.value = String(player.name || '');
-    allyEl.value = String(player.alliance || '');
-    tierEl.value = String(player.tier || 'T10');
-    marchEl.value = String(PNS.parseNumber(player.march || 0) || '');
-    if (statusEl) statusEl.textContent = `Loaded ${player.name} for edit`;
+    if (!p) return;
+    nameEl.value = String(p.name || '');
+    allyEl.value = String(p.alliance || '');
+    tierEl.value = String(p.tier || 'T10');
+    marchEl.value = String(PNS.parseNumber(p.march || 0) || '');
   }
 
   function saveManualPlayerFromBaseEditor(baseId) {
@@ -168,7 +153,7 @@
       editor.className = 'base-editor';
       editor.innerHTML = `
         <div class="editor-row">
-          <div class="editor-select-wrap"><button class="btn btn-xs" type="button" data-base-editor-nav="prev" data-base-id="${base.id}">‹</button><select data-base-editor-select="${base.id}" aria-label="Base editor player select"></select><button class="btn btn-xs" type="button" data-base-editor-nav="next" data-base-id="${base.id}">›</button></div>
+          <select data-base-editor-select="${base.id}" aria-label="Base editor player select"></select>
           <button class="btn btn-sm" type="button" data-base-editor-action="captain" data-base-id="${base.id}">Set captain</button>
           <button class="btn btn-sm" type="button" data-base-editor-action="helper" data-base-id="${base.id}">Add helper</button>
           <button class="btn btn-sm" type="button" data-base-editor-action="remove" data-base-id="${base.id}">Remove selected</button>
@@ -196,13 +181,6 @@
 
     const sel = $(`select[data-base-editor-select="${base.id}"]`, editor);
     const statusEl = $(`[data-base-editor-status="${base.id}"]`, editor);
-    if (sel && !sel.closest('.editor-select-wrap')) {
-      const wrap = document.createElement('div');
-      wrap.className = 'editor-select-wrap';
-      const prev = document.createElement('button'); prev.type='button'; prev.className='btn btn-xs'; prev.dataset.baseEditorNav='prev'; prev.dataset.baseId=base.id; prev.textContent='‹';
-      const next = document.createElement('button'); next.type='button'; next.className='btn btn-xs'; next.dataset.baseEditorNav='next'; next.dataset.baseId=base.id; next.textContent='›';
-      sel.parentNode.insertBefore(wrap, sel); wrap.append(prev, sel, next);
-    }
     const chipList = $(`[data-base-chip-list="${base.id}"]`, editor);
 
     if (statusEl) {
@@ -241,25 +219,10 @@
         sel.dataset.manualBound = '1';
         sel.addEventListener('change', () => syncManualInputsFromSelected(base));
       }
-      // keep manual block empty by default; user can fill manually or click a chip/select a player
-      sel.value = '';
-      fillManualInputsFromPlayer(base, null);
+      syncManualInputsFromSelected(base);
     }
 
     if (chipList) {
-      if (!chipList.dataset.pickBind) {
-        chipList.dataset.pickBind = '1';
-        chipList.addEventListener('click', (ev) => {
-          if (ev.target.closest('[data-base-remove-player]')) return;
-          const chip = ev.target.closest('[data-base-pick-player]');
-          if (!chip) return;
-          const pid = chip.dataset.basePickPlayer || '';
-          const selEl = editor.querySelector(`select[data-base-editor-select="${base.id}"]`);
-          if (selEl && Array.from(selEl.options).some(o => o.value === pid)) selEl.value = pid;
-          const pp = state.playerById.get(pid);
-          fillManualInputsFromPlayer(base, pp || null);
-        });
-      }
       chipList.innerHTML = '';
       const captain = base.captainId ? state.playerById.get(base.captainId) : null;
       const helpers = (base.helperIds || []).map((id) => state.playerById.get(id)).filter(Boolean);
@@ -267,16 +230,12 @@
       if (captain) {
         const chip = document.createElement('div');
         chip.className = 'mini-chip captain';
-        chip.dataset.basePickPlayer = captain.id;
-        chip.dataset.baseId = base.id;
         chip.innerHTML = `<span>Captain: ${PNS.escapeHtml(captain.name)} (${PNS.escapeHtml(captain.tier)})</span><button type="button" data-base-remove-player="${base.id}" data-player-id="${captain.id}" aria-label="Remove captain">×</button>`;
         chipList.appendChild(chip);
       }
       helpers.forEach((p) => {
         const chip = document.createElement('div');
         chip.className = 'mini-chip';
-        chip.dataset.basePickPlayer = p.id;
-        chip.dataset.baseId = base.id;
         chip.innerHTML = `<span>${PNS.escapeHtml(p.name)} (${PNS.escapeHtml(p.tier)})</span><button type="button" data-base-remove-player="${base.id}" data-player-id="${p.id}" aria-label="Remove helper">×</button>`;
         chipList.appendChild(chip);
       });
@@ -311,69 +270,32 @@
     }
 
     const captainMarch = captain?.march || 0;
-    const helpersSum = helpers.reduce((s, p) => s + (p.march || 0), 0);
+    const helpersSum = helpers.reduce((s, p) => s + helperMarchForBase(base, p), 0);
     const total = captainMarch + helpersSum;
-    const limit = captain ? (Number(captain.rally || 0) || 0) : 0;
-    const freeSpace = limit ? Math.max(0, limit - total) : 0;
+    const limit = captain ? (((captain.rally || 0) + (captain.march || 0)) || captain.march || 0) : 0;
     const over = !!(limit && total > limit);
 
     const statDivs = $$('.limit-grid > div', card);
     if (statDivs[0]) $('strong', statDivs[0]).textContent = PNS.formatNum(captainMarch);
-    if (statDivs[1]) $('strong', statDivs[1]).textContent = PNS.formatNum(limit);
+    if (statDivs[1]) $('strong', statDivs[1]).textContent = PNS.formatNum(helpersSum);
     if (statDivs[2]) $('strong', statDivs[2]).textContent = PNS.formatNum(total);
-    if (statDivs[3]) $('strong', statDivs[3]).textContent = PNS.formatNum(freeSpace);
-
-    const planShiftEl = $('.captain-shift', card);
-    const planCountEl = $('.captain-count', card);
-    if (planShiftEl) {
-      const shiftLabel = captain ? (state.activeShift === 'shift1' ? 'Shift 1' : state.activeShift === 'shift2' ? 'Shift 2' : 'Both') : '—';
-      planShiftEl.innerHTML = captain
-        ? `<span class="plan-pill"><span class="plan-ico">🕒</span>${PNS.escapeHtml(shiftLabel)}</span>`
-        : `<span class="plan-pill is-empty">—</span>`;
-      planShiftEl.classList.toggle('captain-empty', !captain);
-    }
-    if (planCountEl) {
-      const n = (captain ? 1 : 0) + helpers.length;
-      planCountEl.innerHTML = `<span class="plan-count-pill"><span class="plan-ico">👥</span>${n}</span>`;
-    }
-
-    const captainMain = card.querySelector('.captain-col .captain-main');
-    if (captainMain) {
-      let editBtn = captainMain.querySelector('[data-captain-edit-btn]');
-      if (!editBtn) {
-        editBtn = document.createElement('button');
-        editBtn.type = 'button';
-        editBtn.className = 'btn btn-xs captain-edit-btn';
-        editBtn.dataset.captainEditBtn = '1';
-        captainMain.appendChild(editBtn);
-      }
-      if (captain) {
-        editBtn.textContent = '✎';
-        editBtn.dataset.pickerEditPlayer = captain.id;
-        editBtn.dataset.pickerEditBase = base.id;
-        editBtn.hidden = false;
-      } else {
-        editBtn.hidden = true;
-        delete editBtn.dataset.pickerEditPlayer;
-        delete editBtn.dataset.pickerEditBase;
-      }
-    }
+    if (statDivs[3]) $('strong', statDivs[3]).textContent = PNS.formatNum(limit);
 
     card.classList.toggle('is-over-limit', over);
     if (statDivs[2]) $('strong', statDivs[2]).classList.toggle('warn-text', over);
-    if (statDivs[1]) $('strong', statDivs[1]).classList.toggle('warn-text', over);
+    if (statDivs[3]) $('strong', statDivs[3]).classList.toggle('warn-text', over);
 
     const tbody = $('.helpers-table-wrap tbody', card);
     if (tbody) {
       tbody.innerHTML = '';
       if (!helpers.length) {
         const tr = document.createElement('tr');
-        tr.innerHTML = '<td colspan="5" class="muted">No helpers assigned</td>';
+        tr.innerHTML = '<td colspan="4" class="muted">No helpers assigned</td>';
         tbody.appendChild(tr);
       } else {
         helpers.slice().sort((a, b) => b.tierRank - a.tierRank || b.march - a.march).forEach((p) => {
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${PNS.escapeHtml(p.name)}</td><td>${PNS.escapeHtml(p.alliance)}</td><td>${PNS.escapeHtml(p.tier)}</td><td>${PNS.formatNum(p.march)}</td><td><button class="btn btn-xs" type="button" data-picker-edit-player="${p.id}" data-picker-edit-base="${base.id}">✎</button></td>`;
+          tr.innerHTML = `<td>${PNS.escapeHtml(p.name)}</td><td>${PNS.escapeHtml(p.alliance)}</td><td>${PNS.escapeHtml(p.tier)}</td><td>${PNS.formatNum(helperMarchForBase(base, p))}</td>`;
           tbody.appendChild(tr);
         });
       }
@@ -387,7 +309,7 @@
     const captain = base.captainId ? state.playerById.get(base.captainId) : null;
     const helpers = base.helperIds.map((id) => state.playerById.get(id)).filter(Boolean);
     const total = (captain?.march || 0) + helpers.reduce((s, p) => s + p.march, 0);
-    const limit = captain ? (Number(captain.rally || 0) || 0) : 0;
+    const limit = captain ? (((captain.rally || 0) + (captain.march || 0)) || captain.march || 0) : 0;
 
     PNS.setRoleTheme(col, captain?.role || null, false);
     const sub = $('.board-sub', col);
@@ -413,7 +335,7 @@
     helpers.slice().sort((a, b) => b.tierRank - a.tierRank || b.march - a.march).forEach((p) => {
       const li = document.createElement('li');
       li.className = 'helper-row';
-      li.innerHTML = `<span>${PNS.escapeHtml(p.name)}</span><em>${PNS.escapeHtml(p.alliance)}</em><b>${PNS.escapeHtml(p.tier)}</b><strong>${PNS.formatNum(p.march)}</strong>`;
+      li.innerHTML = `<span>${PNS.escapeHtml(p.name)}</span><em>${PNS.escapeHtml(p.alliance)}</em><b>${PNS.escapeHtml(p.tier)}</b><strong>${PNS.formatNum(helperMarchForBase(base, p))}</strong>`;
       ul.appendChild(li);
     });
 
@@ -432,8 +354,6 @@
 
       if (!p.assignment) {
         if (typeof PNS.setRowStatus === 'function') PNS.setRowStatus(p, 'Not assigned', '');
-        const planCell = p.rowEl?.querySelector?.('td[data-field="captainPlan"]');
-        if (planCell) { planCell.textContent = '—'; planCell.classList.add('muted'); }
         return;
       }
       const base = state.baseById.get(p.assignment.baseId);
@@ -526,7 +446,6 @@
 
   PNS.getBaseEditorCandidates = getBaseEditorCandidates;
   PNS.syncManualInputsFromSelected = syncManualInputsFromSelected;
-  PNS.fillManualInputsFromPlayer = fillManualInputsFromPlayer;
   PNS.saveManualPlayerFromBaseEditor = saveManualPlayerFromBaseEditor;
   PNS.renderBaseEditor = renderBaseEditor;
 

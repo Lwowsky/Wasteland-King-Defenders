@@ -12,62 +12,65 @@
       </div>
     </div>
 
-    <div class="lang">
-      <button
-        class="lang-btn"
-        type="button"
-        id="langBtn"
-        aria-haspopup="listbox"
-        aria-expanded="false"
-      >
-        <span class="lang-ico" aria-hidden="true">🌐</span>
-        <span class="lang-label" id="langLabel">Українська</span>
-        <span class="lang-caret" aria-hidden="true">▾</span>
-      </button>
+    <div class="header-actions">
+      <div class="lang">
+        <button
+          class="lang-btn"
+          type="button"
+          id="langBtn"
+          aria-haspopup="listbox"
+          aria-expanded="false"
+        >
+          <span class="lang-ico" aria-hidden="true">🌐</span>
+          <span class="lang-label" id="langLabel">Українська</span>
+          <span class="lang-caret" aria-hidden="true">▾</span>
+        </button>
 
-      <div class="lang-menu" id="langMenu" role="listbox" aria-label="Language">
-        <button
-          class="lang-item"
-          type="button"
-          data-lang="uk"
-          role="option"
-          aria-selected="false"
-        >
-          <span class="lang-flag">🇺🇦</span
-          ><span class="lang-name">Українська</span
-          ><span class="lang-code">UK</span>
-        </button>
-        <button
-          class="lang-item"
-          type="button"
-          data-lang="en"
-          role="option"
-          aria-selected="true"
-        >
-          <span class="lang-flag">🇬🇧</span><span class="lang-name">English</span
-          ><span class="lang-code">EN</span>
-        </button>
-        <button
-          class="lang-item"
-          type="button"
-          data-lang="ru"
-          role="option"
-          aria-selected="false"
-        >
-          <span class="lang-flag">ru</span><span class="lang-name">Русский</span
-          ><span class="lang-code">RU</span>
-        </button>
+        <div class="lang-menu" id="langMenu" role="listbox" aria-label="Language">
+          <button
+            class="lang-item"
+            type="button"
+            data-lang="uk"
+            role="option"
+            aria-selected="false"
+          >
+            <span class="lang-flag">🇺🇦</span
+            ><span class="lang-name">Українська</span
+            ><span class="lang-code">UK</span>
+          </button>
+          <button
+            class="lang-item"
+            type="button"
+            data-lang="en"
+            role="option"
+            aria-selected="true"
+          >
+            <span class="lang-flag">🇬🇧</span><span class="lang-name">English</span
+            ><span class="lang-code">EN</span>
+          </button>
+          <button
+            class="lang-item"
+            type="button"
+            data-lang="ru"
+            role="option"
+            aria-selected="false"
+          >
+            <span class="lang-flag">ru</span><span class="lang-name">Русский</span
+            ><span class="lang-code">RU</span>
+          </button>
+        </div>
       </div>
+
+      <button
+        class="burger-btn"
+        id="burgerBtn"
+        aria-label="Open menu"
+        aria-expanded="false"
+        type="button"
+      >
+        <span></span><span></span><span></span>
+      </button>
     </div>
-    <button
-      class="burger-btn"
-      id="burgerBtn"
-      aria-label="Open menu"
-      aria-expanded="false"
-      type="button"
-    >
-      <span></span><span></span><span></span>
-    </button>
   </div>
 </header>
 

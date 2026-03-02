@@ -170,7 +170,7 @@
     if (quick && openSettings) {
       safeOn(quick, 'quickOpen', 'click', (e) => {
         e.preventDefault();
-        window.PNS?.openModal?.('settings');
+        openSettings.click();
       });
     }
 

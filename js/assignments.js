@@ -9,9 +9,10 @@
     status.className = 'row-status' + (level ? ` ${level}` : '');
   }
 
-
-  function notifyAssignmentChanged(detail = {}) {
-    try { document.dispatchEvent(new CustomEvent('pns:assignment-changed', { detail })); } catch {}
+  function helperMarchForBase(base, player) {
+    if (!player) return 0;
+    if (typeof PNS.getTowerEffectiveMarch === 'function') return PNS.getTowerEffectiveMarch(base, player);
+    return Number(player.march || 0) || 0;
   }
 
   function clearPlayerFromBase(playerId) {
@@ -37,13 +38,6 @@
     player.assignment = null;
   }
 
-
-
-  function captainCrossShiftConflict(player, base) {
-    // Cross-shift captain reuse is allowed (same player may captain in Shift 1 and Shift 2 on different towers).
-    return '';
-  }
-
   function validateAssign(player, base, kind) {
     if (!player || !base) return 'Player or base not found.';
     if (!PNS.ROLE_KEYS.includes(player.role)) return `Unknown role for ${player.name}.`;
@@ -51,11 +45,6 @@
     const ignoreShiftAutoFill = !!document.querySelector('#ignoreShiftAutoFillToggle:checked');
     if (!ignoreShiftAutoFill && base.shift !== 'both' && player.shift !== 'both' && base.shift !== player.shift) {
       return `Shift mismatch: ${player.shiftLabel} vs ${base.title.split('/')[0].trim()}.`;
-    }
-
-    if (kind === 'captain') {
-      const conflict = captainCrossShiftConflict(player, base);
-      if (conflict) return conflict;
     }
 
     if (kind === 'helper' && !base.captainId) {
@@ -68,20 +57,15 @@
     }
 
     if (kind === 'helper') {
-      const tierCap = Number(base?.tierMinMarch?.[String(player.tier||'').toUpperCase()] || 0) || 0;
-      if (tierCap > 0 && Number(player.march || 0) > tierCap) {
-        return `Tier max exceeded: ${player.tier} ${PNS.formatNum(player.march)} > ${PNS.formatNum(tierCap)}.`;
-      }
-
       const helperCountAfter = base.helperIds.filter((id) => id !== player.id).length + 1;
       if (Number.isFinite(base.maxHelpers) && base.maxHelpers > 0 && helperCountAfter > base.maxHelpers) {
         return `Max helpers reached: ${helperCountAfter}/${base.maxHelpers}.`;
       }
       const captain = state.playerById.get(base.captainId);
-      const limit = captain ? (Number(captain.rally || 0) || 0) : 0;
+      const limit = captain ? (((captain.rally || 0) + (captain.march || 0)) || captain.march || 0) : 0;
       const helpersSum = base.helperIds.reduce((sum, id) => {
         if (id === player.id) return sum;
-        return sum + (state.playerById.get(id)?.march || 0);
+        return sum + helperMarchForBase(base, state.playerById.get(id));
       }, 0);
       const totalAfter = (captain?.march || 0) + helpersSum + player.march;
       if (limit && totalAfter > limit) {
@@ -123,7 +107,7 @@
         base.helperIds = [];
       }
 
-      const captainLimit = Number(player.rally || 0) || 0;
+      const captainLimit = player.rally || player.march || 0;
       let helperSum = 0;
       const kept = [];
       for (const hid of base.helperIds) {
@@ -144,7 +128,6 @@
     }
 
     if (typeof PNS.renderAll === 'function') PNS.renderAll();
-    notifyAssignmentChanged({ type: 'assign', kind, playerId: player.id, baseId: base.id });
   }
 
   function clearBase(baseId, helpersOnly = false) {
@@ -162,7 +145,6 @@
     });
     base.helperIds = [];
     if (typeof PNS.renderAll === 'function') PNS.renderAll();
-    notifyAssignmentChanged({ type: helpersOnly ? 'clear-helpers' : 'clear-base', baseId });
   }
 
   function removePlayerFromSpecificBase(baseId, playerId) {
@@ -177,7 +159,6 @@
       base.helperIds = base.helperIds.filter((id) => id !== p.id);
       p.assignment = null;
       if (typeof PNS.renderAll === 'function') PNS.renderAll();
-      notifyAssignmentChanged({ type: 'remove-player', baseId, playerId: p.id });
       return true;
     }
     return false;
@@ -218,7 +199,7 @@
       btnClear.type = 'button';
       btnClear.className = 'btn btn-xs';
       btnClear.textContent = 'Clear';
-      btnClear.addEventListener('click', () => { clearPlayerFromBase(player.id); if (typeof PNS.renderAll === 'function') PNS.renderAll(); notifyAssignmentChanged({ type: 'clear-player', playerId: player.id }); });
+      btnClear.addEventListener('click', () => { clearPlayerFromBase(player.id); if (typeof PNS.renderAll === 'function') PNS.renderAll(); });
 
       wrap.append(select, btnCaptain, btnHelper, btnClear);
 
@@ -242,28 +223,6 @@
 
         const removeBtn = e.target.closest('[data-base-remove-player]');
         if (removeBtn) { e.preventDefault(); removePlayerFromSpecificBase(removeBtn.dataset.baseRemovePlayer, removeBtn.dataset.playerId); return; }
-
-        const navBtn = e.target.closest('[data-base-editor-nav]');
-        if (navBtn) {
-          e.preventDefault();
-          const baseId = navBtn.dataset.baseId;
-          const base = state.baseById.get(baseId);
-          const editor = base?.cardEl ? base.cardEl.querySelector('.base-editor') : null;
-          const sel = editor ? editor.querySelector(`select[data-base-editor-select="${baseId}"]`) : null;
-          if (!sel || sel.options.length <= 1) return;
-          const dir = navBtn.dataset.baseEditorNav === 'prev' ? -1 : 1;
-          let idx = Math.max(0, sel.selectedIndex);
-          const start = idx;
-          do {
-            idx += dir;
-            if (idx < 1) idx = sel.options.length - 1;
-            if (idx >= sel.options.length) idx = 1;
-            if (idx === start) break;
-          } while (false);
-          sel.selectedIndex = idx;
-          sel.dispatchEvent(new Event('change', { bubbles: true }));
-          return;
-        }
 
         const editorActionBtn = e.target.closest('[data-base-editor-action]');
         if (editorActionBtn) {

@@ -273,7 +273,7 @@
         const row = document.createElement('div');
         row.className = 'mapping-row required';
         const currentLabel = getFieldLabel(f.key);
-        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${PNS.escapeHtml(currentLabel)} <strong>*</strong></div><span class="edit-hint">editable</span></div>`;
+        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${PNS.escapeHtml(currentLabel)} <strong>*</strong></div><button type="button" class="edit-hint">editable</button></div>`;
 
         const labelInput = document.createElement('input');
         labelInput.type = 'text';
@@ -294,6 +294,15 @@
         select.addEventListener('change', () => { state.importData.mapping[f.key] = select.value; updateImportReadinessHint(); });
         row.appendChild(select);
 
+        const editBtn = row.querySelector('.edit-hint');
+        if (editBtn) {
+          editBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            row.classList.toggle('edit-open');
+            if (row.classList.contains('edit-open')) labelInput.focus();
+          });
+        }
+
         controls.requiredMappingContainer.appendChild(row);
       });
     }
@@ -304,7 +313,7 @@
         const row = document.createElement('div');
         row.className = 'mapping-row';
         const currentLabel = getFieldLabel(f.key);
-        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${PNS.escapeHtml(currentLabel)} <span class="mapping-meta">(optional)</span></div><span class="edit-hint">editable</span></div>`;
+        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${PNS.escapeHtml(currentLabel)} <span class="mapping-meta">(optional)</span></div><button type="button" class="edit-hint">editable</button></div>`;
 
         const labelInput = document.createElement('input');
         labelInput.type = 'text';
@@ -324,6 +333,15 @@
         select.value = state.importData.mapping[f.key] || '';
         select.addEventListener('change', () => { state.importData.mapping[f.key] = select.value; });
         row.appendChild(select);
+
+        const editBtn = row.querySelector('.edit-hint');
+        if (editBtn) {
+          editBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            row.classList.toggle('edit-open');
+            if (row.classList.contains('edit-open')) labelInput.focus();
+          });
+        }
 
         controls.optionalMappingContainer.appendChild(row);
       });
@@ -519,20 +537,17 @@
     if (!players.length) { setImportStatus('No player rows found after import (check mapping / empty rows).', 'danger'); return; }
 
     state.players = players;
-    state.playerById = new Map(players.map(p => [p.id, p]));
-
-    // new import replaces players/shift plans, but keeps settings templates/visibility/etc.
     resetAssignmentsForImportedData();
-    state.shiftPlans = { shift1: null, shift2: null };
-    if (typeof PNS.clearShiftPlansStore === 'function') PNS.clearShiftPlansStore();
-    if (typeof PNS.savePlayersStore === 'function') PNS.savePlayersStore();
 
     if (typeof PNS.renderPlayersTableFromState === 'function') PNS.renderPlayersTableFromState();
     if (typeof PNS.buildRowActions === 'function') PNS.buildRowActions();
+    if (typeof PNS.renderAll === 'function') PNS.renderAll();
 
     if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift);
-    if (typeof PNS.renderAll === 'function') PNS.renderAll();
-    setImportStatus(`Imported ${players.length} players successfully.`, 'good');
+    if (typeof PNS.savePlayersSnapshot === 'function') PNS.savePlayersSnapshot(state.players);
+    // auto-save latest import template so you don't need to press Save after every refresh
+    try { saveCurrentImportTemplate(); } catch {}
+    setImportStatus(`Imported ${players.length} players successfully. Template auto-saved in LocalStorage.`, 'good');
     setImportLoadedInfo(`${state.importData.sourceName || 'source'} • imported ${players.length} players`);
   }
 
@@ -606,6 +621,22 @@
   }
 
   // ===== bind import modal buttons EVERY time DOM changes =====
+  function tryRestorePlayersFromLocalStorage() {
+    if (Array.isArray(state.players) && state.players.length) return false;
+    if (typeof PNS.loadPlayersSnapshot !== 'function') return false;
+    const restored = PNS.loadPlayersSnapshot();
+    if (!Array.isArray(restored) || !restored.length) return false;
+    state.players = restored;
+    state.playerById = new Map(restored.map((p) => [p.id, p]));
+    if (typeof PNS.renderPlayersTableFromState === 'function') PNS.renderPlayersTableFromState();
+    if (typeof PNS.buildRowActions === 'function') PNS.buildRowActions();
+    if (typeof PNS.renderAll === 'function') PNS.renderAll();
+    if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift || 'shift2');
+    setImportLoadedInfo(`Restored ${restored.length} players from LocalStorage.`);
+    setImportStatus('Players restored from previous session. Load/apply a new table anytime to replace them.', 'good');
+    return true;
+  }
+
   function bindImportWizardButtons() {
     const b = getButtons();
     if (b.fileInputMock && !b.fileInputMock.dataset.bound) {
@@ -651,7 +682,8 @@
     if (typeof PNS.loadVisibleOptionalColumns === 'function') PNS.loadVisibleOptionalColumns();
     ensureImportMappingDefaults();
     renderImportUI();
-    setImportLoadedInfo('No file loaded yet. You can use built-in demo data.');
+    const restored = tryRestorePlayersFromLocalStorage();
+    if (!restored) setImportLoadedInfo('No file loaded yet. You can use built-in demo data.');
     bindImportWizardButtons();
   }
 

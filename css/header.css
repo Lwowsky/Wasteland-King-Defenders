@@ -30,12 +30,12 @@
 
 /* ВАЖЛИВО: тут НЕ треба wrap */
 .app-header .header-inner {
+  width: min(1200px, 100%);
   margin: 0 auto;
   padding: 14px var(--app-pad);
   display: flex;
   align-items: center;
   gap: 14px;
-  position: relative;
 }
 
 /* BRAND */
@@ -43,8 +43,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 260px;
   flex: 1 1 auto;
-  min-width: unset;
 }
 
 /* logo */
@@ -73,26 +73,7 @@
   color: transparent;
   text-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
 }
-.app-header .brand-text{
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
 
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-
-  width: min(680px, 55vw);
-  pointer-events: none; /* щоб кліки проходили на кнопки справа */
-}
-
-/* keep text centered */
-.app-header .brand-text h1,
-.app-header .brand-text p{
-  text-align: center;
-}
 .brand-text h1 span {
   color: rgba(255, 170, 90, 0.95);
   background: none;
@@ -105,18 +86,6 @@
   font-size: 12.5px;
   color: rgba(220, 230, 255, 0.68);
   letter-spacing: 0.25px;
-}
-
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* центрує по горизонталі */
-  text-align: center; /* центрує текст */
-}
-
-.brand-text h1,
-.brand-text p {
-  text-align: center;
 }
 
 /* DESKTOP ACTIONS (always one row) */
@@ -253,9 +222,13 @@
   border-radius: 16px;
 }
 
-/* ===== Responsive: on small screens -> hide actions, show burger ===== */
-@media (max-width: 980px) {
+/* ===== Responsive: tablet: hide lang, keep burger visible ===== */
+@media (max-width: 980px) and (min-width: 641px) {
   .header-actions {
+    display: flex;
+    margin-left: auto;
+  }
+  .header-actions .lang {
     display: none;
   }
   .burger-btn {
@@ -270,22 +243,193 @@
   .brand-text h1 {
     font-size: 20px;
   }
-    .app-header .brand{
-    flex: 1 1 auto;
+
+}
+
+/* ===== header title centered again ===== */
+.app-header .header-inner{position:relative;}
+.app-header .brand{flex:0 0 auto; min-width:unset;}
+.app-header .brand-text{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%, -50%);
+  text-align:center;
+  width:min(760px, 50vw);
+  pointer-events:none;
+}
+.app-header .brand-text h1,
+.app-header .brand-text p{ text-align:center; }
+
+/* medium screens: avoid overlap */
+@media (max-width: 980px){
+  .app-header .header-inner{
+    min-height: 154px;
+    padding-right: 84px;
+  }
+  .app-header .brand-badge.brand-logo{ width: 128px; height: 128px; }
+  .app-header .brand-text{
+    width:min(440px, 52vw);
+    left: 50%;
+  }
+  .app-header .brand-text h1{ font-size: 18px; }
+  .app-header .brand-text p{ font-size: 11.5px; }
+}
+
+/* phones <=640: burger over globe in one column, title remains centered */
+@media (max-width: 640px){
+  .app-header .header-actions .lang{ display:block; }
+
+  .app-header .header-inner{
+    min-height: 140px;
+    padding-right: 96px;
+    align-items: flex-start;
+  }
+  .app-header .brand{
+    align-items: flex-start;
+    min-width: 0;
+    padding-right: 0;
+  }
+  .app-header .brand-badge.brand-logo{ width: 92px; height: 92px; }
+  .app-header .brand-text{
+    width: min(255px, calc(100vw - 190px));
+    left: 50%;
+    top: 50%;
+  }
+  .app-header .brand-text h1{ font-size: 14px; line-height: 1.2; }
+  .app-header .brand-text p{ font-size: 9px; }
+
+  .app-header .lang,
+  .app-header .burger-btn{
+    position: absolute;
+    right: var(--app-pad);
+    margin: 0;
+    z-index: 2;
+  }
+  .app-header .burger-btn{ top: 10px; }
+  .app-header .lang{ top: 60px; }
+
+  .app-header .lang .lang-btn{ height: 40px; padding: 0 10px; gap: 8px; }
+  .app-header .lang .lang-label{ display: none; }
+  .app-header .lang .lang-caret{ display: inline-block; }
+}
+
+
+/* patch: keep title centered and readable */
+@media (max-width: 640px){
+  .app-header .brand-text{ text-align:center; }
+  .app-header .brand-text h1, .app-header .brand-text p{ text-align:center; }
+}
+
+/* ===== FIX v2: stable desktop/tablet header layout (logo left / title center / actions right) ===== */
+/* Place this block AT THE VERY END so it overrides previous header patches */
+@media (min-width: 641px) {
+  .app-header .header-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 14px;
+    min-height: 154px;
+    padding-right: var(--app-pad); /* cancel earlier reserved space for absolute burger */
   }
 
-  .app-header .brand-text{
-    position: static;
-    transform: none;
-    width: auto;
-    pointer-events: auto;
+  /* Expose logo + title as separate grid items without changing HTML */
+  .app-header .brand {
+    display: contents;
+  }
 
-    align-items: flex-start;
-    text-align: left;
+  .app-header .brand-badge.brand-logo {
+    grid-column: 1;
+    justify-self: start;
+    align-self: center;
+    width: clamp(108px, 15vw, 170px);
+    height: clamp(108px, 15vw, 170px);
+  }
+
+  .app-header .brand-text {
+    grid-column: 2;
+    justify-self: center;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    width: auto;
+    max-width: min(720px, calc(100vw - 420px));
+    text-align: center;
+    pointer-events: none;
+    z-index: 1;
   }
 
   .app-header .brand-text h1,
-  .app-header .brand-text p{
-    text-align: left;
+  .app-header .brand-text p {
+    text-align: center;
+  }
+
+  .app-header .header-actions {
+    grid-column: 3;
+    justify-self: end;
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 0;
+    white-space: nowrap;
+    position: relative;
+    z-index: 2;
+  }
+
+  .app-header .header-actions .lang {
+    display: block;
+    position: static;
+  }
+
+  .app-header .burger-btn {
+    display: flex;
+    margin-left: 0;
+    position: static;
+  }
+}
+
+/* Tight tablet width: keep selector visible, but compact it so it doesn't crash into title */
+@media (max-width: 760px) and (min-width: 641px) {
+  .app-header .header-inner {
+    min-height: 132px;
+    column-gap: 10px;
+  }
+
+  .app-header .brand-badge.brand-logo {
+    width: 88px;
+    height: 88px;
+  }
+
+  .app-header .brand-text {
+    max-width: min(360px, calc(100vw - 250px));
+  }
+
+  .app-header .brand-text h1 {
+    font-size: 16px;
+    line-height: 1.15;
+  }
+
+  .app-header .brand-text p {
+    font-size: 10px;
+    margin-top: 3px;
+  }
+
+  /* language selector stays visible (globe + caret), label hides only on narrow tablet */
+  .app-header .header-actions .lang .lang-label {
+    display: none;
+  }
+
+  .app-header .header-actions .lang .lang-btn {
+    height: 40px;
+    padding: 0 10px;
+    gap: 8px;
+  }
+
+  .app-header .header-actions .burger-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
   }
 }

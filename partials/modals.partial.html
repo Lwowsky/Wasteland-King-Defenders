@@ -18,8 +18,7 @@
         <div>
           <h2>Налаштування / Імпорт</h2>
           <p class="muted">
-            Імпорт CSV/XLSX/URL, мапінг колонок, LocalStorage шаблон,
-            налаштування auto-fill
+            Імпорт CSV/XLSX/URL, мапінг колонок, LocalStorage шаблон, налаштування auto-fill
           </p>
         </div>
         <a aria-label="Закрити" class="btn btn-icon" data-close-modal="" href="#top">✕</a>
@@ -41,9 +40,7 @@
             </label>
 
             <div class="row gap wrap">
-              <button class="btn btn-sm" id="toggleFieldLabelEditBtn" type="button">
-                Показати редагування назв
-              </button>
+              <button class="btn btn-sm" id="toggleFieldLabelEditBtn" type="button">Показати редагування назв</button>
               <button class="btn btn-sm" id="loadUrlMockBtn" type="button">Load URL</button>
               <button class="btn btn-sm" id="useTemplateMockBtn" type="button">Use saved template</button>
               <button class="btn btn-sm" id="detectColumnsMockBtn" type="button">Detect columns</button>
@@ -51,40 +48,38 @@
             </div>
 
             <div class="muted small" id="importLoadedInfo">No file loaded yet.</div>
-            <div class="muted small" id="importStatusInfo">
-              Load file/link, map columns once, save template.
+            <div class="muted small" id="importStatusInfo">Load file/link, map columns once, save template.</div>
+
+            <div class="row gap wrap top-space import-source-actions">
+              <button class="btn" id="saveTemplateMockBtn" type="button">Save import template</button>
+              <button class="btn btn-primary" id="applyImportMockBtn" type="button">Apply import</button>
             </div>
           </div>
         </section>
 
         <section class="panel subpanel">
           <h3>2. Required columns (core 6)</h3>
-          <div class="stack" id="requiredMappingContainer"></div>
+          <div class="stack mapping-grid-2" id="requiredMappingContainer"></div>
         </section>
 
         <section class="panel subpanel">
-          <h3>3. Optional columns &amp; visibility</h3>
-          <div class="stack compact" id="optionalMappingContainer"></div>
+          <h3>3. Optional columns</h3>
+          <div class="stack compact mapping-grid-2" id="optionalMappingContainer"></div>
+        </section>
 
-          <div class="stack compact top-space visibility-panel" id="columnVisibilityChecks"></div>
-
-          <div class="row gap top-space">
+        <section class="panel subpanel">
+          <h3>4. Visibility columns</h3>
+          <div class="stack compact visibility-panel" id="columnVisibilityChecks"></div>
+          <div class="row gap top-space wrap">
             <button class="btn btn-sm" id="showAllColumnsBtn" type="button">Show all columns</button>
-            <button class="btn btn-sm" id="saveVisibleColumnsMockBtn" type="button">
-              Save visible columns
-            </button>
+            <button class="btn btn-sm" id="saveVisibleColumnsMockBtn" type="button">Save visible columns</button>
           </div>
         </section>
       </div>
 
       <div class="modal-foot">
         <div class="muted">
-          Імпорт працює: CSV/XLSX/Google Sheets CSV link, мапінг колонок
-          (збереження в LocalStorage), plus auto-fill, Final Board export.
-        </div>
-        <div class="row gap">
-          <button class="btn" id="saveTemplateMockBtn" type="button">Save import template</button>
-          <button class="btn btn-primary" id="applyImportMockBtn" type="button">Apply import</button>
+          Імпорт працює: CSV/XLSX/Google Sheets CSV link, мапінг колонок (збереження в LocalStorage), plus auto-fill, Final Board export.
         </div>
       </div>
     </div>
