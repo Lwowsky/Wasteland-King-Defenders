@@ -51,10 +51,10 @@
             <input id="tpeName" placeholder="Нік" style="color:#eef3ff" />
             <input id="tpeAlly" placeholder="Альянс" style="color:#eef3ff" />
             <select id="tpeRole" style="color:#eef3ff">
-              <option>Shooter</option><option>Fighter</option><option>Rider</option>
+              <option>Fighter</option><option>Shooter</option><option>Rider</option>
             </select>
             <input id="tpeTier" placeholder="T14" style="color:#eef3ff" />
-            <input id="tpeMarch" type="number" min="0" placeholder="March" style="color:#eef3ff" />
+            <div class="row gap wrap" style="align-items:center;"><input id="tpeMarch" type="number" min="0" placeholder="March" style="color:#eef3ff;flex:1 1 140px" /><input id="tpeRally" type="number" min="0" placeholder="Rally size" style="color:#eef3ff;flex:1 1 140px" /></div>
             <div id="tpeCapHint" class="muted small"></div>
             <div class="row gap wrap">
               <button class="btn btn-primary" type="button" id="tpeSaveBtn">Зберегти</button>
@@ -70,6 +70,7 @@
   function closeTowerPlayerEditModal() {
     const modal = document.getElementById('towerPlayerEditModal');
     if (!modal) return;
+    modal.dataset.forceAssignKind = '';
     modal.classList.remove('is-open');
     if (!document.querySelector('#towerPickerModal.is-open')) {
       MS.syncBodyModalLock?.();
@@ -114,6 +115,8 @@
     modal.dataset.baseId = String(baseId || '');
     modal.dataset.playerId = String(playerId || '');
     modal.dataset.kind = isCaptain ? 'captain' : 'helper';
+    if (!playerId) modal.dataset.forceAssignKind = modal.dataset.forceAssignKind || '';
+    else modal.dataset.forceAssignKind = '';
 
     const currentInTower = getPlayerCurrentTowerMarch(base, p, isCaptain);
 
@@ -121,6 +124,7 @@
     modal.querySelector('#tpeAlly').value = p?.alliance || '';
     modal.querySelector('#tpeRole').value = p?.role || (PNS.getBaseRole?.(base) || 'Fighter');
     modal.querySelector('#tpeTier').value = p?.tier || 'T10';
+    if (modal.querySelector('#tpeRally')) modal.querySelector('#tpeRally').value = String(Number(p?.rally || 0) || 0);
     // Для helper показуємо "поточний внесок у башню" (після cap/autofill), а не весь зареєстрований загін
     modal.querySelector('#tpeMarch').value = p ? String(currentInTower || '') : '';
     modal.querySelector('#tpeRemoveBtn').hidden = !playerId;
@@ -128,7 +132,8 @@
     const subtitle = modal.querySelector('#tpeSubtitle');
     if (subtitle) {
       const towerName = String(base.title || base.id || '').split('/')[0].trim();
-      subtitle.textContent = isCaptain
+      const forcedKind = String(modal.dataset.forceAssignKind || '').toLowerCase();
+      subtitle.textContent = (isCaptain || forcedKind === 'captain')
         ? `Капітан · ${towerName}`
         : `Хелпер у башні · ${towerName}`;
     }
@@ -148,7 +153,8 @@
     const playerId = modal.dataset.playerId || '';
     const base = state.baseById?.get?.(baseId);
     if (!base) return;
-    const isCaptain = modal.dataset.kind === 'captain' || (!!playerId && base.captainId === playerId);
+    const forcedAssignKind = String(modal.dataset.forceAssignKind || '').toLowerCase();
+    const isCaptain = (forcedAssignKind === 'captain') || modal.dataset.kind === 'captain' || (!!playerId && base.captainId === playerId);
 
     const name = String(modal.querySelector('#tpeName')?.value || '').trim();
     const ally = String(modal.querySelector('#tpeAlly')?.value || '').trim();
@@ -159,6 +165,7 @@
       ? PNS.normalizeTierText(modal.querySelector('#tpeTier')?.value || 'T10')
       : String(modal.querySelector('#tpeTier')?.value || 'T10').toUpperCase();
     const march = Number(modal.querySelector('#tpeMarch')?.value || 0) || 0;
+    const rally = Number(modal.querySelector('#tpeRally')?.value || 0) || 0;
 
     if (!name || !march) { alert('Вкажи нік і march'); return; }
 
@@ -178,6 +185,7 @@
       if (isCaptain) {
         // Captain uses raw march directly
         p.march = march;
+      if ((forcedAssignKind === 'captain') || isCaptain || (base?.captainId && String(base.captainId) === String(p.id))) p.rally = rally;
         if (p.towerMarchOverrideByBase && base?.id) delete p.towerMarchOverrideByBase[base.id];
         if ('towerMarchOverride' in p) delete p.towerMarchOverride;
       } else {
@@ -188,6 +196,9 @@
           ? p.towerMarchOverrideByBase : {};
         p.towerMarchOverrideByBase[base.id] = march;
         p.towerMarchOverride = march; // backward fallback for older code
+      }
+      if (forcedAssignKind === 'captain' && base?.id) {
+        try { PNS.assignPlayerToBase?.(p.id, base.id, 'captain'); } catch {}
       }
     } else {
       const shift = state.activeShift === 'all' ? 'both' : (state.activeShift || 'both');
@@ -200,7 +211,7 @@
         tier,
         tierRank: (typeof PNS.tierRank === 'function' ? PNS.tierRank(tier) : 0),
         march,
-        rally: 0,
+        rally: rally,
         captainReady: false,
         shift,
         shiftLabel: (PNS.formatShiftLabelForCell ? PNS.formatShiftLabelForCell(shift) : shift),
@@ -219,7 +230,7 @@
       p.towerMarchOverride = march;
       state.players.push(p);
       state.playerById?.set?.(p.id, p);
-      try { PNS.assignPlayerToBase?.(p.id, base.id, 'helper'); } catch {}
+      try { PNS.assignPlayerToBase?.(p.id, base.id, (forcedAssignKind === 'captain' ? 'captain' : 'helper')); } catch {}
     }
 
     try { PNS.renderAll?.(); } catch {}

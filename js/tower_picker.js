@@ -117,7 +117,7 @@
       <div class="stack">
         <h3>${title}</h3>
         <div class="picker-meta-row muted small">
-          <span>Shift: ${(state.activeShift || '').toUpperCase()}</span>
+          <span class="picker-meta-shift">Shift: ${(state.activeShift || '').toUpperCase()}</span>
           <label class="picker-only-captains"><input type="checkbox" id="pickerOnlyCaptains" ${isPickerOnlyCaptainsEnabled() ? 'checked' : ''}/> Тільки капітани</label>
           <label class="picker-only-captains"><input type="checkbox" id="pickerMatchRegisteredShift" ${isPickerMatchRegisteredShiftEnabled() ? 'checked' : ''}/> Зазначений Shift</label>
         </div>
@@ -160,11 +160,13 @@
             <div class="picker-manual-row">
               <input id="pickerManualName" placeholder="Нік" />
               <input id="pickerManualAlly" placeholder="Альянс" />
-              <select id="pickerManualRole"><option>Shooter</option><option>Fighter</option><option>Rider</option></select>
+              <select id="pickerManualRole"><option>Fighter</option><option>Shooter</option><option>Rider</option></select>
             </div>
             <div class="picker-manual-row2">
               <input id="pickerManualTier" placeholder="T14" />
               <input id="pickerManualMarch" placeholder="March" type="number" min="0" />
+              <input id="pickerManualRally" placeholder="Rally size" type="number" min="0" />
+              <button class="btn btn-sm" type="button" data-picker-add-manual-captain="${base.id}">Set captain</button>
               <button class="btn btn-sm" type="button" data-picker-add-manual="${base.id}">Add helper</button>
             </div>
           </div>
@@ -198,23 +200,56 @@
     (MS.getTowerCards?.() || []).forEach((card, idx) => {
       const id = String(card.dataset.baseId || card.dataset.baseid || '');
       const title = displayPickerBaseTitle((card.querySelector('h3')?.textContent || `Башня ${idx + 1}`).split('/')[0].trim());
-      const base = MS.cardBaseState?.(card);
-      const done = base ? !!base.captainId : !(MS.isCardIncomplete?.(card));
+      const base = state.baseById?.get?.(id) || MS.cardBaseState?.(card);
+      const done = !!(base && base.captainId);
+      const playersCount = (base ? (Number(base.captainId ? 1 : 0) + Number((base.helperIds || []).length)) : 0);
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'btn btn-sm tower-picker-item' + (state.towerPickerSelectedBaseId === id ? ' active' : '') + (done ? ' tower-done' : '');
+      btn.className = 'btn btn-sm tower-picker-item'
+        + (state.towerPickerSelectedBaseId === id ? ' active' : '')
+        + (done ? ' is-ready tower-done' : ' is-not-ready');
       btn.dataset.pickTowerId = id;
-      btn.style.display = 'flex';
-      btn.style.flexDirection = 'column';
-      btn.style.alignItems = 'flex-start';
-      btn.style.width = '100%';
-      btn.innerHTML = `<strong>${title}</strong><span class="muted small">${done ? 'Капітан виставлений' : 'Без капітана'}</span>`;
+      const statusIcon = done ? '✓' : '!';
+      const statusLabel = done ? 'Готова' : 'Без капітана';
+      const countCls = done ? 'is-ready' : 'is-not-ready';
+      btn.innerHTML = `<div class="tower-item-row"><strong>${title}</strong><span class="tower-item-status" aria-hidden="true">${statusIcon}</span></div><span class="muted small">${statusLabel} · <span class="tower-item-count ${countCls}">players: ${playersCount}</span></span>`;
       list.appendChild(btn);
+    });
+  }
+
+
+  function bindTowerPickerLiveRefreshOnce() {
+    if (state._towerPickerLiveRefreshBound) return;
+    state._towerPickerLiveRefreshBound = true;
+
+    document.addEventListener('change', (e) => {
+      const cb = e.target.closest('#pickerOnlyCaptains,#pickerMatchRegisteredShift');
+      if (!cb) return;
+      setTimeout(() => { try { updateTowerPickerDetail(); } catch {} }, 0);
+    });
+
+    document.addEventListener('click', (e) => {
+      const tab = e.target.closest('[data-picker-shift-tab][data-shift-tab]');
+      if (!tab) return;
+      setTimeout(() => {
+        const modal = document.getElementById('towerPickerModal');
+        if (!modal || !modal.classList.contains('is-open')) return;
+        try { refreshTowerPickerModalList(); updateTowerPickerDetail(); } catch {}
+      }, 90);
+    });
+
+    document.addEventListener('pns:assignment-changed', () => {
+      setTimeout(() => {
+        const modal = document.getElementById('towerPickerModal');
+        if (!modal || !modal.classList.contains('is-open')) return;
+        try { refreshTowerPickerModalList(); updateTowerPickerDetail(); } catch {}
+      }, 50);
     });
   }
 
   function openTowerPickerModal() {
     MS.ensureStep4Styles?.();
+    bindTowerPickerLiveRefreshOnce();
     if (typeof state.towerPickerOnlyCaptains !== 'boolean') state.towerPickerOnlyCaptains = true;
     if (typeof state.towerPickerMatchRegisteredShift !== 'boolean') state.towerPickerMatchRegisteredShift = true;
     let modal = document.getElementById('towerPickerModal');
@@ -226,7 +261,7 @@
         <div class="modal-backdrop" data-close-tower-picker></div>
         <div class="modal-card" role="dialog" aria-modal="true">
           <div class="modal-head tower-picker-head">
-            <div class="tower-picker-head-left"><h2>5 башень</h2><p class="muted">Оберіть башню зліва, налаштуй справа</p></div>
+            <div class="tower-picker-head-left"><h2>Налаштування турелей</h2><p class="muted">Оберіть башню зліва, налаштуй справа</p></div>
             <div class="tower-picker-head-center">
               <button class="btn btn-sm shift-mini" type="button" data-picker-shift-tab="shift1" data-shift-tab="shift1">Shift 1</button>
               <button class="btn btn-sm shift-mini" type="button" data-picker-shift-tab="shift2" data-shift-tab="shift2">Shift 2</button>

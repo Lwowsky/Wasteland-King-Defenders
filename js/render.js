@@ -36,150 +36,87 @@
     return 'unknown';
   }
 
-function helperMarchForBase(base, player) {
-  if (!player) return 0;
-  try {
-    if (typeof PNS.getTowerEffectiveMarch === 'function') return Number(PNS.getTowerEffectiveMarch(base, player)) || 0;
-    if (typeof PNS.getEffectiveTowerMarch === 'function') return Number(PNS.getEffectiveTowerMarch(base, player)) || 0;
-    if (typeof PNS.getEffectiveMarchForBase === 'function') return Number(PNS.getEffectiveMarchForBase(base, player)) || 0;
-  } catch {}
-  return Number(player.march || 0) || 0;
-}
-
-function displayBaseTitle(text) {
-  return String(text || '').replace(/\bCentral\s*Base\b/i, 'Hub').replace(/\bCentral\s*base\b/i, 'Hub');
-}
-
-function syncBaseRuleFromStore(base) {
-  if (!base || !base.id) return;
-  try {
-    if (typeof PNS.getBaseTowerRule !== 'function') return;
-    const rule = PNS.getBaseTowerRule(base.id);
-    if (!rule) return;
-    base.maxHelpers = Number(rule.maxHelpers ?? base.maxHelpers ?? 29) || 29;
-    base.tierMinMarch = { ...(base.tierMinMarch || {}), ...(rule.tierMinMarch || {}) };
-  } catch {}
-}
-
-function ensureRenderVisualTweaks() {
-  if (document.documentElement.dataset.pnsRenderTweaksV4 === '1') return;
-  document.documentElement.dataset.pnsRenderTweaksV4 = '1';
-  const st = document.createElement('style');
-  st.id = 'pns-render-tweaks-v4';
-  st.textContent = `
-    .captain-name-row{display:flex;align-items:center;gap:10px;width:100%;}
-    .captain-name-row .captain-name{flex:1 1 auto;margin:0;}
-    .captain-name-row .btn-icon{min-width:44px;height:44px;border-radius:16px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}
-    .captain-grid{grid-template-columns:minmax(0,1fr) minmax(0,.74fr) minmax(0,1fr) !important;align-items:stretch;width:100%;box-sizing:border-box;overflow:hidden;}
-    .captain-grid .captain-col{min-width:0;}
-    .captain-col-edit .captain-main{min-width:0;overflow:hidden;}
-    .captain-col-edit [data-open-picker-base]{width:100%;max-width:100%;white-space:normal;line-height:1.2;text-align:center;padding:10px;overflow:hidden;text-overflow:ellipsis;}
-    .captain-col-edit .captain-meta{word-break:break-word;}
-    .board-col li.captain-row{background:rgba(246, 179, 26, .14);}
-    .board-col li.captain-row strong{color:#9a5a00 !important;}
-    .captain-col-edit .btn{max-width:100%;overflow:hidden;text-overflow:ellipsis;}
-    .board-col .board-cap{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center;}
-    .board-col .board-cap .cap-pill{display:inline-flex;align-items:center;justify-content:center;padding:2px 8px;border-radius:4px;font-weight:700;line-height:1.2;}
-    .board-col .board-cap .cap-capacity{background:#d8c8aa;color:#30291c;}
-    .board-col .board-cap .cap-free{background:#bfd8ef;color:#133048;}
-    .board-col .board-cap .cap-total{background:#f1a415;color:#241400;}
-    .base-editor-details{display:none !important;}
-  `;
-  document.head.appendChild(st);
-}
-
-function ensureBaseCardTopEditPanel(base) {
-  resolveBaseEls(base);
-  const card = base?.cardEl;
-  if (!card) return;
-
-  const grid = card.querySelector('.captain-grid');
-  if (!grid) return;
-
-  if (!grid.dataset.pnsThreeCol) {
-    grid.dataset.pnsThreeCol = '1';
+  function helperMarchForBase(base, player) {
+    if (!player) return 0;
     try {
-      grid.style.gridTemplateColumns = 'minmax(0,1fr) minmax(0,.74fr) minmax(0,1fr)';
-      grid.style.gap = '12px';
-      grid.style.alignItems = 'stretch';
+      if (typeof PNS.getTowerEffectiveMarch === 'function') return Number(PNS.getTowerEffectiveMarch(base, player)) || 0;
+      if (typeof PNS.getEffectiveTowerMarch === 'function') return Number(PNS.getEffectiveTowerMarch(base, player)) || 0;
+      if (typeof PNS.getEffectiveMarchForBase === 'function') return Number(PNS.getEffectiveMarchForBase(base, player)) || 0;
     } catch {}
+    return Number(player.march || 0) || 0;
   }
+  function ensureCaptainNameRow(card) {
+    if (!card) return null;
+    const leftMain = $('.captain-col:not(.captain-col-right) .captain-main', card)
+      || $('.captain-grid .captain-col .captain-main', card);
+    if (!leftMain) return null;
 
-  let col = grid.querySelector('[data-captain-edit-col]');
-  if (!col) {
-    col = document.createElement('div');
-    col.className = 'captain-col captain-col-edit';
-    col.dataset.captainEditCol = '1';
-    col.innerHTML = `
-      <div class="captain-title">Редагування</div>
-      <div class="captain-main">
-        <button type="button" class="btn btn-sm" data-open-picker-base="" style="width:100%;justify-content:center;">Редагувати башню / Edit tower</button>
-        <div class="captain-meta">Налаштування · captain/helpers · autofill</div>
-      </div>`;
-    grid.appendChild(col);
-  }
-  const btn = col.querySelector('[data-open-picker-base]');
-  if (btn) btn.dataset.openPickerBase = String(base.id || '');
-}
+    let row = $('.captain-name-row', leftMain);
+    const nameEl = $('.captain-name', leftMain);
+    if (!nameEl) return leftMain;
 
-function ensureCaptainInlineEditButton(base, captain) {
-  resolveBaseEls(base);
-  const card = base?.cardEl;
-  if (!card) return;
+    if (!row) {
+      row = document.createElement('div');
+      row.className = 'captain-name-row';
+      // Inline styles to avoid CSS dependency regressions after HTMX swaps / cached CSS
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.justifyContent = 'space-between';
+      row.style.gap = '8px';
+      row.style.width = '100%';
 
-  const captainMain = card.querySelector('.captain-col:not(.captain-col-right):not(.captain-col-edit) .captain-main') || card.querySelector('.captain-grid .captain-col .captain-main');
-  if (!captainMain) return;
-  const captainNameEl = captainMain.querySelector('.captain-name');
-  if (!captainNameEl || captainNameEl.classList.contains('captain-shift')) return;
-
-  let nameRow = captainMain.querySelector('.captain-name-row');
-  if (!nameRow) {
-    nameRow = document.createElement('div');
-    nameRow.className = 'captain-name-row';
-    const parent = captainNameEl.parentNode;
-    if (parent) {
-      parent.insertBefore(nameRow, captainNameEl);
-      nameRow.appendChild(captainNameEl);
-    }
-  }
-  let btn = nameRow.querySelector('[data-edit-captain-inline]');
-  if (!btn) {
-    btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'btn btn-xs btn-icon';
-    btn.dataset.editCaptainInline = '1';
-    btn.setAttribute('aria-label', 'Edit captain');
-    btn.textContent = '✎';
-    nameRow.appendChild(btn);
-  }
-
-  if (base?.id) {
-    btn.hidden = false;
-    btn.disabled = false;
-    if (captain?.id) {
-      btn.dataset.editAssignedPlayer = String(captain.id);
-      btn.dataset.baseId = String(base.id);
-      btn.removeAttribute('data-open-picker-base');
-      btn.title = 'Редагувати капітана';
+      leftMain.insertBefore(row, nameEl);
+      row.appendChild(nameEl);
     } else {
-      btn.removeAttribute('data-edit-assigned-player');
-      btn.removeAttribute('data-base-id');
-      btn.dataset.openPickerBase = String(base.id);
-      btn.title = 'Вибрати капітана';
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.justifyContent = 'space-between';
+      row.style.gap = '8px';
+      row.style.width = '100%';
+      if (nameEl.parentElement !== row) row.prepend(nameEl);
     }
-  } else {
-    btn.hidden = false;
-    btn.disabled = true;
-    btn.removeAttribute('data-edit-assigned-player');
-    btn.removeAttribute('data-base-id');
-    btn.removeAttribute('data-open-picker-base');
+
+    nameEl.style.flex = '1 1 auto';
+    nameEl.style.minWidth = '0';
+    return row;
   }
-}
+
+  function renderBoardMetricStrip(capEl, capacityTotal, freeSpace, total) {
+    if (!capEl) return;
+    capEl.style.display = 'grid';
+    capEl.style.gridTemplateColumns = '1fr 1fr 1fr';
+    capEl.style.gap = '6px';
+    capEl.style.alignItems = 'center';
+    capEl.style.marginTop = '6px';
+
+    const pill = (value, bg, fg, extra='') =>
+      `<span style="display:block;text-align:center;background:${bg};color:${fg};border-radius:4px;padding:2px 4px;font-weight:700;${extra}">${PNS.formatNum(value)}</span>`;
+
+    // 1) Rally+Captain (capacity), 2) Free space, 3) Total
+    capEl.innerHTML = [
+      pill(capacityTotal, '#1f4f92', '#fff'),
+      pill(freeSpace, '#2c7a5a', '#fff'),
+      pill(total, '#f2a30f', '#1a1200', 'font-weight:800;')
+    ].join('');
+  }
+
+  function buildBoardRowHTML(kind, player, marchValue) {
+    const name = PNS.escapeHtml(player?.name || '');
+    const ally = PNS.escapeHtml(player?.alliance || '');
+    const tier = PNS.escapeHtml(player?.tier || '');
+    const march = PNS.formatNum(marchValue || 0);
+
+    if (kind === 'captain') {
+      return `<span>${name}</span><em>${ally}</em><b>${tier}</b><strong style="color:#9a5a00;">${march}</strong>`;
+    }
+    return `<span>${name}</span><em>${ally}</em><b>${tier}</b><strong>${march}</strong>`;
+  }
+
+
 
   // ===== Quota row =====
   function renderQuotaRow(base) {
     resolveBaseEls(base);
-    syncBaseRuleFromStore(base);
     if (!base?.cardEl) return;
 
     const row = $('.quota-row', base.cardEl);
@@ -372,7 +309,6 @@ function ensureCaptainInlineEditButton(base, captain) {
       `;
 
       ( $('.helpers-table-wrap', card) || card ).insertAdjacentElement('afterend', editor);
-      editor.style.display = 'none';
     }
 
     const sel = $(`select[data-base-editor-select="${base.id}"]`, editor);
@@ -456,14 +392,8 @@ function ensureCaptainInlineEditButton(base, captain) {
   // ===== Update cards =====
   function updateBaseCard(base) {
     resolveBaseEls(base);
-    syncBaseRuleFromStore(base);
     const card = base.cardEl;
     if (!card) return;
-
-    ensureRenderVisualTweaks();
-    ensureBaseCardTopEditPanel(base);
-    const headTitle = card.querySelector('.base-card-head h3');
-    if (headTitle) headTitle.textContent = displayBaseTitle(headTitle.textContent);
 
     const captain = base.captainId ? state.playerById.get(base.captainId) : null;
     const helpers = base.helperIds.map((id) => state.playerById.get(id)).filter(Boolean);
@@ -484,7 +414,48 @@ function ensureCaptainInlineEditButton(base, captain) {
         nameEl.classList.add('captain-empty');
       }
     }
-    ensureCaptainInlineEditButton(base, captain);
+
+    // Captain quick-edit button (same modal as helper edit)
+    const captainMain = $('.captain-col:not(.captain-col-right) .captain-main', card) || $('.captain-grid .captain-col .captain-main', card);
+    if (captainMain) {
+      const captainNameRow = ensureCaptainNameRow(card) || captainMain;
+      let capEditBtn = captainMain.querySelector('[data-captain-edit-btn]');
+      if (!capEditBtn) {
+        capEditBtn = document.createElement('button');
+        capEditBtn.type = 'button';
+        capEditBtn.className = 'btn btn-xs btn-icon';
+        capEditBtn.dataset.captainEditBtn = '1';
+        capEditBtn.title = 'Редагувати капітана';
+        capEditBtn.setAttribute('aria-label', 'Edit captain');
+        capEditBtn.textContent = '✎';
+      }
+
+      // Force in one row with captain name
+      if (capEditBtn.parentElement !== captainNameRow) captainNameRow.appendChild(capEditBtn);
+      capEditBtn.style.flex = '0 0 auto';
+      capEditBtn.style.alignSelf = 'center';
+      capEditBtn.style.marginTop = '0';
+      capEditBtn.style.marginLeft = '8px';
+      capEditBtn.style.position = 'relative';
+
+      if (captain?.id) {
+        capEditBtn.hidden = false;
+        capEditBtn.disabled = false;
+        capEditBtn.dataset.editAssignedPlayer = String(captain.id);
+        capEditBtn.dataset.baseId = String(base.id);
+        delete capEditBtn.dataset.openPickerBase;
+        capEditBtn.title = 'Редагувати капітана';
+      } else {
+        // If captain is not selected yet — keep ✎ visible and route to tower editor picker for this base.
+        capEditBtn.hidden = false;
+        capEditBtn.disabled = false;
+        delete capEditBtn.dataset.editAssignedPlayer;
+        capEditBtn.dataset.baseId = String(base.id);
+        capEditBtn.dataset.openPickerBase = String(base.id);
+        capEditBtn.title = 'Обрати капітана';
+      }
+    }
+
 
     // Optional "Plan / Plan" block (newer card layout)
     const planShiftEl = $('.captain-shift', card) || $('[data-plan-shift]', card);
@@ -498,15 +469,8 @@ function ensureCaptainInlineEditButton(base, captain) {
     }
 
     const captainMarch = captain?.march || 0;
-    // Helpers contribute their current march (or capped contribution if such helper exists globally)
-    const helperContribution = (p) => {
-      try {
-        if (typeof PNS.getTowerEffectiveMarch === 'function') return Number(PNS.getTowerEffectiveMarch(base, p)) || 0;
-        if (typeof PNS.getEffectiveTowerMarch === 'function') return Number(PNS.getEffectiveTowerMarch(base, p)) || 0;
-        if (typeof PNS.getEffectiveMarchForBase === 'function') return Number(PNS.getEffectiveMarchForBase(base, p)) || 0;
-      } catch {}
-      return Number(p?.march || 0) || 0;
-    };
+    // Helpers contribute capped/override value for this base (same source as Final Board)
+    const helperContribution = (p) => Number(helperMarchForBase(base, p)) || 0;
     const helpersSum = helpers.reduce((s, p) => s + helperContribution(p), 0);
     const rallySize = captain?.rally || 0; // helpers capacity only
     const total = captainMarch + helpersSum; // requested: actual helpers sum + captain march
@@ -567,20 +531,20 @@ function ensureCaptainInlineEditButton(base, captain) {
 
   function updateBoardCol(base) {
     resolveBaseEls(base);
-    syncBaseRuleFromStore(base);
     if (!base.boardEl) return;
 
     const col = base.boardEl;
     const captain = base.captainId ? state.playerById.get(base.captainId) : null;
     const helpers = base.helperIds.map((id) => state.playerById.get(id)).filter(Boolean);
 
-    const total = (captain?.march || 0) + helpers.reduce((s, p) => s + helperMarchForBase(base, p), 0);
-    const limit = captain ? (((captain.rally || 0) + (captain.march || 0)) || captain.march || 0) : 0;
+    const captainMarch = Number(captain?.march || 0) || 0;
+    const helpersTotal = helpers.reduce((s, p) => s + (Number(helperMarchForBase(base, p)) || 0), 0);
+    const total = captainMarch + helpersTotal;
+    const rallySize = Number(captain?.rally || 0) || 0;
+    const capacityTotal = captainMarch + rallySize;
+    const freeSpace = Math.max(0, capacityTotal - total);
 
     PNS.setRoleTheme(col, captain?.role || null, false);
-
-    const titleEl = col.querySelector('h4');
-    if (titleEl) titleEl.textContent = displayBaseTitle(titleEl.textContent);
 
     const sub = $('.board-sub', col);
     if (sub) {
@@ -589,8 +553,7 @@ function ensureCaptainInlineEditButton(base, captain) {
     }
 
     const cap = $('.board-cap', col);
-    const freeBoard = Math.max(0, (limit || 0) - (total || 0));
-    if (cap) cap.innerHTML = `<span class="cap-pill cap-capacity">${PNS.formatNum(limit)}</span><span class="cap-pill cap-free">${PNS.formatNum(freeBoard)}</span><span class="cap-pill cap-total">${PNS.formatNum(total)}</span>`;
+    renderBoardMetricStrip(cap, capacityTotal, freeSpace, total);
 
     const ul = $('ul', col);
     if (!ul) return;
@@ -599,7 +562,10 @@ function ensureCaptainInlineEditButton(base, captain) {
     if (captain) {
       const li = document.createElement('li');
       li.className = 'captain-row';
-      li.innerHTML = `<span>${PNS.escapeHtml(captain.name)}</span><em>${PNS.escapeHtml(captain.alliance)}</em><b>${PNS.escapeHtml(captain.tier)}</b><strong>${PNS.formatNum(captain.march)}</strong>`;
+      li.style.background = '#efe4b8';
+      li.style.border = '1px solid #d0a748';
+      li.style.boxShadow = 'inset 3px 0 0 #f2b120';
+      li.innerHTML = buildBoardRowHTML('captain', captain, captain.march);
       ul.appendChild(li);
     }
 
@@ -609,7 +575,7 @@ function ensureCaptainInlineEditButton(base, captain) {
       .forEach((p) => {
         const li = document.createElement('li');
         li.className = 'helper-row';
-        li.innerHTML = `<span>${PNS.escapeHtml(p.name)}</span><em>${PNS.escapeHtml(p.alliance)}</em><b>${PNS.escapeHtml(p.tier)}</b><strong>${PNS.formatNum(helperMarchForBase(base, p))}</strong>`;
+        li.innerHTML = buildBoardRowHTML('helper', p, helperMarchForBase(base, p));
         ul.appendChild(li);
       });
 
@@ -639,41 +605,11 @@ function ensureCaptainInlineEditButton(base, captain) {
     });
   }
 
-  function ensureTopEditPanelsByDomScan() {
-    const known = new Set((state.bases || []).map((b) => String(b?.id || '')).filter(Boolean));
-    $$('.base-card[data-base-id], .base-card[data-baseid]').forEach((card) => {
-      const id = String(card.dataset.baseId || card.dataset.baseid || '');
-      if (!id || known.has(id)) return;
-      try {
-        const fakeBase = { id, cardEl: card, title: card.querySelector('.base-card-head h3')?.textContent || id };
-        ensureBaseCardTopEditPanel(fakeBase);
-        ensureCaptainInlineEditButton(fakeBase, null);
-      } catch {}
-    });
-  }
-
-  function ensureTopEditPanelsForAllBases() {
-    (state.bases || []).forEach((b) => {
-      try { ensureBaseCardTopEditPanel(b); } catch {}
-      try {
-        const c = b?.cardEl;
-        if (c) {
-          const editBtn = c.querySelector('[data-captain-edit-col] [data-open-picker-base]');
-          if (editBtn) editBtn.dataset.openPickerBase = String(b.id || c.dataset.baseId || c.dataset.baseid || '');
-        }
-      } catch {}
-    });
-  }
-
   function renderAll() {
     // Rebind base els in case of swaps
     state.bases.forEach(resolveBaseEls);
 
-    ensureTopEditPanelsForAllBases();
-    ensureTopEditPanelsByDomScan();
     state.bases.forEach(updateBaseCard);
-    ensureTopEditPanelsForAllBases();
-    ensureTopEditPanelsByDomScan();
     state.bases.forEach(updateBoardCol);
     updatePlayerRows();
 

@@ -44,13 +44,6 @@
 
   // ===== Base tower rules store =====
   function getEmptyTierMinMarch() { return { T14: 0, T13: 0, T12: 0, T11: 0, T10: 0, T9: 0 }; }
-  function normalizeRuleShift(shift) {
-    const s = String(shift || state.activeShift || 'shift1').toLowerCase();
-    return (s === 'shift1' || s === 'shift2') ? s : 'shift1';
-  }
-  function baseTowerRuleStoreKey(baseId, shift) {
-    return `${normalizeRuleShift(shift)}::${String(baseId || '')}`;
-  }
 
   function normalizeBaseTowerRule(rule) {
     const src = rule || {};
@@ -75,21 +68,13 @@
   function saveBaseTowerRulesStore() {
     safeWriteJSON(KEYS.KEY_BASE_TOWER_RULES, state.baseTowerRules || {});
   }
-  function getBaseTowerRule(baseId, opts = {}) {
-    const shift = normalizeRuleShift(opts.shift || state.activeShift || 'shift1');
-    const store = (state.baseTowerRules || {});
-    const key = baseTowerRuleStoreKey(baseId, shift);
-    // Fallback to legacy unscoped key for migration compatibility
-    const src = store[key] || store[baseId] || {};
-    return normalizeBaseTowerRule(src);
+  function getBaseTowerRule(baseId) {
+    return normalizeBaseTowerRule((state.baseTowerRules || {})[baseId] || {});
   }
   function setBaseTowerRule(baseId, rule, opts = {}) {
     const normalized = normalizeBaseTowerRule(rule);
     if (!state.baseTowerRules || typeof state.baseTowerRules !== 'object') state.baseTowerRules = {};
-    const shift = normalizeRuleShift(opts.shift || state.activeShift || 'shift1');
-    const key = baseTowerRuleStoreKey(baseId, shift);
-    state.baseTowerRules[key] = normalized;
-    // Optional migration cleanup: keep legacy key untouched (read fallback still works)
+    state.baseTowerRules[baseId] = normalized;
     if (opts.persist !== false) saveBaseTowerRulesStore();
 
     const base = state.baseById?.get(baseId);
@@ -163,8 +148,12 @@
       rowEl: null,
       actionCellEl: null,
       assignment: p.assignment || null,
-      towerMarchOverride: (p.towerMarchOverride != null ? Number(p.towerMarchOverride || 0) : null),
-      towerMarchOverrideByBase: (p.towerMarchOverrideByBase && typeof p.towerMarchOverrideByBase === 'object') ? Object.fromEntries(Object.entries(p.towerMarchOverrideByBase).map(([k,v]) => [String(k), Number(v||0)])) : null,
+      towerMarchOverride: (p.towerMarchOverride == null ? null : Number(p.towerMarchOverride)),
+      towerMarchOverrideByBase: (p.towerMarchOverrideByBase && typeof p.towerMarchOverrideByBase === 'object')
+        ? Object.fromEntries(Object.entries(p.towerMarchOverrideByBase)
+            .map(([k,v]) => [String(k), Number(v)])
+            .filter(([,v]) => Number.isFinite(v) && v > 0))
+        : {},
     };
   }
 
@@ -185,6 +174,158 @@
   function clearPlayersSnapshot() {
     try { localStorage.removeItem(KEY_PLAYERS_SNAPSHOT); } catch {}
   }
+
+
+  // ===== Assignments/base snapshot (persist tower state across page refresh) =====
+  function normalizeAssignmentsSnapshot(payload) {
+    const src = payload && typeof payload === 'object' ? payload : {};
+    const arr = Array.isArray(src.bases) ? src.bases : [];
+    return {
+      version: 1,
+      bases: arr.map((b) => ({
+        id: String(b?.id || ''),
+        captainId: b?.captainId ? String(b.captainId) : null,
+        helperIds: Array.isArray(b?.helperIds) ? b.helperIds.map((x) => String(x)).filter(Boolean) : [],
+        role: b?.role ? String(b.role) : null,
+      })).filter((b) => b.id),
+    };
+  }
+
+  function buildAssignmentsSnapshot() {
+    const bases = Array.isArray(state.bases) ? state.bases : [];
+    return normalizeAssignmentsSnapshot({
+      bases: bases.map((b) => ({
+        id: b.id,
+        captainId: b.captainId || null,
+        helperIds: Array.isArray(b.helperIds) ? Array.from(new Set(b.helperIds.map(String))) : [],
+        role: b.role || null,
+      })),
+    });
+  }
+
+  function saveAssignmentsSnapshot() {
+    const payload = buildAssignmentsSnapshot();
+    safeWriteJSON(KEYS.KEY_ASSIGNMENTS_STORE, payload);
+    return true;
+  }
+
+  function loadAssignmentsSnapshot() {
+    return normalizeAssignmentsSnapshot(safeReadJSON(KEYS.KEY_ASSIGNMENTS_STORE, { bases: [] }));
+  }
+
+  function clearAssignmentsSnapshot() {
+    try { localStorage.removeItem(KEYS.KEY_ASSIGNMENTS_STORE); } catch {}
+  }
+
+  function restoreAssignmentsSnapshot(opts = {}) {
+    if (!state?.bases?.length || !state?.baseById?.size || !state?.playerById?.size) return false;
+
+    // Prefer dedicated assignments snapshot. Fallback to assignments embedded in players snapshot.
+    const snap = loadAssignmentsSnapshot();
+    let baseRows = Array.isArray(snap?.bases) ? snap.bases : [];
+    if (!baseRows.length) {
+      const byBase = new Map();
+      (state.players || []).forEach((p) => {
+        const a = p?.assignment;
+        if (!a?.baseId || !a?.kind) return;
+        const row = byBase.get(a.baseId) || { id: String(a.baseId), captainId: null, helperIds: [], role: null };
+        if (a.kind === 'captain') row.captainId = String(p.id);
+        else if (a.kind === 'helper') row.helperIds.push(String(p.id));
+        byBase.set(row.id, row);
+      });
+      baseRows = Array.from(byBase.values());
+    }
+
+    // Clear current assignment links first
+    (state.players || []).forEach((p) => { p.assignment = null; });
+    (state.bases || []).forEach((b) => {
+      b.captainId = null;
+      b.helperIds = [];
+      if (typeof PNS.applyBaseRoleUI === 'function') PNS.applyBaseRoleUI(b, null);
+    });
+
+    const usedPlayers = new Set();
+    for (const row of baseRows) {
+      const base = state.baseById.get(row.id);
+      if (!base) continue;
+
+      let captain = null;
+      if (row.captainId && !usedPlayers.has(row.captainId)) {
+        captain = state.playerById.get(row.captainId) || null;
+      }
+
+      if (captain) {
+        base.captainId = captain.id;
+        captain.assignment = { baseId: base.id, kind: 'captain' };
+        usedPlayers.add(captain.id);
+        if (typeof PNS.applyBaseRoleUI === 'function') PNS.applyBaseRoleUI(base, captain.role || row.role || null);
+      } else {
+        base.captainId = null;
+        if (typeof PNS.applyBaseRoleUI === 'function') PNS.applyBaseRoleUI(base, null);
+      }
+
+      const nextHelpers = [];
+      for (const pid of row.helperIds || []) {
+        if (!pid || usedPlayers.has(pid)) continue;
+        const p = state.playerById.get(pid);
+        if (!p) continue;
+        const baseRole = typeof PNS.getBaseRole === 'function' ? PNS.getBaseRole(base) : (captain?.role || null);
+        if (baseRole && p.role && p.role !== baseRole) continue;
+        nextHelpers.push(p.id);
+        p.assignment = { baseId: base.id, kind: 'helper' };
+        usedPlayers.add(p.id);
+      }
+      base.helperIds = nextHelpers;
+    }
+
+    if (opts.rerender !== false && typeof PNS.renderAll === 'function') PNS.renderAll();
+    if (opts.applyShift !== false && typeof PNS.applyShiftFilter === 'function') {
+      try { PNS.applyShiftFilter(state.activeShift || 'shift1'); } catch {}
+    }
+    return true;
+  }
+
+  function persistSessionState() {
+    try {
+      if (Array.isArray(state.players) && state.players.length) savePlayersSnapshot(state.players);
+      if (Array.isArray(state.bases) && state.bases.length) saveAssignmentsSnapshot();
+    } catch {}
+  }
+
+  // ===== Boot restore from localStorage (script-order safe) =====
+  function restorePlayersOnlyFromSnapshot() {
+    if (Array.isArray(state.players) && state.players.length) return true;
+    const restored = loadPlayersSnapshot();
+    if (!Array.isArray(restored) || !restored.length) return false;
+    state.players = restored;
+    state.playerById = new Map(restored.map((p) => [p.id, p]));
+    return true;
+  }
+
+  function rerenderAfterRestore() {
+    try { if (typeof PNS.renderPlayersTableFromState === 'function') PNS.renderPlayersTableFromState(); } catch {}
+    try { if (typeof PNS.buildRowActions === 'function') PNS.buildRowActions(); } catch {}
+    try { if (typeof PNS.renderAll === 'function') PNS.renderAll(); } catch {}
+    try { if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift || 'shift1'); } catch {}
+    try { if (typeof PNS.setImportLoadedInfo === 'function') PNS.setImportLoadedInfo(`Restored ${(state.players||[]).length} players from LocalStorage.`); } catch {}
+    try { if (typeof PNS.setImportStatus === 'function') PNS.setImportStatus('Players restored from previous session. Load/apply a new table anytime to replace them.', 'good'); } catch {}
+  }
+
+  function tryRestoreSessionFromLocalStorage(opts = {}) {
+    const hasPlayers = Array.isArray(state.players) && state.players.length;
+    const restoredPlayers = hasPlayers ? true : restorePlayersOnlyFromSnapshot();
+    if (!restoredPlayers) return false;
+
+    try { if (typeof PNS.restoreAssignmentsSnapshot === 'function') PNS.restoreAssignmentsSnapshot({ rerender: false, applyShift: false }); } catch {}
+
+    // Render only when UI functions are available; if not, caller may retry later.
+    const readyToRender = typeof PNS.renderAll === 'function' || typeof PNS.renderPlayersTableFromState === 'function';
+    if (readyToRender && opts.render !== false) rerenderAfterRestore();
+    return true;
+  }
+
+  PNS.tryRestoreSessionFromLocalStorage = tryRestoreSessionFromLocalStorage;
+
 
   // ===== Status helpers (swap-safe) =====
   function setImportStatus(msg, tone) {
@@ -211,8 +352,6 @@
   PNS.safeWriteJSON = safeWriteJSON;
 
   PNS.getEmptyTierMinMarch = getEmptyTierMinMarch;
-  PNS.normalizeRuleShift = normalizeRuleShift;
-  PNS.baseTowerRuleStoreKey = baseTowerRuleStoreKey;
   PNS.normalizeBaseTowerRule = normalizeBaseTowerRule;
   PNS.loadBaseTowerRulesStore = loadBaseTowerRulesStore;
   PNS.saveBaseTowerRulesStore = saveBaseTowerRulesStore;
@@ -230,7 +369,35 @@
   PNS.loadPlayersSnapshot = loadPlayersSnapshot;
   PNS.clearPlayersSnapshot = clearPlayersSnapshot;
 
+  PNS.buildAssignmentsSnapshot = buildAssignmentsSnapshot;
+  PNS.saveAssignmentsSnapshot = saveAssignmentsSnapshot;
+  PNS.loadAssignmentsSnapshot = loadAssignmentsSnapshot;
+  PNS.restoreAssignmentsSnapshot = restoreAssignmentsSnapshot;
+  PNS.clearAssignmentsSnapshot = clearAssignmentsSnapshot;
+  PNS.persistSessionState = persistSessionState;
+
   PNS.setImportStatus = setImportStatus;
   PNS.setImportLoadedInfo = setImportLoadedInfo;
+
+  // Late bootstrap restore (covers cases when import/storage script order changed)
+  if (!window.__pnsRestoreSessionBound) {
+    window.__pnsRestoreSessionBound = true;
+    const boot = () => { try { if (typeof PNS.tryRestoreSessionFromLocalStorage === 'function') PNS.tryRestoreSessionFromLocalStorage(); } catch {} };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+    else setTimeout(boot, 0);
+    window.addEventListener('load', boot, { once: true });
+    document.addEventListener('htmx:afterSwap', boot);
+    document.addEventListener('htmx:afterSettle', boot);
+    document.addEventListener('pns:partials:loaded', boot);
+    document.addEventListener('pns:bases:parsed', boot);
+  }
+
+
+  // Persist runtime state on explicit assignment edits and before refresh/close
+  if (!window.__pnsPersistStateBound) {
+    window.__pnsPersistStateBound = true;
+    document.addEventListener('pns:assignment-changed', () => { try { persistSessionState(); } catch {} });
+    window.addEventListener('beforeunload', () => { try { persistSessionState(); } catch {} });
+  }
 
 })();
