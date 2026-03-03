@@ -2,10 +2,30 @@
   const PNS = window.PNS; if (!PNS) return;
   const { state, $, $$ } = PNS;
 
-  function helperMarchForBase(base, player) {
-    if (!player) return 0;
-    if (typeof PNS.getTowerEffectiveMarch === 'function') return PNS.getTowerEffectiveMarch(base, player);
-    return PNS.parseNumber ? PNS.parseNumber(player.march) : (Number(player.march || 0) || 0);
+  // --- helpers (swap-safe) ---
+  function elAlive(el) {
+    return !!(el && el.nodeType === 1 && document.contains(el));
+  }
+
+  function getPlayersTable() {
+    return document.querySelector('#playersDataTable');
+  }
+
+  function resolveBaseEls(base) {
+    // If DOM was swapped, old refs become dead. Rebind by data-base-id.
+    if (!base) return;
+
+    if (!elAlive(base.cardEl)) {
+      const card = document.querySelector(`.base-card[data-base-id="${base.id}"]`)
+        || document.querySelector(`.base-card[data-baseid="${base.id}"]`);
+      if (card) base.cardEl = card;
+    }
+
+    if (!elAlive(base.boardEl)) {
+      const col = document.querySelector(`.board-col[data-base-id="${base.id}"]`)
+        || document.querySelector(`.board-col[data-baseid="${base.id}"]`);
+      if (col) base.boardEl = col;
+    }
   }
 
   function roleTagClass(role) {
@@ -16,10 +36,122 @@
     return 'unknown';
   }
 
+function helperMarchForBase(base, player) {
+  if (!player) return 0;
+  try {
+    if (typeof PNS.getTowerEffectiveMarch === 'function') return Number(PNS.getTowerEffectiveMarch(base, player)) || 0;
+    if (typeof PNS.getEffectiveTowerMarch === 'function') return Number(PNS.getEffectiveTowerMarch(base, player)) || 0;
+    if (typeof PNS.getEffectiveMarchForBase === 'function') return Number(PNS.getEffectiveMarchForBase(base, player)) || 0;
+  } catch {}
+  return Number(player.march || 0) || 0;
+}
+
+function displayBaseTitle(text) {
+  return String(text || '').replace(/\bCentral\s*Base\b/i, 'Hub').replace(/\bCentral\s*base\b/i, 'Hub');
+}
+
+function ensureRenderVisualTweaks() {
+  if (document.documentElement.dataset.pnsRenderTweaksV3 === '1') return;
+  document.documentElement.dataset.pnsRenderTweaksV3 = '1';
+  const st = document.createElement('style');
+  st.id = 'pns-render-tweaks-v3';
+  st.textContent = `
+    .captain-name-row{display:flex;align-items:center;gap:10px;width:100%;}
+    .captain-name-row .captain-name{flex:1 1 auto;margin:0;}
+    .captain-name-row .btn-icon{min-width:44px;height:44px;border-radius:16px;display:inline-flex;align-items:center;justify-content:center;}
+    .board-col li.captain-row{background:rgba(246, 179, 26, .14);}
+    .board-col li.captain-row strong{color:#9a5a00 !important;}
+    .base-editor-details{display:none !important;}
+  `;
+  document.head.appendChild(st);
+}
+
+function ensureBaseCardTopEditPanel(base) {
+  resolveBaseEls(base);
+  const card = base?.cardEl;
+  if (!card) return;
+
+  const grid = card.querySelector('.captain-grid');
+  if (!grid) return;
+
+  if (!grid.dataset.pnsThreeCol) {
+    grid.dataset.pnsThreeCol = '1';
+    try {
+      grid.style.gridTemplateColumns = 'minmax(0,1fr) minmax(0,1fr) minmax(220px,.9fr)';
+      grid.style.gap = '12px';
+      grid.style.alignItems = 'stretch';
+    } catch {}
+  }
+
+  let col = grid.querySelector('[data-captain-edit-col]');
+  if (!col) {
+    col = document.createElement('div');
+    col.className = 'captain-col captain-col-edit';
+    col.dataset.captainEditCol = '1';
+    col.innerHTML = `
+      <div class="captain-title">Редагування</div>
+      <div class="captain-main">
+        <button type="button" class="btn btn-sm" data-open-picker-base="" style="width:100%;justify-content:center;">Редагувати башню / Edit tower</button>
+        <div class="captain-meta">Налаштування · captain/helpers · autofill</div>
+      </div>`;
+    grid.appendChild(col);
+  }
+  const btn = col.querySelector('[data-open-picker-base]');
+  if (btn) btn.dataset.openPickerBase = String(base.id || '');
+}
+
+function ensureCaptainInlineEditButton(base, captain) {
+  resolveBaseEls(base);
+  const card = base?.cardEl;
+  if (!card) return;
+
+  const captainMain = card.querySelector('.captain-col:not(.captain-col-right):not(.captain-col-edit) .captain-main') || card.querySelector('.captain-grid .captain-col .captain-main');
+  if (!captainMain) return;
+  const captainNameEl = captainMain.querySelector('.captain-name');
+  if (!captainNameEl || captainNameEl.classList.contains('captain-shift')) return;
+
+  let nameRow = captainMain.querySelector('.captain-name-row');
+  if (!nameRow) {
+    nameRow = document.createElement('div');
+    nameRow.className = 'captain-name-row';
+    const parent = captainNameEl.parentNode;
+    if (parent) {
+      parent.insertBefore(nameRow, captainNameEl);
+      nameRow.appendChild(captainNameEl);
+    }
+  }
+  let btn = nameRow.querySelector('[data-edit-captain-inline]');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-xs btn-icon';
+    btn.dataset.editCaptainInline = '1';
+    btn.setAttribute('aria-label', 'Edit captain');
+    btn.textContent = '✎';
+    nameRow.appendChild(btn);
+  }
+
+  if (captain?.id && base?.id) {
+    btn.hidden = false;
+    btn.disabled = false;
+    btn.dataset.editAssignedPlayer = String(captain.id);
+    btn.dataset.baseId = String(base.id);
+  } else {
+    btn.hidden = true;
+    btn.disabled = true;
+    btn.removeAttribute('data-edit-assigned-player');
+    btn.removeAttribute('data-base-id');
+  }
+}
+
+  // ===== Quota row =====
   function renderQuotaRow(base) {
+    resolveBaseEls(base);
     if (!base?.cardEl) return;
+
     const row = $('.quota-row', base.cardEl);
     if (!row) return;
+
     row.innerHTML = '';
     const lead = document.createElement('span');
     lead.textContent = 'Auto-fill:';
@@ -28,12 +160,14 @@
     const activeRules = [];
     ['T14','T13','T12','T11','T10','T9'].forEach((k) => {
       const minM = PNS.clampInt(base?.tierMinMarch?.[k], 0);
-      if (minM > 0) activeRules.push(`${k}≥${PNS.formatNum(minM)}`);
+      if (minM > 0) activeRules.push(`${k}≤${PNS.formatNum(minM)}`);
     });
 
     const summary = document.createElement('span');
     summary.className = 'quota-summary';
-    summary.textContent = activeRules.length ? `Tier min march: ${activeRules.join(' · ')}` : 'Tier min march: auto (not set)';
+    summary.textContent = activeRules.length
+      ? `Tier cap march: ${activeRules.join(' · ')}`
+      : 'Tier cap march: auto (not set)';
     row.appendChild(summary);
 
     const mh = document.createElement('span');
@@ -43,27 +177,36 @@
   }
   PNS.renderQuotaRow = renderQuotaRow;
 
+  // ===== Base editor candidates =====
   function getBaseEditorCandidates(base) {
     const baseRole = PNS.getBaseRole(base);
     return (state.players || [])
       .filter((p) => PNS.matchesShift(p.shift || 'both', state.activeShift || 'all'))
       .filter((p) => base.shift === 'both' || p.shift === 'both' || p.shift === base.shift)
       .filter((p) => !baseRole || p.assignment?.kind === 'captain' || p.role === baseRole)
-      .sort((a,b) => (b.tierRank||0)-(a.tierRank||0) || (b.march||0)-(a.march||0) || String(a.name).localeCompare(String(b.name)));
+      .sort((a,b) =>
+        (b.tierRank||0)-(a.tierRank||0) ||
+        (b.march||0)-(a.march||0) ||
+        String(a.name).localeCompare(String(b.name))
+      );
   }
 
   function syncManualInputsFromSelected(base) {
+    resolveBaseEls(base);
     const editor = base?.cardEl ? $('.base-editor', base.cardEl) : null;
     if (!editor) return;
+
     const sel = $(`select[data-base-editor-select="${base.id}"]`, editor);
     const pid = sel?.value || '';
     const p = pid ? state.playerById.get(pid) : null;
+
     const nameEl = $(`[data-manual-name="${base.id}"]`, editor);
     const allyEl = $(`[data-manual-alliance="${base.id}"]`, editor);
     const tierEl = $(`[data-manual-tier="${base.id}"]`, editor);
     const marchEl = $(`[data-manual-march="${base.id}"]`, editor);
     if (!nameEl || !allyEl || !tierEl || !marchEl) return;
     if (!p) return;
+
     nameEl.value = String(p.name || '');
     allyEl.value = String(p.alliance || '');
     tierEl.value = String(p.tier || 'T10');
@@ -72,11 +215,15 @@
 
   function saveManualPlayerFromBaseEditor(baseId) {
     const base = state.baseById.get(baseId);
+    resolveBaseEls(base);
     if (!base || !base.cardEl) return;
+
     const editor = $('.base-editor', base.cardEl);
     if (!editor) return;
+
     const sel = $(`select[data-base-editor-select="${base.id}"]`, editor);
     const pid = sel?.value || '';
+
     const nameEl = $(`[data-manual-name="${base.id}"]`, editor);
     const allyEl = $(`[data-manual-alliance="${base.id}"]`, editor);
     const tierEl = $(`[data-manual-tier="${base.id}"]`, editor);
@@ -85,15 +232,21 @@
 
     const name = String(nameEl?.value || '').trim();
     const alliance = String(allyEl?.value || '').trim();
+
     let tier = PNS.normalizeTierText(tierEl?.value || 'T10');
     const _tm = String(tier).match(/^T(\d{1,2})$/i);
-    if (_tm) { const _n = Math.max(1, Math.min(14, Number(_tm[1]))); tier = `T${_n}`; }
+    if (_tm) {
+      const _n = Math.max(1, Math.min(14, Number(_tm[1])));
+      tier = `T${_n}`;
+    }
+
     const march = PNS.parseNumber(marchEl?.value || '0');
 
     if (!name) { if (statusEl) statusEl.textContent = 'Manual save: enter Player name'; return; }
     if (!march) { if (statusEl) statusEl.textContent = 'Manual save: enter March size'; return; }
 
     let p = pid ? state.playerById.get(pid) : null;
+
     if (p) {
       p.name = name;
       p.alliance = alliance;
@@ -104,6 +257,7 @@
     } else {
       const role = PNS.getBaseRole(base) || 'Fighter';
       const shift = state.activeShift === 'all' ? 'both' : (state.activeShift || 'both');
+
       p = {
         id: `m_${Date.now()}_${Math.floor(Math.random()*1e5)}`,
         name,
@@ -127,10 +281,13 @@
         actionCellEl: null,
         assignment: null,
       };
+
       state.players.push(p);
       state.playerById.set(p.id, p);
+
       renderPlayersTableFromState();
       if (typeof PNS.buildRowActions === 'function') PNS.buildRowActions();
+
       if (base.captainId && (!PNS.getBaseRole(base) || p.role === PNS.getBaseRole(base))) {
         const err = PNS.validateAssign(p, base, 'helper');
         if (!err) {
@@ -138,15 +295,19 @@
           p.assignment = { baseId: base.id, kind: 'helper' };
         }
       }
+
       if (sel) sel.value = p.id;
       if (statusEl) statusEl.textContent = `Added manual player ${p.name} (${tier})`;
     }
+
     if (typeof PNS.renderAll === 'function') PNS.renderAll();
   }
 
   function renderBaseEditor(base) {
+    resolveBaseEls(base);
     const card = base.cardEl;
     if (!card) return;
+
     let editor = $('.base-editor', card);
     if (!editor) {
       editor = document.createElement('div');
@@ -176,7 +337,9 @@
         </div>
         <div class="editor-status" data-base-editor-status="${base.id}"></div>
       `;
+
       ( $('.helpers-table-wrap', card) || card ).insertAdjacentElement('afterend', editor);
+      editor.style.display = 'none';
     }
 
     const sel = $(`select[data-base-editor-select="${base.id}"]`, editor);
@@ -193,6 +356,7 @@
     if (sel) {
       const currentVal = sel.value;
       const candidates = getBaseEditorCandidates(base);
+
       sel.innerHTML = '';
       const opt0 = document.createElement('option');
       opt0.value = '';
@@ -202,6 +366,7 @@
       candidates.forEach((p) => {
         const opt = document.createElement('option');
         opt.value = p.id;
+
         let assignedTag = '';
         if (p.assignment) {
           const assignedBase = state.baseById.get(p.assignment.baseId);
@@ -210,15 +375,18 @@
             ? (p.assignment.kind === 'captain' ? ' [CAP]' : ' [IN BASE]')
             : ` [${p.assignment.kind === 'captain' ? 'CAP' : 'HELP'} @ ${baseShort}]`;
         }
+
         opt.textContent = `${p.name} • ${p.alliance || '—'} • ${p.role} • ${p.tier} • ${PNS.formatNum(p.march)} • ${p.shiftLabel}${assignedTag}`;
         sel.appendChild(opt);
       });
 
       if (currentVal && candidates.some((p) => p.id === currentVal)) sel.value = currentVal;
+
       if (!sel.dataset.manualBound) {
         sel.dataset.manualBound = '1';
         sel.addEventListener('change', () => syncManualInputsFromSelected(base));
       }
+
       syncManualInputsFromSelected(base);
     }
 
@@ -233,12 +401,14 @@
         chip.innerHTML = `<span>Captain: ${PNS.escapeHtml(captain.name)} (${PNS.escapeHtml(captain.tier)})</span><button type="button" data-base-remove-player="${base.id}" data-player-id="${captain.id}" aria-label="Remove captain">×</button>`;
         chipList.appendChild(chip);
       }
+
       helpers.forEach((p) => {
         const chip = document.createElement('div');
         chip.className = 'mini-chip';
         chip.innerHTML = `<span>${PNS.escapeHtml(p.name)} (${PNS.escapeHtml(p.tier)})</span><button type="button" data-base-remove-player="${base.id}" data-player-id="${p.id}" aria-label="Remove helper">×</button>`;
         chipList.appendChild(chip);
       });
+
       if (!captain && !helpers.length) {
         const empty = document.createElement('div');
         empty.className = 'muted small';
@@ -250,68 +420,133 @@
     if (typeof PNS.syncBaseEditorSettingsInputs === 'function') PNS.syncBaseEditorSettingsInputs(base);
   }
 
+  // ===== Update cards =====
   function updateBaseCard(base) {
+    resolveBaseEls(base);
     const card = base.cardEl;
+    if (!card) return;
+
+    ensureRenderVisualTweaks();
+    ensureBaseCardTopEditPanel(base);
+    const headTitle = card.querySelector('.base-card-head h3');
+    if (headTitle) headTitle.textContent = displayBaseTitle(headTitle.textContent);
+
     const captain = base.captainId ? state.playerById.get(base.captainId) : null;
     const helpers = base.helperIds.map((id) => state.playerById.get(id)).filter(Boolean);
+
     PNS.applyBaseRoleUI(base, captain?.role || null);
 
     const nameEl = $('.captain-name', card);
     const metaEl = $('.captain-meta', card);
 
-    if (captain) {
-      nameEl.textContent = captain.name;
-      metaEl.textContent = `${captain.alliance || '—'} · ${captain.tier || '—'} · ${captain.shiftLabel || '—'}`;
-      nameEl.classList.remove('captain-empty');
-    } else {
-      nameEl.textContent = '— Капітан не обраний —';
-      metaEl.textContent = `Type auto by captain · ${base.shift === 'both' ? 'Both' : base.shift.replace('shift', 'Shift ')}`;
-      nameEl.classList.add('captain-empty');
+    if (nameEl && metaEl) {
+      if (captain) {
+        nameEl.textContent = captain.name;
+        metaEl.textContent = `${captain.alliance || '—'} · ${captain.tier || '—'} · ${captain.shiftLabel || '—'}`;
+        nameEl.classList.remove('captain-empty');
+      } else {
+        nameEl.textContent = '— Капітан не обраний —';
+        metaEl.textContent = `Type auto by captain · ${base.shift === 'both' ? 'Both' : base.shift.replace('shift', 'Shift ')}`;
+        nameEl.classList.add('captain-empty');
+      }
+    }
+    ensureCaptainInlineEditButton(base, captain);
+
+    // Optional "Plan / Plan" block (newer card layout)
+    const planShiftEl = $('.captain-shift', card) || $('[data-plan-shift]', card);
+    const planCountEl = $('.captain-count', card) || $('[data-plan-count]', card);
+    if (planShiftEl) {
+      const activeShiftLabel = state.activeShift === 'shift1' ? 'Shift 1' : (state.activeShift === 'shift2' ? 'Shift 2' : 'Both');
+      planShiftEl.textContent = captain ? `🕒 ${activeShiftLabel}` : '—';
+    }
+    if (planCountEl) {
+      planCountEl.textContent = String((captain ? 1 : 0) + helpers.length);
     }
 
     const captainMarch = captain?.march || 0;
-    const helpersSum = helpers.reduce((s, p) => s + helperMarchForBase(base, p), 0);
-    const total = captainMarch + helpersSum;
-    const limit = captain ? (((captain.rally || 0) + (captain.march || 0)) || captain.march || 0) : 0;
-    const over = !!(limit && total > limit);
+    // Helpers contribute their current march (or capped contribution if such helper exists globally)
+    const helperContribution = (p) => {
+      try {
+        if (typeof PNS.getTowerEffectiveMarch === 'function') return Number(PNS.getTowerEffectiveMarch(base, p)) || 0;
+        if (typeof PNS.getEffectiveTowerMarch === 'function') return Number(PNS.getEffectiveTowerMarch(base, p)) || 0;
+        if (typeof PNS.getEffectiveMarchForBase === 'function') return Number(PNS.getEffectiveMarchForBase(base, p)) || 0;
+      } catch {}
+      return Number(p?.march || 0) || 0;
+    };
+    const helpersSum = helpers.reduce((s, p) => s + helperContribution(p), 0);
+    const rallySize = captain?.rally || 0; // helpers capacity only
+    const total = captainMarch + helpersSum; // requested: actual helpers sum + captain march
+    const capacityTotal = captainMarch + rallySize; // captain + helper capacity
+    const freeSpace = Math.max(0, capacityTotal - total);
+    const over = !!(capacityTotal && total > capacityTotal);
 
     const statDivs = $$('.limit-grid > div', card);
-    if (statDivs[0]) $('strong', statDivs[0]).textContent = PNS.formatNum(captainMarch);
-    if (statDivs[1]) $('strong', statDivs[1]).textContent = PNS.formatNum(helpersSum);
-    if (statDivs[2]) $('strong', statDivs[2]).textContent = PNS.formatNum(total);
-    if (statDivs[3]) $('strong', statDivs[3]).textContent = PNS.formatNum(limit);
+    const setStat = (labelRegex, value, warn = false) => {
+      const box = statDivs.find((d) => {
+        const label = (d.querySelector('span')?.textContent || d.textContent || '').trim();
+        return labelRegex.test(label);
+      });
+      const strong = box ? $('strong', box) : null;
+      if (!strong) return;
+      strong.textContent = PNS.formatNum(value);
+      strong.classList.toggle('warn-text', !!warn);
+    };
+
+    // Supports both old and new card layouts by label text
+    setStat(/captain\s*march/i, captainMarch);
+    setStat(/rally/i, rallySize);
+    setStat(/total/i, total, over);
+    setStat(/free\s*space/i, freeSpace, over);
+    // Backward compatibility if some cards still show Helpers / Limit
+    setStat(/helpers/i, helpersSum);
+    setStat(/limit/i, capacityTotal, over);
 
     card.classList.toggle('is-over-limit', over);
-    if (statDivs[2]) $('strong', statDivs[2]).classList.toggle('warn-text', over);
-    if (statDivs[3]) $('strong', statDivs[3]).classList.toggle('warn-text', over);
 
     const tbody = $('.helpers-table-wrap tbody', card);
     if (tbody) {
       tbody.innerHTML = '';
       if (!helpers.length) {
         const tr = document.createElement('tr');
-        tr.innerHTML = '<td colspan="4" class="muted">No helpers assigned</td>';
+        const cols = (tbody.closest('table')?.querySelectorAll('thead th')?.length) || 4;
+        tr.innerHTML = `<td colspan="${cols}" class="muted">No helpers assigned</td>`;
         tbody.appendChild(tr);
       } else {
-        helpers.slice().sort((a, b) => b.tierRank - a.tierRank || b.march - a.march).forEach((p) => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${PNS.escapeHtml(p.name)}</td><td>${PNS.escapeHtml(p.alliance)}</td><td>${PNS.escapeHtml(p.tier)}</td><td>${PNS.formatNum(helperMarchForBase(base, p))}</td>`;
-          tbody.appendChild(tr);
-        });
+        helpers
+          .slice()
+          .sort((a, b) => b.tierRank - a.tierRank || b.march - a.march)
+          .forEach((p) => {
+            const tr = document.createElement('tr');
+            const eff = helperContribution(p);
+            const hasEditCol = ((tbody.closest('table')?.querySelectorAll('thead th')?.length) || 4) >= 5;
+            tr.innerHTML = hasEditCol
+              ? `<td>${PNS.escapeHtml(p.name)}</td><td>${PNS.escapeHtml(p.alliance)}</td><td>${PNS.escapeHtml(p.tier)}</td><td>${PNS.formatNum(eff)}</td><td><button type="button" class="btn btn-xs btn-icon" data-edit-assigned-player="${PNS.escapeHtml(p.id)}" data-base-id="${PNS.escapeHtml(base.id)}" aria-label="Edit player">✎</button></td>`
+              : `<td>${PNS.escapeHtml(p.name)}</td><td>${PNS.escapeHtml(p.alliance)}</td><td>${PNS.escapeHtml(p.tier)}</td><td>${PNS.formatNum(eff)}</td>`;
+            tbody.appendChild(tr);
+          });
       }
     }
+
     renderBaseEditor(base);
+    renderQuotaRow(base);
   }
 
   function updateBoardCol(base) {
+    resolveBaseEls(base);
     if (!base.boardEl) return;
+
     const col = base.boardEl;
     const captain = base.captainId ? state.playerById.get(base.captainId) : null;
     const helpers = base.helperIds.map((id) => state.playerById.get(id)).filter(Boolean);
-    const total = (captain?.march || 0) + helpers.reduce((s, p) => s + p.march, 0);
+
+    const total = (captain?.march || 0) + helpers.reduce((s, p) => s + helperMarchForBase(base, p), 0);
     const limit = captain ? (((captain.rally || 0) + (captain.march || 0)) || captain.march || 0) : 0;
 
     PNS.setRoleTheme(col, captain?.role || null, false);
+
+    const titleEl = col.querySelector('h4');
+    if (titleEl) titleEl.textContent = displayBaseTitle(titleEl.textContent);
+
     const sub = $('.board-sub', col);
     if (sub) {
       sub.classList.toggle('is-auto', !captain);
@@ -319,7 +554,7 @@
     }
 
     const cap = $('.board-cap', col);
-    if (cap) cap.innerHTML = `${PNS.formatNum(total)} <span>${PNS.formatNum(limit)}</span>`;
+    if (cap) cap.innerHTML = `${PNS.formatNum(limit)} <span>${PNS.formatNum(total)}</span>`;
 
     const ul = $('ul', col);
     if (!ul) return;
@@ -332,12 +567,15 @@
       ul.appendChild(li);
     }
 
-    helpers.slice().sort((a, b) => b.tierRank - a.tierRank || b.march - a.march).forEach((p) => {
-      const li = document.createElement('li');
-      li.className = 'helper-row';
-      li.innerHTML = `<span>${PNS.escapeHtml(p.name)}</span><em>${PNS.escapeHtml(p.alliance)}</em><b>${PNS.escapeHtml(p.tier)}</b><strong>${PNS.formatNum(helperMarchForBase(base, p))}</strong>`;
-      ul.appendChild(li);
-    });
+    helpers
+      .slice()
+      .sort((a, b) => b.tierRank - a.tierRank || b.march - a.march)
+      .forEach((p) => {
+        const li = document.createElement('li');
+        li.className = 'helper-row';
+        li.innerHTML = `<span>${PNS.escapeHtml(p.name)}</span><em>${PNS.escapeHtml(p.alliance)}</em><b>${PNS.escapeHtml(p.tier)}</b><strong>${PNS.formatNum(helperMarchForBase(base, p))}</strong>`;
+        ul.appendChild(li);
+      });
 
     if (!captain && !helpers.length) {
       const li = document.createElement('li');
@@ -348,6 +586,7 @@
   }
 
   function updatePlayerRows() {
+    // ensure rowEl are alive (players_parse.js now handles relink)
     state.players.forEach((p) => {
       p.rowEl?.classList?.toggle('is-assigned', !!p.assignment);
       p.rowEl?.classList?.toggle('is-captain', p.assignment?.kind === 'captain');
@@ -358,29 +597,33 @@
       }
       const base = state.baseById.get(p.assignment.baseId);
       const baseName = (base?.title || '').split('/')[0].trim();
-      if (typeof PNS.setRowStatus === 'function') PNS.setRowStatus(p, `${p.assignment.kind === 'captain' ? 'Captain' : 'Helper'} → ${baseName}`, 'good');
+      if (typeof PNS.setRowStatus === 'function') {
+        PNS.setRowStatus(p, `${p.assignment.kind === 'captain' ? 'Captain' : 'Helper'} → ${baseName}`, 'good');
+      }
     });
   }
 
-  function applyPlayerTableFiltersShim() {
-    if (typeof PNS.applyPlayerTableFilters === 'function') PNS.applyPlayerTableFilters();
-  }
-
   function renderAll() {
+    // Rebind base els in case of swaps
+    state.bases.forEach(resolveBaseEls);
+
     state.bases.forEach(updateBaseCard);
     state.bases.forEach(updateBoardCol);
     updatePlayerRows();
-    applyPlayerTableFiltersShim();
+
+    if (typeof PNS.applyPlayerTableFilters === 'function') PNS.applyPlayerTableFilters();
   }
 
   function renderPlayersTableFromState() {
-    const table = PNS.controls.playersDataTable || document.querySelector('#playersDataTable');
+    const table = getPlayersTable();
     if (!table) return;
+
     let theadRow = table.querySelector('thead tr');
     if (!theadRow) {
       table.innerHTML = '<thead><tr></tr></thead><tbody></tbody>';
       theadRow = table.querySelector('thead tr');
     }
+
     theadRow.innerHTML = `
       <th data-field="name">Player name</th>
       <th class="optional-col" data-col-key="alliance" data-field="alliance">Alliance</th>
@@ -396,18 +639,31 @@
       <th data-field="shiftLabel">Shift</th>
       <th class="optional-col" data-col-key="notes" data-field="notes">Notes</th>
       <th data-col-key="actions" data-field="actions">Actions</th>`;
+
     const tbody = table.querySelector('tbody') || table.appendChild(document.createElement('tbody'));
     tbody.innerHTML = '';
 
     state.playerById = new Map();
+
     state.players.forEach((p, idx) => {
-      if (!p.id) p.id = `p${idx+1}`;
+      if (!p.id) p.id = `p${idx + 1}`;
       p.assignment = p.assignment || null;
       p.rowEl = null;
       p.actionCellEl = null;
 
+      p.shift = PNS.normalizeShiftValue(p.shift || p.shiftLabel || 'both');
+      p.shiftLabel = PNS.formatShiftLabelForCell(p.shift);
+      p.role = PNS.normalizeRole(p.role);
+      p.tier = PNS.normalizeTierText(p.tier);
+      p.tierRank = PNS.tierRank(p.tier);
+      p.march = PNS.parseNumber(p.march);
+      p.rally = PNS.parseNumber(p.rally);
+      p.captainReady = !!p.captainReady;
+
       const tr = document.createElement('tr');
       tr.dataset.playerId = p.id;
+      tr.dataset.shift = p.shift || 'both';
+
       tr.innerHTML = `
         <td data-field="name">${PNS.escapeHtml(p.name || '')}</td>
         <td class="optional-col" data-col-key="alliance" data-field="alliance">${PNS.escapeHtml(p.alliance || '')}</td>
@@ -420,30 +676,25 @@
         <td class="optional-col" data-col-key="secondary_tier" data-field="secondary_tier">${PNS.escapeHtml(PNS.normalizeTierText(p.secondaryTier || ''))}</td>
         <td class="optional-col" data-col-key="troop_200k" data-field="troop_200k">${PNS.escapeHtml(String(p.troop200k || ''))}</td>
         <td class="optional-col" data-col-key="captain_ready" data-field="captainReady">${p.captainReady ? '<span class="pill yes">Yes</span>' : '<span class="pill no">No</span>'}</td>
-        <td data-field="shiftLabel">${PNS.escapeHtml(PNS.formatShiftLabelForCell(p.shift || 'both'))}</td>
+        <td data-field="shiftLabel">${PNS.escapeHtml(p.shiftLabel)}</td>
         <td class="optional-col" data-col-key="notes" data-field="notes">${PNS.escapeHtml(String(p.notes || ''))}</td>
         <td class="muted" data-col-key="actions" data-field="actions"></td>`;
+
       tbody.appendChild(tr);
 
       p.rowEl = tr;
       p.actionCellEl = tr.querySelector('td[data-field="actions"]');
-      p.shift = PNS.normalizeShiftValue(p.shift || p.shiftLabel || 'both');
-      p.shiftLabel = PNS.formatShiftLabelForCell(p.shift);
-      tr.dataset.shift = p.shift || 'both';
-      p.role = PNS.normalizeRole(p.role);
-      p.tier = PNS.normalizeTierText(p.tier);
-      p.tierRank = PNS.tierRank(p.tier);
-      p.march = PNS.parseNumber(p.march);
-      p.rally = PNS.parseNumber(p.rally);
-      p.captainReady = !!p.captainReady;
 
       state.playerById.set(p.id, p);
     });
 
     if (typeof PNS.applyColumnVisibility === 'function') PNS.applyColumnVisibility(state.showAllColumns);
+
+    // let others know the table is rebuilt
     try { document.dispatchEvent(new CustomEvent('players-table-rendered')); } catch {}
   }
 
+  // expose
   PNS.getBaseEditorCandidates = getBaseEditorCandidates;
   PNS.syncManualInputsFromSelected = syncManualInputsFromSelected;
   PNS.saveManualPlayerFromBaseEditor = saveManualPlayerFromBaseEditor;
@@ -455,5 +706,11 @@
 
   PNS.renderPlayersTableFromState = renderPlayersTableFromState;
   PNS.renderAll = renderAll;
+
+  // after partial swap refresh: try to repaint using live DOM
+  document.addEventListener('pns:dom:refreshed', () => {
+    // if DOM changed, base elements may need rebind; just rerender safely
+    try { renderAll(); } catch (e) { console.error(e); }
+  });
 
 })();

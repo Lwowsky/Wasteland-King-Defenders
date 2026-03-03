@@ -44,67 +44,11 @@
   }
 
   function makeBaseEditorsCollapsible() {
+    // vNext: old inline editor row is deprecated; tower editing is moved to the 5-towers modal.
     $$('.base-editor').forEach(ed => {
-      if (ed.dataset.v4Wrapped) return;
-      ed.dataset.v4Wrapped = '1';
-
-      const details = document.createElement('details');
-      details.className = 'base-editor-details';
-      details.open = false;
-      details.innerHTML = '<summary>Редагувати башню / Edit tower</summary>';
-
-      const wrapper = document.createElement('div');
-      wrapper.className = 'base-editor-two-col';
-
-      const left = document.createElement('div');
-      left.className = 'base-editor-left';
-
-      const right = document.createElement('div');
-      right.className = 'base-editor-right';
-
-      const card = ed.closest('.base-card');
-      const ds = (card && card.dataset) ? card.dataset : {};
-
-      const rows = $$('.editor-row, .editor-status, .editor-manual', ed);
-      rows.forEach((node) => {
-        left.appendChild(node);
-      });
-
-      right.innerHTML = `
-        <div class="tower-settings-box">
-          <h4>Налаштування башні</h4>
-          <label class="tower-setting-line">
-            <span>Max helpers (без капітана)</span>
-            <input type="number" min="0" step="1" data-v4-maxhelpers value="${ds.baseMaxHelpers || 29}">
-          </label>
-
-          <div class="tower-setting-grid">
-            <label class="tier-row"><span>T14</span><input type="number" min="0" data-v4-tier="T14" value="${ds.tierMinT14 || 0}"></label>
-            <label class="tier-row"><span>T13</span><input type="number" min="0" data-v4-tier="T13" value="${ds.tierMinT13 || 0}"></label>
-            <label class="tier-row"><span>T12</span><input type="number" min="0" data-v4-tier="T12" value="${ds.tierMinT12 || 0}"></label>
-            <label class="tier-row"><span>T11</span><input type="number" min="0" data-v4-tier="T11" value="${ds.tierMinT11 || 0}"></label>
-            <label class="tier-row"><span>T10</span><input type="number" min="0" data-v4-tier="T10" value="${ds.tierMinT10 || 0}"></label>
-            <label class="tier-row"><span>T9</span><input type="number" min="0" data-v4-tier="T9" value="${ds.tierMinT9 || 0}"></label>
-          </div>
-
-          <div class="muted small">
-            Тут задається мінімальний March size для конкретного Tier. Якщо 0 — без обмеження.
-          </div>
-        </div>`;
-
-      wrapper.appendChild(left);
-      wrapper.appendChild(right);
-      details.appendChild(wrapper);
-      ed.appendChild(details);
-    });
-
-    // move editor closer to captain box
-    $$('.base-card').forEach(card => {
-      const cap = $('.captain-box', card);
-      const ed = $('.base-editor', card);
-      if (cap && ed && cap.nextElementSibling !== ed) {
-        cap.insertAdjacentElement('afterend', ed);
-      }
+      ed.style.display = 'none';
+      const det = ed.querySelector('.base-editor-details');
+      if (det) det.remove();
     });
   }
 
@@ -133,6 +77,30 @@
           else { await navigator.clipboard.writeText(boardUrl); alert('Посилання скопійовано'); }
         } catch { }
       });
+    });
+
+
+    if (!document.documentElement.dataset.v4TowerResetBound) {
+      document.documentElement.dataset.v4TowerResetBound = '1';
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-v4-reset-tier-limits]');
+        if (!btn) return;
+        e.preventDefault();
+        const box = btn.closest('.tower-settings-box');
+        if (!box) return;
+        box.querySelectorAll('input[data-v4-tier]').forEach((inp) => {
+          inp.value = '0';
+          inp.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        box.querySelectorAll('input[data-v4-tier]').forEach((inp) => {
+          inp.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      });
+    }
+
+    // Rename Central Base -> Hub (runtime fallback)
+    $$('.base-card-head h3, #board-modal h4').forEach((el) => {
+      el.textContent = String(el.textContent || '').replace(/\bCentral\s*Base\b/i, 'Hub').replace(/\bCentral\s*base\b/i, 'Hub');
     });
 
     // cleanup
