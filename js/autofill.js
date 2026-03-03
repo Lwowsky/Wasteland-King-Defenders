@@ -5,7 +5,20 @@
   function num(x) { return Number.isFinite(+x) ? +x : 0; }
   function uniqPush(arr, id) { if (!arr.includes(id)) arr.push(id); }
 
+  function syncBaseRuleFromStore(base) {
+    if (!base || !base.id) return;
+    try {
+      if (typeof PNS.getBaseTowerRule !== 'function') return;
+      const rule = PNS.getBaseTowerRule(base.id);
+      if (!rule) return;
+      base.maxHelpers = Number(rule.maxHelpers ?? base.maxHelpers ?? 29) || 29;
+      base.tierMinMarch = { ...(base.tierMinMarch || {}), ...(rule.tierMinMarch || {}) };
+    } catch {}
+  }
+
+
   function getBaseTierMinMarch(base, tierKey) {
+    syncBaseRuleFromStore(base);
     const k = String(tierKey || '').toUpperCase();
     return PNS.clampInt(base?.tierMinMarch?.[k], 0);
   }
@@ -15,6 +28,24 @@
   function getTowerEffectiveMarch(base, player) {
     if (!player) return 0;
     const raw = num(player.march);
+
+    // Per-player manual override for a конкретна башня (helper only).
+    // Persists for this tower until helper is removed/clearBase resets overrides.
+    try {
+      if (base) {
+        let ov = NaN;
+        const hasByBaseOverride = !!(player.towerMarchOverrideByBase && typeof player.towerMarchOverrideByBase === 'object' && player.towerMarchOverrideByBase[base.id] != null);
+        if (hasByBaseOverride) {
+          ov = Number(player.towerMarchOverrideByBase[base.id]);
+        } else if (player.assignment && player.assignment.baseId === base.id && player.assignment.kind === 'helper' && player.towerMarchOverride != null) {
+          // legacy fallback: only trust global override while helper is already assigned to this base
+          ov = Number(player.towerMarchOverride);
+        }
+        const assignedAsCaptainHere = !!(player.assignment && player.assignment.baseId === base.id && player.assignment.kind === 'captain');
+        if (!assignedAsCaptainHere && Number.isFinite(ov) && ov > 0) return ov;
+      }
+    } catch {}
+
     const cap = getBaseTierMinMarch(base, player.tier);
     return cap > 0 ? Math.min(raw, cap) : raw;
   }
@@ -67,6 +98,7 @@
   function autoFillBase(baseId) {
     const base = state.baseById?.get?.(baseId);
     if (!base) return { added: 0, reason: 'Base not found' };
+    syncBaseRuleFromStore(base);
 
     // нормалізуємо структуру
     if (!Array.isArray(base.helperIds)) base.helperIds = [];

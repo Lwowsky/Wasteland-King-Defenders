@@ -92,12 +92,13 @@
       PNS.applyColumnVisibility(showAll);
     }
 
-    const shiftSaved = (() => {
-      try { return localStorage.getItem(PNS.KEYS.KEY_SHIFT_FILTER) || state.activeShift || 'shift2'; }
-      catch { return state.activeShift || 'shift2'; }
-    })();
+    // UX request: always open the page on Shift 1 after refresh.
+    const shiftSaved = 'shift1';
+    state.activeShift = 'shift1';
+    try { localStorage.setItem(PNS.KEYS.KEY_SHIFT_FILTER, 'shift1'); } catch {}
     PNS.applyShiftFilter?.(shiftSaved);
     PNS.applyPlayerTableFilters?.();
+    setTimeout(() => { try { state.activeShift = 'shift1'; PNS.applyShiftFilter?.('shift1'); PNS.applyPlayerTableFilters?.(); } catch {} }, 0);
 
     if (location.hash === '#settings-modal') PNS.openModal?.('settings');
     if (location.hash === '#board-modal') PNS.openModal?.('board');

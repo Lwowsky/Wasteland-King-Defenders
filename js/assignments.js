@@ -37,6 +37,12 @@
 
     if (player.assignment.kind === 'helper') {
       base.helperIds = base.helperIds.filter((id) => id !== player.id);
+      try {
+        if (player.towerMarchOverrideByBase && typeof player.towerMarchOverrideByBase === 'object') {
+          delete player.towerMarchOverrideByBase[base.id];
+        }
+        delete player.towerMarchOverride;
+      } catch {}
     }
 
     player.assignment = null;
@@ -48,6 +54,7 @@
 
     const ignoreShiftAutoFill = !!document.querySelector('#ignoreShiftAutoFillToggle:checked');
     if (
+      kind === 'helper' &&
       !ignoreShiftAutoFill &&
       base.shift !== 'both' &&
       player.shift !== 'both' &&
@@ -112,6 +119,10 @@
 
       base.captainId = player.id;
       player.assignment = { baseId: base.id, kind: 'captain' };
+      try {
+        if (player.towerMarchOverrideByBase && typeof player.towerMarchOverrideByBase === 'object') delete player.towerMarchOverrideByBase[base.id];
+        delete player.towerMarchOverride;
+      } catch {}
       if (typeof PNS.applyBaseRoleUI === 'function') PNS.applyBaseRoleUI(base, player.role);
 
       if (prevRole && prevRole !== player.role) {
@@ -164,7 +175,16 @@
 
     base.helperIds.forEach((id) => {
       const hp = state.playerById.get(id);
-      if (hp) hp.assignment = null;
+      if (hp) {
+        hp.assignment = null;
+        try {
+          if (hp.towerMarchOverrideByBase && typeof hp.towerMarchOverrideByBase === 'object') {
+            delete hp.towerMarchOverrideByBase[base.id];
+          }
+          if (hp.assignment?.baseId === base.id) delete hp.towerMarchOverride;
+          else delete hp.towerMarchOverride; // legacy global override should not survive clear
+        } catch {}
+      }
     });
     base.helperIds = [];
 
@@ -183,6 +203,10 @@
 
     if (base.helperIds.includes(p.id)) {
       base.helperIds = base.helperIds.filter((id) => id !== p.id);
+      try {
+        if (p.towerMarchOverrideByBase && typeof p.towerMarchOverrideByBase === 'object') delete p.towerMarchOverrideByBase[base.id];
+        delete p.towerMarchOverride;
+      } catch {}
       p.assignment = null;
       if (typeof PNS.renderAll === 'function') PNS.renderAll();
       return true;

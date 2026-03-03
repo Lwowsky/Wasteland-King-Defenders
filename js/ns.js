@@ -38,7 +38,7 @@
   const state = {
     activeModal: null,
     showAllColumns: false,
-    activeShift: 'shift2',
+    activeShift: 'shift1',
     players: [],
     playerById: new Map(),
     bases: [],

@@ -254,3 +254,81 @@ body.modal-open { overflow: hidden; }
 #pnsActionModal .stack input,#pnsActionModal .stack select{
   width:100%;
 }
+
+
+/* Settings card: 5 towers preview (3-column layout) */
+.shift-towers-preview{
+  margin-top: 12px;
+  padding: 12px 10px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  background:
+    radial-gradient(120% 120% at 50% 0%, rgba(91,140,255,.08), transparent 55%),
+    rgba(255,255,255,.015);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  grid-template-rows: auto auto auto;
+  gap: 10px 8px;
+  align-items: start;
+}
+
+.tower-slot{ display:flex; justify-content:center; }
+.tower-slot-north{ grid-column: 2; grid-row: 1; }
+.tower-slot-west{ grid-column: 1; grid-row: 2; }
+.tower-slot-hub{ grid-column: 2; grid-row: 2; }
+.tower-slot-east{ grid-column: 3; grid-row: 2; }
+.tower-slot-south{ grid-column: 2; grid-row: 3; }
+
+.tower-thumb-card{
+  margin: 0;
+  width: min(100%, 150px);
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 8px 6px 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.06);
+  background: rgba(255,255,255,.02);
+  transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+.tower-thumb-card:hover{
+  transform: translateY(-1px);
+  border-color: rgba(255,170,90,.22);
+  background: rgba(255,255,255,.03);
+}
+.tower-thumb-card-hub{
+  border-color: rgba(255,170,90,.16);
+  box-shadow: inset 0 0 0 1px rgba(255,170,90,.06);
+}
+
+.tower-thumb-img{
+  width: min(100%, 90px);
+  height: auto;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,.38));
+}
+.tower-thumb-img-hub{
+  width: min(100%, 108px);
+}
+
+.tower-thumb-name{
+  color: #dbe6ff;
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+@media (max-width: 640px){
+  .shift-towers-preview{
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    grid-template-rows: none;
+  }
+  .tower-slot-north{ grid-column: 1 / -1; grid-row: auto; }
+  .tower-slot-west{ grid-column: 1; grid-row: auto; }
+  .tower-slot-hub{ grid-column: 2; grid-row: auto; }
+  .tower-slot-east{ grid-column: 1; grid-row: auto; }
+  .tower-slot-south{ grid-column: 2; grid-row: auto; }
+}

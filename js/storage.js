@@ -44,6 +44,13 @@
 
   // ===== Base tower rules store =====
   function getEmptyTierMinMarch() { return { T14: 0, T13: 0, T12: 0, T11: 0, T10: 0, T9: 0 }; }
+  function normalizeRuleShift(shift) {
+    const s = String(shift || state.activeShift || 'shift1').toLowerCase();
+    return (s === 'shift1' || s === 'shift2') ? s : 'shift1';
+  }
+  function baseTowerRuleStoreKey(baseId, shift) {
+    return `${normalizeRuleShift(shift)}::${String(baseId || '')}`;
+  }
 
   function normalizeBaseTowerRule(rule) {
     const src = rule || {};
@@ -68,13 +75,21 @@
   function saveBaseTowerRulesStore() {
     safeWriteJSON(KEYS.KEY_BASE_TOWER_RULES, state.baseTowerRules || {});
   }
-  function getBaseTowerRule(baseId) {
-    return normalizeBaseTowerRule((state.baseTowerRules || {})[baseId] || {});
+  function getBaseTowerRule(baseId, opts = {}) {
+    const shift = normalizeRuleShift(opts.shift || state.activeShift || 'shift1');
+    const store = (state.baseTowerRules || {});
+    const key = baseTowerRuleStoreKey(baseId, shift);
+    // Fallback to legacy unscoped key for migration compatibility
+    const src = store[key] || store[baseId] || {};
+    return normalizeBaseTowerRule(src);
   }
   function setBaseTowerRule(baseId, rule, opts = {}) {
     const normalized = normalizeBaseTowerRule(rule);
     if (!state.baseTowerRules || typeof state.baseTowerRules !== 'object') state.baseTowerRules = {};
-    state.baseTowerRules[baseId] = normalized;
+    const shift = normalizeRuleShift(opts.shift || state.activeShift || 'shift1');
+    const key = baseTowerRuleStoreKey(baseId, shift);
+    state.baseTowerRules[key] = normalized;
+    // Optional migration cleanup: keep legacy key untouched (read fallback still works)
     if (opts.persist !== false) saveBaseTowerRulesStore();
 
     const base = state.baseById?.get(baseId);
@@ -148,6 +163,8 @@
       rowEl: null,
       actionCellEl: null,
       assignment: p.assignment || null,
+      towerMarchOverride: (p.towerMarchOverride != null ? Number(p.towerMarchOverride || 0) : null),
+      towerMarchOverrideByBase: (p.towerMarchOverrideByBase && typeof p.towerMarchOverrideByBase === 'object') ? Object.fromEntries(Object.entries(p.towerMarchOverrideByBase).map(([k,v]) => [String(k), Number(v||0)])) : null,
     };
   }
 
@@ -194,6 +211,8 @@
   PNS.safeWriteJSON = safeWriteJSON;
 
   PNS.getEmptyTierMinMarch = getEmptyTierMinMarch;
+  PNS.normalizeRuleShift = normalizeRuleShift;
+  PNS.baseTowerRuleStoreKey = baseTowerRuleStoreKey;
   PNS.normalizeBaseTowerRule = normalizeBaseTowerRule;
   PNS.loadBaseTowerRulesStore = loadBaseTowerRulesStore;
   PNS.saveBaseTowerRulesStore = saveBaseTowerRulesStore;

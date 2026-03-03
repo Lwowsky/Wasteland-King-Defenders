@@ -50,17 +50,39 @@ function displayBaseTitle(text) {
   return String(text || '').replace(/\bCentral\s*Base\b/i, 'Hub').replace(/\bCentral\s*base\b/i, 'Hub');
 }
 
+function syncBaseRuleFromStore(base) {
+  if (!base || !base.id) return;
+  try {
+    if (typeof PNS.getBaseTowerRule !== 'function') return;
+    const rule = PNS.getBaseTowerRule(base.id);
+    if (!rule) return;
+    base.maxHelpers = Number(rule.maxHelpers ?? base.maxHelpers ?? 29) || 29;
+    base.tierMinMarch = { ...(base.tierMinMarch || {}), ...(rule.tierMinMarch || {}) };
+  } catch {}
+}
+
 function ensureRenderVisualTweaks() {
-  if (document.documentElement.dataset.pnsRenderTweaksV3 === '1') return;
-  document.documentElement.dataset.pnsRenderTweaksV3 = '1';
+  if (document.documentElement.dataset.pnsRenderTweaksV4 === '1') return;
+  document.documentElement.dataset.pnsRenderTweaksV4 = '1';
   const st = document.createElement('style');
-  st.id = 'pns-render-tweaks-v3';
+  st.id = 'pns-render-tweaks-v4';
   st.textContent = `
     .captain-name-row{display:flex;align-items:center;gap:10px;width:100%;}
     .captain-name-row .captain-name{flex:1 1 auto;margin:0;}
-    .captain-name-row .btn-icon{min-width:44px;height:44px;border-radius:16px;display:inline-flex;align-items:center;justify-content:center;}
+    .captain-name-row .btn-icon{min-width:44px;height:44px;border-radius:16px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}
+    .captain-grid{grid-template-columns:minmax(0,1fr) minmax(0,.74fr) minmax(0,1fr) !important;align-items:stretch;width:100%;box-sizing:border-box;overflow:hidden;}
+    .captain-grid .captain-col{min-width:0;}
+    .captain-col-edit .captain-main{min-width:0;overflow:hidden;}
+    .captain-col-edit [data-open-picker-base]{width:100%;max-width:100%;white-space:normal;line-height:1.2;text-align:center;padding:10px;overflow:hidden;text-overflow:ellipsis;}
+    .captain-col-edit .captain-meta{word-break:break-word;}
     .board-col li.captain-row{background:rgba(246, 179, 26, .14);}
     .board-col li.captain-row strong{color:#9a5a00 !important;}
+    .captain-col-edit .btn{max-width:100%;overflow:hidden;text-overflow:ellipsis;}
+    .board-col .board-cap{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center;}
+    .board-col .board-cap .cap-pill{display:inline-flex;align-items:center;justify-content:center;padding:2px 8px;border-radius:4px;font-weight:700;line-height:1.2;}
+    .board-col .board-cap .cap-capacity{background:#d8c8aa;color:#30291c;}
+    .board-col .board-cap .cap-free{background:#bfd8ef;color:#133048;}
+    .board-col .board-cap .cap-total{background:#f1a415;color:#241400;}
     .base-editor-details{display:none !important;}
   `;
   document.head.appendChild(st);
@@ -77,7 +99,7 @@ function ensureBaseCardTopEditPanel(base) {
   if (!grid.dataset.pnsThreeCol) {
     grid.dataset.pnsThreeCol = '1';
     try {
-      grid.style.gridTemplateColumns = 'minmax(0,1fr) minmax(0,1fr) minmax(220px,.9fr)';
+      grid.style.gridTemplateColumns = 'minmax(0,1fr) minmax(0,.74fr) minmax(0,1fr)';
       grid.style.gap = '12px';
       grid.style.alignItems = 'stretch';
     } catch {}
@@ -131,22 +153,33 @@ function ensureCaptainInlineEditButton(base, captain) {
     nameRow.appendChild(btn);
   }
 
-  if (captain?.id && base?.id) {
+  if (base?.id) {
     btn.hidden = false;
     btn.disabled = false;
-    btn.dataset.editAssignedPlayer = String(captain.id);
-    btn.dataset.baseId = String(base.id);
+    if (captain?.id) {
+      btn.dataset.editAssignedPlayer = String(captain.id);
+      btn.dataset.baseId = String(base.id);
+      btn.removeAttribute('data-open-picker-base');
+      btn.title = 'Редагувати капітана';
+    } else {
+      btn.removeAttribute('data-edit-assigned-player');
+      btn.removeAttribute('data-base-id');
+      btn.dataset.openPickerBase = String(base.id);
+      btn.title = 'Вибрати капітана';
+    }
   } else {
-    btn.hidden = true;
+    btn.hidden = false;
     btn.disabled = true;
     btn.removeAttribute('data-edit-assigned-player');
     btn.removeAttribute('data-base-id');
+    btn.removeAttribute('data-open-picker-base');
   }
 }
 
   // ===== Quota row =====
   function renderQuotaRow(base) {
     resolveBaseEls(base);
+    syncBaseRuleFromStore(base);
     if (!base?.cardEl) return;
 
     const row = $('.quota-row', base.cardEl);
@@ -423,6 +456,7 @@ function ensureCaptainInlineEditButton(base, captain) {
   // ===== Update cards =====
   function updateBaseCard(base) {
     resolveBaseEls(base);
+    syncBaseRuleFromStore(base);
     const card = base.cardEl;
     if (!card) return;
 
@@ -533,6 +567,7 @@ function ensureCaptainInlineEditButton(base, captain) {
 
   function updateBoardCol(base) {
     resolveBaseEls(base);
+    syncBaseRuleFromStore(base);
     if (!base.boardEl) return;
 
     const col = base.boardEl;
@@ -554,7 +589,8 @@ function ensureCaptainInlineEditButton(base, captain) {
     }
 
     const cap = $('.board-cap', col);
-    if (cap) cap.innerHTML = `${PNS.formatNum(limit)} <span>${PNS.formatNum(total)}</span>`;
+    const freeBoard = Math.max(0, (limit || 0) - (total || 0));
+    if (cap) cap.innerHTML = `<span class="cap-pill cap-capacity">${PNS.formatNum(limit)}</span><span class="cap-pill cap-free">${PNS.formatNum(freeBoard)}</span><span class="cap-pill cap-total">${PNS.formatNum(total)}</span>`;
 
     const ul = $('ul', col);
     if (!ul) return;
@@ -603,11 +639,41 @@ function ensureCaptainInlineEditButton(base, captain) {
     });
   }
 
+  function ensureTopEditPanelsByDomScan() {
+    const known = new Set((state.bases || []).map((b) => String(b?.id || '')).filter(Boolean));
+    $$('.base-card[data-base-id], .base-card[data-baseid]').forEach((card) => {
+      const id = String(card.dataset.baseId || card.dataset.baseid || '');
+      if (!id || known.has(id)) return;
+      try {
+        const fakeBase = { id, cardEl: card, title: card.querySelector('.base-card-head h3')?.textContent || id };
+        ensureBaseCardTopEditPanel(fakeBase);
+        ensureCaptainInlineEditButton(fakeBase, null);
+      } catch {}
+    });
+  }
+
+  function ensureTopEditPanelsForAllBases() {
+    (state.bases || []).forEach((b) => {
+      try { ensureBaseCardTopEditPanel(b); } catch {}
+      try {
+        const c = b?.cardEl;
+        if (c) {
+          const editBtn = c.querySelector('[data-captain-edit-col] [data-open-picker-base]');
+          if (editBtn) editBtn.dataset.openPickerBase = String(b.id || c.dataset.baseId || c.dataset.baseid || '');
+        }
+      } catch {}
+    });
+  }
+
   function renderAll() {
     // Rebind base els in case of swaps
     state.bases.forEach(resolveBaseEls);
 
+    ensureTopEditPanelsForAllBases();
+    ensureTopEditPanelsByDomScan();
     state.bases.forEach(updateBaseCard);
+    ensureTopEditPanelsForAllBases();
+    ensureTopEditPanelsByDomScan();
     state.bases.forEach(updateBoardCol);
     updatePlayerRows();
 

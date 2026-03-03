@@ -40,7 +40,7 @@
     st.textContent = `
       .bases-grid > .base-settings-card{align-self:stretch;height:100%;}
       .base-settings-card .settings-tools-box{flex:1;display:flex;flex-direction:column;justify-content:flex-start;}
-      .tower-picker-modal .modal-card{width:min(1080px, calc(100vw - 18px));max-height:92vh;overflow:auto;border-radius:16px;}
+      .tower-picker-modal{z-index:30000 !important;} .tower-picker-modal .modal-card{width:min(1080px, calc(100vw - 18px));max-height:92vh;overflow:auto;border-radius:16px;} #board-modal{z-index:70000 !important;} #board-modal .modal-card{position:relative;z-index:1;} #board-modal .modal-backdrop{z-index:0;} #towerPlayerEditModal{z-index:80000 !important;} #towerPlayerEditModal .modal-card{z-index:1;position:relative;}
       .tower-picker-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;position:relative;}
       .tower-picker-head-center{display:flex;align-items:center;justify-content:center;gap:8px;justify-self:center;grid-column:2;}
       .tower-picker-head-left{text-align:left;}
@@ -48,8 +48,8 @@
       .tower-picker-head-left p{margin:4px 0 0;}
       .tower-picker-head .btn.shift-mini{min-width:84px;padding:7px 10px;}
       .tower-picker-head>[data-close-tower-picker]{justify-self:end;grid-column:3;}
-      .tower-picker-detail .picker-topline{display:grid;grid-template-columns:minmax(150px,280px) auto;gap:10px;align-items:center;}
-      .tower-picker-detail .picker-topline > select{min-width:150px;max-width:280px;width:100%;}
+      .tower-picker-detail .picker-meta-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:2px;} .tower-picker-detail .picker-only-captains{display:inline-flex;align-items:center;gap:8px;cursor:pointer;} .tower-picker-detail .picker-only-captains input{width:auto;height:auto;} .tower-picker-detail .picker-topline{display:grid;grid-template-columns:minmax(220px,360px) auto;gap:10px;align-items:center;}
+      .tower-picker-detail .picker-topline > select{min-width:180px;max-width:360px;width:100%;}
       .tower-picker-detail .picker-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
       .tower-picker-detail details.tower-collapsible{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02);} 
       .tower-picker-detail details.tower-collapsible>summary{cursor:pointer;list-style:none;padding:10px;font-weight:600;}
@@ -159,14 +159,18 @@
       }
 
       const btnPick = e.target.closest('#openTowerPickerBtn,[data-action="open-tower-picker"]');
-      if (btnPick) { e.preventDefault(); MS.openTowerPickerModal?.(); return; }
+      if (btnPick) { e.preventDefault(); try { if (!state._pnsShiftForcedOnce) { state._pnsShiftForcedOnce = true; PNS.applyShiftFilter?.('shift1'); } } catch {} MS.openTowerPickerModal?.(); return; }
 
       const btnOpenPickerBase = e.target.closest('[data-open-picker-base]');
       if (btnOpenPickerBase) {
         e.preventDefault();
-        const baseId = btnOpenPickerBase.dataset.openPickerBase || '';
+        let baseId = btnOpenPickerBase.dataset.openPickerBase || '';
+        if (!baseId) {
+          const card = btnOpenPickerBase.closest('.base-card');
+          baseId = card?.dataset?.baseId || card?.dataset?.baseid || '';
+        }
         if (baseId) state.towerPickerSelectedBaseId = baseId;
-        try { MS.focusTowerById?.(baseId); } catch {}
+        try { if (baseId) MS.focusTowerById?.(baseId); } catch {}
         MS.openTowerPickerModal?.();
         setTimeout(() => { try { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); } catch {} }, 20);
         return;
@@ -299,6 +303,7 @@
       if (pickerEditPlayer) {
         e.preventDefault();
         MS.openTowerPlayerEditModal?.(pickerEditPlayer.dataset.pickerEditBase, pickerEditPlayer.dataset.pickerEditPlayer);
+        try { const em = document.getElementById('towerPlayerEditModal'); if (em) em.style.zIndex = '80000'; } catch {}
         return;
       }
 
@@ -308,6 +313,7 @@
         const baseId = editAssigned.dataset.baseId || editAssigned.dataset.editBaseId || '';
         const playerId = editAssigned.dataset.editAssignedPlayer || '';
         if (baseId && playerId) MS.openTowerPlayerEditModal?.(baseId, playerId);
+        try { const em = document.getElementById('towerPlayerEditModal'); if (em) em.style.zIndex = '80000'; } catch {}
         return;
       }
 
@@ -354,6 +360,10 @@
       const btn = e.target.closest('#openBoardFromSettingsColBtn,#openBoardBtnSettings,#openBoardBtnFromSettings,[data-action="open-board"]');
       if (!btn) return;
       e.preventDefault();
+      try {
+        const bm = document.getElementById('board-modal');
+        if (bm) bm.style.zIndex = '70000';
+      } catch {}
       openModal('board');
       try { PNS.renderBoard?.(); } catch {}
     });
@@ -381,6 +391,18 @@
       if (!sel) return;
       e.preventDefault?.();
       MS.handleFocusSelect?.(sel);
+    });
+    document.addEventListener('change', (e) => {
+      const cb = e.target.closest('#pickerOnlyCaptains');
+      if (!cb) return;
+      state.towerPickerOnlyCaptains = !!cb.checked;
+      MS.updateTowerPickerDetail?.();
+    });
+    document.addEventListener('change', (e) => {
+      const cb = e.target.closest('#pickerMatchRegisteredShift');
+      if (!cb) return;
+      state.towerPickerMatchRegisteredShift = !!cb.checked;
+      MS.updateTowerPickerDetail?.();
     });
     document.addEventListener('input', (e) => {
       const sel = e.target.closest('#focusTowerSelect');

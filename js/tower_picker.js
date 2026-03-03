@@ -13,16 +13,42 @@
     return first ? String(first.dataset.baseId || first.dataset.baseid || '') : '';
   }
 
+  function isPickerOnlyCaptainsEnabled() {
+    if (typeof state.towerPickerOnlyCaptains !== 'boolean') state.towerPickerOnlyCaptains = true;
+    if (typeof state.towerPickerMatchRegisteredShift !== 'boolean') state.towerPickerMatchRegisteredShift = true;
+    return !!state.towerPickerOnlyCaptains;
+  }
+
+  function isPickerMatchRegisteredShiftEnabled() {
+    if (typeof state.towerPickerMatchRegisteredShift !== 'boolean') state.towerPickerMatchRegisteredShift = true;
+    return !!state.towerPickerMatchRegisteredShift;
+  }
+
   function eligibleCaptainsForBase(base) {
     if (!base) return [];
-    const curShift = state.activeShift || 'shift2';
+    const onlyCaptains = isPickerOnlyCaptainsEnabled();
+    const matchRegisteredShift = isPickerMatchRegisteredShiftEnabled();
+    const curShift = state.activeShift || 'shift1';
     return (state.players || []).filter((p) => {
       if (!p) return false;
-      if (!p.captainReady) return false;
-      if (!MS.matchesShift?.(p.shift || 'both', curShift)) return false;
+      const isCurrentCaptain = !!(p.assignment && p.assignment.baseId === base.id && p.assignment.kind === 'captain');
+      if (isCurrentCaptain) return true;
+      if (onlyCaptains && !p.captainReady) return false;
+      if (matchRegisteredShift && curShift !== 'all') {
+        const ps = String(p.shift || 'both');
+        if (!(ps === 'both' || ps === curShift)) return false;
+      }
+      // Allow captain selection from any shift when checkbox is off. We only sort by active shift first.
       if (!p.assignment) return true;
-      return p.assignment.baseId === base.id && p.assignment.kind === 'captain';
-    }).sort((a, b) => (b.march || 0) - (a.march || 0) || String(a.name).localeCompare(String(b.name)));
+      return false;
+    }).sort((a, b) => {
+      const aShiftScore = (a.shift === curShift || a.shift === 'both') ? 1 : 0;
+      const bShiftScore = (b.shift === curShift || b.shift === 'both') ? 1 : 0;
+      return (bShiftScore - aShiftScore)
+        || (Number(b.captainReady) - Number(a.captainReady))
+        || ((b.march || 0) - (a.march || 0))
+        || String(a.name).localeCompare(String(b.name));
+    });
   }
 
   function pickerEffectiveMarch(base, player) {
@@ -90,11 +116,15 @@
     detail.innerHTML = `
       <div class="stack">
         <h3>${title}</h3>
-        <div class="muted small">Shift: ${(state.activeShift || '').toUpperCase()}</div>
+        <div class="picker-meta-row muted small">
+          <span>Shift: ${(state.activeShift || '').toUpperCase()}</span>
+          <label class="picker-only-captains"><input type="checkbox" id="pickerOnlyCaptains" ${isPickerOnlyCaptainsEnabled() ? 'checked' : ''}/> Тільки капітани</label>
+          <label class="picker-only-captains"><input type="checkbox" id="pickerMatchRegisteredShift" ${isPickerMatchRegisteredShiftEnabled() ? 'checked' : ''}/> Зазначений Shift</label>
+        </div>
         <div class="picker-topline top-space">
-          <select id="towerPickerCaptainSelect" class="input-like" aria-label="Вибір капітана" style="max-width:320px;">
+          <select id="towerPickerCaptainSelect" class="input-like" aria-label="Вибір капітана">
             <option value="">${captain ? 'Змінити капітана…' : 'Вибрати капітана…'}</option>
-            ${caps.map(p => `<option value="${p.id}" ${captain && captain.id === p.id ? 'selected' : ''}>${String(p.name || '')} · ${String(p.role || '')} · ${Number(p.march || 0).toLocaleString('en-US')}</option>`).join('')}
+            ${caps.map(p => `<option value="${p.id}" ${captain && captain.id === p.id ? 'selected' : ''}>${String(p.name || '')} · ${String(p.role || '')} · ${String(p.shiftLabel || p.shift || '')} · ${Number(p.march || 0).toLocaleString('en-US')}${p.captainReady ? ' · CAP' : ''}</option>`).join('')}
           </select>
           <div class="picker-actions">
             <button class="btn btn-sm" type="button" data-picker-set-captain="${base.id}">Set captain</button>
@@ -185,6 +215,8 @@
 
   function openTowerPickerModal() {
     MS.ensureStep4Styles?.();
+    if (typeof state.towerPickerOnlyCaptains !== 'boolean') state.towerPickerOnlyCaptains = true;
+    if (typeof state.towerPickerMatchRegisteredShift !== 'boolean') state.towerPickerMatchRegisteredShift = true;
     let modal = document.getElementById('towerPickerModal');
     if (!modal) {
       modal = document.createElement('div');
