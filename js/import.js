@@ -538,10 +538,10 @@
 
     state.players = players;
     resetAssignmentsForImportedData();
-
-    // New import replaces player data, but keeps tower settings (tier caps/max helpers).
-    // Clear persisted tower assignments so old player placements are not restored on refresh.
-    if (typeof PNS.clearAssignmentsSnapshot === 'function') PNS.clearAssignmentsSnapshot();
+    // New imported roster: clear saved tower assignments/overrides, keep tower settings (limits/maxHelpers)
+    try { PNS.clearTowersSnapshot?.(); } catch {}
+    try { PNS.clearTowerMarchOverrides?.(); } catch {}
+    try { if (state && typeof state === 'object') state.shiftPlans = {}; } catch {}
 
     if (typeof PNS.renderPlayersTableFromState === 'function') PNS.renderPlayersTableFromState();
     if (typeof PNS.buildRowActions === 'function') PNS.buildRowActions();
@@ -549,8 +549,7 @@
 
     if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift);
     if (typeof PNS.savePlayersSnapshot === 'function') PNS.savePlayersSnapshot(state.players);
-    if (typeof PNS.saveAssignmentsSnapshot === 'function') PNS.saveAssignmentsSnapshot();
-    if (typeof PNS.persistSessionState === 'function') PNS.persistSessionState();
+    if (typeof PNS.saveTowersSnapshot === 'function') PNS.saveTowersSnapshot(state.bases);
     // auto-save latest import template so you don't need to press Save after every refresh
     try { saveCurrentImportTemplate(); } catch {}
     setImportStatus(`Imported ${players.length} players successfully. Template auto-saved in LocalStorage.`, 'good');
@@ -629,29 +628,32 @@
   // ===== bind import modal buttons EVERY time DOM changes =====
   function tryRestorePlayersFromLocalStorage() {
     if (Array.isArray(state.players) && state.players.length) return false;
-
-    // Preferred unified restore (players + bases) if storage module exposes it.
-    if (typeof PNS.tryRestoreSessionFromLocalStorage === 'function') {
-      const ok = !!PNS.tryRestoreSessionFromLocalStorage();
-      if (ok) return true;
-    }
-
     if (typeof PNS.loadPlayersSnapshot !== 'function') return false;
     const restored = PNS.loadPlayersSnapshot();
     if (!Array.isArray(restored) || !restored.length) return false;
     state.players = restored;
     state.playerById = new Map(restored.map((p) => [p.id, p]));
-    // Restore tower/base assignments after players snapshot (captains/helpers in bases).
-    if (typeof PNS.restoreAssignmentsSnapshot === 'function') {
-      try { PNS.restoreAssignmentsSnapshot({ rerender: false, applyShift: false }); } catch {}
-      setTimeout(() => {
-        try { PNS.restoreAssignmentsSnapshot({ rerender: false, applyShift: false }); } catch {}
-      }, 0);
-    }
+    // prevent empty current state from overwriting saved tower snapshot before late restore runs
+    state._skipTowerSnapshotSave = true;
     if (typeof PNS.renderPlayersTableFromState === 'function') PNS.renderPlayersTableFromState();
     if (typeof PNS.buildRowActions === 'function') PNS.buildRowActions();
+
+    const tryRestoreTowers = () => {
+      try {
+        if (typeof PNS.tryRestoreTowersSnapshot === 'function') {
+          const ok = PNS.tryRestoreTowersSnapshot();
+          if (ok && typeof PNS.renderAll === 'function') PNS.renderAll();
+        }
+      } catch {}
+    };
+
+    // Restore players first, then towers (bases may be parsed a bit later depending on partial/init order)
+    tryRestoreTowers();
+    [60, 220, 700, 1500].forEach((ms) => setTimeout(tryRestoreTowers, ms));
+    setTimeout(() => { try { state._skipTowerSnapshotSave = false; PNS.persistSessionStateSoon?.(20); } catch {} }, 1800);
+
     if (typeof PNS.renderAll === 'function') PNS.renderAll();
-    if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift || 'shift1');
+    if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift || 'shift2');
     setImportLoadedInfo(`Restored ${restored.length} players from LocalStorage.`);
     setImportStatus('Players restored from previous session. Load/apply a new table anytime to replace them.', 'good');
     return true;
@@ -705,9 +707,6 @@
     const restored = tryRestorePlayersFromLocalStorage();
     if (!restored) setImportLoadedInfo('No file loaded yet. You can use built-in demo data.');
     bindImportWizardButtons();
-    // Retry restore after all scripts/partials are definitely ready (script-order safe).
-    setTimeout(() => { try { if (!(state.players||[]).length) tryRestorePlayersFromLocalStorage(); } catch {} }, 50);
-    window.addEventListener('load', () => { try { if (!(state.players||[]).length) tryRestorePlayersFromLocalStorage(); } catch {} }, { once: true });
   }
 
   function reInitImportWizard() {

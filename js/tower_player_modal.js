@@ -5,14 +5,7 @@
 
   function getTierCapForBase(base, tier) {
     const key = String(tier || '').toUpperCase();
-    let v = 0;
-    try {
-      if (base?.id && typeof PNS.getBaseTowerRule === 'function') {
-        const rule = PNS.getBaseTowerRule(base.id);
-        v = Number(rule?.tierMinMarch?.[key] || 0) || 0;
-      }
-    } catch {}
-    if (!v) v = Number(base?.tierMinMarch?.[key] || 0) || 0;
+    const v = Number(base?.tierMinMarch?.[key] || 0) || 0;
     return v > 0 ? v : 0; // 0 => no cap
   }
 
@@ -20,6 +13,10 @@
     if (!player) return 0;
     const raw = Number(player.march || 0) || 0;
     if (isCaptain) return raw;
+    try {
+      const ov = PNS.getTowerMarchOverride?.(base?.id, player?.id, state.activeShift);
+      if (Number.isFinite(ov) && ov > 0) return ov;
+    } catch {}
     try {
       if (typeof PNS.getTowerEffectiveMarch === 'function') return Number(PNS.getTowerEffectiveMarch(base, player)) || 0;
       if (typeof PNS.getEffectiveTowerMarch === 'function') return Number(PNS.getEffectiveTowerMarch(base, player)) || 0;
@@ -35,10 +32,9 @@
     modal = document.createElement('div');
     modal.id = 'towerPlayerEditModal';
     modal.className = 'modal';
-    modal.style.zIndex = '80000';
     modal.innerHTML = `
-      <div class="modal-backdrop" data-close-tower-player-edit style="z-index:0"></div>
-      <div class="modal-card" role="dialog" aria-modal="true" style="width:min(560px, calc(100vw - 24px)); position:relative; z-index:1;">
+      <div class="modal-backdrop" data-close-tower-player-edit></div>
+      <div class="modal-card" role="dialog" aria-modal="true" style="width:min(560px, calc(100vw - 24px));">
         <div class="modal-head">
           <div>
             <h2>Редагування гравця</h2>
@@ -51,10 +47,10 @@
             <input id="tpeName" placeholder="Нік" style="color:#eef3ff" />
             <input id="tpeAlly" placeholder="Альянс" style="color:#eef3ff" />
             <select id="tpeRole" style="color:#eef3ff">
-              <option>Fighter</option><option>Shooter</option><option>Rider</option>
+              <option>Shooter</option><option>Fighter</option><option>Rider</option>
             </select>
             <input id="tpeTier" placeholder="T14" style="color:#eef3ff" />
-            <div class="row gap wrap" style="align-items:center;"><input id="tpeMarch" type="number" min="0" placeholder="March" style="color:#eef3ff;flex:1 1 140px" /><input id="tpeRally" type="number" min="0" placeholder="Rally size" style="color:#eef3ff;flex:1 1 140px" /></div>
+            <input id="tpeMarch" type="number" min="0" placeholder="March" style="color:#eef3ff" />
             <div id="tpeCapHint" class="muted small"></div>
             <div class="row gap wrap">
               <button class="btn btn-primary" type="button" id="tpeSaveBtn">Зберегти</button>
@@ -70,7 +66,6 @@
   function closeTowerPlayerEditModal() {
     const modal = document.getElementById('towerPlayerEditModal');
     if (!modal) return;
-    modal.dataset.forceAssignKind = '';
     modal.classList.remove('is-open');
     if (!document.querySelector('#towerPickerModal.is-open')) {
       MS.syncBodyModalLock?.();
@@ -93,14 +88,14 @@
     const cap = (!isCaptain && base) ? getTierCapForBase(base, tier) : 0;
 
     if (marchInp) {
-      // Manual edit is allowed to exceed tier cap for a specific helper (per-player override).
+      // Manual edit may override tower cap for THIS tower + THIS shift only.
       marchInp.removeAttribute('max');
     }
 
     if (hint) {
       if (isCaptain) hint.textContent = 'Капітан: ліміт Tier cap не застосовується.';
-      else if (cap > 0) hint.textContent = `Auto-fill cap для ${tier}: ${Number(cap).toLocaleString('en-US')} (вручну можна більше для цього гравця)`;
-      else hint.textContent = `Для ${tier} у цій башні cap не заданий (0 = без обмеження).`;
+      else if (cap > 0) hint.textContent = `Auto-fill cap для ${tier}: ${Number(cap).toLocaleString('en-US')} (ручне значення можна задати тільки для цієї башні / цього Shift).`;
+      else hint.textContent = `Для ${tier} у цій башні ліміт не заданий (0 = без обмеження).`;
     }
   }
 
@@ -115,8 +110,6 @@
     modal.dataset.baseId = String(baseId || '');
     modal.dataset.playerId = String(playerId || '');
     modal.dataset.kind = isCaptain ? 'captain' : 'helper';
-    if (!playerId) modal.dataset.forceAssignKind = modal.dataset.forceAssignKind || '';
-    else modal.dataset.forceAssignKind = '';
 
     const currentInTower = getPlayerCurrentTowerMarch(base, p, isCaptain);
 
@@ -124,7 +117,6 @@
     modal.querySelector('#tpeAlly').value = p?.alliance || '';
     modal.querySelector('#tpeRole').value = p?.role || (PNS.getBaseRole?.(base) || 'Fighter');
     modal.querySelector('#tpeTier').value = p?.tier || 'T10';
-    if (modal.querySelector('#tpeRally')) modal.querySelector('#tpeRally').value = String(Number(p?.rally || 0) || 0);
     // Для helper показуємо "поточний внесок у башню" (після cap/autofill), а не весь зареєстрований загін
     modal.querySelector('#tpeMarch').value = p ? String(currentInTower || '') : '';
     modal.querySelector('#tpeRemoveBtn').hidden = !playerId;
@@ -132,15 +124,13 @@
     const subtitle = modal.querySelector('#tpeSubtitle');
     if (subtitle) {
       const towerName = String(base.title || base.id || '').split('/')[0].trim();
-      const forcedKind = String(modal.dataset.forceAssignKind || '').toLowerCase();
-      subtitle.textContent = (isCaptain || forcedKind === 'captain')
+      subtitle.textContent = isCaptain
         ? `Капітан · ${towerName}`
         : `Хелпер у башні · ${towerName}`;
     }
 
     updateModalCapUI(modal);
 
-    modal.style.zIndex = '80000';
     modal.classList.add('is-open');
     MS.syncBodyModalLock?.();
   }
@@ -153,8 +143,7 @@
     const playerId = modal.dataset.playerId || '';
     const base = state.baseById?.get?.(baseId);
     if (!base) return;
-    const forcedAssignKind = String(modal.dataset.forceAssignKind || '').toLowerCase();
-    const isCaptain = (forcedAssignKind === 'captain') || modal.dataset.kind === 'captain' || (!!playerId && base.captainId === playerId);
+    const isCaptain = modal.dataset.kind === 'captain' || (!!playerId && base.captainId === playerId);
 
     const name = String(modal.querySelector('#tpeName')?.value || '').trim();
     const ally = String(modal.querySelector('#tpeAlly')?.value || '').trim();
@@ -165,14 +154,8 @@
       ? PNS.normalizeTierText(modal.querySelector('#tpeTier')?.value || 'T10')
       : String(modal.querySelector('#tpeTier')?.value || 'T10').toUpperCase();
     const march = Number(modal.querySelector('#tpeMarch')?.value || 0) || 0;
-    const rally = Number(modal.querySelector('#tpeRally')?.value || 0) || 0;
 
     if (!name || !march) { alert('Вкажи нік і march'); return; }
-
-    const tierCap = isCaptain ? 0 : getTierCapForBase(base, tier);
-    // NOTE: tier cap is used for autofill/default contribution. Manual edit may exceed it
-    // for this specific helper via per-player tower override.
-
 
     let p = playerId ? state.playerById?.get?.(playerId) : null;
     if (p) {
@@ -180,26 +163,13 @@
       p.alliance = ally;
       p.role = role;
       p.tier = tier;
-      if (typeof PNS.tierRank === 'function') p.tierRank = PNS.tierRank(tier);
-
+      // March for existing imported players: store scoped override per tower + shift (do not mutate raw roster value globally)
       if (isCaptain) {
-        // Captain uses raw march directly
-        p.march = march;
-      if ((forcedAssignKind === 'captain') || isCaptain || (base?.captainId && String(base.captainId) === String(p.id))) p.rally = rally;
-        if (p.towerMarchOverrideByBase && base?.id) delete p.towerMarchOverrideByBase[base.id];
-        if ('towerMarchOverride' in p) delete p.towerMarchOverride;
+        p.march = march; // captain edit remains direct (current app uses captain.march in many places)
       } else {
-        // Helper: keep original registered march in p.march if it already exists,
-        // but store manual in-tower contribution as per-base override.
-        if (!p.march) p.march = march;
-        p.towerMarchOverrideByBase = (p.towerMarchOverrideByBase && typeof p.towerMarchOverrideByBase === 'object')
-          ? p.towerMarchOverrideByBase : {};
-        p.towerMarchOverrideByBase[base.id] = march;
-        p.towerMarchOverride = march; // backward fallback for older code
+        try { PNS.setTowerMarchOverride?.(base.id, p.id, march, state.activeShift); } catch {}
       }
-      if (forcedAssignKind === 'captain' && base?.id) {
-        try { PNS.assignPlayerToBase?.(p.id, base.id, 'captain'); } catch {}
-      }
+      if (typeof PNS.tierRank === 'function') p.tierRank = PNS.tierRank(tier);
     } else {
       const shift = state.activeShift === 'all' ? 'both' : (state.activeShift || 'both');
       p = {
@@ -211,7 +181,7 @@
         tier,
         tierRank: (typeof PNS.tierRank === 'function' ? PNS.tierRank(tier) : 0),
         march,
-        rally: rally,
+        rally: 0,
         captainReady: false,
         shift,
         shiftLabel: (PNS.formatShiftLabelForCell ? PNS.formatShiftLabelForCell(shift) : shift),
@@ -225,14 +195,13 @@
         actionCellEl: null,
         assignment: null
       };
-      // manual entry in tower: store same value as per-base override
-      p.towerMarchOverrideByBase = { [base.id]: march };
-      p.towerMarchOverride = march;
       state.players.push(p);
       state.playerById?.set?.(p.id, p);
-      try { PNS.assignPlayerToBase?.(p.id, base.id, (forcedAssignKind === 'captain' ? 'captain' : 'helper')); } catch {}
+      try { PNS.assignPlayerToBase?.(p.id, base.id, 'helper'); } catch {}
+      try { PNS.clearTowerMarchOverride?.(base.id, p.id, state.activeShift); } catch {}
     }
 
+    try { PNS.persistSessionStateSoon?.(10); } catch {}
     try { PNS.renderAll?.(); } catch {}
     modal.classList.remove('is-open');
     if (!document.querySelector('#towerPickerModal.is-open')) MS.syncBodyModalLock?.();
