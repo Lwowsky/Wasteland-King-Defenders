@@ -51,6 +51,7 @@
             </select>
             <input id="tpeTier" placeholder="T14" style="color:#eef3ff" />
             <input id="tpeMarch" type="number" min="0" placeholder="March" style="color:#eef3ff" />
+            <input id="tpeRally" type="number" min="0" placeholder="Rally size (для капітана)" style="color:#eef3ff" />
             <div id="tpeCapHint" class="muted small"></div>
             <div class="row gap wrap">
               <button class="btn btn-primary" type="button" id="tpeSaveBtn">Зберегти</button>
@@ -104,8 +105,9 @@
     if (!base) return;
 
     const p = playerId ? state.playerById?.get?.(playerId) : null;
-    const isCaptain = !!(playerId && base.captainId === playerId);
     const modal = ensureModal();
+    const forcedNewKind = (!playerId && String(modal.dataset.forceAssignKind || '').toLowerCase() === 'captain');
+    const isCaptain = !!((playerId && base.captainId === playerId) || forcedNewKind);
 
     modal.dataset.baseId = String(baseId || '');
     modal.dataset.playerId = String(playerId || '');
@@ -119,6 +121,12 @@
     modal.querySelector('#tpeTier').value = p?.tier || 'T10';
     // Для helper показуємо "поточний внесок у башню" (після cap/autofill), а не весь зареєстрований загін
     modal.querySelector('#tpeMarch').value = p ? String(currentInTower || '') : '';
+    const rallyInp = modal.querySelector('#tpeRally');
+    if (rallyInp) {
+      rallyInp.value = p ? String(Number(p.rally || 0) || '') : '';
+      rallyInp.style.display = isCaptain ? '' : 'none';
+      rallyInp.disabled = !isCaptain;
+    }
     modal.querySelector('#tpeRemoveBtn').hidden = !playerId;
 
     const subtitle = modal.querySelector('#tpeSubtitle');
@@ -154,6 +162,7 @@
       ? PNS.normalizeTierText(modal.querySelector('#tpeTier')?.value || 'T10')
       : String(modal.querySelector('#tpeTier')?.value || 'T10').toUpperCase();
     const march = Number(modal.querySelector('#tpeMarch')?.value || 0) || 0;
+    const rally = Number(modal.querySelector('#tpeRally')?.value || 0) || 0;
 
     if (!name || !march) { alert('Вкажи нік і march'); return; }
 
@@ -166,6 +175,7 @@
       // March for existing imported players: store scoped override per tower + shift (do not mutate raw roster value globally)
       if (isCaptain) {
         p.march = march; // captain edit remains direct (current app uses captain.march in many places)
+        p.rally = rally;
       } else {
         try { PNS.setTowerMarchOverride?.(base.id, p.id, march, state.activeShift); } catch {}
       }
@@ -181,7 +191,7 @@
         tier,
         tierRank: (typeof PNS.tierRank === 'function' ? PNS.tierRank(tier) : 0),
         march,
-        rally: 0,
+        rally: isCaptain ? rally : 0,
         captainReady: false,
         shift,
         shiftLabel: (PNS.formatShiftLabelForCell ? PNS.formatShiftLabelForCell(shift) : shift),
@@ -197,10 +207,13 @@
       };
       state.players.push(p);
       state.playerById?.set?.(p.id, p);
-      try { PNS.assignPlayerToBase?.(p.id, base.id, 'helper'); } catch {}
+      const forceKind = String(modal.dataset.forceAssignKind || '').toLowerCase();
+      const assignKind = (forceKind === 'captain' || isCaptain) ? 'captain' : 'helper';
+      try { PNS.assignPlayerToBase?.(p.id, base.id, assignKind); } catch {}
       try { PNS.clearTowerMarchOverride?.(base.id, p.id, state.activeShift); } catch {}
     }
 
+    try { PNS.savePlayersSnapshot?.(state.players); } catch {}
     try { PNS.persistSessionStateSoon?.(10); } catch {}
     try { PNS.renderAll?.(); } catch {}
     modal.classList.remove('is-open');

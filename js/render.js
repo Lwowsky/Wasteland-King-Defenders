@@ -626,6 +626,15 @@
       theadRow = table.querySelector('thead tr');
     }
 
+    const reserveRoleLabel = typeof PNS.getFieldLabel === 'function' ? PNS.getFieldLabel('secondary_role') : 'Reserve troop type';
+    const reserveTierLabel = typeof PNS.getFieldLabel === 'function' ? PNS.getFieldLabel('secondary_tier') : 'Reserve troop tier';
+    const reserve200kLabel = typeof PNS.getFieldLabel === 'function' ? PNS.getFieldLabel('troop_200k') : 'Reserve troop type (200k+)';
+    const customOptionalDefs = (typeof PNS.getCustomOptionalDefs === 'function' ? PNS.getCustomOptionalDefs() : [])
+      .filter((d) => String(d?.label || '').trim().toLowerCase() !== 'notes');
+    const customOptionalHeadHtml = customOptionalDefs.map((d) =>
+      `<th class="optional-col" data-col-key="${PNS.escapeHtml(String(d.key || ''))}" data-field="${PNS.escapeHtml(String(d.key || ''))}">${PNS.escapeHtml(String(d.label || d.key || 'Custom'))}</th>`
+    ).join('');
+
     theadRow.innerHTML = `
       <th data-field="name">Player name</th>
       <th class="optional-col" data-col-key="alliance" data-field="alliance">Alliance</th>
@@ -634,12 +643,13 @@
       <th data-field="march">March size</th>
       <th class="optional-col" data-col-key="rally_size" data-field="rally">Rally size <button type="button" class="sort-btn" data-sort="rally" aria-label="Sort by Rally size">↓</button></th>
       <th class="optional-col" data-col-key="lair_level" data-field="lair">Lair</th>
-      <th class="optional-col" data-col-key="secondary_role" data-field="secondary_role">2nd role</th>
-      <th class="optional-col" data-col-key="secondary_tier" data-field="secondary_tier">2nd tier</th>
-      <th class="optional-col" data-col-key="troop_200k" data-field="troop_200k">200k types</th>
+      <th class="optional-col" data-col-key="secondary_role" data-field="secondary_role">${PNS.escapeHtml(reserveRoleLabel)}</th>
+      <th class="optional-col" data-col-key="secondary_tier" data-field="secondary_tier">${PNS.escapeHtml(reserveTierLabel)}</th>
+      <th class="optional-col" data-col-key="troop_200k" data-field="troop_200k">${PNS.escapeHtml(reserve200kLabel)}</th>
       <th class="optional-col" data-col-key="captain_ready" data-field="captainReady">Captain</th>
       <th data-field="shiftLabel">Shift</th>
       <th class="optional-col" data-col-key="notes" data-field="notes">Notes</th>
+      ${customOptionalHeadHtml}
       <th data-col-key="actions" data-field="actions">Actions</th>`;
 
     const tbody = table.querySelector('tbody') || table.appendChild(document.createElement('tbody'));
@@ -666,6 +676,12 @@
       tr.dataset.playerId = p.id;
       tr.dataset.shift = p.shift || 'both';
 
+      const customOptionalCellsHtml = customOptionalDefs.map((d) => {
+        const key = String(d.key || '');
+        const val = p?.customFields && typeof p.customFields === 'object' ? p.customFields[key] : '';
+        return `<td class="optional-col" data-col-key="${PNS.escapeHtml(key)}" data-field="${PNS.escapeHtml(key)}">${PNS.escapeHtml(String(val || ''))}</td>`;
+      }).join('');
+
       tr.innerHTML = `
         <td data-field="name">${PNS.escapeHtml(p.name || '')}</td>
         <td class="optional-col" data-col-key="alliance" data-field="alliance">${PNS.escapeHtml(p.alliance || '')}</td>
@@ -680,6 +696,7 @@
         <td class="optional-col" data-col-key="captain_ready" data-field="captainReady">${p.captainReady ? '<span class="pill yes">Yes</span>' : '<span class="pill no">No</span>'}</td>
         <td data-field="shiftLabel">${PNS.escapeHtml(p.shiftLabel)}</td>
         <td class="optional-col" data-col-key="notes" data-field="notes">${PNS.escapeHtml(String(p.notes || ''))}</td>
+        ${customOptionalCellsHtml}
         <td class="muted" data-col-key="actions" data-field="actions"></td>`;
 
       tbody.appendChild(tr);

@@ -160,6 +160,10 @@
     }
 
     if (typeof PNS.renderAll === 'function') PNS.renderAll();
+    try { PNS.savePlayersSnapshot?.(state.players); } catch {}
+    try {
+      document.dispatchEvent(new CustomEvent('pns:assignment-changed', { detail: { baseId: base.id, playerId: player.id, kind } }));
+    } catch {}
   }
 
   function clearBase(baseId, helpersOnly = false) {
@@ -189,6 +193,11 @@
     base.helperIds = [];
 
     if (typeof PNS.renderAll === 'function') PNS.renderAll();
+    try { PNS.savePlayersSnapshot?.(state.players); } catch {}
+    try { PNS.saveTowersSnapshot?.({ forceEmpty: true }); } catch {}
+    try {
+      document.dispatchEvent(new CustomEvent('pns:assignment-changed', { detail: { baseId: base.id, action: helpersOnly ? 'clear-helpers' : 'clear-base' } }));
+    } catch {}
   }
 
   function removePlayerFromSpecificBase(baseId, playerId) {
@@ -209,6 +218,11 @@
       } catch {}
       p.assignment = null;
       if (typeof PNS.renderAll === 'function') PNS.renderAll();
+      try { PNS.savePlayersSnapshot?.(state.players); } catch {}
+      try { PNS.saveTowersSnapshot?.({ forceEmpty: true }); } catch {}
+      try {
+        document.dispatchEvent(new CustomEvent('pns:assignment-changed', { detail: { baseId: base.id, playerId: p.id, action: 'remove-player' } }));
+      } catch {}
       return true;
     }
 

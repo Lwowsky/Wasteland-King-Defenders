@@ -45,6 +45,15 @@
   // ===== Base tower rules store =====
   function getEmptyTierMinMarch() { return { T14: 0, T13: 0, T12: 0, T11: 0, T10: 0, T9: 0 }; }
 
+  function normalizeTowerRuleShift(shift) {
+    const s = String(shift || state?.activeShift || 'shift1').toLowerCase();
+    if (s === 'all') return 'shift1';
+    return s === 'shift2' ? 'shift2' : 'shift1';
+  }
+  function getBaseTowerRuleStoreKey(baseId, shift) {
+    return `${normalizeTowerRuleShift(shift)}::${String(baseId || '')}`;
+  }
+
   function normalizeBaseTowerRule(rule) {
     const src = rule || {};
     const tier = src.tierMinMarch || src.tierMin || {};
@@ -61,24 +70,6 @@
     };
   }
 
-
-  function _normalizeRuleShift(shift) {
-    const s = String(shift || state.activeShift || '').toLowerCase();
-    return (s === 'shift1' || s === 'shift2') ? s : 'both';
-  }
-  function _ruleStoreKey(baseId, shift) {
-    return `${String(baseId || '')}::${_normalizeRuleShift(shift)}`;
-  }
-  function _applyRuleToBaseState(base, normalized, opts = {}) {
-    if (!base || !normalized) return;
-    base.maxHelpers = normalized.maxHelpers;
-    base.tierMinMarch = { ...normalized.tierMinMarch };
-    base.quotas = {};
-    if (typeof PNS.renderQuotaRow === 'function') PNS.renderQuotaRow(base);
-    if (typeof PNS.syncBaseEditorSettingsInputs === 'function') PNS.syncBaseEditorSettingsInputs(base);
-    if (opts.rerender && typeof PNS.renderAll === 'function') PNS.renderAll();
-  }
-
   function loadBaseTowerRulesStore() {
     state.baseTowerRules = safeReadJSON(KEYS.KEY_BASE_TOWER_RULES, {}) || {};
     if (typeof state.baseTowerRules !== 'object' || Array.isArray(state.baseTowerRules)) state.baseTowerRules = {};
@@ -86,33 +77,62 @@
   function saveBaseTowerRulesStore() {
     safeWriteJSON(KEYS.KEY_BASE_TOWER_RULES, state.baseTowerRules || {});
   }
-  function getBaseTowerRule(baseId, shift) {
+  function getBaseTowerRule(baseId, opts = {}) {
     const store = (state.baseTowerRules && typeof state.baseTowerRules === 'object') ? state.baseTowerRules : {};
-    const scopedKey = _ruleStoreKey(baseId, shift);
-    const legacy = store[String(baseId || '')];
-    return normalizeBaseTowerRule(store[scopedKey] || legacy || {});
+    const shift = normalizeTowerRuleShift(opts.shift);
+    const scopedKey = getBaseTowerRuleStoreKey(baseId, shift);
+
+    // New format (shift-scoped): "shift1::baseId" / "shift2::baseId"
+    if (Object.prototype.hasOwnProperty.call(store, scopedKey)) {
+      return normalizeBaseTowerRule(store[scopedKey] || {});
+    }
+
+    // Backward compatibility with old format (shared per-base only)
+    if (Object.prototype.hasOwnProperty.call(store, baseId)) {
+      return normalizeBaseTowerRule(store[baseId] || {});
+    }
+
+    return normalizeBaseTowerRule({});
   }
   function setBaseTowerRule(baseId, rule, opts = {}) {
     const normalized = normalizeBaseTowerRule(rule);
     if (!state.baseTowerRules || typeof state.baseTowerRules !== 'object') state.baseTowerRules = {};
-    const scopedKey = _ruleStoreKey(baseId, opts.shift);
+
+    const scopedKey = getBaseTowerRuleStoreKey(baseId, opts.shift);
     state.baseTowerRules[scopedKey] = normalized;
+
+    // Optional migration cleanup: stop writing shared legacy key after first save.
+    if (opts.deleteLegacy !== false && Object.prototype.hasOwnProperty.call(state.baseTowerRules, baseId)) {
+      delete state.baseTowerRules[baseId];
+    }
+
     if (opts.persist !== false) saveBaseTowerRulesStore();
 
     const base = state.baseById?.get(baseId);
-    if (base) _applyRuleToBaseState(base, normalized, opts);
+    if (base) {
+      base.maxHelpers = normalized.maxHelpers;
+      base.tierMinMarch = { ...normalized.tierMinMarch };
+      base.quotas = {}; // v4.1: quotas disabled, use per-tier min march instead
+      if (typeof PNS.renderQuotaRow === 'function') PNS.renderQuotaRow(base);
+      if (typeof PNS.syncBaseEditorSettingsInputs === 'function') PNS.syncBaseEditorSettingsInputs(base);
+      if (opts.rerender && typeof PNS.renderAll === 'function') PNS.renderAll();
+    }
     return normalized;
   }
 
-  function applyBaseTowerRulesForActiveShift(opts = {}) {
-    if (!Array.isArray(state.bases)) return;
+  function applyBaseTowerRulesForActiveShift() {
+    if (!Array.isArray(state.bases) || !state.bases.length) return false;
     (state.bases || []).forEach((base) => {
-      const rule = getBaseTowerRule(base.id, opts.shift);
-      _applyRuleToBaseState(base, rule, { rerender: false });
+      if (!base?.id) return;
+      const rule = getBaseTowerRule(base.id);
+      base.maxHelpers = Number(rule.maxHelpers || 29) || 29;
+      base.tierMinMarch = { ...(rule.tierMinMarch || getEmptyTierMinMarch()) };
+      base.quotas = {};
+      try { PNS.syncBaseEditorSettingsInputs?.(base); } catch {}
+      try { PNS.renderQuotaRow?.(base); } catch {}
     });
-    if (opts.rerender && typeof PNS.renderAll === 'function') PNS.renderAll();
+    return true;
   }
-
 
   // ===== Field label overrides =====
   function loadFieldLabelOverrides() {
@@ -144,11 +164,8 @@
     safeWriteJSON(KEYS.KEY_IMPORT_VISIBLE_COLUMNS, Array.from(new Set(state.visibleOptionalColumns || [])));
   }
 
-  
-  // ===== Players + towers snapshots (persist across page refresh) =====
+  // ===== Players snapshot (persist imported players across page refresh) =====
   const KEY_PLAYERS_SNAPSHOT = 'pns_layout_players_snapshot_v1';
-  const KEY_TOWERS_SNAPSHOT = 'pns_layout_towers_snapshot_v2';
-  const KEY_TOWER_MARCH_OVERRIDES = 'pns_layout_tower_march_overrides_v1';
 
   function normalizePlayerSnapshotItem(src, idx) {
     const p = src || {};
@@ -197,278 +214,6 @@
     try { localStorage.removeItem(KEY_PLAYERS_SNAPSHOT); } catch {}
   }
 
-  // ---- Manual march override per tower + shift ----
-  function _normalizeOverrideStore(raw) {
-    const out = { shift1: {}, shift2: {} };
-    const src = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
-    ['shift1','shift2'].forEach((shift) => {
-      const byBase = src[shift];
-      if (!byBase || typeof byBase !== 'object' || Array.isArray(byBase)) return;
-      Object.entries(byBase).forEach(([baseId, byPlayer]) => {
-        if (!byPlayer || typeof byPlayer !== 'object' || Array.isArray(byPlayer)) return;
-        const cleanPlayers = {};
-        Object.entries(byPlayer).forEach(([playerId, v]) => {
-          const n = Number(v);
-          if (Number.isFinite(n) && n > 0) cleanPlayers[String(playerId)] = Math.round(n);
-        });
-        if (Object.keys(cleanPlayers).length) out[shift][String(baseId)] = cleanPlayers;
-      });
-    });
-    return out;
-  }
-
-  function loadTowerMarchOverridesStore() {
-    state.towerMarchOverrides = _normalizeOverrideStore(safeReadJSON(KEY_TOWER_MARCH_OVERRIDES, {}));
-    return state.towerMarchOverrides;
-  }
-  function saveTowerMarchOverridesStore() {
-    if (!state.towerMarchOverrides) loadTowerMarchOverridesStore();
-    safeWriteJSON(KEY_TOWER_MARCH_OVERRIDES, _normalizeOverrideStore(state.towerMarchOverrides));
-  }
-  function _overrideShiftKey(shift) { return _normalizeRuleShift(shift); }
-  function getTowerMarchOverride(baseId, playerId, shift) {
-    if (!baseId || !playerId) return null;
-    if (!state.towerMarchOverrides) loadTowerMarchOverridesStore();
-    const s = _overrideShiftKey(shift);
-    const v = state.towerMarchOverrides?.[s]?.[String(baseId)]?.[String(playerId)];
-    const n = Number(v);
-    return Number.isFinite(n) && n > 0 ? n : null;
-  }
-  function setTowerMarchOverride(baseId, playerId, march, shift) {
-    if (!baseId || !playerId) return null;
-    if (!state.towerMarchOverrides) loadTowerMarchOverridesStore();
-    const s = _overrideShiftKey(shift);
-    const n = Math.round(Number(march || 0));
-    state.towerMarchOverrides[s] ||= {};
-    if (!state.towerMarchOverrides[s][String(baseId)]) state.towerMarchOverrides[s][String(baseId)] = {};
-    if (!(n > 0)) delete state.towerMarchOverrides[s][String(baseId)][String(playerId)];
-    else state.towerMarchOverrides[s][String(baseId)][String(playerId)] = n;
-
-    if (!Object.keys(state.towerMarchOverrides[s][String(baseId)] || {}).length) delete state.towerMarchOverrides[s][String(baseId)];
-    saveTowerMarchOverridesStore();
-    return n > 0 ? n : null;
-  }
-  function clearTowerMarchOverride(baseId, playerId, shift) {
-    if (!state.towerMarchOverrides) loadTowerMarchOverridesStore();
-    const s = _overrideShiftKey(shift);
-    if (baseId && playerId) {
-      try { delete state.towerMarchOverrides[s]?.[String(baseId)]?.[String(playerId)]; } catch {}
-      if (state.towerMarchOverrides[s]?.[String(baseId)] && !Object.keys(state.towerMarchOverrides[s][String(baseId)]).length) {
-        delete state.towerMarchOverrides[s][String(baseId)];
-      }
-    } else if (baseId) {
-      try { delete state.towerMarchOverrides[s]?.[String(baseId)]; } catch {}
-    }
-    saveTowerMarchOverridesStore();
-  }
-  function clearTowerMarchOverrides() {
-    state.towerMarchOverrides = { shift1: {}, shift2: {} };
-    try { localStorage.removeItem(KEY_TOWER_MARCH_OVERRIDES); } catch {}
-  }
-
-  // ---- Towers / shift plans snapshot ----
-  function _cloneAssignment(a) { return a ? { baseId: String(a.baseId || ''), kind: String(a.kind || '') } : null; }
-  function _snapshotCurrentShiftPlan() {
-    const players = {};
-    (state.players || []).forEach((p) => { if (p?.id) players[p.id] = _cloneAssignment(p.assignment); });
-    const bases = {};
-    (state.bases || []).forEach((b) => {
-      if (!b?.id) return;
-      bases[b.id] = {
-        captainId: b.captainId ? String(b.captainId) : null,
-        helperIds: Array.isArray(b.helperIds) ? Array.from(new Set(b.helperIds.filter(Boolean).map(String))) : [],
-        role: b.role == null ? null : String(b.role || '')
-      };
-    });
-    return { players, bases };
-  }
-  function _normalizeShiftPlan(plan) {
-    const src = (plan && typeof plan === 'object') ? plan : {};
-    const out = { players: {}, bases: {} };
-    const pmap = (src.players && typeof src.players === 'object') ? src.players : {};
-    Object.entries(pmap).forEach(([pid, a]) => { out.players[String(pid)] = _cloneAssignment(a); });
-    const bmap = (src.bases && typeof src.bases === 'object') ? src.bases : {};
-    Object.entries(bmap).forEach(([bid, b]) => {
-      out.bases[String(bid)] = {
-        captainId: b?.captainId ? String(b.captainId) : null,
-        helperIds: Array.isArray(b?.helperIds) ? Array.from(new Set(b.helperIds.filter(Boolean).map(String))) : [],
-        role: b?.role == null ? null : String(b.role || '')
-      };
-    });
-    return out;
-  }
-  function saveTowersSnapshot() {
-    if (state._skipTowerSnapshotSave) return false;
-    if (!Array.isArray(state.bases) || !state.bases.length) return false;
-    if (!Array.isArray(state.players) || !state.players.length) return false;
-
-    // If shift-plan helpers exist, snapshot current active shift before saving
-    try { PNS.ModalsShift?.saveCurrentShiftPlanSnapshot?.(); } catch {}
-
-    const plans = {};
-    const srcPlans = (state.shiftPlans && typeof state.shiftPlans === 'object') ? state.shiftPlans : {};
-    ['shift1','shift2'].forEach((s) => {
-      if (srcPlans[s]) plans[s] = _normalizeShiftPlan(srcPlans[s]);
-    });
-    const cur = _normalizeRuleShift(state.activeShift);
-    if (cur === 'shift1' || cur === 'shift2') plans[cur] = _snapshotCurrentShiftPlan();
-
-    safeWriteJSON(KEY_TOWERS_SNAPSHOT, {
-      v: 2,
-      activeShift: _normalizeRuleShift(state.activeShift),
-      shiftPlans: plans
-    });
-    return true;
-  }
-  function loadTowersSnapshot() {
-    const raw = safeReadJSON(KEY_TOWERS_SNAPSHOT, null);
-    if (!raw) return null;
-    if (Array.isArray(raw)) {
-      // legacy array-of-bases snapshot
-      return { v: 1, bases: raw };
-    }
-    return raw;
-  }
-  function clearTowersSnapshot() {
-    try { localStorage.removeItem(KEY_TOWERS_SNAPSHOT); } catch {}
-    if (state && state.shiftPlans) state.shiftPlans = {};
-  }
-
-  function _restoreCurrentStateFromPlan(plan) {
-    const normalized = _normalizeShiftPlan(plan);
-    (state.players || []).forEach((p) => { if (p) p.assignment = _cloneAssignment(normalized.players[p.id] || null); });
-    (state.bases || []).forEach((b) => {
-      if (!b) return;
-      const s = normalized.bases[b.id] || {};
-      b.captainId = s.captainId || null;
-      b.helperIds = Array.isArray(s.helperIds) ? s.helperIds.filter((id) => !!state.playerById?.get?.(id)) : [];
-      const captain = b.captainId ? state.playerById?.get?.(b.captainId) : null;
-      b.role = captain?.role || s.role || null;
-      try { PNS.applyBaseRoleUI?.(b, b.role); } catch {}
-    });
-  }
-
-  function tryRestoreTowersSnapshot() {
-    if (!Array.isArray(state.players) || !state.players.length) return false;
-    if (!Array.isArray(state.bases) || !state.bases.length) return false;
-    if (!state.playerById || typeof state.playerById.get !== 'function') return false;
-
-    const snap = loadTowersSnapshot();
-    if (!snap) return false;
-
-    // Legacy support (single current-plan array)
-    if (snap.v === 1 && Array.isArray(snap.bases)) {
-      // reset
-      (state.players || []).forEach((p) => { if (p) p.assignment = null; });
-      (state.bases || []).forEach((b) => { if (b) { b.captainId = null; b.helperIds = []; b.role = null; try { PNS.applyBaseRoleUI?.(b, null); } catch {} } });
-      let restoredAny = false;
-      snap.bases.forEach((item) => {
-        const base = state.baseById?.get?.(String(item?.id || '')); if (!base) return;
-        const captain = item?.captainId ? state.playerById.get(String(item.captainId)) : null;
-        base.captainId = captain ? captain.id : null;
-        if (captain) captain.assignment = { baseId: base.id, kind: 'captain' };
-        base.helperIds = [];
-        (Array.isArray(item?.helperIds) ? item.helperIds : []).forEach((pid) => {
-          const p = state.playerById.get(String(pid)); if (!p || p.id === base.captainId) return;
-          p.assignment = { baseId: base.id, kind: 'helper' }; base.helperIds.push(p.id); restoredAny = true;
-        });
-        base.role = captain?.role || item?.role || null;
-        try { PNS.applyBaseRoleUI?.(base, base.role); } catch {}
-        if (base.captainId) restoredAny = true;
-      });
-      applyBaseTowerRulesForActiveShift({ rerender: false });
-      return restoredAny;
-    }
-
-    const plans = (snap.shiftPlans && typeof snap.shiftPlans === 'object') ? snap.shiftPlans : {};
-    state.shiftPlans = state.shiftPlans || {};
-    ['shift1','shift2'].forEach((s) => {
-      if (plans[s]) state.shiftPlans[s] = _normalizeShiftPlan(plans[s]);
-    });
-
-    const cur = _normalizeRuleShift(state.activeShift);
-    const plan = state.shiftPlans[cur] || null;
-    if (plan) _restoreCurrentStateFromPlan(plan);
-    else {
-      (state.players || []).forEach((p) => { if (p) p.assignment = null; });
-      (state.bases || []).forEach((b) => { if (b) { b.captainId = null; b.helperIds = []; b.role = null; try { PNS.applyBaseRoleUI?.(b, null); } catch {} } });
-    }
-
-    applyBaseTowerRulesForActiveShift({ rerender: false });
-
-    return !!(plan && (
-      Object.values(plan.players || {}).some(Boolean) ||
-      Object.values(plan.bases || {}).some((b) => b?.captainId || (b?.helperIds || []).length)
-    ));
-  }
-
-  // ---- Session persistence orchestration ----
-  let _persistTimer = 0;
-  function persistSessionState() {
-    if (!Array.isArray(state.players) || !state.players.length) return false;
-    let ok = false;
-    try { ok = !!savePlayersSnapshot(state.players) || ok; } catch {}
-    try { ok = !!saveTowersSnapshot() || ok; } catch {}
-    try { saveTowerMarchOverridesStore(); ok = true; } catch {}
-    return ok;
-  }
-  function persistSessionStateSoon(delay = 20) {
-    try { clearTimeout(_persistTimer); } catch {}
-    _persistTimer = setTimeout(() => { try { persistSessionState(); } catch {} }, delay);
-  }
-
-  function wrapRenderAllForPersistence() {
-    const fn = PNS.renderAll;
-    if (typeof fn !== 'function') return false;
-    if (fn.__pnsWrappedForPersistence) return true;
-    const wrapped = function (...args) {
-      const out = fn.apply(this, args);
-      if (Array.isArray(state.players) && state.players.length) persistSessionStateSoon(30);
-      return out;
-    };
-    wrapped.__pnsWrappedForPersistence = true;
-    try { wrapped.__pnsOriginal = fn; } catch {}
-    PNS.renderAll = wrapped;
-    return true;
-  }
-
-  function wrapAssignmentClearersForOverrideCleanup() {
-    const wrapClear = PNS.clearBase;
-    if (typeof wrapClear === 'function' && !wrapClear.__pnsOverridesWrapped) {
-      const w = function (baseId, helpersOnly = false) {
-        const base = state.baseById?.get?.(baseId);
-        const removed = [];
-        if (base) {
-          if (!helpersOnly && base.captainId) removed.push(String(base.captainId));
-          (base.helperIds || []).forEach((id) => removed.push(String(id)));
-        }
-        const res = wrapClear.apply(this, arguments);
-        try {
-          removed.forEach((pid) => clearTowerMarchOverride(baseId, pid));
-          persistSessionStateSoon(10);
-        } catch {}
-        return res;
-      };
-      w.__pnsOverridesWrapped = true;
-      PNS.clearBase = w;
-    }
-
-    const wrapRemove = PNS.removePlayerFromSpecificBase;
-    if (typeof wrapRemove === 'function' && !wrapRemove.__pnsOverridesWrapped) {
-      const w = function (baseId, playerId) {
-        const res = wrapRemove.apply(this, arguments);
-        try {
-          if (res) clearTowerMarchOverride(baseId, playerId);
-          persistSessionStateSoon(10);
-        } catch {}
-        return res;
-      };
-      w.__pnsOverridesWrapped = true;
-      PNS.removePlayerFromSpecificBase = w;
-    }
-  }
-
-
   // ===== Status helpers (swap-safe) =====
   function setImportStatus(msg, tone) {
     const el = resolveControl('importStatusInfo', 'importStatusInfo');
@@ -486,7 +231,6 @@
     if (!el) return;
     el.textContent = msg || 'No file loaded yet.';
   }
-
 
   // expose
   PNS.safeReadBool = safeReadBool;
@@ -513,51 +257,195 @@
   PNS.loadPlayersSnapshot = loadPlayersSnapshot;
   PNS.clearPlayersSnapshot = clearPlayersSnapshot;
 
-  PNS.saveTowersSnapshot = saveTowersSnapshot;
-  PNS.loadTowersSnapshot = loadTowersSnapshot;
-  PNS.clearTowersSnapshot = clearTowersSnapshot;
-  PNS.tryRestoreTowersSnapshot = tryRestoreTowersSnapshot;
+  PNS.setImportStatus = setImportStatus;
+  PNS.setImportLoadedInfo = setImportLoadedInfo;
 
-  PNS.loadTowerMarchOverridesStore = loadTowerMarchOverridesStore;
-  PNS.saveTowerMarchOverridesStore = saveTowerMarchOverridesStore;
+})();
+
+(function () {
+  const PNS = window.PNS; if (!PNS) return;
+  const { state } = PNS;
+
+  // ==== Towers snapshot + per-tower/shift march overrides (additive patch) ====
+  const KEY_TOWERS_SNAPSHOT = 'pns_layout_towers_snapshot_v1';
+  const KEY_TOWER_MARCH_OVERRIDES = 'pns_layout_tower_march_overrides_v1';
+
+  function _safeReadJSON(key, fallback) {
+    try { return typeof PNS.safeReadJSON === 'function' ? PNS.safeReadJSON(key, fallback) : JSON.parse(localStorage.getItem(key) || 'null') ?? fallback; }
+    catch { return fallback; }
+  }
+  function _safeWriteJSON(key, value) {
+    try {
+      if (typeof PNS.safeWriteJSON === 'function') PNS.safeWriteJSON(key, value);
+      else localStorage.setItem(key, JSON.stringify(value));
+    } catch {}
+  }
+
+  function _normShift(shift) {
+    const s = String(shift || state?.activeShift || 'shift1').toLowerCase();
+    if (s === 'all') return 'shift1'; // stable bucket for UI edit calls
+    return (s === 'shift2') ? 'shift2' : 'shift1';
+  }
+
+  function _ovStore() {
+    const src = _safeReadJSON(KEY_TOWER_MARCH_OVERRIDES, {});
+    return (src && typeof src === 'object' && !Array.isArray(src)) ? src : {};
+  }
+  function _ovKey(baseId, playerId, shift) {
+    return `${String(baseId||'')}::${_normShift(shift)}::${String(playerId||'')}`;
+  }
+
+  function getTowerMarchOverride(baseId, playerId, shift) {
+    if (!baseId || !playerId) return null;
+    const store = _ovStore();
+    const v = Number(store[_ovKey(baseId, playerId, shift)]);
+    return Number.isFinite(v) && v > 0 ? v : null;
+  }
+  function setTowerMarchOverride(baseId, playerId, march, shift) {
+    if (!baseId || !playerId) return false;
+    const v = Number(march || 0);
+    const store = _ovStore();
+    const key = _ovKey(baseId, playerId, shift);
+    if (!(Number.isFinite(v) && v > 0)) delete store[key];
+    else store[key] = Math.max(0, Math.floor(v));
+    _safeWriteJSON(KEY_TOWER_MARCH_OVERRIDES, store);
+    return true;
+  }
+  function clearTowerMarchOverride(baseId, playerId, shift) {
+    if (!baseId || !playerId) return false;
+    const store = _ovStore();
+    delete store[_ovKey(baseId, playerId, shift)];
+    _safeWriteJSON(KEY_TOWER_MARCH_OVERRIDES, store);
+    return true;
+  }
+  function clearTowerMarchOverrides() {
+    try { localStorage.removeItem(KEY_TOWER_MARCH_OVERRIDES); } catch {}
+    return true;
+  }
+
+  function _snapshotHasAssignments(payload) {
+    return Array.isArray(payload) && payload.some(b => b && (b.captainId || (Array.isArray(b.helperIds) && b.helperIds.length)));
+  }
+  function _currentTowersPayload() {
+    return (state.bases || []).map((b) => ({
+      id: String(b.id || ''),
+      captainId: b.captainId || null,
+      helperIds: Array.isArray(b.helperIds) ? Array.from(new Set(b.helperIds.map(String))) : [],
+      role: b.role || null
+    }));
+  }
+
+  function saveTowersSnapshot(opts) {
+    if (state && state._skipTowerSnapshotSave) return false;
+    const forceEmpty = !!(opts && opts.forceEmpty);
+    const payload = _currentTowersPayload();
+    if (!payload.length) return false;
+
+    // Guard: don't overwrite non-empty snapshot with an early empty render on page boot.
+    if (!forceEmpty && !_snapshotHasAssignments(payload)) {
+      const existing = _safeReadJSON(KEY_TOWERS_SNAPSHOT, null);
+      if (_snapshotHasAssignments(existing)) return false;
+    }
+
+    _safeWriteJSON(KEY_TOWERS_SNAPSHOT, payload);
+    return true;
+  }
+
+  function loadTowersSnapshot() {
+    const raw = _safeReadJSON(KEY_TOWERS_SNAPSHOT, null);
+    return Array.isArray(raw) ? raw : null;
+  }
+
+  function clearTowersSnapshot() {
+    try { localStorage.removeItem(KEY_TOWERS_SNAPSHOT); } catch {}
+    return true;
+  }
+
+  function tryRestoreTowersSnapshot(opts) {
+    const soft = !!(opts && opts.soft);
+    if (!state?.bases?.length || !state?.playerById || !state.playerById.size) return false;
+
+    const raw = loadTowersSnapshot();
+    if (!Array.isArray(raw) || !raw.length) return false;
+
+    // If soft and there is already visible assignment, skip re-applying.
+    if (soft) {
+      const hasLiveAssignments = (state.bases || []).some(b => b?.captainId || (Array.isArray(b?.helperIds) && b.helperIds.length));
+      if (hasLiveAssignments) return false;
+    }
+
+    const byId = new Map(raw.map(x => [String(x?.id || ''), x || {}]));
+
+    // clear current assignments first
+    (state.players || []).forEach((p) => { if (p) p.assignment = null; });
+    (state.bases || []).forEach((b) => {
+      if (!b) return;
+      b.captainId = null;
+      b.helperIds = [];
+      b.role = null;
+      try { PNS.applyBaseRoleUI?.(b, null); } catch {}
+    });
+
+    for (const base of (state.bases || [])) {
+      const snap = byId.get(String(base.id || ''));
+      if (!snap) continue;
+
+      const captainId = snap.captainId && state.playerById.has(snap.captainId) ? snap.captainId : null;
+      const helperIds = Array.isArray(snap.helperIds)
+        ? snap.helperIds.filter((id) => id && id !== captainId && state.playerById.has(id))
+        : [];
+
+      base.captainId = captainId;
+      base.helperIds = Array.from(new Set(helperIds));
+      base.role = snap.role || null;
+
+      if (captainId) {
+        const cp = state.playerById.get(captainId);
+        if (cp) {
+          cp.assignment = { baseId: base.id, kind: 'captain' };
+          try { PNS.applyBaseRoleUI?.(base, cp.role || base.role || null); } catch {}
+        }
+      } else {
+        try { PNS.applyBaseRoleUI?.(base, base.role || null); } catch {}
+      }
+
+      for (const hid of base.helperIds) {
+        const hp = state.playerById.get(hid);
+        if (hp) hp.assignment = { baseId: base.id, kind: 'helper' };
+      }
+    }
+    return true;
+  }
+
+  // Wrap renderAll once: autosave towers snapshot after changes, but stay safe during restore/import.
+  if (!PNS._towersSnapshotRenderWrapDone && typeof PNS.renderAll === 'function') {
+    PNS._towersSnapshotRenderWrapDone = true;
+    const _origRenderAll = PNS.renderAll;
+    PNS.renderAll = function patchedRenderAll() {
+      const out = _origRenderAll.apply(this, arguments);
+      try { saveTowersSnapshot(); } catch {}
+      return out;
+    };
+  }
+
+  // lightweight autosave on assignment changes / unload
+  if (!PNS._towersSnapshotEventBindDone) {
+    PNS._towersSnapshotEventBindDone = true;
+    document.addEventListener('pns:assignment-changed', () => { try { saveTowersSnapshot(); } catch {} });
+    window.addEventListener('beforeunload', () => {
+      try { if (typeof PNS.savePlayersSnapshot === 'function') PNS.savePlayersSnapshot(state.players); } catch {}
+      try { saveTowersSnapshot(); } catch {}
+    });
+  }
+
+  // expose additive API
   PNS.getTowerMarchOverride = getTowerMarchOverride;
   PNS.setTowerMarchOverride = setTowerMarchOverride;
   PNS.clearTowerMarchOverride = clearTowerMarchOverride;
   PNS.clearTowerMarchOverrides = clearTowerMarchOverrides;
 
-  PNS.persistSessionState = persistSessionState;
-  PNS.persistSessionStateSoon = persistSessionStateSoon;
-
-  PNS.setImportStatus = setImportStatus;
-  PNS.setImportLoadedInfo = setImportLoadedInfo;
-
-  // bootstrap persistence and scoped-rule syncing
-  try { loadTowerMarchOverridesStore(); } catch {}
-  const boot = () => {
-    try { wrapRenderAllForPersistence(); } catch {}
-    try { wrapAssignmentClearersForOverrideCleanup(); } catch {}
-    try { applyBaseTowerRulesForActiveShift({ rerender: false }); } catch {}
-  };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
-  else setTimeout(boot, 0);
-
-  document.addEventListener('htmx:afterSwap', () => { try { boot(); } catch {} });
-  document.addEventListener('htmx:afterSettle', () => { try { boot(); } catch {} });
-  document.addEventListener('pns:partials:loaded', () => { try { boot(); } catch {} });
-
-  // Shift switch -> re-apply per-shift limits to in-memory bases, then save
-  document.addEventListener('click', (e) => {
-    const t = e.target?.closest?.('[data-shift-tab],[data-picker-shift-tab]');
-    if (!t) return;
-    setTimeout(() => {
-      try { applyBaseTowerRulesForActiveShift({ rerender: true }); } catch {}
-      try { persistSessionStateSoon(40); } catch {}
-    }, 0);
-  });
-
-  // Extra save points
-  window.addEventListener('beforeunload', () => { try { persistSessionState(); } catch {} });
-  document.addEventListener('pns:assignment-changed', () => { try { persistSessionStateSoon(10); } catch {} });
-  document.addEventListener('players-table-rendered', () => { try { persistSessionStateSoon(30); } catch {} });
-
+  PNS.saveTowersSnapshot = saveTowersSnapshot;
+  PNS.loadTowersSnapshot = loadTowersSnapshot;
+  PNS.tryRestoreTowersSnapshot = tryRestoreTowersSnapshot;
+  PNS.clearTowersSnapshot = clearTowersSnapshot;
 })();

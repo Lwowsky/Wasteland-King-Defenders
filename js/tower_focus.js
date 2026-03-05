@@ -82,15 +82,27 @@
     const mode = state.towerViewMode || 'all';
     const cards = getTowerCards();
     if (!cards.length) return;
+
+    // Legacy CSS safeguard: if an old class survived a partial swap, it can hide every tower.
+    try { document.querySelector('.bases-grid')?.classList?.remove('focus-current-tower'); } catch {}
+
     if (mode !== 'focus') {
-      cards.forEach(c => { c.hidden = false; c.classList.remove('is-focused-tower'); });
+      cards.forEach(c => { c.hidden = false; c.classList.remove('is-focused-tower'); c.style.removeProperty('display'); });
       syncTowerViewToggleButton();
       syncFocusedTowerSelect();
       return;
     }
+
     let card = getFocusedCard();
     if (!card) card = findNextIncompleteTower();
+
+    // If all towers somehow ended up hidden after refresh/swap, recover by showing all first.
+    if (!card) {
+      cards.forEach(c => { c.hidden = false; c.classList.remove('is-focused-tower'); c.style.removeProperty('display'); });
+      card = findNextIncompleteTower() || cards[0] || null;
+    }
     if (!card) return;
+
     markFocusedCard(card);
     cards.forEach(c => { c.hidden = c !== card; });
     syncTowerViewToggleButton();

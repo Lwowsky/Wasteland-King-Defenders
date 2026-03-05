@@ -14,12 +14,82 @@
     { key: 'alliance_alias', label: 'Alliance alias', required: false, colKey: 'alliance', visibleDefault: true, aliases: ['alliance alias','alliance','альянс','ally','tag'] },
     { key: 'rally_size', label: 'Rally size', required: false, colKey: 'rally_size', visibleDefault: true, aliases: ['rally size','group attack','group atk','размер групповой атаки','розмір групової атаки','rally'] },
     { key: 'lair_level', label: 'Lair level', required: false, colKey: 'lair_level', visibleDefault: false, aliases: ['lair','логово','which lair level can you take'] },
-    { key: 'secondary_role', label: 'Secondary troop role', required: false, colKey: 'secondary_role', visibleDefault: false, aliases: ['secondary troop role','secondary role','дополнительная роль','додаткова роль'] },
-    { key: 'secondary_tier', label: 'Secondary troop tier', required: false, colKey: 'secondary_tier', visibleDefault: false, aliases: ['secondary troop tier','secondary tier','дополнительный тир','додатковий тір'] },
-    { key: 'troop_200k', label: '200k troop types', required: false, colKey: 'troop_200k', visibleDefault: false, aliases: ['200k','at least 200k','provide at least 200k','200к'] },
+    { key: 'secondary_role', label: 'Reserve troop type', required: false, colKey: 'secondary_role', visibleDefault: false, aliases: ['secondary troop role','secondary role','reserve troop type','reserve troop','дополнительная роль','додаткова роль'] },
+    { key: 'secondary_tier', label: 'Reserve troop tier', required: false, colKey: 'secondary_tier', visibleDefault: false, aliases: ['secondary troop tier','secondary tier','reserve troop tier','дополнительный тир','додатковий тір'] },
+    { key: 'troop_200k', label: 'Reserve troop type (200k+)', required: false, colKey: 'troop_200k', visibleDefault: false, aliases: ['200k','at least 200k','provide at least 200k','reserve troop type 200k','200к'] },
     { key: 'notes', label: 'Notes', required: false, colKey: 'notes', visibleDefault: false, aliases: ['note','notes','комментарий','коментар','примітка','comment'] },
   ];
   const OPTIONAL_FIELDS = FIELD_DEFS.filter(f => !f.required);
+const OPTIONAL_FIELDS_UI = OPTIONAL_FIELDS.filter(f => f.key !== 'notes');
+
+function sanitizeCustomFieldKeyPart(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 32) || 'field';
+}
+function normalizeCustomOptionalDefs(defs) {
+  const seen = new Set();
+  return (Array.isArray(defs) ? defs : []).map((d, idx) => {
+    const label = String(d?.label || '').trim() || `Custom column ${idx + 1}`;
+    let key = String(d?.key || '').trim();
+    if (!key) key = `custom_opt_${idx + 1}_${sanitizeCustomFieldKeyPart(label)}`;
+    key = key.replace(/[^a-zA-Z0-9_:-]/g, '_');
+    if (seen.has(key)) key = `${key}_${idx + 1}`;
+    seen.add(key);
+    return { key, label, required: false, colKey: key, visibleDefault: false, isCustom: true };
+  });
+}
+function getCustomOptionalDefs() {
+  state.importData = state.importData || { headers: [], rows: [], mapping: {}, loaded: false };
+  if (!Array.isArray(state.importData.customOptionalDefs)) state.importData.customOptionalDefs = [];
+  state.importData.customOptionalDefs = normalizeCustomOptionalDefs(state.importData.customOptionalDefs);
+  return state.importData.customOptionalDefs;
+}
+function ensureCustomOptionalDefs() {
+  const defs = getCustomOptionalDefs();
+  if (!defs.length) {
+    state.importData.customOptionalDefs = normalizeCustomOptionalDefs([{ key: 'custom_notes_proxy', label: 'Notes' }]);
+  }
+  return getCustomOptionalDefs();
+}
+function addCustomOptionalDef(defaultLabel) {
+  const defs = getCustomOptionalDefs().slice();
+  const nextIndex = defs.length + 1;
+  const label = String(defaultLabel || `Custom column ${nextIndex}`).trim();
+  defs.push({ key: `custom_opt_${Date.now()}_${nextIndex}_${sanitizeCustomFieldKeyPart(label)}`, label });
+  state.importData.customOptionalDefs = normalizeCustomOptionalDefs(defs);
+  const newDef = state.importData.customOptionalDefs[state.importData.customOptionalDefs.length - 1];
+  if (state.importData?.mapping && !(newDef.key in state.importData.mapping)) state.importData.mapping[newDef.key] = '';
+  renderImportUI();
+  requestAnimationFrame(() => {
+    try {
+      const input = document.querySelector(`#optionalMappingContainer .mapping-row[data-map-key="${CSS.escape(newDef.key)}"] .field-label-input`);
+      if (input) { input.focus(); input.select(); }
+    } catch {}
+  });
+}
+function removeCustomOptionalDef(key) {
+  const k = String(key || '');
+  if (!k) return;
+  const defs = getCustomOptionalDefs().filter((d) => d.key !== k);
+  state.importData.customOptionalDefs = normalizeCustomOptionalDefs(defs.length ? defs : [{ key: 'custom_notes_proxy', label: 'Notes' }]);
+  if (state.importData?.mapping && (k in state.importData.mapping)) delete state.importData.mapping[k];
+  if (Array.isArray(state.visibleOptionalColumns)) {
+    state.visibleOptionalColumns = state.visibleOptionalColumns.filter((c) => c !== k);
+  }
+  renderImportUI();
+}
+function getAllOptionalMappingFieldsForUI() {
+  return [...OPTIONAL_FIELDS_UI, ...ensureCustomOptionalDefs()];
+}
+function getVisibleOptionalFieldsForVisibilityPanel() {
+  return [...OPTIONAL_FIELDS_UI, ...getCustomOptionalDefs().filter((d) => String(d.label || '').trim().toLowerCase() !== 'notes')];
+}
+function autoDetectCustomOptionalMapping(headers, def) {
+  return findHeaderMatch(headers, { key: def.key, label: def.label, aliases: [def.label] }) || '';
+}
 
   (function enhanceFieldAliasesV2() {
     const extra = {
@@ -108,6 +178,7 @@
   PNS.getFieldDefByKey = getFieldDefByKey;
   PNS.getFieldLabel = getFieldLabel;
   PNS.getDefaultVisibleOptionalColumns = getDefaultVisibleOptionalColumns;
+  PNS.getCustomOptionalDefs = getCustomOptionalDefs;
 
   function fingerprintHeaders(headers) { return (headers || []).map(h => normHeader(h)).join('|'); }
 
@@ -239,8 +310,10 @@
 
   function ensureImportMappingDefaults() {
     state.importData = state.importData || { headers: [], rows: [], mapping: {}, loaded: false };
+    ensureCustomOptionalDefs();
     const m = state.importData.mapping || {};
     FIELD_DEFS.forEach((f) => { if (!(f.key in m)) m[f.key] = ''; });
+    getCustomOptionalDefs().forEach((f) => { if (!(f.key in m)) m[f.key] = ''; });
     state.importData.mapping = m;
 
     if (!Array.isArray(state.visibleOptionalColumns) || !state.visibleOptionalColumns.length) {
@@ -273,7 +346,7 @@
         const row = document.createElement('div');
         row.className = 'mapping-row required';
         const currentLabel = getFieldLabel(f.key);
-        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${PNS.escapeHtml(currentLabel)} <strong>*</strong></div><button type="button" class="edit-hint">editable</button></div>`;
+        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${PNS.escapeHtml(currentLabel)} <strong>*</strong></div><button type="button" class="edit-hint">✎ Edit</button></div>`;
 
         const labelInput = document.createElement('input');
         labelInput.type = 'text';
@@ -309,18 +382,28 @@
 
     if (controls.optionalMappingContainer) {
       controls.optionalMappingContainer.innerHTML = '';
-      OPTIONAL_FIELDS.forEach((f) => {
+      getAllOptionalMappingFieldsForUI().forEach((f) => {
         const row = document.createElement('div');
-        row.className = 'mapping-row';
-        const currentLabel = getFieldLabel(f.key);
-        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${PNS.escapeHtml(currentLabel)} <span class="mapping-meta">(optional)</span></div><button type="button" class="edit-hint">editable</button></div>`;
+        row.className = 'mapping-row' + (f.isCustom ? ' is-custom-row' : '');
+        row.dataset.mapKey = f.key;
+        const currentLabel = f.isCustom ? String(f.label || '').trim() : getFieldLabel(f.key);
+        const titleHtml = f.isCustom
+          ? `${PNS.escapeHtml(currentLabel)} <span class="mapping-meta">(optional / custom)</span>`
+          : `${PNS.escapeHtml(currentLabel)} <span class="mapping-meta">(optional)</span>`;
+        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${titleHtml}</div><div class="row-title-actions">${f.isCustom ? '<button type="button" class="mapping-remove-btn" title="Remove custom column" aria-label="Remove custom column">✕</button>' : ''}<button type="button" class="edit-hint">✎ Edit</button></div></div>`;
 
         const labelInput = document.createElement('input');
         labelInput.type = 'text';
         labelInput.className = 'field-label-input';
         labelInput.value = currentLabel;
+        labelInput.placeholder = f.isCustom ? 'Custom column label' : '';
         labelInput.addEventListener('change', () => {
-          if (typeof PNS.setFieldLabelOverride === 'function') PNS.setFieldLabelOverride(f.key, labelInput.value);
+          if (f.isCustom) {
+            const defs = getCustomOptionalDefs().map((d) => d.key === f.key ? { ...d, label: labelInput.value || d.label } : d);
+            state.importData.customOptionalDefs = normalizeCustomOptionalDefs(defs);
+          } else if (typeof PNS.setFieldLabelOverride === 'function') {
+            PNS.setFieldLabelOverride(f.key, labelInput.value);
+          }
           renderImportUI();
         });
         row.appendChild(labelInput);
@@ -342,15 +425,28 @@
             if (row.classList.contains('edit-open')) labelInput.focus();
           });
         }
+        const removeBtn = row.querySelector('.mapping-remove-btn');
+        if (removeBtn) {
+          removeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            removeCustomOptionalDef(f.key);
+          });
+        }
 
         controls.optionalMappingContainer.appendChild(row);
       });
+
+      const addRow = document.createElement('div');
+      addRow.className = 'mapping-row mapping-add-row';
+      addRow.innerHTML = `<button type="button" class="btn btn-sm mapping-add-btn">+ Add optional column</button>`;
+      addRow.querySelector('.mapping-add-btn')?.addEventListener('click', () => addCustomOptionalDef());
+      controls.optionalMappingContainer.appendChild(addRow);
     }
 
     if (controls.columnVisibilityChecks) {
       controls.columnVisibilityChecks.innerHTML = '';
       const visibilityFields = [
-        ...OPTIONAL_FIELDS,
+        ...getVisibleOptionalFieldsForVisibilityPanel(),
         { key: 'captain_ready_core_vis', label: 'Captain column', colKey: 'captain_ready' },
       ];
       visibilityFields.forEach((f) => {
@@ -391,6 +487,7 @@
       headers: [...(state.importData.headers || [])],
       mapping: { ...(state.importData.mapping || {}) },
       visibleOptionalColumns: [...(state.visibleOptionalColumns || [])],
+      customOptionalDefs: [...getCustomOptionalDefs().map((d) => ({ key: d.key, label: d.label }))],
       savedAt: new Date().toISOString(),
     };
   }
@@ -426,8 +523,14 @@
   function applyImportTemplate(template) {
     if (!template) { setImportStatus('No matching saved template found for current headers.', 'danger'); return false; }
     const headers = state.importData.headers || [];
+
+    if (Array.isArray(template.customOptionalDefs)) {
+      state.importData.customOptionalDefs = normalizeCustomOptionalDefs(template.customOptionalDefs);
+    }
+    ensureCustomOptionalDefs();
+
     const mapping = {};
-    FIELD_DEFS.forEach((f) => {
+    [...FIELD_DEFS, ...getCustomOptionalDefs()].forEach((f) => {
       const h = template.mapping?.[f.key] || '';
       mapping[f.key] = headers.includes(h) ? h : '';
     });
@@ -454,11 +557,16 @@
     state.importData.sourceType = sourceType || '';
     state.importData.loaded = true;
 
+    ensureCustomOptionalDefs();
     const detected = autoDetectMapping(state.importData.headers);
     const prev = state.importData.mapping || {};
     const merged = {};
     FIELD_DEFS.forEach((f) => {
       merged[f.key] = prev[f.key] && state.importData.headers.includes(prev[f.key]) ? prev[f.key] : (detected[f.key] || '');
+    });
+    getCustomOptionalDefs().forEach((f) => {
+      const auto = autoDetectCustomOptionalMapping(state.importData.headers, f);
+      merged[f.key] = prev[f.key] && state.importData.headers.includes(prev[f.key]) ? prev[f.key] : (auto || '');
     });
     state.importData.mapping = merged;
 
@@ -470,7 +578,10 @@
 
   function handleDetectColumns() {
     if (!(state.importData.headers || []).length) { setImportStatus('Load file/link first, then detect columns.', 'danger'); return; }
-    state.importData.mapping = autoDetectMapping(state.importData.headers);
+    ensureCustomOptionalDefs();
+    const detected = autoDetectMapping(state.importData.headers);
+    getCustomOptionalDefs().forEach((f) => { detected[f.key] = autoDetectCustomOptionalMapping(state.importData.headers, f); });
+    state.importData.mapping = detected;
     renderImportUI();
     setImportStatus('Auto-detect complete. Please verify required columns.', 'good');
   }
@@ -481,6 +592,8 @@
     const missing = FIELD_DEFS.filter(f => f.required && !mapping[f.key]).map(f => f.label);
     if (missing.length) { setImportStatus(`Missing required mappings: ${missing.join(', ')}`, 'danger'); return null; }
 
+    const customDefs = getCustomOptionalDefs();
+    const customFieldLabels = Object.fromEntries(customDefs.map((d) => [d.key, d.label]));
     const players = [];
     let idx = 1;
 
@@ -494,6 +607,19 @@
 
       const shift = PNS.normalizeShiftValue(get('shift_availability'));
       const role = PNS.normalizeRole(get('focus_troop'));
+
+      const customFields = {};
+      let notesFromCustom = '';
+      customDefs.forEach((d) => {
+        const val = get(d.key);
+        if (!val) return;
+        const labelNorm = String(d.label || '').trim().toLowerCase();
+        if (labelNorm === 'notes') {
+          if (!notesFromCustom) notesFromCustom = val;
+          return;
+        }
+        customFields[d.key] = val;
+      });
 
       players.push({
         id: `p${idx++}`,
@@ -512,7 +638,9 @@
         secondaryRole: PNS.normalizeRole(get('secondary_role')),
         secondaryTier: PNS.normalizeTierText(get('secondary_tier')),
         troop200k: get('troop_200k'),
-        notes: get('notes'),
+        notes: get('notes') || notesFromCustom,
+        customFields,
+        customFieldLabels,
         raw: row,
         rowEl: null,
         actionCellEl: null,
@@ -523,6 +651,7 @@
   }
 
   function resetAssignmentsForImportedData() {
+    state.shiftPlans = {};
     (state.bases || []).forEach((b) => {
       b.captainId = null;
       b.helperIds = [];
@@ -537,8 +666,10 @@
     if (!players.length) { setImportStatus('No player rows found after import (check mapping / empty rows).', 'danger'); return; }
 
     state.players = players;
+    state.playerById = new Map(players.map((p) => [p.id, p]));
     resetAssignmentsForImportedData();
-    // New imported roster: clear saved tower assignments/overrides, keep tower settings (limits/maxHelpers)
+
+    // New imported roster must reset tower assignments (but keep tower settings/limits)
     try { PNS.clearTowersSnapshot?.(); } catch {}
     try { PNS.clearTowerMarchOverrides?.(); } catch {}
     try { if (state && typeof state === 'object') state.shiftPlans = {}; } catch {}
@@ -549,12 +680,14 @@
 
     if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift);
     if (typeof PNS.savePlayersSnapshot === 'function') PNS.savePlayersSnapshot(state.players);
-    if (typeof PNS.saveTowersSnapshot === 'function') PNS.saveTowersSnapshot(state.bases);
+    try { PNS.saveTowersSnapshot?.(); } catch {}
+    try { PNS.persistSessionStateSoon?.(20); } catch {}
     // auto-save latest import template so you don't need to press Save after every refresh
     try { saveCurrentImportTemplate(); } catch {}
     setImportStatus(`Imported ${players.length} players successfully. Template auto-saved in LocalStorage.`, 'good');
     setImportLoadedInfo(`${state.importData.sourceName || 'source'} • imported ${players.length} players`);
   }
+
 
   async function handleImportFileChange(ev) {
     const file = ev.target.files?.[0];
@@ -605,7 +738,7 @@
 
   function loadDemoIntoImportWizard() {
     const players = state.players || [];
-    const headers = ['Player name','Alliance alias','Troop Tier','What is your focus troop?','March size','Rally size','Are you ready to be a captain?','Which shift can you join? (each shift is 4 hours)','Which lair level can you take?','Secondary troop role','Secondary troop tier','Which troop type can you provide at least 200k?','Notes'];
+    const headers = ['Player name','Alliance alias','Troop Tier','What is your focus troop?','March size','Rally size','Are you ready to be a captain?','Which shift can you join? (each shift is 4 hours)','Which lair level can you take?','Reserve troop type','Reserve troop tier','Reserve troop type (200k+)','Notes'];
     const rows = players.map((p) => ({
       'Player name': p.name || '',
       'Alliance alias': p.alliance || '',
@@ -616,9 +749,9 @@
       'Are you ready to be a captain?': p.captainReady ? 'Yes' : 'No',
       'Which shift can you join? (each shift is 4 hours)': p.shift === 'shift1' ? 'Shift 1' : p.shift === 'shift2' ? 'Shift 2' : 'Both',
       'Which lair level can you take?': p.lairLevel || '',
-      'Secondary troop role': p.secondaryRole && p.secondaryRole !== 'Unknown' ? p.secondaryRole : '',
-      'Secondary troop tier': p.secondaryTier || '',
-      'Which troop type can you provide at least 200k?': p.troop200k || '',
+      'Reserve troop type': p.secondaryRole && p.secondaryRole !== 'Unknown' ? p.secondaryRole : '',
+      'Reserve troop tier': p.secondaryTier || '',
+      'Reserve troop type (200k+)': p.troop200k || '',
       'Notes': p.notes || '',
     }));
     setRawImportDataset(headers, rows, 'Built-in demo data', 'demo');
@@ -626,36 +759,94 @@
   }
 
   // ===== bind import modal buttons EVERY time DOM changes =====
+  let __restoreRetryTimers = [];
+  function _clearRestoreRetryTimers() {
+    try { __restoreRetryTimers.forEach((id) => clearTimeout(id)); } catch {}
+    __restoreRetryTimers = [];
+  }
+  function _attemptRestoreTowersAndRefreshUI() {
+    try {
+      if (!Array.isArray(state.players) || !state.players.length) return false;
+      if (!state.playerById || typeof state.playerById.get !== 'function') {
+        state.playerById = new Map((state.players || []).map((p) => [p.id, p]));
+      }
+      let restoredTowers = false;
+      if (typeof PNS.tryRestoreTowersSnapshot === 'function') {
+        restoredTowers = !!PNS.tryRestoreTowersSnapshot();
+      }
+      if (typeof PNS.renderAll === 'function') PNS.renderAll();
+      if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift || 'shift1');
+      return restoredTowers;
+    } catch { return false; }
+  }
+
+function hydrateCustomOptionalDefsFromPlayers(players) {
+  const arr = Array.isArray(players) ? players : [];
+  const labels = {};
+  arr.forEach((p) => {
+    const map = p?.customFieldLabels && typeof p.customFieldLabels === 'object' ? p.customFieldLabels : {};
+    Object.entries(map).forEach(([k, v]) => {
+      if (!k) return;
+      if (!(k in labels) && String(v || '').trim()) labels[k] = String(v).trim();
+    });
+    const values = p?.customFields && typeof p.customFields === 'object' ? p.customFields : {};
+    Object.keys(values).forEach((k) => { if (!(k in labels)) labels[k] = k.replace(/^custom[_:-]*/i, '').replace(/_/g, ' ') || k; });
+  });
+  const defs = Object.entries(labels).map(([key, label]) => ({ key, label }))
+    .filter((d) => String(d.label || '').trim().toLowerCase() !== 'notes');
+  if (defs.length) {
+    state.importData = state.importData || { headers: [], rows: [], mapping: {}, loaded: false };
+    state.importData.customOptionalDefs = normalizeCustomOptionalDefs([{ key: 'custom_notes_proxy', label: 'Notes' }, ...defs]);
+    ensureImportMappingDefaults();
+  } else {
+    ensureCustomOptionalDefs();
+  }
+}
+
   function tryRestorePlayersFromLocalStorage() {
-    if (Array.isArray(state.players) && state.players.length) return false;
-    if (typeof PNS.loadPlayersSnapshot !== 'function') return false;
-    const restored = PNS.loadPlayersSnapshot();
-    if (!Array.isArray(restored) || !restored.length) return false;
-    state.players = restored;
-    state.playerById = new Map(restored.map((p) => [p.id, p]));
-    // prevent empty current state from overwriting saved tower snapshot before late restore runs
+    let restoredPlayers = false;
+
+    // 1) Restore players if state is empty
+    if ((!Array.isArray(state.players) || !state.players.length) && typeof PNS.loadPlayersSnapshot === 'function') {
+      const restored = PNS.loadPlayersSnapshot();
+      if (Array.isArray(restored) && restored.length) {
+        state.players = restored;
+        restoredPlayers = true;
+      }
+    }
+
+    // 2) If players already exist (from earlier init/retry), still continue and restore towers/UI
+    if (!Array.isArray(state.players) || !state.players.length) return false;
+
+    hydrateCustomOptionalDefsFromPlayers(state.players || []);
+
+    // Ensure fresh index for edit/autofill/modals after refresh/import
+    state.playerById = new Map((state.players || []).map((p) => [p.id, p]));
+
+    // Prevent early empty render from overwriting saved towers snapshot
     state._skipTowerSnapshotSave = true;
+
     if (typeof PNS.renderPlayersTableFromState === 'function') PNS.renderPlayersTableFromState();
     if (typeof PNS.buildRowActions === 'function') PNS.buildRowActions();
 
-    const tryRestoreTowers = () => {
-      try {
-        if (typeof PNS.tryRestoreTowersSnapshot === 'function') {
-          const ok = PNS.tryRestoreTowersSnapshot();
-          if (ok && typeof PNS.renderAll === 'function') PNS.renderAll();
+    // Immediate restore + late retries (bases/partials can be ready later)
+    _attemptRestoreTowersAndRefreshUI();
+    _clearRestoreRetryTimers();
+    [80, 220, 600, 1200, 2200].forEach((ms) => {
+      const id = setTimeout(() => {
+        _attemptRestoreTowersAndRefreshUI();
+        if (ms >= 2200) {
+          try { state._skipTowerSnapshotSave = false; } catch {}
+          try { PNS.persistSessionStateSoon?.(30); } catch {}
         }
-      } catch {}
-    };
+      }, ms);
+      __restoreRetryTimers.push(id);
+    });
 
-    // Restore players first, then towers (bases may be parsed a bit later depending on partial/init order)
-    tryRestoreTowers();
-    [60, 220, 700, 1500].forEach((ms) => setTimeout(tryRestoreTowers, ms));
-    setTimeout(() => { try { state._skipTowerSnapshotSave = false; PNS.persistSessionStateSoon?.(20); } catch {} }, 1800);
-
-    if (typeof PNS.renderAll === 'function') PNS.renderAll();
-    if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift || 'shift2');
-    setImportLoadedInfo(`Restored ${restored.length} players from LocalStorage.`);
-    setImportStatus('Players restored from previous session. Load/apply a new table anytime to replace them.', 'good');
+    if (restoredPlayers) {
+      setImportLoadedInfo(`Restored ${state.players.length} players from LocalStorage.`);
+      setImportStatus('Players restored from previous session. Load/apply a new table anytime to replace them.', 'good');
+    }
     return true;
   }
 
@@ -706,6 +897,7 @@
     renderImportUI();
     const restored = tryRestorePlayersFromLocalStorage();
     if (!restored) setImportLoadedInfo('No file loaded yet. You can use built-in demo data.');
+    scheduleLateSessionRestore();
     bindImportWizardButtons();
   }
 
@@ -720,6 +912,8 @@
     // rebind buttons and rerender (safe)
     bindImportWizardButtons();
     renderImportUI();
+    [80, 300, 900].forEach((ms) => setTimeout(() => { try { tryRestorePlayersFromLocalStorage(); } catch {} }, ms));
+    scheduleLateSessionRestore();
   }
 
   // expose

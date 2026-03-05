@@ -15,7 +15,11 @@
   function getTowerEffectiveMarch(base, player) {
     if (!player) return 0;
     const raw = num(player.march);
-    // Manual override is scoped to base + active shift (does not affect other shifts / towers)
+    // Captain always uses raw march in tower calculations.
+    try {
+      if (base?.captainId && player?.id && String(base.captainId) === String(player.id)) return raw;
+    } catch {}
+    // Manual override is scoped per tower + current shift.
     try {
       const ov = PNS.getTowerMarchOverride?.(base?.id, player?.id, state.activeShift);
       if (Number.isFinite(ov) && ov > 0) return ov;
@@ -205,9 +209,7 @@
 
   PNS.getBaseTierMinMarch = getBaseTierMinMarch;
   PNS.getTowerEffectiveMarch = getTowerEffectiveMarch;
-  // aliases used by render/modal in your current codebase
   PNS.getEffectiveTowerMarch = getTowerEffectiveMarch;
-  PNS.getEffectiveMarchForBase = getTowerEffectiveMarch;
   PNS.passesBaseTierMinMarch = passesBaseTierMinMarch;
 
   PNS.autoFillDiagnostics = autoFillDiagnostics;

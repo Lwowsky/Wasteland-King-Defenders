@@ -94,6 +94,7 @@
 
     if (nextShift === 'shift1' || nextShift === 'shift2') {
       loadShiftPlanSnapshot(nextShift);
+      try { PNS.applyBaseTowerRulesForActiveShift?.(); } catch {}
       if (typeof PNS.renderAll === 'function') PNS.renderAll();
     }
 

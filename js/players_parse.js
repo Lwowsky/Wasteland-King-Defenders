@@ -195,7 +195,22 @@
     if (hasPlayers) {
       const ok = relinkPlayersToDOM();
       if (!ok) {
-        // якщо в DOM нема таблиці — нічого не робимо
+        // Після HTMX/partials таблиця часто приходить з порожнім <tbody>.
+        // У такому випадку потрібно не тільки relink, а ПЕРЕМАЛЮВАТИ rows зі state.
+        const table = PNS.controls?.playersDataTable || document.querySelector('#playersDataTable');
+        const tbody = table?.querySelector('tbody');
+        const hasTableShell = !!table;
+        const hasRenderedRows = !!tbody && tbody.querySelectorAll('tr').length > 0;
+
+        if (hasTableShell && !hasRenderedRows && typeof PNS.renderPlayersTableFromState === 'function') {
+          try {
+            PNS.renderPlayersTableFromState();
+            relinkPlayersToDOM();
+          } catch (e) {
+            console.warn('[players_parse] failed to re-render players table from state', e);
+          }
+        }
+        // якщо таблиці ще нема в DOM — нічого не робимо (пізніший retry спрацює)
       }
       return;
     }

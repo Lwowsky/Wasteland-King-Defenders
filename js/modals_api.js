@@ -285,8 +285,18 @@
         edit.querySelector('#tpeRole').value = m.querySelector('#pickerManualRole')?.value || 'Fighter';
         edit.querySelector('#tpeTier').value = m.querySelector('#pickerManualTier')?.value || 'T10';
         edit.querySelector('#tpeMarch').value = m.querySelector('#pickerManualMarch')?.value || '';
-        if (edit.querySelector('#tpeRally')) edit.querySelector('#tpeRally').value = m.querySelector('#pickerManualRally')?.value || '';
+        const rallyInput = edit.querySelector('#tpeRally');
+        if (rallyInput) rallyInput.value = m.querySelector('#pickerManualRally')?.value || '';
         edit.dataset.forceAssignKind = assignKind || '';
+
+        // New manual player: keep mode in sync immediately (important for Rally field visibility)
+        const forcedCaptain = String(assignKind || '').toLowerCase() === 'captain';
+        edit.dataset.kind = forcedCaptain ? 'captain' : 'helper';
+        if (rallyInput) {
+          rallyInput.style.display = forcedCaptain ? '' : 'none';
+          rallyInput.disabled = !forcedCaptain;
+        }
+
         const sub = edit.querySelector('#tpeSubtitle');
         if (sub && !edit.dataset.playerId) {
           sub.textContent = assignKind === 'captain' ? 'Новий капітан у башню' : 'Новий хелпер у башню';
