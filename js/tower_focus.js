@@ -45,7 +45,7 @@
   function syncTowerViewToggleButton() {
     const b = (MS.getButtons?.().toggleTowerView) || document.querySelector('#toggleTowerFocusBtn');
     if (!b) return;
-    const focusMode = (state.towerViewMode || 'focus') === 'focus';
+    const focusMode = (state.towerViewMode || 'all') === 'focus';
     b.textContent = focusMode ? 'Показати всі башні' : 'Приховати інші';
     b.dataset.mode = focusMode ? 'focus' : 'all';
     b.setAttribute('aria-pressed', String(focusMode));
@@ -82,27 +82,15 @@
     const mode = state.towerViewMode || 'all';
     const cards = getTowerCards();
     if (!cards.length) return;
-
-    // Legacy CSS safeguard: if an old class survived a partial swap, it can hide every tower.
-    try { document.querySelector('.bases-grid')?.classList?.remove('focus-current-tower'); } catch {}
-
     if (mode !== 'focus') {
-      cards.forEach(c => { c.hidden = false; c.classList.remove('is-focused-tower'); c.style.removeProperty('display'); });
+      cards.forEach(c => { c.hidden = false; c.classList.remove('is-focused-tower'); });
       syncTowerViewToggleButton();
       syncFocusedTowerSelect();
       return;
     }
-
     let card = getFocusedCard();
     if (!card) card = findNextIncompleteTower();
-
-    // If all towers somehow ended up hidden after refresh/swap, recover by showing all first.
-    if (!card) {
-      cards.forEach(c => { c.hidden = false; c.classList.remove('is-focused-tower'); c.style.removeProperty('display'); });
-      card = findNextIncompleteTower() || cards[0] || null;
-    }
     if (!card) return;
-
     markFocusedCard(card);
     cards.forEach(c => { c.hidden = c !== card; });
     syncTowerViewToggleButton();
@@ -126,7 +114,7 @@
 
   function maybeAdvanceFocusedTower() {
     if (!state.autoAdvanceTowerOnAssign) return;
-    if ((state.towerViewMode || 'focus') !== 'focus') return;
+    if ((state.towerViewMode || 'all') !== 'focus') return;
     const current = getFocusedCard();
     if (!current) { applyTowerVisibilityMode(); return; }
     if (!isCardIncomplete(current)) {

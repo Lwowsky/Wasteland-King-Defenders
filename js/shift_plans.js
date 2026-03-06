@@ -4,6 +4,33 @@
   const { state } = PNS; if (!state) return;
   const $$ = PNS.$$ || ((s, r = document) => Array.from(r.querySelectorAll(s)));
   const $ = PNS.$ || ((s, r = document) => r.querySelector(s));
+  const KEY_SHIFT_PLANS_STORE = 'pns_layout_shift_plans_store_v1';
+
+  function safeReadShiftPlansStore() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(KEY_SHIFT_PLANS_STORE) || '{}');
+      return (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+    } catch { return {}; }
+  }
+  function safeWriteShiftPlansStore(value) {
+    try { localStorage.setItem(KEY_SHIFT_PLANS_STORE, JSON.stringify(value || {})); } catch {}
+  }
+  function ensureShiftPlansLoaded() {
+    if (state._shiftPlansLoadedFromLS) return;
+    state._shiftPlansLoadedFromLS = true;
+    const saved = safeReadShiftPlansStore();
+    state.shiftPlans = (state.shiftPlans && typeof state.shiftPlans === 'object') ? state.shiftPlans : {};
+    ['shift1','shift2'].forEach((k) => {
+      if (saved[k] && !state.shiftPlans[k]) state.shiftPlans[k] = saved[k];
+    });
+  }
+  function persistShiftPlansStore() {
+    ensureShiftPlansLoaded();
+    safeWriteShiftPlansStore({
+      shift1: state.shiftPlans?.shift1 || null,
+      shift2: state.shiftPlans?.shift2 || null,
+    });
+  }
 
   function cloneAssignment(a) { return a ? { baseId: a.baseId, kind: a.kind } : null; }
   function snapshotShiftPlan() {
@@ -41,13 +68,33 @@
   }
   function saveCurrentShiftPlanSnapshot() {
     if (!['shift1', 'shift2'].includes(state.activeShift)) return;
+    ensureShiftPlansLoaded();
     state.shiftPlans = state.shiftPlans || {};
     state.shiftPlans[state.activeShift] = snapshotShiftPlan();
+    persistShiftPlansStore();
   }
   function loadShiftPlanSnapshot(shift) {
     if (!['shift1', 'shift2'].includes(shift)) return;
+    ensureShiftPlansLoaded();
     state.shiftPlans = state.shiftPlans || {};
     restoreShiftPlan(state.shiftPlans[shift] || null);
+  }
+
+  function isPlayerUsedInShift(playerId, shift) {
+    if (!playerId || !['shift1', 'shift2'].includes(String(shift || '').toLowerCase())) return null;
+    ensureShiftPlansLoaded();
+    const key = String(shift).toLowerCase();
+    const plan = state.shiftPlans?.[key];
+    const a = plan?.players?.[playerId] || null;
+    if (!a || !a.baseId) return null;
+    return { shift: key, label: key === 'shift1' ? 'Shift 1' : 'Shift 2', assignment: a };
+  }
+
+  function isPlayerUsedInOtherShift(playerId, currentShift) {
+    const cur = String(currentShift || state.activeShift || '').toLowerCase();
+    if (!(cur === 'shift1' || cur === 'shift2')) return null;
+    const other = cur === 'shift1' ? 'shift2' : 'shift1';
+    return isPlayerUsedInShift(playerId, other);
   }
 
   function matchesShift(itemShift, filter) {
@@ -94,7 +141,6 @@
 
     if (nextShift === 'shift1' || nextShift === 'shift2') {
       loadShiftPlanSnapshot(nextShift);
-      try { PNS.applyBaseTowerRulesForActiveShift?.(); } catch {}
       if (typeof PNS.renderAll === 'function') PNS.renderAll();
     }
 
@@ -113,7 +159,7 @@
     }
     try { localStorage.setItem(PNS.KEYS.KEY_SHIFT_FILTER, state.activeShift); } catch {}
 
-    state.towerViewMode = state.towerViewMode || 'focus';
+    state.towerViewMode = state.towerViewMode || 'all';
     setTimeout(() => {
       try { MS.applyTowerVisibilityMode?.(); } catch {}
       try { MS.syncTowerViewToggleButton?.(); } catch {}
@@ -136,6 +182,8 @@
     restoreShiftPlan,
     saveCurrentShiftPlanSnapshot,
     loadShiftPlanSnapshot,
+    isPlayerUsedInShift,
+    isPlayerUsedInOtherShift,
     matchesShift,
     syncSettingsShiftBadge,
     updateShiftTabButtons,
@@ -144,3 +192,5 @@
     handleShiftTabClick,
   });
 })();
+
+(function(){ const PNS = window.PNS; if (!PNS) return; const MS = PNS.ModalsShift || {}; PNS.isPlayerUsedInOtherShift = MS.isPlayerUsedInOtherShift; PNS.isPlayerUsedInShift = MS.isPlayerUsedInShift; })();

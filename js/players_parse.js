@@ -231,16 +231,251 @@
   PNS.relinkPlayersToDOM = relinkPlayersToDOM;
   PNS.ensurePlayersLinked = ensurePlayersLinked;
 
+  /**
+   * Автоматично розподіляє гравців між Shift 1 / Shift 2 (приблизно 50/50).
+   *
+   * За замовчуванням режим "respect":
+   * - shift1/shift2 лишає як є
+   * - only 'both'/порожні перерозподіляє для балансу
+   *
+   * Режим "force":
+   * - ігнорує поточний shift у всіх та робить чистий 50/50 розподіл.
+   */
+  function autoBalanceTwoShifts(players, opts = {}) {
+    const list = Array.isArray(players)
+      ? players
+      : (Array.isArray(state.players) ? state.players : []);
+
+    if (!list.length) return { shift1: 0, shift2: 0 };
+
+    const mode = (opts.mode === 'force') ? 'force' : 'respect';
+    const total = list.length;
+    const max1 = Number.isFinite(opts.maxShift1)
+      ? Math.max(0, Math.floor(opts.maxShift1))
+      : Math.ceil(total / 2);
+    const max2 = Number.isFinite(opts.maxShift2)
+      ? Math.max(0, Math.floor(opts.maxShift2))
+      : (total - max1);
+
+    // нормалізуємо shift
+    list.forEach((p) => {
+      p.shift = normalizeShiftValue(p.shift || p.shiftLabel || 'both');
+    });
+
+    if (mode === 'force') {
+      // спочатку всіх робимо "both", щоб не було впливу старих значень
+      list.forEach((p) => {
+        p.shift = 'both';
+        p.shiftLabel = formatShiftLabelForCell('both');
+        if (p.rowEl) p.rowEl.dataset.shift = 'both';
+      });
+    }
+
+    let c1 = list.filter((p) => p.shift === 'shift1').length;
+    let c2 = list.filter((p) => p.shift === 'shift2').length;
+
+    // пул для розподілу
+    const pool = (mode === 'force')
+      ? list.slice()
+      : list.filter((p) => !p.shift || p.shift === 'both');
+
+    // трохи стабільніший баланс: сортуємо по ролі та march (desc)
+    const roleOrder = { Fighter: 0, Rider: 1, Shooter: 2, Unknown: 3 };
+    pool.sort((a, b) => {
+      const ra = roleOrder[normalizeRole(a.role)] ?? 99;
+      const rb = roleOrder[normalizeRole(b.role)] ?? 99;
+      if (ra !== rb) return ra - rb;
+      const ma = Number(a.march || 0);
+      const mb = Number(b.march || 0);
+      if (mb !== ma) return mb - ma;
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    });
+
+    for (const p of pool) {
+      // якщо це режим respect і гравець вже має shift1/shift2 — пропускаємо
+      if (mode !== 'force' && (p.shift === 'shift1' || p.shift === 'shift2')) continue;
+
+      let target = null;
+      if (c1 >= max1) target = 'shift2';
+      else if (c2 >= max2) target = 'shift1';
+      else target = (c1 <= c2) ? 'shift1' : 'shift2';
+
+      p.shift = target;
+      p.shiftLabel = formatShiftLabelForCell(target);
+      if (p.rowEl) {
+        p.rowEl.dataset.shift = target;
+        const cell = p.rowEl.querySelector('td[data-field="shiftLabel"]');
+        if (cell) cell.textContent = p.shiftLabel;
+      }
+
+      if (target === 'shift1') c1++; else c2++;
+    }
+
+    return { shift1: c1, shift2: c2 };
+  }
+
+  PNS.autoBalanceTwoShifts = autoBalanceTwoShifts;
+
+  // ===== Shift breakdown + manual split helpers =====
+  function getShiftCounts(players) {
+    const list = Array.isArray(players) ? players : (Array.isArray(state.players) ? state.players : []);
+    const out = { shift1: 0, shift2: 0, both: 0, total: 0 };
+    if (!list.length) return out;
+    for (const p of list) {
+      const s = normalizeShiftValue(p?.shift || p?.shiftLabel || 'both');
+      if (s === 'shift1') out.shift1++;
+      else if (s === 'shift2') out.shift2++;
+      else out.both++;
+    }
+    out.total = out.shift1 + out.shift2 + out.both;
+    return out;
+  }
+
+  function updateShiftBreakdownUI() {
+    const c = getShiftCounts(state.players);
+    const text = `${c.shift1} / ${c.shift2} / ${c.both}`;
+    const elMain = document.getElementById('shiftBreakdownText');
+    if (elMain) elMain.textContent = text;
+    const elInline = document.getElementById('shiftBreakdownInline');
+    if (elInline) elInline.textContent = `${text}  (total ${c.total})`;
+
+    // helpful placeholders
+    const a1 = document.getElementById('shiftAddS1');
+    const a2 = document.getElementById('shiftAddS2');
+    if (a1 && !a1.placeholder) a1.placeholder = '+S1';
+    if (a2 && !a2.placeholder) a2.placeholder = '+S2';
+  }
+
+  function setPlayerShift(p, shift) {
+    const s = normalizeShiftValue(shift);
+    p.shift = s;
+    p.shiftLabel = formatShiftLabelForCell(s);
+    if (p.rowEl) {
+      p.rowEl.dataset.shift = s;
+      const cell = p.rowEl.querySelector('td[data-field="shiftLabel"]');
+      if (cell) cell.textContent = p.shiftLabel;
+    }
+  }
+
+  /**
+   * Додає N гравців у Shift 1 / Shift 2 (беручи з Both).
+   *
+   * opts.force=true:
+   *   - спочатку всіх робить Both
+   *   - потім кладе рівно shift1Add / shift2Add (якщо вистачає людей)
+   */
+  function addPlayersToShifts(players, opts = {}) {
+    const list = Array.isArray(players)
+      ? players
+      : (Array.isArray(state.players) ? state.players : []);
+    if (!list.length) return { added1: 0, added2: 0, counts: getShiftCounts(list) };
+
+    const force = !!opts.force;
+    let add1 = Math.max(0, Math.floor(Number(opts.shift1Add || 0)));
+    let add2 = Math.max(0, Math.floor(Number(opts.shift2Add || 0)));
+
+    // нормалізуємо shift
+    list.forEach((p) => { p.shift = normalizeShiftValue(p.shift || p.shiftLabel || 'both'); });
+
+    if (force) {
+      list.forEach((p) => setPlayerShift(p, 'both'));
+    }
+
+    // кандидати — only Both
+    const pool = list.filter((p) => normalizeShiftValue(p.shift || 'both') === 'both');
+
+    // стабільний/передбачуваний відбір: роль + march (desc) + name
+    const roleOrder = { Fighter: 0, Rider: 1, Shooter: 2, Unknown: 3 };
+    pool.sort((a, b) => {
+      const ra = roleOrder[normalizeRole(a.role)] ?? 99;
+      const rb = roleOrder[normalizeRole(b.role)] ?? 99;
+      if (ra !== rb) return ra - rb;
+      const ma = Number(a.march || 0);
+      const mb = Number(b.march || 0);
+      if (mb !== ma) return mb - ma;
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    });
+
+    let i = 0;
+    let added1 = 0;
+    let added2 = 0;
+    while (i < pool.length && (add1 > 0 || add2 > 0)) {
+      // беремо в ту зміну, де більше "потрібно" зараз
+      const takeShift = (add1 > 0 && (add1 >= add2 || add2 <= 0)) ? 'shift1' : 'shift2';
+      const p = pool[i++];
+      setPlayerShift(p, takeShift);
+      if (takeShift === 'shift1') { add1--; added1++; }
+      else { add2--; added2++; }
+    }
+
+    return { added1, added2, counts: getShiftCounts(list) };
+  }
+
+  PNS.getShiftCounts = getShiftCounts;
+  PNS.updateShiftBreakdownUI = updateShiftBreakdownUI;
+  PNS.addPlayersToShifts = addPlayersToShifts;
+
   // initial run
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', ensurePlayersLinked);
+    document.addEventListener('DOMContentLoaded', () => {
+      ensurePlayersLinked();
+      try { updateShiftBreakdownUI(); } catch {}
+    });
   } else {
     ensurePlayersLinked();
+    try { updateShiftBreakdownUI(); } catch {}
   }
+
+  // keep breakdown in sync
+  document.addEventListener('players-table-rendered', () => {
+    try { updateShiftBreakdownUI(); } catch {}
+  });
 
   // after partial swaps (from ns.js)
   document.addEventListener('pns:dom:refreshed', () => {
     ensurePlayersLinked();
+    try { updateShiftBreakdownUI(); } catch {}
   });
+
+  // UI handlers (delegated) — safe across HTMX swaps
+  if (!state._shiftSplitUiBound) {
+    state._shiftSplitUiBound = true;
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('#applyShiftAddBtn');
+      if (!btn) return;
+      e.preventDefault();
+
+      const add1 = Number(document.getElementById('shiftAddS1')?.value || 0);
+      const add2 = Number(document.getElementById('shiftAddS2')?.value || 0);
+      const force = !!document.getElementById('shiftSplitForceChk')?.checked;
+
+      const res = addPlayersToShifts(state.players, { shift1Add: add1, shift2Add: add2, force });
+
+      try { PNS.savePlayersSnapshot?.(state.players); } catch {}
+      try { PNS.applyPlayerTableFilters?.(); } catch {}
+      try { updateShiftBreakdownUI(); } catch {}
+
+      // nice feedback if import status exists
+      try {
+        PNS.setImportStatus?.(
+          `Shift updated: +${res.added1} to Shift 1, +${res.added2} to Shift 2. Now ${res.counts.shift1}/${res.counts.shift2}/${res.counts.both}.`,
+          'good'
+        );
+      } catch {}
+    });
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('#split5050Btn');
+      if (!btn) return;
+      e.preventDefault();
+      const force = !!document.getElementById('shiftSplitForceChk')?.checked;
+      const mode = force ? 'force' : 'respect';
+      try { autoBalanceTwoShifts(state.players, { mode }); } catch {}
+      try { PNS.savePlayersSnapshot?.(state.players); } catch {}
+      try { PNS.applyPlayerTableFilters?.(); } catch {}
+      try { updateShiftBreakdownUI(); } catch {}
+    });
+  }
 
 })();

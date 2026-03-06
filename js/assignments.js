@@ -16,6 +16,28 @@
     return Number(player.march || 0) || 0;
   }
 
+  function sameTroopOnlyEnabled() {
+    try {
+      if (typeof PNS.isTowerNoMixTroopsEnabled === 'function') return !!PNS.isTowerNoMixTroopsEnabled();
+    } catch {}
+    return true;
+  }
+
+  function noCrossShiftDupesEnabled() {
+    try {
+      if (typeof PNS.isTowerNoCrossShiftDupesEnabled === 'function') return !!PNS.isTowerNoCrossShiftDupesEnabled();
+    } catch {}
+    return true;
+  }
+
+  function persistAfterTowerChange(meta = {}) {
+    try { PNS.savePlayersSnapshot?.(state.players); } catch {}
+    try { PNS.saveTowersSnapshot?.(); } catch {}
+    try { PNS.ModalsShift?.saveCurrentShiftPlanSnapshot?.(); } catch {}
+    try { PNS.persistSessionStateSoon?.(10); } catch {}
+    try { document.dispatchEvent(new CustomEvent('pns:assignment-changed', { detail: meta })); } catch {}
+  }
+
   function clearPlayerFromBase(playerId) {
     const player = state.playerById.get(playerId);
     if (!player || !player.assignment) return;
@@ -68,8 +90,16 @@
     }
 
     const effectiveRole = (typeof PNS.getBaseRole === 'function') ? PNS.getBaseRole(base) : null;
-    if (kind === 'helper' && effectiveRole && player.role !== effectiveRole) {
+    if (kind === 'helper' && sameTroopOnlyEnabled() && effectiveRole && player.role !== effectiveRole) {
       return `Role mismatch: ${player.role} cannot go to ${effectiveRole} base.`;
+    }
+
+    if (kind === 'helper' && noCrossShiftDupesEnabled()) {
+      const curShift = String(state.activeShift || '').toLowerCase();
+      if ((curShift === 'shift1' || curShift === 'shift2') && typeof PNS.isPlayerUsedInOtherShift === 'function') {
+        const hit = PNS.isPlayerUsedInOtherShift(player.id, curShift);
+        if (hit) return `Player already assigned in ${hit.label || hit.shift || 'other shift'}.`;
+      }
     }
 
     if (kind === 'helper') {
@@ -160,10 +190,7 @@
     }
 
     if (typeof PNS.renderAll === 'function') PNS.renderAll();
-    try { PNS.savePlayersSnapshot?.(state.players); } catch {}
-    try {
-      document.dispatchEvent(new CustomEvent('pns:assignment-changed', { detail: { baseId: base.id, playerId: player.id, kind } }));
-    } catch {}
+    persistAfterTowerChange({ type: 'assign', baseId: base.id, playerId: player.id, kind });
   }
 
   function clearBase(baseId, helpersOnly = false) {
@@ -193,11 +220,7 @@
     base.helperIds = [];
 
     if (typeof PNS.renderAll === 'function') PNS.renderAll();
-    try { PNS.savePlayersSnapshot?.(state.players); } catch {}
-    try { PNS.saveTowersSnapshot?.({ forceEmpty: true }); } catch {}
-    try {
-      document.dispatchEvent(new CustomEvent('pns:assignment-changed', { detail: { baseId: base.id, action: helpersOnly ? 'clear-helpers' : 'clear-base' } }));
-    } catch {}
+    persistAfterTowerChange({ type: 'clear-base', baseId: base.id, helpersOnly: !!helpersOnly });
   }
 
   function removePlayerFromSpecificBase(baseId, playerId) {
@@ -218,11 +241,7 @@
       } catch {}
       p.assignment = null;
       if (typeof PNS.renderAll === 'function') PNS.renderAll();
-      try { PNS.savePlayersSnapshot?.(state.players); } catch {}
-      try { PNS.saveTowersSnapshot?.({ forceEmpty: true }); } catch {}
-      try {
-        document.dispatchEvent(new CustomEvent('pns:assignment-changed', { detail: { baseId: base.id, playerId: p.id, action: 'remove-player' } }));
-      } catch {}
+      persistAfterTowerChange({ type: 'remove', baseId, playerId: p.id });
       return true;
     }
 
@@ -336,6 +355,7 @@
       btnClear.addEventListener('click', () => {
         clearPlayerFromBase(player.id);
         if (typeof PNS.renderAll === 'function') PNS.renderAll();
+        persistAfterTowerChange({ type: 'clear-player', playerId: player.id });
       });
 
       wrap.append(select, btnCaptain, btnHelper, btnClear);

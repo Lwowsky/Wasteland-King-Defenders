@@ -438,6 +438,14 @@
     });
   }
 
+  function saveAllPersistenceNow(reason) {
+    try { if (typeof PNS.savePlayersSnapshot === 'function') PNS.savePlayersSnapshot(state.players); } catch {}
+    try { if (PNS.ModalsShift?.saveCurrentShiftPlanSnapshot) PNS.ModalsShift.saveCurrentShiftPlanSnapshot(); } catch {}
+    try { saveTowersSnapshot(); } catch {}
+    try { if (typeof PNS.setImportStatus === 'function' && reason) PNS.setImportStatus(`Saved board state (${reason}).`, 'good'); } catch {}
+    return true;
+  }
+
   // expose additive API
   PNS.getTowerMarchOverride = getTowerMarchOverride;
   PNS.setTowerMarchOverride = setTowerMarchOverride;
@@ -446,6 +454,7 @@
 
   PNS.saveTowersSnapshot = saveTowersSnapshot;
   PNS.loadTowersSnapshot = loadTowersSnapshot;
+  PNS.saveAllPersistenceNow = saveAllPersistenceNow;
   PNS.tryRestoreTowersSnapshot = tryRestoreTowersSnapshot;
   PNS.clearTowersSnapshot = clearTowersSnapshot;
 })();

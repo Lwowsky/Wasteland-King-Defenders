@@ -139,7 +139,7 @@
     const actions = [
       ['openSettingsBtnMobile', () => window.PNS?.openModal?.('settings')],
       ['openBoardBtnMobile', () => window.PNS?.openModal?.('board')],
-      ['autoFillAllHeaderBtnMobile', () => window.PNS?.autoFillAllVisibleBases?.()],
+      ['autoFillAllHeaderBtnMobile', () => (window.PNS?.openTowerCalculatorModal?.() || window.PNS?.ModalsShift?.openTowerCalculatorModal?.())],
     ];
 
     actions.forEach(([mobileId, fn]) => {

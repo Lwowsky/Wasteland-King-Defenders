@@ -140,4 +140,15 @@
   PNS.parseNumber = parseNumber;
   PNS.escapeHtml = escapeHtml;
 
+
+  // ---- Shift helpers ----
+  // Used across the app (filters/render) before optional modal modules finish loading.
+  function matchesShift(itemShift, filter) {
+    const normalized = String(itemShift || '').toLowerCase().trim();
+    if (filter === 'all') return true;
+    if (normalized === 'both') return true;
+    return normalized === filter;
+  }
+  PNS.matchesShift = matchesShift;
+
 })();

@@ -10,9 +10,12 @@
   const files = [
     'shift_plans.js',
     'tower_focus.js',
+    'modals_core.js',
+    'modals_preview.js',
     'tower_player_modal.js',
     'tower_picker.js',
-    'modals_api.js',
+    'tower_calc.js',
+    'modals_bootstrap.js',
   ];
 
   function getBaseUrl() {

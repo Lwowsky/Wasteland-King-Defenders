@@ -105,9 +105,8 @@
     if (!base) return;
 
     const p = playerId ? state.playerById?.get?.(playerId) : null;
+    const isCaptain = !!(playerId && base.captainId === playerId);
     const modal = ensureModal();
-    const forcedNewKind = (!playerId && String(modal.dataset.forceAssignKind || '').toLowerCase() === 'captain');
-    const isCaptain = !!((playerId && base.captainId === playerId) || forcedNewKind);
 
     modal.dataset.baseId = String(baseId || '');
     modal.dataset.playerId = String(playerId || '');
@@ -180,6 +179,13 @@
         try { PNS.setTowerMarchOverride?.(base.id, p.id, march, state.activeShift); } catch {}
       }
       if (typeof PNS.tierRank === 'function') p.tierRank = PNS.tierRank(tier);
+      const forceKindExisting = String(modal.dataset.forceAssignKind || '').toLowerCase();
+      if (forceKindExisting === 'captain' || forceKindExisting === 'helper') {
+        const alreadySame = !!(p.assignment && String(p.assignment.baseId) === String(base.id) && String(p.assignment.kind) === forceKindExisting);
+        if (!alreadySame) {
+          try { PNS.assignPlayerToBase?.(p.id, base.id, forceKindExisting); } catch {}
+        }
+      }
     } else {
       const shift = state.activeShift === 'all' ? 'both' : (state.activeShift || 'both');
       p = {
@@ -213,8 +219,10 @@
       try { PNS.clearTowerMarchOverride?.(base.id, p.id, state.activeShift); } catch {}
     }
 
-    try { PNS.savePlayersSnapshot?.(state.players); } catch {}
     try { PNS.persistSessionStateSoon?.(10); } catch {}
+    try { PNS.savePlayersSnapshot?.(state.players); } catch {}
+    try { PNS.ModalsShift?.saveCurrentShiftPlanSnapshot?.(); } catch {}
+    try { PNS.saveTowersSnapshot?.(); } catch {}
     try { PNS.renderAll?.(); } catch {}
     modal.classList.remove('is-open');
     if (!document.querySelector('#towerPickerModal.is-open')) MS.syncBodyModalLock?.();

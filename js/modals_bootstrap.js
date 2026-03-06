@@ -1,283 +1,107 @@
+// Modals bindings + init (split from modals_api.js)
 (function () {
   const PNS = window.PNS; if (!PNS) return;
   const MS = (PNS.ModalsShift = PNS.ModalsShift || {});
   const { state } = PNS; if (!state) return;
-  const $$ = PNS.$$ || ((s, r = document) => Array.from(r.querySelectorAll(s)));
 
-  function getModals() {
-    return {
-      settings: document.querySelector('#settings-modal'),
-      board: document.querySelector('#board-modal'),
-    };
-  }
-  function getShiftTabs() { return Array.from(document.querySelectorAll('[data-shift-tab]')); }
-  function getButtons() {
-    return {
-      showAllData: document.querySelector('#showAllDataBtn'),
-      showAllColumns: document.querySelector('#showAllColumnsBtn'),
-      showAllTowers: document.querySelector('#showAllTowersBtn'),
-      focusCurrentTower: document.querySelector('#focusCurrentTowerBtn') || document.querySelector('#hideOtherTowersBtn') || document.querySelector('#toggleTowerFocusBtn'),
-      toggleTowerView: document.querySelector('#toggleTowerFocusBtn'),
-      openTowerPicker: document.querySelector('#openTowerPickerBtn'),
-      focusTowerSelect: document.querySelector('#focusTowerSelect'),
-      openBoardSettings: document.querySelector('#openBoardFromSettingsColBtn') || document.querySelector('#openBoardBtnSettings') || document.querySelector('#openBoardBtnFromSettings'),
-    };
-  }
-
-  function syncBodyModalLock() {
-    const anyOpen = !!document.querySelector('.modal.is-open');
-    document.body.classList.toggle('modal-open', anyOpen);
-    if (!anyOpen) {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-    }
-  }
-
-  function ensureStep4Styles() {
-    if (document.getElementById('pns-step4-inline-styles')) return;
-    const st = document.createElement('style');
-    st.id = 'pns-step4-inline-styles';
-    st.textContent = `
-      .bases-grid > .base-settings-card{align-self:stretch;height:100%;}
-      .base-settings-card .settings-tools-box{flex:1;display:flex;flex-direction:column;justify-content:flex-start;}
-      .tower-picker-modal{z-index:90000 !important; position:fixed !important; inset:0;} .tower-picker-modal .modal-card{width:min(1080px, calc(100vw - 18px));max-height:92vh;overflow:auto;border-radius:16px;} #board-modal{z-index:120000 !important; position:fixed !important; inset:0;} #board-modal .modal-card{position:relative;z-index:1;} #board-modal .modal-backdrop{z-index:0;} #towerPlayerEditModal{z-index:130000 !important; position:fixed !important; inset:0;} #towerPlayerEditModal .modal-card{z-index:1;position:relative;}
-      .tower-picker-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;position:relative;}
-      .tower-picker-head-center{display:flex;align-items:center;justify-content:center;gap:8px;justify-self:center;grid-column:2;}
-      .tower-picker-head-left{text-align:left;}
-      .tower-picker-head-left h2{margin:0;line-height:1.15;}
-      .tower-picker-head-left p{margin:4px 0 0;}
-      .tower-picker-head .btn.shift-mini{min-width:84px;padding:7px 10px;}
-      .tower-picker-head>[data-close-tower-picker]{justify-self:end;grid-column:3;}
-      .tower-picker-detail .picker-meta-row{display:flex !important;align-items:center;gap:12px;flex-wrap:wrap;margin-top:2px;} .tower-picker-detail .picker-meta-row .picker-meta-shift{margin-right:4px;} .tower-picker-detail .picker-only-captains{display:inline-flex !important;align-items:center;gap:8px;cursor:pointer;white-space:nowrap;} .tower-picker-detail .picker-only-captains input{width:auto;height:auto;flex:0 0 auto;} .tower-picker-detail .picker-topline{display:grid;grid-template-columns:minmax(220px,360px) auto;gap:10px;align-items:center;}
-      .tower-picker-detail .picker-topline > select{min-width:180px;max-width:360px;width:100%;}
-      .tower-picker-detail .picker-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
-      .tower-picker-detail details.tower-collapsible{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02);} 
-      .tower-picker-detail details.tower-collapsible>summary{cursor:pointer;list-style:none;padding:10px;font-weight:600;}
-      .tower-picker-detail details.tower-collapsible>summary::-webkit-details-marker{display:none;}
-      .tower-picker-detail details.tower-collapsible .inner{padding:0 10px 10px;}
-      .tower-picker-detail .picker-limits-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;}
-      .tower-picker-detail .picker-limits-head label{display:grid;gap:6px;min-width:220px;}
-      .tower-picker-detail .picker-manual-row{display:grid;grid-template-columns:minmax(140px,1.3fr) minmax(110px,.8fr) minmax(130px,.9fr);gap:8px;align-items:end;}
-      .tower-picker-detail .picker-manual-row2{display:grid;grid-template-columns:92px 130px 150px max-content max-content !important;gap:8px;align-items:end;}
-      .tower-picker-detail .picker-manual-row2 > .btn{justify-self:start;white-space:nowrap;}
-      .tower-picker-list .tower-item-count{display:inline-flex;align-items:center;justify-content:center;padding:1px 6px;border-radius:999px;font-weight:700;border:1px solid rgba(255,255,255,.14);margin-left:2px;}
-      .tower-picker-list .tower-item-count.is-ready{color:#9ff0b3;border-color:rgba(84,214,140,.35);background:rgba(24,74,42,.26);}
-      .tower-picker-list .tower-item-count.is-not-ready{color:#ffc4cb;border-color:rgba(255,111,126,.35);background:rgba(84,26,36,.22);}
-      #openTowerPickerBtn{min-width:190px;}
-      #focusTowerPrevBtn,#focusTowerNextBtn,#focusTowerSelect,.settings-focus-inline{display:none !important;}
-      .tower-picker-detail .tower-picker-item.active{border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.08);} .tower-picker-list .tower-picker-item{display:flex;flex-direction:column;align-items:stretch;width:100%;text-align:left;padding:9px 10px;border-radius:12px;} .tower-picker-list .tower-picker-item .tower-item-row{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;} .tower-picker-list .tower-picker-item .tower-item-status{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid rgba(255,255,255,.14);background:rgba(12,20,38,.75);color:#dbe6ff;} .tower-picker-list .tower-picker-item.is-ready .tower-item-status{color:#9ff0b3;border-color:rgba(84,214,140,.35);background:rgba(24,74,42,.38);} .tower-picker-list .tower-picker-item.is-not-ready .tower-item-status{color:#ffc4cb;border-color:rgba(255,111,126,.35);background:rgba(84,26,36,.38);} .tower-picker-list .tower-picker-item.is-ready{box-shadow:inset 0 0 0 1px rgba(84,214,140,.10);} .tower-picker-list .tower-picker-item.is-not-ready{box-shadow:inset 0 0 0 1px rgba(255,111,126,.06);} 
-      #towerPlayerEditModal .modal-card{width:min(540px, calc(100vw - 24px));}
-      #towerPlayerEditModal .modal-grid{grid-template-columns:minmax(0,1fr);}
-      #towerPlayerEditModal .modal-grid > .panel{max-width:100%;}
-      .tower-picker-modal input,.tower-picker-modal select,#towerPlayerEditModal input,#towerPlayerEditModal select{color:#e9efff !important;}
-      #towerPlayerEditModal input::placeholder{color:#8e9ab8;}
-      .settings-focus-inline{display:grid;grid-template-columns:30px minmax(0,1fr) 30px;align-items:center;gap:6px;min-width:150px;max-width:240px;flex:1 1 210px;}
-      .settings-focus-inline .btn{padding:0;min-width:30px;width:30px;height:30px;border-radius:9px;}
-      .settings-focus-select{display:block;height:38px;min-width:0;width:100%;padding:7px 10px;font-size:13px;line-height:1.2;}
-      .quota-row .quota-max{margin-left:auto;}
-      .shift-towers-preview .tower-thumb-card{position:relative;cursor:pointer;}
-      .shift-towers-preview .tower-thumb-card.is-active{border-color:rgba(255,170,90,.55); box-shadow:0 0 0 1px rgba(255,170,90,.18) inset, 0 0 0 2px rgba(255,170,90,.08);}
-      .shift-towers-preview .tower-thumb-card.is-ready{background:rgba(84,214,140,.06);}
-      .shift-towers-preview .tower-thumb-card.is-not-ready{background:rgba(255,255,255,.02);}
-      .shift-towers-preview .tower-thumb-card .tower-thumb-status{
-        position:absolute; top:6px; right:6px; width:20px; height:20px; border-radius:999px;
-        display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;
-        border:1px solid rgba(255,255,255,.18); background:rgba(10,18,35,.75); color:#dbe6ff;
-      }
-      .shift-towers-preview .tower-thumb-card.is-ready .tower-thumb-status{
-        color:#9ff0b3; border-color:rgba(84,214,140,.35); background:rgba(30,84,46,.35);
-      }
-      .shift-towers-preview .tower-thumb-card.is-not-ready .tower-thumb-status{
-        color:#ffbec7; border-color:rgba(255,111,126,.35); background:rgba(110,34,44,.28);
-      }
-      @media (max-width: 900px){
-        .tower-picker-modal .modal-card{width:calc(100vw - 10px);max-height:94vh;border-radius:14px;}
-        .tower-picker-modal .modal-head{padding:8px 10px;}
-        .tower-picker-modal .modal-grid{padding:8px !important;gap:8px !important;grid-template-columns:1fr !important;}
-        .tower-picker-head{grid-template-columns:1fr 44px;grid-template-areas:'title close' 'center center';align-items:start;}
-        .tower-picker-head-left{grid-area:title;}
-        .tower-picker-head-center{grid-area:center;grid-column:auto; justify-content:center; margin-top:4px;}
-        .tower-picker-head > [data-close-tower-picker]{grid-area:close;justify-self:end;}
-        .tower-picker-detail .picker-topline{grid-template-columns:1fr;}
-        .tower-picker-detail .picker-manual-row,.tower-picker-detail .picker-manual-row2{grid-template-columns:1fr;}
-      }
-    `;
-    document.head.appendChild(st);
-  }
-
-  function openModal(name) {
-    closeModal();
-    const modal = getModals()[name];
-    if (!modal) return;
-    modal.classList.add('is-open');
-    MS.updateShiftTabButtons?.();
-    syncBodyModalLock();
-    state.activeModal = name;
-  }
-
-  function closeModal() {
-    const modals = getModals();
-    Object.values(modals).forEach((m) => m && m.classList.remove('is-open'));
-    syncBodyModalLock();
-    state.activeModal = null;
-  }
-
-  function syncToggleButtons() {
-    const on = !!state.showAllColumns;
-    const b = getButtons();
-    if (b.showAllData) {
-      b.showAllData.setAttribute('aria-pressed', String(on));
-      b.showAllData.classList.toggle('toggle-on', on);
-      b.showAllData.textContent = on ? 'Сховати зайві колонки' : 'Показати всі дані';
-    }
-    if (b.showAllColumns) {
-      b.showAllColumns.setAttribute('aria-pressed', String(on));
-      b.showAllColumns.classList.toggle('toggle-on', on);
-      b.showAllColumns.textContent = on ? 'Hide extra columns' : 'Show all columns';
-    }
-  }
-
-  function syncVisibilityCheckboxes() {
-    $$('#columnVisibilityChecks input[type="checkbox"][data-col-key]').forEach((cb) => {
-      cb.checked = (state.visibleOptionalColumns || []).includes(cb.dataset.colKey);
-    });
-  }
-
-  function applyColumnVisibility(showAll) {
-    state.showAllColumns = !!showAll;
-    const visible = new Set(state.visibleOptionalColumns || []);
-    $$('.optional-col').forEach((cell) => {
-      const key = cell.dataset.colKey || '';
-      const shouldShow = state.showAllColumns || !key || visible.has(key);
-      cell.classList.toggle('is-hidden-col', !shouldShow);
-    });
-    syncVisibilityCheckboxes();
-    syncToggleButtons();
-    try {
-      if (typeof PNS.safeWriteBool === 'function') PNS.safeWriteBool(PNS.KEYS.KEY_SHOW_ALL, state.showAllColumns);
-      else localStorage.setItem(PNS.KEYS.KEY_SHOW_ALL, state.showAllColumns ? '1' : '0');
-    } catch {}
-  }
-  function toggleColumns() { applyColumnVisibility(!state.showAllColumns); }
-
-
-  function towerPreviewSlotKeyFromTitle(title) {
-    const t = String(title || '').toLowerCase();
-    if (/(техно|hub|central)/i.test(t)) return 'hub';
-    if (/(північ|север|north)/i.test(t)) return 'north';
-    if (/(захід|запад|west)/i.test(t)) return 'west';
-    if (/(схід|восток|east)/i.test(t)) return 'east';
-    if (/(півден|юж|south)/i.test(t)) return 'south';
-    return '';
-  }
-
-  function getBaseByPreviewSlot(slot) {
-    const key = String(slot || '').toLowerCase();
-    if (!key) return null;
-    const bases = (state.bases || []);
-    for (const b of bases) {
-      const title = String(b?.title || '');
-      if (towerPreviewSlotKeyFromTitle(title) === key) return b;
-    }
+  function pickerManualFindPlayerByInput(modal) {
+    const root = modal || document.getElementById('towerPickerModal');
+    if (!root) return null;
+    const inp = root.querySelector('#pickerManualSearch') || root.querySelector('#pickerManualName');
+    const q = String(inp?.value || '').trim();
+    if (!q) return null;
+    const norm = (s) => String(s || '').trim().toLowerCase();
+    const nq = norm(q);
+    const players = Array.isArray(state.players) ? state.players : [];
+    const exact = players.find((p) => norm(p?.name) === nq);
+    if (exact) return exact;
     return null;
   }
 
-  function syncSettingsTowerPreview() {
-    const root = document.querySelector('.shift-towers-preview');
+  function pickerManualSearchMatches(modal) {
+    const root = modal || document.getElementById('towerPickerModal');
+    if (!root) return [];
+    const inp = root.querySelector('#pickerManualSearch') || root.querySelector('#pickerManualName');
+    const q = String(inp?.value || '').trim();
+    if (!q) return [];
+    const norm = (s) => String(s || '').trim().toLowerCase();
+    const nq = norm(q);
+    return (Array.isArray(state.players) ? state.players : []).filter((p) => {
+      const n = norm(p?.name);
+      return n === nq || n.startsWith(nq) || n.includes(nq);
+    }).slice(0, 8);
+  }
+
+  function pickerManualFillFromPlayer(player, modal) {
+    const root = modal || document.getElementById('towerPickerModal');
+    if (!root || !player) return false;
+    const searchEl = root.querySelector('#pickerManualSearch');
+    if (searchEl) {
+      searchEl.value = String(player.name || '');
+      searchEl.dataset.playerId = String(player.id || '');
+    }
+    const nameEl = root.querySelector('#pickerManualName');
+    if (nameEl) {
+      if (!String(nameEl.value || '').trim() || nameEl.dataset.autoFilled === '1') {
+        nameEl.value = String(player.name || '');
+      }
+      nameEl.dataset.playerId = String(player.id || '');
+      nameEl.dataset.autoFilled = '1';
+    }
+    const allyEl = root.querySelector('#pickerManualAlly'); if (allyEl) allyEl.value = String(player.alliance || '');
+    const roleEl = root.querySelector('#pickerManualRole'); if (roleEl) roleEl.value = String(player.role || roleEl.value || 'Fighter');
+    const tierEl = root.querySelector('#pickerManualTier'); if (tierEl) tierEl.value = String(player.tier || '');
+    const marchEl = root.querySelector('#pickerManualMarch'); if (marchEl) marchEl.value = String(Number(player.march || 0) || '');
+    const rallyEl = root.querySelector('#pickerManualRally'); if (rallyEl) rallyEl.value = String(Number(player.rally || 0) || '');
+    const hint = root.querySelector('#pickerManualHint');
+    if (hint) hint.textContent = `Знайдено: ${player.name} · ${player.alliance || '—'} · ${player.role || '—'} · ${player.tier || '—'}`;
+    return true;
+  }
+
+  function pickerManualClearMatchHint(modal) {
+    const root = modal || document.getElementById('towerPickerModal');
     if (!root) return;
-    let focusedId = String(state.focusedBaseId || '');
-    if (!focusedId) {
-      try {
-        const fc = MS.getFocusedCard?.();
-        focusedId = String(fc?.dataset?.baseId || fc?.dataset?.baseid || '');
-      } catch {}
-    }
-    root.querySelectorAll('[data-preview-slot]').forEach((el) => {
-      const slot = el.getAttribute('data-preview-slot') || '';
-      const base = getBaseByPreviewSlot(slot);
-      const card = el.closest('.tower-thumb-card') || el;
-      const status = card.querySelector('.tower-thumb-status');
-      if (!base) {
-        card.classList.remove('is-active', 'is-ready', 'is-not-ready');
-        card.dataset.previewBaseId = '';
-        if (status) status.textContent = '?';
-        card.title = 'Башня не знайдена';
-        return;
-      }
-      const baseId = String(base.id || '');
-      card.dataset.previewBaseId = baseId;
-      const ready = !!base.captainId;
-      card.classList.toggle('is-ready', ready);
-      card.classList.toggle('is-not-ready', !ready);
-      card.classList.toggle('is-active', !!focusedId && focusedId === baseId);
-      card.setAttribute('aria-pressed', (!!focusedId && focusedId === baseId) ? 'true' : 'false');
-      card.title = `${String(base.title || baseId).split('/')[0].trim()} — ${ready ? 'готова' : 'без капітана'}`;
-      if (status) {
-        status.textContent = ready ? '✓' : '!';
-        status.setAttribute('aria-label', ready ? 'Башня готова' : 'Башня не готова');
-      }
-    });
+    const searchEl = root.querySelector('#pickerManualSearch');
+    if (searchEl) delete searchEl.dataset.playerId;
+    const nameEl = root.querySelector('#pickerManualName');
+    if (nameEl) delete nameEl.dataset.playerId;
+    const hint = root.querySelector('#pickerManualHint');
+    if (hint) hint.textContent = '';
   }
 
-  function focusTowerFromPreviewElement(previewEl) {
-    const card = previewEl?.closest?.('.tower-thumb-card') || previewEl;
-    if (!card) return;
-    let baseId = String(card.dataset.previewBaseId || '');
-    if (!baseId) {
-      const slotEl = card.querySelector?.('[data-preview-slot]') || card;
-      const slot = slotEl?.getAttribute?.('data-preview-slot') || '';
-      const base = getBaseByPreviewSlot(slot);
-      baseId = String(base?.id || '');
+  function pickerManualTryAutofill(modal) {
+    const root = modal || document.getElementById('towerPickerModal');
+    const p = pickerManualFindPlayerByInput(root);
+    if (p) return pickerManualFillFromPlayer(p, root);
+    const matches = pickerManualSearchMatches(root);
+    const hint = root?.querySelector?.('#pickerManualHint');
+    if (hint) {
+      if (!matches.length) hint.textContent = '';
+      else if (matches.length === 1) hint.textContent = `Натисни Enter або вибери зі списку: ${matches[0].name}`;
+      else hint.textContent = `Знайдено кілька (${matches.length}) — вибери точний нік зі списку.`;
     }
-    if (!baseId) return;
-
-    state.focusedBaseId = baseId;
-
-    // Prefer using the same path as arrows/select so right panel becomes editable immediately.
-    const sel = document.getElementById('focusTowerSelect');
-    let switched = false;
-    if (sel) {
-      const hasOption = Array.from(sel.options || []).some((o) => String(o.value) === String(baseId));
-      if (hasOption) {
-        sel.value = baseId;
-        try { MS.handleFocusSelect?.(sel); switched = true; } catch {}
-      }
-    }
-    if (!switched) {
-      try { MS.focusTowerById?.(baseId); switched = true; } catch {}
-    }
-
-    try {
-      const esc = (window.CSS && CSS.escape) ? CSS.escape(baseId) : String(baseId).replace(/"/g, '\"');
-      const baseCard = document.querySelector(`.bases-grid .base-card[data-base-id="${esc}"]`) ||
-                       document.querySelector(`.bases-grid .base-card[data-baseid="${esc}"]`);
-      if (baseCard) {
-        MS.markFocusedCard?.(baseCard);
-        if ((state.towerViewMode || 'focus') === 'focus') {
-          setTimeout(() => { try { MS.applyTowerVisibilityMode?.(); } catch {} }, 0);
-        }
-      }
-    } catch {}
-
-    setTimeout(() => {
-      try { MS.syncFocusedTowerSelect?.(); } catch {}
-      try { syncSettingsTowerPreview(); } catch {}
-      try {
-        if (document.getElementById('towerPickerModal')?.classList.contains('is-open')) {
-          MS.refreshTowerPickerModalList?.();
-          MS.updateTowerPickerDetail?.();
-        }
-      } catch {}
-    }, 20);
+    return false;
   }
+
+  function saveTowerTableNow(reason) {
+    try { PNS.savePlayersSnapshot?.(state.players); } catch {}
+    try { PNS.ModalsShift?.saveCurrentShiftPlanSnapshot?.(); } catch {}
+    try { PNS.saveTowersSnapshot?.(); } catch {}
+    try { PNS.setImportStatus?.(`Saved tower table${reason ? ` (${reason})` : ''}.`, 'good'); } catch {}
+  }
+
+
+
 
   function bindSettingsAndTowerButtonsOnce() {
     if (state._modalsShiftExtraBound) return;
     state._modalsShiftExtraBound = true;
 
     function seedTowerEditModalFromManual(baseId, assignKind) {
-      MS.openTowerPlayerEditModal?.(baseId, '');
       const m = document.getElementById('towerPickerModal');
+      try { pickerManualTryAutofill(m); } catch {}
+      const picked = pickerManualFindPlayerByInput(m);
+      MS.openTowerPlayerEditModal?.(baseId, picked?.id || '');
       const edit = document.getElementById('towerPlayerEditModal');
       if (m && edit) {
         edit.querySelector('#tpeName').value = m.querySelector('#pickerManualName')?.value || '';
@@ -285,18 +109,8 @@
         edit.querySelector('#tpeRole').value = m.querySelector('#pickerManualRole')?.value || 'Fighter';
         edit.querySelector('#tpeTier').value = m.querySelector('#pickerManualTier')?.value || 'T10';
         edit.querySelector('#tpeMarch').value = m.querySelector('#pickerManualMarch')?.value || '';
-        const rallyInput = edit.querySelector('#tpeRally');
-        if (rallyInput) rallyInput.value = m.querySelector('#pickerManualRally')?.value || '';
+        if (edit.querySelector('#tpeRally')) edit.querySelector('#tpeRally').value = m.querySelector('#pickerManualRally')?.value || '';
         edit.dataset.forceAssignKind = assignKind || '';
-
-        // New manual player: keep mode in sync immediately (important for Rally field visibility)
-        const forcedCaptain = String(assignKind || '').toLowerCase() === 'captain';
-        edit.dataset.kind = forcedCaptain ? 'captain' : 'helper';
-        if (rallyInput) {
-          rallyInput.style.display = forcedCaptain ? '' : 'none';
-          rallyInput.disabled = !forcedCaptain;
-        }
-
         const sub = edit.querySelector('#tpeSubtitle');
         if (sub && !edit.dataset.playerId) {
           sub.textContent = assignKind === 'captain' ? 'Новий капітан у башню' : 'Новий хелпер у башню';
@@ -306,6 +120,17 @@
     }
 
     document.addEventListener('click', (e) => {
+      const openSettingsBtn = e.target.closest('#openSettingsBtn,[data-open-settings],a[href="#settings-modal"]');
+      if (openSettingsBtn) {
+        try { const calc = document.getElementById('towerCalcModal'); if (calc?.classList.contains('is-open')) calc.style.zIndex = '95000'; } catch {}
+        setTimeout(() => {
+          try {
+            const sm = document.getElementById('settings-modal');
+            if (sm) { sm.style.zIndex = '160000'; sm.classList.add('is-open'); }
+            MS.syncBodyModalLock?.();
+          } catch {}
+        }, 0);
+      }
       const btnShow = e.target.closest('#showAllTowersBtn,[data-action="show-all-towers"]');
       if (btnShow) { e.preventDefault(); MS.showAllTowers?.(); return; }
 
@@ -315,7 +140,7 @@
       const btnToggle = e.target.closest('#toggleTowerFocusBtn,[data-action="toggle-towers-view"]');
       if (btnToggle) {
         e.preventDefault();
-        if ((state.towerViewMode || 'focus') === 'focus') MS.showAllTowers?.();
+        if ((state.towerViewMode || 'all') === 'focus') MS.showAllTowers?.();
         else MS.focusCurrentTower?.();
         return;
       }
@@ -359,7 +184,7 @@
       const previewTower = e.target.closest('.shift-towers-preview .tower-thumb-card, .shift-towers-preview [data-preview-slot]');
       if (previewTower) {
         e.preventDefault();
-        focusTowerFromPreviewElement(previewTower);
+        MS.focusTowerFromPreviewElement?.(previewTower);
         return;
       }
 
@@ -405,7 +230,7 @@
       if (e.target.closest('[data-close-tower-picker]')) {
         e.preventDefault();
         document.getElementById('towerPickerModal')?.classList.remove('is-open');
-        syncBodyModalLock();
+        MS.syncBodyModalLock?.();
         return;
       }
 
@@ -417,6 +242,7 @@
         if (!sel?.value) { alert('Оберіть капітана'); return; }
         try { PNS.assignPlayerToBase?.(sel.value, baseId, 'captain'); } catch {}
         MS.saveCurrentShiftPlanSnapshot?.();
+        saveTowerTableNow('captain');
         setTimeout(() => { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); MS.maybeAdvanceFocusedTower?.(); MS.syncSettingsTowerPreview?.(); }, 60);
         return;
       }
@@ -426,6 +252,7 @@
         e.preventDefault();
         try { PNS.autoFillBase?.(pickerAuto.dataset.pickerAutofill); } catch {}
         MS.saveCurrentShiftPlanSnapshot?.();
+        saveTowerTableNow('autofill');
         setTimeout(() => { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); MS.maybeAdvanceFocusedTower?.(); MS.syncSettingsTowerPreview?.(); }, 60);
         return;
       }
@@ -434,6 +261,7 @@
       if (pickerClrH) {
         e.preventDefault();
         try { PNS.clearBase?.(pickerClrH.dataset.pickerClearHelpers, true); } catch {}
+        saveTowerTableNow('clear helpers');
         setTimeout(() => { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); MS.syncSettingsTowerPreview?.(); }, 40);
         return;
       }
@@ -442,7 +270,16 @@
       if (pickerClrB) {
         e.preventDefault();
         try { PNS.clearBase?.(pickerClrB.dataset.pickerClearBase, false); } catch {}
+        saveTowerTableNow('clear base');
         setTimeout(() => { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); MS.syncSettingsTowerPreview?.(); }, 40);
+        return;
+      }
+
+      const pickerSaveBoard = e.target.closest('[data-picker-save-board]');
+      if (pickerSaveBoard) {
+        e.preventDefault();
+        saveTowerTableNow('manual');
+        setTimeout(() => { try { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); } catch {} }, 20);
         return;
       }
 
@@ -451,7 +288,7 @@
         e.preventDefault();
         MS.focusTowerById?.(pickerFocusRight.dataset.pickerFocusRight);
         document.getElementById('towerPickerModal')?.classList.remove('is-open');
-        syncBodyModalLock();
+        MS.syncBodyModalLock?.();
         return;
       }
 
@@ -526,7 +363,7 @@
         const playerId = em?.dataset.playerId || '';
         if (baseId && playerId) { try { PNS.removePlayerFromSpecificBase?.(baseId, playerId); } catch {} }
         em?.classList.remove('is-open');
-        if (!document.getElementById('towerPickerModal')?.classList.contains('is-open')) syncBodyModalLock();
+        if (!document.getElementById('towerPickerModal')?.classList.contains('is-open')) MS.syncBodyModalLock?.();
         setTimeout(() => { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); MS.syncSettingsTowerPreview?.(); }, 40);
         return;
       }
@@ -557,7 +394,7 @@
       if (!preview) return;
       if (e.key !== 'Enter' && e.key !== ' ') return;
       e.preventDefault();
-      focusTowerFromPreviewElement(preview);
+      MS.focusTowerFromPreviewElement?.(preview);
     });
 
 
@@ -590,8 +427,157 @@
           bm.style.inset = '0';
         }
       } catch {}
-      openModal('board');
+      MS.openModal?.('board');
       try { PNS.renderBoard?.(); } catch {}
+    });
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('#openTowerCalcBtnMobile,[data-action="open-tower-calc"]');
+      if (!btn) return;
+      e.preventDefault();
+      openTowerCalculatorModal();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('[data-close-tower-calc]')) return;
+      e.preventDefault();
+      closeTowerCalculatorModal();
+    });
+
+    document.addEventListener('change', (e) => {
+      const row = e.target.closest?.('[data-calc-row]');
+      const modal = document.getElementById('towerCalcModal');
+      if (row && modal) {
+        if (e.target.matches('[data-calc-captain]')) {
+          const id = String(e.target.value || '');
+          const p = (state.playerById?.get?.(id)) || (state.players || []).find(x => String(x.id) === id);
+          if (p) {
+            const troopSel = row.querySelector('[data-calc-troop]');
+            const helpersInp = row.querySelector('[data-calc-helpers]');
+            if (troopSel && !troopSel.dataset.touched) troopSel.value = roleNorm(p.role) || troopSel.value || 'fighter';
+            if (helpersInp && !String(helpersInp.value || '').trim()) helpersInp.value = '15';
+          }
+        }
+        computeTowerCalcResults();
+        return;
+      }
+      if (modal && e.target.closest('#towerCalcNoCrossShift,#towerCalcBoth50,#towerCalcIgnoreBoth,#towerCalcMinHelpersOn,#towerCalcTierAuto,#towerCalcCompactMode,#towerCalcModeUi,#towerCalcApplyModeUi,#towerCalcMinHelpersCount')) { 
+        const tcNow = getCalcState();
+        if (e.target.closest('#towerCalcTierAuto')) {
+          tcNow.tierSizeMode = (modal?.querySelector('#towerCalcTierAuto')?.checked) ? 'auto' : 'manual';
+          calcApplyTierTargetInputsState(modal, tcNow);
+        }
+        if (e.target.closest('#towerCalcCompactMode')) {
+          tcNow.compactMode = !!modal?.querySelector('#towerCalcCompactMode')?.checked;
+          modal.classList.toggle('is-compact', !!tcNow.compactMode);
+        }
+        computeTowerCalcResults(); return; }
+    });
+
+    document.addEventListener('input', (e) => {
+      const modal = document.getElementById('towerCalcModal');
+      if (!modal) return;
+      if (e.target.matches('[data-calc-helpers]')) { computeTowerCalcResults(); return; }
+      if (e.target.matches('[data-calc-max-march-base]')) { computeTowerCalcResults(); return; }
+      if (e.target.matches('[data-calc-troop]')) { e.target.dataset.touched = '1'; computeTowerCalcResults(); return; }
+      if (e.target.matches('#towerCalcMinHelpersCount')) { computeTowerCalcResults(); return; }
+      if (e.target.matches('[data-calc-tier-target]')) { 
+        const modal = document.getElementById('towerCalcModal');
+        if (modal) {
+          const autoCb = modal.querySelector('#towerCalcTierAuto');
+          if (autoCb?.checked) autoCb.checked = false;
+        }
+        computeTowerCalcResults(); return; 
+      }
+    });
+
+
+    document.addEventListener('click', (e) => {
+      const tabBtn = e.target.closest('[data-calc-main-tab]');
+      if (!tabBtn) return;
+      const modal = document.getElementById('towerCalcModal');
+      if (!modal || !modal.contains(tabBtn)) return;
+      e.preventDefault();
+      const tc = getCalcState();
+      tc.mainTab = calcApplyMainTabUI(modal, tabBtn.getAttribute('data-calc-main-tab') || 'setup');
+      try { localStorage.setItem('pns_tower_calc_state', JSON.stringify(tc)); } catch {}
+    });
+
+    document.addEventListener('click', (e) => {
+      const tabBtn = e.target.closest('[data-calc-tab]');
+      if (!tabBtn) return;
+      const modal = document.getElementById('towerCalcModal');
+      if (!modal || !modal.contains(tabBtn)) return;
+      e.preventDefault();
+      const tc = getCalcState();
+      tc.activeTab = calcApplyActiveTabUI(modal, tabBtn.getAttribute('data-calc-tab') || 'shift1');
+      try { localStorage.setItem('pns_tower_calc_state', JSON.stringify(tc)); } catch {}
+    });
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('#towerCalcRecalcBtn,#towerCalcFitBtn,#towerCalcApplyToTowersBtn,#towerCalcQuickApplyBtn,#towerCalcLoadCaptainsBtn,#towerCalcApplyAndAssignBtn,#towerCalcAutoSlotsS1Btn,#towerCalcAutoSlotsS2Btn,#towerCalcAutoFitBtn');
+      if (!btn) return;
+      e.preventDefault();
+      if (btn.matches('#towerCalcLoadCaptainsBtn')) { calcSyncCaptainsFromTowersIntoCalculator({ keepHelpers: true }); return; }
+      if (btn.matches('#towerCalcAutoSlotsS1Btn')) { try { calcAutoSlotsForShift('shift1'); } catch {} return; }
+      if (btn.matches('#towerCalcAutoSlotsS2Btn')) { try { calcAutoSlotsForShift('shift2'); } catch {} return; }
+      if (btn.matches('#towerCalcAutoFitBtn')) { try { calcAutoFitTowersStrict(); } catch {} return; }
+      if (btn.matches('#towerCalcApplyToTowersBtn')) { applyTowerCalcToTowerSettings(); return; }
+      if (btn.matches('#towerCalcQuickApplyBtn')) { applyTowerCalcAssignmentsToTowers(); return; }
+      if (btn.matches('#towerCalcApplyAndAssignBtn')) { applyTowerCalcAssignmentsToTowers(); return; }
+      computeTowerCalcResults();
+    });
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-calc-edit-base],[data-calc-pick-overflow-base],[data-calc-manual-base],[data-calc-lock-tower],[data-calc-toggle-exclude],[data-calc-toggle-lock-helper],[data-calc-reserve]');
+  if (!btn) return;
+  e.preventDefault();
+  if (btn.matches('[data-calc-lock-tower]')) {
+    calcToggleTowerLocked(btn.getAttribute('data-calc-lock-tower') || '');
+    computeTowerCalcResults();
+    return;
+  }
+  if (btn.matches('[data-calc-toggle-exclude]')) {
+    calcToggleHelperExcluded(btn.getAttribute('data-calc-toggle-exclude') || '');
+    computeTowerCalcResults();
+    return;
+  }
+  if (btn.matches('[data-calc-toggle-lock-helper]')) {
+    calcToggleHelperLockedToBase(btn.getAttribute('data-calc-toggle-lock-helper') || '', btn.getAttribute('data-base-id') || '');
+    computeTowerCalcResults();
+    return;
+  }
+  if (btn.matches('[data-calc-reserve]')) {
+    const pid = btn.getAttribute('data-calc-reserve') || '';
+    const sk = btn.getAttribute('data-reserve-shift') || '';
+    const tc = getCalcState();
+    const cur = String((tc?.overflowReserve && tc.overflowReserve[String(pid)]) || '');
+    calcSetOverflowReserve(pid, cur === sk ? '' : sk);
+    computeTowerCalcResults();
+    return;
+  }
+  const baseId = String(btn.getAttribute('data-calc-edit-base') || btn.getAttribute('data-calc-pick-overflow-base') || btn.getAttribute('data-calc-manual-base') || '');
+  const shiftKey = String(btn.getAttribute('data-calc-shift') || '');
+  if (!baseId) return;
+  calcOpenTowerPickerForBase(baseId, shiftKey);
+  if (btn.matches('[data-calc-manual-base]')) {
+    setTimeout(() => {
+      try {
+        const m = document.getElementById('towerPickerModal');
+        const inp = m?.querySelector?.('#pickerManualName, #pickerManualSearch');
+        inp?.focus?.();
+      } catch {}
+    }, 80);
+  }
+});
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-calc-open-base]');
+      if (!btn) return;
+      e.preventDefault();
+      const baseId = String(btn.getAttribute('data-calc-open-base') || '');
+      const shiftKey = String(btn.getAttribute('data-calc-shift') || '');
+      calcOpenTowerPickerForBase(baseId, shiftKey);
     });
 
     document.addEventListener('click', (e) => {
@@ -631,6 +617,41 @@
       if (!cb) return;
       state.towerPickerMatchRegisteredShift = !!cb.checked;
       MS.updateTowerPickerDetail?.();
+    });
+    document.addEventListener('input', (e) => {
+      const t = e.target;
+      if (!t || t.id !== 'pickerManualSearch') return;
+      const q = String(t.value || '').trim();
+      if (!q) { pickerManualClearMatchHint(document.getElementById('towerPickerModal')); return; }
+      clearTimeout(state._pickerManualSearchTimer);
+      state._pickerManualSearchTimer = setTimeout(() => {
+        try {
+          const root = document.getElementById('towerPickerModal');
+          const matches = pickerManualSearchMatches(root);
+          const hint = root?.querySelector?.('#pickerManualHint');
+          if (hint) hint.textContent = matches.length > 1 ? `Знайдено кілька (${matches.length}) — вибери точний нік зі списку.` : (matches.length === 1 ? `Знайдено 1 — вибери зі списку / Enter` : '');
+        } catch {}
+      }, 120);
+    });
+    document.addEventListener('input', (e) => {
+      const t = e.target;
+      if (!t || t.id !== 'pickerManualName') return;
+      t.dataset.autoFilled = '0';
+    });
+
+document.addEventListener('change', (e) => {
+  const t = e.target;
+  if (!t || t.id !== 'pickerManualSearch') return;
+  try { pickerManualTryAutofill(document.getElementById('towerPickerModal')); } catch {}
+});
+
+
+    document.addEventListener('keydown', (e) => {
+      const t = e.target;
+      if (!t || t.id !== 'pickerManualSearch') return;
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      try { pickerManualTryAutofill(document.getElementById('towerPickerModal')); } catch {}
     });
     document.addEventListener('input', (e) => {
       const sel = e.target.closest('#focusTowerSelect');
@@ -677,47 +698,69 @@
   }
 
   function resyncUIAfterSwap() {
-    ensureStep4Styles();
+    MS.ensureStep4Styles?.();
     refreshTowerPickerLauncherUI();
 
     if (PNS.modals) {
-      const m = getModals();
+      const m = MS.getModals();
       PNS.modals.settings = m.settings;
       PNS.modals.board = m.board;
     }
     if (PNS.shiftTabs && Array.isArray(PNS.shiftTabs)) {
       PNS.shiftTabs.length = 0;
-      PNS.shiftTabs.push(...getShiftTabs());
+      PNS.shiftTabs.push(...MS.getShiftTabs());
     }
 
     if (typeof state.showAllColumns !== 'boolean') state.showAllColumns = false;
-    applyColumnVisibility(!!state.showAllColumns);
+    MS.applyColumnVisibility?.(!!state.showAllColumns);
     MS.updateShiftTabButtons?.();
     MS.updateBoardTitle?.();
     bindSettingsAndTowerButtonsOnce();
 
     if (typeof state.autoAdvanceTowerOnAssign !== 'boolean') state.autoAdvanceTowerOnAssign = false;
-    state.towerViewMode = state.towerViewMode || 'focus';
-    setTimeout(() => { MS.applyTowerVisibilityMode?.(); MS.syncTowerViewToggleButton?.(); MS.syncFocusedTowerSelect?.(); MS.syncSettingsTowerPreview?.(); }, 0);
+    // Do not force focus mode on refresh/HTMX swaps (it hides the right panel and causes apparent flicker).
+    state.towerViewMode = state.towerViewMode || 'all';
+    setTimeout(() => {
+      try {
+        if ((state.towerViewMode || 'all') === 'focus') MS.applyTowerVisibilityMode?.();
+        else MS.showAllTowers?.();
+      } catch {}
+      try { MS.syncTowerViewToggleButton?.(); } catch {}
+      try { MS.syncFocusedTowerSelect?.(); } catch {}
+      try { MS.syncSettingsTowerPreview?.(); } catch {}
+    }, 0);
 
     if (state.activeModal) {
-      const modal = getModals()[state.activeModal];
+      const modal = MS.getModals()[state.activeModal];
       if (modal) modal.classList.add('is-open');
     }
   }
 
+  function scheduleResyncUIAfterSwap() {
+    if (state._modalsResyncScheduled) return;
+    state._modalsResyncScheduled = true;
+    setTimeout(() => {
+      state._modalsResyncScheduled = false;
+      resyncUIAfterSwap();
+    }, 30);
+  }
+
   function exposeLegacyPNSApi() {
-    PNS.openModal = openModal;
-    PNS.closeModal = closeModal;
-    PNS.applyColumnVisibility = applyColumnVisibility;
-    PNS.toggleColumns = toggleColumns;
+    PNS.openModal = MS.openModal;
+    PNS.closeModal = MS.closeModal;
+    PNS.applyColumnVisibility = MS.applyColumnVisibility;
+    PNS.toggleColumns = MS.toggleColumns;
     PNS.matchesShift = MS.matchesShift;
     PNS.applyShiftFilter = MS.applyShiftFilter;
     PNS.handleShiftTabClick = MS.handleShiftTabClick;
     PNS.showAllTowers = MS.showAllTowers;
     PNS.focusCurrentTower = MS.focusCurrentTower;
     PNS.showAllTowers = MS.showAllTowers;
-    PNS.toggleTowerFocusMode = () => ((state.towerViewMode || 'focus') === 'focus' ? MS.showAllTowers?.() : MS.focusCurrentTower?.());
+    PNS.toggleTowerFocusMode = () => ((state.towerViewMode || 'all') === 'focus' ? MS.showAllTowers?.() : MS.focusCurrentTower?.());
+    PNS.openTowerCalculatorModal = MS.openTowerCalculatorModal;
+    PNS.applyTowerCalcToTowerSettings = MS.applyTowerCalcToTowerSettings;
+    PNS.applyTowerCalcAssignmentsToTowers = MS.applyTowerCalcAssignmentsToTowers;
+    PNS.calcSyncCaptainsFromTowersIntoCalculator = MS.calcSyncCaptainsFromTowersIntoCalculator;
   }
 
   function initIfReady() {
@@ -732,35 +775,22 @@
     if (required.some((k) => typeof MS[k] !== 'function')) return false;
 
     exposeLegacyPNSApi();
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', resyncUIAfterSwap);
-    else resyncUIAfterSwap();
-    document.addEventListener('htmx:afterSwap', resyncUIAfterSwap);
-    document.addEventListener('htmx:afterSettle', resyncUIAfterSwap);
-    document.addEventListener('pns:partials:loaded', resyncUIAfterSwap);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scheduleResyncUIAfterSwap);
+    else scheduleResyncUIAfterSwap();
+    document.addEventListener('htmx:afterSwap', scheduleResyncUIAfterSwap);
+    document.addEventListener('htmx:afterSettle', scheduleResyncUIAfterSwap);
+    document.addEventListener('pns:partials:loaded', scheduleResyncUIAfterSwap);
     document.addEventListener('pns:dom:refreshed', () => setTimeout(() => MS.applyTowerVisibilityMode?.(), 0));
     MS.__initialized = true;
     return true;
   }
 
+
+
   Object.assign(MS, {
-    __splitVersion: '1',
-    getModals,
-    getShiftTabs,
-    getButtons,
-    syncBodyModalLock,
-    ensureStep4Styles,
-    openModal,
-    closeModal,
-    applyColumnVisibility,
-    toggleColumns,
-    syncToggleButtons,
-    syncVisibilityCheckboxes,
-    towerPreviewSlotKeyFromTitle,
-    getBaseByPreviewSlot,
-    syncSettingsTowerPreview,
-    focusTowerFromPreviewElement,
     bindSettingsAndTowerButtonsOnce,
     resyncUIAfterSwap,
+    scheduleResyncUIAfterSwap,
     exposeLegacyPNSApi,
     initIfReady,
   });

@@ -16,12 +16,36 @@
   function isPickerOnlyCaptainsEnabled() {
     if (typeof state.towerPickerOnlyCaptains !== 'boolean') state.towerPickerOnlyCaptains = true;
     if (typeof state.towerPickerMatchRegisteredShift !== 'boolean') state.towerPickerMatchRegisteredShift = true;
+    if (typeof state.towerPickerNoMixTroops !== 'boolean') state.towerPickerNoMixTroops = isPickerNoMixTroopsEnabled();
+    if (typeof state.towerPickerNoCrossShiftDupes !== 'boolean') state.towerPickerNoCrossShiftDupes = isPickerNoCrossShiftDupesEnabled();
     return !!state.towerPickerOnlyCaptains;
   }
 
   function isPickerMatchRegisteredShiftEnabled() {
     if (typeof state.towerPickerMatchRegisteredShift !== 'boolean') state.towerPickerMatchRegisteredShift = true;
     return !!state.towerPickerMatchRegisteredShift;
+  }
+
+  function _pickerBoolLS(key, fallback) {
+    try {
+      const v = localStorage.getItem(key);
+      if (v === null) return fallback;
+      return v === '1';
+    } catch { return fallback; }
+  }
+
+  function isPickerNoMixTroopsEnabled() {
+    if (typeof state.towerPickerNoMixTroops !== 'boolean') {
+      state.towerPickerNoMixTroops = _pickerBoolLS('pns_picker_no_mix_troops', true);
+    }
+    return !!state.towerPickerNoMixTroops;
+  }
+
+  function isPickerNoCrossShiftDupesEnabled() {
+    if (typeof state.towerPickerNoCrossShiftDupes !== 'boolean') {
+      state.towerPickerNoCrossShiftDupes = _pickerBoolLS('pns_picker_no_cross_shift_dupes', true);
+    }
+    return !!state.towerPickerNoCrossShiftDupes;
   }
 
   function eligibleCaptainsForBase(base) {
@@ -120,6 +144,8 @@
           <span class="picker-meta-shift">Shift: ${(state.activeShift || '').toUpperCase()}</span>
           <label class="picker-only-captains"><input type="checkbox" id="pickerOnlyCaptains" ${isPickerOnlyCaptainsEnabled() ? 'checked' : ''}/> Тільки капітани</label>
           <label class="picker-only-captains"><input type="checkbox" id="pickerMatchRegisteredShift" ${isPickerMatchRegisteredShiftEnabled() ? 'checked' : ''}/> Зазначений Shift</label>
+          <label class="picker-only-captains"><input type="checkbox" id="pickerNoMixTroops" ${isPickerNoMixTroopsEnabled() ? 'checked' : ''}/> Same troop only</label>
+          <label class="picker-only-captains"><input type="checkbox" id="pickerNoCrossShiftDupes" ${isPickerNoCrossShiftDupesEnabled() ? 'checked' : ''}/> No cross-shift duplicates</label>
         </div>
         <div class="picker-topline top-space">
           <select id="towerPickerCaptainSelect" class="input-like" aria-label="Вибір капітана">
@@ -130,6 +156,7 @@
             <button class="btn btn-sm" type="button" data-picker-set-captain="${base.id}">Set captain</button>
             <button class="btn btn-sm" type="button" data-picker-autofill="${base.id}">Auto-fill</button>
             <button class="btn btn-sm" type="button" data-picker-clear-base="${base.id}">Clear base</button>
+            <button class="btn btn-sm" type="button" data-picker-save-board="${base.id}">Save tower table</button>
           </div>
         </div>
 
@@ -158,10 +185,15 @@
           <summary>Manual add helper</summary>
           <div class="inner stack">
             <div class="picker-manual-row">
-              <input id="pickerManualName" placeholder="Нік" />
+              <input id="pickerManualSearch" list="pickerManualPlayerSuggestions" placeholder="Пошук гравця (зі списку)" autocomplete="off" spellcheck="false" />
+              <input id="pickerManualName" placeholder="Нік (можна свій, не зі списку)" autocomplete="off" />
+              <datalist id="pickerManualPlayerSuggestions">
+                ${(state.players || []).slice().sort((a,b)=> String(a.name||'').localeCompare(String(b.name||''))).map(p => `<option value="${PNS.escapeHtml(String(p.name || ''))}" label="${PNS.escapeHtml(String(p.alliance || ''))} · ${PNS.escapeHtml(String(p.role || ''))} · ${PNS.escapeHtml(String(p.tier || ''))} · ${Number(p.march || 0).toLocaleString('en-US')}"></option>`).join('')}
+              </datalist>
               <input id="pickerManualAlly" placeholder="Альянс" />
               <select id="pickerManualRole"><option>Fighter</option><option>Shooter</option><option>Rider</option></select>
             </div>
+            <div id="pickerManualHint" class="picker-manual-hint muted small"></div>
             <div class="picker-manual-row2">
               <input id="pickerManualTier" placeholder="T14" />
               <input id="pickerManualMarch" placeholder="March" type="number" min="0" />
@@ -223,9 +255,24 @@
     state._towerPickerLiveRefreshBound = true;
 
     document.addEventListener('change', (e) => {
-      const cb = e.target.closest('#pickerOnlyCaptains,#pickerMatchRegisteredShift');
+      const cb = e.target.closest('#pickerOnlyCaptains,#pickerMatchRegisteredShift,#pickerNoMixTroops,#pickerNoCrossShiftDupes');
       if (!cb) return;
-      setTimeout(() => { try { updateTowerPickerDetail(); } catch {} }, 0);
+      try {
+        if (cb.id === 'pickerOnlyCaptains') state.towerPickerOnlyCaptains = !!cb.checked;
+        if (cb.id === 'pickerMatchRegisteredShift') state.towerPickerMatchRegisteredShift = !!cb.checked;
+        if (cb.id === 'pickerNoMixTroops') {
+          state.towerPickerNoMixTroops = !!cb.checked;
+          localStorage.setItem('pns_picker_no_mix_troops', cb.checked ? '1' : '0');
+        }
+        if (cb.id === 'pickerNoCrossShiftDupes') {
+          state.towerPickerNoCrossShiftDupes = !!cb.checked;
+          localStorage.setItem('pns_picker_no_cross_shift_dupes', cb.checked ? '1' : '0');
+        }
+      } catch {}
+      setTimeout(() => {
+        try { updateTowerPickerDetail(); } catch {}
+        try { MS.syncSettingsTowerPreview?.(); } catch {}
+      }, 0);
     });
 
     document.addEventListener('click', (e) => {
@@ -252,6 +299,8 @@
     bindTowerPickerLiveRefreshOnce();
     if (typeof state.towerPickerOnlyCaptains !== 'boolean') state.towerPickerOnlyCaptains = true;
     if (typeof state.towerPickerMatchRegisteredShift !== 'boolean') state.towerPickerMatchRegisteredShift = true;
+    if (typeof state.towerPickerNoMixTroops !== 'boolean') state.towerPickerNoMixTroops = isPickerNoMixTroopsEnabled();
+    if (typeof state.towerPickerNoCrossShiftDupes !== 'boolean') state.towerPickerNoCrossShiftDupes = isPickerNoCrossShiftDupesEnabled();
     let modal = document.getElementById('towerPickerModal');
     if (!modal) {
       modal = document.createElement('div');
@@ -291,5 +340,10 @@
     updateTowerPickerDetail,
     refreshTowerPickerModalList,
     openTowerPickerModal,
+    isPickerNoMixTroopsEnabled,
+    isPickerNoCrossShiftDupesEnabled,
   });
+
+  PNS.isTowerNoMixTroopsEnabled = isPickerNoMixTroopsEnabled;
+  PNS.isTowerNoCrossShiftDupesEnabled = isPickerNoCrossShiftDupesEnabled;
 })();

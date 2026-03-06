@@ -41,6 +41,27 @@
     if (cards[0]) { const s = $('strong', cards[0]); if (s) s.textContent = String(total); }
     if (cards[1]) { const s = $('strong', cards[1]); if (s) s.textContent = String(capReady); }
     if (cards[2]) { const s = $('strong', cards[2]); if (s) s.textContent = `${shooter} / ${fighter} / ${rider}`; }
+
+    let shift1 = 0, shift2 = 0, both = 0;
+    if (typeof PNS?.getShiftCounts === 'function' && Array.isArray(PNS?.state?.players)) {
+      const c = PNS.getShiftCounts(PNS.state.players);
+      shift1 = Number(c.shift1 || 0);
+      shift2 = Number(c.shift2 || 0);
+      both = Number(c.both || 0);
+    } else {
+      rows.forEach((tr) => {
+        const shiftText = (
+          tr.querySelector('td[data-field="shiftLabel"]') ||
+          tr.querySelector('td[data-col-key="shift"]')
+        )?.textContent || tr.dataset.shift || 'both';
+        const s = String(shiftText || '').toLowerCase();
+        if (s.includes('shift 1') || s === 'shift1') shift1++;
+        else if (s.includes('shift 2') || s === 'shift2') shift2++;
+        else both++;
+      });
+    }
+    const shiftEl = document.getElementById('shiftCounts');
+    if (shiftEl) shiftEl.textContent = `${shift1} / ${shift2} / ${both}`;
   }
 
   function makeBaseEditorsCollapsible() {

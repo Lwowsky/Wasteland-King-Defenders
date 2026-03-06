@@ -2,6 +2,9 @@
   const PNS = window.PNS; if (!PNS) return;
   const { state } = PNS;
 
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
   function onClick(selector, handler) {
     document.addEventListener('click', (e) => {
       const el = e.target.closest(selector);
@@ -53,12 +56,10 @@
       maxHelpers: PNS.clampInt(c.maxHelpers?.defaultValue ?? c.maxHelpers?.value ?? 29),
     };
   }
-
   function initQuotaSettings() {
     const saved = typeof PNS.safeReadJSON === 'function' ? PNS.safeReadJSON(PNS.KEYS.KEY_AUTOFILL_SETTINGS, null) : null;
     const effective = saved || getDefaultAutoFillSettings();
-    const c = PNS.controls || {};
-    const q = effective?.quotas || {};
+    const c = PNS.controls || {}; const q = effective?.quotas || {};
     if (c.quotaT14) c.quotaT14.value = PNS.clampInt(q.T14, 0);
     if (c.quotaT13) c.quotaT13.value = PNS.clampInt(q.T13, 0);
     if (c.quotaT12) c.quotaT12.value = PNS.clampInt(q.T12, 4);
@@ -71,100 +72,44 @@
     if (!saved && typeof PNS.safeWriteJSON === 'function') PNS.safeWriteJSON(PNS.KEYS.KEY_AUTOFILL_SETTINGS, effective);
   }
 
-  function dispatchDomRefreshed() {
-    try { document.dispatchEvent(new Event('pns:dom:refreshed')); } catch {}
-    try { window.dispatchEvent(new Event('pns:dom:refreshed')); } catch {}
-  }
-
-  function hasPlayersShell() {
-    return !!document.querySelector('#playersDataTable');
-  }
-  function getPlayersRowsCount() {
-    const tbody = document.querySelector('#playersDataTable tbody');
-    return tbody ? tbody.querySelectorAll('tr').length : 0;
-  }
-  function getBaseCards() {
-    return Array.from(document.querySelectorAll('.bases-grid .base-card'));
-  }
-  function getVisibleBaseCards() {
-    return getBaseCards().filter((c) => !c.hidden && c.style.display !== 'none');
-  }
-
-  function ensurePlayersTableFromState() {
-    if (!hasPlayersShell()) return;
-
-    if (typeof PNS.ensurePlayersLinked === 'function') {
-      PNS.ensurePlayersLinked();
-    } else if (typeof PNS.parsePlayersFromTable === 'function' && (!Array.isArray(state.players) || !state.players.length)) {
-      PNS.parsePlayersFromTable();
-    }
-
-    // If DOM shell is empty but state exists -> paint table from state
-    if (Array.isArray(state.players) && state.players.length && getPlayersRowsCount() === 0) {
-      if (typeof PNS.renderPlayersTableFromState === 'function') PNS.renderPlayersTableFromState();
-      if (typeof PNS.ensurePlayersLinked === 'function') PNS.ensurePlayersLinked();
-      if (typeof PNS.buildRowActions === 'function') PNS.buildRowActions();
-    }
-  }
-
-  function ensureBasesPanelFromDom() {
-    const cards = getBaseCards();
-    if (!cards.length) return false;
-
-    // Parse bases if missing/out-of-date after partial swap.
-    const needParse = !Array.isArray(state.bases) || !state.bases.length || state.bases.length !== cards.length;
-    if (needParse && typeof PNS.parseBasesFromCards === 'function') {
-      try { PNS.parseBasesFromCards(); } catch (e) { console.error('[init_bind] parseBasesFromCards failed', e); }
-    }
-
-    // If all cards are hidden (focus/filter race), unhide first; shift/focus will re-apply safely.
-    const visible = getVisibleBaseCards();
-    if (cards.length && visible.length === 0) {
-      cards.forEach((c) => { c.hidden = false; c.style.removeProperty('display'); });
-      try { document.querySelector('.bases-grid')?.classList?.remove('focus-current-tower'); } catch {}
-    }
-
-    // Restore assignments after cards rebind.
-    try { PNS.tryRestoreTowersSnapshot?.({ soft: true }); } catch (e) { console.warn('[init_bind] towers soft-restore failed', e); }
-
-    // Render + re-apply shift/focus visibility.
-    try { PNS.renderAll?.(); } catch (e) { console.error('[init_bind] renderAll failed', e); }
-
-    const shift = ['shift1','shift2','all'].includes(state.activeShift) ? state.activeShift : 'shift1';
-    try { PNS.applyShiftFilter?.(shift); } catch (e) { console.warn('[init_bind] applyShiftFilter failed', e); }
-    try { PNS.applyPlayerTableFilters?.(); } catch {}
-
-    // If focus mode accidentally hides all towers, fallback to show all.
-    if (getBaseCards().length && getVisibleBaseCards().length === 0) {
-      try { PNS.ModalsShift?.showAllTowers?.(); } catch {}
-      try { PNS.ModalsShift?.applyTowerVisibilityMode?.(); } catch {}
-    }
-    try { PNS.ModalsShift?.syncTowerViewToggleButton?.(); } catch {}
-    try { PNS.ModalsShift?.syncFocusedTowerSelect?.(); } catch {}
-
-    return true;
-  }
-
   function rebuildFromDom() {
     PNS.refreshDomCache?.();
+    const hasPlayersTable = !!document.querySelector('#playersDataTable');
+    const hasBaseCards = !!document.querySelector('.bases-grid .base-card:not([data-settings-card])');
 
-    ensurePlayersTableFromState();
-    ensureBasesPanelFromDom();
+    if (hasPlayersTable) {
+      if (typeof PNS.ensurePlayersLinked === 'function') PNS.ensurePlayersLinked();
+      else if (typeof PNS.parsePlayersFromTable === 'function') PNS.parsePlayersFromTable();
+    }
+    if (hasBaseCards && typeof PNS.parseBasesFromCards === 'function') PNS.parseBasesFromCards();
+
+    if (typeof PNS.buildRowActions === 'function') PNS.buildRowActions();
+    if (typeof PNS.renderAll === 'function') PNS.renderAll();
 
     try { initQuotaSettings(); } catch {}
-    try { PNS.initImportWizard?.(); } catch {}
-    try { PNS.syncTopFilterUI?.(); } catch {}
+    PNS.initImportWizard?.();
+    PNS.syncTopFilterUI?.();
 
     if (typeof PNS.applyColumnVisibility === 'function') {
       const showAll = typeof PNS.safeReadBool === 'function' ? PNS.safeReadBool(PNS.KEYS.KEY_SHOW_ALL, false) : false;
-      try { PNS.applyColumnVisibility(showAll); } catch {}
+      PNS.applyColumnVisibility(showAll);
     }
 
-    // Re-open modal from hash (if user refreshed on modal hash)
+    // Restore saved shift (do not force Shift 1 on every rebuild — it causes flicker/race after HTMX swaps)
+    let shiftSaved = state.activeShift || 'shift1';
+    try {
+      const ls = localStorage.getItem(PNS.KEYS.KEY_SHIFT_FILTER);
+      if (ls === 'shift1' || ls === 'shift2' || ls === 'all') shiftSaved = ls;
+    } catch {}
+    state.activeShift = shiftSaved;
+    PNS.applyShiftFilter?.(shiftSaved);
+    PNS.applyPlayerTableFilters?.();
+
+    // Notify split modules once DOM/state are in sync
+    try { document.dispatchEvent(new CustomEvent('pns:dom:refreshed')); } catch {}
+
     if (location.hash === '#settings-modal') PNS.openModal?.('settings');
     if (location.hash === '#board-modal') PNS.openModal?.('board');
-
-    dispatchDomRefreshed();
   }
 
   function scheduleRebuild() {
@@ -172,58 +117,18 @@
     state._htmxRebuildScheduled = true;
     setTimeout(() => {
       state._htmxRebuildScheduled = false;
-      rebuildFromDom();
-    }, 0);
-  }
-
-  function scheduleBootRecoveryPasses() {
-    if (state._bootRecoveryScheduled) return;
-    state._bootRecoveryScheduled = true;
-    const delays = [0, 50, 150, 300, 600, 1000, 1600, 2400, 3600, 5200, 8000];
-    delays.forEach((ms) => {
-      setTimeout(() => {
-        try {
-          const needPlayers = hasPlayersShell() && Array.isArray(state.players) && state.players.length && getPlayersRowsCount() === 0;
-          const baseCards = getBaseCards();
-          const needBases = baseCards.length && ((!Array.isArray(state.bases) || state.bases.length !== baseCards.length) || getVisibleBaseCards().length === 0);
-          if (needPlayers || needBases || (!state.bases?.length && document.querySelector('.bases-grid'))) {
-            scheduleRebuild();
-          }
-        } catch {}
-      }, ms);
-    });
-  }
-
-  function startDomWatchdog() {
-    if (state._pnsDomWatchdogStarted) return;
-    state._pnsDomWatchdogStarted = true;
-    if (typeof MutationObserver !== 'function') return;
-
-    const observer = new MutationObserver((mutations) => {
-      let should = false;
-      for (const m of mutations) {
-        if (m.type !== 'childList') continue;
-        for (const n of m.addedNodes || []) {
-          if (!n || n.nodeType !== 1) continue;
-          const el = n;
-          if (
-            el.matches?.('#playersDataTable, .bases-grid, .base-card, .base-settings-card, .board-col') ||
-            el.querySelector?.('#playersDataTable, .bases-grid, .base-card, .base-settings-card, .board-col')
-          ) {
-            should = true;
-            break;
-          }
+      const hasPlayers = !!document.querySelector('#playersDataTable');
+      const hasBases = !!document.querySelector('.bases-grid .base-card:not([data-settings-card])');
+      if (!hasPlayers || !hasBases) {
+        // HTMX partials load independently; wait until both sides are in DOM.
+        if (!state._htmxRebuildRetryScheduled) {
+          state._htmxRebuildRetryScheduled = true;
+          setTimeout(() => { state._htmxRebuildRetryScheduled = false; scheduleRebuild(); }, 60);
         }
-        if (should) break;
+        return;
       }
-      if (should) {
-        scheduleRebuild();
-        scheduleBootRecoveryPasses();
-      }
-    });
-
-    try { observer.observe(document.body || document.documentElement, { childList: true, subtree: true }); } catch {}
-    state._pnsDomWatchdog = observer;
+      rebuildFromDom();
+    }, 40);
   }
 
   function bindDelegatedOnce() {
@@ -242,6 +147,7 @@
     onClick('#exportPngBtn', (e) => { e.preventDefault(); exportBoardAsPNG(); });
     onClick('#exportPdfBtn', (e) => { e.preventDefault(); exportBoardAsPDF(); });
 
+    // import wizard buttons (delegated for HTMX)
     onClick('#loadUrlMockBtn', (e) => { e.preventDefault(); PNS.handleLoadUrlClick?.(); });
     onClick('#useTemplateMockBtn', (e) => { e.preventDefault(); PNS.handleUseSavedTemplateClick?.(); });
     onClick('#saveVisibleColumnsMockBtn', (e) => { e.preventDefault(); PNS.handleSaveVisibleColumnsClick?.(); });
@@ -255,6 +161,7 @@
       if (url && !hasHeaders) PNS.handleLoadUrlClick?.(); else PNS.handleDetectColumns?.();
     });
 
+    // settings card buttons (optional)
     onClick('#settingsShowAllBasesBtn, [data-show-all-bases]', (e) => { e.preventDefault(); PNS.showAllBaseCards?.(); });
     onClick('#settingsHideOtherBasesBtn, [data-hide-other-bases]', (e) => { e.preventDefault(); PNS.showOnlyActiveBaseCard?.(); });
 
@@ -281,6 +188,7 @@
       if (e.target.closest('[data-shift-tab]')) PNS.handleShiftTabClick?.(e);
     });
 
+    // live tier/min settings
     document.addEventListener('input', (e) => {
       const input = e.target.closest('[data-v4-maxhelpers],[data-v4-tier]'); if (!input) return;
       const card = input.closest('.base-card'); const baseId = card?.dataset?.baseId; if (!baseId) return;
@@ -303,18 +211,13 @@
   }
 
   function init() {
-    try { PNS.loadTopFilters?.(); } catch {}
-    try { PNS.loadBaseTowerRulesStore?.(); } catch {}
+    PNS.loadTopFilters?.();
+    PNS.loadBaseTowerRulesStore?.();
     bindDelegatedOnce();
-    startDomWatchdog();
     scheduleRebuild();
-    scheduleBootRecoveryPasses();
   }
 
   document.addEventListener('DOMContentLoaded', init);
-  window.addEventListener('load', scheduleRebuild);
   document.addEventListener('htmx:afterSwap', scheduleRebuild);
   document.addEventListener('htmx:afterSettle', scheduleRebuild);
-  document.addEventListener('pns:partials:loaded', () => { scheduleRebuild(); scheduleBootRecoveryPasses(); });
-  window.addEventListener('pns:partials:loaded', () => { scheduleRebuild(); scheduleBootRecoveryPasses(); });
 })();

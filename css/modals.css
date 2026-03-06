@@ -402,88 +402,147 @@
 }
 
 
+/* Tower calculator / settings stacking hotfix */
+#settings-modal {
+  z-index: 260000 !important;
+}
+#settings-modal .modal-card {
+  position: relative;
+  z-index: 1;
+}
+#settings-modal .modal-backdrop {
+  z-index: 0;
+}
+#towerCalcModal.tower-calc-modal {
+  z-index: 95000 !important;
+}
+#towerCalcModal.tower-calc-modal.tower-calc-under-settings {
+  z-index: 90000 !important;
+}
 
-/* v4.2 import modal compact width + polished mapping actions */
-#settings-modal .modal-card{
-  width:min(1180px, calc(100vw - 24px)) !important;
-}
-#settings-modal .modal-card.has-settings-side-menu{
-  grid-template-columns: 230px minmax(0,1fr) !important;
-}
-#settings-modal .settings-side-btn{
-  padding: 12px 14px;
-  border-radius: 13px;
-}
-#settings-modal .mapping-grid-2{
-  gap:10px;
-}
-#settings-modal .mapping-row{
-  padding: 10px;
-  border-radius: 12px;
-  background: rgba(255,255,255,.02);
-}
-#settings-modal .mapping-row .row-title-wrap{
-  align-items:flex-start;
-}
-#settings-modal .mapping-row .row-title-actions{
-  display:flex;
-  gap:6px;
-  align-items:center;
-  flex: 0 0 auto;
-}
-#settings-modal .edit-hint{
-  border:1px solid rgba(130,160,255,.28);
-  background: linear-gradient(180deg, rgba(90,115,170,.22), rgba(58,76,118,.18));
-  color:#dfe8ff;
+/* ===== vSplit: moved from JS ensureStep4Styles() ===== */
+      .bases-grid > .base-settings-card{align-self:stretch;height:100%;}
+      .base-settings-card .settings-tools-box{flex:1;display:flex;flex-direction:column;justify-content:flex-start;}
+      .tower-picker-modal{z-index:100000 !important; position:fixed !important; inset:0;} .tower-picker-modal .modal-card{width:min(1080px, calc(100vw - 18px));max-height:92vh;overflow:auto;border-radius:16px;} #board-modal{z-index:120000 !important; position:fixed !important; inset:0;} #board-modal .modal-card{position:relative;z-index:1;} #board-modal .modal-backdrop{z-index:0;} #towerPlayerEditModal{z-index:130000 !important; position:fixed !important; inset:0;} #towerPlayerEditModal .modal-card{z-index:1;position:relative;}
+      .tower-picker-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;position:relative;}
+      .tower-picker-head-center{display:flex;align-items:center;justify-content:center;gap:8px;justify-self:center;grid-column:2;}
+      .tower-picker-head-left{text-align:left;}
+      .tower-picker-head-left h2{margin:0;line-height:1.15;}
+      .tower-picker-head-left p{margin:4px 0 0;}
+      .tower-picker-head .btn.shift-mini{min-width:84px;padding:7px 10px;}
+      .tower-picker-head>[data-close-tower-picker]{justify-self:end;grid-column:3;}
+      .tower-picker-detail .picker-meta-row{display:flex !important;align-items:center;gap:12px;flex-wrap:wrap;margin-top:2px;} .tower-picker-detail .picker-meta-row .picker-meta-shift{margin-right:4px;} .tower-picker-detail .picker-only-captains{display:inline-flex !important;align-items:center;gap:8px;cursor:pointer;white-space:nowrap;} .tower-picker-detail .picker-only-captains input{width:auto;height:auto;flex:0 0 auto;} .tower-picker-detail .picker-topline{display:grid;grid-template-columns:minmax(220px,360px) auto;gap:10px;align-items:center;}
+      .tower-picker-detail .picker-topline > select{min-width:180px;max-width:360px;width:100%;}
+      .tower-picker-detail .picker-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+      .tower-picker-detail details.tower-collapsible{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02);} 
+      .tower-picker-detail details.tower-collapsible>summary{cursor:pointer;list-style:none;padding:10px;font-weight:600;}
+      .tower-picker-detail details.tower-collapsible>summary::-webkit-details-marker{display:none;}
+      .tower-picker-detail details.tower-collapsible .inner{padding:0 10px 10px;}
+      .tower-picker-detail .picker-limits-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;}
+      .tower-picker-detail .picker-limits-head label{display:grid;gap:6px;min-width:220px;}
+      .tower-picker-detail .picker-manual-row{display:grid;grid-template-columns:minmax(160px,1.2fr) minmax(180px,1.35fr) minmax(110px,.8fr) minmax(130px,.9fr);gap:8px;align-items:end;}
+      .tower-picker-detail .picker-manual-row2{display:grid;grid-template-columns:92px 130px 150px max-content max-content !important;gap:8px;align-items:end;}
+      .tower-picker-detail .picker-manual-row2 > .btn{justify-self:start;white-space:nowrap;}
+      .tower-picker-detail .picker-manual-hint{min-height:16px;margin-top:-2px;}
+      .tower-picker-list .tower-item-count{display:inline-flex;align-items:center;justify-content:center;padding:1px 6px;border-radius:999px;font-weight:700;border:1px solid rgba(255,255,255,.14);margin-left:2px;}
+      .tower-picker-list .tower-item-count.is-ready{color:#9ff0b3;border-color:rgba(84,214,140,.35);background:rgba(24,74,42,.26);}
+      .tower-picker-list .tower-item-count.is-not-ready{color:#ffc4cb;border-color:rgba(255,111,126,.35);background:rgba(84,26,36,.22);}
+      #openTowerPickerBtn{min-width:190px;}
+      #focusTowerPrevBtn,#focusTowerNextBtn,#focusTowerSelect,.settings-focus-inline{display:none !important;}
+      .tower-picker-detail .tower-picker-item.active{border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.08);} .tower-picker-list .tower-picker-item{display:flex;flex-direction:column;align-items:stretch;width:100%;text-align:left;padding:9px 10px;border-radius:12px;} .tower-picker-list .tower-picker-item .tower-item-row{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;} .tower-picker-list .tower-picker-item .tower-item-status{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid rgba(255,255,255,.14);background:rgba(12,20,38,.75);color:#dbe6ff;} .tower-picker-list .tower-picker-item.is-ready .tower-item-status{color:#9ff0b3;border-color:rgba(84,214,140,.35);background:rgba(24,74,42,.38);} .tower-picker-list .tower-picker-item.is-not-ready .tower-item-status{color:#ffc4cb;border-color:rgba(255,111,126,.35);background:rgba(84,26,36,.38);} .tower-picker-list .tower-picker-item.is-ready{box-shadow:inset 0 0 0 1px rgba(84,214,140,.10);} .tower-picker-list .tower-picker-item.is-not-ready{box-shadow:inset 0 0 0 1px rgba(255,111,126,.06);} 
+      #towerPlayerEditModal .modal-card{width:min(540px, calc(100vw - 24px));}
+      #towerPlayerEditModal .modal-grid{grid-template-columns:minmax(0,1fr);}
+      #towerPlayerEditModal .modal-grid > .panel{max-width:100%;}
+      .tower-picker-modal input,.tower-picker-modal select,#towerPlayerEditModal input,#towerPlayerEditModal select{color:#e9efff !important;}
+      #towerPlayerEditModal input::placeholder{color:#8e9ab8;}
+      .settings-focus-inline{display:grid;grid-template-columns:30px minmax(0,1fr) 30px;align-items:center;gap:6px;min-width:150px;max-width:240px;flex:1 1 210px;}
+      .settings-focus-inline .btn{padding:0;min-width:30px;width:30px;height:30px;border-radius:9px;}
+      .settings-focus-select{display:block;height:38px;min-width:0;width:100%;padding:7px 10px;font-size:13px;line-height:1.2;}
+      .quota-row .quota-max{margin-left:auto;}
+      .shift-towers-preview .tower-thumb-card{position:relative;cursor:pointer;}
+      .shift-towers-preview .tower-thumb-card.is-active{border-color:rgba(255,170,90,.55); box-shadow:0 0 0 1px rgba(255,170,90,.18) inset, 0 0 0 2px rgba(255,170,90,.08);}
+      .shift-towers-preview .tower-thumb-card.is-ready{background:rgba(84,214,140,.06);}
+      .shift-towers-preview .tower-thumb-card.is-not-ready{background:rgba(255,255,255,.02);}
+      .shift-towers-preview .tower-thumb-card .tower-thumb-status{
+        position:absolute; top:6px; right:6px; width:20px; height:20px; border-radius:999px;
+        display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;
+        border:1px solid rgba(255,255,255,.18); background:rgba(10,18,35,.75); color:#dbe6ff;
+      }
+      .shift-towers-preview .tower-thumb-card.is-ready .tower-thumb-status{
+        color:#9ff0b3; border-color:rgba(84,214,140,.35); background:rgba(30,84,46,.35);
+      }
+      .shift-towers-preview .tower-thumb-card.is-not-ready .tower-thumb-status{
+        color:#ffbec7; border-color:rgba(255,111,126,.35); background:rgba(110,34,44,.28);
+      }
+      #settings-modal, #settings-modal.modal{z-index:260000 !important;position:fixed !important;inset:0;}
+      #settings-modal .modal-backdrop{z-index:0 !important;position:absolute;inset:0;}
+      #settings-modal .modal-card{position:relative;z-index:1 !important;}
+      .tower-calc-modal{z-index:95000 !important;position:fixed !important;inset:0;}
+      .tower-calc-modal .modal-backdrop{z-index:0 !important;}
+      .tower-calc-modal .modal-card{position:relative;z-index:1 !important;}
+      .tower-calc-modal.tower-calc-under-settings{z-index:90000 !important;}
+      .tower-calc-modal.tower-calc-suspended{visibility:hidden !important; opacity:0 !important; pointer-events:none !important;}
+      .tower-calc-modal .modal-card{width:min(1220px, calc(100vw - 20px));max-height:94vh;overflow:auto;border-radius:16px;}
+      .tower-calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+      .tower-calc-panel{border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(255,255,255,.02);}
+      .tower-calc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+      .tower-calc-rows{display:grid;gap:8px;margin-top:8px;}
+      .tower-calc-row{display:grid;grid-template-columns:minmax(220px,1.6fr) 120px 120px;gap:8px;align-items:center;}
+      .tower-calc-row .mini{font-size:12px;color:#aab5d3;}
+      .tower-calc-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px;}
+      .tower-calc-summary>div{border:1px solid var(--line);border-radius:10px;padding:8px;background:rgba(255,255,255,.015);display:grid;gap:4px;}
+      .tower-calc-results{margin-top:10px;display:grid;gap:10px;}
+      .tower-calc-tier-table{width:100%;border-collapse:collapse;font-size:13px;}
+      .tower-calc-tier-table th,.tower-calc-tier-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;}
+      .tower-calc-tier-table th:last-child,.tower-calc-tier-table td:last-child{text-align:right;}
+      .tower-calc-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+      .tower-calc-controls label{display:inline-flex;align-items:center;gap:6px;}
+      .tower-calc-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;}
+      .tower-calc-toolbar{display:flex;flex-direction:column;gap:8px;}
+      .tower-calc-toolbar-main{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+      .tower-calc-compact-toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;}
+      .tower-calc-advanced{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02);}
+      .tower-calc-advanced>summary{cursor:pointer;list-style:none;padding:8px 10px;font-weight:600;}
+      .tower-calc-advanced>summary::-webkit-details-marker{display:none;}
+      .tower-calc-advanced .inner{padding:0 10px 10px;}
+      .tower-calc-mini-summary{border:1px dashed rgba(255,255,255,.18);border-radius:12px;padding:8px 10px;background:rgba(255,255,255,.015);}
+      .tower-calc-main-tabs{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+      .tower-calc-main-tabs [data-calc-main-tab].is-active{box-shadow:inset 0 0 0 1px rgba(148,163,184,.35);border-color:rgba(148,163,184,.5);}
+      .tower-calc-main-panel{display:none;}
+      .tower-calc-main-panel.is-active{display:block;}
+      .tower-calc-placeholder{border:1px dashed rgba(255,255,255,.12);border-radius:12px;padding:10px;background:rgba(255,255,255,.015);}
+      .tower-calc-modal.is-compact .modal-head{padding:10px 12px;}
+      .tower-calc-modal.is-compact .modal-grid{padding:10px !important;gap:8px !important;}
+      .tower-calc-modal.is-compact .tower-calc-row{grid-template-columns:minmax(200px,1.6fr) 110px 92px;gap:6px;}
+      .tower-calc-modal.is-compact .tower-calc-panel{padding:8px;}
+      .tower-calc-modal.is-compact .tower-calc-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
+
+      @media (max-width: 900px){
+        .tower-picker-modal .modal-card{width:calc(100vw - 10px);max-height:94vh;border-radius:14px;}
+        .tower-picker-modal .modal-head{padding:8px 10px;}
+        .tower-picker-modal .modal-grid{padding:8px !important;gap:8px !important;grid-template-columns:1fr !important;}
+        .tower-picker-head{grid-template-columns:1fr 44px;grid-template-areas:'title close' 'center center';align-items:start;}
+        .tower-picker-head-left{grid-area:title;}
+        .tower-picker-head-center{grid-area:center;grid-column:auto; justify-content:center; margin-top:4px;}
+        .tower-picker-head > [data-close-tower-picker]{grid-area:close;justify-self:end;}
+        .tower-picker-detail .picker-topline{grid-template-columns:1fr;}
+        .tower-picker-detail .picker-manual-row,.tower-picker-detail .picker-manual-row2{grid-template-columns:1fr;}
+        .tower-calc-grid{grid-template-columns:1fr;}
+        .tower-calc-row{grid-template-columns:1fr;}
+        .tower-calc-summary{grid-template-columns:1fr 1fr;}
+      }
+    
+
+/* --- Tower Calculator: prevent bottom actions from being clipped --- */
+.tower-calc-modal .tower-calc-results{padding-bottom:28px;}
+
+/* Make btn-xs actually "xs" inside tower calculator (it was only styled in .row-actions before) */
+.tower-calc-modal .btn.btn-xs{
+  padding:6px 8px;
   border-radius:10px;
-  padding:4px 10px;
   font-size:11px;
-  font-weight:600;
-  text-decoration:none;
-  opacity:1;
-  line-height:1.1;
-  min-height:28px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
+  line-height:1;
 }
-#settings-modal .edit-hint:hover{
-  border-color: rgba(150,185,255,.4);
-  background: linear-gradient(180deg, rgba(100,130,190,.26), rgba(64,84,128,.22));
-}
-#settings-modal .mapping-remove-btn{
-  width:28px;
-  height:28px;
-  border-radius:9px;
-  border:1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
-  color:#dfe8ff;
-  cursor:pointer;
-}
-#settings-modal .mapping-remove-btn:hover{
-  border-color: rgba(255,111,126,.35);
-  color:#ffd2d8;
-  background: rgba(255,111,126,.08);
-}
-#settings-modal .mapping-add-row{
-  display:block !important;
-  border:1px dashed rgba(255,255,255,.12);
-  background: rgba(255,255,255,.01);
-}
-#settings-modal .mapping-add-row .mapping-add-btn{
-  width:100%;
-  justify-content:center;
-  font-weight:700;
-  border-style:dashed;
-}
-#settings-modal .mapping-row.is-custom-row{
-  border-color: rgba(120,160,255,.14);
-}
-@media (max-width: 980px){
-  #settings-modal .modal-card{
-    width:min(980px, calc(100vw - 12px)) !important;
-  }
-  #settings-modal .modal-card.has-settings-side-menu{
-    grid-template-columns:1fr !important;
-  }
-}
+
+/* Extra breathing room at the bottom of the modal card */
+.tower-calc-modal .modal-grid{padding-bottom:28px;}
