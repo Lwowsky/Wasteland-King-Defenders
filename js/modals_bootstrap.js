@@ -90,15 +90,35 @@
     try { PNS.setImportStatus?.(`Saved tower table${reason ? ` (${reason})` : ''}.`, 'good'); } catch {}
   }
 
+  function towerPickerScopeRoot(el) {
+    return el?.closest?.('.tower-picker-scope,.tower-picker-detail,#towerPickerModal') || document.getElementById('towerPickerModal');
+  }
 
+  function towerPickerScopeShift(el) {
+    const root = towerPickerScopeRoot(el);
+    const inline = root?.closest?.('#towerCalcModal') || el?.closest?.('#towerCalcModal');
+    if (!inline) return String(state.activeShift || 'shift1');
+    return String(root?.getAttribute?.('data-calc-inline-scope') || state.activeShift || 'shift1');
+  }
+
+  function refreshTowerPickerScope(root) {
+    const inCalc = !!root?.closest?.('#towerCalcModal');
+    if (inCalc) {
+      try { window.calcRenderInlineTowerSettings?.(document.getElementById('towerCalcModal')); } catch {}
+      try { window.calcRenderLiveFinalBoard?.(document.getElementById('towerCalcModal')); } catch {}
+      return;
+    }
+    try { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); } catch {}
+    try { MS.syncSettingsTowerPreview?.(); } catch {}
+  }
 
 
   function bindSettingsAndTowerButtonsOnce() {
     if (state._modalsShiftExtraBound) return;
     state._modalsShiftExtraBound = true;
 
-    function seedTowerEditModalFromManual(baseId, assignKind) {
-      const m = document.getElementById('towerPickerModal');
+    function seedTowerEditModalFromManual(baseId, assignKind, rootIn) {
+      const m = rootIn || document.getElementById('towerPickerModal');
       try { pickerManualTryAutofill(m); } catch {}
       const picked = pickerManualFindPlayerByInput(m);
       MS.openTowerPlayerEditModal?.(baseId, picked?.id || '');
@@ -238,48 +258,63 @@
       if (pickerSetCaptain) {
         e.preventDefault();
         const baseId = pickerSetCaptain.dataset.pickerSetCaptain;
-        const sel = document.getElementById('towerPickerCaptainSelect');
+        const root = towerPickerScopeRoot(pickerSetCaptain);
+        const sel = root?.querySelector?.('#towerPickerCaptainSelect');
         if (!sel?.value) { alert('Оберіть капітана'); return; }
+        try {
+          const sk = towerPickerScopeShift(pickerSetCaptain);
+          if (pickerSetCaptain.closest('#towerCalcModal') && MS.applyShiftFilter && String(state.activeShift || '') !== String(sk || '')) MS.applyShiftFilter(sk);
+        } catch {}
         try { PNS.assignPlayerToBase?.(sel.value, baseId, 'captain'); } catch {}
         MS.saveCurrentShiftPlanSnapshot?.();
         saveTowerTableNow('captain');
-        setTimeout(() => { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); MS.maybeAdvanceFocusedTower?.(); MS.syncSettingsTowerPreview?.(); }, 60);
+        setTimeout(() => { try { MS.maybeAdvanceFocusedTower?.(); } catch {} refreshTowerPickerScope(root); }, 60);
         return;
       }
 
       const pickerAuto = e.target.closest('[data-picker-autofill]');
       if (pickerAuto) {
         e.preventDefault();
+        const root = towerPickerScopeRoot(pickerAuto);
+        try {
+          const sk = towerPickerScopeShift(pickerAuto);
+          if (pickerAuto.closest('#towerCalcModal') && MS.applyShiftFilter && String(state.activeShift || '') !== String(sk || '')) MS.applyShiftFilter(sk);
+        } catch {}
         try { PNS.autoFillBase?.(pickerAuto.dataset.pickerAutofill); } catch {}
         MS.saveCurrentShiftPlanSnapshot?.();
         saveTowerTableNow('autofill');
-        setTimeout(() => { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); MS.maybeAdvanceFocusedTower?.(); MS.syncSettingsTowerPreview?.(); }, 60);
+        setTimeout(() => { try { MS.maybeAdvanceFocusedTower?.(); } catch {} refreshTowerPickerScope(root); }, 60);
         return;
       }
 
       const pickerClrH = e.target.closest('[data-picker-clear-helpers]');
       if (pickerClrH) {
         e.preventDefault();
+        const root = towerPickerScopeRoot(pickerClrH);
+        try { const sk = towerPickerScopeShift(pickerClrH); if (pickerClrH.closest('#towerCalcModal') && MS.applyShiftFilter && String(state.activeShift || '') !== String(sk || '')) MS.applyShiftFilter(sk); } catch {}
         try { PNS.clearBase?.(pickerClrH.dataset.pickerClearHelpers, true); } catch {}
         saveTowerTableNow('clear helpers');
-        setTimeout(() => { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); MS.syncSettingsTowerPreview?.(); }, 40);
+        setTimeout(() => { refreshTowerPickerScope(root); }, 40);
         return;
       }
 
       const pickerClrB = e.target.closest('[data-picker-clear-base]');
       if (pickerClrB) {
         e.preventDefault();
+        const root = towerPickerScopeRoot(pickerClrB);
+        try { const sk = towerPickerScopeShift(pickerClrB); if (pickerClrB.closest('#towerCalcModal') && MS.applyShiftFilter && String(state.activeShift || '') !== String(sk || '')) MS.applyShiftFilter(sk); } catch {}
         try { PNS.clearBase?.(pickerClrB.dataset.pickerClearBase, false); } catch {}
         saveTowerTableNow('clear base');
-        setTimeout(() => { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); MS.syncSettingsTowerPreview?.(); }, 40);
+        setTimeout(() => { refreshTowerPickerScope(root); }, 40);
         return;
       }
 
       const pickerSaveBoard = e.target.closest('[data-picker-save-board]');
       if (pickerSaveBoard) {
         e.preventDefault();
+        const root = towerPickerScopeRoot(pickerSaveBoard);
         saveTowerTableNow('manual');
-        setTimeout(() => { try { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); } catch {} }, 20);
+        setTimeout(() => { refreshTowerPickerScope(root); }, 20);
         return;
       }
 
@@ -296,8 +331,8 @@
       const pickerResetRule = e.target.closest('[data-picker-reset-rule]');
       if (pickerResetRule) {
         e.preventDefault();
-        const modal = document.getElementById('towerPickerModal');
-        modal?.querySelectorAll('[data-picker-tier]').forEach(inp => { inp.value = '0'; });
+        const root = towerPickerScopeRoot(pickerResetRule);
+        root?.querySelectorAll?.('[data-picker-tier]').forEach(inp => { inp.value = '0'; });
         return;
       }
 
@@ -305,32 +340,34 @@
       if (pickerSaveRule) {
         e.preventDefault();
         const baseId = pickerSaveRule.dataset.pickerSaveRule;
-        const modal = document.getElementById('towerPickerModal');
-        const maxHelpers = Number(modal?.querySelector('#pickerMaxHelpers')?.value || 29) || 29;
+        const root = towerPickerScopeRoot(pickerSaveRule);
+        const shiftKey = towerPickerScopeShift(pickerSaveRule);
+        const maxHelpers = Number(root?.querySelector('#pickerMaxHelpers')?.value || 29) || 29;
         const tierMinMarch = {};
-        modal?.querySelectorAll('[data-picker-tier]').forEach(inp => { tierMinMarch[inp.dataset.pickerTier] = Number(inp.value || 0) || 0; });
-        try { PNS.setBaseTowerRule?.(baseId, { maxHelpers, tierMinMarch }, { persist: true, rerender: true }); } catch {}
-        setTimeout(() => { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); MS.syncSettingsTowerPreview?.(); }, 40);
+        root?.querySelectorAll?.('[data-picker-tier]').forEach(inp => { tierMinMarch[inp.dataset.pickerTier] = Number(inp.value || 0) || 0; });
+        try { PNS.setBaseTowerRule?.(baseId, { maxHelpers, tierMinMarch }, { shift: shiftKey, persist: true, rerender: true }); } catch {}
+        setTimeout(() => { refreshTowerPickerScope(root); }, 40);
         return;
       }
 
       const pickerAddManualCaptain = e.target.closest('[data-picker-add-manual-captain]');
       if (pickerAddManualCaptain) {
         e.preventDefault();
-        seedTowerEditModalFromManual(pickerAddManualCaptain.dataset.pickerAddManualCaptain, 'captain');
+        seedTowerEditModalFromManual(pickerAddManualCaptain.dataset.pickerAddManualCaptain, 'captain', towerPickerScopeRoot(pickerAddManualCaptain));
         return;
       }
 
       const pickerAddManual = e.target.closest('[data-picker-add-manual]');
       if (pickerAddManual) {
         e.preventDefault();
-        seedTowerEditModalFromManual(pickerAddManual.dataset.pickerAddManual, 'helper');
+        seedTowerEditModalFromManual(pickerAddManual.dataset.pickerAddManual, 'helper', towerPickerScopeRoot(pickerAddManual));
         return;
       }
 
       const pickerEditPlayer = e.target.closest('[data-picker-edit-player]');
       if (pickerEditPlayer) {
         e.preventDefault();
+        try { const sk = towerPickerScopeShift(pickerEditPlayer); if (pickerEditPlayer.closest('#towerCalcModal') && MS.applyShiftFilter && String(state.activeShift || '') !== String(sk || '')) MS.applyShiftFilter(sk); } catch {}
         MS.openTowerPlayerEditModal?.(pickerEditPlayer.dataset.pickerEditBase, pickerEditPlayer.dataset.pickerEditPlayer);
         try { const em = document.getElementById('towerPlayerEditModal'); if (em) { em.style.zIndex = '80000'; em.dataset.forceAssignKind = ''; } } catch {}
         return;
@@ -511,7 +548,30 @@
       e.preventDefault();
       const tc = getCalcState();
       tc.activeTab = calcApplyActiveTabUI(modal, tabBtn.getAttribute('data-calc-tab') || 'shift1');
+      try { if (MS.applyShiftFilter && String(state.activeShift || '') !== String(tc.activeTab || '')) MS.applyShiftFilter(tc.activeTab); } catch {}
       try { localStorage.setItem('pns_tower_calc_state', JSON.stringify(tc)); } catch {}
+      try { window.calcRenderInlineTowerSettings?.(modal); } catch {}
+      try { window.calcRenderLiveFinalBoard?.(modal); } catch {}
+    });
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-calc-preview-shift],[data-calc-preview-export],[data-calc-preview-share],[data-calc-inline-base]');
+      if (!btn) return;
+      const modal = document.getElementById('towerCalcModal');
+      if (!modal || !modal.contains(btn)) return;
+      e.preventDefault();
+      if (btn.matches('[data-calc-inline-base]')) {
+        try { window.calcSetInlineSelectedBaseId?.(btn.getAttribute('data-calc-shift') || 'shift1', btn.getAttribute('data-calc-inline-base') || ''); } catch {}
+        try { window.calcRenderInlineTowerSettings?.(modal); } catch {}
+        return;
+      }
+      if (btn.matches('[data-calc-preview-shift]')) {
+        try { window.calcSetPreviewShift?.(btn.getAttribute('data-calc-preview-shift') || 'shift2'); } catch {}
+        try { window.calcRenderLiveFinalBoard?.(modal); } catch {}
+        return;
+      }
+      if (btn.matches('[data-calc-preview-export]')) { try { window.calcExportPreviewBoardPng?.(); } catch {} return; }
+      if (btn.matches('[data-calc-preview-share]')) { try { window.calcSharePreviewBoard?.(); } catch {} return; }
     });
 
     document.addEventListener('click', (e) => {
@@ -610,23 +670,23 @@ document.addEventListener('click', (e) => {
       const cb = e.target.closest('#pickerOnlyCaptains');
       if (!cb) return;
       state.towerPickerOnlyCaptains = !!cb.checked;
-      MS.updateTowerPickerDetail?.();
+      refreshTowerPickerScope(towerPickerScopeRoot(cb));
     });
     document.addEventListener('change', (e) => {
       const cb = e.target.closest('#pickerMatchRegisteredShift');
       if (!cb) return;
       state.towerPickerMatchRegisteredShift = !!cb.checked;
-      MS.updateTowerPickerDetail?.();
+      refreshTowerPickerScope(towerPickerScopeRoot(cb));
     });
     document.addEventListener('input', (e) => {
       const t = e.target;
       if (!t || t.id !== 'pickerManualSearch') return;
+      const root = towerPickerScopeRoot(t);
       const q = String(t.value || '').trim();
-      if (!q) { pickerManualClearMatchHint(document.getElementById('towerPickerModal')); return; }
+      if (!q) { pickerManualClearMatchHint(root); return; }
       clearTimeout(state._pickerManualSearchTimer);
       state._pickerManualSearchTimer = setTimeout(() => {
         try {
-          const root = document.getElementById('towerPickerModal');
           const matches = pickerManualSearchMatches(root);
           const hint = root?.querySelector?.('#pickerManualHint');
           if (hint) hint.textContent = matches.length > 1 ? `Знайдено кілька (${matches.length}) — вибери точний нік зі списку.` : (matches.length === 1 ? `Знайдено 1 — вибери зі списку / Enter` : '');
@@ -642,7 +702,7 @@ document.addEventListener('click', (e) => {
 document.addEventListener('change', (e) => {
   const t = e.target;
   if (!t || t.id !== 'pickerManualSearch') return;
-  try { pickerManualTryAutofill(document.getElementById('towerPickerModal')); } catch {}
+  try { pickerManualTryAutofill(towerPickerScopeRoot(t)); } catch {}
 });
 
 
@@ -651,7 +711,7 @@ document.addEventListener('change', (e) => {
       if (!t || t.id !== 'pickerManualSearch') return;
       if (e.key !== 'Enter') return;
       e.preventDefault();
-      try { pickerManualTryAutofill(document.getElementById('towerPickerModal')); } catch {}
+      try { pickerManualTryAutofill(towerPickerScopeRoot(t)); } catch {}
     });
     document.addEventListener('input', (e) => {
       const sel = e.target.closest('#focusTowerSelect');
@@ -677,6 +737,14 @@ document.addEventListener('change', (e) => {
         try { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); } catch {}
         try { MS.syncSettingsTowerPreview?.(); } catch {}
         try { refreshTowerPickerLauncherUI(); } catch {}
+        try {
+          const calc = document.getElementById('towerCalcModal');
+          if (calc?.classList.contains('is-open')) {
+            window.calcRenderInlineTowerSettings?.(calc);
+            window.calcRenderLiveFinalBoard?.(calc);
+            window.calcUpdateShiftStatsUI?.(calc);
+          }
+        } catch {}
       }, 40);
     });
   }

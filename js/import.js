@@ -605,7 +605,8 @@ function autoDetectCustomOptionalMapping(headers, def) {
       const name = get('player_name');
       if (!name) continue;
 
-      const shift = PNS.normalizeShiftValue(get('shift_availability'));
+      const registeredShiftRaw = get('shift_availability');
+      const shift = PNS.normalizeShiftValue(registeredShiftRaw);
       const role = PNS.normalizeRole(get('focus_troop'));
 
       const customFields = {};
@@ -632,6 +633,9 @@ function autoDetectCustomOptionalMapping(headers, def) {
         march: PNS.parseNumber(get('march_size')),
         rally: PNS.parseNumber(get('rally_size')),
         captainReady: PNS.normalizeYesNo(get('captain_ready')),
+        registeredShiftRaw,
+        registeredShift: shift,
+        registeredShiftLabel: PNS.formatShiftLabelForCell(shift),
         shift,
         shiftLabel: PNS.formatShiftLabelForCell(shift),
         lairLevel: get('lair_level'),
@@ -888,6 +892,14 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
       b.applyImportMockBtn.dataset.bound = '1';
       b.applyImportMockBtn.addEventListener('click', applyImportedPlayers);
     }
+  }
+
+  let _lateSessionRestoreTimer = 0;
+  function scheduleLateSessionRestore() {
+    try { if (_lateSessionRestoreTimer) clearTimeout(_lateSessionRestoreTimer); } catch {}
+    _lateSessionRestoreTimer = setTimeout(() => {
+      try { tryRestorePlayersFromLocalStorage(); } catch (e) { console.warn('[PNS] late session restore failed', e); }
+    }, 120);
   }
 
   function initImportWizard() {

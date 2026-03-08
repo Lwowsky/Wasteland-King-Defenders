@@ -605,12 +605,18 @@
     });
   }
 
+  function renderBoard() {
+    state.bases.forEach(resolveBaseEls);
+    state.bases.forEach(updateBoardCol);
+    try { PNS.ModalsShift?.updateBoardTitle?.(); } catch {}
+  }
+
   function renderAll() {
     // Rebind base els in case of swaps
     state.bases.forEach(resolveBaseEls);
 
     state.bases.forEach(updateBaseCard);
-    state.bases.forEach(updateBoardCol);
+    renderBoard();
     updatePlayerRows();
 
     if (typeof PNS.applyPlayerTableFilters === 'function') PNS.applyPlayerTableFilters();
@@ -722,6 +728,7 @@
   PNS.updateBaseCard = updateBaseCard;
   PNS.updateBoardCol = updateBoardCol;
   PNS.updatePlayerRows = updatePlayerRows;
+  PNS.renderBoard = renderBoard;
 
   PNS.renderPlayersTableFromState = renderPlayersTableFromState;
   PNS.renderAll = renderAll;

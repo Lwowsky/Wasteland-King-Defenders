@@ -18,10 +18,17 @@
         <div>
           <h2>Налаштування / Імпорт</h2>
           <p class="muted">
-            Імпорт CSV/XLSX/URL, мапінг колонок, LocalStorage шаблон, налаштування auto-fill
+            Імпорт CSV/XLSX/URL, мапінг колонок, LocalStorage шаблон,
+            налаштування auto-fill
           </p>
         </div>
-        <a aria-label="Закрити" class="btn btn-icon" data-close-modal="" href="#top">✕</a>
+        <a
+          aria-label="Закрити"
+          class="btn btn-icon"
+          data-close-modal=""
+          href="#top"
+          >✕</a
+        >
       </div>
 
       <div class="modal-grid">
@@ -30,8 +37,14 @@
           <div class="stack">
             <label class="file-drop">
               <span class="drop-title">Upload CSV / Excel</span>
-              <span class="muted">CSV / XLSX parser + URL fetch (Google Sheets CSV link)</span>
-              <input accept=".csv,.xlsx,.xls,.txt" id="fileInputMock" type="file" />
+              <span class="muted"
+                >CSV / XLSX parser + URL fetch (Google Sheets CSV link)</span
+              >
+              <input
+                accept=".csv,.xlsx,.xls,.txt"
+                id="fileInputMock"
+                type="file"
+              />
             </label>
 
             <label>
@@ -40,19 +53,49 @@
             </label>
 
             <div class="row gap wrap">
-              <button class="btn btn-sm" id="toggleFieldLabelEditBtn" type="button">Показати редагування назв</button>
-              <button class="btn btn-sm" id="loadUrlMockBtn" type="button">Load URL</button>
-              <button class="btn btn-sm" id="useTemplateMockBtn" type="button">Use saved template</button>
-              <button class="btn btn-sm" id="detectColumnsMockBtn" type="button">Detect columns</button>
-              <button class="btn btn-sm" id="loadDemoImportBtn" type="button">Load demo data</button>
+              <button
+                class="btn btn-sm"
+                id="toggleFieldLabelEditBtn"
+                type="button"
+              >
+                Показати редагування назв
+              </button>
+              <button class="btn btn-sm" id="loadUrlMockBtn" type="button">
+                Load URL
+              </button>
+              <button class="btn btn-sm" id="useTemplateMockBtn" type="button">
+                Use saved template
+              </button>
+              <button
+                class="btn btn-sm"
+                id="detectColumnsMockBtn"
+                type="button"
+              >
+                Detect columns
+              </button>
+              <button class="btn btn-sm" id="loadDemoImportBtn" type="button">
+                Load demo data
+              </button>
             </div>
 
-            <div class="muted small" id="importLoadedInfo">No file loaded yet.</div>
-            <div class="muted small" id="importStatusInfo">Load file/link, map columns once, save template.</div>
+            <div class="muted small" id="importLoadedInfo">
+              No file loaded yet.
+            </div>
+            <div class="muted small" id="importStatusInfo">
+              Load file/link, map columns once, save template.
+            </div>
 
             <div class="row gap wrap top-space import-source-actions">
-              <button class="btn" id="saveTemplateMockBtn" type="button">Save import template</button>
-              <button class="btn btn-primary" id="applyImportMockBtn" type="button">Apply import</button>
+              <button class="btn" id="saveTemplateMockBtn" type="button">
+                Save import template
+              </button>
+              <button
+                class="btn btn-primary"
+                id="applyImportMockBtn"
+                type="button"
+              >
+                Apply import
+              </button>
             </div>
           </div>
         </section>
@@ -64,22 +107,37 @@
 
         <section class="panel subpanel">
           <h3>3. Optional columns</h3>
-          <div class="stack compact mapping-grid-2" id="optionalMappingContainer"></div>
+          <div
+            class="stack compact mapping-grid-2"
+            id="optionalMappingContainer"
+          ></div>
         </section>
 
         <section class="panel subpanel">
           <h3>4. Visibility columns</h3>
-          <div class="stack compact visibility-panel" id="columnVisibilityChecks"></div>
+          <div
+            class="stack compact visibility-panel"
+            id="columnVisibilityChecks"
+          ></div>
           <div class="row gap top-space wrap">
-            <button class="btn btn-sm" id="showAllColumnsBtn" type="button">Show all columns</button>
-            <button class="btn btn-sm" id="saveVisibleColumnsMockBtn" type="button">Save visible columns</button>
+            <button class="btn btn-sm" id="showAllColumnsBtn" type="button">
+              Show all columns
+            </button>
+            <button
+              class="btn btn-sm"
+              id="saveVisibleColumnsMockBtn"
+              type="button"
+            >
+              Save visible columns
+            </button>
           </div>
         </section>
       </div>
 
       <div class="modal-foot">
         <div class="muted">
-          Імпорт працює: CSV/XLSX/Google Sheets CSV link, мапінг колонок (збереження в LocalStorage), plus auto-fill, Final Board export.
+          Імпорт працює: CSV/XLSX/Google Sheets CSV link, мапінг колонок
+          (збереження в LocalStorage), plus auto-fill, Final Board export.
         </div>
       </div>
     </div>
@@ -102,31 +160,45 @@
     <div aria-modal="true" class="modal-card board-card" role="dialog">
       <div class="modal-head">
         <div>
-          <h2>Final Board View</h2>
+          <h2>Фінальний план</h2>
           <p class="muted">
-            Вигляд для офіцерів / скріншота / PDF. Експорт PNG/PDF працює
-            через JS.
+            Вигляд для офіцерів / скріншота / PDF. Експорт PNG/PDF працює через
+            JS.
           </p>
         </div>
 
         <div class="row gap wrap board-head-actions">
           <div class="row gap">
-            <button class="btn btn-sm board-shift-tab" data-shift-tab="shift1" type="button">
+            <button
+              class="btn btn-sm board-shift-tab"
+              data-shift-tab="shift1"
+              type="button"
+            >
               Shift 1
             </button>
-            <button class="btn btn-sm board-shift-tab active" data-shift-tab="shift2" type="button">
+            <button
+              class="btn btn-sm board-shift-tab active"
+              data-shift-tab="shift2"
+              type="button"
+            >
               Shift 2
             </button>
           </div>
 
-          <button class="btn btn-sm" id="exportPngBtn" type="button">Export PNG</button>
-          <button class="btn btn-sm" id="shareBoardBtn" type="button">Поділитися</button>
+          <button class="btn btn-sm" id="exportPngBtn" type="button">
+            Export PNG
+          </button>
+          <button class="btn btn-sm" id="shareBoardBtn" type="button">
+            Поділитися
+          </button>
           <a class="btn btn-icon" data-close-modal="" href="#top">✕</a>
         </div>
       </div>
 
       <div class="board-sheet">
-        <div class="board-title" id="boardTitle">2nd shift / Вторая половина</div>
+        <div class="board-title" id="boardTitle">
+          2nd shift / Вторая половина
+        </div>
 
         <div class="board-grid">
           <section class="board-col" data-shift="both">
@@ -136,7 +208,7 @@
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">No players assigned</li>
+              <li class="empty-row">Немає призначених гравців</li>
             </ul>
           </section>
 
@@ -147,7 +219,7 @@
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">No players assigned</li>
+              <li class="empty-row">Немає призначених гравців</li>
             </ul>
           </section>
 
@@ -158,7 +230,7 @@
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">No players assigned</li>
+              <li class="empty-row">Немає призначених гравців</li>
             </ul>
           </section>
 
@@ -169,7 +241,7 @@
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">No players assigned</li>
+              <li class="empty-row">Немає призначених гравців</li>
             </ul>
           </section>
 
@@ -180,7 +252,7 @@
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">No players assigned</li>
+              <li class="empty-row">Немає призначених гравців</li>
             </ul>
           </section>
         </div>
@@ -188,156 +260,423 @@
     </div>
   </section>
 
-
   <!-- TOWER CALCULATOR MODAL (moved from JS ensureTowerCalcModal) -->
-  <section aria-label="Tower Calculator" class="modal tower-calc-modal" id="towerCalcModal">
-          <a aria-label="Закрити" class="modal-backdrop" href="#top" data-close-modal="" data-close-tower-calc></a>
-          <div class="modal-card" role="dialog" aria-modal="true">
-            <div class="modal-head">
-              <div>
-                <h2 style="margin:0">Tower Calculator</h2>
-                <p class="muted" style="margin:4px 0 0">План на 10 капітанів (5 + 5), розрахунок вміщення helper-ів по башнях і тірах (капітани не входять у tier-пул)</p>
+  <section
+    aria-label="Tower Calculator"
+    class="modal tower-calc-modal"
+    id="towerCalcModal"
+  >
+    <a
+      aria-label="Закрити"
+      class="modal-backdrop"
+      href="#top"
+      data-close-modal=""
+      data-close-tower-calc
+    ></a>
+    <div class="modal-card" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <div>
+          <h2 style="margin: 0">Tower Calculator</h2>
+          <p class="muted" style="margin: 4px 0 0">
+            План на 10 капітанів (5 + 5), розрахунок вміщення гравців по
+            башнях і тірах (капітани не входять у tier-пул)
+          </p>
+        </div>
+        <a
+          aria-label="Закрити"
+          class="btn btn-icon"
+          href="#top"
+          data-close-modal=""
+          data-close-tower-calc
+          >✕</a
+        >
+      </div>
+      <div class="modal-grid" style="grid-template-columns: 1fr; gap: 10px">
+        <section class="panel subpanel" id="towerCalcMainTabsWrap">
+          <div class="tower-calc-main-tabs" id="towerCalcMainTabs">
+            <button class="btn btn-sm" type="button" data-calc-main-tab="setup">
+              Налаштування
+            </button>
+            <button
+              class="btn btn-sm"
+              type="button"
+              data-calc-main-tab="towers"
+            >
+              Налаштування башень
+            </button>
+            <button
+              class="btn btn-sm"
+              type="button"
+              data-calc-main-tab="overflow"
+            >
+              Хто не вліз
+            </button>
+            <button
+              class="btn btn-sm"
+              type="button"
+              data-calc-main-tab="preview"
+            >
+              Фінальний план
+            </button>
+          </div>
+        </section>
+        <section
+          class="panel subpanel tower-calc-main-panel"
+          data-calc-main-panel="setup"
+        >
+          <div
+            class="tower-calc-controls"
+            style="
+              display: flex;
+              gap: 12px;
+              flex-wrap: wrap;
+              align-items: center;
+            "
+          >
+            <div class="tower-calc-toolbar">
+              <div class="tower-calc-toolbar-main">
+                <button
+                  class="btn btn-sm"
+                  type="button"
+                  id="towerCalcLoadCaptainsBtn"
+                >
+                  Підтягнути капітанів з башень
+                </button>
+                <button class="btn btn-sm" type="button" id="towerCalcFitBtn">
+                  Порахувати
+                </button>
+                <button
+                  class="btn btn-sm"
+                  type="button"
+                  id="towerCalcApplyToTowersBtn"
+                >
+                  Використати на башнях (ліміти)
+                </button>
+                <button
+                  class="btn btn-sm"
+                  type="button"
+                  id="towerCalcQuickApplyBtn"
+                >
+                  Заповнити башні + ліміти (авто)
+                </button>
               </div>
-              <a aria-label="Закрити" class="btn btn-icon" href="#top" data-close-modal="" data-close-tower-calc>✕</a>
-            </div>
-            <div class="modal-grid" style="grid-template-columns:1fr;gap:10px;">
-              <section class="panel subpanel" id="towerCalcMainTabsWrap">
-                <div class="tower-calc-main-tabs" id="towerCalcMainTabs">
-                  <button class="btn btn-sm" type="button" data-calc-main-tab="setup">Налаштування</button>
-                  <button class="btn btn-sm" type="button" data-calc-main-tab="towers">Башні</button>
-                  <button class="btn btn-sm" type="button" data-calc-main-tab="overflow">Хто не вліз</button>
-                  <button class="btn btn-sm" type="button" data-calc-main-tab="preview">Попередній перегляд</button>
-                </div>
-              </section>
-              <section class="panel subpanel tower-calc-main-panel" data-calc-main-panel="setup">
-                <div class="tower-calc-controls" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
-                  <div class="tower-calc-toolbar">
-                    <div class="tower-calc-toolbar-main">
-                      <button class="btn btn-sm" type="button" id="towerCalcLoadCaptainsBtn">Підтягнути капітанів з башень</button>
-                      <button class="btn btn-sm" type="button" id="towerCalcFitBtn">Порахувати</button>
-                      <button class="btn btn-sm" type="button" id="towerCalcApplyToTowersBtn">Використати на башнях (ліміти)</button>
-                      <button class="btn btn-sm" type="button" id="towerCalcQuickApplyBtn">Заповнити башні + ліміти (авто)</button>
-                      <label class="tower-calc-compact-toggle"><input type="checkbox" id="towerCalcCompactMode" /> Compact</label>
-                    </div>
-                    <div class="tower-calc-controls muted small" style="margin-top:2px">
-                      <label>Режим
-                        <select id="towerCalcModeUi" style="min-width:130px">
-                          <option value="assisted">Assisted</option>
-                          <option value="auto">Auto</option>
-                          <option value="manual">Manual</option>
-                        </select>
-                      </label>
-                      <label>Застосування
-                        <select id="towerCalcApplyModeUi" style="min-width:160px">
-                          <option value="topup">Top-up only</option>
-                          <option value="empty">Fill empty only</option>
-                          <option value="rebalance">Rebalance all</option>
-                        </select>
-                      </label>
-                      <span class="muted">UI skeleton v7.0a (логіка режимів підключиться далі)</span>
-                    </div>
-                    <details class="tower-calc-advanced" id="towerCalcAdvanced">
-                      <summary>Додатково</summary>
-                      <div class="inner">
-                        <div class="tower-calc-controls" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
-                          <label><input type="checkbox" id="towerCalcNoCrossShift" checked /> No cross-shift duplicates (helpers only)</label>
-                          <label><input type="checkbox" id="towerCalcBoth50" /> Auto-balance Both players</label>
-                          <label><input type="checkbox" id="towerCalcMinHelpersOn" /> Min helpers per tower</label>
-                          <label>Min <input id="towerCalcMinHelpersCount" type="number" min="1" max="30" step="1" value="10" style="width:72px" /></label>
-                          <label><input type="checkbox" id="towerCalcTierAuto" checked /> Auto tier-size</label>
-                          <button class="btn btn-sm" type="button" id="towerCalcApplyAndAssignBtn">Застосувати + перенести гравців у башні</button>
-                          <button class="btn btn-sm" type="button" id="towerCalcRecalcBtn" style="display:none">Recalculate</button>
-                        </div>
-                        <div class="muted small" style="margin-top:8px">Tier-size (per helper):
-                          <span style="display:inline-flex;gap:8px;flex-wrap:wrap;align-items:center" id="towerCalcTierTargetRow">
-                            <label>T14 <input data-calc-tier-target="T14" type="number" min="0" step="1000" style="width:92px" /></label>
-                            <label>T13 <input data-calc-tier-target="T13" type="number" min="0" step="1000" style="width:92px" /></label>
-                            <label>T12 <input data-calc-tier-target="T12" type="number" min="0" step="1000" style="width:92px" /></label>
-                            <label>T11 <input data-calc-tier-target="T11" type="number" min="0" step="1000" style="width:92px" /></label>
-                            <label>T10 <input data-calc-tier-target="T10" type="number" min="0" step="1000" style="width:92px" /></label>
-                            <label>T9 <input data-calc-tier-target="T9" type="number" min="0" step="1000" style="width:92px" /></label>
-                          </span>
-                        </div>
-                        <div class="muted small" style="margin-top:6px">Порада: “Порахувати” → “Використати на башнях (ліміти)” налаштовує ліміти. Кнопка “Заповнити башні + ліміти (авто)” — налаштовує ліміти і одразу переносить helper-ів у башні.</div>
-                      </div>
-                    </details>
-
-                    <div id="towerCalcShiftBalance" class="tower-calc-shift-balance">
-                      <div class="tower-calc-shift-balance-head">
-                        <div class="muted small"><strong>Shift статистика</strong></div>
-                        <div class="muted small" id="towerCalcShiftCountsLine"></div>
-                      </div>
-
-                      <div class="tower-calc-shift-cards">
-                        <div class="tower-calc-shift-card">
-                          <span>Shift 1</span>
-                          <strong id="tcShift1Count">0</strong>
-                          <div class="muted small" id="tcShift1Roles">F / R / S: 0 / 0 / 0</div>
-                        </div>
-                        <div class="tower-calc-shift-card">
-                          <span>Shift 2</span>
-                          <strong id="tcShift2Count">0</strong>
-                          <div class="muted small" id="tcShift2Roles">F / R / S: 0 / 0 / 0</div>
-                        </div>
-                        <div class="tower-calc-shift-card">
-                          <span>Both</span>
-                          <strong id="tcBothCount">0</strong>
-                          <div class="muted small" id="tcBothRoles">F / R / S: 0 / 0 / 0</div>
-                        </div>
-                      </div>
-
-                      <div class="tower-calc-shift-controls">
-                        <div class="tower-calc-shift-controls-left">
-                          <label>Додати в Shift 1
-                            <input id="shiftAddS1" type="number" min="0" value="0" />
-                          </label>
-                          <label>Додати в Shift 2
-                            <input id="shiftAddS2" type="number" min="0" value="0" />
-                          </label>
-                          <button class="btn btn-sm" id="applyShiftAddBtn" type="button">Застосувати</button>
-                          <button class="btn btn-sm" id="split5050Btn" type="button">50 / 50</button>
-                          <label class="tower-calc-shift-force">
-                            <input id="shiftSplitForceChk" type="checkbox" />
-                            Force (скинути всіх в Both)
-                          </label>
-                        </div>
-
-                        <div class="tower-calc-shift-controls-right">
-                          <label class="tower-calc-ignore-both">
-                            <input id="towerCalcIgnoreBoth" type="checkbox" />
-                            Планувати Shift 1/2 без Both
-                          </label>
-
-                          <div class="tower-calc-autoslots">
-                            <button class="btn btn-sm" id="towerCalcAutoSlotsS1Btn" type="button">Auto slots S1</button>
-                            <button class="btn btn-sm" id="towerCalcAutoSlotsS2Btn" type="button">Auto slots S2</button>
-                            <button class="btn btn-sm" id="towerCalcAutoFitBtn" type="button">Auto fit towers</button>
-                          </div>
-
-                          <div class="muted small">
-                            Auto slots = розподілити helper-slots по башнях за кількістю гравців (без капітанів).
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div id="towerCalcMiniSummary" class="tower-calc-mini-summary muted small"></div>
+              <div
+                class="tower-calc-controls muted small"
+                style="margin-top: 2px"
+              >
+                <label
+                  >Режим
+                  <select id="towerCalcModeUi" style="min-width: 130px">
+                    <option value="assisted">З підказками</option>
+                    <option value="auto">Авто</option>
+                    <option value="manual">Вручну</option>
+                  </select>
+                </label>
+                <label
+                  >Застосування
+                  <select id="towerCalcApplyModeUi" style="min-width: 160px">
+                    <option value="topup">Лише дозаповнення</option>
+                    <option value="empty">Лише порожні</option>
+                    <option value="rebalance">Перерозподілити все</option>
+                  </select>
+                </label>
+                <span class="muted"
+                  ></span
+                >
+              </div>
+              <details class="tower-calc-advanced" id="towerCalcAdvanced">
+                <summary>Додатково</summary>
+                <div class="inner">
+                  <div
+                    class="tower-calc-controls"
+                    style="
+                      display: flex;
+                      gap: 12px;
+                      flex-wrap: wrap;
+                      align-items: center;
+                    "
+                  >
+                    <label
+                      ><input
+                        type="checkbox"
+                        id="towerCalcNoCrossShift"
+                        checked
+                      />
+                      Без дублювання helper-ів між shifts</label
+                    >
+                    <label
+                      ><input type="checkbox" id="towerCalcBoth50" />
+                      Автобаланс гравців Both</label
+                    >
+                    <label
+                      ><input type="checkbox" id="towerCalcMinHelpersOn" /> Мінімум гравців на башню</label
+                    >
+                    <label
+                      >Кількість
+                      <input
+                        id="towerCalcMinHelpersCount"
+                        type="number"
+                        min="1"
+                        max="30"
+                        step="1"
+                        value="10"
+                        style="width: 72px"
+                    /></label>
+                    <label
+                      ><input type="checkbox" id="towerCalcTierAuto" checked />
+                      Авто-розмір tier</label
+                    >
+                    <button
+                      class="btn btn-sm"
+                      type="button"
+                      id="towerCalcApplyAndAssignBtn"
+                    >
+                      Застосувати + перенести гравців у башні
+                    </button>
+                    <button
+                      class="btn btn-sm"
+                      type="button"
+                      id="towerCalcRecalcBtn"
+                      style="display: none"
+                    >
+                      Recalculate
+                    </button>
                   </div>
-    </div>
-              </section>
-              <section class="panel subpanel tower-calc-main-panel" id="towerCalcTabsWrap" data-calc-main-panel="towers">
-                <div class="tower-calc-tabs" id="towerCalcTabs" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                  <button class="btn btn-sm" type="button" data-calc-tab="shift1">Shift 1</button>
-                  <button class="btn btn-sm" type="button" data-calc-tab="shift2">Shift 2</button>
-                  <span class="muted small" style="margin-left:6px">Показується тільки один Shift, щоб було більше місця для даних</span>
+                  <div class="muted small" style="margin-top: 8px">
+                    Розмір tier (на 1 гравця):
+                    <span
+                      style="
+                        display: inline-flex;
+                        gap: 8px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                      id="towerCalcTierTargetRow"
+                    >
+                      <label
+                        >T14
+                        <input
+                          data-calc-tier-target="T14"
+                          type="number"
+                          min="0"
+                          step="1000"
+                          style="width: 92px"
+                      /></label>
+                      <label
+                        >T13
+                        <input
+                          data-calc-tier-target="T13"
+                          type="number"
+                          min="0"
+                          step="1000"
+                          style="width: 92px"
+                      /></label>
+                      <label
+                        >T12
+                        <input
+                          data-calc-tier-target="T12"
+                          type="number"
+                          min="0"
+                          step="1000"
+                          style="width: 92px"
+                      /></label>
+                      <label
+                        >T11
+                        <input
+                          data-calc-tier-target="T11"
+                          type="number"
+                          min="0"
+                          step="1000"
+                          style="width: 92px"
+                      /></label>
+                      <label
+                        >T10
+                        <input
+                          data-calc-tier-target="T10"
+                          type="number"
+                          min="0"
+                          step="1000"
+                          style="width: 92px"
+                      /></label>
+                      <label
+                        >T9
+                        <input
+                          data-calc-tier-target="T9"
+                          type="number"
+                          min="0"
+                          step="1000"
+                          style="width: 92px"
+                      /></label>
+                    </span>
+                  </div>
+                  <div class="muted small" style="margin-top: 6px">
+                    Порада: “Порахувати” → “Використати на башнях (ліміти)”
+                    налаштовує ліміти. Кнопка “Заповнити башні + ліміти (авто)”
+                    — налаштовує ліміти і одразу переносить гравців у башні.
+                  </div>
                 </div>
-              </section>
-              <section class="panel subpanel tower-calc-grid tower-calc-main-panel" id="towerCalcGrid" data-calc-main-panel="towers"></section>
-              <section class="panel subpanel tower-calc-main-panel" id="towerCalcOverflowOut" data-calc-main-panel="overflow">
-                <div class="tower-calc-placeholder muted small">Натисни “Порахувати”, щоб побачити список гравців, які не влізли, по Shift і башнях.</div>
-              </section>
-              <section class="panel subpanel tower-calc-main-panel" id="towerCalcGlobalOut" data-calc-main-panel="preview"></section>
+              </details>
+
+              <div id="towerCalcShiftBalance" class="tower-calc-shift-balance">
+                <div class="tower-calc-shift-balance-head">
+                  <div class="muted small">
+                    <strong>Shift статистика</strong>
+                  </div>
+                  <div class="muted small" id="towerCalcShiftCountsLine"></div>
+                </div>
+
+                <div class="tower-calc-shift-cards">
+                  <div class="tower-calc-shift-card">
+                    <span>Shift 1</span>
+                    <strong id="tcShift1Count">0</strong>
+                    <div class="muted small" id="tcShift1Roles">
+                      F / R / S: 0 / 0 / 0
+                    </div>
+                  </div>
+                  <div class="tower-calc-shift-card">
+                    <span>Shift 2</span>
+                    <strong id="tcShift2Count">0</strong>
+                    <div class="muted small" id="tcShift2Roles">
+                      F / R / S: 0 / 0 / 0
+                    </div>
+                  </div>
+                  <div class="tower-calc-shift-card">
+                    <span>Both</span>
+                    <strong id="tcBothCount">0</strong>
+                    <div class="muted small" id="tcBothRoles">
+                      F / R / S: 0 / 0 / 0
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tower-calc-shift-controls">
+                  <div class="tower-calc-shift-controls-left">
+                    <label
+                      >Ліміт Shift 1
+                      <input id="shiftLimitS1" type="number" min="0" max="100" value="90" />
+                    </label>
+                    <label
+                      >Ліміт Shift 2
+                      <input id="shiftLimitS2" type="number" min="0" max="100" value="90" />
+                    </label>
+                    <label
+                      >Додати в Shift 1
+                      <input id="shiftAddS1" type="number" min="0" value="0" />
+                    </label>
+                    <label
+                      >Додати в Shift 2
+                      <input id="shiftAddS2" type="number" min="0" value="0" />
+                    </label>
+                    <button
+                      class="btn btn-sm"
+                      id="applyShiftAddBtn"
+                      type="button"
+                    >
+                      Застосувати
+                    </button>
+                    <button class="btn btn-sm" id="towerCalcRestoreImportShiftsBtn" type="button">
+                      Відновити з імпорту
+                    </button>
+                    <label class="tower-calc-shift-force">
+                      <input id="shiftSplitForceChk" type="checkbox" />
+                      Скинути поточний розподіл у Both перед застосуванням
+                    </label>
+                    <div class="muted small" id="towerCalcShiftLimitNote"></div>
+                  </div>
+
+                  <div class="tower-calc-shift-controls-right">
+                    <label class="tower-calc-ignore-both">
+                      <input id="towerCalcIgnoreBoth" type="checkbox" />
+                      Планувати Shift 1/2 без Both
+                    </label>
+
+                    <div class="tower-calc-autoslots">
+                      <button
+                        class="btn btn-sm"
+                        id="towerCalcAutoSlotsS1Btn"
+                        type="button"
+                      >
+                        Автослоти S1
+                      </button>
+                      <button
+                        class="btn btn-sm"
+                        id="towerCalcAutoSlotsS2Btn"
+                        type="button"
+                      >
+                        Автослоти S2
+                      </button>
+                      <button
+                        class="btn btn-sm"
+                        id="towerCalcAutoFitBtn"
+                        type="button"
+                      >
+                        Автозаповнення башень
+                      </button>
+                    </div>
+
+                    <div class="muted small">
+                      Автослоти = розподілити слоти по башнях за
+                      кількістю гравців (без капітанів).
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                id="towerCalcMiniSummary"
+                class="tower-calc-mini-summary muted small"
+              ></div>
             </div>
           </div>
+        </section>
+        <section
+          class="panel subpanel tower-calc-main-panel"
+          id="towerCalcTabsWrap"
+          data-calc-main-panel="towers"
+        >
+          <div
+            class="tower-calc-tabs"
+            id="towerCalcTabs"
+            style="
+              display: flex;
+              gap: 8px;
+              flex-wrap: wrap;
+              align-items: center;
+            "
+          >
+            <button class="btn btn-sm" type="button" data-calc-tab="shift1">
+              Shift 1
+            </button>
+            <button class="btn btn-sm" type="button" data-calc-tab="shift2">
+              Shift 2
+            </button>
+            <span class="muted small" style="margin-left: 6px"
+              >Показується тільки один Shift, щоб було більше місця для
+              даних</span
+            >
+          </div>
+        </section>
+        <section
+          class="panel subpanel tower-calc-grid tower-calc-main-panel"
+          id="towerCalcGrid"
+          data-calc-main-panel="towers"
+        ></section>
+        <section
+          class="panel subpanel tower-calc-main-panel"
+          id="towerCalcOverflowOut"
+          data-calc-main-panel="overflow"
+        >
+          <div class="tower-calc-placeholder muted small">
+            Натисни “Порахувати”, щоб побачити список гравців, які не влізли, по
+            Shift і башнях.
+          </div>
+        </section>
+        <section
+          class="panel subpanel tower-calc-main-panel"
+          id="towerCalcGlobalOut"
+          data-calc-main-panel="preview"
+        ></section>
+      </div>
+    </div>
   </section>
 </div>

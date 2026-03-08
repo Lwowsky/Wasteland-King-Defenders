@@ -182,6 +182,12 @@
       march: Number(p.march || 0),
       rally: Number(p.rally || 0),
       captainReady: !!p.captainReady,
+      registeredShiftRaw: String(p.registeredShiftRaw || ''),
+      registeredShift: String(p.registeredShift || shift || 'both'),
+      registeredShiftLabel: String(
+        p.registeredShiftLabel ||
+        (typeof PNS.formatShiftLabelForCell === 'function' ? PNS.formatShiftLabelForCell(String(p.registeredShift || shift || 'both')) : String(p.shiftLabel || ''))
+      ),
       shift,
       shiftLabel: typeof PNS.formatShiftLabelForCell === 'function' ? PNS.formatShiftLabelForCell(shift) : String(p.shiftLabel || ''),
       lairLevel: String(p.lairLevel || ''),

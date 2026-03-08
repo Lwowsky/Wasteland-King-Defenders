@@ -144,8 +144,8 @@
           <span class="picker-meta-shift">Shift: ${(state.activeShift || '').toUpperCase()}</span>
           <label class="picker-only-captains"><input type="checkbox" id="pickerOnlyCaptains" ${isPickerOnlyCaptainsEnabled() ? 'checked' : ''}/> Тільки капітани</label>
           <label class="picker-only-captains"><input type="checkbox" id="pickerMatchRegisteredShift" ${isPickerMatchRegisteredShiftEnabled() ? 'checked' : ''}/> Зазначений Shift</label>
-          <label class="picker-only-captains"><input type="checkbox" id="pickerNoMixTroops" ${isPickerNoMixTroopsEnabled() ? 'checked' : ''}/> Same troop only</label>
-          <label class="picker-only-captains"><input type="checkbox" id="pickerNoCrossShiftDupes" ${isPickerNoCrossShiftDupesEnabled() ? 'checked' : ''}/> No cross-shift duplicates</label>
+          <label class="picker-only-captains"><input type="checkbox" id="pickerNoMixTroops" ${isPickerNoMixTroopsEnabled() ? 'checked' : ''}/> Лише той самий тип військ</label>
+          <label class="picker-only-captains"><input type="checkbox" id="pickerNoCrossShiftDupes" ${isPickerNoCrossShiftDupesEnabled() ? 'checked' : ''}/> Без дублювання між shifts</label>
         </div>
         <div class="picker-topline top-space">
           <select id="towerPickerCaptainSelect" class="input-like" aria-label="Вибір капітана">
@@ -153,16 +153,16 @@
             ${caps.map(p => `<option value="${p.id}" ${captain && captain.id === p.id ? 'selected' : ''}>${String(p.name || '')} · ${String(p.role || '')} · ${String(p.shiftLabel || p.shift || '')} · ${Number(p.march || 0).toLocaleString('en-US')}${p.captainReady ? ' · CAP' : ''}</option>`).join('')}
           </select>
           <div class="picker-actions">
-            <button class="btn btn-sm" type="button" data-picker-set-captain="${base.id}">Set captain</button>
-            <button class="btn btn-sm" type="button" data-picker-autofill="${base.id}">Auto-fill</button>
-            <button class="btn btn-sm" type="button" data-picker-clear-base="${base.id}">Clear base</button>
-            <button class="btn btn-sm" type="button" data-picker-save-board="${base.id}">Save tower table</button>
+            <button class="btn btn-sm" type="button" data-picker-set-captain="${base.id}">Поставити капітана</button>
+            <button class="btn btn-sm" type="button" data-picker-autofill="${base.id}">Автозаповнення</button>
+            <button class="btn btn-sm" type="button" data-picker-clear-base="${base.id}">Очистити башню</button>
+            <button class="btn btn-sm" type="button" data-picker-save-board="${base.id}">Зберегти таблицю башні</button>
           </div>
         </div>
 
         <div class="limit-grid limit-grid-compact top-space">
           <div><span>Captain march</span><strong>${Number(stats.captainMarch || 0).toLocaleString('en-US')}</strong></div>
-          <div><span>Rally size</span><strong>${Number(stats.rallySize || 0).toLocaleString('en-US')}</strong></div>
+          <div><span>Розмір ралі</span><strong>${Number(stats.rallySize || 0).toLocaleString('en-US')}</strong></div>
           <div><span>Total Σ</span><strong>${Number(stats.total || 0).toLocaleString('en-US')}</strong></div>
           <div><span>Free space</span><strong>${Number(stats.free || 0).toLocaleString('en-US')}</strong></div>
         </div>
@@ -171,7 +171,7 @@
           <summary>Налаштування башні · ліміти по тірам (макс. March)</summary>
           <div class="inner stack">
             <div class="picker-limits-head">
-              <label><span class="muted small">Max helpers</span><input id="pickerMaxHelpers" type="number" min="0" value="${rule.maxHelpers}" /></label>
+              <label><span class="muted small">Макс. гравців</span><input id="pickerMaxHelpers" type="number" min="0" value="${rule.maxHelpers}" /></label>
               <button class="btn btn-sm" type="button" data-picker-save-rule="${base.id}">Зберегти ліміти</button>
               <button class="btn btn-sm" type="button" data-picker-reset-rule="${base.id}">Скинути ліміти (T14–T9 → 0)</button>
             </div>
@@ -182,7 +182,7 @@
         </details>
 
         <details class="tower-collapsible" id="towerPickerManualBlock">
-          <summary>Manual add helper</summary>
+          <summary>Додати гравця вручну</summary>
           <div class="inner stack">
             <div class="picker-manual-row">
               <input id="pickerManualSearch" list="pickerManualPlayerSuggestions" placeholder="Пошук гравця (зі списку)" autocomplete="off" spellcheck="false" />
@@ -197,22 +197,22 @@
             <div class="picker-manual-row2">
               <input id="pickerManualTier" placeholder="T14" />
               <input id="pickerManualMarch" placeholder="March" type="number" min="0" />
-              <input id="pickerManualRally" placeholder="Rally size" type="number" min="0" />
-              <button class="btn btn-sm" type="button" data-picker-add-manual-captain="${base.id}">Set captain</button>
-              <button class="btn btn-sm" type="button" data-picker-add-manual="${base.id}">Add helper</button>
+              <input id="pickerManualRally" placeholder="Розмір ралі" type="number" min="0" />
+              <button class="btn btn-sm" type="button" data-picker-add-manual-captain="${base.id}">Поставити капітана</button>
+              <button class="btn btn-sm" type="button" data-picker-add-manual="${base.id}">Додати гравця</button>
             </div>
           </div>
         </details>
 
         <div class="panel subpanel" style="padding:10px">
-          <div class="row gap wrap" style="justify-content:space-between"><strong>Гравці в башні</strong><span class="muted small">${captain ? 'Captain + helpers' : 'No captain'}</span></div>
+          <div class="row gap wrap" style="justify-content:space-between"><strong>Гравці в башні</strong><span class="muted small">${captain ? 'Капітан + гравці' : 'Без капітана'}</span></div>
           <div class="helpers-table-wrap top-space">
             <table class="mini-table">
               <thead><tr><th>Player</th><th>Ally</th><th>Role</th><th>Tier</th><th>March</th><th>✎</th></tr></thead>
               <tbody>
                 ${captain ? `<tr><td>${captain.name}</td><td>${captain.alliance || ''}</td><td>${captain.role || ''}</td><td>${captain.tier || ''}</td><td>${pickerMarchCell(base, captain, { isCaptain: true })}</td><td><button class="btn btn-xs" type="button" data-picker-edit-player="${captain.id}" data-picker-edit-base="${base.id}">✎</button></td></tr>` : ''}
                 ${helperRows.map(p => `<tr><td>${p.name}</td><td>${p.alliance || ''}</td><td>${p.role || ''}</td><td>${p.tier || ''}</td><td>${pickerMarchCell(base, p)}</td><td><button class="btn btn-xs" type="button" data-picker-edit-player="${p.id}" data-picker-edit-base="${base.id}">✎</button></td></tr>`).join('')}
-                ${(!captain && !helperRows.length) ? '<tr><td colspan="6" class="muted">No players assigned</td></tr>' : ''}
+                ${(!captain && !helperRows.length) ? '<tr><td colspan="6" class="muted">Немає призначених гравців</td></tr>' : ''}
               </tbody>
             </table>
           </div>
@@ -314,7 +314,7 @@
             <div class="tower-picker-head-center">
               <button class="btn btn-sm shift-mini" type="button" data-picker-shift-tab="shift1" data-shift-tab="shift1">Shift 1</button>
               <button class="btn btn-sm shift-mini" type="button" data-picker-shift-tab="shift2" data-shift-tab="shift2">Shift 2</button>
-              <button class="btn btn-sm shift-mini" type="button" data-action="open-board">Final Board View</button>
+              <button class="btn btn-sm shift-mini" type="button" data-action="open-board">Фінальний план</button>
             </div>
             <button class="btn btn-icon" type="button" data-close-tower-picker>✕</button>
           </div>

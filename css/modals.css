@@ -109,20 +109,23 @@
   margin-top: 2px;
 }
 .board-cap {
-  margin-top: 4px;
+  margin-top: 6px;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 11px;
 }
 .board-cap span {
-  background: #f6a313;
-  color: #111;
-  padding: 1px 4px;
-  border-radius: 2px;
-  font-weight: 700;
+  display: block;
+  text-align: center;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-weight: 800;
 }
+.board-cap .cap-total { background: #2d5da6; color: #fff; }
+.board-cap .cap-free { background: #3d8761; color: #fff; }
+.board-cap .cap-used { background: #f0a615; color: #111; }
 .board-col ul {
   list-style: none;
   margin: 0;
@@ -546,3 +549,32 @@
 
 /* Extra breathing room at the bottom of the modal card */
 .tower-calc-modal .modal-grid{padding-bottom:28px;}
+
+/* Tower calculator inline tower settings + preview */
+.tower-calc-inline-shell{display:grid;grid-template-columns:260px minmax(0,1fr);gap:12px;align-items:start}
+.tower-calc-inline-shell .tower-picker-list{display:flex;flex-direction:column;gap:8px}
+.tower-calc-inline-shell .tower-picker-detail{min-width:0}
+.tower-calc-board-preview #towerCalcBoardPreviewSheet{margin-top:8px}
+@media (max-width: 1100px){
+  .tower-calc-inline-shell{grid-template-columns:1fr}
+}
+
+
+.tower-calc-shift-inline{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:8px}
+.tower-calc-shift-inline span{display:inline-flex;gap:6px;align-items:center}
+.tower-calc-shift-inline b{font-size:20px;line-height:1}
+.tower-calc-shift-inline em{font-style:normal}
+
+.tower-calc-board-preview{max-width:100%;min-width:0}
+.tower-calc-board-preview #towerCalcBoardPreviewSheet{max-width:100%;overflow:hidden}
+.tower-calc-board-preview .board-sheet{background:#d9ccb2;padding:10px 12px;border-radius:0;overflow:hidden;max-width:100%}
+.tower-calc-board-preview .board-grid{min-width:0;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.tower-calc-board-preview .board-col{min-height:0}
+.tower-calc-board-preview .board-col header{padding:7px 6px}
+.tower-calc-board-preview .board-col h4{font-size:11px;line-height:1.1;min-height:24px;margin:0}
+.tower-calc-board-preview .board-sub{font-size:10px}
+.tower-calc-board-preview .board-cap{gap:6px;font-size:10px}
+.tower-calc-board-preview .board-col li{font-size:10px;padding:4px 4px;grid-template-columns:minmax(0,1.25fr) .5fr .38fr .72fr}
+.tower-calc-board-preview .board-col li span,.tower-calc-board-preview .board-col li em,.tower-calc-board-preview .board-col li b,.tower-calc-board-preview .board-col li strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tower-calc-preview-toolbar{align-items:center;margin-bottom:4px}
+.tower-calc-preview-toolbar .board-shift-tab.active{box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}

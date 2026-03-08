@@ -18,6 +18,8 @@
     return fn(String(v ?? ''));
   }
 
+  function calcFmt(n) { return Number(n || 0).toLocaleString('en-US'); }
+
   function getCalcCaptainPool() {
     return (Array.isArray(state.players) ? state.players : [])
       .filter((p) => p && (p.captainReady || Number(p.rally || 0) > 0 || Number(p.march || 0) > 0))
@@ -82,6 +84,8 @@
     tc.helperPrefs = (tc.helperPrefs && typeof tc.helperPrefs === 'object') ? tc.helperPrefs : {};
     tc.towerPrefs = (tc.towerPrefs && typeof tc.towerPrefs === 'object') ? tc.towerPrefs : {};
     tc.overflowReserve = (tc.overflowReserve && typeof tc.overflowReserve === 'object') ? tc.overflowReserve : {};
+    tc.inlineTowerSelected = (tc.inlineTowerSelected && typeof tc.inlineTowerSelected === 'object') ? tc.inlineTowerSelected : {};
+    tc.previewShift = (['shift1','shift2'].includes(String(tc.previewShift||'').toLowerCase())) ? String(tc.previewShift).toLowerCase() : (['shift1','shift2'].includes(String(state.activeShift||'').toLowerCase()) ? String(state.activeShift).toLowerCase() : 'shift2');
     tc.ignoreBoth = !!tc.ignoreBoth;
     return tc;
   }
@@ -326,7 +330,8 @@ function calcRenderPreviewPanel(modal, results) {
       if (hprefs[pid]?.excluded) continue;
       if (!calcShiftMatch(p, shiftKey)) continue;
       const rawShift = String(p.shift || p.shiftLabel || '').toLowerCase();
-      if (tc.ignoreBoth && rawShift === 'both') continue;
+      const forcedReserve = String((reserves && reserves[String(p.id || '')]) || '').toLowerCase();
+      if (tc.ignoreBoth && rawShift === 'both' && forcedReserve !== String(shiftKey || '').toLowerCase()) continue;
       if (both50 && noCrossShift && rawShift === 'both') {
         const sk = String(shiftKey || '').toLowerCase();
         const mapped = String((bothAllocMap && (bothAllocMap[String(p.id || '')] || bothAllocMap[p.id])) || '');
@@ -593,8 +598,10 @@ function calcReadRowsFromDOM(shiftKey, modal) {
 
   function calcWriteRowsToState(modal) {
     const tc = getCalcState();
-    tc.shift1 = calcReadRowsFromDOM('shift1', modal);
-    tc.shift2 = calcReadRowsFromDOM('shift2', modal);
+    const domShift1 = calcReadRowsFromDOM('shift1', modal);
+    const domShift2 = calcReadRowsFromDOM('shift2', modal);
+    if (domShift1.length) tc.shift1 = domShift1;
+    if (domShift2.length) tc.shift2 = domShift2;
     tc.noCrossShift = !!(modal?.querySelector('#towerCalcNoCrossShift')?.checked);
     tc.both50 = !!(modal?.querySelector('#towerCalcBoth50')?.checked);
     tc.ignoreBoth = !!(modal?.querySelector('#towerCalcIgnoreBoth')?.checked);
@@ -644,6 +651,8 @@ function calcReadRowsFromDOM(shiftKey, modal) {
     tc.helperPrefs = (tc.helperPrefs && typeof tc.helperPrefs === 'object') ? tc.helperPrefs : {};
     tc.towerPrefs = (tc.towerPrefs && typeof tc.towerPrefs === 'object') ? tc.towerPrefs : {};
     tc.overflowReserve = (tc.overflowReserve && typeof tc.overflowReserve === 'object') ? tc.overflowReserve : {};
+    tc.inlineTowerSelected = (tc.inlineTowerSelected && typeof tc.inlineTowerSelected === 'object') ? tc.inlineTowerSelected : {};
+    tc.previewShift = (['shift1','shift2'].includes(String(tc.previewShift||'').toLowerCase())) ? String(tc.previewShift).toLowerCase() : (['shift1','shift2'].includes(String(state.activeShift||'').toLowerCase()) ? String(state.activeShift).toLowerCase() : 'shift2');
     tc.ignoreBoth = !!tc.ignoreBoth;
     return tc;
   }
@@ -687,62 +696,134 @@ function calcReadRowsFromDOM(shiftKey, modal) {
     return active;
   }
 
-  function calcRenderOverflowPanel(modal, results) {
-    const root = modal || document.getElementById('towerCalcModal');
-    const out = root?.querySelector?.('#towerCalcOverflowOut');
-    if (!out) return;
-    const res = results || state.towerCalcLastResults;
-    if (!res?.shift1 && !res?.shift2) {
-      out.innerHTML = '<div class="tower-calc-placeholder muted small">Натисни “Порахувати”, щоб побачити список гравців, які не влізли, по Shift і башнях.</div>';
-      return;
-    }
-    const fm = (n) => Number(n || 0).toLocaleString('en-US');
-    const lines = [];
-    const byReason = { notFit: 0, partial: 0 };
-    const tc = getCalcState();
-    for (const sk of ['shift1','shift2']) {
-      const plans = Array.isArray(res?.[sk]?.towerPlans) ? res[sk].towerPlans : [];
-      const slots = calcGetTowerSlotsForShift(sk);
-      plans.forEach((tp, idx) => {
-        const slot = calcResolveBaseSlotForTowerPlan(sk, tp, idx, slots);
-        const baseId = String(slot?.baseId || '');
-        const title = String(slot?.title || tp?.captain?.name || `Башня ${idx+1}`);
-        const nf = Array.isArray(tp?.notFitPlayers) ? tp.notFitPlayers : [];
-        const pp = Array.isArray(tp?.partialPlayers) ? tp.partialPlayers : [];
-        byReason.notFit += nf.length;
-        byReason.partial += pp.length;
-        nf.forEach((p) => lines.push({ playerId:String(p?.id||''), shift: sk, tower: title, baseId, nick: String(p?.name || '—'), troop: roleNorm(p?.role) || '', tier: String(p?.tier || ''), march: Number(p?.march || 0) || 0, reason: 'not fit' }));
-        pp.forEach((p) => lines.push({ playerId:String(p?.id||''), shift: sk, tower: title, baseId, nick: String(p?.name || '—'), troop: roleNorm(p?.role) || '', tier: String(p?.tier || ''), march: Number(p?.sent || 0) || 0, reason: `partial ${fm(p?.sent)}/${fm(p?.full)}` }));
+
+function calcRenderOverflowPanel(modal, results) {
+  const root = modal || document.getElementById('towerCalcModal');
+  const out = root?.querySelector?.('#towerCalcOverflowOut');
+  if (!out) return;
+  const res = results || state.towerCalcLastResults;
+  const fm = (n) => Number(n || 0).toLocaleString('en-US');
+  const tc = getCalcState();
+  const counts = (typeof PNS?.getShiftCounts === 'function') ? PNS.getShiftCounts(state.players) : { shift1: 0, shift2: 0, both: 0 };
+  const limits = (typeof PNS?.getTowerCalcShiftLimits === 'function') ? PNS.getTowerCalcShiftLimits() : { shift1: 90, shift2: 90 };
+  const usedIds = new Set();
+  const calcCaptainIds = new Set();
+  const detailsById = new Map();
+
+  for (const sk of ['shift1','shift2']) {
+    const plans = Array.isArray(res?.[sk]?.towerPlans) ? res[sk].towerPlans : [];
+    plans.forEach((tp) => {
+      const capId = String(tp?.captain?.id || '');
+      if (capId) { usedIds.add(capId); calcCaptainIds.add(capId); }
+      (tp?.pickedPlayers || []).forEach((p) => {
+        const pid = String(p?.id || '');
+        if (pid) usedIds.add(pid);
       });
+      (tp?.notFitPlayers || []).forEach((p) => {
+        const pid = String(p?.id || '');
+        if (!pid) return;
+        detailsById.set(pid, { status: 'Не вліз', sourceShift: sk });
+      });
+      (tp?.partialPlayers || []).forEach((p) => {
+        const pid = String(p?.id || '');
+        if (!pid) return;
+        detailsById.set(pid, { status: `Частково ${fm(p?.sent || 0)} / ${fm(p?.full || 0)}`, sourceShift: sk });
+      });
+    });
+  }
+
+  const groups = { shift1: [], shift2: [], both: [] };
+  for (const p of (Array.isArray(state.players) ? state.players : [])) {
+    if (!p || !p.id) continue;
+    const pid = String(p.id || '');
+    if (calcCaptainIds.has(pid)) continue;
+    if (p.assignment?.baseId) continue;
+    const shift = String((typeof PNS?.normalizeShiftValue === 'function' ? PNS.normalizeShiftValue(p.shift || p.shiftLabel || 'both') : (p.shift || p.shiftLabel || 'both')) || 'both').toLowerCase();
+    if (!groups[shift]) continue;
+    if (usedIds.has(pid) && !detailsById.has(pid)) continue;
+    const extra = detailsById.get(pid) || {};
+    groups[shift].push({
+      playerId: pid,
+      name: String(p.name || '—'),
+      alliance: String(p.alliance || ''),
+      role: String(p.role || ''),
+      tier: String(p.tier || ''),
+      march: Number(p.march || 0) || 0,
+      status: extra.status || (shift === 'both' && tc.ignoreBoth ? 'Both не враховується' : 'Не використано'),
+    });
+  }
+
+  Object.keys(groups).forEach((k) => groups[k].sort((a,b) => (Number(b.march || 0) - Number(a.march || 0)) || String(a.name || '').localeCompare(String(b.name || ''))));
+
+  const section = (key, title, rows, meta) => `
+    <section class="tower-calc-panel top-space">
+      <div class="tower-calc-head"><h3 style="margin:0">${title}</h3><span class="muted small">${meta}</span></div>
+      ${rows.length ? `
+        <div class="helpers-table-wrap top-space" style="max-height:26vh;overflow:auto">
+          <table class="mini-table tower-calc-tier-table">
+            <thead><tr><th>Нік</th><th>Альянс</th><th>Роль</th><th>Tier</th><th>March</th><th>Статус</th><th>Дії</th></tr></thead>
+            <tbody>
+              ${rows.map((r) => {
+                const disableS1 = (key !== 'shift1' && counts.shift1 >= limits.shift1) ? ' disabled' : '';
+                const disableS2 = (key !== 'shift2' && counts.shift2 >= limits.shift2) ? ' disabled' : '';
+                return `<tr>
+                  <td>${calcEsc(r.name)}</td>
+                  <td>${calcEsc(r.alliance || '—')}</td>
+                  <td>${calcEsc(r.role || '—')}</td>
+                  <td>${calcEsc(r.tier || '')}</td>
+                  <td>${fm(r.march)}</td>
+                  <td>${calcEsc(r.status || '')}</td>
+                  <td>
+                    <button type="button" class="btn btn-xs" data-calc-set-player-shift="${calcEsc(r.playerId)}" data-target-shift="shift1"${disableS1}>→ Shift 1</button>
+                    <button type="button" class="btn btn-xs" data-calc-set-player-shift="${calcEsc(r.playerId)}" data-target-shift="shift2"${disableS2}>→ Shift 2</button>
+                    <button type="button" class="btn btn-xs" data-calc-set-player-shift="${calcEsc(r.playerId)}" data-target-shift="both">→ Both</button>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>` : '<div class="tower-calc-placeholder muted small">Порожньо</div>'}
+    </section>`;
+
+  out.innerHTML = `
+    <div class="muted small"><strong>Хто не вліз / резерв</strong> · Shift 1: ${fm(groups.shift1.length)} · Shift 2: ${fm(groups.shift2.length)} · Both: ${fm(groups.both.length)}</div>
+    ${section('shift1', 'Shift 1', groups.shift1, `гравців: ${fm(counts.shift1)} / ${fm(limits.shift1)}${counts.shift1 > limits.shift1 ? ` · понад ліміт: ${fm(counts.shift1 - limits.shift1)}` : ''}`)}
+    ${section('shift2', 'Shift 2', groups.shift2, `гравців: ${fm(counts.shift2)} / ${fm(limits.shift2)}${counts.shift2 > limits.shift2 ? ` · понад ліміт: ${fm(counts.shift2 - limits.shift2)}` : ''}`)}
+    ${section('both', 'Both', groups.both, `гравців: ${fm(counts.both)}${tc.ignoreBoth ? ' · зараз не враховуються в розрахунку' : ''}`)}
+    <div class="muted small top-space">Кнопки “→ Shift 1 / Shift 2 / Both” одразу змінюють shift гравця та запускають перерахунок.</div>`;
+}
+
+  function calcNormalizeRegisteredShift(value) {
+    try {
+      if (typeof PNS?.normalizeShiftValue === 'function') {
+        return PNS.normalizeShiftValue(value);
+      }
+    } catch {}
+    const s = String(value || '').trim().toLowerCase();
+    if (!s) return 'unknown';
+    if (/(both|all|1\s*[,/;+&-]\s*2|2\s*[,/;+&-]\s*1|обе|обидв|оба|две|any shift|будь-як)/i.test(s)) return 'both';
+    if (/(?:^|)(?:shift|зміна|змiна|смена)\s*[-: ]*1(?:|$)|(?:^|)1(?:st)?\s*(?:shift|зміна|змiна|смена)?(?:|$)|перш|перша|перв|first/i.test(s)) return 'shift1';
+    if (/(?:^|)(?:shift|зміна|змiна|смена)\s*[-: ]*2(?:|$)|(?:^|)2(?:nd)?\s*(?:shift|зміна|змiна|смена)?(?:|$)|друг|втор|second/i.test(s)) return 'shift2';
+    return s === 'shift1' || s === 'shift2' || s === 'both' ? s : 'unknown';
+  }
+
+  function calcGetRegisteredShiftForPlayer(player) {
+    try {
+      if (typeof PNS?.getRegisteredShiftForPlayer === 'function') {
+        return PNS.getRegisteredShiftForPlayer(player);
+      }
+    } catch {}
+    const rawCandidates = [
+      player?.registeredShiftRaw,
+      state?.importData?.mapping?.shift_availability && player?.raw ? player.raw[state.importData.mapping.shift_availability] : '',
+      player?.registeredShift,
+      player?.registeredShiftLabel,
+    ].map((v) => String(v || '').trim()).filter(Boolean);
+    for (const raw of rawCandidates) {
+      const norm = calcNormalizeRegisteredShift(raw);
+      if (norm === 'shift1' || norm === 'shift2' || norm === 'both') return norm;
     }
-    if (!lines.length) {
-      out.innerHTML = '<div class="tower-calc-placeholder"><strong>✅ Усі helper-и влізли</strong><div class="muted small top-space">Список overflow порожній для поточного розрахунку.</div></div>';
-      return;
-    }
-    out.innerHTML = `
-      <div class="tower-calc-head"><h3 style="margin:0">Хто не вліз / partial</h3><span class="muted small">not fit: ${fm(byReason.notFit)} · partial: ${fm(byReason.partial)}</span></div>
-      <div class="helpers-table-wrap top-space" style="max-height:56vh;overflow:auto">
-        <table class="mini-table tower-calc-tier-table">
-          <thead><tr><th>Shift</th><th>Башня</th><th>Нік</th><th>Troop</th><th>Tier</th><th>March</th><th>Причина</th><th>Дії</th></tr></thead>
-          <tbody>
-            ${lines.map(r => {
-              const pref = calcGetHelperPref(r.playerId);
-              const reserve = String((tc?.overflowReserve && tc.overflowReserve[r.playerId]) || '');
-              return `<tr>
-                <td>${calcEsc(r.shift)}</td><td>${calcEsc(r.tower)}</td><td>${calcEsc(r.nick)}</td><td>${calcEsc(r.troop)}</td><td>${calcEsc(r.tier)}</td><td>${fm(r.march)}</td><td>${calcEsc(r.reason)}</td>
-                <td>
-                  ${r.baseId ? `<button type="button" class="btn btn-xs" data-calc-open-base="${calcEsc(r.baseId)}" data-calc-shift="${calcEsc(r.shift)}">Tower</button>` : ''}
-                  ${r.baseId ? `<button type="button" class="btn btn-xs" data-calc-pick-overflow-base="${calcEsc(r.baseId)}" data-calc-shift="${calcEsc(r.shift)}">Pick</button>` : ''}
-                  ${r.playerId ? `<button type="button" class="btn btn-xs" data-calc-toggle-exclude="${calcEsc(r.playerId)}">${pref?.excluded ? 'Unexclude' : 'Exclude'}</button>` : ''}
-                  ${r.playerId ? `<button type="button" class="btn btn-xs" data-calc-reserve="${calcEsc(r.playerId)}" data-reserve-shift="shift1"${reserve==='shift1'?' style="outline:1px solid #93c5fd"':''}>S1</button>` : ''}
-                  ${r.playerId ? `<button type="button" class="btn btn-xs" data-calc-reserve="${calcEsc(r.playerId)}" data-reserve-shift="shift2"${reserve==='shift2'?' style="outline:1px solid #93c5fd"':''}>S2</button>` : ''}
-                </td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-      <div class="muted small top-space">v7.0b: exclude/reserve → натисни “Порахувати”. Для ручної доводки відкрий башню (Tower/Pick) і додай/відредагуй helper-ів там.</div>`;
+    return 'unknown';
   }
 
   function calcComputeShiftRoleStats() {
@@ -750,12 +831,13 @@ function calcReadRowsFromDOM(shiftKey, modal) {
       shift1: { total: 0, shooter: 0, rider: 0, fighter: 0 },
       shift2: { total: 0, shooter: 0, rider: 0, fighter: 0 },
       both: { total: 0, shooter: 0, rider: 0, fighter: 0 },
+      unknown: { total: 0, shooter: 0, rider: 0, fighter: 0 },
       total: 0,
     };
     for (const p of (Array.isArray(state.players) ? state.players : [])) {
       if (!p) continue;
-      const s = String(p.shift || p.shiftLabel || 'both').toLowerCase();
-      const key = (s === 'shift1' || s === 'shift2') ? s : 'both';
+      const cur = String((typeof PNS?.normalizeShiftValue === 'function' ? PNS.normalizeShiftValue(p?.shift || p?.shiftLabel || 'both') : (p?.shift || p?.shiftLabel || 'both')) || 'both').toLowerCase();
+      const key = out[cur] ? cur : 'unknown';
       out[key].total += 1;
       const r = roleNorm(p.role) || '';
       if (r && out[key][r] !== undefined) out[key][r] += 1;
@@ -768,6 +850,7 @@ function calcReadRowsFromDOM(shiftKey, modal) {
     const modal = modalIn || document.getElementById('towerCalcModal');
     if (!modal) return;
     const s = calcComputeShiftRoleStats();
+    const limits = (typeof PNS?.getTowerCalcShiftLimits === 'function') ? PNS.getTowerCalcShiftLimits() : { shift1: 90, shift2: 90 };
     const setText = (id, text) => {
       const el = modal.querySelector('#' + id) || document.getElementById(id);
       if (el) el.textContent = String(text);
@@ -778,7 +861,23 @@ function calcReadRowsFromDOM(shiftKey, modal) {
     setText('tcShift1Roles', `S / F / R: ${s.shift1.shooter} / ${s.shift1.fighter} / ${s.shift1.rider}`);
     setText('tcShift2Roles', `S / F / R: ${s.shift2.shooter} / ${s.shift2.fighter} / ${s.shift2.rider}`);
     setText('tcBothRoles', `S / F / R: ${s.both.shooter} / ${s.both.fighter} / ${s.both.rider}`);
-    setText('towerCalcShiftCountsLine', `${s.shift1.total} / ${s.shift2.total} / ${s.both.total} (total ${s.total})`);
+    setText('tcTotalCount', s.total);
+
+    const root = modal.querySelector('#towerCalcShiftBalance') || document.getElementById('towerCalcShiftBalance');
+    const cards = root?.querySelector('.tower-calc-shift-cards');
+    if (cards) cards.style.display = 'none';
+
+    const pieces = [
+      `Shift 1: ${s.shift1.total}/${limits.shift1} (S/F/R ${s.shift1.shooter}/${s.shift1.fighter}/${s.shift1.rider})`,
+      `Shift 2: ${s.shift2.total}/${limits.shift2} (S/F/R ${s.shift2.shooter}/${s.shift2.fighter}/${s.shift2.rider})`,
+      `Both: ${s.both.total} (S/F/R ${s.both.shooter}/${s.both.fighter}/${s.both.rider})`
+    ];
+    if (s.shift1.total > limits.shift1) pieces.push(`⚠ Shift 1 понад ліміт на ${s.shift1.total - limits.shift1}`);
+    if (s.shift2.total > limits.shift2) pieces.push(`⚠ Shift 2 понад ліміт на ${s.shift2.total - limits.shift2}`);
+    pieces.push(`Усього: ${s.total}`);
+    setText('towerCalcShiftCountsLine', pieces.join(' · '));
+
+    try { PNS.ensureTowerCalcShiftUi?.(); } catch {}
   }
 
   function calcGetStrictShiftPoolCount(shiftKey, tc) {
@@ -800,9 +899,7 @@ function calcReadRowsFromDOM(shiftKey, modal) {
     if (!modal) return false;
     const sk = (String(shiftKey || '').toLowerCase() === 'shift2') ? 'shift2' : 'shift1';
     const tc = calcWriteRowsToState(modal);
-    tc.ignoreBoth = true;
     const ig = modal.querySelector('#towerCalcIgnoreBoth');
-    if (ig) ig.checked = true;
     try { localStorage.setItem('pns_tower_calc_state', JSON.stringify(tc)); } catch {}
     try { calcUpdateShiftStatsUI(modal); } catch {}
     const slots = calcGetTowerSlotsForShift(sk);
@@ -837,8 +934,9 @@ function calcReadRowsFromDOM(shiftKey, modal) {
     const modal = document.getElementById('towerCalcModal');
     if (!modal) return false;
     const ig = modal.querySelector('#towerCalcIgnoreBoth');
-    if (ig) ig.checked = true;
-    try { const tc = getCalcState(); tc.ignoreBoth = true; localStorage.setItem('pns_tower_calc_state', JSON.stringify(tc)); } catch {}
+    const tcKeep = getCalcState();
+    if (ig) ig.checked = !!tcKeep.ignoreBoth;
+    try { localStorage.setItem('pns_tower_calc_state', JSON.stringify(tcKeep)); } catch {}
     calcAutoSlotsForShift('shift1');
     calcAutoSlotsForShift('shift2');
     computeTowerCalcResults();
@@ -868,21 +966,19 @@ function calcReadRowsFromDOM(shiftKey, modal) {
             <option value="rider" ${troop==='rider'?'selected':''}>Rider</option>
             <option value="shooter" ${troop==='shooter'?'selected':''}>Shooter</option>
           </select>
-          <input data-calc-helpers type="number" min="0" placeholder="Helpers" value="${calcEsc(String(helpersVal))}" />
+          <input data-calc-helpers type="number" min="0" placeholder="Гравці" value="${calcEsc(String(helpersVal))}" />
         </div>`;
     }).join('');
 
     const grid = modal.querySelector('#towerCalcGrid');
     if (grid) {
       grid.innerHTML = `
-        <div class="tower-calc-panel" data-calc-panel="shift1">
-          <div class="tower-calc-head"><h3 style="margin:0">Shift 1</h3><span class="muted small">5 captains</span></div>
-          <div class="tower-calc-rows">${rowHtml('shift1', tc.shift1)}</div>
-          <div class="tower-calc-results" id="towerCalcOutShift1"></div>
+        <div class="tower-calc-inline-shell">
+          <aside class="tower-picker-list" id="towerCalcInlineList"></aside>
+          <section class="tower-picker-detail" id="towerCalcInlineDetail"></section>
         </div>
-        <div class="tower-calc-panel" data-calc-panel="shift2">
-          <div class="tower-calc-head"><h3 style="margin:0">Shift 2</h3><span class="muted small">5 captains</span></div>
-          <div class="tower-calc-rows">${rowHtml('shift2', tc.shift2)}</div>
+        <div class="tower-calc-inline-results" style="display:none">
+          <div class="tower-calc-results" id="towerCalcOutShift1"></div>
           <div class="tower-calc-results" id="towerCalcOutShift2"></div>
         </div>`;
     }
@@ -899,12 +995,254 @@ function calcReadRowsFromDOM(shiftKey, modal) {
     calcApplyMainTabUI(modal, tc.mainTab || 'setup');
     calcApplyActiveTabUI(modal, tc.activeTab || 'shift1');
     calcUpdateShiftStatsUI(modal);
-    computeTowerCalcResults();
-    calcRenderOverflowPanel(modal, state.towerCalcLastResults);
-    return modal;
-  }
 
-  function calcPickHelpersRoundRobin(players, caps) {
+  computeTowerCalcResults();
+  calcRenderOverflowPanel(modal, state.towerCalcLastResults);
+  try { calcRenderInlineTowerSettings(modal); } catch {}
+  try { calcRenderLiveFinalBoard(modal); } catch {}
+  return modal;
+}
+
+function calcSetInlineSelectedBaseId(shiftKey, baseId) {
+  const tc = getCalcState();
+  const sk = String(shiftKey || '').toLowerCase() === 'shift2' ? 'shift2' : 'shift1';
+  tc.inlineTowerSelected = tc.inlineTowerSelected || {};
+  tc.inlineTowerSelected[sk] = String(baseId || '');
+  try { localStorage.setItem('pns_tower_calc_state', JSON.stringify(tc)); } catch {}
+  return tc.inlineTowerSelected[sk];
+}
+
+function calcGetInlineSelectedBaseId(shiftKey) {
+  const tc = getCalcState();
+  const sk = String(shiftKey || '').toLowerCase() === 'shift2' ? 'shift2' : 'shift1';
+  const current = String(tc?.inlineTowerSelected?.[sk] || '');
+  if (current) return current;
+  const bases = getCalcTowerBaseOrder();
+  return String(bases?.[0]?.id || '');
+}
+
+function calcHelperEffectiveMarchForShift(baseLike, player, shiftKey) {
+  if (!player) return 0;
+  const raw = Math.max(0, Number(player.march || 0) || 0);
+  try { if (baseLike?.captainId && String(baseLike.captainId) === String(player.id)) return raw; } catch {}
+  try {
+    const ov = PNS.getTowerMarchOverride?.(baseLike?.id, player?.id, shiftKey);
+    if (Number.isFinite(ov) && ov > 0) return Number(ov) || 0;
+  } catch {}
+  const cap = Math.max(0, Number(baseLike?.tierMinMarch?.[String(player.tier || '').toUpperCase()] || 0) || 0);
+  return cap > 0 ? Math.min(raw, cap) : raw;
+}
+
+function calcTowerStatsForShiftBase(base, shiftKey) {
+  const slots = calcGetTowerSlotsForShift(shiftKey);
+  const slot = slots.find((s) => String(s?.baseId || '') === String(base?.id || '')) || {
+    baseId: String(base?.id || ''),
+    title: String(base?.title || base?.id || ''),
+    captainId: '',
+    helperIds: [],
+    role: base?.role || null,
+  };
+  const rule = (typeof PNS.getBaseTowerRule === 'function')
+    ? (PNS.getBaseTowerRule(String(base?.id || ''), { shift: shiftKey }) || {})
+    : {};
+  const baseLike = {
+    id: String(base?.id || ''),
+    title: String(base?.title || base?.id || ''),
+    captainId: String(slot?.captainId || ''),
+    helperIds: Array.isArray(slot?.helperIds) ? slot.helperIds.slice() : [],
+    role: slot?.role || base?.role || null,
+    maxHelpers: Number(rule?.maxHelpers ?? base?.maxHelpers ?? 29) || 29,
+    tierMinMarch: {
+      T14: Number(rule?.tierMinMarch?.T14 ?? base?.tierMinMarch?.T14 ?? 0) || 0,
+      T13: Number(rule?.tierMinMarch?.T13 ?? base?.tierMinMarch?.T13 ?? 0) || 0,
+      T12: Number(rule?.tierMinMarch?.T12 ?? base?.tierMinMarch?.T12 ?? 0) || 0,
+      T11: Number(rule?.tierMinMarch?.T11 ?? base?.tierMinMarch?.T11 ?? 0) || 0,
+      T10: Number(rule?.tierMinMarch?.T10 ?? base?.tierMinMarch?.T10 ?? 0) || 0,
+      T9: Number(rule?.tierMinMarch?.T9 ?? base?.tierMinMarch?.T9 ?? 0) || 0,
+    },
+  };
+  const captain = baseLike.captainId ? state.playerById?.get?.(baseLike.captainId) : null;
+  const helpers = (Array.isArray(baseLike.helperIds) ? baseLike.helperIds : []).map((id) => state.playerById?.get?.(id)).filter(Boolean);
+  const captainMarch = Math.max(0, Number(captain?.march || 0) || 0);
+  const rallySize = Math.max(0, Number(captain?.rally || 0) || 0);
+  const helpersTotal = helpers.reduce((s, pl) => s + calcHelperEffectiveMarchForShift(baseLike, pl, shiftKey), 0);
+  const total = captainMarch + helpersTotal;
+  const capacityTotal = captainMarch + rallySize;
+  const free = Math.max(0, capacityTotal - total);
+  return { captain, helpers, rule: { maxHelpers: baseLike.maxHelpers, tierMinMarch: { ...(baseLike.tierMinMarch || {}) } }, captainMarch, rallySize, helpersTotal, total, capacityTotal, free, baseLike };
+}
+
+function calcRenderInlineTowerSettings(modalIn) {
+  const modal = modalIn || document.getElementById('towerCalcModal');
+  if (!modal) return;
+  const tc = getCalcState();
+  const shiftKey = String(tc.activeTab || 'shift1').toLowerCase() === 'shift2' ? 'shift2' : 'shift1';
+  const list = modal.querySelector('#towerCalcInlineList');
+  const detail = modal.querySelector('#towerCalcInlineDetail');
+  if (!list || !detail) return;
+  const bases = getCalcTowerBaseOrder().map((b) => state.baseById?.get?.(String(b?.id || '')) || b).filter(Boolean);
+  if (!bases.length) {
+    list.innerHTML = '';
+    detail.innerHTML = '<div class="muted">Немає башень</div>';
+    return;
+  }
+  let selectedId = calcGetInlineSelectedBaseId(shiftKey);
+  if (!bases.some((b) => String(b.id) === selectedId)) selectedId = String(bases[0].id || '');
+  calcSetInlineSelectedBaseId(shiftKey, selectedId);
+  list.innerHTML = bases.map((base, idx) => {
+    const stats = calcTowerStatsForShiftBase(base, shiftKey);
+    const done = !!stats.captain;
+    const playersCount = Number(done ? 1 : 0) + Number(stats.helpers.length || 0);
+    const title = calcEsc(String(base.title || base.id || `Башня ${idx + 1}`).split('/')[0].trim());
+    return `<button type="button" class="btn btn-sm tower-picker-item ${String(base.id) === selectedId ? 'active' : ''} ${done ? 'is-ready tower-done' : 'is-not-ready'}" data-calc-inline-base="${calcEsc(base.id)}" data-calc-shift="${calcEsc(shiftKey)}"><div class="tower-item-row"><strong>${title}</strong><span class="tower-item-status" aria-hidden="true">${done ? '✓' : '!'}</span></div><span class="muted small">${done ? 'Готова' : 'Без капітана'} · <span class="tower-item-count ${done ? 'is-ready' : 'is-not-ready'}">players: ${playersCount}</span></span></button>`;
+  }).join('');
+  const base = bases.find((b) => String(b.id) === selectedId) || bases[0];
+  const stats = calcTowerStatsForShiftBase(base, shiftKey);
+  const captain = stats.captain;
+  const rule = stats.rule || { maxHelpers: Number(base.maxHelpers || 0) || 0, tierMinMarch: { ...(base.tierMinMarch || {}) } };
+  const title = calcEsc(String(base.title || base.id || '').split('/')[0].trim());
+  let caps = [];
+  try { caps = MS.eligibleCaptainsForBase?.(base) || []; } catch {}
+  const helperRows = stats.helpers.map((p) => {
+    const eff = calcHelperEffectiveMarchForShift(stats.baseLike, p, shiftKey);
+    return `<tr><td>${calcEsc(p.name || '')}</td><td>${calcEsc(p.alliance || '')}</td><td>${calcEsc(p.role || '')}</td><td>${calcEsc(p.tier || '')}</td><td>${calcFmt(eff)}</td><td><button class="btn btn-xs" type="button" data-picker-edit-player="${calcEsc(p.id)}" data-picker-edit-base="${calcEsc(base.id)}">✎</button></td></tr>`;
+  }).join('');
+  detail.innerHTML = `
+    <div class="stack tower-picker-scope" data-calc-inline-scope="${calcEsc(shiftKey)}">
+      <h3>${title}</h3>
+      <div class="picker-meta-row muted small"><span class="picker-meta-shift">Shift: ${shiftKey === 'shift1' ? 'SHIFT 1' : 'SHIFT 2'}</span><label class="picker-only-captains"><input type="checkbox" id="pickerOnlyCaptains" ${state.towerPickerOnlyCaptains !== false ? 'checked' : ''}/> Тільки капітани</label><label class="picker-only-captains"><input type="checkbox" id="pickerMatchRegisteredShift" ${state.towerPickerMatchRegisteredShift !== false ? 'checked' : ''}/> Зазначений Shift</label><label class="picker-only-captains"><input type="checkbox" id="pickerNoMixTroops" ${state.towerPickerNoMixTroops !== false ? 'checked' : ''}/> Лише той самий тип військ</label><label class="picker-only-captains"><input type="checkbox" id="pickerNoCrossShiftDupes" ${state.towerPickerNoCrossShiftDupes !== false ? 'checked' : ''}/> Без дублювання між shifts</label></div>
+      <div class="picker-topline top-space"><select id="towerPickerCaptainSelect" class="input-like" aria-label="Вибір капітана"><option value="">${captain ? 'Змінити капітана…' : 'Вибрати капітана…'}</option>${caps.map(p => `<option value="${calcEsc(p.id)}" ${captain && String(captain.id) === String(p.id) ? 'selected' : ''}>${calcEsc(String(p.name || ''))} · ${calcEsc(String(p.role || ''))} · ${calcEsc(String(p.shiftLabel || p.shift || ''))} · ${Number(p.march || 0).toLocaleString('en-US')}${p.captainReady ? ' · CAP' : ''}</option>`).join('')}</select><div class="picker-actions"><button class="btn btn-sm" type="button" data-picker-set-captain="${calcEsc(base.id)}">Поставити капітана</button><button class="btn btn-sm" type="button" data-picker-autofill="${calcEsc(base.id)}">Автозаповнення</button><button class="btn btn-sm" type="button" data-picker-clear-base="${calcEsc(base.id)}">Очистити башню</button><button class="btn btn-sm" type="button" data-picker-save-board="${calcEsc(base.id)}">Зберегти таблицю башні</button></div></div>
+      <div class="limit-grid limit-grid-compact top-space"><div><span>Captain march</span><strong>${calcFmt(stats.captainMarch)}</strong></div><div><span>Rally size</span><strong>${calcFmt(stats.rallySize)}</strong></div><div><span>Total Σ</span><strong>${calcFmt(stats.total)}</strong></div><div><span>Free space</span><strong>${calcFmt(stats.free)}</strong></div></div>
+      <details class="tower-collapsible top-space" id="towerPickerLimitsBlock"><summary>Налаштування башні · ліміти по тірам (макс. March)</summary><div class="inner stack"><div class="picker-limits-head"><label><span class="muted small">Макс. гравців</span><input id="pickerMaxHelpers" type="number" min="0" value="${Number(rule.maxHelpers || 0) || 0}" /></label><button class="btn btn-sm" type="button" data-picker-save-rule="${calcEsc(base.id)}">Зберегти ліміти</button><button class="btn btn-sm" type="button" data-picker-reset-rule="${calcEsc(base.id)}">Скинути ліміти (T14–T9 → 0)</button></div><div class="row gap wrap">${['T14','T13','T12','T11','T10','T9'].map(t => `<label><span class="muted small">${t}</span><input type="number" min="0" data-picker-tier="${t}" value="${Number(rule?.tierMinMarch?.[t] || 0) || 0}" style="width:90px" /></label>`).join('')}</div></div></details>
+      <details class="tower-collapsible" id="towerPickerManualBlock"><summary>Додати вручну helper</summary><div class="inner stack"><div class="picker-manual-row"><input id="pickerManualSearch" list="pickerManualPlayerSuggestions" placeholder="Пошук гравця (зі списку)" autocomplete="off" spellcheck="false" /><input id="pickerManualName" placeholder="Нік (можна свій, не зі списку)" autocomplete="off" /><datalist id="pickerManualPlayerSuggestions">${(state.players || []).slice().sort((a,b)=> String(a.name||'').localeCompare(String(b.name||''))).map(p => `<option value="${calcEsc(String(p.name || ''))}" label="${calcEsc(String(p.alliance || ''))} · ${calcEsc(String(p.role || ''))} · ${calcEsc(String(p.tier || ''))} · ${Number(p.march || 0).toLocaleString('en-US')}"></option>`).join('')}</datalist><input id="pickerManualAlly" placeholder="Альянс" /><select id="pickerManualRole"><option>Fighter</option><option>Shooter</option><option>Rider</option></select></div><div id="pickerManualHint" class="picker-manual-hint muted small"></div><div class="picker-manual-row2"><input id="pickerManualTier" placeholder="T14" /><input id="pickerManualMarch" placeholder="March" type="number" min="0" /><input id="pickerManualRally" placeholder="Rally size" type="number" min="0" /><button class="btn btn-sm" type="button" data-picker-add-manual-captain="${calcEsc(base.id)}">Поставити капітана</button><button class="btn btn-sm" type="button" data-picker-add-manual="${calcEsc(base.id)}">Додати гравця</button></div></div></details>
+      <div class="panel subpanel" style="padding:10px"><div class="row gap wrap" style="justify-content:space-between"><strong>Гравці в башні</strong><span class="muted small">${captain ? 'Капітан + гравці' : 'Без капітана'}</span></div><div class="helpers-table-wrap top-space"><table class="mini-table"><thead><tr><th>Player</th><th>Ally</th><th>Role</th><th>Tier</th><th>March</th><th>✎</th></tr></thead><tbody>${captain ? `<tr><td>${calcEsc(captain.name || '')}</td><td>${calcEsc(captain.alliance || '')}</td><td>${calcEsc(captain.role || '')}</td><td>${calcEsc(captain.tier || '')}</td><td>${calcFmt(stats.captainMarch)}</td><td><button class="btn btn-xs" type="button" data-picker-edit-player="${calcEsc(captain.id)}" data-picker-edit-base="${calcEsc(base.id)}">✎</button></td></tr>` : ''}${helperRows}${(!captain && !stats.helpers.length) ? '<tr><td colspan="6" class="muted">Немає призначених гравців</td></tr>' : ''}</tbody></table></div></div>
+    </div>`;
+}
+
+function calcBuildBoardHtmlForShift(shiftKey) {
+  const title = shiftKey === 'shift1' ? 'Shift 1 / Перша половина' : 'Shift 2 / Друга половина';
+  const bases = getCalcTowerBaseOrder().map((b) => state.baseById?.get?.(String(b?.id || '')) || b).filter(Boolean);
+  const cols = bases.map((base, idx) => {
+    const stats = calcTowerStatsForShiftBase(base, shiftKey);
+    const captain = stats.captain;
+    const helpers = stats.helpers.slice().sort((a, b) => (Number(b.tierRank || 0) - Number(a.tierRank || 0)) || (Number(b.march || 0) - Number(a.march || 0)) || String(a.name || '').localeCompare(String(b.name || '')));
+    const roleKey = String(roleNorm(captain?.role) || '').toLowerCase();
+    const roleText = captain ? calcEsc(String(captain.role || '')) : 'Тип визначається капітаном';
+    const themeCls = captain ? (' ' + roleKey + '-theme') : ' is-auto';
+    const titleShort = calcEsc(String(base.title || base.id || `Башня ${idx + 1}`));
+    const rows = [];
+    if (captain) rows.push(`<li class="captain-row"><span>${calcEsc(String(captain.name || ''))}</span><em>${calcEsc(String(captain.alliance || ''))}</em><b>${calcEsc(String(captain.tier || ''))}</b><strong style="color:#9a5a00;">${calcFmt(stats.captainMarch)}</strong></li>`);
+    helpers.forEach((pl) => {
+      const eff = calcHelperEffectiveMarchForShift(stats.baseLike, pl, shiftKey);
+      rows.push(`<li class="helper-row"><span>${calcEsc(String(pl.name || ''))}</span><em>${calcEsc(String(pl.alliance || ''))}</em><b>${calcEsc(String(pl.tier || ''))}</b><strong>${calcFmt(eff)}</strong></li>`);
+    });
+    if (!rows.length) rows.push('<li class="empty-row">Немає призначених гравців</li>');
+    return `<section class="board-col${themeCls}" data-shift="${calcEsc(shiftKey)}" data-base-id="${calcEsc(String(base.id || ''))}"><header><h4>${titleShort}</h4><div class="board-sub${captain ? '' : ' is-auto'}">${captain ? `${roleText} / ${roleText}` : 'Тип визначається капітаном'}</div><div class="board-cap"><span class="cap-total">${calcFmt(stats.capacityTotal)}</span><span class="cap-free">${calcFmt(stats.free)}</span><span class="cap-used">${calcFmt(stats.total)}</span></div></header><ul>${rows.join('')}</ul></section>`;
+  }).join('');
+  return `<div class="board-sheet"><div class="board-title">${title}</div><div class="board-grid">${cols}</div></div>`;
+}
+
+function calcSetPreviewShift(shiftKey) {
+  const tc = getCalcState();
+  tc.previewShift = String(shiftKey || '').toLowerCase() === 'shift1' ? 'shift1' : 'shift2';
+  try { localStorage.setItem('pns_tower_calc_state', JSON.stringify(tc)); } catch {}
+  return tc.previewShift;
+}
+
+function calcRenderLiveFinalBoard(modalIn) {
+  const modal = modalIn || document.getElementById('towerCalcModal');
+  const out = modal?.querySelector?.('#towerCalcGlobalOut');
+  if (!out) return;
+  const tc = getCalcState();
+  const shiftKey = String(tc.previewShift || 'shift2').toLowerCase() === 'shift1' ? 'shift1' : 'shift2';
+  out.innerHTML = `
+    <div class="tower-calc-board-preview">
+      <div class="row gap wrap board-head-actions tower-calc-preview-toolbar">
+        <div class="row gap">
+          <button class="btn btn-sm board-shift-tab ${shiftKey === 'shift1' ? 'active' : ''}" type="button" data-calc-preview-shift="shift1">Shift 1</button>
+          <button class="btn btn-sm board-shift-tab ${shiftKey === 'shift2' ? 'active' : ''}" type="button" data-calc-preview-shift="shift2">Shift 2</button>
+        </div>
+        <button class="btn btn-sm" type="button" data-calc-preview-export="1">Завантажити PNG</button>
+        <button class="btn btn-sm" type="button" data-calc-preview-share="1">Поділитися</button>
+      </div>
+      <div id="towerCalcPreviewStatus" class="muted small">Живий фінальний план · ${shiftKey === 'shift1' ? 'Shift 1' : 'Shift 2'}</div>
+      <div id="towerCalcBoardPreviewSheet">${calcBuildBoardHtmlForShift(shiftKey)}</div>
+    </div>`;
+}
+
+async function calcExportPreviewBoardPng() {
+  const target = document.querySelector('#towerCalcBoardPreviewSheet .board-sheet') || document.querySelector('#towerCalcBoardPreviewSheet');
+  const status = document.getElementById('towerCalcPreviewStatus');
+  if (!target) { alert('Немає Final Board для експорту.'); return false; }
+  if (typeof window.html2canvas !== 'function') { alert('html2canvas не завантажився.'); return false; }
+  const tc = getCalcState();
+  const shiftKey = String(tc.previewShift || 'shift2').toLowerCase() === 'shift1' ? 'shift1' : 'shift2';
+  const label = shiftKey === 'shift1' ? 'Shift 1' : 'Shift 2';
+  try {
+    if (status) status.textContent = `Готуємо PNG · ${label}…`;
+    const canvas = await window.html2canvas(target, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
+    const a = document.createElement('a');
+    a.download = `pns-final-board-${shiftKey}.png`;
+    a.href = canvas.toDataURL('image/png');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    if (status) status.textContent = `PNG збережено · ${label}.`;
+    return true;
+  } catch (err) {
+    console.error(err);
+    if (status) status.textContent = 'Не вдалося згенерувати PNG.';
+    alert('Не вдалося згенерувати PNG');
+    return false;
+  }
+}
+
+async function calcSharePreviewBoard() {
+  const target = document.querySelector('#towerCalcBoardPreviewSheet .board-sheet') || document.querySelector('#towerCalcBoardPreviewSheet');
+  const tc = getCalcState();
+  const shiftKey = String(tc.previewShift || 'shift2').toLowerCase() === 'shift1' ? 'shift1' : 'shift2';
+  const label = shiftKey === 'shift1' ? 'Shift 1' : 'Shift 2';
+  const status = document.getElementById('towerCalcPreviewStatus');
+  if (!target) { alert('Немає Final Board для поширення.'); return false; }
+  try {
+    if (status) status.textContent = `Готуємо share · ${label}…`;
+    if (typeof window.html2canvas === 'function') {
+      const canvas = await window.html2canvas(target, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (blob) {
+        if (navigator.share && window.File) {
+          const file = new File([blob], `pns-final-board-${shiftKey}.png`, { type: 'image/png' });
+          const canShareFiles = typeof navigator.canShare === 'function' ? navigator.canShare({ files: [file] }) : true;
+          if (canShareFiles) {
+            await navigator.share({ title: 'P&S Final Board', text: `Final Board ${label}`, files: [file] });
+            if (status) status.textContent = `Board поширено · ${label}.`;
+            return true;
+          }
+        }
+        if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          if (status) status.textContent = `PNG board скопійовано в буфер · ${label}.`;
+          return true;
+        }
+      }
+    }
+    const boardUrl = location.href.split('#')[0] + '#board-modal';
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(boardUrl);
+      if (status) status.textContent = `Посилання скопійовано · ${label}.`;
+      return true;
+    }
+    alert(boardUrl);
+    if (status) status.textContent = `Посилання показано · ${label}.`;
+    return true;
+  } catch (err) {
+    console.error(err);
+    if (status) status.textContent = 'Не вдалося поширити board.';
+    return false;
+  }
+}
+
+function calcPickHelpersRoundRobin(players, caps) {
     const out = Array.isArray(caps) ? caps.map(() => []) : [];
     if (!Array.isArray(players) || !players.length || !Array.isArray(caps) || !caps.length) return out;
     const targets = caps.map((c) => Math.max(0, Number(c?.helpersWanted || 0) || 0));
@@ -1206,15 +1544,15 @@ function computeShiftCalculator(shiftKey, rows, globalCfg, blockedIn = new Set()
       let applySkipReason = '';
       if (towerLocked) {
         helpersWanted = 0;
-        applySkipReason = 'tower locked';
+        applySkipReason = 'башня заблокована';
       } else if (applyMode === 'empty') {
         if (existingHasCaptain || existingHelperCount > 0) {
           helpersWanted = 0;
-          applySkipReason = 'not empty';
+          applySkipReason = 'не порожня';
         }
       } else if (applyMode === 'topup') {
         helpersWanted = Math.max(0, helpersWantedRaw - existingHelperCount);
-        if (helpersWanted <= 0) applySkipReason = 'already filled';
+        if (helpersWanted <= 0) applySkipReason = 'вже заповнено';
       }
 
       selectedCaptains.push({
@@ -1383,41 +1721,41 @@ function renderCalcShiftOut(result, mount) {
           <div><h4 style="margin:0">#${i+1} ${calcEsc(tp.captain?.name || '—')}</h4><div class="muted small">${calcEsc(tp.troop || '')} · ${calcEsc(baseTitle || 'Башня')}</div></div>
           <div class="tower-calc-controls">
             ${baseId ? `<button type="button" class="btn btn-xs" data-calc-open-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey||'')}">Башня</button>` : ''}
-            ${baseId ? `<button type="button" class="btn btn-xs" data-calc-edit-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey||'')}">Edit helpers</button>` : ''}
-            ${baseId ? `<button type="button" class="btn btn-xs" data-calc-pick-overflow-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey||'')}">Pick overflow</button>` : ''}
-            ${baseId ? `<button type="button" class="btn btn-xs" data-calc-manual-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey||'')}">Manual add</button>` : ''}
-            ${baseId ? `<button type="button" class="btn btn-xs ${isLockedTower ? 'btn-primary':''}" data-calc-lock-tower="${calcEsc(baseId)}">${isLockedTower ? 'Unlock tower' : 'Lock tower'}</button>` : ''}
+            ${baseId ? `<button type="button" class="btn btn-xs" data-calc-edit-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey||'')}">Редагувати гравців</button>` : ''}
+            ${baseId ? `<button type="button" class="btn btn-xs" data-calc-pick-overflow-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey||'')}">Взяти з резерву</button>` : ''}
+            ${baseId ? `<button type="button" class="btn btn-xs" data-calc-manual-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey||'')}">Додати вручну</button>` : ''}
+            ${baseId ? `<button type="button" class="btn btn-xs ${isLockedTower ? 'btn-primary':''}" data-calc-lock-tower="${calcEsc(baseId)}">${isLockedTower ? 'Розблокувати башню' : 'Заблокувати башню'}</button>` : ''}
           </div>
         </div>
         <div class="tower-calc-summary">
-          <div><span class="muted small">Helpers</span><strong>${fm(tp.helpersPlaced)} / ${fm(tp.helpersWanted)}${Number(tp.helpersWantedRaw||0)!==Number(tp.helpersWanted||0)?` (raw ${fm(tp.helpersWantedRaw)})`:''}</strong></div>
-          <div><span class="muted small">Tower cap</span><strong>${fm(tp.towerCapacity || ((Number(tp.rallySize||0)||0)+(Number(tp.captainMarch||0)||0)))}</strong></div>
-          <div><span class="muted small">Used / shortage</span><strong>${fm(tp.usedMarch)} / ${fm(tp.shortageMarch)}</strong></div>
-          <div><span class="muted small">Rec min/tier</span><strong>${tp.suggestedTierText?.length ? calcEsc(tp.suggestedTierText.join(' · ')) : '—'}</strong></div>
+          <div><span class="muted small">Гравці</span><strong>${fm(tp.helpersPlaced)} / ${fm(tp.helpersWanted)}${Number(tp.helpersWantedRaw||0)!==Number(tp.helpersWanted||0)?` (raw ${fm(tp.helpersWantedRaw)})`:''}</strong></div>
+          <div><span class="muted small">Місткість башні</span><strong>${fm(tp.towerCapacity || ((Number(tp.rallySize||0)||0)+(Number(tp.captainMarch||0)||0)))}</strong></div>
+          <div><span class="muted small">Використано / нестача</span><strong>${fm(tp.usedMarch)} / ${fm(tp.shortageMarch)}</strong></div>
+          <div><span class="muted small">Рекомендований мінімум / tier</span><strong>${tp.suggestedTierText?.length ? calcEsc(tp.suggestedTierText.join(' · ')) : '—'}</strong></div>
         </div>
         <div class="muted small top-space">Rally ${fm(tp.rallySize)} · Captain size ${fm(tp.captainMarch)} · Helper cap ${fm(tp.helperCapacity)}</div>
         <div class="muted small">${tp.tierMix.length ? calcEsc(tp.tierMix.join(' · ')) : '—'}</div>
-        <div class="muted small">${tp.towerLocked ? '🔒 tower locked (auto/apply skip)' : (tp.applySkipReason ? calcEsc(`ℹ ${tp.applySkipReason}`) : ((tp.lockedPicked||0)>0 ? calcEsc(`🔒 locked helpers: ${tp.lockedPicked}`) : ''))}</div>
+        <div class="muted small">${tp.towerLocked ? '🔒 башня заблокована (auto/apply skip)' : (tp.applySkipReason ? calcEsc(`ℹ ${tp.applySkipReason}`) : ((tp.lockedPicked||0)>0 ? calcEsc(`🔒 locked helpers: ${tp.lockedPicked}`) : ''))}</div>
         <div class="muted small">${(tp.notFitPlayers?.length || tp.partialPlayers?.length) ? calcEsc([
           ...(tp.notFitPlayers || []).slice(0,4).map(p => `${p.name || '—'} (${p.tier || ''})`),
           ...(tp.partialPlayers || []).slice(0,2).map(p => `${p.name || '—'} partial ${Number(p.sent||0).toLocaleString('en-US')}/${Number(p.full||0).toLocaleString('en-US')}`)
         ].join(' · ')) + (((tp.notFitPlayers?.length||0)+(tp.partialPlayers?.length||0)) > 6 ? ' …' : '') : '✅ all fit'}</div>
-        ${(tp.pickedPlayers || []).length ? `<details class="top-space"><summary class="small">Picked helpers (${fm(tp.pickedPlayers.length)})</summary><div class="helpers-table-wrap top-space" style="max-height:180px;overflow:auto"><table class="mini-table tower-calc-tier-table"><thead><tr><th>Nick</th><th>Tier</th><th>Troop</th><th>Send</th><th>Full</th><th>Дії</th></tr></thead><tbody>${helperRows}</tbody></table></div></details>` : ''}
+        ${(tp.pickedPlayers || []).length ? `<details class="top-space"><summary class="small">Відібрані гравці (${fm(tp.pickedPlayers.length)})</summary><div class="helpers-table-wrap top-space" style="max-height:180px;overflow:auto"><table class="mini-table tower-calc-tier-table"><thead><tr><th>Нік</th><th>Tier</th><th>Тип</th><th>Відправлено</th><th>Повний</th><th>Дії</th></tr></thead><tbody>${helperRows}</tbody></table></div></details>` : ''}
       </div>`;
-    }).join('') : `<div class="tower-calc-placeholder muted small">No captains selected</div>`;
+    }).join('') : `<div class="tower-calc-placeholder muted small">Капітанів не вибрано</div>`;
 
     mount.innerHTML = `
       <div class="tower-calc-summary">
-        <div><span class="muted small">Captains selected</span><strong>${result.selectedCaptains.length}</strong></div>
-        <div><span class="muted small">Helpers (wanted / placed)</span><strong>${fm(result.totalHelpersWanted)} / ${fm(result.totalHelpersPlaced)}${Number(result.totalHelpersWantedRaw||0)!==Number(result.totalHelpersWanted||0)?` (raw ${fm(result.totalHelpersWantedRaw)})`:''}</strong></div>
-        <div><span class="muted small">Helper march fit</span><strong>${fm(result.totalSupplied)}</strong></div>
-        <div><span class="muted small">Shortage</span><strong>${fm(result.remaining)}</strong></div>
+        <div><span class="muted small">Обрано капітанів</span><strong>${result.selectedCaptains.length}</strong></div>
+        <div><span class="muted small">Гравці (потрібно / поставлено)</span><strong>${fm(result.totalHelpersWanted)} / ${fm(result.totalHelpersPlaced)}${Number(result.totalHelpersWantedRaw||0)!==Number(result.totalHelpersWanted||0)?` (raw ${fm(result.totalHelpersWantedRaw)})`:''}</strong></div>
+        <div><span class="muted small">Марш гравців</span><strong>${fm(result.totalSupplied)}</strong></div>
+        <div><span class="muted small">Нестача</span><strong>${fm(result.remaining)}</strong></div>
       </div>
-      <div class="muted small">Helper capacity by troop (from captains): ${troopBadges}</div>
+      <div class="muted small">Місткість за типом військ (від капітанів): ${troopBadges}</div>
       <div class="top-space">${cardsHtml}</div>
-      <details class="top-space"><summary class="small">Tier totals</summary>
+      <details class="top-space"><summary class="small">Підсумок по tiers</summary>
         <table class="tower-calc-tier-table top-space">
-          <thead><tr><th>Tier</th><th>Total avail players</th><th>Total avail march</th><th>Used players</th><th>Used march</th></tr></thead>
+          <thead><tr><th>Tier</th><th>Доступно гравців</th><th>Доступний марш</th><th>Використано гравців</th><th>Використано марш</th></tr></thead>
           <tbody>
             ${tiers.map(t => `<tr><td>${t}</td><td>${fm(result.mergedAvail[t].count)}</td><td>${fm(result.mergedAvail[t].march)}</td><td>${fm(result.mergedUsed[t].count)}</td><td>${fm(result.mergedUsed[t].march)}</td></tr>`).join('')}
           </tbody>
@@ -1515,7 +1853,7 @@ function calcSyncCaptainsFromTowersIntoCalculator(opts = {}) {
     tc[shiftKey] = nextRows;
   }
   try { localStorage.setItem('pns_tower_calc_state', JSON.stringify(tc)); } catch {}
-  renderTowerCalcModal();
+  if (opts.render !== false) renderTowerCalcModal();
   return true;
 }
 
@@ -1605,14 +1943,10 @@ function applyTowerCalcToTowerSettings() {
 
     try { const tc = getCalcState(); tc.mainTab = calcApplyMainTabUI(modal, 'preview'); localStorage.setItem('pns_tower_calc_state', JSON.stringify(tc)); } catch {}
     try { const tc = getCalcState(); tc.mainTab = calcApplyMainTabUI(modal, 'preview'); localStorage.setItem('pns_tower_calc_state', JSON.stringify(tc)); } catch {}
-    const out = modal.querySelector('#towerCalcGlobalOut');
-    if (out) {
-      const note = document.createElement('div');
-      note.className = 'muted small top-space';
-      note.textContent = `✅ Applied calculator limits/helpers to ${applied} tower settings (captain→tower match first, fallback by slot).`;
-      out.appendChild(note);
-    }
-    try { PNS.setImportStatus?.(`Calculator limits/helpers applied to towers (${applied}).`, 'good'); } catch {}
+    const out = modal.querySelector('#towerCalcPreviewStatus') || modal.querySelector('#towerCalcGlobalOut');
+    if (out) out.textContent = `✅ Налаштування калькулятора застосовано до ${applied} tower settings.`;
+    try { PNS.setImportStatus?.(`Налаштування калькулятора застосовано до башень (${applied}).`, 'good'); } catch {}
+    try { calcRenderLiveFinalBoard(modal); } catch {}
     return true;
   }
 
@@ -1654,7 +1988,7 @@ function applyTowerCalcToTowerSettings() {
         seenBase.add(baseId);
 
         if (calcIsTowerLocked(baseId)) {
-          warnings.push(`${shiftKey} ${slot?.title || baseId}: tower locked (skipped)`);
+          warnings.push(`${shiftKey} ${slot?.title || baseId}: башня заблокована (skipped)`);
           continue;
         }
 
@@ -1662,7 +1996,7 @@ function applyTowerCalcToTowerSettings() {
         const preHelperIds = Array.isArray(baseLive?.helperIds) ? baseLive.helperIds.slice() : [];
         const preHasCaptain = !!String(baseLive?.captainId || '');
         if (applyMode === 'empty' && (preHasCaptain || preHelperIds.length > 0)) {
-          warnings.push(`${shiftKey} ${slot?.title || baseId}: not empty (skipped)`);
+          warnings.push(`${shiftKey} ${slot?.title || baseId}: не порожня (skipped)`);
           continue;
         }
 
@@ -1681,11 +2015,11 @@ function applyTowerCalcToTowerSettings() {
               if (cpAssigned && String(cpAssigned.baseId || '') === baseId && String(cpAssigned.kind || '') === 'captain') assignedCaptains += 1;
               else warnings.push(`${shiftKey} ${slot?.title || baseId}: captain ${tp.captain?.name || tp.captain?.id} (not assigned)`);
             } catch (err) {
-              warnings.push(`${shiftKey} ${slot?.title || baseId}: captain ${tp.captain?.name || tp.captain?.id} (${err?.message || 'assign failed'})`);
+              warnings.push(`${shiftKey} ${slot?.title || baseId}: captain ${tp.captain?.name || tp.captain?.id} (${err?.message || 'помилка призначення'})`);
             }
           }
         } else if (String(currentCaptainId) !== String(tp.captain.id || '')) {
-          warnings.push(`${shiftKey} ${slot?.title || baseId}: captain kept (apply mode ${applyMode})`);
+          warnings.push(`${shiftKey} ${slot?.title || baseId}: капітан залишився (режим ${applyMode})`);
         }
 
         baseLive = state.baseById?.get?.(baseId);
@@ -1712,9 +2046,9 @@ function applyTowerCalcToTowerSettings() {
               assignedHelpers += 1;
               existingHelperSet.add(pid);
               if (remainingToAdd !== Infinity) remainingToAdd = Math.max(0, remainingToAdd - 1);
-            } else warnings.push(`${shiftKey} ${slot?.title || baseId}: helper ${hp?.name || pid} (not assigned / over limit)`);
+            } else warnings.push(`${shiftKey} ${slot?.title || baseId}: helper ${hp?.name || pid} (не призначено / перевищено ліміт)`);
           } catch (err) {
-            warnings.push(`${shiftKey} ${slot?.title || baseId}: helper ${hp?.name || pid} (${err?.message || 'assign failed'})`);
+            warnings.push(`${shiftKey} ${slot?.title || baseId}: helper ${hp?.name || pid} (${err?.message || 'помилка призначення'})`);
           }
         }
       }
@@ -1731,12 +2065,9 @@ function applyTowerCalcToTowerSettings() {
     try { PNS.saveTowersSnapshot?.(); } catch {}
     try { PNS.savePlayersSnapshot?.(state.players); } catch {}
 
-    const out = modal.querySelector('#towerCalcGlobalOut');
+    const out = modal.querySelector('#towerCalcPreviewStatus') || modal.querySelector('#towerCalcGlobalOut');
     if (out) {
-      const note = document.createElement('div');
-      note.className = 'muted small top-space';
-      note.innerHTML = `<strong>✅ Перенесено у башні:</strong> captains ${assignedCaptains}, helpers ${assignedHelpers}.` + (suppressedAlerts ? ` <span class="muted">(suppressed popups: ${suppressedAlerts})</span>` : '');
-      out.appendChild(note);
+      out.textContent = `✅ Перенесено у башні: капітани ${assignedCaptains}, гравці ${assignedHelpers}.` + (suppressedAlerts ? ` (приглушено popup-вікон: ${suppressedAlerts})` : '');
       const notFitLines = [];
       try {
         for (const sk of ['shift1','shift2']) {
@@ -1748,25 +2079,17 @@ function applyTowerCalcToTowerSettings() {
           }
         }
       } catch {}
-      if (notFitLines.length) {
-        const nf = document.createElement('div');
-        nf.className = 'muted small top-space';
-        nf.innerHTML = `<strong>Хто не вліз (summary):</strong><br>${notFitLines.slice(0,10).map(calcEsc).join('<br>')}${notFitLines.length > 10 ? `<br>… +${notFitLines.length - 10}` : ''}`;
-        out.appendChild(nf);
-      }
-      if (warnings.length) {
-        const warn = document.createElement('div');
-        warn.className = 'muted small top-space';
-        warn.innerHTML = `<strong>Попередження:</strong><br>${warnings.slice(0,12).map(calcEsc).join('<br>')}${warnings.length > 12 ? `<br>… +${warnings.length - 12}` : ''}`;
-        out.appendChild(warn);
-      }
+      if (notFitLines.length && out) out.textContent += ` · Не влізли: ${notFitLines.length}`;
+      if (warnings.length && out) out.textContent += ` · Попередження: ${warnings.length}`;
     }
+    try { calcRenderLiveFinalBoard(modal); } catch {}
     return true;
   }
 
 function computeTowerCalcResults() {
     const modal = document.getElementById('towerCalcModal');
     if (!modal) return null;
+    try { calcSyncCaptainsFromTowersIntoCalculator({ keepHelpers: true, render: false }); } catch {}
     const tc = calcWriteRowsToState(modal);
     const cfg = { noCrossShift: !!tc.noCrossShift, both50: !!tc.both50, minHelpersPerTower: !!tc.minHelpersPerTower, minHelpersCount: Math.max(1, Math.min(30, Number(tc.minHelpersCount || 10) || 10)), tierSizeMode: tc.tierSizeMode || 'auto', tierSizeManual: calcNormalizeTierSizeTargets(tc.tierSizeManual), tierTargets: calcResolveTierSizeTargets(tc), applyMode: tc.uiApplyMode || 'topup' };
     if (cfg.noCrossShift && cfg.both50) {
@@ -1783,36 +2106,18 @@ function computeTowerCalcResults() {
     state.towerCalcLastResults = { shift1, shift2, cfg, at: Date.now() };
     renderCalcShiftOut(shift1, modal.querySelector('#towerCalcOutShift1'));
     renderCalcShiftOut(shift2, modal.querySelector('#towerCalcOutShift2'));
-    const global = modal.querySelector('#towerCalcGlobalOut');
-    if (global) {
-      const totalDemand = shift1.totalDemand + shift2.totalDemand;
-      const totalSup = shift1.totalSupplied + shift2.totalSupplied;
-      const totalHw = shift1.totalHelpersWanted + shift2.totalHelpersWanted;
-      const totalHp = shift1.totalHelpersPlaced + shift2.totalHelpersPlaced;
-      global.innerHTML = `
-        <div class="tower-calc-head"><h3 style="margin:0">Summary</h3><span class="muted small">No cross-shift dupes: ${cfg.noCrossShift ? 'ON' : 'OFF'} · Auto Both: ${cfg.both50 ? 'ON' : 'OFF'} · Tier-size: ${cfg.tierSizeMode === 'manual' ? 'MANUAL' : 'AUTO'} · Apply: ${String(cfg.applyMode||'topup').toUpperCase()} · Min helpers: ${cfg.minHelpersPerTower ? ('ON(' + Number(cfg.minHelpersCount||10) + ')') : 'OFF'}</span></div>
-        ${cfg?.autoBothCounts ? `<div class="muted small">Auto-balance Both players → counts: Shift1 ${Number(cfg.autoBothCounts.shift1||0)} · Shift2 ${Number(cfg.autoBothCounts.shift2||0)}</div>` : ''}
-        ${cfg?.autoBothTroopCounts ? `<div class="muted small">Troop balance → S1 F/R/S: ${Number(cfg.autoBothTroopCounts.shift1?.fighter||0)}/${Number(cfg.autoBothTroopCounts.shift1?.rider||0)}/${Number(cfg.autoBothTroopCounts.shift1?.shooter||0)} · S2 F/R/S: ${Number(cfg.autoBothTroopCounts.shift2?.fighter||0)}/${Number(cfg.autoBothTroopCounts.shift2?.rider||0)}/${Number(cfg.autoBothTroopCounts.shift2?.shooter||0)}</div>` : ''}
-        <div class="tower-calc-summary">
-          <div><span class="muted small">Helper slots (wanted / placed)</span><strong>${Number(totalHw||0).toLocaleString('en-US')} / ${Number(totalHp||0).toLocaleString('en-US')}</strong></div>
-          <div><span class="muted small">Total helper capacity</span><strong>${Number(totalDemand||0).toLocaleString('en-US')}</strong></div>
-          <div><span class="muted small">Total supplied</span><strong>${Number(totalSup||0).toLocaleString('en-US')}</strong></div>
-          <div><span class="muted small">Total shortage</span><strong>${Number(Math.max(0,totalDemand-totalSup)||0).toLocaleString('en-US')}</strong></div>
-        </div>
-        <div class="muted small">Примітка: капітани можуть повторюватись у Shift 1/2; helper-и — ні (якщо No cross-shift увімкнено). Повна місткість башні = Rally size + captain size (march). Місткість для helper-ів = повна місткість − march капітана (зазвичай = Rally size). Helper-и можуть відправляти частину march (partial send), тому калькулятор рахує розмір на helper-а по tier. Колонка Rec min/tier = рекомендований однаковий March для tier у налаштуваннях башні. Режим Auto використовує базову шкалу (вищий tier → більший розмір), Manual — значення з полів T14..T9. Якщо Rally size дозволяє — helper-и можуть іти більшим/повним march.</div>`;
-
-      const mini = modal.querySelector('#towerCalcMiniSummary');
-      if (mini) {
-        mini.textContent = `Shift1 helpers ${Number(shift1.totalHelpersWanted||0)}→${Number(shift1.totalHelpersPlaced||0)} · Shift2 helpers ${Number(shift2.totalHelpersWanted||0)}→${Number(shift2.totalHelpersPlaced||0)} · Shortage ${Number((Math.max(0,(shift1.totalDemand+shift2.totalDemand)-(shift1.totalSupplied+shift2.totalSupplied))||0)).toLocaleString('en-US')}`;
-      }
+    const mini = modal.querySelector('#towerCalcMiniSummary');
+    if (mini) {
+      mini.textContent = `Shift 1: ${Number(shift1.totalHelpersWanted||0)}→${Number(shift1.totalHelpersPlaced||0)} · Shift 2: ${Number(shift2.totalHelpersWanted||0)}→${Number(shift2.totalHelpersPlaced||0)} · Both: ${Number(calcComputeShiftRoleStats().both.total || 0)} · Нестача: ${Number((Math.max(0,(shift1.totalDemand+shift2.totalDemand)-(shift1.totalSupplied+shift2.totalSupplied))||0)).toLocaleString('en-US')}`;
     }
     try { calcRenderOverflowPanel(modal, state.towerCalcLastResults); } catch {}
-    try { calcRenderPreviewPanel(modal, state.towerCalcLastResults); } catch {}
+    try { calcRenderLiveFinalBoard(modal); } catch {}
     return state.towerCalcLastResults;
   }
 
 function openTowerCalculatorModal() {
     MS.ensureStep4Styles?.();
+    try { const tc = getCalcState(); tc.mainTab = 'setup'; tc.activeTab = String(state.activeShift || '').toLowerCase() === 'shift2' ? 'shift2' : 'shift1'; localStorage.setItem('pns_tower_calc_state', JSON.stringify(tc)); } catch {}
     const modal = renderTowerCalcModal();
     if (!modal) { alert('Tower Calculator modal ще не завантажився (partials/modals.partial.html). Спробуй ще раз через секунду.'); return; }
     try {
@@ -1829,6 +2134,31 @@ function openTowerCalculatorModal() {
     const cm = document.getElementById('towerCalcModal');
     if (cm) { cm.classList.remove('is-open'); cm.style.zIndex = ''; }
     MS.syncBodyModalLock?.();
+  }
+  if (!state._towerCalcPlayerShiftBound) {
+    state._towerCalcPlayerShiftBound = true;
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-calc-set-player-shift]');
+      if (!btn) return;
+      e.preventDefault();
+      const pid = String(btn.getAttribute('data-calc-set-player-shift') || '');
+      const target = String(btn.getAttribute('data-target-shift') || 'both');
+      const res = (typeof PNS?.movePlayerToShiftWithLimits === 'function') ? PNS.movePlayerToShiftWithLimits(pid, target) : { ok: false };
+      if (!res?.ok) {
+        const msg = res?.reason === 'limit-shift1'
+          ? `Shift 1 уже має ліміт ${res?.limits?.shift1 || 0}.`
+          : (res?.reason === 'limit-shift2'
+            ? `Shift 2 уже має ліміт ${res?.limits?.shift2 || 0}.`
+            : 'Не вдалося змінити shift гравця.');
+        try { PNS.setImportStatus?.(msg, 'warn'); } catch {}
+        return;
+      }
+      try { PNS.savePlayersSnapshot?.(state.players); } catch {}
+      try { PNS.applyPlayerTableFilters?.(); } catch {}
+      try { PNS.updateShiftBreakdownUI?.(); } catch {}
+      try { calcUpdateShiftStatsUI(document.getElementById('towerCalcModal')); } catch {}
+      try { computeTowerCalcResults(); } catch {}
+    });
   }
 
 
@@ -1853,6 +2183,9 @@ function openTowerCalculatorModal() {
     calcAutoSlotsForShift,
     calcAutoFitTowersStrict,
     calcUpdateShiftStatsUI,
+    calcComputeShiftRoleStats,
+    calcRenderInlineTowerSettings,
+    calcRenderLiveFinalBoard,
     roleNorm,
   });
   window.openTowerCalculatorModal = openTowerCalculatorModal;
@@ -1871,8 +2204,14 @@ function openTowerCalculatorModal() {
   window.calcAutoSlotsForShift = calcAutoSlotsForShift;
   window.calcAutoFitTowersStrict = calcAutoFitTowersStrict;
   window.calcUpdateShiftStatsUI = calcUpdateShiftStatsUI;
+  window.calcRenderInlineTowerSettings = calcRenderInlineTowerSettings;
+  window.calcRenderLiveFinalBoard = calcRenderLiveFinalBoard;
   window.applyTowerCalcToTowerSettings = applyTowerCalcToTowerSettings;
   window.applyTowerCalcAssignmentsToTowers = applyTowerCalcAssignmentsToTowers;
+  window.calcSetInlineSelectedBaseId = calcSetInlineSelectedBaseId;
+  window.calcSetPreviewShift = calcSetPreviewShift;
+  window.calcExportPreviewBoardPng = calcExportPreviewBoardPng;
+  window.calcSharePreviewBoard = calcSharePreviewBoard;
   window.calcSyncCaptainsFromTowersIntoCalculator = calcSyncCaptainsFromTowersIntoCalculator;
   window.roleNorm = roleNorm;
 })();

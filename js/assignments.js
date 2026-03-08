@@ -25,9 +25,34 @@
 
   function noCrossShiftDupesEnabled() {
     try {
+      const calcCb = document.getElementById('towerCalcNoCrossShift');
+      if (calcCb) return !!calcCb.checked;
+    } catch {}
+    try {
+      const pickerCb = document.getElementById('pickerNoCrossShiftDupes');
+      if (pickerCb) return !!pickerCb.checked;
+    } catch {}
+    try {
+      if (typeof state?.towerPickerNoCrossShiftDupes === 'boolean') return !!state.towerPickerNoCrossShiftDupes;
+    } catch {}
+    try {
       if (typeof PNS.isTowerNoCrossShiftDupesEnabled === 'function') return !!PNS.isTowerNoCrossShiftDupesEnabled();
     } catch {}
     return true;
+  }
+
+  function canUsePlayerAcrossShifts(player, base, kind) {
+    if (kind !== 'helper' || !player || !base) return false;
+    if (noCrossShiftDupesEnabled()) return false;
+    const curShift = String(state.activeShift || '').toLowerCase();
+    if (curShift !== 'shift1' && curShift !== 'shift2') return false;
+    try {
+      if (typeof PNS.isPlayerUsedInOtherShift === 'function') {
+        const hit = PNS.isPlayerUsedInOtherShift(player.id, curShift);
+        if (hit) return true;
+      }
+    } catch {}
+    return false;
   }
 
   function persistAfterTowerChange(meta = {}) {
@@ -75,9 +100,11 @@
     if (!PNS.ROLE_KEYS?.includes?.(player.role)) return `Unknown role for ${player.name}.`;
 
     const ignoreShiftAutoFill = !!document.querySelector('#ignoreShiftAutoFillToggle:checked');
+    const allowCrossShiftReuse = canUsePlayerAcrossShifts(player, base, kind);
     if (
       kind === 'helper' &&
       !ignoreShiftAutoFill &&
+      !allowCrossShiftReuse &&
       base.shift !== 'both' &&
       player.shift !== 'both' &&
       base.shift !== player.shift
