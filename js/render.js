@@ -632,29 +632,21 @@
       theadRow = table.querySelector('thead tr');
     }
 
-    const reserveRoleLabel = typeof PNS.getFieldLabel === 'function' ? PNS.getFieldLabel('secondary_role') : 'Reserve troop type';
-    const reserveTierLabel = typeof PNS.getFieldLabel === 'function' ? PNS.getFieldLabel('secondary_tier') : 'Reserve troop tier';
-    const reserve200kLabel = typeof PNS.getFieldLabel === 'function' ? PNS.getFieldLabel('troop_200k') : 'Reserve troop type (200k+)';
-    const customOptionalDefs = (typeof PNS.getCustomOptionalDefs === 'function' ? PNS.getCustomOptionalDefs() : [])
-      .filter((d) => String(d?.label || '').trim().toLowerCase() !== 'notes');
+    const customOptionalDefs = (typeof PNS.getCustomOptionalDefs === 'function' ? PNS.getCustomOptionalDefs() : []);
     const customOptionalHeadHtml = customOptionalDefs.map((d) =>
       `<th class="optional-col" data-col-key="${PNS.escapeHtml(String(d.key || ''))}" data-field="${PNS.escapeHtml(String(d.key || ''))}">${PNS.escapeHtml(String(d.label || d.key || 'Custom'))}</th>`
     ).join('');
 
     theadRow.innerHTML = `
       <th data-field="name">Player name</th>
-      <th class="optional-col" data-col-key="alliance" data-field="alliance">Alliance</th>
+      <th data-field="alliance">Alliance</th>
       <th data-field="role">Focus troop</th>
       <th data-field="tier">Tier <button type="button" class="sort-btn" data-sort="tier" aria-label="Sort by Tier">↓</button></th>
       <th data-field="march">March size</th>
-      <th class="optional-col" data-col-key="rally_size" data-field="rally">Rally size <button type="button" class="sort-btn" data-sort="rally" aria-label="Sort by Rally size">↓</button></th>
-      <th class="optional-col" data-col-key="lair_level" data-field="lair">Lair</th>
-      <th class="optional-col" data-col-key="secondary_role" data-field="secondary_role">${PNS.escapeHtml(reserveRoleLabel)}</th>
-      <th class="optional-col" data-col-key="secondary_tier" data-field="secondary_tier">${PNS.escapeHtml(reserveTierLabel)}</th>
-      <th class="optional-col" data-col-key="troop_200k" data-field="troop_200k">${PNS.escapeHtml(reserve200kLabel)}</th>
-      <th class="optional-col" data-col-key="captain_ready" data-field="captainReady">Captain</th>
+      <th data-field="rally">Rally size <button type="button" class="sort-btn" data-sort="rally" aria-label="Sort by Rally size">↓</button></th>
+      <th data-field="captainReady">Captain</th>
       <th data-field="shiftLabel">Shift</th>
-      <th class="optional-col" data-col-key="notes" data-field="notes">Notes</th>
+      <th class="optional-col" data-col-key="lair_level" data-field="lair">Lair level</th>
       ${customOptionalHeadHtml}
       <th data-col-key="actions" data-field="actions">Actions</th>`;
 
@@ -690,18 +682,14 @@
 
       tr.innerHTML = `
         <td data-field="name">${PNS.escapeHtml(p.name || '')}</td>
-        <td class="optional-col" data-col-key="alliance" data-field="alliance">${PNS.escapeHtml(p.alliance || '')}</td>
+        <td data-field="alliance">${PNS.escapeHtml(p.alliance || '')}</td>
         <td data-field="role"><span class="tag ${roleTagClass(p.role)}">${PNS.escapeHtml(PNS.normalizeRole(p.role))}</span></td>
         <td data-field="tier">${PNS.escapeHtml(PNS.normalizeTierText(p.tier))}</td>
         <td data-field="march">${PNS.formatNum(PNS.parseNumber(p.march))}</td>
-        <td class="optional-col" data-col-key="rally_size" data-field="rally">${PNS.formatNum(PNS.parseNumber(p.rally))}</td>
-        <td class="optional-col" data-col-key="lair_level" data-field="lair">${PNS.escapeHtml(String(p.lairLevel || ''))}</td>
-        <td class="optional-col" data-col-key="secondary_role" data-field="secondary_role">${PNS.escapeHtml((p.secondaryRole && p.secondaryRole !== 'Unknown') ? p.secondaryRole : '')}</td>
-        <td class="optional-col" data-col-key="secondary_tier" data-field="secondary_tier">${PNS.escapeHtml(PNS.normalizeTierText(p.secondaryTier || ''))}</td>
-        <td class="optional-col" data-col-key="troop_200k" data-field="troop_200k">${PNS.escapeHtml(String(p.troop200k || ''))}</td>
-        <td class="optional-col" data-col-key="captain_ready" data-field="captainReady">${p.captainReady ? '<span class="pill yes">Yes</span>' : '<span class="pill no">No</span>'}</td>
+        <td data-field="rally">${PNS.formatNum(PNS.parseNumber(p.rally))}</td>
+        <td data-field="captainReady">${p.captainReady ? '<span class="pill yes">Yes</span>' : '<span class="pill no">No</span>'}</td>
         <td data-field="shiftLabel">${PNS.escapeHtml(p.shiftLabel)}</td>
-        <td class="optional-col" data-col-key="notes" data-field="notes">${PNS.escapeHtml(String(p.notes || ''))}</td>
+        <td class="optional-col" data-col-key="lair_level" data-field="lair">${PNS.escapeHtml(String(p.lairLevel || ''))}</td>
         ${customOptionalCellsHtml}
         <td class="muted" data-col-key="actions" data-field="actions"></td>`;
 

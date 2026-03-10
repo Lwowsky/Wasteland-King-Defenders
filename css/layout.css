@@ -248,47 +248,6 @@
   }
 }
 
-/* manual player edit/add block */
-.base-editor .editor-manual {
-  margin-top: 10px;
-  padding: 10px;
-  border: 1px dashed rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
-}
-.base-editor .editor-manual-title {
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-.base-editor .editor-manual-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.base-editor .editor-manual-grid label {
-  display: grid;
-  gap: 5px;
-  font-size: 12px;
-}
-.base-editor .editor-manual-grid label span {
-  color: rgba(219, 232, 255, 0.8);
-}
-.base-editor .editor-manual-grid input,
-.base-editor .editor-manual-grid select {
-  width: 100%;
-  min-width: 0;
-  background: rgba(7, 18, 49, 0.9);
-  color: #e9efff;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  padding: 8px 10px;
-}
-@media (max-width: 900px) {
-  .base-editor .editor-manual-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* v4.1.6 stronger visible sort arrows */
 #playersDataTable thead th .sort-btn {
   opacity: 1 !important;
@@ -318,7 +277,6 @@
   background: rgba(93, 127, 255, 0.28);
 }
 
-
 /* Bases grid layout with settings column */
 .bases-grid{
   display:grid;
@@ -340,7 +298,6 @@
 .tower-settings-box .tower-setting-line input[type=number]{width:96px !important;min-width:96px !important;}
 .base-settings-card .captain-box.settings-tools-box{min-height:420px;}
 @media (max-width: 1200px){.base-settings-card .captain-box.settings-tools-box{min-height:auto;}}
-
 
 /* step6 settings row compact */
 .base-settings-card .settings-tools-box > .row:first-of-type{display:flex;flex-wrap:wrap;gap:10px;}

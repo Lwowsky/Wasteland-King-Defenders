@@ -1,37 +1,59 @@
 (function () {
+  const PNS = window.PNS = window.PNS || {};
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
-  // ===== utils =====
-  function bindOnce(el, key, fn) {
-    if (!el) return;
-    const k = `bound_${key}`;
-    if (el.dataset && el.dataset[k] === '1') return;
-    if (el.dataset) el.dataset[k] = '1';
-    fn();
+  function safeRun(fn) {
+    try { fn(); } catch (e) { console.warn('[dom.js]', e); }
   }
 
-  function safeRun(fn) { try { fn(); } catch (e) { console.warn('[dom.js]', e); } }
+  function exposeLegacyBaseEditorFlag() {
+    if (typeof PNS.shouldRenderLegacyBaseEditor !== 'function') {
+      PNS.shouldRenderLegacyBaseEditor = () => false;
+    }
+    if (typeof PNS.isLegacyBaseEditorEnabled !== 'function') {
+      PNS.isLegacyBaseEditorEnabled = () => {
+        try { return !!PNS.shouldRenderLegacyBaseEditor(); } catch {}
+        return false;
+      };
+    }
+  }
 
-  // ===== features =====
+  function ensureLegacyBaseEditorStyles() {
+    const enabled = typeof PNS.isLegacyBaseEditorEnabled === 'function' ? !!PNS.isLegacyBaseEditorEnabled() : false;
+    const id = 'pns-base-editor-fallback-css';
+    const href = 'css/base-editor-fallback.css';
+    const existing = document.getElementById(id);
+
+    if (!enabled) {
+      existing?.remove?.();
+      return;
+    }
+
+    if (existing) return;
+
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+  }
+
   function updateStats() {
     const rows = $$('#playersDataTable tbody tr');
     const total = rows.length;
     let capReady = 0, shooter = 0, fighter = 0, rider = 0;
 
-    rows.forEach(tr => {
+    rows.forEach((tr) => {
       const tds = $$('td', tr);
-
-      const roleText =
-        (tr.querySelector('td[data-field="role"]') || tds[2])?.textContent || '';
-
-      const capText =
-        (tr.querySelector('td[data-field="captainReady"]')
-          || tr.querySelector('td[data-col-key="captain_ready"]')
-          || tds[6])?.textContent || '';
+      const roleText = (tr.querySelector('td[data-field="role"]') || tds[2])?.textContent || '';
+      const capText = (
+        tr.querySelector('td[data-field="captainReady"]') ||
+        tr.querySelector('td[data-col-key="captain_ready"]') ||
+        tds[6]
+      )?.textContent || '';
 
       if (/yes|так|да/i.test(capText)) capReady++;
-
       if (/shoot|стрел|стріл/i.test(roleText)) shooter++;
       else if (/fight|боец|боєц|infantry/i.test(roleText)) fighter++;
       else if (/ride|наезд|наїзд|caval/i.test(roleText)) rider++;
@@ -60,13 +82,18 @@
         else both++;
       });
     }
+
     const shiftEl = document.getElementById('shiftCounts');
     if (shiftEl) shiftEl.textContent = `${shift1} / ${shift2} / ${both}`;
   }
 
   function makeBaseEditorsCollapsible() {
-    // vNext: old inline editor row is deprecated; tower editing is moved to the 5-towers modal.
-    $$('.base-editor').forEach(ed => {
+    const enabled = typeof PNS.isLegacyBaseEditorEnabled === 'function' ? !!PNS.isLegacyBaseEditorEnabled() : false;
+    $$('.base-editor').forEach((ed) => {
+      if (!enabled) {
+        ed.remove();
+        return;
+      }
       ed.style.display = 'none';
       const det = ed.querySelector('.base-editor-details');
       if (det) det.remove();
@@ -74,33 +101,6 @@
   }
 
   function patchButtonsAndText() {
-    // ВАЖЛИВО: після partials елементи міняються, тому робимо "bindOnce"
-    bindOnce($('#openImportQuickBtn'), 'openImportQuickBtn', () => {
-      $('#openImportQuickBtn')?.addEventListener('click', () => $('#openSettingsBtn')?.click());
-    });
-
-    bindOnce($('#toggleFieldLabelEditBtn'), 'toggleFieldLabelEditBtn', () => {
-      $('#toggleFieldLabelEditBtn')?.addEventListener('click', (e) => {
-        const modal = $('#settings-modal');
-        if (!modal) return;
-        modal.classList.toggle('show-field-label-edits');
-        e.currentTarget.textContent = modal.classList.contains('show-field-label-edits')
-          ? 'Сховати редагування назв'
-          : 'Показати редагування назв';
-      });
-    });
-
-    bindOnce($('#shareBoardBtn'), 'shareBoardBtn', () => {
-      $('#shareBoardBtn')?.addEventListener('click', async () => {
-        const boardUrl = location.href.split('#')[0] + '#board-modal';
-        try {
-          if (navigator.share) await navigator.share({ title: 'P&S Final Board', text: 'Final Board View', url: boardUrl });
-          else { await navigator.clipboard.writeText(boardUrl); alert('Посилання скопійовано'); }
-        } catch { }
-      });
-    });
-
-
     if (!document.documentElement.dataset.v4TowerResetBound) {
       document.documentElement.dataset.v4TowerResetBound = '1';
       document.addEventListener('click', (e) => {
@@ -119,24 +119,11 @@
       });
     }
 
-    // Rename Central Base -> Hub (runtime fallback)
-    $$('.base-card-head h3, #board-modal h4').forEach((el) => {
-      el.textContent = String(el.textContent || '').replace(/\bCentral\s*Base\b/i, 'Hub').replace(/\bCentral\s*base\b/i, 'Hub');
-    });
-
-    // cleanup
     $('#openBoardExportHintBtn')?.remove();
-    $$('[data-shift-tab="all"]').forEach(el => el.remove());
-
-    // Update limit labels in right cards
-    $$('.limit-grid > div').forEach(div => {
-      const span = $('span', div);
-      if (span && /Limit/i.test(span.textContent)) span.textContent = 'Limit (Rally+March)';
-    });
   }
 
   function highlightBoardCaptainRows() {
-    $$('.board-col ul li:first-child').forEach(li => li.classList.add('is-captain-row'));
+    $$('.board-col ul li:first-child').forEach((li) => li.classList.add('is-captain-row'));
   }
 
   function hideFieldLabelInputsByDefault() {
@@ -145,15 +132,14 @@
     modal.classList.remove('show-field-label-edits');
   }
 
-  // ===== observers: must be re-attached after swaps =====
   let obsTable = null;
   let obsBases = null;
   let obsBoard = null;
 
   function disconnectObservers() {
-    try { obsTable?.disconnect(); } catch { }
-    try { obsBases?.disconnect(); } catch { }
-    try { obsBoard?.disconnect(); } catch { }
+    try { obsTable?.disconnect(); } catch {}
+    try { obsBases?.disconnect(); } catch {}
+    try { obsBoard?.disconnect(); } catch {}
     obsTable = obsBases = obsBoard = null;
   }
 
@@ -179,8 +165,9 @@
     }
   }
 
-  // ===== main init (safe to run repeatedly) =====
   function init() {
+    safeRun(exposeLegacyBaseEditorFlag);
+    safeRun(ensureLegacyBaseEditorStyles);
     safeRun(updateStats);
     safeRun(patchButtonsAndText);
     safeRun(makeBaseEditorsCollapsible);
@@ -189,17 +176,10 @@
     safeRun(initMutationObservers);
   }
 
-  // Initial
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 
-  // Re-init after partial swaps (HTMX)
-  // Якщо HTMX нема — ці listeners просто не зашкодять.
   document.addEventListener('htmx:afterSwap', init);
   document.addEventListener('htmx:afterSettle', init);
-
-  // Якщо ти підвантажуєш partials через fetch і сам вставляєш innerHTML —
-  // просто диспатчни: document.dispatchEvent(new Event('pns:partials:loaded'));
   document.addEventListener('pns:partials:loaded', init);
-
 })();

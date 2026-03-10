@@ -2,94 +2,150 @@
   const PNS = window.PNS; if (!PNS) return;
   const { state, $$ } = PNS;
 
-  // ---- Field definitions (as in your core.js) ----
+  // ---- Field definitions (required + додаткова import mapping) ----
   const FIELD_DEFS = [
-    { key: 'player_name', label: 'Player name', required: true, aliases: ['player name','name','nickname','nick','имя игрока','имя','імя гравця','імя','player'] },
-    { key: 'focus_troop', label: 'Focus troop', required: true, aliases: ['focus troop','main troop','main role','troop role','what is your focus troop','основной тип войск','главная роль','головна роль','role'] },
-    { key: 'troop_tier', label: 'Troop Tier', required: true, aliases: ['troop tier','tier','main tier','главный тир','головний тір','тир','тір'] },
-    { key: 'march_size', label: 'March size', required: true, aliases: ['march size','squad size','troop size','размер отряда','розмір твого отряду','march'] },
-    { key: 'captain_ready', label: 'Captain ready', required: true, aliases: ['captain','ready to be captain','готов быть капитаном','готовий бути капітаном','captain ready'] },
-    { key: 'shift_availability', label: 'Shift availability', required: true, aliases: ['shift','смена','зміна','which shift can you join'] },
+    { key: 'player_name', label: 'Ім’я гравця', required: true, aliases: ['player name','name','nickname','nick','имя игрока','имя','імя гравця','імя','player'] },
+    { key: 'focus_troop', label: 'Тип військ', required: true, aliases: ['focus troop','main troop','main role','troop role','what is your focus troop','основной тип войск','главная роль','головна роль','role'] },
+    { key: 'troop_tier', label: 'Тір військ', required: true, aliases: ['troop tier','tier','main tier','главный тир','головний тір','тир','тір'] },
+    { key: 'march_size', label: 'Розмір маршу', required: true, aliases: ['march size','squad size','troop size','размер отряда','розмір твого отряду','march'] },
+    { key: 'rally_size', label: 'Розмір групової атаки', required: true, colKey: 'rally_size', aliases: ['rally size','group attack','group atk','размер групповой атаки','розмір групової атаки','rally'] },
+    { key: 'alliance_alias', label: 'Альянс', required: true, colKey: 'alliance', aliases: ['alliance alias','alliance','альянс','ally','tag'] },
+    { key: 'captain_ready', label: 'Готовність бути капітаном', required: true, aliases: ['captain','ready to be captain','готов быть капитаном','готовий бути капітаном','captain ready'] },
+    { key: 'shift_availability', label: 'Доступність по зміні', required: true, aliases: ['shift','смена','зміна','which shift can you join'] },
 
-    { key: 'alliance_alias', label: 'Alliance alias', required: false, colKey: 'alliance', visibleDefault: true, aliases: ['alliance alias','alliance','альянс','ally','tag'] },
-    { key: 'rally_size', label: 'Rally size', required: false, colKey: 'rally_size', visibleDefault: true, aliases: ['rally size','group attack','group atk','размер групповой атаки','розмір групової атаки','rally'] },
-    { key: 'lair_level', label: 'Lair level', required: false, colKey: 'lair_level', visibleDefault: false, aliases: ['lair','логово','which lair level can you take'] },
-    { key: 'secondary_role', label: 'Reserve troop type', required: false, colKey: 'secondary_role', visibleDefault: false, aliases: ['secondary troop role','secondary role','reserve troop type','reserve troop','дополнительная роль','додаткова роль'] },
-    { key: 'secondary_tier', label: 'Reserve troop tier', required: false, colKey: 'secondary_tier', visibleDefault: false, aliases: ['secondary troop tier','secondary tier','reserve troop tier','дополнительный тир','додатковий тір'] },
-    { key: 'troop_200k', label: 'Reserve troop type (200k+)', required: false, colKey: 'troop_200k', visibleDefault: false, aliases: ['200k','at least 200k','provide at least 200k','reserve troop type 200k','200к'] },
-    { key: 'notes', label: 'Notes', required: false, colKey: 'notes', visibleDefault: false, aliases: ['note','notes','комментарий','коментар','примітка','comment'] },
+    { key: 'lair_level', label: 'Рівень лігва', required: false, colKey: 'lair_level', visibleDefault: true, aliases: ['lair','логово','which lair level can you take'] },
+    { key: 'secondary_role', label: 'Тип резервних військ', required: false, colKey: 'secondary_role', visibleDefault: false, aliases: ['secondary troop role','secondary role','reserve troop type','reserve troop','дополнительная роль','додаткова роль'] },
+    { key: 'secondary_tier', label: 'Тір резервних військ', required: false, colKey: 'secondary_tier', visibleDefault: false, aliases: ['secondary troop tier','secondary tier','reserve troop tier','дополнительный тир','додатковий тір'] },
+    { key: 'troop_200k', label: 'Тип резервних військ (200k+)', required: false, colKey: 'troop_200k', visibleDefault: false, aliases: ['200k','at least 200k','provide at least 200k','reserve troop type 200k','200к'] },
+    { key: 'notes', label: 'Нотатки', required: false, colKey: 'notes', visibleDefault: false, aliases: ['note','notes','комментарий','коментар','примітка','comment'] },
   ];
   const OPTIONAL_FIELDS = FIELD_DEFS.filter(f => !f.required);
-const OPTIONAL_FIELDS_UI = OPTIONAL_FIELDS.filter(f => f.key !== 'notes');
+  const OPTIONAL_BUILTIN_KEYS = new Set(['lair_level']);
+  const OPTIONAL_FIELDS_UI = OPTIONAL_FIELDS.filter(f => OPTIONAL_BUILTIN_KEYS.has(f.key));
+  const PERSIST_KEYS = {
+    CUSTOM_OPTIONAL_DEFS: 'pns_layout_import_custom_додаткова_defs_v2'
+  };
+  const DEFAULT_CUSTOM_OPTIONAL_DEFS = [
+    { key: 'reserve_type_fighter', label: 'Резервний тип військ: боєць', isCustom: true, colKey: 'reserve_type_fighter', visibleDefault: true },
+    { key: 'reserve_type_rider', label: 'Резервний тип військ: наїздник', isCustom: true, colKey: 'reserve_type_rider', visibleDefault: true },
+    { key: 'reserve_type_shooter', label: 'Резервний тип військ: стрілець', isCustom: true, colKey: 'reserve_type_shooter', visibleDefault: true },
+  ];
 
-function sanitizeCustomFieldKeyPart(text) {
-  return String(text || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .slice(0, 32) || 'field';
-}
-function normalizeCustomOptionalDefs(defs) {
-  const seen = new Set();
-  return (Array.isArray(defs) ? defs : []).map((d, idx) => {
-    const label = String(d?.label || '').trim() || `Custom column ${idx + 1}`;
-    let key = String(d?.key || '').trim();
-    if (!key) key = `custom_opt_${idx + 1}_${sanitizeCustomFieldKeyPart(label)}`;
-    key = key.replace(/[^a-zA-Z0-9_:-]/g, '_');
-    if (seen.has(key)) key = `${key}_${idx + 1}`;
-    seen.add(key);
-    return { key, label, required: false, colKey: key, visibleDefault: false, isCustom: true };
-  });
-}
-function getCustomOptionalDefs() {
-  state.importData = state.importData || { headers: [], rows: [], mapping: {}, loaded: false };
-  if (!Array.isArray(state.importData.customOptionalDefs)) state.importData.customOptionalDefs = [];
-  state.importData.customOptionalDefs = normalizeCustomOptionalDefs(state.importData.customOptionalDefs);
-  return state.importData.customOptionalDefs;
-}
-function ensureCustomOptionalDefs() {
-  const defs = getCustomOptionalDefs();
-  if (!defs.length) {
-    state.importData.customOptionalDefs = normalizeCustomOptionalDefs([{ key: 'custom_notes_proxy', label: 'Notes' }]);
+  const CANONICAL_CUSTOM_OPTIONAL_LABELS = {
+    reserve_type_fighter: 'Резервний тип військ: боєць',
+    reserve_type_rider: 'Резервний тип військ: наїздник',
+    reserve_type_shooter: 'Резервний тип військ: стрілець',
+  };
+
+  function canonicalizeCustomOptionalLabel(key, fallbackLabel) {
+    const k = String(key || '').trim();
+    return CANONICAL_CUSTOM_OPTIONAL_LABELS[k] || String(fallbackLabel || '').trim();
   }
-  return getCustomOptionalDefs();
-}
-function addCustomOptionalDef(defaultLabel) {
-  const defs = getCustomOptionalDefs().slice();
-  const nextIndex = defs.length + 1;
-  const label = String(defaultLabel || `Custom column ${nextIndex}`).trim();
-  defs.push({ key: `custom_opt_${Date.now()}_${nextIndex}_${sanitizeCustomFieldKeyPart(label)}`, label });
-  state.importData.customOptionalDefs = normalizeCustomOptionalDefs(defs);
-  const newDef = state.importData.customOptionalDefs[state.importData.customOptionalDefs.length - 1];
-  if (state.importData?.mapping && !(newDef.key in state.importData.mapping)) state.importData.mapping[newDef.key] = '';
-  renderImportUI();
-  requestAnimationFrame(() => {
+
+  function sanitizeCustomFieldKeyPart(text) {
+    return String(text || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 32) || 'field';
+  }
+  function normalizeCustomOptionalDefs(defs) {
+    const seen = new Set();
+    return (Array.isArray(defs) ? defs : []).map((d, idx) => {
+      let label = String(d?.label || '').trim() || `Кастомна колонка ${idx + 1}`;
+      let key = String(d?.key || '').trim();
+      if (!key) key = `custom_opt_${idx + 1}_${sanitizeCustomFieldKeyPart(label)}`;
+      key = key.replace(/[^a-zA-Z0-9_:-]/g, '_');
+      label = canonicalizeCustomOptionalLabel(key, label);
+      if (seen.has(key)) key = `${key}_${idx + 1}`;
+      seen.add(key);
+      return {
+        key,
+        label,
+        required: false,
+        colKey: key,
+        visibleDefault: !!d?.visibleDefault,
+        isCustom: true,
+      };
+    });
+  }
+  function defaultCustomOptionalDefs() {
+    return normalizeCustomOptionalDefs(DEFAULT_CUSTOM_OPTIONAL_DEFS);
+  }
+  function readPersistedCustomOptionalDefs() {
     try {
-      const input = document.querySelector(`#optionalMappingContainer .mapping-row[data-map-key="${CSS.escape(newDef.key)}"] .field-label-input`);
-      if (input) { input.focus(); input.select(); }
-    } catch {}
-  });
-}
-function removeCustomOptionalDef(key) {
-  const k = String(key || '');
-  if (!k) return;
-  const defs = getCustomOptionalDefs().filter((d) => d.key !== k);
-  state.importData.customOptionalDefs = normalizeCustomOptionalDefs(defs.length ? defs : [{ key: 'custom_notes_proxy', label: 'Notes' }]);
-  if (state.importData?.mapping && (k in state.importData.mapping)) delete state.importData.mapping[k];
-  if (Array.isArray(state.visibleOptionalColumns)) {
-    state.visibleOptionalColumns = state.visibleOptionalColumns.filter((c) => c !== k);
+      const raw = localStorage.getItem(PERSIST_KEYS.CUSTOM_OPTIONAL_DEFS);
+      const parsed = raw ? JSON.parse(raw) : [];
+      const byKey = new Map(defaultCustomOptionalDefs().map((d) => [d.key, d]));
+      (Array.isArray(parsed) ? parsed : []).forEach((d) => {
+        if (!d || !String(d.key || '').trim()) return;
+        byKey.set(String(d.key), { ...(byKey.get(String(d.key)) || {}), ...d });
+      });
+      return normalizeCustomOptionalDefs(Array.from(byKey.values()));
+    } catch {
+      return defaultCustomOptionalDefs();
+    }
   }
-  renderImportUI();
-}
-function getAllOptionalMappingFieldsForUI() {
-  return [...OPTIONAL_FIELDS_UI, ...ensureCustomOptionalDefs()];
-}
-function getVisibleOptionalFieldsForVisibilityPanel() {
-  return [...OPTIONAL_FIELDS_UI, ...getCustomOptionalDefs().filter((d) => String(d.label || '').trim().toLowerCase() !== 'notes')];
-}
-function autoDetectCustomOptionalMapping(headers, def) {
-  return findHeaderMatch(headers, { key: def.key, label: def.label, aliases: [def.label] }) || '';
-}
+  function persistCustomOptionalDefs(defs) {
+    try {
+      localStorage.setItem(PERSIST_KEYS.CUSTOM_OPTIONAL_DEFS, JSON.stringify(normalizeCustomOptionalDefs(defs)));
+    } catch {}
+  }
+  function getCustomOptionalDefs() {
+    state.importData = state.importData || { headers: [], rows: [], mapping: {}, loaded: false };
+    if (!Array.isArray(state.importData.customOptionalDefs) || !state.importData.customOptionalDefs.length) {
+      state.importData.customOptionalDefs = readPersistedCustomOptionalDefs();
+    }
+    state.importData.customOptionalDefs = normalizeCustomOptionalDefs(state.importData.customOptionalDefs);
+    return state.importData.customOptionalDefs;
+  }
+  function ensureCustomOptionalDefs() {
+    const defs = getCustomOptionalDefs();
+    if (!defs.length) {
+      state.importData.customOptionalDefs = defaultCustomOptionalDefs();
+      persistCustomOptionalDefs(state.importData.customOptionalDefs);
+    }
+    return getCustomOptionalDefs();
+  }
+  function addCustomOptionalDef(defaultLabel) {
+    const defs = getCustomOptionalDefs().slice();
+    const nextIndex = defs.length + 1;
+    const label = String(defaultLabel || `Кастомна колонка ${nextIndex}`).trim();
+    defs.push({ key: `custom_opt_${Date.now()}_${nextIndex}_${sanitizeCustomFieldKeyPart(label)}`, label, visibleDefault: false });
+    state.importData.customOptionalDefs = normalizeCustomOptionalDefs(defs);
+    persistCustomOptionalDefs(state.importData.customOptionalDefs);
+    const newDef = state.importData.customOptionalDefs[state.importData.customOptionalDefs.length - 1];
+    if (state.importData?.mapping && !(newDef.key in state.importData.mapping)) state.importData.mapping[newDef.key] = '';
+    renderImportUI();
+    requestAnimationFrame(() => {
+      try {
+        const input = document.querySelector(`#optionalMappingContainer .mapping-row[data-map-key="${CSS.escape(newDef.key)}"] .field-label-input`);
+        if (input) { input.focus(); input.select(); }
+      } catch {}
+    });
+  }
+  function removeCustomOptionalDef(key) {
+    const k = String(key || '');
+    if (!k) return;
+    const defs = getCustomOptionalDefs().filter((d) => d.key !== k);
+    state.importData.customOptionalDefs = normalizeCustomOptionalDefs(defs.length ? defs : defaultCustomOptionalDefs());
+    persistCustomOptionalDefs(state.importData.customOptionalDefs);
+    if (state.importData?.mapping && (k in state.importData.mapping)) delete state.importData.mapping[k];
+    if (Array.isArray(state.visibleOptionalColumns)) {
+      state.visibleOptionalColumns = state.visibleOptionalColumns.filter((c) => c !== k);
+      if (typeof PNS.saveVisibleOptionalColumns === 'function') PNS.saveVisibleOptionalColumns();
+    }
+    renderImportUI();
+  }
+  function getAllOptionalMappingFieldsForUI() {
+    return [...OPTIONAL_FIELDS_UI, ...ensureCustomOptionalDefs()];
+  }
+  function getVisibleOptionalFieldsForVisibilityPanel() {
+    return [...OPTIONAL_FIELDS_UI, ...getCustomOptionalDefs()];
+  }
+  function autoDetectCustomOptionalMapping(headers, def) {
+    return findHeaderMatch(headers, { key: def.key, label: def.label, aliases: [def.label] }) || '';
+  }
 
   (function enhanceFieldAliasesV2() {
     const extra = {
@@ -131,8 +187,11 @@ function autoDetectCustomOptionalMapping(headers, def) {
       useTemplateMockBtn: document.querySelector('#useTemplateMockBtn'),
       saveVisibleColumnsMockBtn: document.querySelector('#saveVisibleColumnsMockBtn'),
       loadDemoImportBtn: document.querySelector('#loadDemoImportBtn'),
-      saveTemplateMockBtn: document.querySelector('#saveTemplateMockBtn'),
+      saveTemplateMockBtns: Array.from(document.querySelectorAll('[data-save-import-template]')),
       applyImportMockBtn: document.querySelector('#applyImportMockBtn'),
+      resetAllStorageBtn: document.querySelector('#resetAllStorageBtn'),
+      resetColumnDataBtn: document.querySelector('#resetColumnDataBtn'),
+      resetTableDataBtn: document.querySelector('#resetTableDataBtn'),
     };
   }
 
@@ -166,10 +225,40 @@ function autoDetectCustomOptionalMapping(headers, def) {
     return getFieldDefByKey(key)?.label || key;
   }
 
+  function migrateImportUiLabels() {
+    try {
+      const defs = normalizeCustomOptionalDefs(getCustomOptionalDefs());
+      state.importData.customOptionalDefs = defs;
+      persistCustomOptionalDefs(defs);
+    } catch {}
+    try {
+      const overrides = state.fieldLabelOverrides && typeof state.fieldLabelOverrides === 'object'
+        ? { ...state.fieldLabelOverrides }
+        : {};
+      const changed = [];
+      if (overrides.reserve_type_fighter && overrides.reserve_type_fighter !== CANONICAL_CUSTOM_OPTIONAL_LABELS.reserve_type_fighter) {
+        overrides.reserve_type_fighter = CANONICAL_CUSTOM_OPTIONAL_LABELS.reserve_type_fighter;
+        changed.push('reserve_type_fighter');
+      }
+      if (overrides.reserve_type_rider && overrides.reserve_type_rider !== CANONICAL_CUSTOM_OPTIONAL_LABELS.reserve_type_rider) {
+        overrides.reserve_type_rider = CANONICAL_CUSTOM_OPTIONAL_LABELS.reserve_type_rider;
+        changed.push('reserve_type_rider');
+      }
+      if (overrides.reserve_type_shooter && overrides.reserve_type_shooter !== CANONICAL_CUSTOM_OPTIONAL_LABELS.reserve_type_shooter) {
+        overrides.reserve_type_shooter = CANONICAL_CUSTOM_OPTIONAL_LABELS.reserve_type_shooter;
+        changed.push('reserve_type_shooter');
+      }
+      if (changed.length) {
+        state.fieldLabelOverrides = overrides;
+        if (typeof PNS.saveFieldLabelOverrides === 'function') PNS.saveFieldLabelOverrides();
+      }
+    } catch {}
+  }
+
   function getDefaultVisibleOptionalColumns() {
-    const base = OPTIONAL_FIELDS.filter(f => f.visibleDefault).map(f => f.colKey);
-    if (!base.includes('captain_ready')) base.push('captain_ready');
-    return base;
+    const builtin = OPTIONAL_FIELDS_UI.filter(f => f.visibleDefault).map(f => f.colKey);
+    const custom = ensureCustomOptionalDefs().filter(f => f.visibleDefault).map(f => f.colKey);
+    return Array.from(new Set([...builtin, ...custom]));
   }
 
   // expose needed defs for storage module
@@ -329,15 +418,16 @@ function autoDetectCustomOptionalMapping(headers, def) {
 
   function updateImportReadinessHint() {
     const headers = state.importData.headers || [];
-    if (!headers.length) { setImportStatus('Load CSV/XLSX file or public Google Sheets CSV link first.'); return; }
+    if (!headers.length) { setImportStatus('Спочатку завантаж CSV/XLSX файл або встав публічне CSV-посилання Google Sheets.'); return; }
     const missing = FIELD_DEFS.filter(f => f.required && !state.importData.mapping?.[f.key]).map(f => getFieldLabel(f.key));
-    if (missing.length) setImportStatus(`Map required columns: ${missing.join(', ')}`, 'danger');
-    else setImportStatus(`Ready to import • ${state.importData.rows.length} rows • ${headers.length} columns`, 'good');
+    if (missing.length) setImportStatus(`Заповни обов’язкові колонки: ${missing.join(', ')}`, 'danger');
+    else setImportStatus(`Готово до імпорту • ${state.importData.rows.length} рядків • ${headers.length} колонок`, 'good');
   }
 
   function renderImportUI() {
     const headers = state.importData.headers || [];
     ensureImportMappingDefaults();
+    migrateImportUiLabels();
     const controls = getControls();
 
     if (controls.requiredMappingContainer) {
@@ -346,7 +436,7 @@ function autoDetectCustomOptionalMapping(headers, def) {
         const row = document.createElement('div');
         row.className = 'mapping-row required';
         const currentLabel = getFieldLabel(f.key);
-        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${PNS.escapeHtml(currentLabel)} <strong>*</strong></div><button type="button" class="edit-hint">✎ Edit</button></div>`;
+        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${PNS.escapeHtml(currentLabel)} <strong>*</strong></div><button type="button" class="mapping-edit-btn"><span aria-hidden="true">✎</span><span>Редагувати</span></button></div>`;
 
         const labelInput = document.createElement('input');
         labelInput.type = 'text';
@@ -360,14 +450,14 @@ function autoDetectCustomOptionalMapping(headers, def) {
 
         const select = document.createElement('select');
         select.dataset.mapField = f.key;
-        const empty = document.createElement('option'); empty.value = ''; empty.textContent = '— select column —';
+        const empty = document.createElement('option'); empty.value = ''; empty.textContent = '— вибери колонку —';
         select.appendChild(empty);
         headers.forEach((h) => { const opt = document.createElement('option'); opt.value = h; opt.textContent = h; select.appendChild(opt); });
         select.value = state.importData.mapping[f.key] || '';
         select.addEventListener('change', () => { state.importData.mapping[f.key] = select.value; updateImportReadinessHint(); });
         row.appendChild(select);
 
-        const editBtn = row.querySelector('.edit-hint');
+        const editBtn = row.querySelector('.mapping-edit-btn');
         if (editBtn) {
           editBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -388,19 +478,20 @@ function autoDetectCustomOptionalMapping(headers, def) {
         row.dataset.mapKey = f.key;
         const currentLabel = f.isCustom ? String(f.label || '').trim() : getFieldLabel(f.key);
         const titleHtml = f.isCustom
-          ? `${PNS.escapeHtml(currentLabel)} <span class="mapping-meta">(optional / custom)</span>`
-          : `${PNS.escapeHtml(currentLabel)} <span class="mapping-meta">(optional)</span>`;
-        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${titleHtml}</div><div class="row-title-actions">${f.isCustom ? '<button type="button" class="mapping-remove-btn" title="Remove custom column" aria-label="Remove custom column">✕</button>' : ''}<button type="button" class="edit-hint">✎ Edit</button></div></div>`;
+          ? `${PNS.escapeHtml(currentLabel)} <span class="mapping-meta">кастомна</span>`
+          : `${PNS.escapeHtml(currentLabel)} <span class="mapping-meta">додаткова</span>`;
+        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${titleHtml}</div><div class="row-title-actions">${f.isCustom ? '<button type="button" class="mapping-remove-btn" title="Видалити кастомну колонку" aria-label="Видалити кастомну колонку">✕</button>' : ''}<button type="button" class="mapping-edit-btn"><span aria-hidden="true">✎</span><span>Редагувати</span></button></div></div>`;
 
         const labelInput = document.createElement('input');
         labelInput.type = 'text';
         labelInput.className = 'field-label-input';
         labelInput.value = currentLabel;
-        labelInput.placeholder = f.isCustom ? 'Custom column label' : '';
+        labelInput.placeholder = f.isCustom ? 'Назва кастомної колонки' : '';
         labelInput.addEventListener('change', () => {
           if (f.isCustom) {
             const defs = getCustomOptionalDefs().map((d) => d.key === f.key ? { ...d, label: labelInput.value || d.label } : d);
             state.importData.customOptionalDefs = normalizeCustomOptionalDefs(defs);
+            persistCustomOptionalDefs(state.importData.customOptionalDefs);
           } else if (typeof PNS.setFieldLabelOverride === 'function') {
             PNS.setFieldLabelOverride(f.key, labelInput.value);
           }
@@ -410,14 +501,14 @@ function autoDetectCustomOptionalMapping(headers, def) {
 
         const select = document.createElement('select');
         select.dataset.mapField = f.key;
-        const empty = document.createElement('option'); empty.value = ''; empty.textContent = '— not mapped —';
+        const empty = document.createElement('option'); empty.value = ''; empty.textContent = '— не прив’язано —';
         select.appendChild(empty);
         headers.forEach((h) => { const opt = document.createElement('option'); opt.value = h; opt.textContent = h; select.appendChild(opt); });
         select.value = state.importData.mapping[f.key] || '';
         select.addEventListener('change', () => { state.importData.mapping[f.key] = select.value; });
         row.appendChild(select);
 
-        const editBtn = row.querySelector('.edit-hint');
+        const editBtn = row.querySelector('.mapping-edit-btn');
         if (editBtn) {
           editBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -438,17 +529,14 @@ function autoDetectCustomOptionalMapping(headers, def) {
 
       const addRow = document.createElement('div');
       addRow.className = 'mapping-row mapping-add-row';
-      addRow.innerHTML = `<button type="button" class="btn btn-sm mapping-add-btn">+ Add optional column</button>`;
+      addRow.innerHTML = `<button type="button" class="btn btn-sm mapping-add-btn">+ Додати додаткову колонку</button>`;
       addRow.querySelector('.mapping-add-btn')?.addEventListener('click', () => addCustomOptionalDef());
       controls.optionalMappingContainer.appendChild(addRow);
     }
 
     if (controls.columnVisibilityChecks) {
       controls.columnVisibilityChecks.innerHTML = '';
-      const visibilityFields = [
-        ...getVisibleOptionalFieldsForVisibilityPanel(),
-        { key: 'captain_ready_core_vis', label: 'Captain column', colKey: 'captain_ready' },
-      ];
+      const visibilityFields = getVisibleOptionalFieldsForVisibilityPanel();
       visibilityFields.forEach((f) => {
         const key = f.colKey;
         if (!key) return;
@@ -462,6 +550,7 @@ function autoDetectCustomOptionalMapping(headers, def) {
           const set = new Set(state.visibleOptionalColumns || []);
           cb.checked ? set.add(key) : set.delete(key);
           state.visibleOptionalColumns = Array.from(set);
+          if (typeof PNS.saveVisibleOptionalColumns === 'function') PNS.saveVisibleOptionalColumns();
           if (typeof PNS.applyColumnVisibility === 'function') PNS.applyColumnVisibility(state.showAllColumns);
         });
         controls.columnVisibilityChecks.appendChild(label);
@@ -482,7 +571,7 @@ function autoDetectCustomOptionalMapping(headers, def) {
   function getCurrentImportTemplate() {
     readMappingFromUI();
     return {
-      name: 'Last template',
+      name: 'Останній шаблон',
       fingerprint: fingerprintHeaders(state.importData.headers),
       headers: [...(state.importData.headers || [])],
       mapping: { ...(state.importData.mapping || {}) },
@@ -493,12 +582,12 @@ function autoDetectCustomOptionalMapping(headers, def) {
   }
 
   function saveCurrentImportTemplate() {
-    if (!(state.importData.headers || []).length) { setImportStatus('Nothing to save: load a file/link first.', 'danger'); return; }
+    if (!(state.importData.headers || []).length) { setImportStatus('Немає що зберігати: спочатку завантаж файл або посилання.', 'danger'); return; }
     const tpl = getCurrentImportTemplate();
     const templates = getImportTemplates().filter(t => t.fingerprint !== tpl.fingerprint);
     templates.unshift(tpl);
     saveImportTemplates(templates.slice(0, 20));
-    setImportStatus('Import template saved in LocalStorage for this browser.', 'good');
+    setImportStatus('Шаблон імпорту збережено.', 'good');
   }
 
   function findBestImportTemplate(headers) {
@@ -521,11 +610,12 @@ function autoDetectCustomOptionalMapping(headers, def) {
   }
 
   function applyImportTemplate(template) {
-    if (!template) { setImportStatus('No matching saved template found for current headers.', 'danger'); return false; }
+    if (!template) { setImportStatus('Для поточних заголовків не знайдено відповідного збереженого шаблону.', 'danger'); return false; }
     const headers = state.importData.headers || [];
 
     if (Array.isArray(template.customOptionalDefs)) {
       state.importData.customOptionalDefs = normalizeCustomOptionalDefs(template.customOptionalDefs);
+      persistCustomOptionalDefs(state.importData.customOptionalDefs);
     }
     ensureCustomOptionalDefs();
 
@@ -541,7 +631,7 @@ function autoDetectCustomOptionalMapping(headers, def) {
       if (typeof PNS.saveVisibleOptionalColumns === 'function') PNS.saveVisibleOptionalColumns();
       if (typeof PNS.applyColumnVisibility === 'function') PNS.applyColumnVisibility(state.showAllColumns);
     }
-    setImportStatus(`Applied saved template${template.fingerprint === fingerprintHeaders(headers) ? ' (exact match)' : ' (partial match)'}.`, 'good');
+    setImportStatus(`Застосовано збережений шаблон${template.fingerprint === fingerprintHeaders(headers) ? ' (точний збіг)' : ' (частковий збіг)'}.`, 'good');
     return true;
   }
 
@@ -550,11 +640,11 @@ function autoDetectCustomOptionalMapping(headers, def) {
     if (tpl) applyImportTemplate(tpl);
   }
 
-  function setRawImportDataset(headers, rows, sourceName, sourceType) {
+  function setRawImportDataset(headers, rows, джерелоName, джерелоType) {
     state.importData.headers = headers || [];
     state.importData.rows = rows || [];
-    state.importData.sourceName = sourceName || '';
-    state.importData.sourceType = sourceType || '';
+    state.importData.джерелоName = джерелоName || '';
+    state.importData.джерелоType = джерелоType || '';
     state.importData.loaded = true;
 
     ensureCustomOptionalDefs();
@@ -570,31 +660,31 @@ function autoDetectCustomOptionalMapping(headers, def) {
     });
     state.importData.mapping = merged;
 
-    setImportLoadedInfo(`${sourceName} • ${rows.length} rows • ${headers.length} cols`);
+    setImportLoadedInfo(`${джерелоName} • ${rows.length} рядків • ${headers.length} колонок`);
     renderImportUI();
     autoApplySavedImportTemplate();
     renderImportUI();
   }
 
   function handleDetectColumns() {
-    if (!(state.importData.headers || []).length) { setImportStatus('Load file/link first, then detect columns.', 'danger'); return; }
+    if (!(state.importData.headers || []).length) { setImportStatus('Спочатку завантаж файл або посилання, потім визнач колонки.', 'danger'); return; }
     ensureCustomOptionalDefs();
     const detected = autoDetectMapping(state.importData.headers);
     getCustomOptionalDefs().forEach((f) => { detected[f.key] = autoDetectCustomOptionalMapping(state.importData.headers, f); });
     state.importData.mapping = detected;
     renderImportUI();
-    setImportStatus('Auto-detect complete. Please verify required columns.', 'good');
+    setImportStatus('Колонки визначено автоматично. Перевір зіставлення обов’язкових колонок.', 'good');
   }
 
   function buildImportedPlayersFromRaw() {
     readMappingFromUI();
     const mapping = state.importData.mapping || {};
     const missing = FIELD_DEFS.filter(f => f.required && !mapping[f.key]).map(f => f.label);
-    if (missing.length) { setImportStatus(`Missing required mappings: ${missing.join(', ')}`, 'danger'); return null; }
+    if (missing.length) { setImportStatus(`Бракує обов’язкових зіставлень: ${missing.join(', ')}`, 'danger'); return null; }
 
     const customDefs = getCustomOptionalDefs();
     const customFieldLabels = Object.fromEntries(customDefs.map((d) => [d.key, d.label]));
-    const players = [];
+    const гравців = [];
     let idx = 1;
 
     for (const row of state.importData.rows || []) {
@@ -622,7 +712,7 @@ function autoDetectCustomOptionalMapping(headers, def) {
         customFields[d.key] = val;
       });
 
-      players.push({
+      гравців.push({
         id: `p${idx++}`,
         name,
         playerExternalId: '',
@@ -651,7 +741,7 @@ function autoDetectCustomOptionalMapping(headers, def) {
         assignment: null,
       });
     }
-    return players;
+    return гравців;
   }
 
   function resetAssignmentsForImportedData() {
@@ -667,13 +757,13 @@ function autoDetectCustomOptionalMapping(headers, def) {
   function applyImportedPlayers() {
     const players = buildImportedPlayersFromRaw();
     if (!players) return;
-    if (!players.length) { setImportStatus('No player rows found after import (check mapping / empty rows).', 'danger'); return; }
+    if (!players.length) { setImportStatus('Після імпорту не знайдено жодного гравця. Перевір мапінг колонок і порожні рядки.', 'danger'); return; }
 
     state.players = players;
     state.playerById = new Map(players.map((p) => [p.id, p]));
     resetAssignmentsForImportedData();
 
-    // New imported roster must reset tower assignments (but keep tower settings/limits)
+    // New імпортовано roster must reset tower assignments (but keep tower settings/limits)
     try { PNS.clearTowersSnapshot?.(); } catch {}
     try { PNS.clearTowerMarchOverrides?.(); } catch {}
     try { if (state && typeof state === 'object') state.shiftPlans = {}; } catch {}
@@ -684,12 +774,13 @@ function autoDetectCustomOptionalMapping(headers, def) {
 
     if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift);
     if (typeof PNS.savePlayersSnapshot === 'function') PNS.savePlayersSnapshot(state.players);
+    try { saveCurrentImportTemplate(); } catch {}
     try { PNS.saveTowersSnapshot?.(); } catch {}
     try { PNS.persistSessionStateSoon?.(20); } catch {}
     // auto-save latest import template so you don't need to press Save after every refresh
     try { saveCurrentImportTemplate(); } catch {}
-    setImportStatus(`Imported ${players.length} players successfully. Template auto-saved in LocalStorage.`, 'good');
-    setImportLoadedInfo(`${state.importData.sourceName || 'source'} • imported ${players.length} players`);
+    setImportStatus(`Імпортовано ${players.length} гравців. Шаблон автоматично оновлено в LocalStorage.`, 'good');
+    setImportLoadedInfo(`${state.importData.джерелоName || 'джерело'} • імпортовано ${players.length} гравців`);
   }
 
 
@@ -697,36 +788,36 @@ function autoDetectCustomOptionalMapping(headers, def) {
     const file = ev.target.files?.[0];
     if (!file) return;
     try {
-      setImportStatus('Reading file...');
+      setImportStatus('Читаю файл...');
       const { headers, rows } = await parseFileToDataset(file);
-      if (!headers.length) throw new Error('No headers detected');
+      if (!headers.length) throw new Error('Не вдалося знайти заголовки колонок');
       setRawImportDataset(headers, rows, file.name, 'file');
-      setImportStatus('File loaded. Verify mapping and click Apply import.', 'good');
+      setImportStatus('Файл завантажено. Перевір мапінг і натисни «Застосувати імпорт».', 'good');
     } catch (e) {
       console.error(e);
-      setImportStatus(`Failed to parse file: ${e.message || e}`, 'danger');
+      setImportStatus(`Не вдалося розібрати файл: ${e.message || e}`, 'danger');
     }
   }
 
   async function handleLoadUrlClick() {
     const b = getButtons();
     const raw = b.urlInputMock?.value?.trim();
-    if (!raw) { setImportStatus('Paste CSV/Google Sheets link first.', 'danger'); return; }
+    if (!raw) { setImportStatus('Спочатку встав CSV-посилання або посилання Google Sheets.', 'danger'); return; }
 
     try {
-      setImportStatus('Loading URL...');
+      setImportStatus('Завантажую URL...');
       const { headers, rows } = await loadDatasetFromUrl(raw);
-      if (!headers.length) throw new Error('No headers detected');
+      if (!headers.length) throw new Error('Не вдалося знайти заголовки колонок');
       setRawImportDataset(headers, rows, raw, 'url');
-      setImportStatus('URL loaded. Verify mapping and click Apply import.', 'good');
+      setImportStatus('URL завантажено. Перевір мапінг і натисни «Застосувати імпорт».', 'good');
     } catch (e) {
       console.error(e);
-      setImportStatus('Could not load URL. Make sure the sheet is public (Anyone with link / CSV export) and CORS is allowed.', 'danger');
+      setImportStatus('Не вдалося завантажити URL. Переконайся, що таблиця публічна (Anyone with link / CSV export) і що CORS дозволений.', 'danger');
     }
   }
 
   function handleUseSavedTemplateClick() {
-    if (!(state.importData.headers || []).length) { setImportStatus('Load file/link first to apply matching template.', 'danger'); return; }
+    if (!(state.importData.headers || []).length) { setImportStatus('Спочатку завантаж файл або посилання, щоб застосувати відповідний шаблон.', 'danger'); return; }
     const ok = applyImportTemplate(findBestImportTemplate(state.importData.headers));
     renderImportUI();
     if (!ok) updateImportReadinessHint();
@@ -737,13 +828,13 @@ function autoDetectCustomOptionalMapping(headers, def) {
     state.visibleOptionalColumns = selected;
     if (typeof PNS.saveVisibleOptionalColumns === 'function') PNS.saveVisibleOptionalColumns();
     if (typeof PNS.applyColumnVisibility === 'function') PNS.applyColumnVisibility(state.showAllColumns);
-    setImportStatus('Visible columns saved in LocalStorage.', 'good');
+    setImportStatus('Видимі колонки збережено.', 'good');
   }
 
   function loadDemoIntoImportWizard() {
-    const players = state.players || [];
+    const гравців = state.players || [];
     const headers = ['Player name','Alliance alias','Troop Tier','What is your focus troop?','March size','Rally size','Are you ready to be a captain?','Which shift can you join? (each shift is 4 hours)','Which lair level can you take?','Reserve troop type','Reserve troop tier','Reserve troop type (200k+)','Notes'];
-    const rows = players.map((p) => ({
+    const rows = гравців.map((p) => ({
       'Player name': p.name || '',
       'Alliance alias': p.alliance || '',
       'Troop Tier': p.tier || '',
@@ -758,8 +849,8 @@ function autoDetectCustomOptionalMapping(headers, def) {
       'Reserve troop type (200k+)': p.troop200k || '',
       'Notes': p.notes || '',
     }));
-    setRawImportDataset(headers, rows, 'Built-in demo data', 'demo');
-    setImportStatus('Demo dataset loaded into import wizard.', 'good');
+    setRawImportDataset(headers, rows, 'Вбудовані демо-дані', 'demo');
+    setImportStatus('Демо-набір завантажено в майстер імпорту.', 'good');
   }
 
   // ===== bind import modal buttons EVERY time DOM changes =====
@@ -796,21 +887,35 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
     const values = p?.customFields && typeof p.customFields === 'object' ? p.customFields : {};
     Object.keys(values).forEach((k) => { if (!(k in labels)) labels[k] = k.replace(/^custom[_:-]*/i, '').replace(/_/g, ' ') || k; });
   });
-  const defs = Object.entries(labels).map(([key, label]) => ({ key, label }))
-    .filter((d) => String(d.label || '').trim().toLowerCase() !== 'notes');
-  if (defs.length) {
-    state.importData = state.importData || { headers: [], rows: [], mapping: {}, loaded: false };
-    state.importData.customOptionalDefs = normalizeCustomOptionalDefs([{ key: 'custom_notes_proxy', label: 'Notes' }, ...defs]);
-    ensureImportMappingDefaults();
-  } else {
-    ensureCustomOptionalDefs();
-  }
+  const defsFromPlayers = Object.entries(labels).map(([key, label]) => ({ key, label }));
+  const persisted = readPersistedCustomOptionalDefs();
+  const current = Array.isArray(state.importData?.customOptionalDefs) ? state.importData.customOptionalDefs : [];
+  const mergedMap = new Map();
+  [...defaultCustomOptionalDefs(), ...persisted, ...current, ...defsFromPlayers].forEach((d) => {
+    if (!d || !String(d.key || '').trim()) return;
+    const key = String(d.key).trim();
+    const prev = mergedMap.get(key) || {};
+    mergedMap.set(key, {
+      ...prev,
+      ...d,
+      key,
+      label: String(d.label || prev.label || key).trim() || key,
+      required: false,
+      colKey: String(d.colKey || prev.colKey || key),
+      visibleDefault: typeof d.visibleDefault === 'boolean' ? d.visibleDefault : !!prev.visibleDefault,
+      isCustom: true,
+    });
+  });
+  state.importData = state.importData || { headers: [], rows: [], mapping: {}, loaded: false };
+  state.importData.customOptionalDefs = normalizeCustomOptionalDefs(Array.from(mergedMap.values()));
+  persistCustomOptionalDefs(state.importData.customOptionalDefs);
+  ensureImportMappingDefaults();
 }
 
   function tryRestorePlayersFromLocalStorage() {
     let restoredPlayers = false;
 
-    // 1) Restore players if state is empty
+    // 1) Restore гравців if state is empty
     if ((!Array.isArray(state.players) || !state.players.length) && typeof PNS.loadPlayersSnapshot === 'function') {
       const restored = PNS.loadPlayersSnapshot();
       if (Array.isArray(restored) && restored.length) {
@@ -819,7 +924,7 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
       }
     }
 
-    // 2) If players already exist (from earlier init/retry), still continue and restore towers/UI
+    // 2) If гравців already exist (from earlier init/retry), still continue and restore towers/UI
     if (!Array.isArray(state.players) || !state.players.length) return false;
 
     hydrateCustomOptionalDefsFromPlayers(state.players || []);
@@ -848,10 +953,237 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
     });
 
     if (restoredPlayers) {
-      setImportLoadedInfo(`Restored ${state.players.length} players from LocalStorage.`);
-      setImportStatus('Players restored from previous session. Load/apply a new table anytime to replace them.', 'good');
+      setImportLoadedInfo(`Відновлено ${state.players.length} гравців із LocalStorage.`);
+      setImportStatus('Гравців відновлено з попередньої сесії. У будь-який момент можна завантажити нову таблицю і замінити їх.', 'good');
     }
     return true;
+  }
+
+
+  function removeLsKey(key) {
+    try { if (key) localStorage.removeItem(key); } catch {}
+  }
+
+
+  function ensureResetConfirmStyles() {
+    if (document.getElementById('pnsResetConfirmStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'pnsResetConfirmStyles';
+    style.textContent = `
+      .pns-confirm-overlay{position:fixed;inset:0;background:rgba(8,12,20,.72);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:300100;}
+      .pns-confirm-dialog{position:relative;z-index:1;width:min(100%,480px);background:linear-gradient(180deg,rgba(20,28,42,.98),rgba(12,18,28,.98));border:1px solid rgba(255,255,255,.12);border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.45);color:#eef4ff;overflow:hidden;}
+      .pns-confirm-head{padding:18px 20px 12px;display:flex;gap:12px;align-items:flex-start;}
+      .pns-confirm-icon{flex:0 0 44px;width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(255,107,107,.16);border:1px solid rgba(255,107,107,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.06);}
+      .pns-confirm-title{margin:0;font-size:18px;line-height:1.25;font-weight:800;color:#fff;}
+      .pns-confirm-sub{margin:6px 0 0;font-size:13px;line-height:1.5;color:rgba(232,240,255,.82);}
+      .pns-confirm-body{padding:0 20px 18px;}
+      .pns-confirm-note{margin:0;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);font-size:13px;line-height:1.5;color:rgba(232,240,255,.78);}
+      .pns-confirm-actions{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px 20px;border-top:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);}
+      .pns-confirm-btn{appearance:none;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#f5f8ff;border-radius:12px;padding:10px 14px;font-size:14px;font-weight:700;cursor:pointer;transition:transform .12s ease, background .12s ease, border-color .12s ease;}
+      .pns-confirm-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.2);}
+      .pns-confirm-btn--danger{background:linear-gradient(180deg,#ff6b6b,#e04848);border-color:rgba(255,107,107,.42);color:#fff;box-shadow:0 10px 22px rgba(224,72,72,.24);}
+      .pns-confirm-btn--danger:hover{background:linear-gradient(180deg,#ff7d7d,#ea5656);border-color:rgba(255,132,132,.56);}
+      @media (max-width: 560px){
+        .pns-confirm-overlay{padding:14px;}
+        .pns-confirm-dialog{width:100%;border-radius:16px;}
+        .pns-confirm-head{padding:16px 16px 10px;}
+        .pns-confirm-body{padding:0 16px 16px;}
+        .pns-confirm-actions{padding:12px 16px 16px;flex-direction:column-reverse;}
+        .pns-confirm-btn{width:100%;}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function showDangerConfirm(opts) {
+    const options = opts || {};
+    ensureResetConfirmStyles();
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'pns-confirm-overlay';
+      overlay.innerHTML = `
+        <div class="pns-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="pnsConfirmTitle">
+          <div class="pns-confirm-head">
+            <div class="pns-confirm-icon">⚠️</div>
+            <div>
+              <h3 class="pns-confirm-title" id="pnsConfirmTitle">${String(options.title || 'Підтверди дію')}</h3>
+              <p class="pns-confirm-sub">${String(options.message || '')}</p>
+            </div>
+          </div>
+          ${options.note ? `<div class="pns-confirm-body"><p class="pns-confirm-note">${String(options.note)}</p></div>` : ''}
+          <div class="pns-confirm-actions">
+            <button type="button" class="pns-confirm-btn" data-confirm-cancel>${String(options.cancelText || 'Скасувати')}</button>
+            <button type="button" class="pns-confirm-btn pns-confirm-btn--danger" data-confirm-ok>${String(options.confirmText || 'Очистити')}</button>
+          </div>
+        </div>
+      `;
+      const cleanup = (value) => {
+        try { document.removeEventListener('keydown', onKeyDown, true); } catch {}
+        try { overlay.remove(); } catch {}
+        resolve(!!value);
+      };
+      const onKeyDown = (e) => {
+        if (e.key === 'Escape') cleanup(false);
+      };
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) cleanup(false);
+      });
+      overlay.querySelector('[data-confirm-cancel]')?.addEventListener('click', () => cleanup(false));
+      overlay.querySelector('[data-confirm-ok]')?.addEventListener('click', () => cleanup(true));
+      document.addEventListener('keydown', onKeyDown, true);
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => overlay.querySelector('[data-confirm-ok]')?.focus());
+    });
+  }
+
+  async function resetColumnData() {
+    const ok = await showDangerConfirm({
+      title: 'Скинути дані колонок?',
+      message: 'Буде скинуто мапінг колонок, додаткові колонки, видимість і збережені шаблони.',
+      note: 'Дані гравців у таблиці при цьому не видаляються.',
+      confirmText: 'Скинути колонки'
+    });
+    if (!ok) return;
+
+    removeLsKey(PNS.KEYS?.KEY_IMPORT_TEMPLATES);
+    removeLsKey(PNS.KEYS?.KEY_IMPORT_VISIBLE_COLUMNS);
+    removeLsKey(PNS.KEYS?.KEY_FIELD_LABEL_OVERRIDES);
+    removeLsKey(PERSIST_KEYS.CUSTOM_OPTIONAL_DEFS);
+
+    state.fieldLabelOverrides = {};
+    state.importData = state.importData || { headers: [], rows: [], mapping: {}, loaded: false };
+
+    const factoryCustomDefs = defaultCustomOptionalDefs();
+    const factoryCustomKeys = new Set(factoryCustomDefs.map((d) => String(d.key || '')));
+
+    // Повертаємо тільки заводський набір додаткових колонок і прибираємо все,
+    // що було створено через "+ Додати додаткову колонку".
+    state.importData.customOptionalDefs = factoryCustomDefs;
+    persistCustomOptionalDefs(state.importData.customOptionalDefs);
+
+    // Якщо custom optional-колонки вже встигли записатися в snapshot гравців,
+    // прибираємо їх і звідти, інакше після reload вони відновляться назад.
+    if (Array.isArray(state.players) && state.players.length) {
+      state.players = state.players.map((p) => {
+        const customFields = p?.customFields && typeof p.customFields === 'object' ? { ...p.customFields } : {};
+        const customFieldLabels = p?.customFieldLabels && typeof p.customFieldLabels === 'object' ? { ...p.customFieldLabels } : {};
+        Object.keys(customFields).forEach((k) => { if (!factoryCustomKeys.has(k)) delete customFields[k]; });
+        Object.keys(customFieldLabels).forEach((k) => { if (!factoryCustomKeys.has(k)) delete customFieldLabels[k]; });
+        return { ...p, customFields, customFieldLabels };
+      });
+      state.playerById = new Map((state.players || []).map((p) => [p.id, p]));
+      try { PNS.savePlayersSnapshot?.(state.players); } catch {}
+      try { PNS.renderPlayersTableFromState?.(); } catch {}
+      try { PNS.buildRowActions?.(); } catch {}
+    } else {
+      try { PNS.clearPlayersSnapshot?.(); } catch {}
+    }
+
+    // Перебудовуємо mapping тільки з базового набору полів.
+    const mapping = {};
+    const headers = state.importData.headers || [];
+    const detected = headers.length ? autoDetectMapping(headers) : {};
+    FIELD_DEFS.forEach((f) => { mapping[f.key] = detected[f.key] || ''; });
+    state.importData.customOptionalDefs.forEach((f) => {
+      mapping[f.key] = headers.length ? (autoDetectCustomOptionalMapping(headers, f) || '') : '';
+    });
+    state.importData.mapping = mapping;
+
+    // Видимість теж повертаємо до дефолту тільки для заводських optional-полів.
+    state.visibleOptionalColumns = getDefaultVisibleOptionalColumns();
+    if (typeof PNS.saveVisibleOptionalColumns === 'function') PNS.saveVisibleOptionalColumns();
+
+    renderImportUI();
+    try { PNS.applyColumnVisibility?.(state.showAllColumns); } catch {}
+    setImportStatus('Дані колонок скинуто до заводських налаштувань.', 'good');
+  }
+
+  async function resetTableData() {
+    const ok = await showDangerConfirm({
+      title: 'Скинути дані таблиць?',
+      message: 'Буде очищено таблицю гравців, призначення, плани змін і збережені табличні дані.',
+      note: 'Налаштування колонок та шаблони імпорту залишаться без змін.',
+      confirmText: 'Скинути таблиці'
+    });
+    if (!ok) return;
+
+    try { PNS.clearPlayersSnapshot?.(); } catch {}
+    try { PNS.clearTowersSnapshot?.(); } catch {}
+    try { PNS.clearTowerMarchOverrides?.(); } catch {}
+    removeLsKey(PNS.KEYS?.KEY_ASSIGNMENTS_STORE);
+    removeLsKey(PNS.KEYS?.KEY_ASSIGNMENT_PRESETS);
+    removeLsKey(PNS.KEYS?.KEY_TOP_FILTERS);
+    removeLsKey(PNS.KEYS?.KEY_SHIFT_FILTER);
+    removeLsKey(PNS.KEYS?.KEY_SHOW_ALL);
+
+    state.players = [];
+    state.playerById = new Map();
+    state.shiftPlans = {};
+    (state.bases || []).forEach((b) => {
+      if (!b) return;
+      b.captainId = null;
+      b.helperIds = [];
+      b.role = null;
+      try { PNS.applyBaseRoleUI?.(b, null); } catch {}
+    });
+
+    try { PNS.renderPlayersTableFromState?.(); } catch {}
+    try { PNS.buildRowActions?.(); } catch {}
+    try { PNS.renderAll?.(); } catch {}
+    setImportLoadedInfo('Дані таблиць скинуто.');
+    setImportStatus('Дані таблиць скинуто. Можна завантажити нову таблицю.', 'good');
+  }
+
+  async function resetAllLocalStorage() {
+    const ok = await showDangerConfirm({
+      title: 'Повністю скинути LocalStorage?',
+      message: 'Усі збережені дані сайту буде видалено і застосунок повернеться до заводських налаштувань.',
+      note: 'Цю дію не можна скасувати. Будуть очищені таблиці, колонки, шаблони імпорту, налаштування та інший локально збережений стан.',
+      confirmText: 'Скинути все'
+    });
+    if (!ok) return;
+
+    try { PNS.setPersistenceSuppressed?.(true); } catch {}
+    try { window.__PNS_FACTORY_RESET_ACTIVE = true; } catch {}
+    try { sessionStorage.clear(); } catch {}
+
+    // Очищаємо in-memory state, щоб жоден beforeunload/autosave не записав старі дані назад.
+    try {
+      state.players = [];
+      state.playerById = new Map();
+      state.shiftPlans = {};
+      state.importData = { headers: [], rows: [], mapping: {}, loaded: false, customOptionalDefs: defaultCustomOptionalDefs() };
+      state.visibleOptionalColumns = getDefaultVisibleOptionalColumns();
+      state.fieldLabelOverrides = {};
+      (state.bases || []).forEach((b) => {
+        if (!b) return;
+        b.captainId = null;
+        b.helperIds = [];
+        b.role = null;
+      });
+    } catch {}
+
+    try {
+      localStorage.clear();
+    } catch {
+      const keys = new Set([
+        ...(Object.values(PNS.KEYS || {}).filter(Boolean)),
+        PERSIST_KEYS.CUSTOM_OPTIONAL_DEFS,
+        'pns_layout_players_snapshot_v1',
+        'pns_layout_tower_march_overrides_v1',
+        'pns_layout_towers_snapshot_v1',
+      ]);
+      keys.forEach(removeLsKey);
+    }
+
+    // Повторно прибираємо на наступному тіку на випадок відкладених старих таймерів.
+    setTimeout(() => {
+      try { localStorage.clear(); } catch {}
+      try { sessionStorage.clear(); } catch {}
+      try { window.location.replace(window.location.pathname + window.location.search + window.location.hash); } catch {
+        try { window.location.reload(); } catch {}
+      }
+    }, 20);
   }
 
   function bindImportWizardButtons() {
@@ -884,13 +1216,26 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
       b.loadDemoImportBtn.dataset.bound = '1';
       b.loadDemoImportBtn.addEventListener('click', loadDemoIntoImportWizard);
     }
-    if (b.saveTemplateMockBtn && !b.saveTemplateMockBtn.dataset.bound) {
-      b.saveTemplateMockBtn.dataset.bound = '1';
-      b.saveTemplateMockBtn.addEventListener('click', saveCurrentImportTemplate);
-    }
+    (b.saveTemplateMockBtns || []).forEach((btn) => {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', saveCurrentImportTemplate);
+    });
     if (b.applyImportMockBtn && !b.applyImportMockBtn.dataset.bound) {
       b.applyImportMockBtn.dataset.bound = '1';
       b.applyImportMockBtn.addEventListener('click', applyImportedPlayers);
+    }
+    if (b.resetAllStorageBtn && !b.resetAllStorageBtn.dataset.bound) {
+      b.resetAllStorageBtn.dataset.bound = '1';
+      b.resetAllStorageBtn.addEventListener('click', resetAllLocalStorage);
+    }
+    if (b.resetColumnDataBtn && !b.resetColumnDataBtn.dataset.bound) {
+      b.resetColumnDataBtn.dataset.bound = '1';
+      b.resetColumnDataBtn.addEventListener('click', resetColumnData);
+    }
+    if (b.resetTableDataBtn && !b.resetTableDataBtn.dataset.bound) {
+      b.resetTableDataBtn.dataset.bound = '1';
+      b.resetTableDataBtn.addEventListener('click', resetTableData);
     }
   }
 
@@ -905,10 +1250,12 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
   function initImportWizard() {
     if (typeof PNS.loadFieldLabelOverrides === 'function') PNS.loadFieldLabelOverrides();
     if (typeof PNS.loadVisibleOptionalColumns === 'function') PNS.loadVisibleOptionalColumns();
+    state.importData = state.importData || { headers: [], rows: [], mapping: {}, loaded: false };
+    state.importData.customOptionalDefs = readPersistedCustomOptionalDefs();
     ensureImportMappingDefaults();
     renderImportUI();
     const restored = tryRestorePlayersFromLocalStorage();
-    if (!restored) setImportLoadedInfo('No file loaded yet. You can use built-in demo data.');
+    if (!restored) setImportLoadedInfo('Файл ще не завантажено. Завантаж файл або встав публічне CSV-посилання.');
     scheduleLateSessionRestore();
     bindImportWizardButtons();
   }

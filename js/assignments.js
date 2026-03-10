@@ -18,6 +18,11 @@
 
   function sameTroopOnlyEnabled() {
     try {
+      if (typeof PNS.getTowerAssignmentPolicy === 'function') {
+        return !!PNS.getTowerAssignmentPolicy(null, null, 'helper').sameTroopOnly;
+      }
+    } catch {}
+    try {
       if (typeof PNS.isTowerNoMixTroopsEnabled === 'function') return !!PNS.isTowerNoMixTroopsEnabled();
     } catch {}
     return true;
@@ -25,15 +30,9 @@
 
   function noCrossShiftDupesEnabled() {
     try {
-      const calcCb = document.getElementById('towerCalcNoCrossShift');
-      if (calcCb) return !!calcCb.checked;
-    } catch {}
-    try {
-      const pickerCb = document.getElementById('pickerNoCrossShiftDupes');
-      if (pickerCb) return !!pickerCb.checked;
-    } catch {}
-    try {
-      if (typeof state?.towerPickerNoCrossShiftDupes === 'boolean') return !!state.towerPickerNoCrossShiftDupes;
+      if (typeof PNS.getTowerAssignmentPolicy === 'function') {
+        return !!PNS.getTowerAssignmentPolicy(null, null, 'helper').noCrossShiftDupes;
+      }
     } catch {}
     try {
       if (typeof PNS.isTowerNoCrossShiftDupesEnabled === 'function') return !!PNS.isTowerNoCrossShiftDupesEnabled();
@@ -41,18 +40,19 @@
     return true;
   }
 
-  function canUsePlayerAcrossShifts(player, base, kind) {
-    if (kind !== 'helper' || !player || !base) return false;
-    if (noCrossShiftDupesEnabled()) return false;
-    const curShift = String(state.activeShift || '').toLowerCase();
-    if (curShift !== 'shift1' && curShift !== 'shift2') return false;
+  function readAssignmentPolicy(player, base, kind) {
     try {
-      if (typeof PNS.isPlayerUsedInOtherShift === 'function') {
-        const hit = PNS.isPlayerUsedInOtherShift(player.id, curShift);
-        if (hit) return true;
+      if (typeof PNS.getTowerAssignmentPolicy === 'function') {
+        return PNS.getTowerAssignmentPolicy(player, base, kind) || {};
       }
     } catch {}
-    return false;
+    return {};
+  }
+
+  function canUsePlayerAcrossShifts(player, base, kind) {
+    if (kind !== 'helper' || !player || !base) return false;
+    const policy = readAssignmentPolicy(player, base, kind);
+    return !!policy.allowCrossShiftReuse;
   }
 
   function persistAfterTowerChange(meta = {}) {
@@ -99,11 +99,12 @@
     if (!player || !base) return 'Player or base not found.';
     if (!PNS.ROLE_KEYS?.includes?.(player.role)) return `Unknown role for ${player.name}.`;
 
-    const ignoreShiftAutoFill = !!document.querySelector('#ignoreShiftAutoFillToggle:checked');
-    const allowCrossShiftReuse = canUsePlayerAcrossShifts(player, base, kind);
+    const policy = readAssignmentPolicy(player, base, kind);
+    const allowCrossShiftReuse = !!policy.allowCrossShiftReuse;
+    const ignoreShiftMismatch = !!policy.ignoreShiftMismatch;
     if (
       kind === 'helper' &&
-      !ignoreShiftAutoFill &&
+      !ignoreShiftMismatch &&
       !allowCrossShiftReuse &&
       base.shift !== 'both' &&
       player.shift !== 'both' &&
@@ -117,14 +118,17 @@
     }
 
     const effectiveRole = (typeof PNS.getBaseRole === 'function') ? PNS.getBaseRole(base) : null;
-    if (kind === 'helper' && sameTroopOnlyEnabled() && effectiveRole && player.role !== effectiveRole) {
+    if (kind === 'helper' && (policy.sameTroopOnly ?? sameTroopOnlyEnabled()) && effectiveRole && player.role !== effectiveRole) {
       return `Role mismatch: ${player.role} cannot go to ${effectiveRole} base.`;
     }
 
-    if (kind === 'helper' && noCrossShiftDupesEnabled()) {
+    if (kind === 'helper' && (policy.noCrossShiftDupes ?? noCrossShiftDupesEnabled())) {
       const curShift = String(state.activeShift || '').toLowerCase();
-      if ((curShift === 'shift1' || curShift === 'shift2') && typeof PNS.isPlayerUsedInOtherShift === 'function') {
-        const hit = PNS.isPlayerUsedInOtherShift(player.id, curShift);
+      if (curShift === 'shift1' || curShift === 'shift2') {
+        const hit = policy.otherShiftBlocker
+          || policy.otherShiftHit
+          || (typeof PNS.getOtherShiftBlocker === 'function' ? PNS.getOtherShiftBlocker(player.id, curShift, kind) : null)
+          || (typeof PNS.isPlayerUsedInOtherShift === 'function' ? PNS.isPlayerUsedInOtherShift(player.id, curShift) : null);
         if (hit) return `Player already assigned in ${hit.label || hit.shift || 'other shift'}.`;
       }
     }
@@ -308,7 +312,10 @@
       }
 
       const editorActionBtn = e.target.closest('[data-base-editor-action]');
-      if (editorActionBtn) {
+      const legacyBaseEditorEnabled = typeof PNS.isLegacyBaseEditorEnabled === 'function'
+        ? !!PNS.isLegacyBaseEditorEnabled()
+        : (typeof PNS.shouldRenderLegacyBaseEditor === 'function' ? !!PNS.shouldRenderLegacyBaseEditor() : false);
+      if (editorActionBtn && legacyBaseEditorEnabled) {
         e.preventDefault();
         const baseId = editorActionBtn.dataset.baseId;
         const base = state.baseById.get(baseId);
@@ -408,6 +415,8 @@
   // exports
   PNS.setRowStatus = setRowStatus;
   PNS.clearPlayerFromBase = clearPlayerFromBase;
+  PNS.validateAssignCore = validateAssign;
+  PNS.assignPlayerToBaseCore = assignPlayerToBase;
   PNS.validateAssign = validateAssign;
   PNS.assignPlayerToBase = assignPlayerToBase;
   PNS.clearBase = clearBase;

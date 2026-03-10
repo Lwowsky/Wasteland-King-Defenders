@@ -18,8 +18,7 @@
         <div>
           <h2>Налаштування / Імпорт</h2>
           <p class="muted">
-            Імпорт CSV/XLSX/URL, мапінг колонок, LocalStorage шаблон,
-            налаштування auto-fill
+            Імпорт таблиці та налаштування мапінгу колонок
           </p>
         </div>
         <a
@@ -32,81 +31,95 @@
       </div>
 
       <div class="modal-grid">
-        <section class="panel subpanel">
-          <h3>1. Import source</h3>
-          <div class="stack">
-            <label class="file-drop">
-              <span class="drop-title">Upload CSV / Excel</span>
-              <span class="muted"
-                >CSV / XLSX parser + URL fetch (Google Sheets CSV link)</span
-              >
-              <input
-                accept=".csv,.xlsx,.xls,.txt"
-                id="fileInputMock"
-                type="file"
-              />
-            </label>
+        <section class="panel subpanel import-source-panel">
+          <div class="mapping-section-head">
+            <div>
+              <h3>1. Джерело імпорту</h3>
+              <p class="mapping-section-note">Завантаж файл або встав публічне CSV-посилання.</p>
+            </div>
+          </div>
+          <div class="stack import-source-stack">
+            <div class="import-source-grid">
+              <label class="file-drop import-source-card import-upload-card">
+                <span class="import-card-kicker">Файл</span>
+                <span class="drop-title">Завантажити CSV / Excel</span>
+                <span class="muted">CSV, XLSX, XLS, TXT. Найшвидший спосіб імпорту таблиці.</span>
+                <input
+                  accept=".csv,.xlsx,.xls,.txt"
+                  id="fileInputMock"
+                  type="file"
+                />
+              </label>
 
-            <label>
-              <span>Google Sheets / CSV link</span>
-              <input id="urlInputMock" placeholder="https://..." type="url" />
-            </label>
+              <label class="import-source-card import-url-card">
+                <span class="import-card-kicker">Посилання</span>
+                <span class="drop-title">Google Sheets / CSV посилання</span>
+                <span class="muted">Працює з публічним CSV export або відкритим CSV-посиланням Google Sheets.</span>
+                <input id="urlInputMock" placeholder="https://..." type="url" />
+              </label>
+            </div>
 
-            <div class="row gap wrap">
-              <button
-                class="btn btn-sm"
-                id="toggleFieldLabelEditBtn"
-                type="button"
-              >
-                Показати редагування назв
+            <div class="import-tools-row import-tools-row-main">
+              <button class="btn btn-sm" id="detectColumnsMockBtn" type="button">
+                Визначити колонки
               </button>
               <button class="btn btn-sm" id="loadUrlMockBtn" type="button">
-                Load URL
-              </button>
-              <button class="btn btn-sm" id="useTemplateMockBtn" type="button">
-                Use saved template
-              </button>
-              <button
-                class="btn btn-sm"
-                id="detectColumnsMockBtn"
-                type="button"
-              >
-                Detect columns
-              </button>
-              <button class="btn btn-sm" id="loadDemoImportBtn" type="button">
-                Load demo data
+                Завантажити URL
               </button>
             </div>
 
-            <div class="muted small" id="importLoadedInfo">
-              No file loaded yet.
-            </div>
-            <div class="muted small" id="importStatusInfo">
-              Load file/link, map columns once, save template.
+            <div class="import-status-grid">
+              <div class="import-status-card">
+                <div class="import-status-title">Поточне джерело</div>
+                <div class="muted small" id="importLoadedInfo">
+                  Файл ще не завантажено.
+                </div>
+              </div>
+              <div class="import-status-card">
+                <div class="import-status-title">Статус</div>
+                <div class="muted small" id="importStatusInfo">
+                  Завантаж файл або посилання, визнач колонки, застосуй імпорт.
+                </div>
+              </div>
             </div>
 
-            <div class="row gap wrap top-space import-source-actions">
-              <button class="btn" id="saveTemplateMockBtn" type="button">
-                Save import template
-              </button>
-              <button
-                class="btn btn-primary"
-                id="applyImportMockBtn"
-                type="button"
-              >
-                Apply import
-              </button>
+            <div class="import-template-tools">
+              <div class="import-source-actions">
+                <button
+                  class="btn btn-primary"
+                  id="applyImportMockBtn"
+                  type="button"
+                >
+                  Застосувати імпорт
+                </button>
+              </div>
             </div>
           </div>
         </section>
 
         <section class="panel subpanel">
-          <h3>2. Required columns (core 6)</h3>
+          <div class="mapping-section-head">
+            <div>
+              <h3>2. Обов'язкові колонки</h3>
+              <p class="mapping-section-note">Ім’я гравця, тип військ, тір, розмір маршу, розмір групової атаки, альянс, готовність бути капітаном, доступність по зміні.</p>
+            </div>
+            <div class="mapping-section-head-actions">
+              <button class="btn btn-sm btn-ghost" data-save-import-template="1" type="button">Зберегти шаблон</button>
+            </div>
+          </div>
           <div class="stack mapping-grid-2" id="requiredMappingContainer"></div>
         </section>
 
         <section class="panel subpanel">
-          <h3>3. Optional columns</h3>
+          <div class="mapping-section-head">
+            <div>
+              <h3>3. Додаткові колонки</h3>
+              <p class="mapping-section-note">Рівень лігва, резервний тип військ: боєць / наїздник / стрілець та твої власні додаткові колонки.</p>
+            </div>
+            <div class="mapping-section-head-actions">
+              <button class="btn btn-sm btn-ghost" data-save-import-template="1" type="button">Зберегти шаблон</button>
+            </div>
+          </div>
           <div
             class="stack compact mapping-grid-2"
             id="optionalMappingContainer"
@@ -114,30 +127,46 @@
         </section>
 
         <section class="panel subpanel">
-          <h3>4. Visibility columns</h3>
+          <div class="mapping-section-head">
+            <div>
+              <h3>4. Видимі колонки</h3>
+              <p class="mapping-section-note">Обери, які додаткові колонки треба показувати в таблиці гравців при натисканні «Показати всі дані».</p>
+            </div>
+          </div>
           <div
             class="stack compact visibility-panel"
             id="columnVisibilityChecks"
           ></div>
           <div class="row gap top-space wrap">
-            <button class="btn btn-sm" id="showAllColumnsBtn" type="button">
-              Show all columns
-            </button>
-            <button
+                        <button
               class="btn btn-sm"
               id="saveVisibleColumnsMockBtn"
               type="button"
             >
-              Save visible columns
+              Зберегти видимі колонки
             </button>
           </div>
         </section>
+
+        <section class="panel subpanel">
+          <div class="mapping-section-head">
+            <div>
+              <h3>5. Скидання даних</h3>
+              <p class="mapping-section-note">Обережно: ці дії скидають збережені налаштування або дані таблиць.</p>
+            </div>
+          </div>
+          <div class="stack reset-actions-grid">
+            <button class="btn btn-sm btn-danger-soft" id="resetAllStorageBtn" type="button">Повністю скинути LocalStorage</button>
+            <button class="btn btn-sm btn-ghost" id="resetColumnDataBtn" type="button">Скинути дані колонок</button>
+            <button class="btn btn-sm btn-ghost" id="resetTableDataBtn" type="button">Скинути дані таблиць</button>
+          </div>
+        </section>
+
       </div>
 
       <div class="modal-foot">
         <div class="muted">
-          Імпорт працює: CSV/XLSX/Google Sheets CSV link, мапінг колонок
-          (збереження в LocalStorage), plus auto-fill, Final Board export.
+          Підтримуються CSV/XLSX та публічне CSV-посилання Google Sheets.
         </div>
       </div>
     </div>
@@ -397,14 +426,6 @@
                     "
                   >
                     <label
-                      ><input
-                        type="checkbox"
-                        id="towerCalcNoCrossShift"
-                        checked
-                      />
-                      Без дублювання helper-ів між shifts</label
-                    >
-                    <label
                       ><input type="checkbox" id="towerCalcBoth50" />
                       Автобаланс гравців Both</label
                     >
@@ -553,11 +574,11 @@
                   <div class="tower-calc-shift-controls-left">
                     <label
                       >Ліміт Shift 1
-                      <input id="shiftLimitS1" type="number" min="0" max="100" value="90" />
+                      <input id="shiftLimitS1" type="number" min="0" max="100" value="100" />
                     </label>
                     <label
                       >Ліміт Shift 2
-                      <input id="shiftLimitS2" type="number" min="0" max="100" value="90" />
+                      <input id="shiftLimitS2" type="number" min="0" max="100" value="100" />
                     </label>
                     <label
                       >Додати в Shift 1
@@ -574,7 +595,11 @@
                     >
                       Застосувати
                     </button>
-                    <button class="btn btn-sm" id="towerCalcRestoreImportShiftsBtn" type="button">
+                    <button
+                      class="btn btn-sm"
+                      id="towerCalcRestoreImportShiftsBtn"
+                      type="button"
+                    >
                       Відновити з імпорту
                     </button>
                     <label class="tower-calc-shift-force">
@@ -593,30 +618,11 @@
                     <div class="tower-calc-autoslots">
                       <button
                         class="btn btn-sm"
-                        id="towerCalcAutoSlotsS1Btn"
-                        type="button"
-                      >
-                        Автослоти S1
-                      </button>
-                      <button
-                        class="btn btn-sm"
-                        id="towerCalcAutoSlotsS2Btn"
-                        type="button"
-                      >
-                        Автослоти S2
-                      </button>
-                      <button
-                        class="btn btn-sm"
                         id="towerCalcAutoFitBtn"
                         type="button"
                       >
                         Автозаповнення башень
                       </button>
-                    </div>
-
-                    <div class="muted small">
-                      Автослоти = розподілити слоти по башнях за
-                      кількістю гравців (без капітанів).
                     </div>
                   </div>
                 </div>

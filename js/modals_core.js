@@ -74,12 +74,12 @@
     if (b.showAllData) {
       b.showAllData.setAttribute('aria-pressed', String(on));
       b.showAllData.classList.toggle('toggle-on', on);
-      b.showAllData.textContent = on ? 'Сховати зайві колонки' : 'Показати всі дані';
+      b.showAllData.textContent = on ? 'Сховати додаткові дані' : 'Показати всі дані';
     }
     if (b.showAllColumns) {
       b.showAllColumns.setAttribute('aria-pressed', String(on));
       b.showAllColumns.classList.toggle('toggle-on', on);
-      b.showAllColumns.textContent = on ? 'Hide extra columns' : 'Show all columns';
+      b.showAllColumns.textContent = on ? 'Hide selected columns' : 'Show selected columns';
     }
   }
 
@@ -94,7 +94,7 @@
     const visible = new Set(state.visibleOptionalColumns || []);
     $$('.optional-col').forEach((cell) => {
       const key = cell.dataset.colKey || '';
-      const shouldShow = state.showAllColumns || !key || visible.has(key);
+      const shouldShow = !key ? true : (!!state.showAllColumns && visible.has(key));
       cell.classList.toggle('is-hidden-col', !shouldShow);
     });
     syncVisibilityCheckboxes();

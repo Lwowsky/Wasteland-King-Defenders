@@ -461,7 +461,7 @@
   }
 
 
-  function clampShiftLimitValue(v, fallback = 90) {
+  function clampShiftLimitValue(v, fallback = 100) {
     const n = Math.floor(Number(v));
     if (!Number.isFinite(n)) return fallback;
     return Math.max(0, Math.min(100, n));
@@ -473,8 +473,8 @@
     const saved2 = tc.shiftPlayerLimit2;
     const ui1 = document.getElementById('shiftLimitS1');
     const ui2 = document.getElementById('shiftLimitS2');
-    const limit1 = clampShiftLimitValue(ui1?.value ?? saved1, 90);
-    const limit2 = clampShiftLimitValue(ui2?.value ?? saved2, 90);
+    const limit1 = clampShiftLimitValue(ui1?.value ?? saved1, 100);
+    const limit2 = clampShiftLimitValue(ui2?.value ?? saved2, 100);
     tc.shiftPlayerLimit1 = limit1;
     tc.shiftPlayerLimit2 = limit2;
     return { shift1: limit1, shift2: limit2 };

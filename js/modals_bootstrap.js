@@ -101,6 +101,50 @@
     return String(root?.getAttribute?.('data-calc-inline-scope') || state.activeShift || 'shift1');
   }
 
+  function setActiveTowerPickerScope(root) {
+    try { state._towerPickerActiveScopeRoot = root || null; } catch {}
+  }
+
+function syncPickerFlagsFromScope(root) {
+  if (!root?.querySelector) return;
+  try {
+    const onlyCaptains = root.querySelector('#pickerOnlyCaptains');
+    if (onlyCaptains) state.towerPickerOnlyCaptains = !!onlyCaptains.checked;
+  } catch {}
+  try {
+    const matchShift = root.querySelector('#pickerMatchRegisteredShift');
+    if (matchShift) state.towerPickerMatchRegisteredShift = !!matchShift.checked;
+  } catch {}
+  try {
+    const noMix = root.querySelector('#pickerNoMixTroops');
+    if (noMix) {
+      state.towerPickerNoMixTroops = !!noMix.checked;
+      localStorage.setItem('pns_picker_no_mix_troops', noMix.checked ? '1' : '0');
+    }
+  } catch {}
+  try {
+    const useBoth = root.querySelector('#pickerNoCrossShiftDupes');
+    if (useBoth) {
+      state.towerPickerNoCrossShiftDupes = !!useBoth.checked;
+      localStorage.setItem('pns_picker_no_cross_shift_dupes', useBoth.checked ? '1' : '0');
+    }
+  } catch {}
+}
+
+  function syncPickerRuleFromScope(baseId, root) {
+    if (!baseId || !root?.querySelector || typeof PNS.setBaseTowerRule !== 'function') return;
+    try {
+      const maxHelpersEl = root.querySelector('#pickerMaxHelpers');
+      const tierMinMarch = {};
+      root.querySelectorAll('[data-picker-tier]').forEach((inp) => { tierMinMarch[inp.dataset.pickerTier] = Number(inp.value || 0) || 0; });
+      const rule = {
+        maxHelpers: Number(maxHelpersEl?.value || 29) || 29,
+        tierMinMarch,
+      };
+      PNS.setBaseTowerRule(baseId, rule, { persist: true, rerender: false });
+    } catch {}
+  }
+
   function refreshTowerPickerScope(root) {
     const inCalc = !!root?.closest?.('#towerCalcModal');
     if (inCalc) {
@@ -259,6 +303,9 @@
         e.preventDefault();
         const baseId = pickerSetCaptain.dataset.pickerSetCaptain;
         const root = towerPickerScopeRoot(pickerSetCaptain);
+        setActiveTowerPickerScope(root);
+        syncPickerFlagsFromScope(root);
+        syncPickerRuleFromScope(baseId, root);
         const sel = root?.querySelector?.('#towerPickerCaptainSelect');
         if (!sel?.value) { alert('Оберіть капітана'); return; }
         try {
@@ -276,11 +323,15 @@
       if (pickerAuto) {
         e.preventDefault();
         const root = towerPickerScopeRoot(pickerAuto);
+        const baseId = pickerAuto.dataset.pickerAutofill;
+        setActiveTowerPickerScope(root);
+        syncPickerFlagsFromScope(root);
+        syncPickerRuleFromScope(baseId, root);
         try {
           const sk = towerPickerScopeShift(pickerAuto);
           if (pickerAuto.closest('#towerCalcModal') && MS.applyShiftFilter && String(state.activeShift || '') !== String(sk || '')) MS.applyShiftFilter(sk);
         } catch {}
-        try { PNS.autoFillBase?.(pickerAuto.dataset.pickerAutofill); } catch {}
+        try { PNS.autoFillBase?.(baseId); } catch {}
         MS.saveCurrentShiftPlanSnapshot?.();
         saveTowerTableNow('autofill');
         setTimeout(() => { try { MS.maybeAdvanceFocusedTower?.(); } catch {} refreshTowerPickerScope(root); }, 60);
@@ -291,6 +342,8 @@
       if (pickerClrH) {
         e.preventDefault();
         const root = towerPickerScopeRoot(pickerClrH);
+        setActiveTowerPickerScope(root);
+        syncPickerFlagsFromScope(root);
         try { const sk = towerPickerScopeShift(pickerClrH); if (pickerClrH.closest('#towerCalcModal') && MS.applyShiftFilter && String(state.activeShift || '') !== String(sk || '')) MS.applyShiftFilter(sk); } catch {}
         try { PNS.clearBase?.(pickerClrH.dataset.pickerClearHelpers, true); } catch {}
         saveTowerTableNow('clear helpers');
@@ -302,6 +355,8 @@
       if (pickerClrB) {
         e.preventDefault();
         const root = towerPickerScopeRoot(pickerClrB);
+        setActiveTowerPickerScope(root);
+        syncPickerFlagsFromScope(root);
         try { const sk = towerPickerScopeShift(pickerClrB); if (pickerClrB.closest('#towerCalcModal') && MS.applyShiftFilter && String(state.activeShift || '') !== String(sk || '')) MS.applyShiftFilter(sk); } catch {}
         try { PNS.clearBase?.(pickerClrB.dataset.pickerClearBase, false); } catch {}
         saveTowerTableNow('clear base');
@@ -313,6 +368,7 @@
       if (pickerSaveBoard) {
         e.preventDefault();
         const root = towerPickerScopeRoot(pickerSaveBoard);
+        setActiveTowerPickerScope(root);
         saveTowerTableNow('manual');
         setTimeout(() => { refreshTowerPickerScope(root); }, 20);
         return;
@@ -332,6 +388,7 @@
       if (pickerResetRule) {
         e.preventDefault();
         const root = towerPickerScopeRoot(pickerResetRule);
+        setActiveTowerPickerScope(root);
         root?.querySelectorAll?.('[data-picker-tier]').forEach(inp => { inp.value = '0'; });
         return;
       }
@@ -575,12 +632,10 @@
     });
 
     document.addEventListener('click', (e) => {
-      const btn = e.target.closest('#towerCalcRecalcBtn,#towerCalcFitBtn,#towerCalcApplyToTowersBtn,#towerCalcQuickApplyBtn,#towerCalcLoadCaptainsBtn,#towerCalcApplyAndAssignBtn,#towerCalcAutoSlotsS1Btn,#towerCalcAutoSlotsS2Btn,#towerCalcAutoFitBtn');
+      const btn = e.target.closest('#towerCalcRecalcBtn,#towerCalcFitBtn,#towerCalcApplyToTowersBtn,#towerCalcQuickApplyBtn,#towerCalcLoadCaptainsBtn,#towerCalcApplyAndAssignBtn,#towerCalcAutoFitBtn');
       if (!btn) return;
       e.preventDefault();
       if (btn.matches('#towerCalcLoadCaptainsBtn')) { calcSyncCaptainsFromTowersIntoCalculator({ keepHelpers: true }); return; }
-      if (btn.matches('#towerCalcAutoSlotsS1Btn')) { try { calcAutoSlotsForShift('shift1'); } catch {} return; }
-      if (btn.matches('#towerCalcAutoSlotsS2Btn')) { try { calcAutoSlotsForShift('shift2'); } catch {} return; }
       if (btn.matches('#towerCalcAutoFitBtn')) { try { calcAutoFitTowersStrict(); } catch {} return; }
       if (btn.matches('#towerCalcApplyToTowersBtn')) { applyTowerCalcToTowerSettings(); return; }
       if (btn.matches('#towerCalcQuickApplyBtn')) { applyTowerCalcAssignmentsToTowers(); return; }
@@ -667,16 +722,11 @@ document.addEventListener('click', (e) => {
       setTimeout(() => MS.syncSettingsTowerPreview?.(), 20);
     });
     document.addEventListener('change', (e) => {
-      const cb = e.target.closest('#pickerOnlyCaptains');
+      const cb = e.target.closest('#pickerOnlyCaptains,#pickerMatchRegisteredShift,#pickerNoMixTroops,#pickerNoCrossShiftDupes');
       if (!cb) return;
-      state.towerPickerOnlyCaptains = !!cb.checked;
-      refreshTowerPickerScope(towerPickerScopeRoot(cb));
-    });
-    document.addEventListener('change', (e) => {
-      const cb = e.target.closest('#pickerMatchRegisteredShift');
-      if (!cb) return;
-      state.towerPickerMatchRegisteredShift = !!cb.checked;
-      refreshTowerPickerScope(towerPickerScopeRoot(cb));
+      const root = towerPickerScopeRoot(cb);
+      syncPickerFlagsFromScope(root);
+      refreshTowerPickerScope(root);
     });
     document.addEventListener('input', (e) => {
       const t = e.target;
@@ -721,7 +771,7 @@ document.addEventListener('change', (e) => {
     });
 
     document.addEventListener('click', (e) => {
-      const btn = e.target.closest('.row-actions .btn, [data-base-editor-action], [data-base-remove-player]');
+      const btn = e.target.closest('.row-actions .btn, [data-base-remove-player]');
       if (!btn) return;
       const txt = (btn.textContent || '').toLowerCase();
       const act = btn.dataset.baseEditorAction || '';

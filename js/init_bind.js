@@ -23,7 +23,7 @@
   function exportBoardAsPNG() {
     const board = document.querySelector('.board-sheet');
     if (!board) return;
-    if (typeof window.html2canvas !== 'function') return alert('html2canvas не завантажився.');
+    if (typeof window.html2canvas !== 'function') return alert(window.__PNS_OFFLINE_NO_HTML2CANVAS__ ? 'PNG export недоступний в offline-пакеті без локальної бібліотеки html2canvas.' : 'html2canvas не завантажився.');
     window.html2canvas(board, { backgroundColor: '#ffffff', scale: 2 }).then((canvas) => {
       const a = document.createElement('a');
       const shift = state.activeShift || 'all';
@@ -142,7 +142,7 @@
       e.preventDefault(); PNS.openModal?.('board'); PNS.renderBoard?.();
     });
     onClick('#showAllDataBtn, #showAllColumnsBtn', (e) => { e.preventDefault(); PNS.toggleColumns?.(); });
-    onClick('#autoFillAllHeaderBtn, #autoFillAllHeaderBtnMobile, #autoFillAllBasesBtn, #settingsAutoFillAllBtn', (e) => { e.preventDefault(); PNS.autoFillAllVisibleBases?.(); });
+    onClick('#autoFillAllHeaderBtn, #autoFillAllBasesBtn, #settingsAutoFillAllBtn', (e) => { e.preventDefault(); PNS.autoFillAllVisibleBases?.(); });
     onClick('#clearCurrentShiftBtn, #settingsClearCurrentShiftBtn', (e) => { e.preventDefault(); PNS.clearCurrentShiftAssignments?.(); PNS.renderAll?.(); });
     onClick('#exportPngBtn', (e) => { e.preventDefault(); exportBoardAsPNG(); });
     onClick('#exportPdfBtn', (e) => { e.preventDefault(); exportBoardAsPDF(); });

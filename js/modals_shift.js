@@ -13,6 +13,7 @@
     'modals_core.js',
     'modals_preview.js',
     'tower_player_modal.js',
+    'tower_picker_shared_ui.js',
     'tower_picker.js',
     'tower_calc.js',
     'modals_bootstrap.js',

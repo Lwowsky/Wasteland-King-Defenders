@@ -12,6 +12,25 @@
     return true;
   }
 
+  function matchRegisteredShiftEnabled() {
+    try {
+      if (typeof PNS.isTowerMatchRegisteredShiftEnabled === 'function') return !!PNS.isTowerMatchRegisteredShiftEnabled();
+    } catch {}
+    return true;
+  }
+
+  function useBothEnabled() {
+    return state.towerPickerNoCrossShiftDupes === true;
+  }
+
+  function resolveTowerShift(base) {
+    const baseShift = String(base?.shift || '').toLowerCase();
+    if (baseShift === 'shift1' || baseShift === 'shift2') return baseShift;
+    const activeShift = String(state.activeShift || '').toLowerCase();
+    if (activeShift === 'shift1' || activeShift === 'shift2') return activeShift;
+    return 'shift1';
+  }
+
   function getBaseTierMinMarch(base, tierKey) {
     const k = String(tierKey || '').toUpperCase();
     return PNS.clampInt(base?.tierMinMarch?.[k], 0);
@@ -54,12 +73,18 @@
   }
 
   function autoFillDiagnostics(base, captain) {
+    const enforceShift = matchRegisteredShiftEnabled();
+    const targetShift = resolveTowerShift(base);
     const free = (state.players || []).filter((p) => !p.assignment && p.id !== captain.id);
     const sameRoleRequired = enforceSameTroopRole();
     const sameRole = sameRoleRequired ? free.filter((p) => p.role === captain.role) : free.slice();
 
-    const byActiveShift = sameRole.filter((p) => PNS.matchesShift(p.shift, state.activeShift));
-    const byBaseShift = byActiveShift.filter((p) => base.shift === 'both' || p.shift === 'both' || p.shift === base.shift);
+    const byActiveShift = enforceShift
+      ? sameRole.filter((p) => PNS.matchesShift(p.shift, targetShift))
+      : sameRole.slice();
+    const byBaseShift = enforceShift
+      ? byActiveShift.filter((p) => base.shift === 'both' || p.shift === 'both' || p.shift === base.shift)
+      : byActiveShift.slice();
     const passTierMin = byBaseShift.filter((p) => passesBaseTierMinMarch(base, p));
 
     const limit = calcRallyLimit(captain);
@@ -121,19 +146,26 @@
       : Infinity;
 
     const ignoreShift = !!document.querySelector('#ignoreShiftAutoFillToggle:checked');
+    const enforceShift = matchRegisteredShiftEnabled();
+    const targetShift = resolveTowerShift(base);
 
-    const commonCandidates = () => (state.players || [])
-      .filter((p) => p && p.id !== captain.id)
-      .filter((p) => !p.assignment)
-      .filter((p) => enforceSameTroopRole() ? (p.role === captain.role) : true)
-      .filter((p) => ignoreShift ? true : PNS.matchesShift(p.shift, state.activeShift))
-      .filter((p) => ignoreShift ? true : (base.shift === 'both' || p.shift === 'both' || p.shift === base.shift))
-      .filter((p) => passesBaseTierMinMarch(base, p))
-      .sort((a, b) =>
-        (num(b.tierRank) - num(a.tierRank)) ||
-        (num(b.march) - num(a.march)) ||
-        String(a.name).localeCompare(String(b.name))
-      );
+const commonCandidates = () => (state.players || [])
+  .filter((p) => p && p.id !== captain.id)
+  .filter((p) => !p.assignment)
+  .filter((p) => enforceSameTroopRole() ? (p.role === captain.role) : true)
+  .filter((p) => {
+    const useBoth = useBothEnabled();
+    const ps = String(p.shift || p.shiftLabel || '').trim().toLowerCase();
+    return useBoth ? true : ps !== 'both';
+  })
+  .filter((p) => (ignoreShift || !enforceShift) ? true : PNS.matchesShift(p.shift, targetShift))
+  .filter((p) => (ignoreShift || !enforceShift) ? true : (base.shift === 'both' || p.shift === 'both' || p.shift === base.shift))
+  .filter((p) => passesBaseTierMinMarch(base, p))
+  .sort((a, b) =>
+    (num(b.tierRank) - num(a.tierRank)) ||
+    (num(b.march) - num(a.march)) ||
+    String(a.name).localeCompare(String(b.name))
+  );
 
     // важливо: validateAssign може бути ще не підвантажений
     const canValidate = typeof PNS.validateAssign === 'function';
@@ -160,9 +192,9 @@
     if (added <= 0) {
       let reason = '';
       const d = autoFillDiagnostics(base, captain);
-      if (!d.sameRole && enforceSameTroopRole()) reason = `No free ${captain.role} players.`;
-      else if (!ignoreShift && !d.byActiveShift) reason = `No ${captain.role} players for active filter (${state.activeShift}).`;
-      else if (!ignoreShift && !d.byBaseShift) reason = `No ${captain.role} players match tower shift.`;
+      if (!d.sameRole && enforceSameTroopRole()) reason = `Немає вільних гравців типу ${captain.role}.`;
+      else if (!ignoreShift && matchRegisteredShiftEnabled() && !d.byActiveShift) reason = `Немає ${captain.role} для shift ${resolveTowerShift(base)}.`;
+      else if (!ignoreShift && matchRegisteredShiftEnabled() && !d.byBaseShift) reason = `Немає ${captain.role}, які підходять під shift башні.`;
       else if (!d.passTierMin) reason = 'No candidates pass per-tier min march rules.';
       else if ((base.maxHelpers || 0) > 0 && base.helperIds.length >= base.maxHelpers) reason = `Max helpers reached (${base.maxHelpers}).`;
       else if (room !== Infinity && d.fitRoom === 0) reason = `No players fit remaining rally room (${PNS.formatNum?.(Math.max(0, d.room)) ?? Math.max(0, d.room)}).`;

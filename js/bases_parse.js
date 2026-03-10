@@ -82,7 +82,10 @@
 
   function syncBaseEditorSettingsInputs(base) {
     if (!base?.cardEl) return;
-    const root = $('.base-editor', base.cardEl) || base.cardEl;
+    const legacyRoot = (typeof PNS.isLegacyBaseEditorEnabled === 'function' && PNS.isLegacyBaseEditorEnabled())
+      ? $('.base-editor', base.cardEl)
+      : null;
+    const root = legacyRoot || base.cardEl;
 
     const maxEl = $('[data-v4-maxhelpers]', root);
     if (maxEl) maxEl.value = String(PNS.clampInt(base.maxHelpers, 29));
@@ -106,7 +109,10 @@
       });
     }
 
-    const root = $('.base-editor', base.cardEl) || base.cardEl;
+    const legacyRoot = (typeof PNS.isLegacyBaseEditorEnabled === 'function' && PNS.isLegacyBaseEditorEnabled())
+      ? $('.base-editor', base.cardEl)
+      : null;
+    const root = legacyRoot || base.cardEl;
     const out = {
       maxHelpers: PNS.clampInt($('[data-v4-maxhelpers]', root)?.value, base?.maxHelpers || 29),
       tierMinMarch: PNS.getEmptyTierMinMarch(),

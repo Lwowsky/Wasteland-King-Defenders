@@ -139,7 +139,7 @@
     const actions = [
       ['openSettingsBtnMobile', () => window.PNS?.openModal?.('settings')],
       ['openBoardBtnMobile', () => window.PNS?.openModal?.('board')],
-      ['autoFillAllHeaderBtnMobile', () => (window.PNS?.openTowerCalculatorModal?.() || window.PNS?.ModalsShift?.openTowerCalculatorModal?.())],
+      ['openTowerCalcBtnMobile', () => (window.PNS?.openTowerCalculatorModal?.() || window.PNS?.ModalsShift?.openTowerCalculatorModal?.())],
     ];
 
     actions.forEach(([mobileId, fn]) => {
@@ -165,12 +165,11 @@
   // =========================
   function bindQuickButtons() {
     const quick = document.getElementById('openImportQuickBtn');
-    const openSettings = document.getElementById('openSettingsBtn');
 
-    if (quick && openSettings) {
+    if (quick) {
       safeOn(quick, 'quickOpen', 'click', (e) => {
         e.preventDefault();
-        openSettings.click();
+        try { window.PNS?.openModal?.('settings'); } catch {}
       });
     }
 
@@ -184,6 +183,18 @@
         e.currentTarget.textContent = modal.classList.contains('show-field-label-edits')
           ? 'Сховати редагування назв'
           : 'Показати редагування назв';
+      });
+    }
+
+    const share = document.getElementById('shareBoardBtn');
+    if (share) {
+      safeOn(share, 'shareBoard', 'click', async (e) => {
+        e.preventDefault();
+        const boardUrl = location.href.split('#')[0] + '#board-modal';
+        try {
+          if (navigator.share) await navigator.share({ title: 'P&S Final Board', text: 'Final Board View', url: boardUrl });
+          else { await navigator.clipboard.writeText(boardUrl); alert('Посилання скопійовано'); }
+        } catch {}
       });
     }
   }

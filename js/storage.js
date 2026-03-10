@@ -28,7 +28,7 @@
     } catch { return fallback; }
   }
   function safeWriteBool(key, value) {
-    try { localStorage.setItem(key, value ? '1' : '0'); } catch {}
+    try { if (isPersistenceSuppressed()) return; localStorage.setItem(key, value ? '1' : '0'); } catch {}
   }
 
   function safeReadJSON(key, fallback) {
@@ -39,7 +39,20 @@
     } catch { return fallback; }
   }
   function safeWriteJSON(key, value) {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+    try { if (isPersistenceSuppressed()) return; localStorage.setItem(key, JSON.stringify(value)); } catch {}
+  }
+
+  function isPersistenceSuppressed() {
+    try { return !!(window.__PNS_FACTORY_RESET_ACTIVE || state?._suppressPersistence); } catch { return false; }
+  }
+
+  function setPersistenceSuppressed(flag) {
+    try { state._suppressPersistence = !!flag; } catch {}
+    try {
+      if (flag) window.__PNS_FACTORY_RESET_ACTIVE = true;
+      else delete window.__PNS_FACTORY_RESET_ACTIVE;
+    } catch {}
+    return !!flag;
   }
 
   // ===== Base tower rules store =====
@@ -75,7 +88,9 @@
     if (typeof state.baseTowerRules !== 'object' || Array.isArray(state.baseTowerRules)) state.baseTowerRules = {};
   }
   function saveBaseTowerRulesStore() {
+    if (isPersistenceSuppressed()) return false;
     safeWriteJSON(KEYS.KEY_BASE_TOWER_RULES, state.baseTowerRules || {});
+    return true;
   }
   function getBaseTowerRule(baseId, opts = {}) {
     const store = (state.baseTowerRules && typeof state.baseTowerRules === 'object') ? state.baseTowerRules : {};
@@ -140,7 +155,9 @@
     state.fieldLabelOverrides = saved && typeof saved === 'object' ? saved : {};
   }
   function saveFieldLabelOverrides() {
+    if (isPersistenceSuppressed()) return false;
     safeWriteJSON(KEYS.KEY_FIELD_LABEL_OVERRIDES, state.fieldLabelOverrides || {});
+    return true;
   }
   function setFieldLabelOverride(key, value) {
     if (!state.fieldLabelOverrides || typeof state.fieldLabelOverrides !== 'object') state.fieldLabelOverrides = {};
@@ -161,7 +178,9 @@
         : []);
   }
   function saveVisibleOptionalColumns() {
+    if (isPersistenceSuppressed()) return false;
     safeWriteJSON(KEYS.KEY_IMPORT_VISIBLE_COLUMNS, Array.from(new Set(state.visibleOptionalColumns || [])));
+    return true;
   }
 
   // ===== Players snapshot (persist imported players across page refresh) =====
@@ -195,6 +214,8 @@
       secondaryTier: String(p.secondaryTier || ''),
       troop200k: String(p.troop200k || ''),
       notes: String(p.notes || ''),
+      customFields: p.customFields && typeof p.customFields === 'object' ? { ...p.customFields } : {},
+      customFieldLabels: p.customFieldLabels && typeof p.customFieldLabels === 'object' ? { ...p.customFieldLabels } : {},
       raw: p.raw && typeof p.raw === 'object' ? p.raw : {},
       rowEl: null,
       actionCellEl: null,
@@ -203,6 +224,7 @@
   }
 
   function savePlayersSnapshot(players) {
+    if (isPersistenceSuppressed()) return false;
     const arr = Array.isArray(players) ? players : state.players;
     if (!Array.isArray(arr) || !arr.length) return false;
     const payload = arr.map((p, i) => normalizePlayerSnapshotItem(p, i));
@@ -235,7 +257,7 @@
   function setImportLoadedInfo(msg) {
     const el = resolveControl('importLoadedInfo', 'importLoadedInfo');
     if (!el) return;
-    el.textContent = msg || 'No file loaded yet.';
+    el.textContent = msg || 'Файл ще не завантажено.';
   }
 
   // expose
@@ -258,6 +280,8 @@
 
   PNS.loadVisibleOptionalColumns = loadVisibleOptionalColumns;
   PNS.saveVisibleOptionalColumns = saveVisibleOptionalColumns;
+  PNS.isPersistenceSuppressed = isPersistenceSuppressed;
+  PNS.setPersistenceSuppressed = setPersistenceSuppressed;
 
   PNS.savePlayersSnapshot = savePlayersSnapshot;
   PNS.loadPlayersSnapshot = loadPlayersSnapshot;
@@ -342,6 +366,7 @@
   }
 
   function saveTowersSnapshot(opts) {
+    if (isPersistenceSuppressed()) return false;
     if (state && state._skipTowerSnapshotSave) return false;
     const forceEmpty = !!(opts && opts.forceEmpty);
     const payload = _currentTowersPayload();
@@ -439,6 +464,7 @@
     PNS._towersSnapshotEventBindDone = true;
     document.addEventListener('pns:assignment-changed', () => { try { saveTowersSnapshot(); } catch {} });
     window.addEventListener('beforeunload', () => {
+      if (isPersistenceSuppressed()) return;
       try { if (typeof PNS.savePlayersSnapshot === 'function') PNS.savePlayersSnapshot(state.players); } catch {}
       try { saveTowersSnapshot(); } catch {}
     });
