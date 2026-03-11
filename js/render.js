@@ -28,6 +28,13 @@
     }
   }
 
+function optionalColumnClass(key) {
+  const normalizedKey = String(key || '').trim();
+  const visible = new Set(state.visibleOptionalColumns || []);
+  const shouldShow = !!state.showAllColumns && visible.has(normalizedKey);
+  return `optional-col${shouldShow ? '' : ' is-hidden-col'}`;
+}
+
   function roleTagClass(role) {
     const r = PNS.normalizeRole(role).toLowerCase();
     if (r.includes('shoot')) return 'shooter';
@@ -508,7 +515,7 @@
         const tr = document.createElement('tr');
         const cols = (tbody.closest('table')?.querySelectorAll('thead th')?.length) || 4;
         tr.innerHTML = `<td colspan="${cols}" class="muted">No helpers assigned</td>`;
-        tbody.appendChild(tr);
+        fragment.appendChild(tr);
       } else {
         helpers
           .slice()
@@ -520,7 +527,7 @@
             tr.innerHTML = hasEditCol
               ? `<td>${PNS.escapeHtml(p.name)}</td><td>${PNS.escapeHtml(p.alliance)}</td><td>${PNS.escapeHtml(p.tier)}</td><td>${PNS.formatNum(eff)}</td><td><button type="button" class="btn btn-xs btn-icon" data-edit-assigned-player="${PNS.escapeHtml(p.id)}" data-base-id="${PNS.escapeHtml(base.id)}" aria-label="Edit player">✎</button></td>`
               : `<td>${PNS.escapeHtml(p.name)}</td><td>${PNS.escapeHtml(p.alliance)}</td><td>${PNS.escapeHtml(p.tier)}</td><td>${PNS.formatNum(eff)}</td>`;
-            tbody.appendChild(tr);
+            fragment.appendChild(tr);
           });
       }
     }
@@ -605,9 +612,44 @@
     });
   }
 
+  function renderBoardFromTowerCalcResults() {
+    const activeShift = String(state.activeShift || '').toLowerCase();
+    if (!(activeShift === 'shift1' || activeShift === 'shift2')) return false;
+
+    const results = state.towerCalcLastResults || null;
+    const hasPlans = !!(results?.shift1?.towerPlans?.length || results?.shift2?.towerPlans?.length);
+    if (!hasPlans) return false;
+
+    const payload =
+      (typeof PNS.getTowerCalcBoardPayloadForShift === 'function'
+        ? PNS.getTowerCalcBoardPayloadForShift(activeShift, results)
+        : null) ||
+      (typeof window.getTowerCalcBoardPayloadForShift === 'function'
+        ? window.getTowerCalcBoardPayloadForShift(activeShift, results)
+        : null);
+    if (!payload?.colsHtml) return false;
+
+    const sheet = document.querySelector('.board-sheet');
+    const grid = sheet?.querySelector('.board-grid');
+    const titleEl = sheet?.querySelector('#boardTitle');
+    if (!sheet || !grid || !titleEl) return false;
+
+    titleEl.textContent = String(payload.title || titleEl.textContent || '');
+    grid.innerHTML = String(payload.colsHtml || '');
+
+    state.bases.forEach((base) => {
+      base.boardEl = null;
+      resolveBaseEls(base);
+    });
+
+    return true;
+  }
+
   function renderBoard() {
     state.bases.forEach(resolveBaseEls);
-    state.bases.forEach(updateBoardCol);
+    if (!renderBoardFromTowerCalcResults()) {
+      state.bases.forEach(updateBoardCol);
+    }
     try { PNS.ModalsShift?.updateBoardTitle?.(); } catch {}
   }
 
@@ -634,7 +676,7 @@
 
     const customOptionalDefs = (typeof PNS.getCustomOptionalDefs === 'function' ? PNS.getCustomOptionalDefs() : []);
     const customOptionalHeadHtml = customOptionalDefs.map((d) =>
-      `<th class="optional-col" data-col-key="${PNS.escapeHtml(String(d.key || ''))}" data-field="${PNS.escapeHtml(String(d.key || ''))}">${PNS.escapeHtml(String(d.label || d.key || 'Custom'))}</th>`
+      `<th class="${optionalColumnClass(String(d.key || ''))}" data-col-key="${PNS.escapeHtml(String(d.key || ''))}" data-field="${PNS.escapeHtml(String(d.key || ''))}">${PNS.escapeHtml(String(d.label || d.key || 'Custom'))}</th>`
     ).join('');
 
     theadRow.innerHTML = `
@@ -646,11 +688,12 @@
       <th data-field="rally">Rally size <button type="button" class="sort-btn" data-sort="rally" aria-label="Sort by Rally size">↓</button></th>
       <th data-field="captainReady">Captain</th>
       <th data-field="shiftLabel">Shift</th>
-      <th class="optional-col" data-col-key="lair_level" data-field="lair">Lair level</th>
+      <th class="${optionalColumnClass('lair_level')}" data-col-key="lair_level" data-field="lair">Lair level</th>
       ${customOptionalHeadHtml}
       <th data-col-key="actions" data-field="actions">Actions</th>`;
 
     const tbody = table.querySelector('tbody') || table.appendChild(document.createElement('tbody'));
+    const fragment = document.createDocumentFragment();
     tbody.innerHTML = '';
 
     state.playerById = new Map();
@@ -677,7 +720,7 @@
       const customOptionalCellsHtml = customOptionalDefs.map((d) => {
         const key = String(d.key || '');
         const val = p?.customFields && typeof p.customFields === 'object' ? p.customFields[key] : '';
-        return `<td class="optional-col" data-col-key="${PNS.escapeHtml(key)}" data-field="${PNS.escapeHtml(key)}">${PNS.escapeHtml(String(val || ''))}</td>`;
+        return `<td class="${optionalColumnClass(key)}" data-col-key="${PNS.escapeHtml(key)}" data-field="${PNS.escapeHtml(key)}">${PNS.escapeHtml(String(val || ''))}</td>`;
       }).join('');
 
       tr.innerHTML = `
@@ -689,11 +732,11 @@
         <td data-field="rally">${PNS.formatNum(PNS.parseNumber(p.rally))}</td>
         <td data-field="captainReady">${p.captainReady ? '<span class="pill yes">Yes</span>' : '<span class="pill no">No</span>'}</td>
         <td data-field="shiftLabel">${PNS.escapeHtml(p.shiftLabel)}</td>
-        <td class="optional-col" data-col-key="lair_level" data-field="lair">${PNS.escapeHtml(String(p.lairLevel || ''))}</td>
+        <td class="${optionalColumnClass('lair_level')}" data-col-key="lair_level" data-field="lair">${PNS.escapeHtml(String(p.lairLevel || ''))}</td>
         ${customOptionalCellsHtml}
         <td class="muted" data-col-key="actions" data-field="actions"></td>`;
 
-      tbody.appendChild(tr);
+      fragment.appendChild(tr);
 
       p.rowEl = tr;
       p.actionCellEl = tr.querySelector('td[data-field="actions"]');
@@ -701,9 +744,12 @@
       state.playerById.set(p.id, p);
     });
 
+    tbody.appendChild(fragment);
+
     if (typeof PNS.applyColumnVisibility === 'function') PNS.applyColumnVisibility(state.showAllColumns);
 
     // let others know the table is rebuilt
+    try { document.dispatchEvent(new CustomEvent('players-table-data-changed')); } catch {}
     try { document.dispatchEvent(new CustomEvent('players-table-rendered')); } catch {}
   }
 

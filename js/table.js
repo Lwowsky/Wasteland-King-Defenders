@@ -170,7 +170,12 @@
   }
 
   function init() { bind(); scheduleRecalc(); }
+
+  const PNS = window.PNS = window.PNS || {};
+  PNS.schedulePlayerTableRecalc = scheduleRecalc;
   document.addEventListener('players-table-rendered', init);
+  document.addEventListener('players-table-filters-changed', scheduleRecalc);
+  document.addEventListener('players-table-data-changed', scheduleRecalc);
   document.addEventListener('htmx:afterSwap', init);
   document.addEventListener('htmx:afterSettle', init);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

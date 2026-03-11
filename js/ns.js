@@ -113,6 +113,67 @@
   PNS.shiftTabs = shiftTabs;
   PNS.controls = controls;
 
+function refreshDomCache() {
+  PNS.modals = {
+    settings: $('#settings-modal'),
+    board: $('#board-modal'),
+  };
+  PNS.buttons = {
+    ...PNS.buttons,
+    openSettings: $('#openSettingsBtn'),
+    openBoard: $('#openBoardBtn'),
+    showAllData: $('#showAllDataBtn'),
+    showAllColumns: $('#showAllColumnsBtn'),
+    autoFillAllHeader: $('#autoFillAllHeaderBtn'),
+    autoFillAllBases: $('#autoFillAllBasesBtn'),
+    clearCurrentShift: $('#clearCurrentShiftBtn'),
+    copyShift1ToShift2: $('#copyShift1ToShift2Btn'),
+    copyShift2ToShift1: $('#copyShift2ToShift1Btn'),
+    applyQuotaSettings: $('#applyQuotaSettingsBtn'),
+    resetQuotaSettings: $('#resetQuotaSettingsBtn'),
+    savePreset: $('#savePresetBtn'),
+    overwritePreset: $('#overwritePresetBtn'),
+    loadPreset: $('#loadPresetBtn'),
+    deletePreset: $('#deletePresetBtn'),
+    exportPng: $('#exportPngBtn'),
+    exportPdf: $('#exportPdfBtn'),
+    saveTemplateMock: $('#saveTemplateMockBtn'),
+    applyImportMock: $('#applyImportMockBtn'),
+    fileInputMock: $('#fileInputMock'),
+    urlInputMock: $('#urlInputMock'),
+    loadUrlMock: $('#loadUrlMockBtn'),
+    useTemplateMock: $('#useTemplateMockBtn'),
+    detectColumnsMock: $('#detectColumnsMockBtn'),
+    saveVisibleColumnsMock: $('#saveVisibleColumnsMockBtn'),
+    loadDemoImportBtn: $('#loadDemoImportBtn'),
+  };
+  PNS.shiftTabs = $$('[data-shift-tab]');
+  PNS.controls = {
+    ...PNS.controls,
+    quotaT14: $('#quotaT14Input'),
+    quotaT13: $('#quotaT13Input'),
+    quotaT12: $('#quotaT12Input'),
+    quotaT11: $('#quotaT11Input'),
+    quotaT10: $('#quotaT10Input'),
+    quotaT9: $('#quotaT9Input'),
+    maxHelpers: $('#maxHelpersInput'),
+    quotaScope: $('#quotaScopeSelect'),
+    quotaStatus: $('#quotaSettingsStatus'),
+    presetName: $('#presetNameInput'),
+    presetSelect: $('#presetSelect'),
+    presetStatus: $('#presetStatus'),
+    requiredMappingContainer: $('#requiredMappingContainer'),
+    optionalMappingContainer: $('#optionalMappingContainer'),
+    columnVisibilityChecks: $('#columnVisibilityChecks'),
+    importLoadedInfo: $('#importLoadedInfo'),
+    importStatusInfo: $('#importStatusInfo'),
+    playersDataTable: $('#playersDataTable'),
+  };
+}
+
+PNS.refreshDomCache = refreshDomCache;
+refreshDomCache();
+
   // ---- Utils ----
   function toast(msg) { try { console.log('[PNS]', msg); } catch {} }
   function clampInt(v, fallback = 0) {

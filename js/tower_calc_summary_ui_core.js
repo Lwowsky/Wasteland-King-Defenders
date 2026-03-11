@@ -252,7 +252,7 @@
         <span class="tcv7-role-icon" aria-hidden="true"><img src="img/${file}" alt="" loading="lazy" decoding="async"></span>
         <strong>${fm(n)}</strong>
       </div>`;
-    return `<div class="tcv7-role-row">${item('is-fighter', stats.fighter, 'Fighter', 'fighter.png')}${item('is-rider', stats.rider, 'Rider', 'rider.png')}${item('is-shooter', stats.shooter, 'Shooter', 'shooter.png')}</div>`;
+    return `<div class="tcv7-role-row">${item('is-fighter', stats.fighter, 'Fighter', 'fighter.webp')}${item('is-rider', stats.rider, 'Rider', 'rider.webp')}${item('is-shooter', stats.shooter, 'Shooter', 'shooter.webp')}</div>`;
   }
 
   function card(title, primary, kicker, details, stats, extra) {

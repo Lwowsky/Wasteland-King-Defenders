@@ -86,9 +86,11 @@
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 12px;
+}
+.stats-grid--players {
+  grid-template-columns: minmax(250px, 0.92fr) repeat(2, minmax(0, 1fr));
 }
 .stat-card {
   background: var(--panel-2);
@@ -97,6 +99,7 @@
   padding: 10px;
   display: grid;
   gap: 4px;
+  min-height: 104px;
 }
 .stat-card span {
   color: var(--muted);
@@ -107,6 +110,111 @@
 }
 .stat-card.warn strong {
   color: var(--warn);
+}
+
+.stat-card--compact {
+  padding: 9px 10px;
+}
+.stat-card--compact strong {
+  font-size: 15px;
+  line-height: 1.15;
+}
+.stat-card--plain {
+  align-content: center;
+}
+.stat-card--duo {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 14px;
+  padding: 12px 14px;
+  background:
+    linear-gradient(135deg, rgba(18, 31, 62, 0.96), rgba(11, 21, 44, 0.92)),
+    radial-gradient(circle at top right, rgba(91, 140, 255, 0.14), transparent 45%),
+    radial-gradient(circle at bottom left, rgba(255, 182, 72, 0.12), transparent 40%);
+}
+.stat-duo-item {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+}
+.stat-duo-item span {
+  font-size: 12px;
+}
+.stat-duo-item strong {
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.stat-duo-divider {
+  width: 1px;
+  align-self: stretch;
+  background: linear-gradient(180deg, transparent, rgba(255,255,255,.16), transparent);
+}
+.stat-card--rich {
+  gap: 8px;
+}
+.stat-split {
+  display: grid;
+  gap: 8px;
+}
+.stat-split--roles,
+.stat-split--shifts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.stat-chip {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  min-height: 80px;
+  padding: 10px 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.03);
+  text-align: center;
+}
+.stat-chip b {
+  font-size: 18px;
+  line-height: 1;
+}
+.stat-chip small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.stat-chip--role {
+  align-content: center;
+  justify-content: center;
+  gap: 8px;
+}
+.stat-chip--role img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,.35));
+}
+.stat-chip--role.is-fighter {
+  background: linear-gradient(180deg, rgba(255,178,71,.12), rgba(255,255,255,.03));
+  border-color: rgba(255,178,71,.22);
+}
+.stat-chip--role.is-rider {
+  background: linear-gradient(180deg, rgba(142,211,123,.12), rgba(255,255,255,.03));
+  border-color: rgba(142,211,123,.22);
+}
+.stat-chip--role.is-shooter {
+  background: linear-gradient(180deg, rgba(90,183,255,.12), rgba(255,255,255,.03));
+  border-color: rgba(90,183,255,.22);
+}
+.stat-chip--shift.is-shift1 {
+  background: linear-gradient(180deg, rgba(79,140,255,.15), rgba(255,255,255,.03));
+  border-color: rgba(79,140,255,.25);
+}
+.stat-chip--shift.is-shift2 {
+  background: linear-gradient(180deg, rgba(141,107,255,.15), rgba(255,255,255,.03));
+  border-color: rgba(141,107,255,.25);
+}
+.stat-chip--shift.is-both {
+  background: linear-gradient(180deg, rgba(244,185,74,.15), rgba(255,255,255,.03));
+  border-color: rgba(244,185,74,.25);
 }
 
 .mapping-box {
@@ -153,8 +261,7 @@
 
 .filters-row {
   display: grid;
-  grid-template-columns: 2fr repeat(3, 1fr);
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 12px;
 }
 .filters-row label,

@@ -138,7 +138,7 @@
     // mobile buttons -> call PNS directly (NO d.click to avoid double triggers)
     const actions = [
       ['openSettingsBtnMobile', () => window.PNS?.openModal?.('settings')],
-      ['openBoardBtnMobile', () => window.PNS?.openModal?.('board')],
+      ['openBoardBtnMobile', () => { window.PNS?.openModal?.('board'); window.PNS?.renderBoard?.(); }],
       ['openTowerCalcBtnMobile', () => (window.PNS?.openTowerCalculatorModal?.() || window.PNS?.ModalsShift?.openTowerCalculatorModal?.())],
     ];
 

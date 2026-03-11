@@ -39,6 +39,28 @@
     document.head.appendChild(link);
   }
 
+function roleCountsHtml(fighter, rider, shooter) {
+  return `
+      <span class="stat-chip stat-chip--role is-fighter"><b>${fighter}</b><small>Fighter</small></span>
+      <span class="stat-chip stat-chip--role is-rider"><b>${rider}</b><small>Rider</small></span>
+      <span class="stat-chip stat-chip--role is-shooter"><b>${shooter}</b><small>Shooter</small></span>`;
+}
+
+function shiftCountsHtml(shift1, shift2, both) {
+  return `
+      <span class="stat-chip stat-chip--shift is-shift1"><b>${shift1}</b><small>Shift 1</small></span>
+      <span class="stat-chip stat-chip--shift is-shift2"><b>${shift2}</b><small>Shift 2</small></span>
+      <span class="stat-chip stat-chip--shift is-both"><b>${both}</b><small>Both</small></span>`;
+}
+
+function scheduleUpdateStats() {
+  if (window.__pnsStatsRaf) cancelAnimationFrame(window.__pnsStatsRaf);
+  window.__pnsStatsRaf = requestAnimationFrame(() => {
+    window.__pnsStatsRaf = 0;
+    safeRun(updateStats);
+  });
+}
+
   function updateStats() {
     const rows = $$('#playersDataTable tbody tr');
     const total = rows.length;
@@ -59,10 +81,13 @@
       else if (/ride|наезд|наїзд|caval/i.test(roleText)) rider++;
     });
 
-    const cards = $$('.stats-grid .stat-card');
-    if (cards[0]) { const s = $('strong', cards[0]); if (s) s.textContent = String(total); }
-    if (cards[1]) { const s = $('strong', cards[1]); if (s) s.textContent = String(capReady); }
-    if (cards[2]) { const s = $('strong', cards[2]); if (s) s.textContent = `${shooter} / ${fighter} / ${rider}`; }
+    const totalStrong = document.querySelector('[data-stat-card="total"] strong');
+    const captainsStrong = document.querySelector('[data-stat-card="captains"] strong');
+    if (totalStrong) totalStrong.textContent = String(total);
+    if (captainsStrong) captainsStrong.textContent = String(capReady);
+
+    const roleEl = document.getElementById('roleCountsDisplay');
+    if (roleEl) roleEl.innerHTML = roleCountsHtml(fighter, rider, shooter);
 
     let shift1 = 0, shift2 = 0, both = 0;
     if (typeof PNS?.getShiftCounts === 'function' && Array.isArray(PNS?.state?.players)) {
@@ -83,6 +108,8 @@
       });
     }
 
+    const shiftDisplayEl = document.getElementById('shiftCountsDisplay');
+    if (shiftDisplayEl) shiftDisplayEl.innerHTML = shiftCountsHtml(shift1, shift2, both);
     const shiftEl = document.getElementById('shiftCounts');
     if (shiftEl) shiftEl.textContent = `${shift1} / ${shift2} / ${both}`;
   }
@@ -148,7 +175,7 @@
 
     const tableBody = $('#playersDataTable tbody');
     if (tableBody) {
-      obsTable = new MutationObserver(() => { safeRun(updateStats); });
+      obsTable = new MutationObserver(() => { scheduleUpdateStats(); });
       obsTable.observe(tableBody, { childList: true, subtree: true, characterData: true });
     }
 

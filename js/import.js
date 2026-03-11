@@ -875,6 +875,15 @@
     } catch { return false; }
   }
 
+
+  function _needsPlayersTableRender() {
+    const table = document.querySelector('#playersDataTable');
+    const bodyRows = document.querySelectorAll('#playersDataTable tbody tr');
+    if (!table) return false;
+    if (bodyRows.length !== (state.players || []).length) return true;
+    return (state.players || []).some((p) => !p || !p.rowEl || !p.rowEl.isConnected);
+  }
+
 function hydrateCustomOptionalDefsFromPlayers(players) {
   const arr = Array.isArray(players) ? players : [];
   const labels = {};
@@ -935,22 +944,27 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
     // Prevent early empty render from overwriting saved towers snapshot
     state._skipTowerSnapshotSave = true;
 
-    if (typeof PNS.renderPlayersTableFromState === 'function') PNS.renderPlayersTableFromState();
-    if (typeof PNS.buildRowActions === 'function') PNS.buildRowActions();
+    if (restoredPlayers || _needsPlayersTableRender()) {
+      if (typeof PNS.renderPlayersTableFromState === 'function') PNS.renderPlayersTableFromState();
+      if (typeof PNS.buildRowActions === 'function') PNS.buildRowActions();
+    }
 
-    // Immediate restore + late retries (bases/partials can be ready later)
+    // Immediate restore + late retries only once on boot; later calls just refresh once
     _attemptRestoreTowersAndRefreshUI();
-    _clearRestoreRetryTimers();
-    [80, 220, 600, 1200, 2200].forEach((ms) => {
-      const id = setTimeout(() => {
-        _attemptRestoreTowersAndRefreshUI();
-        if (ms >= 2200) {
-          try { state._skipTowerSnapshotSave = false; } catch {}
-          try { PNS.persistSessionStateSoon?.(30); } catch {}
-        }
-      }, ms);
-      __restoreRetryTimers.push(id);
-    });
+    if (!state._restoreRetriesBootstrapped) {
+      state._restoreRetriesBootstrapped = true;
+      _clearRestoreRetryTimers();
+      [80, 220, 600, 1200, 2200].forEach((ms) => {
+        const id = setTimeout(() => {
+          _attemptRestoreTowersAndRefreshUI();
+          if (ms >= 2200) {
+            try { state._skipTowerSnapshotSave = false; } catch {}
+            try { PNS.persistSessionStateSoon?.(30); } catch {}
+          }
+        }, ms);
+        __restoreRetryTimers.push(id);
+      });
+    }
 
     if (restoredPlayers) {
       setImportLoadedInfo(`Відновлено ${state.players.length} гравців із LocalStorage.`);

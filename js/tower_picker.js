@@ -20,7 +20,7 @@
 
   function isPickerOnlyCaptainsEnabled() {
     if (typeof state.towerPickerOnlyCaptains !== "boolean")
-      state.towerPickerOnlyCaptains = true;
+      state.towerPickerOnlyCaptains = false;
     if (typeof state.towerPickerMatchRegisteredShift !== "boolean")
       state.towerPickerMatchRegisteredShift = true;
     if (typeof state.towerPickerNoMixTroops !== "boolean")
@@ -425,7 +425,7 @@
     MS.ensureStep4Styles?.();
     bindTowerPickerLiveRefreshOnce();
     if (typeof state.towerPickerOnlyCaptains !== "boolean")
-      state.towerPickerOnlyCaptains = true;
+      state.towerPickerOnlyCaptains = false;
     if (typeof state.towerPickerMatchRegisteredShift !== "boolean")
       state.towerPickerMatchRegisteredShift = true;
     if (typeof state.towerPickerNoMixTroops !== "boolean")

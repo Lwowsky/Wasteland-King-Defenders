@@ -2,7 +2,7 @@
 .filters-row-v4,
 .filters-row {
   display: grid;
-  grid-template-columns: minmax(220px, 2fr) repeat(5, minmax(120px, 1fr));
+  grid-template-columns: minmax(240px, 1.7fr) repeat(5, minmax(118px, 1fr)) max-content;
   gap: 14px;
   align-items: end;
 }
@@ -16,6 +16,7 @@
 }
 .reset-filters-btn {
   white-space: nowrap;
+  align-self: end;
 }
 .table-pagination {
   display: flex;
@@ -149,14 +150,17 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-.stats-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.stats-grid--players {
+  grid-template-columns: minmax(250px, 0.92fr) repeat(2, minmax(0, 1fr));
 }
 
 @media (max-width: 1200px) {
+  .stats-grid--players {
+    grid-template-columns: 1fr;
+  }
   .filters-row-v4,
   .filters-row {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .filters-row .search-wide {
     grid-column: 1 / -1;
@@ -305,3 +309,20 @@
 
 .base-settings-card .settings-top-row{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;}
 @media (max-width:1200px){.base-settings-card .settings-top-row{flex-wrap:wrap;}}
+
+@media (max-width: 900px) {
+  .stats-grid--players { grid-template-columns: 1fr; }
+  .stat-split--roles,
+  .stat-split--shifts { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 680px) {
+  .stat-card--duo {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .stat-duo-divider {
+    width: auto;
+    height: 1px;
+  }
+}

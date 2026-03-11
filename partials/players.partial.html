@@ -21,24 +21,35 @@
     </div>
   </div>
 
-  <div class="stats-grid">
-    <article class="stat-card">
+  <div class="stats-grid stats-grid--players">
+  <article class="stat-card stat-card--duo" data-stat-card="summary">
+    <div class="stat-duo-item" data-stat-card="total">
       <span>Всього гравців</span>
       <strong>0</strong>
-    </article>
-    <article class="stat-card">
+    </div>
+    <div class="stat-duo-divider" aria-hidden="true"></div>
+    <div class="stat-duo-item" data-stat-card="captains">
       <span>Капітанів готові</span>
       <strong>0</strong>
-    </article>
-    <article class="stat-card">
-      <span>Shooter / Fighter / Rider</span>
-      <strong>0 / 0 / 0</strong>
-    </article>
-    <article class="stat-card">
-      <span>Shift 1 / Shift 2 / Both</span>
-      <strong id="shiftCounts">0 / 0 / 0</strong>
-    </article>
-  </div>
+    </div>
+  </article>
+
+  <article class="stat-card stat-card--rich stat-card--plain" data-stat-card="roles">
+    <div class="stat-split stat-split--roles" id="roleCountsDisplay" aria-label="Розподіл ролей">
+      <span class="stat-chip stat-chip--role is-fighter"><b>0</b><small>Fighter</small></span>
+      <span class="stat-chip stat-chip--role is-rider"><b>0</b><small>Rider</small></span>
+      <span class="stat-chip stat-chip--role is-shooter"><b>0</b><small>Shooter</small></span>
+    </div>
+  </article>
+
+  <article class="stat-card stat-card--rich stat-card--plain" data-stat-card="shifts">
+    <div class="stat-split stat-split--shifts" id="shiftCountsDisplay" aria-label="Розподіл по змінах">
+      <span class="stat-chip stat-chip--shift is-shift1"><b>0</b><small>Shift 1</small></span>
+      <span class="stat-chip stat-chip--shift is-shift2"><b>0</b><small>Shift 2</small></span>
+      <span class="stat-chip stat-chip--shift is-both"><b>0</b><small>Both</small></span>
+    </div>
+  </article>
+</div>
 
   <div class="filters-row">
     <label>
@@ -64,9 +75,9 @@
       <span>Shift</span>
       <select id="topShiftFilter">
         <option value="all">Усі</option>
-        <option value="shift1">Shift 1 (+Both)</option>
-        <option value="shift2">Shift 2 (+Both)</option>
-        <option value="both">Both only</option>
+        <option value="shift1">Shift 1</option>
+        <option value="shift2">Shift 2</option>
+        <option value="both">Both</option>
       </select>
     </label>
 

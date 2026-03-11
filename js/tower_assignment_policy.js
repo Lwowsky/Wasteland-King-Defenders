@@ -60,22 +60,27 @@
     return true;
   }
 
-  function noCrossShiftDupesEnabled() {
-    const live = readCheckbox('pickerNoCrossShiftDupes');
-    if (typeof live === 'boolean') {
-      state.towerPickerNoCrossShiftDupes = live;
-      return live;
-    }
-    if (typeof state.towerPickerNoCrossShiftDupes === 'boolean') return !!state.towerPickerNoCrossShiftDupes;
+  function readCalcNoCrossShift() {
     try {
-      const raw = localStorage.getItem('pns_picker_no_cross_shift_dupes');
-      if (raw === '1' || raw === '0') {
-        state.towerPickerNoCrossShiftDupes = raw === '1';
-        return state.towerPickerNoCrossShiftDupes;
+      const live = readCheckbox('towerCalcNoCrossShift');
+      if (typeof live === 'boolean') return live;
+    } catch {}
+    try {
+      const tc = state?.towerCalc;
+      if (tc && typeof tc.noCrossShift === 'boolean') return !!tc.noCrossShift;
+    } catch {}
+    try {
+      const raw = localStorage.getItem('pns_tower_calc_state');
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data && typeof data.noCrossShift === 'boolean') return !!data.noCrossShift;
       }
     } catch {}
-    state.towerPickerNoCrossShiftDupes = false;
-    return false;
+    return true;
+  }
+
+  function noCrossShiftDupesEnabled() {
+    return readCalcNoCrossShift();
   }
 
   function getShiftLabel(shiftKey) {

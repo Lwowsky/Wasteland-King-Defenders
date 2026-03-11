@@ -30,9 +30,14 @@
     };
   }
 
-  function getButtons() {
-    return PNS.buttons || {};
-  }
+function getButtons() {
+  const buttons = PNS.buttons || (PNS.buttons = {});
+  buttons.showAllData = document.getElementById('showAllDataBtn');
+  buttons.showAllColumns = document.getElementById('showAllColumnsBtn');
+  buttons.openSettings = document.getElementById('openSettingsBtn');
+  buttons.openBoard = document.getElementById('openBoardBtn');
+  return buttons;
+}
 
   function getShiftTabs() {
     return PNS.shiftTabs || $$('[data-shift-tab]');
@@ -74,7 +79,7 @@
     if (b.showAllData) {
       b.showAllData.setAttribute('aria-pressed', String(on));
       b.showAllData.classList.toggle('toggle-on', on);
-      b.showAllData.textContent = on ? 'Сховати додаткові дані' : 'Показати всі дані';
+      b.showAllData.textContent = on ? 'Сховати дані' : 'Показати всі дані';
     }
     if (b.showAllColumns) {
       b.showAllColumns.setAttribute('aria-pressed', String(on));

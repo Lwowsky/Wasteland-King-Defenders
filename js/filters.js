@@ -38,6 +38,12 @@
     return PNS.normalizeShiftValue(v);
   }
 
+  function matchesTopShiftFilter(itemShift, filter) {
+    const normalized = PNS.normalizeShiftValue(itemShift);
+    if (filter === 'all') return true;
+    return normalized === filter;
+  }
+
   function loadTopFilters() {
     const saved = typeof PNS.safeReadJSON === 'function'
       ? PNS.safeReadJSON(PNS.KEYS.KEY_TOP_FILTERS, null)
@@ -98,7 +104,10 @@
   }
 
   function applyPlayerTableFilters() {
-    if (!Array.isArray(state.players) || !state.players.length) return;
+    if (!Array.isArray(state.players) || !state.players.length) {
+      try { document.dispatchEvent(new CustomEvent('players-table-filters-changed')); } catch {}
+      return;
+    }
 
     const q = normText(state.topFilters?.search);
     const roleF = normalizeRoleFilterValue(state.topFilters?.role || 'all');
@@ -110,9 +119,7 @@
       if (!row) return;
 
       let ok = true;
-      const effectiveShiftFilter = shiftF === 'all' ? 'all' : shiftF;
-
-      if (!PNS.matchesShift(p.shift || row.dataset.shift || 'both', effectiveShiftFilter)) ok = false;
+      if (!matchesTopShiftFilter(p.shift || row.dataset.shift || 'both', shiftF)) ok = false;
       if (ok && roleF !== 'all' && PNS.normalizeRole(p.role) !== roleF) ok = false;
 
       if (ok && statusF !== 'all') {
@@ -128,6 +135,9 @@
 
       row.hidden = !ok;
     });
+
+    try { document.dispatchEvent(new CustomEvent('players-table-filters-changed')); } catch {}
+    try { PNS.schedulePlayerTableRecalc?.(); } catch {}
   }
 
   function bindTopFilterEvents() {
@@ -165,7 +175,7 @@
         );
         state.topFilters.shift = next;
         saveTopFilters();
-        PNS.applyShiftFilter(next === 'all' ? 'all' : next);
+        applyPlayerTableFilters();
       });
     }
 

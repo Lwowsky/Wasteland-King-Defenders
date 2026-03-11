@@ -57,6 +57,38 @@
       );
   }
 
+  function calcEligibleCaptainsForInlineBase(base, shiftKey, currentCaptainId) {
+    const onlyCaptains = state.towerPickerOnlyCaptains === true;
+    const matchRegisteredShift = state.towerPickerMatchRegisteredShift !== false;
+    const useBoth = state.towerPickerNoCrossShiftDupes === true;
+    const targetShift = String(shiftKey || "shift1").toLowerCase() === "shift2" ? "shift2" : "shift1";
+
+    return (Array.isArray(state.players) ? state.players : [])
+      .filter((p) => {
+        if (!p) return false;
+        if (String(currentCaptainId || "") === String(p.id || "")) return true;
+        if (onlyCaptains && !p.captainReady) return false;
+        const ps = String(p.shift || p.shiftLabel || "both").toLowerCase();
+        if (!useBoth && ps === "both") return false;
+        if (matchRegisteredShift && !(ps === "both" || ps === targetShift)) return false;
+        return true;
+      })
+      .slice()
+      .sort((a, b) => {
+        const aShift = String(a?.shift || a?.shiftLabel || "both").toLowerCase();
+        const bShift = String(b?.shift || b?.shiftLabel || "both").toLowerCase();
+        const aShiftScore = aShift === targetShift || (useBoth && aShift === "both") ? 1 : 0;
+        const bShiftScore = bShift === targetShift || (useBoth && bShift === "both") ? 1 : 0;
+        return (
+          bShiftScore - aShiftScore ||
+          Number(b.captainReady) - Number(a.captainReady) ||
+          (Number(b.rally || 0) + Number(b.march || 0)) -
+            (Number(a.rally || 0) + Number(a.march || 0)) ||
+          String(a.name || "").localeCompare(String(b.name || ""))
+        );
+      });
+  }
+
   function ensureTowerCalcModal() {
     const modal = document.getElementById("towerCalcModal");
     if (!modal) {
@@ -1735,7 +1767,7 @@
     );
     let caps = [];
     try {
-      caps = MS.eligibleCaptainsForBase?.(base) || [];
+      caps = calcEligibleCaptainsForInlineBase(base, shiftKey, captain?.id) || [];
     } catch {}
     const helperRows = stats.helpers
       .map((p) => {
@@ -1750,7 +1782,7 @@
     detail.innerHTML = `
     <div class="stack tower-picker-scope" data-calc-inline-scope="${calcEsc(shiftKey)}">
       <h3>${title}</h3>
-      <div class="picker-meta-row muted small"><span class="picker-meta-shift">Shift: ${shiftKey === "shift1" ? "SHIFT 1" : "SHIFT 2"}</span><label class="picker-only-captains"><input type="checkbox" id="pickerOnlyCaptains" ${state.towerPickerOnlyCaptains !== false ? "checked" : ""}/> Тільки капітани</label><label class="picker-only-captains"><input type="checkbox" id="pickerMatchRegisteredShift" ${state.towerPickerMatchRegisteredShift !== false ? "checked" : ""}/> Зазначений Shift</label><label class="picker-only-captains"><input type="checkbox" id="pickerNoMixTroops" ${state.towerPickerNoMixTroops !== false ? "checked" : ""}/> Лише той самий тип військ</label><label class="picker-only-captains"><input type="checkbox" id="pickerNoCrossShiftDupes" ${state.towerPickerNoCrossShiftDupes === true ? 'checked' : ''}/> Використовувати Both</label></div>
+      <div class="picker-meta-row muted small"><span class="picker-meta-shift">Shift: ${shiftKey === "shift1" ? "SHIFT 1" : "SHIFT 2"}</span><label class="picker-only-captains"><input type="checkbox" id="pickerOnlyCaptains" ${state.towerPickerOnlyCaptains === true ? "checked" : ""}/> Тільки капітани</label><label class="picker-only-captains"><input type="checkbox" id="pickerMatchRegisteredShift" ${state.towerPickerMatchRegisteredShift !== false ? "checked" : ""}/> Зазначений Shift</label><label class="picker-only-captains"><input type="checkbox" id="pickerNoMixTroops" ${state.towerPickerNoMixTroops !== false ? "checked" : ""}/> Лише той самий тип військ</label><label class="picker-only-captains"><input type="checkbox" id="pickerNoCrossShiftDupes" ${state.towerPickerNoCrossShiftDupes === true ? 'checked' : ''}/> Використовувати Both</label></div>
       <div class="picker-topline top-space"><select id="towerPickerCaptainSelect" class="input-like" aria-label="Вибір капітана"><option value="">${captain ? "Змінити капітана…" : "Вибрати капітана…"}</option>${caps.map((p) => `<option value="${calcEsc(p.id)}" ${captain && String(captain.id) === String(p.id) ? "selected" : ""}>${calcEsc(String(p.name || ""))} · ${calcEsc(String(p.role || ""))} · ${calcEsc(String(p.shiftLabel || p.shift || ""))} · ${Number(p.march || 0).toLocaleString("en-US")}${p.captainReady ? " · CAP" : ""}</option>`).join("")}</select><div class="picker-actions"><button class="btn btn-sm" type="button" data-picker-set-captain="${calcEsc(base.id)}">Поставити капітана</button><button class="btn btn-sm" type="button" data-picker-autofill="${calcEsc(base.id)}">Автозаповнення</button><button class="btn btn-sm" type="button" data-picker-clear-base="${calcEsc(base.id)}">Очистити башню</button><button class="btn btn-sm" type="button" data-picker-save-board="${calcEsc(base.id)}">Зберегти таблицю башні</button></div></div>
       <div class="limit-grid limit-grid-compact top-space"><div><span>Captain march</span><strong>${calcFmt(stats.captainMarch)}</strong></div><div><span>Rally size</span><strong>${calcFmt(stats.rallySize)}</strong></div><div><span>Total Σ</span><strong>${calcFmt(stats.total)}</strong></div><div><span>Free space</span><strong>${calcFmt(stats.free)}</strong></div></div>
       <details class="tower-collapsible top-space" id="towerPickerLimitsBlock"><summary>Налаштування башні · ліміти по тірам (макс. March)</summary><div class="inner stack"><div class="picker-limits-head"><label><span class="muted small">Макс. гравців</span><input id="pickerMaxHelpers" type="number" min="0" value="${Number(rule.maxHelpers || 0) || 0}" /></label><button class="btn btn-sm" type="button" data-picker-save-rule="${calcEsc(base.id)}">Зберегти ліміти</button><button class="btn btn-sm" type="button" data-picker-reset-rule="${calcEsc(base.id)}">Скинути ліміти (T14–T9 → 0)</button></div><div class="row gap wrap">${["T14", "T13", "T12", "T11", "T10", "T9"].map((t) => `<label><span class="muted small">${t}</span><input type="number" min="0" data-picker-tier="${t}" value="${Number(rule?.tierMinMarch?.[t] || 0) || 0}" style="width:90px" /></label>`).join("")}</div></div></details>
@@ -1821,6 +1853,87 @@
       })
       .join("");
     return `<div class="board-sheet"><div class="board-title">${title}</div><div class="board-grid">${cols}</div></div>`;
+  }
+
+
+  function getTowerCalcBoardPayloadForShift(shiftKey, resultsInput) {
+    const results = resultsInput || state.towerCalcLastResults || null;
+    const shiftRes = results?.[shiftKey];
+    if (!shiftRes) return null;
+
+    const title =
+      shiftKey === "shift1"
+        ? "Shift 1 / Перша половина"
+        : "Shift 2 / Друга половина";
+
+    const bases = getCalcTowerBaseOrder()
+      .map((b) => state.baseById?.get?.(String(b?.id || "")) || b)
+      .filter(Boolean);
+
+    const plans = Array.isArray(shiftRes?.towerPlans) ? shiftRes.towerPlans : [];
+    const planByBaseId = new Map();
+    plans.forEach((tp) => {
+      const baseId = String(tp?.baseId || "");
+      if (baseId && !planByBaseId.has(baseId)) planByBaseId.set(baseId, tp);
+    });
+
+    const usedPlanRefs = new Set();
+    const colsHtml = bases
+      .map((base, idx) => {
+        let plan = planByBaseId.get(String(base?.id || "")) || null;
+        if (!plan && plans[idx] && !usedPlanRefs.has(plans[idx])) plan = plans[idx];
+        if (plan) usedPlanRefs.add(plan);
+
+        const captain = plan?.captain || null;
+        const roleTextRaw = captain ? String(captain.role || roleNorm(captain.role) || "") : "";
+        const roleText = captain ? calcEsc(roleTextRaw) : "Тип визначається капітаном";
+        const roleKey = String(roleNorm(roleTextRaw) || "").toLowerCase();
+        const themeCls = captain ? ` ${roleKey}-theme` : " is-auto";
+        const titleShort = calcEsc(
+          String(plan?.baseTitle || base?.title || base?.id || `Башня ${idx + 1}`),
+        );
+
+        const captainMarch = Number(plan?.captainMarch ?? captain?.march ?? 0) || 0;
+        const towerCapacity = Number(
+          plan?.towerCapacity ?? ((Number(plan?.rallySize || 0) || 0) + captainMarch),
+        ) || 0;
+        const usedMarch = Number(plan?.usedMarch || 0) || 0;
+        const total = captainMarch + usedMarch;
+        const free = Math.max(0, towerCapacity - total);
+
+        const rows = [];
+        if (captain) {
+          rows.push(
+            `<li class="captain-row"><span>${calcEsc(String(captain.name || ""))}</span><em>${calcEsc(String(captain.alliance || ""))}</em><b>${calcEsc(String(captain.tier || ""))}</b><strong style="color:#9a5a00;">${calcFmt(captainMarch)}</strong></li>`,
+          );
+        }
+
+        const helpers = Array.isArray(plan?.pickedPlayers) ? plan.pickedPlayers.slice() : [];
+        helpers
+          .sort(
+            (a, b) =>
+              Number(plan?.assignedById?.[String(b?.id || "")] || b?.sent || b?.march || 0) -
+                Number(plan?.assignedById?.[String(a?.id || "")] || a?.sent || a?.march || 0) ||
+              Number(b?.tierRank || 0) - Number(a?.tierRank || 0) ||
+              Number(b?.march || 0) - Number(a?.march || 0) ||
+              String(a?.name || "").localeCompare(String(b?.name || "")),
+          )
+          .forEach((pl) => {
+            const sent = Number(
+              plan?.assignedById?.[String(pl?.id || "")] ?? pl?.sent ?? pl?.assignedMarch ?? pl?.march ?? 0,
+            ) || 0;
+            rows.push(
+              `<li class="helper-row"><span>${calcEsc(String(pl?.name || ""))}</span><em>${calcEsc(String(pl?.alliance || ""))}</em><b>${calcEsc(String(pl?.tier || ""))}</b><strong>${calcFmt(sent)}</strong></li>`,
+            );
+          });
+
+        if (!rows.length) rows.push('<li class="empty-row">Немає призначених гравців</li>');
+
+        return `<section class="board-col${themeCls}" data-shift="${calcEsc(shiftKey)}" data-base-id="${calcEsc(String(base?.id || plan?.baseId || ""))}"><header><h4>${titleShort}</h4><div class="board-sub${captain ? "" : " is-auto"}">${captain ? `${roleText} / ${roleText}` : "Тип визначається капітаном"}</div><div class="board-cap"><span class="cap-total">${calcFmt(towerCapacity)}</span><span class="cap-free">${calcFmt(free)}</span><span class="cap-used">${calcFmt(total)}</span></div></header><ul>${rows.join("")}</ul></section>`;
+      })
+      .join("");
+
+    return { title, colsHtml, shiftKey };
   }
 
   function calcSetPreviewShift(shiftKey) {
@@ -3475,6 +3588,7 @@
     calcComputeShiftRoleStats,
     calcRenderInlineTowerSettings,
     calcRenderLiveFinalBoard,
+    getTowerCalcBoardPayloadForShift,
     roleNorm,
   });
   window.openTowerCalculatorModal = openTowerCalculatorModal;
@@ -3495,6 +3609,7 @@
   window.calcUpdateShiftStatsUI = calcUpdateShiftStatsUI;
   window.calcRenderInlineTowerSettings = calcRenderInlineTowerSettings;
   window.calcRenderLiveFinalBoard = calcRenderLiveFinalBoard;
+  window.getTowerCalcBoardPayloadForShift = getTowerCalcBoardPayloadForShift;
   window.applyTowerCalcToTowerSettings = applyTowerCalcToTowerSettings;
   window.applyTowerCalcAssignmentsToTowers = applyTowerCalcAssignmentsToTowers;
   window.calcSetInlineSelectedBaseId = calcSetInlineSelectedBaseId;
