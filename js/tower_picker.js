@@ -20,9 +20,9 @@
 
   function isPickerOnlyCaptainsEnabled() {
     if (typeof state.towerPickerOnlyCaptains !== "boolean")
-      state.towerPickerOnlyCaptains = false;
+      state.towerPickerOnlyCaptains = _pickerBoolLS("pns_picker_only_captains", false);
     if (typeof state.towerPickerMatchRegisteredShift !== "boolean")
-      state.towerPickerMatchRegisteredShift = true;
+      state.towerPickerMatchRegisteredShift = _pickerBoolLS("pns_picker_match_registered_shift", true);
     if (typeof state.towerPickerNoMixTroops !== "boolean")
       state.towerPickerNoMixTroops = isPickerNoMixTroopsEnabled();
     if (typeof state.towerPickerNoCrossShiftDupes !== "boolean")
@@ -32,7 +32,7 @@
 
   function isPickerMatchRegisteredShiftEnabled() {
     if (typeof state.towerPickerMatchRegisteredShift !== "boolean")
-      state.towerPickerMatchRegisteredShift = true;
+      state.towerPickerMatchRegisteredShift = _pickerBoolLS("pns_picker_match_registered_shift", true);
     return !!state.towerPickerMatchRegisteredShift;
   }
 
@@ -126,6 +126,14 @@
   }
 
   function pickerEffectiveMarch(base, player) {
+    try {
+      const ov = PNS.getTowerMarchOverride?.(
+        base?.id,
+        player?.id,
+        String(state.activeShift || "shift1"),
+      );
+      if (Number.isFinite(ov) && ov >= 0) return Math.max(0, Number(ov) || 0);
+    } catch {}
     try {
       if (typeof PNS.getTowerEffectiveMarch === "function")
         return Number(PNS.getTowerEffectiveMarch(base, player)) || 0;
@@ -252,11 +260,13 @@
             <div class="picker-limits-head">
               <label><span class="muted small">Макс. гравців</span><input id="pickerMaxHelpers" type="number" min="0" value="${rule.maxHelpers}" /></label>
               <button class="btn btn-sm" type="button" data-picker-save-rule="${base.id}">Зберегти ліміти</button>
+              <button class="btn btn-sm" type="button" data-picker-recalc-rule="${base.id}">Перерахувати склад</button>
               <button class="btn btn-sm" type="button" data-picker-reset-rule="${base.id}">Скинути ліміти (T14–T9 → 0)</button>
             </div>
             <div class="row gap wrap">
               ${["T14", "T13", "T12", "T11", "T10", "T9"].map((t) => `<label><span class="muted small">${t}</span><input type="number" min="0" data-picker-tier="${t}" value="${rule.tierMinMarch[t] || 0}" style="width:90px" /></label>`).join("")}
             </div>
+            <div class="muted small">0 = гнучкий tier: бере повний March, але якщо місця не вистачає — ділить залишок між гравцями цього tier.</div>
           </div>
         </details>
 
@@ -358,10 +368,14 @@
       );
       if (!cb) return;
       try {
-        if (cb.id === "pickerOnlyCaptains")
+        if (cb.id === "pickerOnlyCaptains") {
           state.towerPickerOnlyCaptains = !!cb.checked;
-        if (cb.id === "pickerMatchRegisteredShift")
+          localStorage.setItem("pns_picker_only_captains", cb.checked ? "1" : "0");
+        }
+        if (cb.id === "pickerMatchRegisteredShift") {
           state.towerPickerMatchRegisteredShift = !!cb.checked;
+          localStorage.setItem("pns_picker_match_registered_shift", cb.checked ? "1" : "0");
+        }
         if (cb.id === "pickerNoMixTroops") {
           state.towerPickerNoMixTroops = !!cb.checked;
           localStorage.setItem(
@@ -425,7 +439,7 @@
     MS.ensureStep4Styles?.();
     bindTowerPickerLiveRefreshOnce();
     if (typeof state.towerPickerOnlyCaptains !== "boolean")
-      state.towerPickerOnlyCaptains = false;
+      state.towerPickerOnlyCaptains = true;
     if (typeof state.towerPickerMatchRegisteredShift !== "boolean")
       state.towerPickerMatchRegisteredShift = true;
     if (typeof state.towerPickerNoMixTroops !== "boolean")

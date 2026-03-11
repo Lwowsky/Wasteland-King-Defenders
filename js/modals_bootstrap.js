@@ -109,11 +109,17 @@ function syncPickerFlagsFromScope(root) {
   if (!root?.querySelector) return;
   try {
     const onlyCaptains = root.querySelector('#pickerOnlyCaptains');
-    if (onlyCaptains) state.towerPickerOnlyCaptains = !!onlyCaptains.checked;
+    if (onlyCaptains) {
+      state.towerPickerOnlyCaptains = !!onlyCaptains.checked;
+      localStorage.setItem('pns_picker_only_captains', onlyCaptains.checked ? '1' : '0');
+    }
   } catch {}
   try {
     const matchShift = root.querySelector('#pickerMatchRegisteredShift');
-    if (matchShift) state.towerPickerMatchRegisteredShift = !!matchShift.checked;
+    if (matchShift) {
+      state.towerPickerMatchRegisteredShift = !!matchShift.checked;
+      localStorage.setItem('pns_picker_match_registered_shift', matchShift.checked ? '1' : '0');
+    }
   } catch {}
   try {
     const noMix = root.querySelector('#pickerNoMixTroops');
@@ -403,6 +409,26 @@ function syncPickerFlagsFromScope(root) {
         const tierMinMarch = {};
         root?.querySelectorAll?.('[data-picker-tier]').forEach(inp => { tierMinMarch[inp.dataset.pickerTier] = Number(inp.value || 0) || 0; });
         try { PNS.setBaseTowerRule?.(baseId, { maxHelpers, tierMinMarch }, { shift: shiftKey, persist: true, rerender: true }); } catch {}
+        setTimeout(() => { refreshTowerPickerScope(root); }, 40);
+        return;
+      }
+
+      const pickerRecalcRule = e.target.closest('[data-picker-recalc-rule]');
+      if (pickerRecalcRule) {
+        e.preventDefault();
+        const baseId = pickerRecalcRule.dataset.pickerRecalcRule;
+        const root = towerPickerScopeRoot(pickerRecalcRule);
+        const shiftKey = towerPickerScopeShift(pickerRecalcRule);
+        const maxHelpers = Number(root?.querySelector('#pickerMaxHelpers')?.value || 29) || 29;
+        const tierMinMarch = {};
+        root?.querySelectorAll?.('[data-picker-tier]').forEach(inp => { tierMinMarch[inp.dataset.pickerTier] = Number(inp.value || 0) || 0; });
+        try { PNS.setBaseTowerRule?.(baseId, { maxHelpers, tierMinMarch }, { shift: shiftKey, persist: true, rerender: false }); } catch {}
+        let recalc = null;
+        try { recalc = window.calcRecalculateTowerComposition?.(baseId, shiftKey) || null; } catch {}
+        try {
+          const free = Number(recalc?.free || 0) || 0;
+          PNS.setImportStatus?.(`Склад башні перераховано. Вільне місце: ${free.toLocaleString('en-US')}.`, 'good');
+        } catch {}
         setTimeout(() => { refreshTowerPickerScope(root); }, 40);
         return;
       }

@@ -30,26 +30,35 @@
     document.head.appendChild(style);
   }
 
+  function lsBool(key, fallback) {
+    try {
+      const v = localStorage.getItem(key);
+      if (v === null) return fallback;
+      return v === '1';
+    } catch {
+      return fallback;
+    }
+  }
+
   function initDefaultsOnce() {
     let done = false;
     try { done = localStorage.getItem(LS_INIT) === '1'; } catch {}
-    if (done) return;
-    try {
-      state.towerPickerOnlyCaptains = false;
-      state.towerPickerNoCrossShiftDupes = false;
-      state.towerPickerMatchRegisteredShift = true;
-      state.towerPickerNoMixTroops = true;
-      localStorage.setItem('pns_picker_no_mix_troops', '1');
-      localStorage.setItem('pns_picker_no_cross_shift_dupes', '0');
-      localStorage.setItem(LS_INIT, '1');
-    } catch {}
+    if (!done) {
+      try {
+        if (localStorage.getItem('pns_picker_only_captains') === null) localStorage.setItem('pns_picker_only_captains', '0');
+        if (localStorage.getItem('pns_picker_match_registered_shift') === null) localStorage.setItem('pns_picker_match_registered_shift', '1');
+        if (localStorage.getItem('pns_picker_no_mix_troops') === null) localStorage.setItem('pns_picker_no_mix_troops', '1');
+        if (localStorage.getItem('pns_picker_no_cross_shift_dupes') === null) localStorage.setItem('pns_picker_no_cross_shift_dupes', '0');
+        localStorage.setItem(LS_INIT, '1');
+      } catch {}
+    }
   }
 
   function normalizeStateDefaults() {
-    if (typeof state.towerPickerOnlyCaptains !== 'boolean') state.towerPickerOnlyCaptains = false;
-    if (typeof state.towerPickerNoCrossShiftDupes !== 'boolean') state.towerPickerNoCrossShiftDupes = false;
-    if (typeof state.towerPickerMatchRegisteredShift !== 'boolean') state.towerPickerMatchRegisteredShift = true;
-    if (typeof state.towerPickerNoMixTroops !== 'boolean') state.towerPickerNoMixTroops = true;
+    if (typeof state.towerPickerOnlyCaptains !== 'boolean') state.towerPickerOnlyCaptains = lsBool('pns_picker_only_captains', false);
+    if (typeof state.towerPickerNoCrossShiftDupes !== 'boolean') state.towerPickerNoCrossShiftDupes = lsBool('pns_picker_no_cross_shift_dupes', false);
+    if (typeof state.towerPickerMatchRegisteredShift !== 'boolean') state.towerPickerMatchRegisteredShift = lsBool('pns_picker_match_registered_shift', true);
+    if (typeof state.towerPickerNoMixTroops !== 'boolean') state.towerPickerNoMixTroops = lsBool('pns_picker_no_mix_troops', true);
   }
 
   function sameTroopEnabled() {
@@ -117,10 +126,14 @@
     setLabelTextForInput('pickerMatchRegisteredShift', 'Зазначений Shift', modal);
     setLabelTextForInput('pickerNoMixTroops', 'Лише той самий тип військ', modal);
 
+    const onlyCb = q('#pickerOnlyCaptains', modal);
     const shiftCb = q('#pickerMatchRegisteredShift', modal);
     const mixCb = q('#pickerNoMixTroops', modal);
+    const bothCb = q('#pickerNoCrossShiftDupes', modal);
+    if (onlyCb) onlyCb.checked = !!state.towerPickerOnlyCaptains;
     if (shiftCb) shiftCb.checked = !!matchShiftEnabled();
     if (mixCb) mixCb.checked = !!sameTroopEnabled();
+    if (bothCb) bothCb.checked = !!state.towerPickerNoCrossShiftDupes;
   }
 
   function patchPickerRenderer() {
@@ -156,10 +169,21 @@
   document.addEventListener('change', (e) => {
     const t = e.target;
     if (!t || !t.id) return;
-    if (t.id === 'pickerMatchRegisteredShift') state.towerPickerMatchRegisteredShift = !!t.checked;
+    if (t.id === 'pickerOnlyCaptains') {
+      state.towerPickerOnlyCaptains = !!t.checked;
+      try { localStorage.setItem('pns_picker_only_captains', t.checked ? '1' : '0'); } catch {}
+    }
+    if (t.id === 'pickerMatchRegisteredShift') {
+      state.towerPickerMatchRegisteredShift = !!t.checked;
+      try { localStorage.setItem('pns_picker_match_registered_shift', t.checked ? '1' : '0'); } catch {}
+    }
     if (t.id === 'pickerNoMixTroops') {
       state.towerPickerNoMixTroops = !!t.checked;
       try { localStorage.setItem('pns_picker_no_mix_troops', t.checked ? '1' : '0'); } catch {}
+    }
+    if (t.id === 'pickerNoCrossShiftDupes') {
+      state.towerPickerNoCrossShiftDupes = !!t.checked;
+      try { localStorage.setItem('pns_picker_no_cross_shift_dupes', t.checked ? '1' : '0'); } catch {}
     }
     setTimeout(run, 0);
   }, true);

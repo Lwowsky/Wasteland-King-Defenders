@@ -511,6 +511,7 @@ function optionalColumnClass(key) {
     const tbody = $('.helpers-table-wrap tbody', card);
     if (tbody) {
       tbody.innerHTML = '';
+      const fragment = document.createDocumentFragment();
       if (!helpers.length) {
         const tr = document.createElement('tr');
         const cols = (tbody.closest('table')?.querySelectorAll('thead th')?.length) || 4;
@@ -530,6 +531,7 @@ function optionalColumnClass(key) {
             fragment.appendChild(tr);
           });
       }
+      tbody.appendChild(fragment);
     }
 
     renderBaseEditor(base);
@@ -620,6 +622,40 @@ function optionalColumnClass(key) {
     const hasPlans = !!(results?.shift1?.towerPlans?.length || results?.shift2?.towerPlans?.length);
     if (!hasPlans) return false;
 
+    const sheet = document.querySelector('.board-sheet');
+    const grid = sheet?.querySelector('.board-grid');
+    const titleEl = sheet?.querySelector('#boardTitle');
+    if (!sheet || !grid || !titleEl) return false;
+
+    // Variant 2: use the exact same renderer as Tower Calculator Final Plan
+    // so burger/settings board can never drift from calculator preview.
+    const boardHtml =
+      (typeof PNS.calcBuildBoardHtmlForShift === 'function'
+        ? PNS.calcBuildBoardHtmlForShift(activeShift)
+        : null) ||
+      (typeof window.calcBuildBoardHtmlForShift === 'function'
+        ? window.calcBuildBoardHtmlForShift(activeShift)
+        : null);
+
+    if (boardHtml) {
+      const host = document.createElement('div');
+      host.innerHTML = String(boardHtml || '').trim();
+      const builtSheet = host.querySelector('.board-sheet');
+      const builtTitle = builtSheet?.querySelector('.board-title');
+      const builtGrid = builtSheet?.querySelector('.board-grid');
+      if (builtSheet && builtGrid) {
+        titleEl.textContent = String(builtTitle?.textContent || titleEl.textContent || '');
+        grid.innerHTML = String(builtGrid.innerHTML || '');
+
+        state.bases.forEach((base) => {
+          base.boardEl = null;
+          resolveBaseEls(base);
+        });
+        return true;
+      }
+    }
+
+    // Fallback to legacy payload builder if calculator HTML renderer is unavailable.
     const payload =
       (typeof PNS.getTowerCalcBoardPayloadForShift === 'function'
         ? PNS.getTowerCalcBoardPayloadForShift(activeShift, results)
@@ -628,11 +664,6 @@ function optionalColumnClass(key) {
         ? window.getTowerCalcBoardPayloadForShift(activeShift, results)
         : null);
     if (!payload?.colsHtml) return false;
-
-    const sheet = document.querySelector('.board-sheet');
-    const grid = sheet?.querySelector('.board-grid');
-    const titleEl = sheet?.querySelector('#boardTitle');
-    if (!sheet || !grid || !titleEl) return false;
 
     titleEl.textContent = String(payload.title || titleEl.textContent || '');
     grid.innerHTML = String(payload.colsHtml || '');
