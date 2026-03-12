@@ -1091,22 +1091,6 @@
     return active;
   }
 
-  function calcOverflowShiftLabel(shift) {
-    const sk = String(shift || "").toLowerCase();
-    if (sk === "shift1") return "Shift 1";
-    if (sk === "shift2") return "Shift 2";
-    return "Both";
-  }
-
-  function calcOverflowCountsMeta(rows) {
-    const m = { shift1: 0, shift2: 0, both: 0 };
-    for (const r of Array.isArray(rows) ? rows : []) {
-      const sk = String(r?.registeredShift || "both").toLowerCase();
-      if (m[sk] != null) m[sk] += 1;
-    }
-    return `усього: ${rows.length} · Shift 1: ${m.shift1} · Shift 2: ${m.shift2} · Both: ${m.both}`;
-  }
-
   function calcRenderOverflowPanel(modal, results) {
     const root = modal || document.getElementById("towerCalcModal");
     const out = root?.querySelector?.("#towerCalcOverflowOut");
@@ -1143,27 +1127,20 @@
         (tp?.notFitPlayers || []).forEach((p) => {
           const pid = String(p?.id || "");
           if (!pid) return;
-          detailsById.set(pid, {
-            bucket: "notfit",
-            status: "Не вліз",
-            reason: `Не вистачило місця в ${sk === "shift1" ? "Shift 1" : "Shift 2"}.`,
-            sourceShift: sk,
-          });
+          detailsById.set(pid, { status: "Не вліз", sourceShift: sk });
         });
         (tp?.partialPlayers || []).forEach((p) => {
           const pid = String(p?.id || "");
           if (!pid) return;
           detailsById.set(pid, {
-            bucket: "partial",
             status: `Частково ${fm(p?.sent || 0)} / ${fm(p?.full || 0)}`,
-            reason: "У башні лишився тільки частковий вільний залишок.",
             sourceShift: sk,
           });
         });
       });
     }
 
-    const groups = { notfit: [], partial: [], reserve: [], both: [] };
+    const groups = { shift1: [], shift2: [], both: [] };
     for (const p of Array.isArray(state.players) ? state.players : []) {
       if (!p || !p.id) continue;
       const pid = String(p.id || "");
@@ -1174,40 +1151,21 @@
           ? PNS.normalizeShiftValue(p.shift || p.shiftLabel || "both")
           : p.shift || p.shiftLabel || "both") || "both",
       ).toLowerCase();
-      const extra = detailsById.get(pid);
-      if (usedIds.has(pid) && !extra) continue;
-      const baseRow = {
+      if (!groups[shift]) continue;
+      if (usedIds.has(pid) && !detailsById.has(pid)) continue;
+      const extra = detailsById.get(pid) || {};
+      groups[shift].push({
         playerId: pid,
         name: String(p.name || "—"),
         alliance: String(p.alliance || ""),
         role: String(p.role || ""),
         tier: String(p.tier || ""),
         march: Number(p.march || 0) || 0,
-        registeredShift: shift,
-        sourceShift: String(extra?.sourceShift || ""),
-        status: String(extra?.status || ""),
-        reason: String(extra?.reason || ""),
-      };
-      if (extra?.bucket === "notfit") {
-        groups.notfit.push(baseRow);
-        continue;
-      }
-      if (extra?.bucket === "partial") {
-        groups.partial.push(baseRow);
-        continue;
-      }
-      if (shift === "both" && tc.ignoreBoth) {
-        groups.both.push({
-          ...baseRow,
-          status: "Both не використано",
-          reason: 'Опція "Використовувати Both" вимкнена.',
-        });
-        continue;
-      }
-      groups.reserve.push({
-        ...baseRow,
-        status: "Резерв",
-        reason: "Гравець не був відібраний у жодну башню.",
+        status:
+          extra.status ||
+          (shift === "both" && tc.ignoreBoth
+            ? "Both не чіпається"
+            : "Не використано"),
       });
     }
 
@@ -1219,24 +1177,24 @@
       ),
     );
 
-    const section = (title, rows, meta) => `
+    const section = (key, title, rows, meta) => `
     <section class="tower-calc-panel top-space">
-      <div class="tower-calc-head"><h3 style="margin:0">${title}</h3><span class="muted small">${calcEsc(meta)}</span></div>
+      <div class="tower-calc-head"><h3 style="margin:0">${title}</h3><span class="muted small">${meta}</span></div>
       ${
         rows.length
           ? `
         <div class="helpers-table-wrap top-space" style="max-height:26vh;overflow:auto">
           <table class="mini-table tower-calc-tier-table">
-            <thead><tr><th>Нік</th><th>Альянс</th><th>Роль</th><th>Tier</th><th>March</th><th>Shift</th><th>Статус</th><th>Причина</th><th>Дії</th></tr></thead>
+            <thead><tr><th>Нік</th><th>Альянс</th><th>Роль</th><th>Tier</th><th>March</th><th>Статус</th><th>Дії</th></tr></thead>
             <tbody>
               ${rows
                 .map((r) => {
                   const disableS1 =
-                    r.registeredShift !== "shift1" && counts.shift1 >= limits.shift1
+                    key !== "shift1" && counts.shift1 >= limits.shift1
                       ? " disabled"
                       : "";
                   const disableS2 =
-                    r.registeredShift !== "shift2" && counts.shift2 >= limits.shift2
+                    key !== "shift2" && counts.shift2 >= limits.shift2
                       ? " disabled"
                       : "";
                   return `<tr>
@@ -1245,9 +1203,7 @@
                   <td>${calcEsc(r.role || "—")}</td>
                   <td>${calcEsc(r.tier || "")}</td>
                   <td>${fm(r.march)}</td>
-                  <td>${calcEsc(calcOverflowShiftLabel(r.registeredShift))}</td>
                   <td>${calcEsc(r.status || "")}</td>
-                  <td>${calcEsc(r.reason || "")}</td>
                   <td>
                     <button type="button" class="btn btn-xs" data-calc-set-player-shift="${calcEsc(r.playerId)}" data-target-shift="shift1"${disableS1}>→ Shift 1</button>
                     <button type="button" class="btn btn-xs" data-calc-set-player-shift="${calcEsc(r.playerId)}" data-target-shift="shift2"${disableS2}>→ Shift 2</button>
@@ -1264,12 +1220,11 @@
     </section>`;
 
     out.innerHTML = `
-    <div class="muted small"><strong>Хто не вліз / резерв</strong> · Не вліз: ${fm(groups.notfit.length)} · Частково: ${fm(groups.partial.length)} · Резерв: ${fm(groups.reserve.length)} · Both: ${fm(groups.both.length)}</div>
-    ${section("Не влізли", groups.notfit, calcOverflowCountsMeta(groups.notfit))}
-    ${section("Частково влізли", groups.partial, calcOverflowCountsMeta(groups.partial))}
-    ${section("Резерв", groups.reserve, calcOverflowCountsMeta(groups.reserve) + ` · поточні ліміти: Shift 1 ${fm(counts.shift1)} / ${fm(limits.shift1)}, Shift 2 ${fm(counts.shift2)} / ${fm(limits.shift2)}`)}
-    ${section("Both / не використані", groups.both, calcOverflowCountsMeta(groups.both) + (tc.ignoreBoth ? ' · зараз Both не використовуються автоматично' : ''))}
-    <div class="muted small top-space">Кнопки “→ Shift 1 / Shift 2 / Both” одразу змінюють shift гравця та запускають новий перерахунок.</div>`;
+    <div class="muted small"><strong>Хто не вліз / резерв</strong> · Shift 1: ${fm(groups.shift1.length)} · Shift 2: ${fm(groups.shift2.length)} · Both: ${fm(groups.both.length)}</div>
+    ${section("shift1", "Shift 1", groups.shift1, `гравців: ${fm(counts.shift1)} / ${fm(limits.shift1)}${counts.shift1 > limits.shift1 ? ` · понад ліміт: ${fm(counts.shift1 - limits.shift1)}` : ""}`)}
+    ${section("shift2", "Shift 2", groups.shift2, `гравців: ${fm(counts.shift2)} / ${fm(limits.shift2)}${counts.shift2 > limits.shift2 ? ` · понад ліміт: ${fm(counts.shift2 - limits.shift2)}` : ""}`)}
+    ${section("both", "Both", groups.both, `гравців: ${fm(counts.both)}${tc.ignoreBoth ? " · не чіпаються, поки не розподілиш вручну" : ""}`)}
+    <div class="muted small top-space">Кнопки “→ Shift 1 / Shift 2 / Both” одразу змінюють shift гравця та запускають перерахунок.</div>`;
   }
 
   function calcNormalizeRegisteredShift(value) {

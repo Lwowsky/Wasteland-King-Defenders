@@ -8,6 +8,7 @@
 
   const MODAL_ID = 'towerCalcModal';
   let refreshTimer = 0;
+  let patchLock = false;
 
   const q = (s, r = document) => {
     try { return (r || document).querySelector(s); } catch { return null; }
@@ -18,17 +19,49 @@
     try { return PNS.towerCalcGetModal?.() || byId(MODAL_ID); } catch { return byId(MODAL_ID); }
   }
 
-  function patchModal() {
-    try { PNS.ensureTowerCalcStyleCore?.(); } catch {}
-    const root = getModal();
-    if (!root) return false;
-    if (typeof PNS.patchTowerCalcPresentation === 'function') {
-      PNS.patchTowerCalcPresentation(root);
-      return true;
-    }
-    try { PNS.installTowerCalcLayoutUi?.(root); } catch {}
+  function getOverflowPanel(root) {
+    return q('#towerCalcOverflowOut', root) || q('[data-calc-main-panel="overflow"]', root);
+  }
+
+  function isLegacyOverflowPanel(panel) {
+    if (!panel) return false;
+    const text = String(panel.textContent || '');
+    return !!(
+      panel.querySelector('[data-calc-set-player-shift]')
+      || text.includes('Хто не вліз / резерв')
+      || text.includes('Не використано')
+      || text.includes('Both не чіпається')
+    );
+  }
+
+  function ensureStatusOverflowUi(root) {
+    const panel = getOverflowPanel(root);
+    if (!panel) return false;
+    const hasStatusUi = !!panel.querySelector('.tcv5-status-view');
+    if (hasStatusUi && !isLegacyOverflowPanel(panel)) return false;
     try { PNS.installTowerCalcSummaryUi?.(root); } catch {}
     return true;
+  }
+
+  function patchModal() {
+    if (patchLock) return false;
+    patchLock = true;
+    try {
+      try { PNS.ensureTowerCalcStyleCore?.(); } catch {}
+      const root = getModal();
+      if (!root) return false;
+      if (typeof PNS.patchTowerCalcPresentation === 'function') {
+        PNS.patchTowerCalcPresentation(root);
+      } else {
+        try { PNS.installTowerCalcLayoutUi?.(root); } catch {}
+        try { PNS.installTowerCalcSummaryUi?.(root); } catch {}
+      }
+      try { ensureStatusOverflowUi(root); } catch {}
+      try { observeOverflowPanel(); } catch {}
+      return true;
+    } finally {
+      patchLock = false;
+    }
   }
 
   function scheduleRefresh(delay, doCompute) {
@@ -147,6 +180,15 @@
     });
 
     document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-ov5-filter]');
+      if (!btn) return;
+      e.preventDefault();
+      const active = PNS.towerCalcReadUiState?.().overflowTab || 'shift1';
+      try { PNS.towerCalcSetOverflowFilter?.(active, btn.dataset.ov5Filter); } catch {}
+      patchModal();
+    });
+
+    document.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-ov5-reset-shift]');
       if (!btn) return;
       e.preventDefault();
@@ -158,6 +200,19 @@
       if (!btn) return;
       e.preventDefault();
       PNS.towerCalcRestoreOverflowFromImport?.();
+      scheduleRefresh(20, true);
+      setTimeout(() => {
+        try { window.calcApplyMainTabUI?.(getModal() || document, 'overflow'); } catch {}
+        patchModal();
+      }, 60);
+      setTimeout(() => {
+        try { window.calcApplyMainTabUI?.(getModal() || document, 'overflow'); } catch {}
+        patchModal();
+      }, 180);
+      setTimeout(() => {
+        try { window.calcApplyMainTabUI?.(getModal() || document, 'overflow'); } catch {}
+        patchModal();
+      }, 420);
     });
 
     document.addEventListener('click', (e) => {
@@ -203,7 +258,32 @@
     document.addEventListener('players-table-rendered', () => scheduleRefresh(80, false));
     document.addEventListener('pns:assignment-changed', () => scheduleRefresh(40, true));
     document.addEventListener('pns:dom:refreshed', () => scheduleRefresh(80, false));
+    document.addEventListener('pns:tower-calc-overflow-restored', () => {
+      scheduleRefresh(20, true);
+      setTimeout(() => patchModal(), 60);
+      setTimeout(() => patchModal(), 180);
+      setTimeout(() => patchModal(), 420);
+    });
     window.addEventListener('resize', () => scheduleRefresh(40, false), { passive: true });
+    return true;
+  }
+
+
+  function observeOverflowPanel() {
+    const root = getModal();
+    const panel = getOverflowPanel(root);
+    if (!panel || panel.dataset.tcRuntimeOverflowObserved === '1') return false;
+    panel.dataset.tcRuntimeOverflowObserved = '1';
+    const mo = new MutationObserver(() => {
+      if (patchLock) return;
+      window.clearTimeout(Number(panel.dataset.tcRuntimeOverflowTimer || 0));
+      const timer = window.setTimeout(() => {
+        if (patchLock) return;
+        if (isLegacyOverflowPanel(panel) || !panel.querySelector('.tcv5-status-view')) patchModal();
+      }, 0);
+      panel.dataset.tcRuntimeOverflowTimer = String(timer);
+    });
+    mo.observe(panel, { childList: true, subtree: true });
     return true;
   }
 
@@ -228,6 +308,7 @@
     bindEvents();
     patchModal();
     observeOpenOnly();
+    observeOverflowPanel();
     setTimeout(() => patchModal(), 40);
     setTimeout(() => patchModal(), 180);
     setTimeout(() => patchModal(), 420);

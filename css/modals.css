@@ -582,6 +582,10 @@
 .tower-calc-preview-toolbar > *{flex:0 0 auto}
 .tower-calc-preview-toolbar .row.gap{display:flex;flex-wrap:nowrap;gap:8px;flex:0 0 auto}
 .tower-calc-preview-toolbar .board-shift-tab.active{box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.tower-calc-board-preview{position:relative;isolation:isolate}
+.tower-calc-preview-toolbar{position:sticky;top:0;z-index:4;padding:8px 10px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:linear-gradient(180deg,rgba(12,20,42,.96),rgba(9,16,34,.92));backdrop-filter:blur(8px);box-shadow:0 10px 24px rgba(0,0,0,.16)}
+.tower-calc-preview-toolbar + #towerCalcPreviewStatus{margin-top:8px}
+.tower-calc-preview-toolbar .btn{position:relative;z-index:1}
 
 
 /* Phase 22: mobile tower calc modal hardening */

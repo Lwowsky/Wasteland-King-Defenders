@@ -1,4 +1,3 @@
-
 (function () {
   'use strict';
 
@@ -33,6 +32,13 @@
     if (/1/.test(s)) return 'shift1';
     if (/2/.test(s)) return 'shift2';
     return 'both';
+  }
+
+  function normalizeReserveValue(value) {
+    const s = String(value || '').trim();
+    if (!s) return '';
+    const normalized = normalizeShift(s);
+    return normalized === 'shift1' || normalized === 'shift2' ? normalized : '';
   }
 
   function roleNorm(value) {
@@ -103,75 +109,111 @@
     return 100;
   }
 
-  function getAssignedHelperSets() {
-    const out = { shift1: new Set(), shift2: new Set(), any: new Set() };
-    const res = window.PNS?.state?.towerCalcLastResults || null;
-    let usedPlanned = false;
+  function cleanTowerTitle(value, fallback) {
+    const raw = String(value || fallback || '').trim();
+    if (!raw) return '—';
+    const first = raw.split('/')[0].trim();
+    return first || raw || '—';
+  }
 
+  function getBaseTitleMap() {
+    const state = window.PNS?.state || {};
+    const map = new Map();
+    const add = (baseId, title, fallbackIndex) => {
+      const id = String(baseId || '');
+      if (!id) return;
+      map.set(id, cleanTowerTitle(title, `Башня ${Number(fallbackIndex || 0) + 1}`));
+    };
+    try {
+      const order = (typeof window.getCalcTowerBaseOrder === 'function') ? (window.getCalcTowerBaseOrder() || []) : [];
+      order.forEach((base, idx) => add(base?.id, base?.title || state.baseById?.get?.(String(base?.id || ''))?.title, idx));
+    } catch {}
+    (Array.isArray(state.bases) ? state.bases : []).forEach((base, idx) => add(base?.id, base?.title, idx));
+    return map;
+  }
+
+  function addAssignment(out, sk, playerId, tower, kind) {
+    const id = String(playerId || '');
+    if (!id || !tower || !['shift1', 'shift2'].includes(sk) || out.has(id)) return;
+    out.set(id, { shift: sk, tower, kind: kind === 'captain' ? 'captain' : 'helper' });
+  }
+
+  function buildRobustAssignmentMap() {
+    const out = new Map();
+    const state = window.PNS?.state || {};
+    const titleByBaseId = getBaseTitleMap();
+
+    const addFromSlots = (sk, slots) => {
+      (Array.isArray(slots) ? slots : []).forEach((slot, idx) => {
+        const baseId = String(slot?.baseId || '');
+        const tower = titleByBaseId.get(baseId)
+          || cleanTowerTitle(slot?.title, `Башня ${idx + 1}`);
+        addAssignment(out, sk, slot?.captainId, tower, 'captain');
+        (Array.isArray(slot?.helperIds) ? slot.helperIds : []).forEach((id) => addAssignment(out, sk, id, tower, 'helper'));
+      });
+    };
+
+    const addFromBases = (sk, bases) => {
+      (Array.isArray(bases) ? bases : []).forEach((base, idx) => {
+        const tower = titleByBaseId.get(String(base?.id || '')) || cleanTowerTitle(base?.title, `Башня ${idx + 1}`);
+        addAssignment(out, sk, base?.captainId, tower, 'captain');
+        (Array.isArray(base?.helperIds) ? base.helperIds : []).forEach((id) => addAssignment(out, sk, id, tower, 'helper'));
+      });
+    };
+
+    const addFromPlan = (sk, plan) => {
+      const planBases = plan?.bases && typeof plan.bases === 'object' ? plan.bases : null;
+      if (planBases) {
+        Object.entries(planBases).forEach(([baseId, base], idx) => {
+          const tower = titleByBaseId.get(String(baseId || '')) || cleanTowerTitle(base?.title, `Башня ${idx + 1}`);
+          addAssignment(out, sk, base?.captainId, tower, 'captain');
+          (Array.isArray(base?.helperIds) ? base.helperIds : []).forEach((id) => addAssignment(out, sk, id, tower, 'helper'));
+        });
+      }
+    };
+
+    // Source of truth for assignments:
+    // 1) calcGetTowerSlotsForShift(sk) — the same layer the calculator uses for towers
+    // 2) live state.bases / persisted shiftPlans only as fallback if slots are unavailable
     for (const sk of ['shift1', 'shift2']) {
-      const plans = Array.isArray(res?.[sk]?.towerPlans) ? res[sk].towerPlans : [];
-      if (plans.length) {
-        usedPlanned = true;
-        for (const tp of plans) {
-          const captainId = String(tp?.captain?.id || '');
-          if (captainId) {
-            out[sk].add(captainId);
-            out.any.add(captainId);
-          }
-          const picked = Array.isArray(tp?.pickedPlayers) ? tp.pickedPlayers : [];
-          for (const p of picked) {
-            const sid = String(p?.id || '');
-            if (!sid) continue;
-            out[sk].add(sid);
-            out.any.add(sid);
-          }
+      let usedSlots = false;
+      try {
+        const slots = (typeof window.calcGetTowerSlotsForShift === 'function')
+          ? (window.calcGetTowerSlotsForShift(sk) || [])
+          : [];
+        if (Array.isArray(slots) && slots.length) {
+          addFromSlots(sk, slots);
+          usedSlots = true;
         }
-      }
-    }
+      } catch {}
 
-    if (!usedPlanned) {
-      for (const sk of ['shift1', 'shift2']) {
-        const slots = (typeof window.calcGetTowerSlotsForShift === 'function') ? (window.calcGetTowerSlotsForShift(sk) || []) : [];
-        for (const slot of slots) {
-          const captainId = String(slot?.captainId || '');
-          if (captainId) {
-            out[sk].add(captainId);
-            out.any.add(captainId);
-          }
-          const ids = Array.isArray(slot?.helperIds) ? slot.helperIds : [];
-          for (const id of ids) {
-            const sid = String(id || '');
-            if (!sid) continue;
-            out[sk].add(sid);
-            out.any.add(sid);
-          }
-        }
-      }
+      if (usedSlots) continue;
+
+      if (String(state.activeShift || '') === sk) addFromBases(sk, state.bases);
+      else addFromPlan(sk, state.shiftPlans?.[sk] || null);
     }
 
     return out;
   }
 
-  function getLiveAssignedHelperSets() {
+
+  function getAssignedHelperSets() {
     const out = { shift1: new Set(), shift2: new Set(), any: new Set() };
-    for (const sk of ['shift1', 'shift2']) {
-      const slots = (typeof window.calcGetTowerSlotsForShift === 'function') ? (window.calcGetTowerSlotsForShift(sk) || []) : [];
-      for (const slot of slots) {
-        const captainId = String(slot?.captainId || '');
-        if (captainId) {
-          out[sk].add(captainId);
-          out.any.add(captainId);
-        }
-        const ids = Array.isArray(slot?.helperIds) ? slot.helperIds : [];
-        for (const id of ids) {
-          const sid = String(id || '');
-          if (!sid) continue;
-          out[sk].add(sid);
-          out.any.add(sid);
-        }
-      }
-    }
+    const map = buildRobustAssignmentMap();
+    map.forEach((info, id) => {
+      if (!id || !info?.shift) return;
+      out[info.shift].add(id);
+      out.any.add(id);
+    });
     return out;
+  }
+
+  function getLiveAssignedHelperSets() {
+    return getAssignedHelperSets();
+  }
+
+  function getLiveAssignmentMap() {
+    return buildRobustAssignmentMap();
   }
 
   function collectOverflowMap() {
@@ -181,7 +223,7 @@
     for (const sk of ['shift1', 'shift2']) {
       const plans = Array.isArray(res?.[sk]?.towerPlans) ? res[sk].towerPlans : [];
       plans.forEach((tp, idx) => {
-        const tower = String(tp?.captain?.name || `Башня ${idx + 1}`);
+        const tower = cleanTowerTitle(tp?.captain?.name, `Башня ${idx + 1}`);
         (Array.isArray(tp?.notFitPlayers) ? tp.notFitPlayers : []).forEach((p) => {
           const id = String(p?.id || '');
           if (!id) return;
@@ -190,9 +232,7 @@
         (Array.isArray(tp?.partialPlayers) ? tp.partialPlayers : []).forEach((p) => {
           const id = String(p?.id || '');
           if (!id) return;
-          const sent = Number(p?.sent || 0) || 0;
-          const full = Number(p?.full || 0) || 0;
-          map.set(id, { kind: 'partial', shift: sk, tower, note: `${fm(sent)} / ${fm(full)}` });
+          map.set(id, { kind: 'partial', shift: sk, tower, note: 'Частково' });
         });
       });
     }
@@ -312,44 +352,23 @@
     if (mini) mini.style.display = 'none';
   }
 
-  function getOverflowRows(shiftKey) {
-    const state = window.PNS?.state || {};
-    const players = Array.isArray(state.players) ? state.players : [];
-    const assigned = getLiveAssignedHelperSets().any;
-    const overflowMap = collectOverflowMap();
-    const tc = (window.PNS?.state?.towerCalc || window.PNS?.state?.towerCalcState || {});
-    const reserveState = (tc && typeof tc === 'object' && tc.overflowReserve && typeof tc.overflowReserve === 'object') ? tc.overflowReserve : null;
-    const reserveLs = (() => {
-      try { return JSON.parse(localStorage.getItem('pns_tower_calc_state') || '{}')?.overflowReserve || {}; } catch { return {}; }
-    })();
-
-    return players
-      .filter((p) => normalizeShift(p?.shift || p?.shiftLabel || 'both') === shiftKey && !assigned.has(String(p?.id || '')))
-      .map((p) => {
-        const id = String(p?.id || '');
-        const of = overflowMap.get(id);
-        const reserve = String((reserveState && reserveState[id]) || reserveLs[id] || '');
-        return {
-          id,
-          name: String(p?.name || '—'),
-          alliance: String(p?.alliance || '—'),
-          role: String(p?.role || '—'),
-          tier: String(p?.tier || '—'),
-          march: Number(p?.march || 0) || 0,
-          status: of?.kind === 'partial' ? 'Частково' : of?.kind === 'notfit' ? 'Не вліз' : 'Резерв',
-          tower: of?.tower || '—',
-          reserve,
-        };
-      })
-      .sort((a, b) => (b.march - a.march) || a.name.localeCompare(b.name));
-  }
-
   function readOverflowReserveStorage() {
     const tc = (window.PNS?.state?.towerCalc || window.PNS?.state?.towerCalcState || {});
     const fromState = (tc && typeof tc === 'object' && tc.overflowReserve && typeof tc.overflowReserve === 'object') ? tc.overflowReserve : {};
     let fromLs = {};
     try { fromLs = JSON.parse(localStorage.getItem('pns_tower_calc_state') || '{}')?.overflowReserve || {}; } catch {}
     return { fromState, fromLs };
+  }
+
+  function getMergedOverflowReserveMap() {
+    const { fromState, fromLs } = readOverflowReserveStorage();
+    const raw = { ...(fromLs || {}), ...(fromState || {}) };
+    const clean = {};
+    Object.entries(raw).forEach(([id, val]) => {
+      const safe = normalizeReserveValue(val);
+      if (safe) clean[String(id)] = safe;
+    });
+    return clean;
   }
 
   function writeOverflowReserveStorage(nextMap) {
@@ -368,76 +387,117 @@
     } catch {}
   }
 
-  function resetOverflowReserveForShift(shiftKey) {
-    const sk = normalizeShift(shiftKey);
-    if (!['shift1', 'shift2'].includes(sk)) return { changed: 0, shiftKey: sk };
-    const PNS = window.PNS;
-    const state = PNS?.state || {};
+  function getOverflowRows(shiftKey) {
+    const state = window.PNS?.state || {};
     const players = Array.isArray(state.players) ? state.players : [];
-    const { fromState, fromLs } = readOverflowReserveStorage();
-    const merged = { ...(fromLs || {}), ...(fromState || {}) };
-    const next = { ...merged };
-    let changed = 0;
+    const assignmentMap = getLiveAssignmentMap();
+    const reserveMap = getMergedOverflowReserveMap();
+    const active = normalizeShift(shiftKey);
 
-    for (const [id, reserveShift] of Object.entries(merged)) {
-      if (String(reserveShift || '') !== sk) continue;
-      delete next[id];
-      const p = getPlayerById(id);
-      if (!p) continue;
-      const registered = (() => {
-        try { return normalizeShift(PNS?.getRegisteredShiftForPlayer?.(p) || p?.registeredShift || p?.registeredShiftLabel || 'both'); } catch { return 'both'; }
-      })();
-      setPlayerShiftLive(p, registered);
-      changed += 1;
-    }
-
-    writeOverflowReserveStorage(next);
-    try { PNS.savePlayersSnapshot?.(players); } catch {}
-    try { PNS.applyPlayerTableFilters?.(); } catch {}
-    try { PNS.renderAll?.(); } catch {}
-    try { window.computeTowerCalcResults?.(); } catch {}
-    try { PNS.setImportStatus?.(`Скинуто резерв ${sk === 'shift1' ? 'Shift 1' : 'Shift 2'}: ${changed}.`, 'good'); } catch {}
-    patchState({ overflowTab: sk });
-    return { changed, shiftKey: sk };
+    return players
+      .filter((p) => normalizeShift(p?.shift || p?.shiftLabel || 'both') === active)
+      .map((p) => {
+        const id = String(p?.id || '');
+        const assigned = assignmentMap.get(id) || null;
+        const reserveShift = normalizeReserveValue(reserveMap[id]);
+        const status = assigned ? 'in' : reserveShift ? 'reserve' : 'out';
+        const towerLabel = assigned
+          ? (active === 'both' ? `${assigned.shift === 'shift1' ? 'Shift 1' : 'Shift 2'} · ${assigned.tower}` : assigned.tower)
+          : '—';
+        return {
+          id,
+          name: String(p?.name || '—'),
+          alliance: String(p?.alliance || '—'),
+          role: String(p?.role || '—'),
+          tier: String(p?.tier || '—'),
+          march: Number(p?.march || 0) || 0,
+          tower: towerLabel,
+          towerRaw: assigned?.tower || '—',
+          assignedShift: assigned?.shift || '',
+          reserve: reserveShift,
+          status,
+          statusLabel: assigned ? 'У башні' : reserveShift ? 'Резерв' : 'Не в башні',
+        };
+      })
+      .sort((a, b) => {
+        const order = { in: 0, out: 1, reserve: 2 };
+        return (order[a.status] - order[b.status]) || (b.march - a.march) || a.name.localeCompare(b.name, 'uk');
+      });
   }
 
-  function restoreOverflowFromImport() {
-    const PNS = window.PNS;
-    const state = PNS?.state || {};
-    const players = Array.isArray(state.players) ? state.players : [];
-    writeOverflowReserveStorage({});
-    let counts = null;
-    try { counts = PNS.restorePlayerShiftsFromImport?.(players) || null; } catch {}
-    try { PNS.savePlayersSnapshot?.(players); } catch {}
-    try { PNS.applyPlayerTableFilters?.(); } catch {}
-    try { PNS.renderAll?.(); } catch {}
-    try { window.computeTowerCalcResults?.(); } catch {}
-    try {
-      const text = counts ? `Відновлено з імпорту: S1 ${counts.shift1}, S2 ${counts.shift2}, Both ${counts.both}.` : 'Відновлено з імпорту.';
-      PNS.setImportStatus?.(text, 'good');
-    } catch {}
-    return counts;
+  function getOverflowFilter(active) {
+    const ui = readUiState();
+    const key = `overflowFilter_${active}`;
+    const raw = String(ui[key] || ui.overflowFilter || 'all');
+    return ['all', 'in', 'out', 'reserve'].includes(raw) ? raw : 'all';
+  }
+
+  function setOverflowFilter(active, filter) {
+    const safe = ['all', 'in', 'out', 'reserve'].includes(String(filter || '')) ? String(filter) : 'all';
+    patchState({ overflowFilter: safe, [`overflowFilter_${active}`]: safe });
+  }
+
+  function applyOverflowFilter(rows, filter) {
+    const safe = ['all', 'in', 'out', 'reserve'].includes(String(filter || '')) ? String(filter) : 'all';
+    if (safe === 'all') return rows.slice();
+    return rows.filter((row) => row.status === safe);
+  }
+
+  function summarizeOverflowRows(rows) {
+    return rows.reduce((acc, row) => {
+      acc.total += 1;
+      if (row.status === 'in') acc.in += 1;
+      else if (row.status === 'reserve') acc.reserve += 1;
+      else acc.out += 1;
+      return acc;
+    }, { total: 0, in: 0, out: 0, reserve: 0 });
+  }
+
+  function renderMiniStat(title, value, hint, extraClass) {
+    return `
+      <article class="tcv5-mini-card ${extraClass || ''}">
+        <div class="tcv5-mini-card-title">${title}</div>
+        <div class="tcv5-mini-card-value">${fm(value)}</div>
+        <div class="tcv5-mini-card-hint">${hint}</div>
+      </article>`;
+  }
+
+  function renderStatusPill(status, label) {
+    const cls = status === 'in' ? 'is-in' : status === 'reserve' ? 'is-reserve' : 'is-out';
+    return `<span class="tcv5-status-pill ${cls}">${label}</span>`;
+  }
+
+  function updateMainTabLabels(root) {
+    qa('[data-calc-main-tab="overflow"]', root || document).forEach((btn) => {
+      const current = txt(btn);
+      if (current !== 'Статус гравців') btn.textContent = 'Статус гравців';
+    });
   }
 
   function renderOverflowTabs(root) {
     const panel = q('#towerCalcOverflowOut', root) || q('[data-calc-main-panel="overflow"]', root);
     if (!panel) return;
+
+    updateMainTabLabels(root);
+
     const ui = readUiState();
     const active = ['shift1', 'shift2', 'both'].includes(ui.overflowTab) ? ui.overflowTab : 'shift1';
-    const rows = { shift1: getOverflowRows('shift1'), shift2: getOverflowRows('shift2'), both: getOverflowRows('both') };
-    const items = rows[active] || [];
+    const allRows = getOverflowRows(active);
+    const meta = summarizeOverflowRows(allRows);
+    const activeFilter = getOverflowFilter(active);
+    const items = applyOverflowFilter(allRows, activeFilter);
     const title = active === 'shift1' ? 'Shift 1' : active === 'shift2' ? 'Shift 2' : 'Both';
     const subtitle = active === 'both'
-      ? `Резерв ${fm(items.length)} · окремо від автоматичного планування`
-      : `Резерв ${fm(items.length)} · тут можна вручну зарезервувати у 1 Shift або 2 Shift`;
+      ? 'Тут видно всіх гравців із групи Both: хто вже стоїть у башнях, хто поза башнями, і хто вручну відправлений у резерв.'
+      : 'Одна таблиця з фактичним статусом гравця: у башні, не в башні або в резерві.';
     const savedScroll = Number(ui['overflowScroll_' + active] || 0) || 0;
 
     panel.innerHTML = `
-      <div class="tcv5-overflow-wrap">
+      <div class="tcv5-overflow-wrap tcv5-status-view">
         <div class="tcv5-overflow-head">
           <div>
-            <h3>Хто не вліз / резерв</h3>
-            <div class="muted small">Показуються тільки гравці, яких зараз немає в башнях. Вкладки йдуть за поточним Shift гравця.</div>
+            <h3>Статус гравців</h3>
+            <div class="muted small">${subtitle}</div>
           </div>
           <div class="tcv5-tabs" role="tablist">
             <button class="btn btn-sm ${active === 'shift1' ? 'is-active' : ''}" type="button" data-ov5-tab="shift1">Shift 1</button>
@@ -445,43 +505,68 @@
             <button class="btn btn-sm ${active === 'both' ? 'is-active' : ''}" type="button" data-ov5-tab="both">Both</button>
           </div>
         </div>
+
+        <div class="tcv5-overflow-summary">
+          ${renderMiniStat('У башнях', meta.in, 'Зараз реально стоять у башнях', 'is-in')}
+          ${renderMiniStat('Поза башнями', meta.out, 'Не стоять у жодній башні', 'is-out')}
+          ${renderMiniStat('У резерві', meta.reserve, 'Вручну відправлені в резерв Shift 1/2', 'is-reserve')}
+        </div>
+
         <section class="tcv5-panel is-active" data-ov5-panel="${active}">
           <div class="tcv5-panel-head">
-            <strong>${title}</strong>
-            <span class="muted small">${subtitle}</span>
+            <div>
+              <strong>${title}</strong>
+              <div class="muted small">Показано ${fm(items.length)} із ${fm(allRows.length)}</div>
+            </div>
+            <div class="tcv5-filters" role="tablist" aria-label="Фільтр статусу">
+              <button class="btn btn-xs ${activeFilter === 'all' ? 'is-active' : ''}" type="button" data-ov5-filter="all">Усі ${fm(meta.total)}</button>
+              <button class="btn btn-xs ${activeFilter === 'in' ? 'is-active' : ''}" type="button" data-ov5-filter="in">У башнях ${fm(meta.in)}</button>
+              <button class="btn btn-xs ${activeFilter === 'out' ? 'is-active' : ''}" type="button" data-ov5-filter="out">Поза башнями ${fm(meta.out)}</button>
+              <button class="btn btn-xs ${activeFilter === 'reserve' ? 'is-active' : ''}" type="button" data-ov5-filter="reserve">У резерві ${fm(meta.reserve)}</button>
+            </div>
             <div class="tcv17-overflow-actions">
               <button class="btn btn-xs" type="button" data-ov5-reset-shift="shift1">Скинути резерв S1</button>
               <button class="btn btn-xs" type="button" data-ov5-reset-shift="shift2">Скинути резерв S2</button>
               <button class="btn btn-xs" type="button" data-ov5-restore-import="1">Відновити з імпорту</button>
             </div>
           </div>
+
           ${items.length ? `
             <div class="helpers-table-wrap top-space tcv5-scroll-wrap" data-ov5-scroll-wrap="${active}">
               <table class="mini-table tower-calc-tier-table tcv5-table">
                 <thead>
                   <tr>
-                    <th>Нік</th><th>Альянс</th><th>Роль</th><th>Tier</th><th>March</th><th>Статус</th><th>Башня</th><th>Резерв</th><th>Дії</th>
+                    <th>Гравець</th>
+                    <th>Альянс</th>
+                    <th>Роль / Tier</th>
+                    <th>March</th>
+                    <th>Статус</th>
+                    <th>Башня</th>
+                    <th>Резерв</th>
+                    <th>Дії</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${items.map((r) => `
-                    <tr>
-                      <td>${esc(r.name)}</td>
+                    <tr data-player-status="${esc(r.status)}">
+                      <td>
+                        <div class="tcv5-player-name">${esc(r.name)}</div>
+                      </td>
                       <td>${esc(r.alliance)}</td>
-                      <td>${esc(r.role)}</td>
-                      <td>${esc(r.tier)}</td>
+                      <td>${esc(r.role)} <span class="muted">${esc(r.tier)}</span></td>
                       <td>${fm(r.march)}</td>
-                      <td>${esc(r.status)}</td>
+                      <td>${renderStatusPill(r.status, r.statusLabel)}</td>
                       <td>${esc(r.tower)}</td>
                       <td>${r.reserve === 'shift1' ? '1 Shift' : r.reserve === 'shift2' ? '2 Shift' : '—'}</td>
                       <td>
-                        <button class="btn btn-xs ${r.reserve === 'shift1' ? 'is-active' : ''}" type="button" data-ui-reserve-shift="shift1" data-player-id="${esc(r.id)}">1 Shift</button>
-                        <button class="btn btn-xs ${r.reserve === 'shift2' ? 'is-active' : ''}" type="button" data-ui-reserve-shift="shift2" data-player-id="${esc(r.id)}">2 Shift</button>
+                        ${r.status === 'in' ? '<span class="muted">—</span>' : `
+                          <button class="btn btn-xs ${r.reserve === 'shift1' ? 'is-active' : ''}" type="button" data-ui-reserve-shift="shift1" data-player-id="${esc(r.id)}">1 Shift</button>
+                          <button class="btn btn-xs ${r.reserve === 'shift2' ? 'is-active' : ''}" type="button" data-ui-reserve-shift="shift2" data-player-id="${esc(r.id)}">2 Shift</button>`}
                       </td>
                     </tr>`).join('')}
                 </tbody>
               </table>
-            </div>` : '<div class="tower-calc-placeholder muted small top-space">Порожньо</div>'}
+            </div>` : '<div class="tower-calc-placeholder muted small top-space">За цим фільтром зараз порожньо.</div>'}
         </section>
       </div>`;
 
@@ -499,6 +584,153 @@
     }
   }
 
+
+  function restorePlayerShiftsFromImportFallback(players) {
+    const PNS = window.PNS;
+    const list = Array.isArray(players) ? players : [];
+    const counts = { shift1: 0, shift2: 0, both: 0 };
+    for (const p of list) {
+      if (!p) continue;
+      const registered = (() => {
+        try { return normalizeShift(PNS?.getRegisteredShiftForPlayer?.(p) || p?.registeredShift || p?.registeredShiftLabel || 'both'); } catch { return 'both'; }
+      })();
+      const safe = ['shift1', 'shift2', 'both'].includes(registered) ? registered : 'both';
+      setPlayerShiftLive(p, safe);
+      counts[safe] = Number(counts[safe] || 0) + 1;
+    }
+    return counts;
+  }
+
+  function reapplyStatusPlayersUi(root) {
+    const calcRoot = root || getModal() || document;
+    try { window.calcApplyMainTabUI?.(calcRoot, 'overflow'); } catch {}
+    try { install(calcRoot); } catch {}
+    try { window.PNS?.patchTowerCalcRuntimeUi?.(); } catch {}
+    return true;
+  }
+
+  function triggerSettingsClear(mode) {
+    const root = getModal() || document;
+    const id = mode === 'shift1'
+      ? 'towerCalcClearShift1Btn'
+      : mode === 'shift2'
+        ? 'towerCalcClearShift2Btn'
+        : 'towerCalcClearHelpersAllBtn';
+    const btn = byId(id, root) || byId(id, document);
+    if (!btn) return false;
+    try {
+      btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+      return true;
+    } catch {}
+    try { btn.click(); return true; } catch {}
+    return false;
+  }
+
+  function hideOverflowPanelDuringRefresh(root) {
+    const calcRoot = root || getModal() || document;
+    const panel = q('[data-calc-main-panel="overflow"]', calcRoot);
+    if (!panel) return () => {};
+    const prevVisibility = panel.style.visibility;
+    const prevOpacity = panel.style.opacity;
+    panel.style.visibility = 'hidden';
+    panel.style.opacity = '0';
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      panel.style.visibility = prevVisibility;
+      panel.style.opacity = prevOpacity;
+    };
+  }
+
+  function refreshStatusPlayersUi(root) {
+    const calcRoot = root || getModal() || document;
+    const release = hideOverflowPanelDuringRefresh(calcRoot);
+    const rerender = () => {
+      try { reapplyStatusPlayersUi(calcRoot); } catch {}
+      try { release(); } catch {}
+    };
+    try { rerender(); } catch {}
+    try { requestAnimationFrame(rerender); } catch {}
+    return true;
+  }
+
+  function resetOverflowReserveForShift(shiftKey) {
+    const sk = normalizeShift(shiftKey);
+    if (!['shift1', 'shift2'].includes(sk)) return { changed: 0, shiftKey: sk };
+    const PNS = window.PNS;
+    const state = PNS?.state || {};
+    const players = Array.isArray(state.players) ? state.players : [];
+
+    let rawTc = {};
+    try { rawTc = JSON.parse(localStorage.getItem('pns_tower_calc_state') || '{}') || {}; } catch { rawTc = {}; }
+
+    const merged = {
+      ...(rawTc?.overflowReserve && typeof rawTc.overflowReserve === 'object' ? rawTc.overflowReserve : {}),
+      ...(state?.towerCalc?.overflowReserve && typeof state.towerCalc.overflowReserve === 'object' ? state.towerCalc.overflowReserve : {}),
+      ...(state?.towerCalcState?.overflowReserve && typeof state.towerCalcState.overflowReserve === 'object' ? state.towerCalcState.overflowReserve : {}),
+      ...getMergedOverflowReserveMap(),
+    };
+
+    const next = { ...merged };
+    const idsToClear = Object.keys(merged).filter((id) => normalizeReserveValue(merged[id]) === sk);
+    let changed = 0;
+
+    idsToClear.forEach((id) => {
+      delete next[id];
+      try { window.calcSetOverflowReserve?.(id, ''); } catch {}
+      const p = getPlayerById(id);
+      if (p) {
+        const registered = (() => {
+          try { return normalizeShift(PNS?.getRegisteredShiftForPlayer?.(p) || p?.registeredShift || p?.registeredShiftLabel || 'both'); } catch { return 'both'; }
+        })();
+        setPlayerShiftLive(p, registered);
+      }
+      changed += 1;
+    });
+
+    writeOverflowReserveStorage(next);
+    const delegated = triggerSettingsClear(sk);
+    try { PNS.savePlayersSnapshot?.(players); } catch {}
+    try { PNS.applyPlayerTableFilters?.(); } catch {}
+    try { if (!delegated) PNS.renderAll?.(); } catch {}
+    try { if (!delegated) window.computeTowerCalcResults?.(); } catch {}
+    patchState({ overflowTab: sk });
+    refreshStatusPlayersUi();
+    try { requestAnimationFrame(() => refreshStatusPlayersUi()); } catch {}
+    try { setTimeout(() => refreshStatusPlayersUi(), 60); } catch {}
+    try { PNS.setImportStatus?.(`Очищено ${sk === 'shift1' ? 'Shift 1' : 'Shift 2'} як у Налаштуваннях башень.`, 'good'); } catch {}
+    return { changed, shiftKey: sk, delegated };
+  }
+
+  function restoreOverflowFromImport() {
+    const PNS = window.PNS;
+    const state = PNS?.state || {};
+    const players = Array.isArray(state.players) ? state.players : [];
+
+    const rawMerged = getMergedOverflowReserveMap();
+    Object.keys(rawMerged).forEach((id) => { try { window.calcSetOverflowReserve?.(id, ''); } catch {} });
+    writeOverflowReserveStorage({});
+
+    const delegated = triggerSettingsClear('all');
+    let counts = null;
+    try { counts = PNS.restorePlayerShiftsFromImport?.(players) || null; } catch {}
+    if (!counts) counts = restorePlayerShiftsFromImportFallback(players);
+
+    try { PNS.savePlayersSnapshot?.(players); } catch {}
+    try { PNS.applyPlayerTableFilters?.(); } catch {}
+    try { if (!delegated) PNS.renderAll?.(); } catch {}
+    try { if (!delegated) window.computeTowerCalcResults?.(); } catch {}
+    refreshStatusPlayersUi();
+    try { requestAnimationFrame(() => refreshStatusPlayersUi()); } catch {}
+    try { setTimeout(() => refreshStatusPlayersUi(), 60); } catch {}
+    try {
+      const text = counts ? `Відновлено з імпорту після очистки Shift 1 + 2: S1 ${counts.shift1}, S2 ${counts.shift2}, Both ${counts.both}.` : 'Відновлено з імпорту після очистки Shift 1 + 2.';
+      PNS.setImportStatus?.(text, 'good');
+    } catch {}
+    return counts;
+  }
+
   function toggleReserveCore(playerId, shiftKey) {
     const id = String(playerId || '');
     const sk = normalizeShift(shiftKey);
@@ -510,16 +742,78 @@
     const currentShift = normalizeShift(p?.shift || p?.shiftLabel || 'both');
     if (currentShift !== sk) {
       setPlayerShiftLive(p, sk);
-      persistPlayersAfterShiftMove(`Гравця ${p.name || ''} переведено в ${sk === 'shift1' ? 'Shift 1' : 'Shift 2'}.`);
     }
 
-    try { window.calcSetOverflowReserve?.(id, sk); } catch {}
+    const merged = getMergedOverflowReserveMap();
+    const next = { ...merged };
+    if (normalizeReserveValue(next[id]) === sk) delete next[id];
+    else next[id] = sk;
+    writeOverflowReserveStorage(next);
+
+    try { window.calcSetOverflowReserve?.(id, next[id] || ''); } catch {}
+    try { persistPlayersAfterShiftMove(`Гравця ${p.name || ''} переведено в ${sk === 'shift1' ? 'Shift 1' : 'Shift 2'}.`); } catch {}
     patchState({ overflowTab: sk });
+    refreshStatusPlayersUi();
+    return true;
+  }
+
+  function bindUiEvents(root) {
+    const calcRoot = root || getModal() || document;
+    if (!calcRoot || calcRoot.dataset.tcSummaryUiCoreBound === '1') return false;
+    calcRoot.dataset.tcSummaryUiCoreBound = '1';
+
+    calcRoot.addEventListener('click', (e) => {
+      const tabBtn = e.target.closest('[data-ov5-tab]');
+      if (tabBtn && calcRoot.contains(tabBtn)) {
+        e.preventDefault();
+        e.stopPropagation();
+        patchState({ overflowTab: tabBtn.dataset.ov5Tab || 'shift1' });
+        refreshStatusPlayersUi(calcRoot);
+        return;
+      }
+
+      const filterBtn = e.target.closest('[data-ov5-filter]');
+      if (filterBtn && calcRoot.contains(filterBtn)) {
+        e.preventDefault();
+        e.stopPropagation();
+        const active = normalizeShift(readUiState().overflowTab || 'shift1');
+        setOverflowFilter(active, filterBtn.dataset.ov5Filter || 'all');
+        refreshStatusPlayersUi(calcRoot);
+        return;
+      }
+
+      const resetBtn = e.target.closest('[data-ov5-reset-shift]');
+      if (resetBtn && calcRoot.contains(resetBtn)) {
+        e.preventDefault();
+        e.stopPropagation();
+        resetOverflowReserveForShift(resetBtn.dataset.ov5ResetShift);
+        return;
+      }
+
+      const restoreBtn = e.target.closest('[data-ov5-restore-import]');
+      if (restoreBtn && calcRoot.contains(restoreBtn)) {
+        e.preventDefault();
+        e.stopPropagation();
+        restoreOverflowFromImport();
+        return;
+      }
+
+      const reserveBtn = e.target.closest('[data-ui-reserve-shift]');
+      if (reserveBtn && calcRoot.contains(reserveBtn)) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleReserveCore(reserveBtn.dataset.playerId, reserveBtn.dataset.uiReserveShift);
+        return;
+      }
+    }, true);
+
     return true;
   }
 
   function install(root) {
     const calcRoot = root || getModal() || document;
+    bindUiEvents(calcRoot);
+    updateMainTabLabels(calcRoot);
     renderTopSummary(calcRoot);
     renderOverflowTabs(calcRoot);
     return true;
@@ -529,6 +823,7 @@
   PNS.towerCalcWriteUiState = writeUiState;
   PNS.towerCalcPatchUiState = patchState;
   PNS.towerCalcNormalizeShift = normalizeShift;
+  PNS.towerCalcNormalizeReserveValue = normalizeReserveValue;
   PNS.towerCalcGetPlayerById = getPlayerById;
   PNS.towerCalcGetModal = getModal;
   PNS.towerCalcFindShiftLimitInputs = findShiftLimitInputs;
@@ -536,15 +831,19 @@
   PNS.towerCalcGetLimitValue = getLimitValue;
   PNS.towerCalcGetAssignedHelperSets = getAssignedHelperSets;
   PNS.towerCalcGetLiveAssignedHelperSets = getLiveAssignedHelperSets;
+  PNS.towerCalcGetLiveAssignmentMap = getLiveAssignmentMap;
   PNS.towerCalcCollectOverflowMap = collectOverflowMap;
   PNS.towerCalcCollectStats = collectStats;
   PNS.towerCalcRenderTopSummary = renderTopSummary;
   PNS.towerCalcRenderOverflowTabs = renderOverflowTabs;
   PNS.installTowerCalcSummaryUi = install;
   PNS.towerCalcGetOverflowRows = getOverflowRows;
+  PNS.towerCalcGetOverflowFilter = getOverflowFilter;
+  PNS.towerCalcSetOverflowFilter = setOverflowFilter;
   PNS.towerCalcReadOverflowReserveStorage = readOverflowReserveStorage;
   PNS.towerCalcWriteOverflowReserveStorage = writeOverflowReserveStorage;
   PNS.towerCalcResetOverflowReserveForShift = resetOverflowReserveForShift;
   PNS.towerCalcRestoreOverflowFromImport = restoreOverflowFromImport;
   PNS.towerCalcToggleReserveCore = toggleReserveCore;
+  PNS.towerCalcRefreshStatusPlayersUi = refreshStatusPlayersUi;
 })();

@@ -249,3 +249,27 @@
     grid-template-columns:1fr !important;
   }
 }
+
+
+/* Phase 27: simplified status players view */
+.tcv5-status-view{display:flex;flex-direction:column;gap:14px}
+.tcv5-overflow-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tcv5-mini-card{padding:16px 18px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:rgba(5,10,30,.22)}
+.tcv5-mini-card.is-in{border-color:rgba(59,130,246,.28)}
+.tcv5-mini-card.is-out{border-color:rgba(245,158,11,.26)}
+.tcv5-mini-card.is-reserve{border-color:rgba(16,185,129,.26)}
+.tcv5-mini-card-title{font-size:14px;opacity:.88}
+.tcv5-mini-card-value{margin-top:8px;font-size:30px;font-weight:800;line-height:1.05}
+.tcv5-mini-card-hint{margin-top:8px;font-size:12px;line-height:1.45;opacity:.74}
+.tcv5-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tcv5-status-pill{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.08);font-size:13px;font-weight:700;white-space:nowrap}
+.tcv5-status-pill.is-in{background:rgba(37,99,235,.16);border-color:rgba(96,165,250,.36);color:#dbeafe}
+.tcv5-status-pill.is-out{background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.34);color:#fde68a}
+.tcv5-status-pill.is-reserve{background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.34);color:#d1fae5}
+.tcv5-player-name{font-weight:700}
+.tcv5-table td:nth-child(8){white-space:nowrap}
+.tcv5-table td:nth-child(8) .btn + .btn{margin-left:6px}
+
+@media (max-width: 820px){
+  .tcv5-overflow-summary{grid-template-columns:1fr}
+}
