@@ -45,7 +45,7 @@ function optionalColumnClass(key) {
 
   function buildRoleBadge(role) {
     const cls = roleTagClass(role);
-    const label = PNS.escapeHtml(typeof PNS.roleLabel === 'function' ? PNS.roleLabel(role) : PNS.normalizeRole(role));
+    const label = PNS.escapeHtml(typeof PNS.roleLabel === 'function' ? PNS.roleLabel(role, true) : PNS.normalizeRole(role));
     return `<span class="tag tag--role ${cls}">${label}</span>`;
   }
 
@@ -150,7 +150,7 @@ function optionalColumnClass(key) {
 
     row.innerHTML = '';
     const lead = document.createElement('span');
-    lead.textContent = 'Auto-fill:';
+    lead.textContent = 'Автозаповнення:';
     row.appendChild(lead);
 
     const activeRules = [];
@@ -162,13 +162,13 @@ function optionalColumnClass(key) {
     const summary = document.createElement('span');
     summary.className = 'quota-summary';
     summary.textContent = activeRules.length
-      ? `Обмеження маршу за тіром: ${activeRules.join(' · ')}`
-      : 'Обмеження маршу за тіром: авто';
+      ? `Ліміти маршу за тірами: ${activeRules.join(' · ')}`
+      : 'Ліміти маршу за тірами: авто';
     row.appendChild(summary);
 
     const mh = document.createElement('span');
     mh.className = 'quota-max';
-    mh.textContent = `Макс. помічників: ${Number(base.maxПомічникs || 0)}`;
+    mh.textContent = `Макс. помічників: ${Number(base.maxHelpers || 0)}`;
     row.appendChild(mh);
   }
   PNS.renderQuotaRow = renderQuotaRow;
@@ -310,26 +310,26 @@ function optionalColumnClass(key) {
       editor.className = 'base-editor';
       editor.innerHTML = `
         <div class="editor-row">
-          <select data-base-editor-select="${base.id}" aria-label="Base editor player select"></select>
-          <button class="btn btn-sm" type="button" data-base-editor-action="captain" data-base-id="${base.id}">Set captain</button>
-          <button class="btn btn-sm" type="button" data-base-editor-action="helper" data-base-id="${base.id}">Add helper</button>
-          <button class="btn btn-sm" type="button" data-base-editor-action="remove" data-base-id="${base.id}">Remove selected</button>
+          <select data-base-editor-select="${base.id}" aria-label="Вибір гравця для турелі"></select>
+          <button class="btn btn-sm" type="button" data-base-editor-action="captain" data-base-id="${base.id}">Поставити капітана</button>
+          <button class="btn btn-sm" type="button" data-base-editor-action="helper" data-base-id="${base.id}">Додати помічника</button>
+          <button class="btn btn-sm" type="button" data-base-editor-action="remove" data-base-id="${base.id}">Прибрати вибраного</button>
         </div>
         <div class="editor-row mini-chip-list" data-base-chip-list="${base.id}"></div>
         <div class="editor-manual" data-base-manual="${base.id}">
-          <div class="editor-manual-title">Manual player edit / add</div>
+          <div class="editor-manual-title">Ручне редагування або додавання гравця</div>
           <div class="editor-manual-grid">
             <label><span>Нік гравця</span><input type="text" data-manual-name="${base.id}" placeholder="Нік гравця"></label>
-            <label><span>Alliance</span><input type="text" data-manual-alliance="${base.id}" placeholder="Alliance"></label>
-            <label><span>Tier</span>
+            <label><span>Альянс</span><input type="text" data-manual-alliance="${base.id}" placeholder="Альянс"></label>
+            <label><span>Тір</span>
               <select data-manual-tier="${base.id}">
                 <option>T1</option><option>T2</option><option>T3</option><option>T4</option><option>T5</option><option>T6</option><option>T7</option><option>T8</option><option>T9</option><option>T10</option><option>T11</option><option>T12</option><option>T13</option><option>T14</option>
               </select>
             </label>
-            <label><span>Troops (March)</span><input type="number" min="0" step="1" data-manual-march="${base.id}" placeholder="0"></label>
+            <label><span>Сила маршу</span><input type="number" min="0" step="1" data-manual-march="${base.id}" placeholder="0"></label>
           </div>
           <div class="editor-row"><button class="btn btn-sm" type="button" data-base-editor-action="manualsave" data-base-id="${base.id}">Зберегти</button></div>
-          <div class="muted small" data-manual-status="${base.id}">Select player to edit march/tier (T1–T14), or enter a new player and save.</div>
+          <div class="muted small" data-manual-status="${base.id}">Обери гравця, щоб змінити марш або тір, або введи нового й збережи.</div>
         </div>
         <div class="editor-status" data-base-editor-status="${base.id}"></div>
       `;
@@ -344,8 +344,8 @@ function optionalColumnClass(key) {
     if (statusEl) {
       const role = PNS.getBaseRole(base);
       statusEl.textContent = role
-        ? `Tower type: ${role}. You can add only ${role} helpers.`
-        : 'Tower type will be set automatically by captain.';
+        ? `Тип турелі: ${role}. Можна додавати лише ${role} помічників.`
+        : 'Тип турелі визначиться автоматично після вибору капітана.';
     }
 
     if (sel) {
@@ -367,8 +367,8 @@ function optionalColumnClass(key) {
           const assignedBase = state.baseById.get(p.assignment.baseId);
           const baseShort = (assignedBase?.title || '').split('/')[0].trim();
           assignedTag = p.assignment.baseId === base.id
-            ? (p.assignment.kind === 'captain' ? ' [CAP]' : ' [IN BASE]')
-            : ` [${p.assignment.kind === 'captain' ? 'CAP' : 'HELP'} @ ${baseShort}]`;
+            ? (p.assignment.kind === 'captain' ? ' [КАП]' : ' [У ТУРЕЛІ]')
+            : ` [${p.assignment.kind === 'captain' ? 'КАП' : 'ПОМ'} @ ${baseShort}]`;
         }
 
         const roleLabel = typeof PNS.roleLabel === 'function' ? PNS.roleLabel(p.role) : p.role;
@@ -518,12 +518,12 @@ function optionalColumnClass(key) {
     };
 
     // Supports both old and new card layouts by label text
-    setStat(/captain\s*march/i, captainMarch);
-    setStat(/rally/i, rallySize);
-    setStat(/total/i, total, over);
-    setStat(/free\s*space/i, freeSpace, over);
+    setStat(/марш\s*капітана|captain\s*march/i, captainMarch);
+    setStat(/ралі|rally/i, rallySize);
+    setStat(/разом|total/i, total, over);
+    setStat(/вільне\s*місце|free\s*space/i, freeSpace, over);
     // Backward compatibility if some cards still show Помічникs / Limit
-    setStat(/helpers/i, helpersSum);
+    setStat(/помічник|helpers/i, helpersSum);
     setStat(/limit/i, capacityTotal, over);
 
     card.classList.toggle('is-over-limit', over);
@@ -578,7 +578,7 @@ function optionalColumnClass(key) {
     const sub = $('.board-sub', col);
     if (sub) {
       sub.classList.toggle('is-auto', !captain);
-      sub.textContent = captain ? `${captain.role} / ${captain.role}` : 'Type auto by captain';
+      sub.textContent = captain ? `${typeof PNS.roleLabel === 'function' ? PNS.roleLabel(captain.role) : captain.role} / ${typeof PNS.roleLabel === 'function' ? PNS.roleLabel(captain.role) : captain.role}` : 'Тип визначається капітаном';
     }
 
     const cap = $('.board-cap', col);

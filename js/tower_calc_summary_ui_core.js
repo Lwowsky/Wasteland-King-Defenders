@@ -122,7 +122,7 @@
     const add = (baseId, title, fallbackIndex) => {
       const id = String(baseId || '');
       if (!id) return;
-      map.set(id, cleanTowerTitle(title, `Башня ${Number(fallbackIndex || 0) + 1}`));
+      map.set(id, cleanTowerTitle(title, `Турель ${Number(fallbackIndex || 0) + 1}`));
     };
     try {
       const order = (typeof window.getCalcTowerBaseOrder === 'function') ? (window.getCalcTowerBaseOrder() || []) : [];
@@ -147,7 +147,7 @@
       (Array.isArray(slots) ? slots : []).forEach((slot, idx) => {
         const baseId = String(slot?.baseId || '');
         const tower = titleByBaseId.get(baseId)
-          || cleanTowerTitle(slot?.title, `Башня ${idx + 1}`);
+          || cleanTowerTitle(slot?.title, `Турель ${idx + 1}`);
         addAssignment(out, sk, slot?.captainId, tower, 'captain');
         (Array.isArray(slot?.helperIds) ? slot.helperIds : []).forEach((id) => addAssignment(out, sk, id, tower, 'helper'));
       });
@@ -155,7 +155,7 @@
 
     const addFromBases = (sk, bases) => {
       (Array.isArray(bases) ? bases : []).forEach((base, idx) => {
-        const tower = titleByBaseId.get(String(base?.id || '')) || cleanTowerTitle(base?.title, `Башня ${idx + 1}`);
+        const tower = titleByBaseId.get(String(base?.id || '')) || cleanTowerTitle(base?.title, `Турель ${idx + 1}`);
         addAssignment(out, sk, base?.captainId, tower, 'captain');
         (Array.isArray(base?.helperIds) ? base.helperIds : []).forEach((id) => addAssignment(out, sk, id, tower, 'helper'));
       });
@@ -165,7 +165,7 @@
       const planBases = plan?.bases && typeof plan.bases === 'object' ? plan.bases : null;
       if (planBases) {
         Object.entries(planBases).forEach(([baseId, base], idx) => {
-          const tower = titleByBaseId.get(String(baseId || '')) || cleanTowerTitle(base?.title, `Башня ${idx + 1}`);
+          const tower = titleByBaseId.get(String(baseId || '')) || cleanTowerTitle(base?.title, `Турель ${idx + 1}`);
           addAssignment(out, sk, base?.captainId, tower, 'captain');
           (Array.isArray(base?.helperIds) ? base.helperIds : []).forEach((id) => addAssignment(out, sk, id, tower, 'helper'));
         });
@@ -223,7 +223,7 @@
     for (const sk of ['shift1', 'shift2']) {
       const plans = Array.isArray(res?.[sk]?.towerPlans) ? res[sk].towerPlans : [];
       plans.forEach((tp, idx) => {
-        const tower = cleanTowerTitle(tp?.captain?.name, `Башня ${idx + 1}`);
+        const tower = cleanTowerTitle(tp?.captain?.name, `Турель ${idx + 1}`);
         (Array.isArray(tp?.notFitPlayers) ? tp.notFitPlayers : []).forEach((p) => {
           const id = String(p?.id || '');
           if (!id) return;
@@ -292,7 +292,7 @@
         <span class="tcv7-role-icon" aria-hidden="true"><img src="img/${file}" alt="" loading="lazy" decoding="async"></span>
         <strong>${fm(n)}</strong>
       </div>`;
-    return `<div class="tcv7-role-row">${item('is-fighter', stats.fighter, 'Fighter', 'fighter.webp')}${item('is-rider', stats.rider, 'Rider', 'rider.webp')}${item('is-shooter', stats.shooter, 'Shooter', 'shooter.webp')}</div>`;
+    return `<div class="tcv7-role-row">${item('is-fighter', stats.fighter, 'Бійці', 'fighter.webp')}${item('is-rider', stats.rider, 'Наїзники', 'rider.webp')}${item('is-shooter', stats.shooter, 'Стрільці', 'shooter.webp')}</div>`;
   }
 
   function card(title, primary, kicker, details, stats, extra) {
@@ -539,9 +539,9 @@
                     <th>Гравець</th>
                     <th>Альянс</th>
                     <th>Роль / Тір</th>
-                    <th>March</th>
+                    <th>Марш</th>
                     <th>Статус</th>
-                    <th>Башня</th>
+                    <th>Турель</th>
                     <th>Резерв</th>
                     <th>Дії</th>
                   </tr>
@@ -553,11 +553,11 @@
                         <div class="tcv5-player-name">${esc(r.name)}</div>
                       </td>
                       <td>${esc(r.alliance)}</td>
-                      <td>${esc(r.role)} <span class="muted">${esc(r.tier)}</span></td>
+                      <td>${esc(typeof window.PNS?.roleLabel === "function" ? window.PNS.roleLabel(r.role) : r.role)} <span class="muted">${esc(r.tier)}</span></td>
                       <td>${fm(r.march)}</td>
                       <td>${renderStatusPill(r.status, r.statusLabel)}</td>
                       <td>${esc(r.tower)}</td>
-                      <td>${r.reserve === 'shift1' ? '1 Shift' : r.reserve === 'shift2' ? '2 Shift' : '—'}</td>
+                      <td>${r.reserve === 'shift1' ? 'Зміна 1' : r.reserve === 'shift2' ? 'Зміна 2' : '—'}</td>
                       <td>
                         ${r.status === 'in' ? '<span class="muted">—</span>' : `
                           <button class="btn btn-xs ${r.reserve === 'shift1' ? 'is-active' : ''}" type="button" data-ui-reserve-shift="shift1" data-player-id="${esc(r.id)}">Зміна 1</button>

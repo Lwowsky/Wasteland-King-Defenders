@@ -192,7 +192,7 @@
         e.preventDefault();
         const boardUrl = location.href.split('#')[0] + '#board-modal';
         try {
-          if (navigator.share) await navigator.share({ title: 'P&S Final Board', text: 'Final Board View', url: boardUrl });
+          if (navigator.share) await navigator.share({ title: 'P&S Фінальний план', text: 'Фінальний план', url: boardUrl });
           else { await navigator.clipboard.writeText(boardUrl); alert('Посилання скопійовано'); }
         } catch {}
       });

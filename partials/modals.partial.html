@@ -303,8 +303,7 @@
         <div>
           <h2 style="margin: 0">Розподіл по турелях</h2>
           <p class="muted" style="margin: 4px 0 0">
-            План на 10 капітанів (5 + 5), розрахунок вміщення гравців по
-            розклад гравців по турелях і тірах для двох змін. Капітани рахуються окремо.
+            Тут ти готуєш склад для двох змін: розподіляєш гравців по турелях, перевіряєш резерв і формуєш фінальний план для альянсу.
           </p>
         </div>
         <a
@@ -327,7 +326,7 @@
               type="button"
               data-calc-main-tab="towers"
             >
-              Налаштування башень
+              Налаштування турелей
             </button>
             <button
               class="btn btn-sm"
@@ -365,7 +364,7 @@
                   type="button"
                   id="towerCalcLoadCaptainsBtn"
                 >
-                  Підтягнути капітанів з башень
+                  Підтягнути капітанів з турелей
                 </button>
                 <button class="btn btn-sm" type="button" id="towerCalcFitBtn">
                   Порахувати
@@ -441,7 +440,7 @@
                     /></label>
                     <label
                       ><input type="checkbox" id="towerCalcTierAuto" checked />
-                      Авто-розмір tier</label
+                      Авто-ліміт тіру</label
                     >
                     <button
                       class="btn btn-sm"
@@ -456,11 +455,11 @@
                       id="towerCalcRecalcBtn"
                       style="display: none"
                     >
-                      Recalculate
+                      Перерахувати
                     </button>
                   </div>
                   <div class="muted small" style="margin-top: 8px">
-                    Розмір tier (на 1 гравця):
+                    Ліміт маршу за тіром (на 1 гравця):
                     <span
                       style="
                         display: inline-flex;
@@ -527,9 +526,7 @@
                     </span>
                   </div>
                   <div class="muted small" style="margin-top: 6px">
-                    Порада: “Порахувати” → “Підготувати ліміти для турелей”
-                    налаштовує ліміти. Кнопка “Автоматично заповнити турелі”
-                    — одразу готує ліміти й розставляє гравців по турелях.
+                    Порада: спочатку порахуй склад, потім підготуй ліміти для турелей або одразу запусти автозаповнення.
                   </div>
                 </div>
               </details>
@@ -537,7 +534,7 @@
               <div id="towerCalcShiftBalance" class="tower-calc-shift-balance">
                 <div class="tower-calc-shift-balance-head">
                   <div class="muted small">
-                    <strong>Shift статистика</strong>
+                    <strong>Статистика змін</strong>
                   </div>
                   <div class="muted small" id="towerCalcShiftCountsLine"></div>
                 </div>
@@ -617,7 +614,7 @@
                         id="towerCalcAutoFitBtn"
                         type="button"
                       >
-                        Автозаповнення башень
+                        Автозаповнення турелей
                       </button>
                     </div>
                   </div>
@@ -649,8 +646,7 @@
             <button class="btn btn-sm" type="button" data-calc-tab="shift1">Зміна 1</button>
             <button class="btn btn-sm" type="button" data-calc-tab="shift2">Зміна 2</button>
             <span class="muted small" style="margin-left: 6px"
-              >Показується тільки один Shift, щоб було більше місця для
-              даних</span
+              >Показується тільки одна зміна, щоб план був зручнішим для перегляду</span
             >
           </div>
         </section>

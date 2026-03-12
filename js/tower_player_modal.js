@@ -80,7 +80,7 @@
             <div class="placement-editor stack compact">
               <div>
                 <strong>Куди поставити гравця</strong>
-                <div class="muted small" id="tpePlacementCopy">Вибери зміну, башню та роль або залиш гравця в резерві.</div>
+                <div class="muted small" id="tpePlacementCopy">Обери зміну, турель і роль для гравця або залиш його в резерві.</div>
               </div>
               <div class="placement-editor-grid">
                 <label class="placement-editor-field">
@@ -309,7 +309,7 @@
     fillPlayerFields(modal, player, player.march, true);
 
     const subtitle = modal.querySelector('#tpeSubtitle');
-    if (subtitle) subtitle.textContent = 'Вибери башню, роль і зміну для гравця або залиш його в резерві.';
+    if (subtitle) subtitle.textContent = 'Обери турель, роль і зміну для гравця або залиш його в резерві.';
 
     const placementCopy = modal.querySelector('#tpePlacementCopy');
     if (placementCopy) placementCopy.textContent = 'Редагування зі списку гравців: зміни застосовуються до вибраної зміни.';

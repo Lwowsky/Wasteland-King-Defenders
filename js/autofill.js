@@ -108,7 +108,7 @@
 
   function autoFillBase(baseId) {
     const base = state.baseById?.get?.(baseId);
-    if (!base) return { added: 0, reason: 'Base not found' };
+    if (!base) return { added: 0, reason: 'Турель не знайдена' };
 
     // нормалізуємо структуру
     if (!Array.isArray(base.helperIds)) base.helperIds = [];
@@ -120,7 +120,7 @@
     base.maxHelpers = num(base.maxHelpers) || defaultMax;
 
     if (!base.captainId) {
-      const msg = `Set captain first for ${base.title.split('/')[0].trim()}`;
+      const msg = `Спочатку обери капітана для ${base.title.split('/')[0].trim()}`;
       alert(msg);
       return { added: 0, reason: msg };
     }
@@ -195,21 +195,21 @@ const commonCandidates = () => (state.players || [])
       if (!d.sameRole && enforceSameTroopRole()) reason = `Немає вільних гравців типу ${captain.role}.`;
       else if (!ignoreShift && matchRegisteredShiftEnabled() && !d.byActiveShift) reason = `Немає ${captain.role} для shift ${resolveTowerShift(base)}.`;
       else if (!ignoreShift && matchRegisteredShiftEnabled() && !d.byBaseShift) reason = `Немає ${captain.role}, які підходять під зміну цієї турелі.`;
-      else if (!d.passTierMin) reason = 'No candidates pass per-tier min march rules.';
+      else if (!d.passTierMin) reason = 'Немає гравців, які підходять під ліміти маршу за тірами.';
       else if ((base.maxHelpers || 0) > 0 && base.helperIds.length >= base.maxHelpers) reason = `Ліміт помічників заповнений (${base.maxHelpers}).`;
-      else if (room !== Infinity && d.fitRoom === 0) reason = `No players fit remaining rally room (${PNS.formatNum?.(Math.max(0, d.room)) ?? Math.max(0, d.room)}).`;
-      else reason = 'No eligible candidates after checks.';
+      else if (room !== Infinity && d.fitRoom === 0) reason = `Ніхто не вміщується в залишок ралі (${PNS.formatNum?.(Math.max(0, d.room)) ?? Math.max(0, d.room)}).`;
+      else reason = 'Після перевірок не знайшлося відповідних гравців.';
 
       const debug = ` [free:${d.free}, role:${d.sameRole}, shift:${d.byActiveShift}, tower:${d.byBaseShift}, tierMin:${d.passTierMin}, fit:${d.fitRoom}]`;
 
       if (typeof PNS.setImportStatus === 'function') {
-        PNS.setImportStatus(`Auto-fill: ${base.title.split('/')[0].trim()} → 0 added. ${reason}${debug}`, 'danger');
+        PNS.setImportStatus(`Автозаповнення: ${base.title.split('/')[0].trim()} → додано 0. ${reason}${debug}`, 'danger');
       }
       return { added: 0, reason };
     }
 
     if (typeof PNS.setImportStatus === 'function') {
-      PNS.setImportStatus(`Auto-fill: ${base.title.split('/')[0].trim()} → +${added} helper(s).`, 'good');
+      PNS.setImportStatus(`Автозаповнення: ${base.title.split('/')[0].trim()} → +${added} помічників.`, 'good');
     }
     return { added };
   }

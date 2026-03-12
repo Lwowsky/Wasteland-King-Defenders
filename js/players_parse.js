@@ -500,26 +500,26 @@
 
     const a1 = document.getElementById('shiftAddS1');
     const a2 = document.getElementById('shiftAddS2');
-    if (a1 && !a1.placeholder) a1.placeholder = '+ Shift 1';
-    if (a2 && !a2.placeholder) a2.placeholder = '+ Shift 2';
+    if (a1 && !a1.placeholder) a1.placeholder = '+ до зміни 1';
+    if (a2 && !a2.placeholder) a2.placeholder = '+ до зміни 2';
     const l1 = document.getElementById('shiftLimitS1');
     const l2 = document.getElementById('shiftLimitS2');
     if (l1) {
       l1.min = '0';
       l1.max = '100';
-      l1.title = 'Максимум 100 гравців у Shift 1';
+      l1.title = 'Максимум 100 гравців у зміні 1';
     }
     if (l2) {
       l2.min = '0';
       l2.max = '100';
-      l2.title = 'Максимум 100 гравців у Shift 2';
+      l2.title = 'Максимум 100 гравців у зміні 2';
     }
     const note = document.getElementById('towerCalcShiftLimitNote');
     if (note) {
       const warn = [];
-      if (c.shift1 > limits.shift1) warn.push(`Shift 1 переповнений на ${c.shift1 - limits.shift1}`);
-      if (c.shift2 > limits.shift2) warn.push(`Shift 2 переповнений на ${c.shift2 - limits.shift2}`);
-      note.textContent = warn.length ? warn.join(' · ') : `Ліміти зміщень: Shift 1 — ${limits.shift1}, Shift 2 — ${limits.shift2} (макс. 100).`;
+      if (c.shift1 > limits.shift1) warn.push(`Зміна 1 переповнена на ${c.shift1 - limits.shift1}`);
+      if (c.shift2 > limits.shift2) warn.push(`Зміна 2 переповнена на ${c.shift2 - limits.shift2}`);
+      note.textContent = warn.length ? warn.join(' · ') : `Ліміти змін: Зміна 1 — ${limits.shift1}, Зміна 2 — ${limits.shift2} (макс. 100).`;
     }
   }
 
@@ -734,7 +734,7 @@
       const limits = syncTowerCalcShiftLimitUi();
       try { refreshTowerCalcAfterShiftChange(); } catch {}
       try {
-        PNS.setImportStatus?.(`Оновлено ліміти shifts: Shift 1 — ${limits.shift1}, Shift 2 — ${limits.shift2}.`, 'good');
+        PNS.setImportStatus?.(`Оновлено ліміти змін: Зміна 1 — ${limits.shift1}, Зміна 2 — ${limits.shift2}.`, 'good');
       } catch {}
     });
 

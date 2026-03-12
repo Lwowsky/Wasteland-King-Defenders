@@ -39,8 +39,8 @@
 
     if (typeEl) {
       typeEl.textContent = base.role
-        ? `${base.role} base (авто по капітану)`
-        : 'Тип бази: автоматично по капітану';
+        ? `Тип турелі: ${typeof PNS.roleLabel === 'function' ? PNS.roleLabel(base.role, true).toLowerCase() : String(base.role || '').toLowerCase()}`
+        : 'Тип турелі визначається капітаном';
     }
 
     if (badgeEl) {
@@ -188,8 +188,8 @@
         const tools = document.createElement('div');
         tools.className = 'base-tools';
         tools.innerHTML = `
-          <button class="btn btn-sm" type="button" data-base-autofill="${id}">Auto-fill</button>
-          <button class="btn btn-sm" type="button" data-base-clear-helpers="${id}">Clear helpers</button>
+          <button class="btn btn-sm" type="button" data-base-autofill="${id}">Автозаповнення</button>
+          <button class="btn btn-sm" type="button" data-base-clear-helpers="${id}">Очистити помічників</button>
           <button class="btn btn-sm" type="button" data-base-clear-all="${id}">Clear base</button>
         `;
         // якщо quotaRow нема — вставимо в кінець card, щоб точно було

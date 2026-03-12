@@ -150,8 +150,8 @@
 
   function displayPickerBaseTitle(text) {
     return String(text || "")
-      .replace(/\bCentral\s*Base\b/i, "Hub")
-      .replace(/\bCentral\s*base\b/i, "Hub");
+      .replace(/\bCentral\s*Base\b/i, "Техно-Центр")
+      .replace(/\bCentral\s*base\b/i, "Техно-Центр");
   }
 
   function towerStats(base) {
@@ -205,7 +205,7 @@
     state.towerPickerSelectedBaseId = baseId;
     const base = state.baseById?.get?.(baseId);
     if (!base) {
-      detail.innerHTML = '<div class="muted">Оберіть башню зліва</div>';
+      detail.innerHTML = '<div class="muted">Оберіть турель зліва</div>';
       return;
     }
 
@@ -228,34 +228,34 @@
       <div class="stack">
         <h3>${title}</h3>
         <div class="picker-meta-row muted small">
-          <span class="picker-meta-shift">Shift: ${(state.activeShift || "").toUpperCase()}</span>
+          <span class="picker-meta-shift">Зміна: ${state.activeShift === "shift1" ? "Зміна 1" : state.activeShift === "shift2" ? "Зміна 2" : "Обидві"}</span>
           <label class="picker-only-captains"><input type="checkbox" id="pickerOnlyCaptains" ${isPickerOnlyCaptainsEnabled() ? "checked" : ""}/> Тільки капітани</label>
-          <label class="picker-only-captains"><input type="checkbox" id="pickerMatchRegisteredShift" ${isPickerMatchRegisteredShiftEnabled() ? "checked" : ""}/> Зазначений Shift</label>
+          <label class="picker-only-captains"><input type="checkbox" id="pickerMatchRegisteredShift" ${isPickerMatchRegisteredShiftEnabled() ? "checked" : ""}/> Враховувати зміну гравця</label>
           <label class="picker-only-captains"><input type="checkbox" id="pickerNoMixTroops" ${isPickerNoMixTroopsEnabled() ? "checked" : ""}/> Лише той самий тип військ</label>
-          <label class="picker-only-captains"><input type="checkbox" id="pickerNoCrossShiftDupes" ${isPickerNoCrossShiftDupesEnabled() ? "checked" : ""}/> Використовувати Both</label>
+          <label class="picker-only-captains"><input type="checkbox" id="pickerNoCrossShiftDupes" ${isPickerNoCrossShiftDupesEnabled() ? "checked" : ""}/> Використовувати «Обидві»</label>
         </div>
         <div class="picker-topline top-space">
           <select id="towerPickerCaptainSelect" class="input-like" aria-label="Вибір капітана">
             <option value="">${captain ? "Змінити капітана…" : "Вибрати капітана…"}</option>
-            ${caps.map((p) => `<option value="${p.id}" ${captain && captain.id === p.id ? "selected" : ""}>${String(p.name || "")} · ${String(p.role || "")} · ${String(p.shiftLabel || p.shift || "")} · ${Number(p.march || 0).toLocaleString("en-US")}${p.captainReady ? " · CAP" : ""}</option>`).join("")}
+            ${caps.map((p) => `<option value="${p.id}" ${captain && captain.id === p.id ? "selected" : ""}>${String(p.name || "")} · ${typeof PNS.roleLabel === "function" ? PNS.roleLabel(String(p.role || ""), false) : String(p.role || "")} · ${typeof PNS.shiftLabel === "function" ? PNS.shiftLabel(String(p.shiftLabel || p.shift || "")) : String(p.shiftLabel || p.shift || "")} · ${Number(p.march || 0).toLocaleString("en-US")}${p.captainReady ? " · КАП" : ""}</option>`).join("")}
           </select>
           <div class="picker-actions">
             <button class="btn btn-sm" type="button" data-picker-set-captain="${base.id}">Поставити капітана</button>
             <button class="btn btn-sm" type="button" data-picker-autofill="${base.id}">Автозаповнення</button>
-            <button class="btn btn-sm" type="button" data-picker-clear-base="${base.id}">Очистити башню</button>
-            <button class="btn btn-sm" type="button" data-picker-save-board="${base.id}">Зберегти таблицю башні</button>
+            <button class="btn btn-sm" type="button" data-picker-clear-base="${base.id}">Очистити турель</button>
+            <button class="btn btn-sm" type="button" data-picker-save-board="${base.id}">Зберегти таблицю турелі</button>
           </div>
         </div>
 
         <div class="limit-grid limit-grid-compact top-space">
-          <div><span>Captain march</span><strong>${Number(stats.captainMarch || 0).toLocaleString("en-US")}</strong></div>
+          <div><span>Марш капітана</span><strong>${Number(stats.captainMarch || 0).toLocaleString("en-US")}</strong></div>
           <div><span>Розмір ралі</span><strong>${Number(stats.rallySize || 0).toLocaleString("en-US")}</strong></div>
-          <div><span>Total Σ</span><strong>${Number(stats.total || 0).toLocaleString("en-US")}</strong></div>
-          <div><span>Free space</span><strong>${Number(stats.free || 0).toLocaleString("en-US")}</strong></div>
+          <div><span>Разом</span><strong>${Number(stats.total || 0).toLocaleString("en-US")}</strong></div>
+          <div><span>Вільне місце</span><strong>${Number(stats.free || 0).toLocaleString("en-US")}</strong></div>
         </div>
 
         <details class="tower-collapsible top-space" id="towerPickerLimitsBlock">
-          <summary>Налаштування башні · ліміти по тірам (макс. March)</summary>
+          <summary>Налаштування турелі · ліміти по тірах (макс. марш)</summary>
           <div class="inner stack">
             <div class="picker-limits-head">
               <label><span class="muted small">Макс. гравців</span><input id="pickerMaxHelpers" type="number" min="0" value="${rule.maxHelpers}" /></label>
@@ -266,7 +266,7 @@
             <div class="row gap wrap">
               ${["T14", "T13", "T12", "T11", "T10", "T9"].map((t) => `<label><span class="muted small">${t}</span><input type="number" min="0" data-picker-tier="${t}" value="${rule.tierMinMarch[t] || 0}" style="width:90px" /></label>`).join("")}
             </div>
-            <div class="muted small">0 = гнучкий tier: бере повний March, але якщо місця не вистачає — ділить залишок між гравцями цього tier.</div>
+            <div class="muted small">0 = гнучкий тір: бере повний марш, але якщо місця не вистачає — ділить залишок між гравцями цього тіру.</div>
           </div>
         </details>
 
@@ -284,17 +284,17 @@
                   )
                   .map(
                     (p) =>
-                      `<option value="${PNS.escapeHtml(String(p.name || ""))}" label="${PNS.escapeHtml(String(p.alliance || ""))} · ${PNS.escapeHtml(String(p.role || ""))} · ${PNS.escapeHtml(String(p.tier || ""))} · ${Number(p.march || 0).toLocaleString("en-US")}"></option>`,
+                      `<option value="${PNS.escapeHtml(String(p.name || ""))}" label="${PNS.escapeHtml(String(p.alliance || ""))} · ${PNS.escapeHtml(typeof PNS.roleLabel === "function" ? PNS.roleLabel(String(p.role || ""), false) : String(p.role || ""))} · ${PNS.escapeHtml(String(p.tier || ""))} · ${Number(p.march || 0).toLocaleString("en-US")}"></option>`,
                   )
                   .join("")}
               </datalist>
               <input id="pickerManualAlly" placeholder="Альянс" />
-              <select id="pickerManualRole"><option>Fighter</option><option>Shooter</option><option>Rider</option></select>
+              <select id="pickerManualRole"><option value="Fighter">Боєць</option><option value="Shooter">Стрілець</option><option value="Rider">Наїзник</option></select>
             </div>
             <div id="pickerManualHint" class="picker-manual-hint muted small"></div>
             <div class="picker-manual-row2">
               <input id="pickerManualTier" placeholder="T14" />
-              <input id="pickerManualMarch" placeholder="March" type="number" min="0" />
+              <input id="pickerManualMarch" placeholder="Марш" type="number" min="0" />
               <input id="pickerManualRally" placeholder="Розмір ралі" type="number" min="0" />
               <button class="btn btn-sm" type="button" data-picker-add-manual-captain="${base.id}">Поставити капітана</button>
               <button class="btn btn-sm" type="button" data-picker-add-manual="${base.id}">Додати гравця</button>
@@ -303,13 +303,13 @@
         </details>
 
         <div class="panel subpanel" style="padding:10px">
-          <div class="row gap wrap" style="justify-content:space-between"><strong>Гравці в башні</strong><span class="muted small">${captain ? "Капітан + гравці" : "Без капітана"}</span></div>
+          <div class="row gap wrap" style="justify-content:space-between"><strong>Гравці в турелі</strong><span class="muted small">${captain ? "Капітан і гравці" : "Без капітана"}</span></div>
           <div class="helpers-table-wrap top-space">
             <table class="mini-table">
-              <thead><tr><th>Player</th><th>Ally</th><th>Role</th><th>Tier</th><th>March</th><th>✎</th></tr></thead>
+              <thead><tr><th>Гравець</th><th>Альянс</th><th>Роль</th><th>Тір</th><th>Марш</th><th>✎</th></tr></thead>
               <tbody>
-                ${captain ? `<tr><td>${captain.name}</td><td>${captain.alliance || ""}</td><td>${captain.role || ""}</td><td>${captain.tier || ""}</td><td>${pickerMarchCell(base, captain, { isCaptain: true })}</td><td><button class="btn btn-xs" type="button" data-picker-edit-player="${captain.id}" data-picker-edit-base="${base.id}">✎</button></td></tr>` : ""}
-                ${helperRows.map((p) => `<tr><td>${p.name}</td><td>${p.alliance || ""}</td><td>${p.role || ""}</td><td>${p.tier || ""}</td><td>${pickerMarchCell(base, p)}</td><td><button class="btn btn-xs" type="button" data-picker-edit-player="${p.id}" data-picker-edit-base="${base.id}">✎</button></td></tr>`).join("")}
+                ${captain ? `<tr><td>${captain.name}</td><td>${captain.alliance || ""}</td><td>${typeof PNS.roleLabel === "function" ? PNS.roleLabel(captain.role || "", false) : (captain.role || "")}</td><td>${captain.tier || ""}</td><td>${pickerMarchCell(base, captain, { isCaptain: true })}</td><td><button class="btn btn-xs" type="button" data-picker-edit-player="${captain.id}" data-picker-edit-base="${base.id}">✎</button></td></tr>` : ""}
+                ${helperRows.map((p) => `<tr><td>${p.name}</td><td>${p.alliance || ""}</td><td>${typeof PNS.roleLabel === "function" ? PNS.roleLabel(p.role || "", false) : (p.role || "")}</td><td>${p.tier || ""}</td><td>${pickerMarchCell(base, p)}</td><td><button class="btn btn-xs" type="button" data-picker-edit-player="${p.id}" data-picker-edit-base="${base.id}">✎</button></td></tr>`).join("")}
                 ${!captain && !helperRows.length ? '<tr><td colspan="6" class="muted">Немає призначених гравців</td></tr>' : ""}
               </tbody>
             </table>
@@ -334,7 +334,7 @@
     (MS.getTowerCards?.() || []).forEach((card, idx) => {
       const id = String(card.dataset.baseId || card.dataset.baseid || "");
       const title = displayPickerBaseTitle(
-        (card.querySelector("h3")?.textContent || `Башня ${idx + 1}`)
+        (card.querySelector("h3")?.textContent || `Турель ${idx + 1}`)
           .split("/")[0]
           .trim(),
       );
@@ -353,7 +353,7 @@
       const statusIcon = done ? "✓" : "!";
       const statusLabel = done ? "Готова" : "Без капітана";
       const countCls = done ? "is-ready" : "is-not-ready";
-      btn.innerHTML = `<div class="tower-item-row"><strong>${title}</strong><span class="tower-item-status" aria-hidden="true">${statusIcon}</span></div><span class="muted small">${statusLabel} · <span class="tower-item-count ${countCls}">players: ${playersCount}</span></span>`;
+      btn.innerHTML = `<div class="tower-item-row"><strong>${title}</strong><span class="tower-item-status" aria-hidden="true">${statusIcon}</span></div><span class="muted small">${statusLabel} · <span class="tower-item-count ${countCls}">гравців: ${playersCount}</span></span>`;
       list.appendChild(btn);
     });
   }
@@ -455,10 +455,10 @@
         <div class="modal-backdrop" data-close-tower-picker></div>
         <div class="modal-card" role="dialog" aria-modal="true">
           <div class="modal-head tower-picker-head">
-            <div class="tower-picker-head-left"><h2>Налаштування турелей</h2><p class="muted">Оберіть башню зліва, налаштуй справа</p></div>
+            <div class="tower-picker-head-left"><h2>Налаштування турелей</h2><p class="muted">Оберіть турель зліва та налаштуйте її праворуч</p></div>
             <div class="tower-picker-head-center">
-              <button class="btn btn-sm shift-mini" type="button" data-picker-shift-tab="shift1" data-shift-tab="shift1">Shift 1</button>
-              <button class="btn btn-sm shift-mini" type="button" data-picker-shift-tab="shift2" data-shift-tab="shift2">Shift 2</button>
+              <button class="btn btn-sm shift-mini" type="button" data-picker-shift-tab="shift1" data-shift-tab="shift1">Зміна 1</button>
+              <button class="btn btn-sm shift-mini" type="button" data-picker-shift-tab="shift2" data-shift-tab="shift2">Зміна 2</button>
               <button class="btn btn-sm shift-mini" type="button" data-action="open-board">Фінальний план</button>
             </div>
             <button class="btn btn-icon" type="button" data-close-tower-picker>✕</button>

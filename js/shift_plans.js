@@ -129,9 +129,9 @@
   function updateBoardTitle() {
     const title = $('#boardTitle');
     if (!title) return;
-    if (state.activeShift === 'shift1') title.textContent = '1st shift / Первая половина';
-    else if (state.activeShift === 'shift2') title.textContent = '2nd shift / Вторая половина';
-    else title.textContent = 'All shifts / Все смены';
+    if (state.activeShift === 'shift1') title.textContent = 'Зміна 1';
+    else if (state.activeShift === 'shift2') title.textContent = 'Зміна 2';
+    else title.textContent = 'Усі зміни';
   }
 
   function applyShiftFilter(shift) {

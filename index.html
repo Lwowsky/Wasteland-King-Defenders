@@ -318,43 +318,43 @@
     <section class="base-settings-card" id="basesSettingsCard" data-settings-card="1" data-shift="both" style="display:flex;flex-direction:column;min-height:100%;">
       <header class="base-card-head">
         <div>
-          <h3>Налаштування / Settings</h3>
-          <p class="base-type">Тип бази: автоматично по капітану</p>
+          <h3>Налаштування</h3>
+          <p class="base-type">Тип турелі визначається капітаном</p>
         </div>
         <span class="base-role badge is-auto" id="settingsShiftBadge">Зміна 2</span>
       </header>
 
       <div class="captain-box settings-tools-box">
-        <div class="captain-title">Shift plan</div>
+        <div class="captain-title">План змін</div>
         <div class="row gap wrap settings-top-row">
           <button class="btn btn-sm shift-tab" data-shift-tab="shift1" type="button">Зміна 1</button>
           <button class="btn btn-sm shift-tab active" data-shift-tab="shift2" type="button">Зміна 2</button>
           <button class="btn btn-sm" id="toggleTowerFocusBtn" data-action="toggle-towers-view" type="button">Приховати інші</button>
-          <button class="btn btn-sm" id="openTowerPickerBtn" data-action="open-tower-picker" type="button">5 башень</button>
-          <div class="settings-focus-inline compact" title="Башня справа">
+          <button class="btn btn-sm" id="openTowerPickerBtn" data-action="open-tower-picker" type="button">Налаштування турелей</button>
+          <div class="settings-focus-inline compact" title="Турель праворуч">
             <button class="btn btn-xs" id="focusTowerPrevBtn" type="button" aria-label="Попередня турель">‹</button>
-            <select id="focusTowerSelect" class="settings-focus-select" aria-label="Башня справа"></select>
+            <select id="focusTowerSelect" class="settings-focus-select" aria-label="Турель праворуч"></select>
             <button class="btn btn-xs" id="focusTowerNextBtn" type="button" aria-label="Наступна турель">›</button>
           </div>
         </div>
         <div class="row gap wrap top-space">
           <button class="btn btn-sm" id="autoFillAllBasesBtn" type="button">Автозаповнити все</button>
-          <button class="btn btn-sm" id="clearCurrentShiftBtn" type="button">Очистити поточний Shift</button>
+          <button class="btn btn-sm" id="clearCurrentShiftBtn" type="button">Очистити поточну зміну</button>
           <button class="btn btn-sm" id="openBoardFromSettingsColBtn" data-action="open-board" type="button">Фінальний план</button>
         </div>
         <div class="muted small top-space">Зміна 1 / Зміна 2 — окремі плани. Автозаповнення не дублює гравців між ними.</div>
-        <div class="shift-towers-preview top-space" aria-label="Схема 5 башень">
+        <div class="shift-towers-preview top-space" aria-label="Схема Налаштування турелей">
           <div class="tower-slot tower-slot-north">
             <figure class="tower-thumb-card" data-preview-slot-card role="button" tabindex="0" aria-pressed="false">
               <img
                 class="tower-thumb-img"
                 src="img/tower_turret.webp"
-                alt="Северная турель"
+                alt="Північна турель"
                 loading="lazy"
                 decoding="async"
               />
               <span class="tower-thumb-status" aria-hidden="true">!</span>
-              <figcaption class="tower-thumb-name" data-preview-slot="north">Северная турель</figcaption>
+              <figcaption class="tower-thumb-name" data-preview-slot="north">Північна турель</figcaption>
             </figure>
           </div>
 
@@ -363,12 +363,12 @@
               <img
                 class="tower-thumb-img"
                 src="img/tower_turret.webp"
-                alt="Западная турель"
+                alt="Західна турель"
                 loading="lazy"
                 decoding="async"
               />
               <span class="tower-thumb-status" aria-hidden="true">!</span>
-              <figcaption class="tower-thumb-name" data-preview-slot="west">Западная турель</figcaption>
+              <figcaption class="tower-thumb-name" data-preview-slot="west">Західна турель</figcaption>
             </figure>
           </div>
 
@@ -377,12 +377,12 @@
               <img
                 class="tower-thumb-img tower-thumb-img-hub"
                 src="img/tower_hub.webp"
-                alt="Техно Центр"
+                alt="Техно-Центр"
                 loading="lazy"
                 decoding="async"
               />
               <span class="tower-thumb-status" aria-hidden="true">!</span>
-              <figcaption class="tower-thumb-name" data-preview-slot="hub">Техно Центр</figcaption>
+              <figcaption class="tower-thumb-name" data-preview-slot="hub">Техно-Центр</figcaption>
             </figure>
           </div>
 
@@ -391,12 +391,12 @@
               <img
                 class="tower-thumb-img"
                 src="img/tower_turret.webp"
-                alt="Восточная турель"
+                alt="Східна турель"
                 loading="lazy"
                 decoding="async"
               />
               <span class="tower-thumb-status" aria-hidden="true">!</span>
-              <figcaption class="tower-thumb-name" data-preview-slot="east">Восточная турель</figcaption>
+              <figcaption class="tower-thumb-name" data-preview-slot="east">Східна турель</figcaption>
             </figure>
           </div>
 
@@ -405,12 +405,12 @@
               <img
                 class="tower-thumb-img"
                 src="img/tower_turret.webp"
-                alt="Южная турель"
+                alt="Південна турель"
                 loading="lazy"
                 decoding="async"
               />
               <span class="tower-thumb-status" aria-hidden="true">!</span>
-              <figcaption class="tower-thumb-name" data-preview-slot="south">Южная турель</figcaption>
+              <figcaption class="tower-thumb-name" data-preview-slot="south">Південна турель</figcaption>
             </figure>
           </div>
         </div>
@@ -422,9 +422,9 @@
       <header class="base-card-head">
         <div>
           <h3>Техно-Центр</h3>
-          <p class="base-type">Тип бази: автоматично по капітану</p>
+          <p class="base-type">Тип турелі визначається капітаном</p>
         </div>
-        <span class="base-role badge is-auto">Auto</span>
+        <span class="base-role badge is-auto">Авто</span>
       </header>
 
       <div class="captain-box">
@@ -437,7 +437,7 @@
             </div>
           </div>
           <div class="captain-col captain-col-right">
-            <div class="captain-title">План / Plan</div>
+            <div class="captain-title">План</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
               <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
@@ -454,8 +454,8 @@
       </div>
 
       <div class="quota-row">
-        <span>Auto-fill:</span>
-        <span class="quota-summary">Tier max march: auto (not set)</span>
+        <span>Автозаповнення:</span>
+        <span class="quota-summary">Ліміти маршу за тірами: авто</span>
         <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
@@ -463,10 +463,10 @@
         <table class="mini-table">
           <thead>
             <tr>
-              <th>Player</th>
-              <th>Ally</th>
-              <th>Tier</th>
-              <th>March</th>
+              <th>Гравець</th>
+              <th>Альянс</th>
+              <th>Тір</th>
+              <th>Марш</th>
               <th class="edit-col">✎</th>
             </tr>
           </thead>
@@ -484,9 +484,9 @@
       <header class="base-card-head">
         <div>
           <h3>Північна турель</h3>
-          <p class="base-type">Тип бази: автоматично по капітану</p>
+          <p class="base-type">Тип турелі визначається капітаном</p>
         </div>
-        <span class="base-role badge is-auto">Auto</span>
+        <span class="base-role badge is-auto">Авто</span>
       </header>
 
       <div class="captain-box">
@@ -499,7 +499,7 @@
             </div>
           </div>
           <div class="captain-col captain-col-right">
-            <div class="captain-title">План / Plan</div>
+            <div class="captain-title">План</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
               <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
@@ -516,8 +516,8 @@
       </div>
 
       <div class="quota-row">
-        <span>Auto-fill:</span>
-        <span class="quota-summary">Tier max march: auto (not set)</span>
+        <span>Автозаповнення:</span>
+        <span class="quota-summary">Ліміти маршу за тірами: авто</span>
         <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
@@ -525,10 +525,10 @@
         <table class="mini-table">
           <thead>
             <tr>
-              <th>Player</th>
-              <th>Ally</th>
-              <th>Tier</th>
-              <th>March</th>
+              <th>Гравець</th>
+              <th>Альянс</th>
+              <th>Тір</th>
+              <th>Марш</th>
               <th class="edit-col">✎</th>
             </tr>
           </thead>
@@ -546,9 +546,9 @@
       <header class="base-card-head">
         <div>
           <h3>Західна турель</h3>
-          <p class="base-type">Тип бази: автоматично по капітану</p>
+          <p class="base-type">Тип турелі визначається капітаном</p>
         </div>
-        <span class="base-role badge is-auto">Auto</span>
+        <span class="base-role badge is-auto">Авто</span>
       </header>
 
       <div class="captain-box">
@@ -561,7 +561,7 @@
             </div>
           </div>
           <div class="captain-col captain-col-right">
-            <div class="captain-title">План / Plan</div>
+            <div class="captain-title">План</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
               <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
@@ -578,8 +578,8 @@
       </div>
 
       <div class="quota-row">
-        <span>Auto-fill:</span>
-        <span class="quota-summary">Tier max march: auto (not set)</span>
+        <span>Автозаповнення:</span>
+        <span class="quota-summary">Ліміти маршу за тірами: авто</span>
         <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
@@ -587,10 +587,10 @@
         <table class="mini-table">
           <thead>
             <tr>
-              <th>Player</th>
-              <th>Ally</th>
-              <th>Tier</th>
-              <th>March</th>
+              <th>Гравець</th>
+              <th>Альянс</th>
+              <th>Тір</th>
+              <th>Марш</th>
               <th class="edit-col">✎</th>
             </tr>
           </thead>
@@ -608,9 +608,9 @@
       <header class="base-card-head">
         <div>
           <h3>Східна турель</h3>
-          <p class="base-type">Тип бази: автоматично по капітану</p>
+          <p class="base-type">Тип турелі визначається капітаном</p>
         </div>
-        <span class="base-role badge is-auto">Auto</span>
+        <span class="base-role badge is-auto">Авто</span>
       </header>
 
       <div class="captain-box">
@@ -623,7 +623,7 @@
             </div>
           </div>
           <div class="captain-col captain-col-right">
-            <div class="captain-title">План / Plan</div>
+            <div class="captain-title">План</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
               <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
@@ -640,8 +640,8 @@
       </div>
 
       <div class="quota-row">
-        <span>Auto-fill:</span>
-        <span class="quota-summary">Tier max march: auto (not set)</span>
+        <span>Автозаповнення:</span>
+        <span class="quota-summary">Ліміти маршу за тірами: авто</span>
         <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
@@ -649,10 +649,10 @@
         <table class="mini-table">
           <thead>
             <tr>
-              <th>Player</th>
-              <th>Ally</th>
-              <th>Tier</th>
-              <th>March</th>
+              <th>Гравець</th>
+              <th>Альянс</th>
+              <th>Тір</th>
+              <th>Марш</th>
               <th class="edit-col">✎</th>
             </tr>
           </thead>
@@ -670,9 +670,9 @@
       <header class="base-card-head">
         <div>
           <h3>Південна турель</h3>
-          <p class="base-type">Тип бази: автоматично по капітану</p>
+          <p class="base-type">Тип турелі визначається капітаном</p>
         </div>
-        <span class="base-role badge is-auto">Auto</span>
+        <span class="base-role badge is-auto">Авто</span>
       </header>
 
       <div class="captain-box">
@@ -685,7 +685,7 @@
             </div>
           </div>
           <div class="captain-col captain-col-right">
-            <div class="captain-title">План / Plan</div>
+            <div class="captain-title">План</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
               <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
@@ -702,8 +702,8 @@
       </div>
 
       <div class="quota-row">
-        <span>Auto-fill:</span>
-        <span class="quota-summary">Tier max march: auto (not set)</span>
+        <span>Автозаповнення:</span>
+        <span class="quota-summary">Ліміти маршу за тірами: авто</span>
         <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
@@ -711,10 +711,10 @@
         <table class="mini-table">
           <thead>
             <tr>
-              <th>Player</th>
-              <th>Ally</th>
-              <th>Tier</th>
-              <th>March</th>
+              <th>Гравець</th>
+              <th>Альянс</th>
+              <th>Тір</th>
+              <th>Марш</th>
               <th class="edit-col">✎</th>
             </tr>
           </thead>
@@ -731,9 +731,9 @@
     </main>
 
     <footer class="app-footer">
-  <div>© Tower Planner Layout — HTML/CSS + minimal JS + demo assign</div>
+  <div>© Планувальник турелей альянсу</div>
   <div class="muted">
-    Повна демо-версія: імпорт + мапінг + auto-fill + Final Board + export
+    Імпортуй список, розподіляй гравців по турелях і формуй фінальний план для команди.
   </div>
 </footer>
 
@@ -1042,8 +1042,7 @@
         <div>
           <h2 style="margin: 0">Розподіл по турелях</h2>
           <p class="muted" style="margin: 4px 0 0">
-            План на 10 капітанів (5 + 5), розрахунок вміщення гравців по
-            розклад гравців по турелях і тірах для двох змін. Капітани рахуються окремо.
+            Тут ти готуєш склад для двох змін: розподіляєш гравців по турелях, перевіряєш резерв і формуєш фінальний план для альянсу.
           </p>
         </div>
         <a
@@ -1066,7 +1065,7 @@
               type="button"
               data-calc-main-tab="towers"
             >
-              Налаштування башень
+              Налаштування турелей
             </button>
             <button
               class="btn btn-sm"
@@ -1104,7 +1103,7 @@
                   type="button"
                   id="towerCalcLoadCaptainsBtn"
                 >
-                  Підтягнути капітанів з башень
+                  Підтягнути капітанів з турелей
                 </button>
                 <button class="btn btn-sm" type="button" id="towerCalcFitBtn">
                   Порахувати
@@ -1180,7 +1179,7 @@
                     /></label>
                     <label
                       ><input type="checkbox" id="towerCalcTierAuto" checked />
-                      Авто-розмір tier</label
+                      Авто-ліміт тіру</label
                     >
                     <button
                       class="btn btn-sm"
@@ -1195,11 +1194,11 @@
                       id="towerCalcRecalcBtn"
                       style="display: none"
                     >
-                      Recalculate
+                      Перерахувати
                     </button>
                   </div>
                   <div class="muted small" style="margin-top: 8px">
-                    Розмір tier (на 1 гравця):
+                    Ліміт маршу за тіром (на 1 гравця):
                     <span
                       style="
                         display: inline-flex;
@@ -1266,9 +1265,7 @@
                     </span>
                   </div>
                   <div class="muted small" style="margin-top: 6px">
-                    Порада: “Порахувати” → “Підготувати ліміти для турелей”
-                    налаштовує ліміти. Кнопка “Автоматично заповнити турелі”
-                    — одразу готує ліміти й розставляє гравців по турелях.
+                    Порада: спочатку порахуй склад, потім підготуй ліміти для турелей або одразу запусти автозаповнення.
                   </div>
                 </div>
               </details>
@@ -1276,7 +1273,7 @@
               <div id="towerCalcShiftBalance" class="tower-calc-shift-balance">
                 <div class="tower-calc-shift-balance-head">
                   <div class="muted small">
-                    <strong>Shift статистика</strong>
+                    <strong>Статистика змін</strong>
                   </div>
                   <div class="muted small" id="towerCalcShiftCountsLine"></div>
                 </div>
@@ -1356,7 +1353,7 @@
                         id="towerCalcAutoFitBtn"
                         type="button"
                       >
-                        Автозаповнення башень
+                        Автозаповнення турелей
                       </button>
                     </div>
                   </div>
@@ -1388,8 +1385,7 @@
             <button class="btn btn-sm" type="button" data-calc-tab="shift1">Зміна 1</button>
             <button class="btn btn-sm" type="button" data-calc-tab="shift2">Зміна 2</button>
             <span class="muted small" style="margin-left: 6px"
-              >Показується тільки один Shift, щоб було більше місця для
-              даних</span
+              >Показується тільки одна зміна, щоб план був зручнішим для перегляду</span
             >
           </div>
         </section>
@@ -1417,6 +1413,7 @@
   </section>
 </div>
 
+    <script src="js/i18n_core.js" defer></script>
     <script src="js/ns.js" defer></script>
     <script src="js/storage.js" defer></script>
     <script src="js/modals_shift.js" defer></script>

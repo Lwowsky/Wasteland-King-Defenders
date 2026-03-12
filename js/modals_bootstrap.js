@@ -183,7 +183,7 @@ function syncPickerFlagsFromScope(root) {
         edit.dataset.forceAssignKind = assignKind || '';
         const sub = edit.querySelector('#tpeSubtitle');
         if (sub && !edit.dataset.playerId) {
-          sub.textContent = assignKind === 'captain' ? 'Новий капітан у башню' : 'Новий хелпер у башню';
+          sub.textContent = assignKind === 'captain' ? 'Новий капітан у турель' : 'Новий помічник у турель';
         }
       }
       try { const em = document.getElementById('towerPlayerEditModal'); if (em) em.style.zIndex = '80000'; } catch {}
@@ -221,7 +221,7 @@ function syncPickerFlagsFromScope(root) {
       const btnOpenPickerBaseFallback = e.target.closest('.base-card .captain-col button, .base-card .captain-col-right button');
       if (btnOpenPickerBaseFallback && !btnOpenPickerBaseFallback.closest('#towerPickerModal')) {
         const txt = (btnOpenPickerBaseFallback.textContent || '').toLowerCase();
-        const looksLikeEditTower = /edit tower|редагувати башню/.test(txt);
+        const looksLikeEditTower = /edit tower|редагувати турель/.test(txt);
         if (looksLikeEditTower && !btnOpenPickerBaseFallback.matches('[data-open-picker-base]')) {
           e.preventDefault();
           const card = btnOpenPickerBaseFallback.closest('.base-card');
@@ -352,7 +352,7 @@ function syncPickerFlagsFromScope(root) {
         syncPickerFlagsFromScope(root);
         try { const sk = towerPickerScopeShift(pickerClrH); if (pickerClrH.closest('#towerCalcModal') && MS.applyShiftFilter && String(state.activeShift || '') !== String(sk || '')) MS.applyShiftFilter(sk); } catch {}
         try { PNS.clearBase?.(pickerClrH.dataset.pickerClearHelpers, true); } catch {}
-        saveTowerTableNow('clear helpers');
+        saveTowerTableNow('очищення помічників');
         setTimeout(() => { refreshTowerPickerScope(root); }, 40);
         return;
       }
