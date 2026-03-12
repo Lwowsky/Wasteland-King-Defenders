@@ -3,6 +3,7 @@
 
   const PNS = window.PNS = window.PNS || {};
   const KEY = '__pns_tower_calc_cross_shift_compute_core__';
+  const t = (key, fallback = '') => (typeof window.PNS?.t === 'function' ? window.PNS.t(key, fallback) : fallback);
   if (window[KEY]) return;
   window[KEY] = true;
 
@@ -55,11 +56,11 @@
           if ((in1 && in2) || (!in1 && !in2)) return;
           restore.push([p, p.shift, p.shiftLabel, p.rowEl?.dataset?.shift || '']);
           p.shift = 'both';
-          p.shiftLabel = 'Обидві';
+          p.shiftLabel = t('both', 'Обидві');
           if (p.rowEl) {
             p.rowEl.dataset.shift = 'both';
             const cell = p.rowEl.querySelector('td[data-field="shiftLabel"]');
-            if (cell) cell.textContent = 'Обидві';
+            if (cell) cell.textContent = t('both', 'Обидві');
           }
         });
       } catch {}
@@ -77,7 +78,7 @@
               const cell = p.rowEl.querySelector('td[data-field="shiftLabel"]');
               if (cell) {
                 const norm = normalizeShift(shift || 'both');
-                cell.textContent = shiftLabel || (typeof window.PNS?.shiftLabel === 'function' ? window.PNS.shiftLabel(norm) : (norm === 'shift1' ? 'Зміна 1' : norm === 'shift2' ? 'Зміна 2' : 'Обидві'));
+                cell.textContent = shiftLabel || (typeof window.PNS?.shiftLabel === 'function' ? window.PNS.shiftLabel(norm) : (norm === 'shift1' ? t('shift1', 'Зміна 1') : norm === 'shift2' ? t('shift2', 'Зміна 2') : t('both', 'Обидві')));
               }
             }
           } catch {}

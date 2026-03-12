@@ -2,6 +2,7 @@
   const PNS = window.PNS; if (!PNS) return;
   const MS = (PNS.ModalsShift = PNS.ModalsShift || {});
   const { state } = PNS; if (!state) return;
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
 
   function getTierCapForBase(base, tier) {
     const key = String(tier || '').toUpperCase();
@@ -55,7 +56,7 @@
 
   function getBaseLabel(baseId) {
     const base = state.baseById?.get?.(baseId) || null;
-    return String(base?.title || 'Башта').split('/')[0].trim() || 'Башта';
+    return String(base?.title || t('turret', 'Турель')).split('/')[0].trim() || t('turret', 'Турель');
   }
 
   function ensureModal() {
@@ -70,8 +71,8 @@
       <div class="modal-card" role="dialog" aria-modal="true" style="width:min(640px, calc(100vw - 24px));">
         <div class="modal-head">
           <div>
-            <h2>Редагування гравця</h2>
-            <p class="muted" id="tpeSubtitle">Зміна даних / видалення з турелі</p>
+            <h2>${t('edit_player_title', 'Редагування гравця')}</h2>
+            <p class="muted" id="tpeSubtitle">${t('player_edit_subtitle', 'Зміна даних / видалення з турелі')}</p>
           </div>
           <button class="btn btn-icon" type="button" data-close-tower-player-edit>✕</button>
         </div>
@@ -79,44 +80,44 @@
           <section class="panel subpanel stack" style="max-width:100%;">
             <div class="placement-editor stack compact">
               <div>
-                <strong>Куди поставити гравця</strong>
-                <div class="muted small" id="tpePlacementCopy">Обери зміну, турель і роль для гравця або залиш його в резерві.</div>
+                <strong>${t('where_place_player', 'Куди поставити гравця')}</strong>
+                <div class="muted small" id="tpePlacementCopy">${t('choose_shift_turret_role_or_reserve', 'Обери зміну, турель і роль для гравця або залиш його в резерві.')}</div>
               </div>
               <div class="placement-editor-grid">
                 <label class="placement-editor-field">
-                  <span>Зміна</span>
+                  <span>${t('shift', 'Зміна')}</span>
                   <select id="tpePlacementShift" style="color:#eef3ff">
-                    <option value="shift1">Зміна 1</option>
-                    <option value="shift2">Зміна 2</option>
+                    <option value="shift1">${t('shift1', 'Зміна 1')}</option>
+                    <option value="shift2">${t('shift2', 'Зміна 2')}</option>
                   </select>
                 </label>
                 <label class="placement-editor-field">
-                  <span>Турель</span>
+                  <span>${t('turret', 'Турель')}</span>
                   <select id="tpePlacementBase" style="color:#eef3ff"></select>
                 </label>
                 <label class="placement-editor-field">
-                  <span>Роль у башті</span>
+                  <span>${t('role_in_turret', 'Роль у турелі')}</span>
                   <select id="tpePlacementKind" style="color:#eef3ff">
-                    <option value="helper">Помічник</option>
-                    <option value="captain">Капітан</option>
+                    <option value="helper">${t('helper', 'Помічник')}</option>
+                    <option value="captain">${t('captain', 'Капітан')}</option>
                   </select>
                 </label>
               </div>
               <div id="tpePlacementHint" class="muted small"></div>
             </div>
 
-            <input id="tpeName" placeholder="Нік" style="color:#eef3ff" />
-            <input id="tpeAlly" placeholder="Альянс" style="color:#eef3ff" />
+            <input id="tpeName" placeholder="${t('nickname', 'Нік')}" style="color:#eef3ff" />
+            <input id="tpeAlly" placeholder="${t('ally', 'Альянс')}" style="color:#eef3ff" />
             <select id="tpeRole" style="color:#eef3ff">
-              <option value="Shooter">Стрілець</option><option value="Fighter">Боєць</option><option value="Rider">Наїзник</option>
+              <option value="Shooter">${t('shooter', 'Стрілець')}</option><option value="Fighter">${t('fighter', 'Боєць')}</option><option value="Rider">${t('rider', 'Наїзник')}</option>
             </select>
             <input id="tpeTier" placeholder="T14" style="color:#eef3ff" />
-            <input id="tpeMarch" type="number" min="0" placeholder="Марш" style="color:#eef3ff" />
-            <input id="tpeRally" type="number" min="0" placeholder="Розмір ралі" style="color:#eef3ff" />
+            <input id="tpeMarch" type="number" min="0" placeholder="${t('march', 'Марш')}" style="color:#eef3ff" />
+            <input id="tpeRally" type="number" min="0" placeholder="${t('rally_size', 'Розмір ралі')}" style="color:#eef3ff" />
             <div id="tpeCapHint" class="muted small"></div>
             <div class="row gap wrap">
-              <button class="btn btn-primary" type="button" id="tpeSaveBtn">Зберегти</button>
-              <button class="btn" type="button" id="tpeRemoveBtn">Видалити з турелі</button>
+              <button class="btn btn-primary" type="button" id="tpeSaveBtn">${t('save', 'Зберегти')}</button>
+              <button class="btn" type="button" id="tpeRemoveBtn">${t('remove_from_turret', 'Прибрати з турелі')}</button>
             </div>
           </section>
         </div>
@@ -130,7 +131,7 @@
     const baseSelect = modal.querySelector('#tpePlacementBase');
     if (!baseSelect) return;
 
-    const options = ['<option value="">Резерв</option>'];
+    const options = [`<option value="">${t('reserve', 'Резерв')}</option>`];
     (state.bases || []).forEach((base) => {
       const label = getBaseLabel(base.id);
       options.push(`<option value="${PNS.escapeHtml(String(base.id || ''))}">${PNS.escapeHtml(label)}</option>`);
@@ -155,11 +156,11 @@
     modal.dataset.kind = kind;
 
     if (!baseId) {
-      hint.textContent = `Гравець буде в резерві у ${shiftLabel}.`;
+      hint.textContent = `${t('reserve', 'Резерв')} · ${shiftLabel}.`;
       return;
     }
 
-    const action = kind === 'captain' ? 'капітаном' : 'помічником';
+    const action = kind === 'captain' ? t('captain_as_role', 'капітаном') : t('helper_as_role', 'помічником');
     hint.textContent = `${shiftLabel} · ${getBaseLabel(baseId)} · ${action}.`;
   }
 
@@ -180,7 +181,7 @@
       const rosterMode = modal.dataset.mode === 'roster';
       const sameAsActive = normalizeEditableShift(state.activeShift || 'shift1') === shift;
       removeBtn.hidden = rosterMode || !sameAsActive || !assignment?.baseId;
-      removeBtn.textContent = 'Видалити з турелі';
+      removeBtn.textContent = t('remove_from_turret', 'Прибрати з турелі');
     }
 
     updatePlacementHint(modal);
@@ -215,21 +216,21 @@
 
     if (!hint) return;
     if (mode === 'roster') {
-      hint.textContent = 'Редагування зі списку: march та rally оновлюються в картці гравця.';
+      hint.textContent = t('roster_edit_hint', 'Редагування зі списку: марш і ралі оновлюються в картці гравця.');
       return;
     }
     if (kind === 'captain') {
-      hint.textContent = 'Капітан: обмеження за тіром не застосовується.';
+      hint.textContent = t('captain_tier_limit_note', 'Капітан: обмеження за тіром не застосовується.');
       return;
     }
     if (!base) {
-      hint.textContent = 'Оберіть турель, щоб побачити підказку по ліміту маршу.';
+      hint.textContent = t('choose_turret_for_limit', 'Оберіть турель, щоб побачити підказку по ліміту маршу.');
       return;
     }
     if (cap > 0) {
-      hint.textContent = `Ліміт автозаповнення для ${tier}: ${Number(cap).toLocaleString('en-US')} (ручне значення можна задати лише для цієї башти / цієї зміни).`;
+      hint.textContent = `${t('autofill_limit_for_tier', 'Ліміт автозаповнення для')} ${tier}: ${Number(cap).toLocaleString('en-US')} ${t('manual_value_tower_shift_note', '(ручне значення можна задати лише для цієї турелі / цієї зміни).')}`;
     } else {
-      hint.textContent = `Для ${tier} у цій турелі ліміт не заданий (0 = без обмеження).`;
+      hint.textContent = `${tier}: ${t('auto_tier_limits', 'автоматично')} / 0 = ${t('no_limit', 'без обмежень')}.`;
     }
   }
 
@@ -246,6 +247,63 @@
       rallyInp.style.display = forceRallyVisible ? '' : 'none';
       rallyInp.disabled = !forceRallyVisible;
     }
+  }
+
+
+  function refreshTowerPlayerEditModalTexts(modal) {
+    if (!modal) return;
+    const mode = modal.dataset.mode || 'tower';
+    const playerId = modal.dataset.playerId || '';
+    const baseId = modal.dataset.baseId || '';
+    const shiftSelect = modal.querySelector('#tpePlacementShift');
+    const kindSelect = modal.querySelector('#tpePlacementKind');
+    const placementBase = modal.querySelector('#tpePlacementBase');
+    const nameInp = modal.querySelector('#tpeName');
+    const allyInp = modal.querySelector('#tpeAlly');
+    const marchInp = modal.querySelector('#tpeMarch');
+    const rallyInp = modal.querySelector('#tpeRally');
+    const saveBtn = modal.querySelector('#tpeSaveBtn');
+    const removeBtn = modal.querySelector('#tpeRemoveBtn');
+    const title = modal.querySelector('.modal-head h2');
+    const subtitle = modal.querySelector('#tpeSubtitle');
+    const placementCopy = modal.querySelector('#tpePlacementCopy');
+    const fields = modal.querySelectorAll('.placement-editor-field > span');
+    const roleOptions = modal.querySelectorAll('#tpeRole option');
+    const kindOptions = modal.querySelectorAll('#tpePlacementKind option');
+    if (title) title.textContent = t('edit_player_title', 'Редагування гравця');
+    if (fields[0]) fields[0].textContent = t('shift', 'Зміна');
+    if (fields[1]) fields[1].textContent = t('turret', 'Турель');
+    if (fields[2]) fields[2].textContent = t('role_in_turret', 'Роль у турелі');
+    if (shiftSelect?.options?.[0]) shiftSelect.options[0].textContent = t('shift1', 'Зміна 1');
+    if (shiftSelect?.options?.[1]) shiftSelect.options[1].textContent = t('shift2', 'Зміна 2');
+    if (kindOptions?.[0]) kindOptions[0].textContent = t('helper', 'Помічник');
+    if (kindOptions?.[1]) kindOptions[1].textContent = t('captain', 'Капітан');
+    if (placementBase?.options?.length) {
+      const first = placementBase.options[0];
+      if (first && first.value === '') first.textContent = t('reserve', 'Резерв');
+    }
+    if (nameInp) nameInp.placeholder = t('nickname', 'Нік');
+    if (allyInp) allyInp.placeholder = t('ally', 'Альянс');
+    if (marchInp) marchInp.placeholder = t('march', 'Марш');
+    if (rallyInp) rallyInp.placeholder = t('rally_size', 'Розмір ралі');
+    if (roleOptions?.[0]) roleOptions[0].textContent = t('shooter', 'Стрілець');
+    if (roleOptions?.[1]) roleOptions[1].textContent = t('fighter', 'Боєць');
+    if (roleOptions?.[2]) roleOptions[2].textContent = t('rider', 'Наїзник');
+    if (saveBtn) saveBtn.textContent = t('save', 'Зберегти');
+    if (removeBtn) removeBtn.textContent = t('remove_from_turret', 'Прибрати з турелі');
+
+    if (mode === 'roster') {
+      if (subtitle) subtitle.textContent = t('choose_turret_role_shift_or_reserve', 'Обери турель, роль і зміну для гравця або залиш його в резерві.');
+      if (placementCopy) placementCopy.textContent = t('roster_edit_apply_selected_shift', 'Редагування зі списку гравців: зміни застосовуються до вибраної зміни.');
+    } else {
+      const base = state.baseById?.get?.(baseId);
+      const isCaptain = !!(playerId && base && base.captainId === playerId);
+      const towerName = getBaseLabel(baseId);
+      if (subtitle) subtitle.textContent = isCaptain ? `${t('captain', 'Капітан')} · ${towerName}` : `${t('helper_in_turret', 'Помічник у турелі')} · ${towerName}`;
+      if (placementCopy) placementCopy.textContent = t('quick_move_player', 'Можна швидко перенести гравця в іншу турель або в іншу зміну.');
+    }
+    updatePlacementHint(modal);
+    updateModalCapUI(modal);
   }
 
   function openTowerPlayerEditModal(baseId, playerId) {
@@ -270,17 +328,7 @@
 
     const currentInTower = getPlayerCurrentTowerMarch(base, p, isCaptain);
     fillPlayerFields(modal, p, currentInTower, isCaptain);
-
-    const subtitle = modal.querySelector('#tpeSubtitle');
-    if (subtitle) {
-      const towerName = getBaseLabel(base.id);
-      subtitle.textContent = isCaptain
-        ? `Капітан · ${towerName}`
-        : `Помічник у турелі · ${towerName}`;
-    }
-
-    const placementCopy = modal.querySelector('#tpePlacementCopy');
-    if (placementCopy) placementCopy.textContent = 'Можна швидко перенести гравця в іншу турель або в іншу зміну.';
+    refreshTowerPlayerEditModalTexts(modal);
 
     const removeBtn = modal.querySelector('#tpeRemoveBtn');
     if (removeBtn) removeBtn.hidden = !playerId;
@@ -307,15 +355,8 @@
     if (placementShift) placementShift.value = preferredShift;
 
     fillPlayerFields(modal, player, player.march, true);
-
-    const subtitle = modal.querySelector('#tpeSubtitle');
-    if (subtitle) subtitle.textContent = 'Обери турель, роль і зміну для гравця або залиш його в резерві.';
-
-    const placementCopy = modal.querySelector('#tpePlacementCopy');
-    if (placementCopy) placementCopy.textContent = 'Редагування зі списку гравців: зміни застосовуються до вибраної зміни.';
-
     syncPlacementFromSelectedShift(modal);
-    updateModalCapUI(modal);
+    refreshTowerPlayerEditModalTexts(modal);
 
     modal.classList.add('is-open');
     MS.syncBodyModalLock?.();
@@ -351,7 +392,7 @@
     const march = Number(modal.querySelector('#tpeMarch')?.value || 0) || 0;
     const rally = Number(modal.querySelector('#tpeRally')?.value || 0) || 0;
 
-    if (!name || !march) { alert('Вкажи нік і march'); return; }
+    if (!name || !march) { alert(t('enter_nick_and_march', 'Вкажи нік і марш')); return; }
 
     let p = playerId ? state.playerById?.get?.(playerId) : null;
     if (p) {
@@ -389,7 +430,7 @@
         secondaryRole: '',
         secondaryTier: '',
         troop200k: '',
-        notes: 'Ручне додавання',
+        notes: t('manual_addition_note', 'Ручне додавання'),
         raw: null,
         rowEl: null,
         actionCellEl: null,
@@ -453,6 +494,12 @@
       updatePlacementHint(modal);
       updateModalCapUI(modal);
     }
+  });
+
+
+  document.addEventListener('pns:i18n-changed', () => {
+    const modal = document.getElementById('towerPlayerEditModal');
+    if (modal) refreshTowerPlayerEditModalTexts(modal);
   });
 
   Object.assign(MS, {

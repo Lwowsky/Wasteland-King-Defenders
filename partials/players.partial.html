@@ -36,9 +36,9 @@
 
   <article class="stat-card stat-card--rich stat-card--plain" data-stat-card="roles">
     <div class="stat-split stat-split--roles" id="roleCountsDisplay" aria-label="Розподіл ролей">
-      <span class="stat-chip stat-chip--role is-fighter"><b>0</b><small>Бійці</small></span>
-      <span class="stat-chip stat-chip--role is-rider"><b>0</b><small>Наїзники</small></span>
-      <span class="stat-chip stat-chip--role is-shooter"><b>0</b><small>Стрільці</small></span>
+      <span class="stat-chip stat-chip--role is-fighter"><b>0</b><small data-i18n="fighter_plural">Бійці</small></span>
+      <span class="stat-chip stat-chip--role is-rider"><b>0</b><small data-i18n="rider_plural">Наїзники</small></span>
+      <span class="stat-chip stat-chip--role is-shooter"><b>0</b><small data-i18n="shooter_plural">Стрільці</small></span>
     </div>
   </article>
 
@@ -46,7 +46,7 @@
     <div class="stat-split stat-split--shifts" id="shiftCountsDisplay" aria-label="Розподіл по змінах">
       <span class="stat-chip stat-chip--shift is-shift1"><b>0</b><small>Зміна 1</small></span>
       <span class="stat-chip stat-chip--shift is-shift2"><b>0</b><small>Зміна 2</small></span>
-      <span class="stat-chip stat-chip--shift is-both"><b>0</b><small>Обидві</small></span>
+      <span class="stat-chip stat-chip--shift is-both"><b>0</b><small data-i18n="both">Обидві</small></span>
     </div>
   </article>
 </div>
@@ -82,17 +82,17 @@
     </label>
 
     <label>
-      <span>Статус</span>
+      <span data-i18n="status">Статус</span>
       <select id="topStatusFilter">
-        <option>Усі</option>
-        <option>Вільні</option>
-        <option>У базі</option>
-        <option>Капітани</option>
+        <option value="all" data-i18n="all">Усі</option>
+        <option value="free" data-i18n="status_free">Вільні</option>
+        <option value="assigned" data-i18n="status_assigned">У турелі</option>
+        <option value="captains" data-i18n="status_captains">Капітани</option>
       </select>
     </label>
 
     <label>
-      <span>Тір</span>
+      <span data-i18n="tier">Тір</span>
       <select id="topTierFilter">
         <option value="all" data-i18n="all">Усі</option>
         <option>T14</option>
@@ -105,7 +105,7 @@
     </label>
 
     <label>
-      <span>Рядків</span>
+      <span data-i18n="rows">Рядків</span>
       <select id="pageSizeSelect">
         <option selected>10</option>
         <option>20</option>
@@ -119,7 +119,7 @@
       id="resetFiltersBtn"
       type="button"
     >
-      Скинути фільтри
+      <span data-i18n="reset_filters">Скинути фільтри</span>
     </button>
   </div>
 
@@ -127,40 +127,40 @@
     <table class="data-table" id="playersDataTable">
       <thead>
         <tr>
-          <th data-field="name">Нік гравця</th>
-          <th data-field="alliance">Альянс</th>
-          <th data-field="role">Тип військ</th>
-          <th data-field="tier">
+          <th data-field="name" data-i18n="player_name">Нік гравця</th>
+          <th data-field="alliance" data-i18n="alliance">Альянс</th>
+          <th data-field="role" data-i18n="troop_type">Тип військ</th>
+          <th data-field="tier" data-i18n="tier">
             Тір
             <button
               class="sort-btn"
               data-sort="tier"
               type="button"
-              title="Сортувати за тіром"
-              aria-label="Сортувати за тіром"
+              title="Сортувати за тіром" data-i18n-title="sort_by_tier"
+              aria-label="Сортувати за тіром" data-i18n-aria-label="sort_by_tier"
             >
               ↓
             </button>
           </th>
-          <th data-field="march">Розмір маршу</th>
+          <th data-field="march" data-i18n="march_size">Розмір маршу</th>
           <th data-field="rally">
             Розмір ралі
             <button
               class="sort-btn"
               data-sort="rally"
               type="button"
-              title="Сортувати за розміром ралі"
-              aria-label="Сортувати за розміром ралі"
+              title="Сортувати за розміром ралі" data-i18n-title="sort_by_rally"
+              aria-label="Сортувати за розміром ралі" data-i18n-aria-label="sort_by_rally"
             >
               ↓
             </button>
           </th>
-          <th data-field="captainReady">Капітан</th>
-          <th data-field="shiftLabel">Зміна</th>
-          <th class="optional-col is-hidden-col" data-col-key="lair_level" data-field="lair">
+          <th data-field="captainReady" data-i18n="captain">Капітан</th>
+          <th data-field="shiftLabel" data-i18n="shift">Зміна</th>
+          <th class="optional-col is-hidden-col" data-col-key="lair_level" data-field="lair" data-i18n="lair_level">
             Рівень лігва
           </th>
-          <th data-col-key="actions" data-field="actions">Розміщення</th>
+          <th data-col-key="actions" data-field="actions" data-i18n="placement">Розміщення</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -169,7 +169,7 @@
 
   <div class="table-pagination">
     <button class="btn btn-sm" id="pagePrevBtn" type="button">◀</button>
-    <span id="pageInfoText">Сторінка 1 / 1</span>
+    <span id="pageInfoText" data-i18n="page_word">Сторінка 1 / 1</span>
     <button class="btn btn-sm" id="pageNextBtn" type="button">▶</button>
   </div>
 </section>

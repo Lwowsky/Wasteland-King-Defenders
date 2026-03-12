@@ -1,6 +1,51 @@
 (function () {
   const PNS = window.PNS; if (!PNS) return;
   const { state, $$ } = PNS;
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
+
+  const FIELD_LABEL_KEYS = {
+    player_name: 'player_name',
+    focus_troop: 'troop_type',
+    troop_tier: 'troop_tier_import',
+    march_size: 'march_size',
+    rally_size: 'rally_size',
+    alliance_alias: 'alliance',
+    captain_ready: 'captain_ready_import',
+    shift_availability: 'shift_availability_import',
+    lair_level: 'lair_level',
+    secondary_role: 'secondary_role_import',
+    secondary_tier: 'secondary_tier_import',
+    troop_200k: 'troop_200k_import',
+    notes: 'notes',
+  };
+
+  function getDefaultFieldLabel(key, fallback = '') {
+    const defaults = {
+      player_name: t('player_name', 'Нік гравця'),
+      focus_troop: t('troop_type', 'Тип військ'),
+      troop_tier: t('troop_tier_import', 'Тір військ'),
+      march_size: t('march_size', 'Розмір маршу'),
+      rally_size: t('rally_size', 'Розмір ралі'),
+      alliance_alias: t('alliance', 'Альянс'),
+      captain_ready: t('captain_ready_import', 'Готовність бути капітаном'),
+      shift_availability: t('shift_availability_import', 'Доступність по змінах'),
+      lair_level: t('lair_level', 'Рівень лігва'),
+      secondary_role: t('secondary_role_import', 'Тип резервних військ'),
+      secondary_tier: t('secondary_tier_import', 'Тір резервних військ'),
+      troop_200k: t('troop_200k_import', 'Тип резервних військ (200k+)'),
+      notes: t('notes', 'Нотатки'),
+    };
+    return defaults[key] || fallback || key;
+  }
+
+  function getDefaultCustomFieldLabel(key, fallback = '') {
+    const defaults = {
+      reserve_type_fighter: t('reserve_type_fighter_import', 'Резервний тип військ: боєць'),
+      reserve_type_rider: t('reserve_type_rider_import', 'Резервний тип військ: наїзник'),
+      reserve_type_shooter: t('reserve_type_shooter_import', 'Резервний тип військ: стрілець'),
+    };
+    return defaults[key] || fallback || key;
+  }
 
   // ---- Field definitions (required + додаткова import mapping) ----
   const FIELD_DEFS = [
@@ -39,7 +84,7 @@
 
   function canonicalizeCustomOptionalLabel(key, fallbackLabel) {
     const k = String(key || '').trim();
-    return CANONICAL_CUSTOM_OPTIONAL_LABELS[k] || String(fallbackLabel || '').trim();
+    return getDefaultCustomFieldLabel(k, CANONICAL_CUSTOM_OPTIONAL_LABELS[k] || String(fallbackLabel || '').trim());
   }
 
   function sanitizeCustomFieldKeyPart(text) {
@@ -110,13 +155,15 @@
   function addCustomOptionalDef(defaultLabel) {
     const defs = getCustomOptionalDefs().slice();
     const nextIndex = defs.length + 1;
-    const label = String(defaultLabel || `Кастомна колонка ${nextIndex}`).trim();
+    const label = String(defaultLabel || t('custom_column_numbered', `Кастомна колонка ${nextIndex}`).replace('{n}', String(nextIndex))).trim();
     defs.push({ key: `custom_opt_${Date.now()}_${nextIndex}_${sanitizeCustomFieldKeyPart(label)}`, label, visibleDefault: false });
     state.importData.customOptionalDefs = normalizeCustomOptionalDefs(defs);
     persistCustomOptionalDefs(state.importData.customOptionalDefs);
     const newDef = state.importData.customOptionalDefs[state.importData.customOptionalDefs.length - 1];
     if (state.importData?.mapping && !(newDef.key in state.importData.mapping)) state.importData.mapping[newDef.key] = '';
     renderImportUI();
+    try { window.PNSI18N?.apply?.(document.getElementById('settings-modal') || document); } catch {}
+    try { window.PNSI18N?.apply?.(document.getElementById('settings-modal') || document); } catch {}
     requestAnimationFrame(() => {
       try {
         const input = document.querySelector(`#optionalMappingContainer .mapping-row[data-map-key="${CSS.escape(newDef.key)}"] .field-label-input`);
@@ -222,7 +269,8 @@
   function getFieldLabel(key) {
     const override = state.fieldLabelOverrides?.[key];
     if (override && String(override).trim()) return String(override).trim();
-    return getFieldDefByKey(key)?.label || key;
+    const def = getFieldDefByKey(key);
+    return getDefaultFieldLabel(key, def?.label || key);
   }
 
   function migrateImportUiLabels() {
@@ -436,7 +484,7 @@
         const row = document.createElement('div');
         row.className = 'mapping-row required';
         const currentLabel = getFieldLabel(f.key);
-        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${PNS.escapeHtml(currentLabel)} <strong>*</strong></div><button type="button" class="mapping-edit-btn"><span aria-hidden="true">✎</span><span>Редагувати</span></button></div>`;
+        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${PNS.escapeHtml(currentLabel)} <strong>*</strong></div><button type="button" class="mapping-edit-btn"><span aria-hidden="true">✎</span><span>${t('edit', 'Редагувати')}</span></button></div>`;
 
         const labelInput = document.createElement('input');
         labelInput.type = 'text';
@@ -450,7 +498,7 @@
 
         const select = document.createElement('select');
         select.dataset.mapField = f.key;
-        const empty = document.createElement('option'); empty.value = ''; empty.textContent = '— вибери колонку —';
+        const empty = document.createElement('option'); empty.value = ''; empty.textContent = t('choose_column_placeholder', '— вибери колонку —');
         select.appendChild(empty);
         headers.forEach((h) => { const opt = document.createElement('option'); opt.value = h; opt.textContent = h; select.appendChild(opt); });
         select.value = state.importData.mapping[f.key] || '';
@@ -478,15 +526,15 @@
         row.dataset.mapKey = f.key;
         const currentLabel = f.isCustom ? String(f.label || '').trim() : getFieldLabel(f.key);
         const titleHtml = f.isCustom
-          ? `${PNS.escapeHtml(currentLabel)} <span class="mapping-meta">кастомна</span>`
-          : `${PNS.escapeHtml(currentLabel)} <span class="mapping-meta">додаткова</span>`;
-        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${titleHtml}</div><div class="row-title-actions">${f.isCustom ? '<button type="button" class="mapping-remove-btn" title="Видалити кастомну колонку" aria-label="Видалити кастомну колонку">✕</button>' : ''}<button type="button" class="mapping-edit-btn"><span aria-hidden="true">✎</span><span>Редагувати</span></button></div></div>`;
+          ? `${PNS.escapeHtml(currentLabel)} <span class="mapping-meta">${t('custom_column_label','кастомна')}</span>`
+          : `${PNS.escapeHtml(currentLabel)} <span class="mapping-meta">${t('extra_column_label','додаткова')}</span>`;
+        row.innerHTML = `<div class="row-title-wrap"><div class="row-title">${titleHtml}</div><div class="row-title-actions">${f.isCustom ? `<button type="button" class="mapping-remove-btn" title="${t('remove_extra_column', 'Видалити додаткову колонку')}" aria-label="${t('remove_extra_column', 'Видалити додаткову колонку')}">✕</button>` : ''}<button type="button" class="mapping-edit-btn"><span aria-hidden="true">✎</span><span>${t('edit', 'Редагувати')}</span></button></div></div>`;
 
         const labelInput = document.createElement('input');
         labelInput.type = 'text';
         labelInput.className = 'field-label-input';
         labelInput.value = currentLabel;
-        labelInput.placeholder = f.isCustom ? 'Назва кастомної колонки' : '';
+        labelInput.placeholder = f.isCustom ? t('custom_column_name_placeholder', 'Назва кастомної колонки') : '';
         labelInput.addEventListener('change', () => {
           if (f.isCustom) {
             const defs = getCustomOptionalDefs().map((d) => d.key === f.key ? { ...d, label: labelInput.value || d.label } : d);
@@ -501,7 +549,7 @@
 
         const select = document.createElement('select');
         select.dataset.mapField = f.key;
-        const empty = document.createElement('option'); empty.value = ''; empty.textContent = '— не прив’язано —';
+        const empty = document.createElement('option'); empty.value = ''; empty.textContent = t('not_mapped_placeholder', '— не прив’язано —');
         select.appendChild(empty);
         headers.forEach((h) => { const opt = document.createElement('option'); opt.value = h; opt.textContent = h; select.appendChild(opt); });
         select.value = state.importData.mapping[f.key] || '';
@@ -529,7 +577,7 @@
 
       const addRow = document.createElement('div');
       addRow.className = 'mapping-row mapping-add-row';
-      addRow.innerHTML = `<button type="button" class="btn btn-sm mapping-add-btn">+ Додати додаткову колонку</button>`;
+      addRow.innerHTML = `<button type="button" class="btn btn-sm mapping-add-btn">${t('add_extra_column', '+ Додати додаткову колонку')}</button>`;
       addRow.querySelector('.mapping-add-btn')?.addEventListener('click', () => addCustomOptionalDef());
       controls.optionalMappingContainer.appendChild(addRow);
     }
@@ -554,6 +602,7 @@
           if (typeof PNS.applyColumnVisibility === 'function') PNS.applyColumnVisibility(state.showAllColumns);
         });
         controls.columnVisibilityChecks.appendChild(label);
+      try { window.PNSI18N?.apply?.(label); } catch {}
       });
     }
 
@@ -587,7 +636,7 @@
     const templates = getImportTemplates().filter(t => t.fingerprint !== tpl.fingerprint);
     templates.unshift(tpl);
     saveImportTemplates(templates.slice(0, 20));
-    setImportStatus('Шаблон імпорту збережено.', 'good');
+    setImportStatus(t('import_template_saved', 'Шаблон імпорту збережено.'), 'good');
   }
 
   function findBestImportTemplate(headers) {
@@ -610,7 +659,7 @@
   }
 
   function applyImportTemplate(template) {
-    if (!template) { setImportStatus('Для поточних заголовків не знайдено відповідного збереженого шаблону.', 'danger'); return false; }
+    if (!template) { setImportStatus(t('import_template_not_found', 'Для поточних заголовків не знайдено відповідного збереженого шаблону.'), 'danger'); return false; }
     const headers = state.importData.headers || [];
 
     if (Array.isArray(template.customOptionalDefs)) {
@@ -673,7 +722,7 @@
     getCustomOptionalDefs().forEach((f) => { detected[f.key] = autoDetectCustomOptionalMapping(state.importData.headers, f); });
     state.importData.mapping = detected;
     renderImportUI();
-    setImportStatus('Колонки визначено автоматично. Перевір зіставлення обов’язкових колонок.', 'good');
+    setImportStatus(t('columns_auto_detected', 'Колонки визначено автоматично. Перевір зіставлення обов’язкових колонок.'), 'good');
   }
 
   function buildImportedPlayersFromRaw() {
@@ -828,7 +877,7 @@
     state.visibleOptionalColumns = selected;
     if (typeof PNS.saveVisibleOptionalColumns === 'function') PNS.saveVisibleOptionalColumns();
     if (typeof PNS.applyColumnVisibility === 'function') PNS.applyColumnVisibility(state.showAllColumns);
-    setImportStatus('Видимі колонки збережено.', 'good');
+    setImportStatus(t('visible_columns_saved', 'Видимі колонки збережено.'), 'good');
   }
 
   function loadDemoIntoImportWizard() {
@@ -850,7 +899,7 @@
       'Примітки': p.notes || '',
     }));
     setRawImportDataset(headers, rows, 'Вбудовані демо-дані', 'demo');
-    setImportStatus('Демо-набір завантажено в майстер імпорту.', 'good');
+    setImportStatus(t('import_demo_loaded', 'Демо-набір завантажено в майстер імпорту.'), 'good');
   }
 
   // ===== bind import modal buttons EVERY time DOM changes =====
@@ -866,11 +915,19 @@
         state.playerById = new Map((state.players || []).map((p) => [p.id, p]));
       }
       let restoredTowers = false;
+      try { if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift || 'shift1'); } catch {}
       if (typeof PNS.tryRestoreTowersSnapshot === 'function') {
         restoredTowers = !!PNS.tryRestoreTowersSnapshot();
       }
+      if (!restoredTowers) {
+        try { restoredTowers = !!PNS.restoreBasesFromPlayerAssignments?.(); } catch {}
+      }
+      try { PNS.ModalsShift?.saveCurrentShiftPlanSnapshot?.(); } catch {}
       if (typeof PNS.renderAll === 'function') PNS.renderAll();
-      if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift || 'shift1');
+      try { PNS.calcSyncCaptainsFromTowersIntoCalculator?.({ keepHelpers: true, render: false }); } catch {}
+      try { window.calcRenderInlineTowerSettings?.(document.getElementById('towerCalcModal')); } catch {}
+      try { window.calcRenderLiveFinalBoard?.(document.getElementById('towerCalcModal')); } catch {}
+      try { window.calcUpdateShiftStatsUI?.(document.getElementById('towerCalcModal')); } catch {}
       return restoredTowers;
     } catch { return false; }
   }
@@ -968,7 +1025,7 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
 
     if (restoredPlayers) {
       setImportLoadedInfo(`Відновлено ${state.players.length} гравців із LocalStorage.`);
-      setImportStatus('Гравців відновлено з попередньої сесії. У будь-який момент можна завантажити нову таблицю і замінити їх.', 'good');
+      setImportStatus(t('restored_previous_session', 'Гравців відновлено з попередньої сесії. У будь-який момент можна завантажити нову таблицю і замінити їх.'), 'good');
     }
     return true;
   }
@@ -1109,7 +1166,7 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
 
     renderImportUI();
     try { PNS.applyColumnVisibility?.(state.showAllColumns); } catch {}
-    setImportStatus('Дані колонок скинуто до заводських налаштувань.', 'good');
+    setImportStatus(t('column_data_reset', 'Дані колонок скинуто до заводських налаштувань.'), 'good');
   }
 
   async function resetTableData() {
@@ -1145,7 +1202,7 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
     try { PNS.buildRowActions?.(); } catch {}
     try { PNS.renderAll?.(); } catch {}
     setImportLoadedInfo('Дані таблиць скинуто.');
-    setImportStatus('Дані таблиць скинуто. Можна завантажити нову таблицю.', 'good');
+    setImportStatus(t('table_data_reset', 'Дані таблиць скинуто. Можна завантажити нову таблицю.'), 'good');
   }
 
   async function resetAllLocalStorage() {
@@ -1313,5 +1370,6 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
 
   // custom event (якщо ти сам робиш fetch partials)
   document.addEventListener('pns:partials:loaded', reInitImportWizard);
+  document.addEventListener('pns:i18n-changed', reInitImportWizard);
 
 })();

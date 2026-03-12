@@ -1,13 +1,13 @@
 <div id="partials-modals-root">
   <!-- SETTINGS MODAL (CSS only via :target) -->
   <section
-    aria-label="Налаштування та імпорт"
+    aria-label="Налаштування та імпорт" data-i18n-aria-label="settings_import"
     class="modal"
     data-modal="settings"
     id="settings-modal"
   >
     <a
-      aria-label="Закрити"
+      aria-label="Закрити" data-i18n-aria-label="close_menu"
       class="modal-backdrop"
       data-close-modal=""
       href="#top"
@@ -16,13 +16,11 @@
     <div aria-modal="true" class="modal-card" role="dialog">
       <div class="modal-head">
         <div>
-          <h2>Налаштування / Імпорт</h2>
-          <p class="muted">
-            Імпорт таблиці та налаштування мапінгу колонок
-          </p>
+          <h2 data-i18n="settings_import">Налаштування / Імпорт</h2>
+          <p class="muted" data-i18n="settings_import_subtitle">Завантаж список гравців, звір колонки й підготуй сайт до розподілу по турелях.</p>
         </div>
         <a
-          aria-label="Закрити"
+          aria-label="Закрити" data-i18n-aria-label="close_menu"
           class="btn btn-icon"
           data-close-modal=""
           href="#top"
@@ -34,16 +32,16 @@
         <section class="panel subpanel import-source-panel">
           <div class="mapping-section-head">
             <div>
-              <h3>1. Джерело імпорту</h3>
-              <p class="mapping-section-note">Завантаж файл або встав публічне CSV-посилання.</p>
+              <h3 data-i18n="import_source_title">1. Звідки взяти список гравців</h3>
+              <p class="mapping-section-note" data-i18n="import_source_note">Завантаж файл або встав публічне посилання на таблицю.</p>
             </div>
           </div>
           <div class="stack import-source-stack">
             <div class="import-source-grid">
               <label class="file-drop import-source-card import-upload-card">
-                <span class="import-card-kicker">Файл</span>
-                <span class="drop-title">Завантажити CSV / Excel</span>
-                <span class="muted">CSV, XLSX, XLS, TXT. Найшвидший спосіб імпорту таблиці.</span>
+                <span class="import-card-kicker" data-i18n="import_source_file">Файл</span>
+                <span class="drop-title" data-i18n="import_upload_title">Завантажити CSV / Excel</span>
+                <span class="muted" data-i18n="import_upload_desc">Підтримуються CSV, XLSX, XLS і TXT. Це найзручніший спосіб швидко додати таблицю.</span>
                 <input
                   accept=".csv,.xlsx,.xls,.txt"
                   id="fileInputMock"
@@ -52,33 +50,33 @@
               </label>
 
               <label class="import-source-card import-url-card">
-                <span class="import-card-kicker">Посилання</span>
-                <span class="drop-title">Google Sheets / CSV посилання</span>
-                <span class="muted">Працює з публічним CSV export або відкритим CSV-посиланням Google Sheets.</span>
+                <span class="import-card-kicker" data-i18n="import_source_link">Посилання</span>
+                <span class="drop-title" data-i18n="import_url_title">Google Sheets / CSV посилання</span>
+                <span class="muted" data-i18n="import_url_desc">Працює з публічним CSV export або відкритим CSV-посиланням із Google Sheets.</span>
                 <input id="urlInputMock" placeholder="https://..." type="url" />
               </label>
             </div>
 
             <div class="import-tools-row import-tools-row-main">
-              <button class="btn btn-sm" id="detectColumnsMockBtn" type="button">
-                Визначити колонки
+              <button class="btn btn-sm" id="detectColumnsMockBtn" type="button" data-i18n="detect_columns">
+                Знайти колонки
               </button>
-              <button class="btn btn-sm" id="loadUrlMockBtn" type="button">
-                Завантажити URL
+              <button class="btn btn-sm" id="loadUrlMockBtn" type="button" data-i18n="load_url">
+                Завантажити посилання
               </button>
             </div>
 
             <div class="import-status-grid">
               <div class="import-status-card">
-                <div class="import-status-title">Поточне джерело</div>
-                <div class="muted small" id="importLoadedInfo">
-                  Файл ще не завантажено.
+                <div class="import-status-title" data-i18n="current_source">Поточне джерело</div>
+                <div class="muted small" id="importLoadedInfo" data-i18n="file_not_loaded">
+                  Файл або посилання ще не завантажено.
                 </div>
               </div>
               <div class="import-status-card">
-                <div class="import-status-title">Статус</div>
-                <div class="muted small" id="importStatusInfo">
-                  Завантаж файл або посилання, визнач колонки, застосуй імпорт.
+                <div class="import-status-title" data-i18n="import_status_title">Статус імпорту</div>
+                <div class="muted small" id="importStatusInfo" data-i18n="import_status_hint">
+                  Завантаж джерело, перевір колонки й натисни «Застосувати імпорт».
                 </div>
               </div>
             </div>
@@ -89,6 +87,7 @@
                   class="btn btn-primary"
                   id="applyImportMockBtn"
                   type="button"
+                  data-i18n="apply_import"
                 >
                   Застосувати імпорт
                 </button>
@@ -100,11 +99,11 @@
         <section class="panel subpanel">
           <div class="mapping-section-head">
             <div>
-              <h3>2. Обов'язкові колонки</h3>
-              <p class="mapping-section-note">Ім’я гравця, тип військ, тір, розмір маршу, розмір групової атаки, альянс, готовність бути капітаном, доступність по зміні.</p>
+              <h3 data-i18n="required_columns_title">2. Обов’язкові колонки</h3>
+              <p class="mapping-section-note" data-i18n="required_columns_note">Ім’я гравця, тип військ, тір, розмір маршу, розмір групової атаки, альянс, готовність бути капітаном і доступність по змінах.</p>
             </div>
             <div class="mapping-section-head-actions">
-              <button class="btn btn-sm btn-ghost" data-save-import-template="1" type="button">Зберегти шаблон</button>
+              <button class="btn btn-sm btn-ghost" data-save-import-template="1" type="button" data-i18n="save_template">Зберегти шаблон</button>
             </div>
           </div>
           <div class="stack mapping-grid-2" id="requiredMappingContainer"></div>
@@ -113,11 +112,11 @@
         <section class="panel subpanel">
           <div class="mapping-section-head">
             <div>
-              <h3>3. Додаткові колонки</h3>
-              <p class="mapping-section-note">Рівень лігва, резервний тип військ: боєць / наїздник / стрілець та твої власні додаткові колонки.</p>
+              <h3 data-i18n="optional_columns_title">3. Додаткові колонки</h3>
+              <p class="mapping-section-note" data-i18n="optional_columns_note">Рівень лігва, резервний тип військ і будь-які твої власні додаткові поля.</p>
             </div>
             <div class="mapping-section-head-actions">
-              <button class="btn btn-sm btn-ghost" data-save-import-template="1" type="button">Зберегти шаблон</button>
+              <button class="btn btn-sm btn-ghost" data-save-import-template="1" type="button" data-i18n="save_template">Зберегти шаблон</button>
             </div>
           </div>
           <div
@@ -129,8 +128,8 @@
         <section class="panel subpanel">
           <div class="mapping-section-head">
             <div>
-              <h3>4. Видимі колонки</h3>
-              <p class="mapping-section-note">Обери, які додаткові колонки треба показувати в таблиці гравців при натисканні «Показати всі дані».</p>
+              <h3 data-i18n="visible_columns_title">4. Які дані показувати в таблиці</h3>
+              <p class="mapping-section-note" data-i18n="visible_columns_note">Обери, які додаткові колонки бачити в таблиці гравців після натискання «Показати всі дані».</p>
             </div>
           </div>
           <div
@@ -141,7 +140,7 @@
                         <button
               class="btn btn-sm"
               id="saveVisibleColumnsMockBtn"
-              type="button"
+              type="button" data-i18n="save_visible_columns"
             >
               Зберегти видимі колонки
             </button>
@@ -151,22 +150,22 @@
         <section class="panel subpanel">
           <div class="mapping-section-head">
             <div>
-              <h3>5. Скидання даних</h3>
-              <p class="mapping-section-note">Обережно: ці дії скидають збережені налаштування або дані таблиць.</p>
+              <h3 data-i18n="reset_data_title">5. Скидання даних</h3>
+              <p class="mapping-section-note" data-i18n="reset_data_note">Обережно: ці дії очищають збережені налаштування або дані таблиць.</p>
             </div>
           </div>
           <div class="stack reset-actions-grid">
-            <button class="btn btn-sm btn-danger-soft" id="resetAllStorageBtn" type="button">Повністю скинути LocalStorage</button>
-            <button class="btn btn-sm btn-ghost" id="resetColumnDataBtn" type="button">Скинути дані колонок</button>
-            <button class="btn btn-sm btn-ghost" id="resetTableDataBtn" type="button">Скинути дані таблиць</button>
+            <button class="btn btn-sm btn-danger-soft" id="resetAllStorageBtn" type="button" data-i18n="reset_storage">Повністю очистити LocalStorage</button>
+            <button class="btn btn-sm btn-ghost" id="resetColumnDataBtn" type="button" data-i18n="reset_column_data">Скинути дані колонок</button>
+            <button class="btn btn-sm btn-ghost" id="resetTableDataBtn" type="button" data-i18n="reset_table_data">Скинути дані таблиць</button>
           </div>
         </section>
 
       </div>
 
       <div class="modal-foot">
-        <div class="muted">
-          Підтримуються CSV/XLSX та публічне CSV-посилання Google Sheets.
+        <div class="muted" data-i18n="import_footer_note">
+          Підтримуються CSV/XLSX і публічні CSV-посилання з Google Sheets.
         </div>
       </div>
     </div>
@@ -174,13 +173,13 @@
 
   <!-- FINAL BOARD MODAL (CSS only preview) -->
   <section
-    aria-label="Фінальний план"
+    aria-label="Фінальний план" data-i18n-aria-label="final_plan"
     class="modal board-modal"
     data-modal="board"
     id="board-modal"
   >
     <a
-      aria-label="Закрити"
+      aria-label="Закрити" data-i18n-aria-label="close_menu"
       class="modal-backdrop"
       data-close-modal=""
       href="#top"
@@ -189,11 +188,8 @@
     <div aria-modal="true" class="modal-card board-card" role="dialog">
       <div class="modal-head">
         <div>
-          <h2>Фінальний план</h2>
-          <p class="muted">
-            Вигляд для офіцерів / скріншота / PDF. Експорт PNG/PDF працює через
-            JS.
-          </p>
+          <h2 data-i18n="final_plan">Фінальний план</h2>
+          <p class="muted" data-i18n="board_subtitle">Перегляд для офіцерів: зручно показати фінальний план, зробити скрін або поділитися ним.</p>
         </div>
 
         <div class="row gap wrap board-head-actions">
@@ -210,10 +206,10 @@
             >Зміна 2</button>
           </div>
 
-          <button class="btn btn-sm" id="exportPngBtn" type="button">
-            Експорт PNG
+          <button class="btn btn-sm" id="exportPngBtn" type="button" data-i18n="export_png">
+            Завантажити PNG
           </button>
-          <button class="btn btn-sm" id="shareBoardBtn" type="button">
+          <button class="btn btn-sm" id="shareBoardBtn" type="button" data-i18n="final_plan_share">
             Поділитися
           </button>
           <a class="btn btn-icon" data-close-modal="" href="#top">✕</a>
@@ -233,7 +229,7 @@
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">Немає призначених гравців</li>
+              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
             </ul>
           </section>
 
@@ -244,7 +240,7 @@
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">Немає призначених гравців</li>
+              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
             </ul>
           </section>
 
@@ -255,7 +251,7 @@
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">Немає призначених гравців</li>
+              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
             </ul>
           </section>
 
@@ -266,7 +262,7 @@
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">Немає призначених гравців</li>
+              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
             </ul>
           </section>
 
@@ -277,7 +273,7 @@
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">Немає призначених гравців</li>
+              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
             </ul>
           </section>
         </div>
@@ -287,12 +283,12 @@
 
   <!-- TOWER CALCULATOR MODAL (moved from JS ensureTowerCalcModal) -->
   <section
-    aria-label="Розподіл по турелях"
+    aria-label="Розподіл по турелях" data-i18n-aria-label="tower_planning"
     class="modal tower-calc-modal"
     id="towerCalcModal"
   >
     <a
-      aria-label="Закрити"
+      aria-label="Закрити" data-i18n-aria-label="close_menu"
       class="modal-backdrop"
       href="#top"
       data-close-modal=""
@@ -301,13 +297,11 @@
     <div class="modal-card" role="dialog" aria-modal="true">
       <div class="modal-head">
         <div>
-          <h2 style="margin: 0">Розподіл по турелях</h2>
-          <p class="muted" style="margin: 4px 0 0">
-            Тут ти готуєш склад для двох змін: розподіляєш гравців по турелях, перевіряєш резерв і формуєш фінальний план для альянсу.
-          </p>
+          <h2 style="margin: 0" data-i18n="tower_planning">Розподіл по турелях</h2>
+          <p class="muted" style="margin: 4px 0 0" data-i18n="calc_modal_subtitle">Тут ти готуєш склад для двох змін: розподіляєш гравців по турелях, перевіряєш резерв і збираєш фінальний план.</p>
         </div>
         <a
-          aria-label="Закрити"
+          aria-label="Закрити" data-i18n-aria-label="close_menu"
           class="btn btn-icon"
           href="#top"
           data-close-modal=""
@@ -318,13 +312,14 @@
       <div class="modal-grid" style="grid-template-columns: 1fr; gap: 10px">
         <section class="panel subpanel" id="towerCalcMainTabsWrap">
           <div class="tower-calc-main-tabs" id="towerCalcMainTabs">
-            <button class="btn btn-sm" type="button" data-calc-main-tab="setup">
+            <button class="btn btn-sm" type="button" data-calc-main-tab="setup" data-i18n="settings">
               Налаштування
             </button>
             <button
               class="btn btn-sm"
               type="button"
               data-calc-main-tab="towers"
+              data-i18n="tower_settings"
             >
               Налаштування турелей
             </button>
@@ -332,6 +327,7 @@
               class="btn btn-sm"
               type="button"
               data-calc-main-tab="overflow"
+              data-i18n="player_status"
             >
               Статус гравців
             </button>
@@ -339,6 +335,7 @@
               class="btn btn-sm"
               type="button"
               data-calc-main-tab="preview"
+              data-i18n="final_plan"
             >
               Фінальний план
             </button>
@@ -363,16 +360,18 @@
                   class="btn btn-sm"
                   type="button"
                   id="towerCalcLoadCaptainsBtn"
+                  data-i18n="load_captains_from_turrets"
                 >
-                  Підтягнути капітанів з турелей
+                  Підтягнути капітанів із турелей
                 </button>
-                <button class="btn btn-sm" type="button" id="towerCalcFitBtn">
+                <button class="btn btn-sm" type="button" id="towerCalcFitBtn" data-i18n="calculate">
                   Порахувати
                 </button>
                 <button
                   class="btn btn-sm"
                   type="button"
                   id="towerCalcApplyToTowersBtn"
+                  data-i18n="prepare_limits_for_turrets"
                 >
                   Підготувати ліміти для турелей
                 </button>
@@ -380,6 +379,7 @@
                   class="btn btn-sm"
                   type="button"
                   id="towerCalcQuickApplyBtn"
+                  data-i18n="auto_fill_turrets"
                 >
                   Автоматично заповнити турелі
                 </button>
@@ -388,20 +388,18 @@
                 class="tower-calc-controls muted small"
                 style="margin-top: 2px"
               >
-                <label
-                  >Режим
+                <label><span data-i18n="mode">Режим</span>
                   <select id="towerCalcModeUi" style="min-width: 130px">
-                    <option value="assisted">З підказками</option>
-                    <option value="auto">Авто</option>
-                    <option value="manual">Вручну</option>
+                    <option value="assisted" data-i18n="assisted_mode">З підказками</option>
+                    <option value="auto" data-i18n="auto_mode">Авто</option>
+                    <option value="manual" data-i18n="manual_mode">Вручну</option>
                   </select>
                 </label>
-                <label
-                  >Застосування
+                <label><span data-i18n="apply_mode">Застосування</span>
                   <select id="towerCalcApplyModeUi" style="min-width: 160px">
-                    <option value="topup">Лише дозаповнення</option>
-                    <option value="empty">Лише порожні</option>
-                    <option value="rebalance">Перерозподілити все</option>
+                    <option value="topup" data-i18n="topup_only">Лише дозаповнення</option>
+                    <option value="empty" data-i18n="empty_only">Лише порожні</option>
+                    <option value="rebalance" data-i18n="rebalance_all">Перерозподілити все</option>
                   </select>
                 </label>
                 <span class="muted"
@@ -409,7 +407,7 @@
                 >
               </div>
               <details class="tower-calc-advanced" id="towerCalcAdvanced">
-                <summary>Додатково</summary>
+                <summary data-i18n="advanced">Додатково</summary>
                 <div class="inner">
                   <div
                     class="tower-calc-controls"
@@ -422,13 +420,12 @@
                   >
                     <label
                       ><input type="checkbox" id="towerCalcBoth50" />
-                      Автобаланс гравців «Обидві»</label
+                      <span data-i18n="auto_balance_both">Автобаланс гравців «Обидві»</span></label
                     >
                     <label
-                      ><input type="checkbox" id="towerCalcMinHelpersOn" /> Мінімум гравців на турель</label
+                      ><input type="checkbox" id="towerCalcMinHelpersOn" /> <span data-i18n="min_players_per_turret">Мінімум гравців на турель</span></label
                     >
-                    <label
-                      >Кількість
+                    <label><span data-i18n="quantity">Кількість</span>
                       <input
                         id="towerCalcMinHelpersCount"
                         type="number"
@@ -440,12 +437,13 @@
                     /></label>
                     <label
                       ><input type="checkbox" id="towerCalcTierAuto" checked />
-                      Авто-ліміт тіру</label
+                      <span data-i18n="auto_tier_limit">Авто-ліміт тіру</span></label
                     >
                     <button
                       class="btn btn-sm"
                       type="button"
                       id="towerCalcApplyAndAssignBtn"
+                      data-i18n="apply_and_assign_players"
                     >
                       Застосувати й розставити гравців по турелях
                     </button>
@@ -459,7 +457,7 @@
                     </button>
                   </div>
                   <div class="muted small" style="margin-top: 8px">
-                    Ліміт маршу за тіром (на 1 гравця):
+                    <span data-i18n="tier_march_limit_single">Ліміт маршу за тіром (на 1 гравця):</span>
                     <span
                       style="
                         display: inline-flex;

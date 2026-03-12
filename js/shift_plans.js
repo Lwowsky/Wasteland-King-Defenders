@@ -4,6 +4,7 @@
   const { state } = PNS; if (!state) return;
   const $$ = PNS.$$ || ((s, r = document) => Array.from(r.querySelectorAll(s)));
   const $ = PNS.$ || ((s, r = document) => r.querySelector(s));
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
   const KEY_SHIFT_PLANS_STORE = 'pns_layout_shift_plans_store_v1';
 
   function safeReadShiftPlansStore() {
@@ -87,7 +88,7 @@
     const plan = state.shiftPlans?.[key];
     const a = plan?.players?.[playerId] || null;
     if (!a || !a.baseId) return null;
-    return { shift: key, label: key === 'shift1' ? 'Зміна 1' : 'Зміна 2', assignment: a };
+    return { shift: key, label: key === 'shift1' ? t('shift1', 'Зміна 1') : t('shift2', 'Зміна 2'), assignment: a };
   }
 
   function isPlayerUsedInOtherShift(playerId, currentShift) {
@@ -107,7 +108,7 @@
   function syncSettingsShiftBadge() {
     const badge = document.getElementById('settingsShiftBadge');
     if (!badge) return;
-    const label = state.activeShift === 'shift1' ? 'Зміна 1' : state.activeShift === 'shift2' ? 'Зміна 2' : 'Усі';
+    const label = state.activeShift === 'shift1' ? t('shift1', 'Зміна 1') : state.activeShift === 'shift2' ? t('shift2', 'Зміна 2') : t('all', 'Усі');
     badge.textContent = label;
   }
 
@@ -129,9 +130,13 @@
   function updateBoardTitle() {
     const title = $('#boardTitle');
     if (!title) return;
-    if (state.activeShift === 'shift1') title.textContent = 'Зміна 1';
-    else if (state.activeShift === 'shift2') title.textContent = 'Зміна 2';
-    else title.textContent = 'Усі зміни';
+    const t = typeof PNS?.t === 'function' ? PNS.t : ((_, f='') => f);
+    const shiftLabel = typeof PNS?.shiftLabel === 'function'
+      ? PNS.shiftLabel
+      : ((value) => String(value || ''));
+    if (state.activeShift === 'shift1') title.textContent = shiftLabel('shift1');
+    else if (state.activeShift === 'shift2') title.textContent = shiftLabel('shift2');
+    else title.textContent = t('all_shifts', 'Усі зміни');
   }
 
   function applyShiftFilter(shift) {

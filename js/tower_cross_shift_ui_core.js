@@ -7,6 +7,14 @@
 
   function q(sel, root=document){ try { return root.querySelector(sel); } catch { return null; } }
   function qa(sel, root=document){ try { return Array.from(root.querySelectorAll(sel)); } catch { return []; } }
+  function t(key, fallback = '') { const PNS = window.PNS; try { return typeof PNS?.t === 'function' ? PNS.t(key, fallback) : fallback; } catch { return fallback; } }
+  function fmtMsg(key, fallback, vars = {}) {
+    let out = t(key, fallback);
+    Object.entries(vars || {}).forEach(([k, v]) => { out = out.replace(new RegExp('\\{' + k + '\\}', 'g'), String(v ?? '')); });
+    return out;
+  }
+  function roleLabel(value, plural = false) { const PNS = window.PNS; try { return typeof PNS?.roleLabel === 'function' ? PNS.roleLabel(value, plural) : String(value || ''); } catch { return String(value || ''); } }
+
   function normShift(v){
     const s = String(v || '').toLowerCase();
     if (s === 'shift1' || s === '1' || s === 's1') return 'shift1';
@@ -103,21 +111,21 @@
 
         // Власна валідація для кейсу "капітан в іншому shift як helper тут"
         let err = '';
-        if (!PNS.ROLE_KEYS?.includes?.(player.role)) err = `Не вдалося визначити тип військ для ${player.name}.`;
+        if (!PNS.ROLE_KEYS?.includes?.(player.role)) err = fmtMsg('troop_type_not_defined_for_player', 'Не вдалося визначити тип військ для {name}.', { name: player.name || '' });
         else if (!ignoreShiftAutoFill && baseShift !== 'both' && playerShift !== 'both' && playerShift !== baseShift) {
           // дозволяємо цей mismatch лише якщо він капітан в іншому shift
           err = '';
         }
-        if (!err && !base.captainId) err = `Спочатку постав капітана в турель «${base.title}».`;
+        if (!err && !base.captainId) err = fmtMsg('place_captain_first_turret', 'Спочатку постав капітана в турель «{tower}».', { tower: base.title || '' });
         const effectiveRole = (typeof PNS.getBaseRole === 'function') ? PNS.getBaseRole(base) : null;
-        if (!err && sameTroopOnlyEnabled() && effectiveRole && player.role !== effectiveRole) err = `Тип військ не підходить: ${player.role} не можна поставити в турель типу ${effectiveRole}.`;
+        if (!err && sameTroopOnlyEnabled() && effectiveRole && player.role !== effectiveRole) err = fmtMsg('troop_type_mismatch_for_turret', 'Тип військ не підходить: {playerRole} не можна поставити в турель типу {turretRole}.', { playerRole: roleLabel(player.role, true).toLowerCase(), turretRole: roleLabel(effectiveRole, true).toLowerCase() });
         if (!err && noCrossShiftDupesEnabled()) {
           const hit = wrappedOther(player.id, activeShift);
-          if (hit) err = `Гравець уже призначений у ${hit.label || hit.shift || 'іншій зміні'}.`;
+          if (hit) err = fmtMsg('player_already_assigned_elsewhere', 'Гравець уже призначений у {place}.', { place: hit.label || hit.shift || t('player_in_other_shift', 'іншій зміні') });
         }
         if (!err) {
           const helperCountAfter = (base.helperIds || []).filter((id) => id !== player.id).length + 1;
-          if (Number.isFinite(base.maxHelpers) && base.maxHelpers > 0 && helperCountAfter > base.maxHelpers) err = `Ліміт помічників заповнений: ${helperCountAfter}/${base.maxHelpers}.`;
+          if (Number.isFinite(base.maxHelpers) && base.maxHelpers > 0 && helperCountAfter > base.maxHelpers) err = fmtMsg('helper_limit_reached', 'Ліміт помічників заповнений: {current}/{max}.', { current: helperCountAfter, max: base.maxHelpers });
         }
         if (!err) {
           const captain = state.playerById?.get?.(base.captainId);
@@ -127,7 +135,7 @@
             return sum + helperMarchForBase(base, state.playerById?.get?.(id));
           }, 0);
           const totalAfter = Number(captain?.march || 0) + helpersSum + helperMarchForBase(base, player);
-          if (limit && totalAfter > limit) err = `Перевищено ліміт: ${PNS.formatNum?.(totalAfter) || totalAfter} > ${PNS.formatNum?.(limit) || limit}.`;
+          if (limit && totalAfter > limit) err = fmtMsg('limit_exceeded', 'Перевищено ліміт: {current} > {limit}.', { current: PNS.formatNum?.(totalAfter) || totalAfter, limit: PNS.formatNum?.(limit) || limit });
         }
         if (err) {
           try { PNS.setRowStatus?.(player, err, 'danger'); } catch {}

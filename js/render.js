@@ -1,6 +1,7 @@
 (function () {
   const PNS = window.PNS; if (!PNS) return;
   const { state, $, $$ } = PNS;
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
 
   // --- helpers (swap-safe) ---
   function elAlive(el) {
@@ -249,7 +250,7 @@ function optionalColumnClass(key) {
       p.tier = tier;
       p.tierRank = PNS.tierRank(tier);
       p.march = march;
-      if (statusEl) statusEl.textContent = `Updated ${p.name}: ${PNS.formatNum(march)} march`;
+      if (statusEl) statusEl.textContent = t('updated_player_march', 'Оновлено {name}: марш {march}').replace('{name}', String(p.name || '')).replace('{march}', PNS.formatNum(march));
     } else {
       const role = PNS.getBaseRole(base) || 'Fighter';
       const shift = state.activeShift === 'all' ? 'both' : (state.activeShift || 'both');
@@ -271,7 +272,7 @@ function optionalColumnClass(key) {
         secondaryRole: '',
         secondaryTier: '',
         troop200k: '',
-        notes: 'Manual entry',
+        notes: t('add_player_manually', 'Додати гравця вручну'),
         raw: null,
         rowEl: null,
         actionCellEl: null,
@@ -293,7 +294,7 @@ function optionalColumnClass(key) {
       }
 
       if (sel) sel.value = p.id;
-      if (statusEl) statusEl.textContent = `Added manual player ${p.name} (${tier})`;
+      if (statusEl) statusEl.textContent = t('added_manual_player', 'Додано гравця вручну: {name} ({tier})').replace('{name}', String(p.name || '')).replace('{tier}', String(tier || ''));
     }
 
     if (typeof PNS.renderAll === 'function') PNS.renderAll();
@@ -394,21 +395,21 @@ function optionalColumnClass(key) {
       if (captain) {
         const chip = document.createElement('div');
         chip.className = 'mini-chip captain';
-        chip.innerHTML = `<span>Капітан: ${PNS.escapeHtml(captain.name)} (${PNS.escapeHtml(captain.tier)})</span><button type="button" data-base-remove-player="${base.id}" data-player-id="${captain.id}" aria-label="Прибрати капітана">×</button>`;
+        chip.innerHTML = `<span>${t('captain', 'Капітан')}: ${PNS.escapeHtml(captain.name)} (${PNS.escapeHtml(captain.tier)})</span><button type="button" data-base-remove-player="${base.id}" data-player-id="${captain.id}" aria-label="${t('remove_captain_aria', 'Прибрати капітана')}">×</button>`;
         chipList.appendChild(chip);
       }
 
       helpers.forEach((p) => {
         const chip = document.createElement('div');
         chip.className = 'mini-chip';
-        chip.innerHTML = `<span>${PNS.escapeHtml(p.name)} (${PNS.escapeHtml(p.tier)})</span><button type="button" data-base-remove-player="${base.id}" data-player-id="${p.id}" aria-label="Прибрати помічника">×</button>`;
+        chip.innerHTML = `<span>${PNS.escapeHtml(p.name)} (${PNS.escapeHtml(p.tier)})</span><button type="button" data-base-remove-player="${base.id}" data-player-id="${p.id}" aria-label="${t('remove_helper_aria', 'Прибрати помічника')}">×</button>`;
         chipList.appendChild(chip);
       });
 
       if (!captain && !helpers.length) {
         const empty = document.createElement('div');
         empty.className = 'muted small';
-        empty.textContent = 'У цій турелі ще немає призначених гравців.';
+        empty.textContent = t('no_players_in_turret_yet', 'У цій турелі ще немає призначених гравців.');
         chipList.appendChild(empty);
       }
     }
@@ -481,6 +482,19 @@ function optionalColumnClass(key) {
         capEditBtn.dataset.openPickerBase = String(base.id);
         capEditBtn.title = typeof PNS.t === 'function' ? PNS.t('choose_captain') : 'Обрати капітана';
       }
+      capEditBtn.onclick = (ev) => {
+        try { ev.preventDefault(); ev.stopPropagation(); } catch {}
+        try { PNS.ModalsShift?.initIfReady?.(); } catch {}
+        const currentBaseId = String(base.id || capEditBtn.dataset.baseId || capEditBtn.dataset.openPickerBase || '');
+        if (!currentBaseId) return;
+        if (captain?.id) {
+          try { PNS.ModalsShift?.openTowerPlayerEditModal?.(currentBaseId, String(captain.id)); } catch {}
+        } else {
+          try { PNS.state.towerPickerSelectedBaseId = currentBaseId; } catch {}
+          try { PNS.ModalsShift?.focusTowerById?.(currentBaseId); } catch {}
+          try { PNS.ModalsShift?.openTowerPickerModal?.(); } catch {}
+        }
+      };
     }
 
 
@@ -488,7 +502,7 @@ function optionalColumnClass(key) {
     const planShiftEl = $('.captain-shift', card) || $('[data-plan-shift]', card);
     const planCountEl = $('.captain-count', card) || $('[data-plan-count]', card);
     if (planShiftEl) {
-      const activeShiftLabel = typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(state.activeShift === 'all' ? 'both' : (state.activeShift || 'both')) : (state.activeShift === 'shift1' ? 'Зміна 1' : (state.activeShift === 'shift2' ? 'Зміна 2' : 'Обидві'));
+      const activeShiftLabel = typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(state.activeShift === 'all' ? 'both' : (state.activeShift || 'both')) : (state.activeShift === 'shift1' ? t('shift1', 'Зміна 1') : (state.activeShift === 'shift2' ? t('shift2', 'Зміна 2') : t('both', 'Обидві')));
       planShiftEl.textContent = captain ? `🕒 ${activeShiftLabel}` : '—';
     }
     if (planCountEl) {
@@ -535,7 +549,7 @@ function optionalColumnClass(key) {
       if (!helpers.length) {
         const tr = document.createElement('tr');
         const cols = (tbody.closest('table')?.querySelectorAll('thead th')?.length) || 4;
-        tr.innerHTML = `<td colspan="${cols}" class="muted">Помічників ще не призначено</td>`;
+        tr.innerHTML = `<td colspan="${cols}" class="muted">${t('helpers_not_assigned', 'Помічників ще не призначено')}</td>`;
         fragment.appendChild(tr);
       } else {
         helpers
@@ -546,7 +560,7 @@ function optionalColumnClass(key) {
             const eff = helperContribution(p);
             const hasEditCol = ((tbody.closest('table')?.querySelectorAll('thead th')?.length) || 4) >= 5;
             tr.innerHTML = hasEditCol
-              ? `<td>${PNS.escapeHtml(p.name)}</td><td>${PNS.escapeHtml(p.alliance)}</td><td>${PNS.escapeHtml(p.tier)}</td><td>${PNS.formatNum(eff)}</td><td><button type="button" class="btn btn-xs btn-icon" data-edit-assigned-player="${PNS.escapeHtml(p.id)}" data-base-id="${PNS.escapeHtml(base.id)}" aria-label="Редагувати гравця">✎</button></td>`
+              ? `<td>${PNS.escapeHtml(p.name)}</td><td>${PNS.escapeHtml(p.alliance)}</td><td>${PNS.escapeHtml(p.tier)}</td><td>${PNS.formatNum(eff)}</td><td><button type="button" class="btn btn-xs btn-icon" data-edit-assigned-player="${PNS.escapeHtml(p.id)}" data-base-id="${PNS.escapeHtml(base.id)}" aria-label="${t('edit_player_title', 'Редагування гравця')}">✎</button></td>`
               : `<td>${PNS.escapeHtml(p.name)}</td><td>${PNS.escapeHtml(p.alliance)}</td><td>${PNS.escapeHtml(p.tier)}</td><td>${PNS.formatNum(eff)}</td>`;
             fragment.appendChild(tr);
           });
@@ -726,8 +740,8 @@ function optionalColumnClass(key) {
     ).join('');
 
     theadRow.innerHTML = `
-      <th data-field="name">Нік гравця</th>
-      <th data-field="alliance">Альянс</th>
+      <th data-field="name">${typeof PNS.t === 'function' ? PNS.t('player_name') : 'Нік гравця'}</th>
+      <th data-field="alliance">${typeof PNS.t === 'function' ? PNS.t('alliance') : 'Альянс'}</th>
       <th data-field="role">${typeof PNS.t === 'function' ? PNS.t('troop_type') : 'Тип військ'}</th>
       <th data-field="tier">${typeof PNS.t === 'function' ? PNS.t('tier') : 'Тір'} <button type="button" class="sort-btn" data-sort="tier" aria-label="${typeof PNS.t === 'function' ? PNS.t('tier') : 'Тір'}">↓</button></th>
       <th data-field="march">${typeof PNS.t === 'function' ? PNS.t('march_power') : 'Розмір маршу'}</th>

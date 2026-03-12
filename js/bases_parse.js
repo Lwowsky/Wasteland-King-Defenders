@@ -188,9 +188,9 @@
         const tools = document.createElement('div');
         tools.className = 'base-tools';
         tools.innerHTML = `
-          <button class="btn btn-sm" type="button" data-base-autofill="${id}">Автозаповнення</button>
-          <button class="btn btn-sm" type="button" data-base-clear-helpers="${id}">Очистити помічників</button>
-          <button class="btn btn-sm" type="button" data-base-clear-all="${id}">Clear base</button>
+          <button class="btn btn-sm" type="button" data-base-autofill="${id}">${PNS.escapeHtml(t('auto_fill', 'Автозаповнення'))}</button>
+          <button class="btn btn-sm" type="button" data-base-clear-helpers="${id}">${PNS.escapeHtml(t('clear_helpers', 'Очистити помічників'))}</button>
+          <button class="btn btn-sm" type="button" data-base-clear-all="${id}">${PNS.escapeHtml(t('clear_base', 'Очистити турель'))}</button>
         `;
         // якщо quotaRow нема — вставимо в кінець card, щоб точно було
         if (quotaRow) quotaRow.insertAdjacentElement('afterend', tools);

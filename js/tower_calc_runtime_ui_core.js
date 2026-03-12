@@ -7,6 +7,7 @@
   window[KEY] = true;
 
   const MODAL_ID = 'towerCalcModal';
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
   let refreshTimer = 0;
   let patchLock = false;
 
@@ -152,8 +153,8 @@
     try { window.computeTowerCalcResults?.(); } catch {}
     try {
       const msg = mode === 'all'
-        ? 'Очищено помічників у змінах 1 і 2. Капітани залишилися.'
-        : `Очищено помічників: ${mode === 'shift1' ? 'Зміна 1' : 'Зміна 2'}. Капітани залишилися.`;
+        ? t('clear_helpers_both_done', 'Очищено помічників у змінах 1 і 2. Капітани залишилися.')
+        : `${t('clear_helpers_done_prefix', 'Очищено помічників:')} ${mode === 'shift1' ? t('shift1', 'Зміна 1') : t('shift2', 'Зміна 2')}. ${t('captains_stayed', 'Капітани залишилися.')}`;
       PNS.setImportStatus?.(msg, 'good');
     } catch {}
     return true;

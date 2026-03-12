@@ -1,6 +1,7 @@
 (function () {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const t = (key, fallback = '') => (typeof window.PNS?.t === 'function' ? window.PNS.t(key, fallback) : fallback);
 
   // =========================
   // Helpers
@@ -55,12 +56,9 @@
     const grid = $('#settings-modal .modal-grid');
     if (!modal || !card || !grid) return;
 
-    if (card.dataset.v4MenuBuilt === '1') return;
-
     const sections = $$('.modal-grid > section.panel.subpanel', grid);
     if (!sections.length) return;
 
-    card.dataset.v4MenuBuilt = '1';
     card.querySelector('.settings-side-menu')?.remove();
 
     const nav = document.createElement('aside');
@@ -76,7 +74,9 @@
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'settings-side-btn' + (idx === 0 ? ' active' : '');
-      btn.textContent = h ? h.textContent.replace(/^\d+\.\s*/, '') : `Section ${idx + 1}`;
+      const hKey = h?.getAttribute?.('data-i18n') || '';
+      const hText = hKey ? t(hKey, h?.textContent || '') : (h ? h.textContent : '');
+      btn.textContent = hText ? hText.replace(/^\d+\.\s*/, '') : `${t('section_word', 'Розділ')} ${idx + 1}`;
       btn.dataset.targetSection = String(idx);
 
       btn.addEventListener('click', () => {
@@ -91,6 +91,7 @@
     nav.appendChild(list);
     card.querySelector('.modal-head')?.insertAdjacentElement('afterend', nav);
     card.classList.add('has-settings-side-menu');
+    card.dataset.v4MenuBuilt = '1';
 
     modal.classList.remove('show-field-label-edits');
   }
@@ -181,8 +182,8 @@
         if (!modal) return;
         modal.classList.toggle('show-field-label-edits');
         e.currentTarget.textContent = modal.classList.contains('show-field-label-edits')
-          ? 'Сховати редагування назв'
-          : 'Показати редагування назв';
+          ? t('hide_field_name_edit', 'Сховати редагування назв')
+          : t('show_field_name_edit', 'Показати редагування назв');
       });
     }
 
@@ -192,8 +193,8 @@
         e.preventDefault();
         const boardUrl = location.href.split('#')[0] + '#board-modal';
         try {
-          if (navigator.share) await navigator.share({ title: `P&S ${typeof window.PNS?.t === 'function' ? window.PNS.t('final_plan') : 'Фінальний план'}`, text: (typeof window.PNS?.t === 'function' ? window.PNS.t('final_plan') : 'Фінальний план'), url: boardUrl });
-          else { await navigator.clipboard.writeText(boardUrl); alert('Посилання скопійовано'); }
+          if (navigator.share) await navigator.share({ title: `P&S ${t('final_plan', 'Фінальний план')}`, text: t('final_plan', 'Фінальний план'), url: boardUrl });
+          else { await navigator.clipboard.writeText(boardUrl); alert(t('link_copied', 'Посилання скопійовано')); }
         } catch {}
       });
     }
@@ -225,5 +226,10 @@
   safeOn(document, 'custom', 'pns:partials:loaded', () => {
     closeDrawerIfOpen();
     bindAll();
+  });
+
+  safeOn(document, 'i18n', 'pns:i18n-changed', () => {
+    try { createSettingsMenu(); } catch {}
+    try { window.PNS?.reInitImportWizard?.(); } catch {}
   });
 })();

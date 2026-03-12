@@ -91,23 +91,23 @@ function enforceIgnoreBoth(root) {
     if (forceLabel) forceLabel.style.display = 'none';
 
     const loadBtn = q('#towerCalcLoadCaptainsBtn', root);
-    if (loadBtn) loadBtn.textContent = 'Взяти капітанів із турелей';
+    if (loadBtn) loadBtn.textContent = t('load_captains_from_turrets', 'Підтягнути капітанів із турелей');
     const applyBtn = q('#towerCalcApplyToTowersBtn', root);
-    if (applyBtn) applyBtn.textContent = 'Застосувати ліміти';
+    if (applyBtn) applyBtn.textContent = t('prepare_limits_for_turrets', 'Підготувати ліміти для турелей');
     const quickBtn = q('#towerCalcQuickApplyBtn', root);
-    if (quickBtn) quickBtn.textContent = 'Автозаповнення башень';
+    if (quickBtn) quickBtn.textContent = t('auto_fill_turrets', 'Автоматично заповнити турелі');
 
     const adv = q('#towerCalcAdvanced summary', root);
-    if (adv) adv.textContent = 'Параметри розподілу і ліміти';
+    if (adv) adv.textContent = t('parameters_limits', 'Параметри розподілу і ліміти');
 
     const modeSel = q('#towerCalcModeUi', root);
     if (modeSel) {
-      const map = { assisted: 'Підказки', auto: 'Авто', manual: 'Ручний' };
+      const map = { assisted: t('assisted_mode', 'З підказками'), auto: t('auto_mode', 'Авто'), manual: t('manual_mode', 'Вручну') };
       qa('option', modeSel).forEach((o) => { o.textContent = map[o.value] || o.textContent; });
     }
     const applyMode = q('#towerCalcApplyModeUi', root);
     if (applyMode) {
-      const map = { topup: 'Лише дозаповнення', empty: 'Лише порожні', rebalance: 'Повний перерозподіл' };
+      const map = { topup: t('topup_only', 'Лише дозаповнення'), empty: t('empty_only', 'Лише порожні'), rebalance: t('rebalance_all', 'Перерозподілити все') };
       qa('option', applyMode).forEach((o) => { o.textContent = map[o.value] || o.textContent; });
     }
 
@@ -115,10 +115,10 @@ function enforceIgnoreBoth(root) {
       const t = txt(el);
       if (/UI skeleton/i.test(t)) el.style.display = 'none';
       if (/Auto slots =|місця для помічників/i.test(t)) {
-        el.textContent = 'Автослоти = швидкий розподіл місць для помічників по турелях за кількістю вільних гравців без капітанів.';
+        el.textContent = t('auto_slots_help', 'Автослоти = швидкий розподіл місць для помічників по турелях за кількістю вільних гравців без капітанів.');
       }
       if (/Порада:|Порахувати/i.test(t)) {
-        el.textContent = 'Спочатку вистав ліміти shift-ів і башень, потім використай “Застосувати ліміти” або “Автозаповнення башень”.';
+        el.textContent = t('calc_tip_text', 'Спочатку вистав ліміти змін і турелей, потім використай «Застосувати ліміти» або «Автозаповнення турелей».');
       }
       if (/Ліміти зміщень:/i.test(t)) {
         el.style.display = 'none';
@@ -183,7 +183,7 @@ function enforceIgnoreBoth(root) {
     }
 
     const summary = q('summary', advanced);
-    if (summary) summary.textContent = 'Параметри розподілу і ліміти';
+    if (summary) summary.textContent = t('parameters_limits', 'Параметри розподілу і ліміти');
 
     if (controls && controls.parentElement !== compactControls) compactControls.appendChild(controls);
     if (tierRow && tierRow.parentElement !== tierPanel) tierPanel.appendChild(tierRow);
@@ -221,7 +221,7 @@ function enforceIgnoreBoth(root) {
       row = document.createElement('div');
       row.id = 'tcv5LimitEditRow';
       row.className = 'tcv5-limit-edit-row';
-      row.innerHTML = '<label class="tcv5-limit-toggle"><input id="tcv5EnableShiftLimits" type="checkbox" /><span>Редагувати ліміти вручну</span></label>';
+      row.innerHTML = `<label class="tcv5-limit-toggle"><input id="tcv5EnableShiftLimits" type="checkbox" /><span>${t('manual_limit_edit', 'Редагувати ліміти вручну')}</span></label>`;
       const controls = q('.tower-calc-shift-controls', balance);
       if (controls) balance.insertBefore(row, controls);
       else balance.appendChild(row);

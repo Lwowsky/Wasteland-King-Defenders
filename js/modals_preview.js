@@ -3,6 +3,7 @@
   const PNS = window.PNS; if (!PNS) return;
   const MS = (PNS.ModalsShift = PNS.ModalsShift || {});
   const { state } = PNS; if (!state) return;
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
 
   function towerPreviewSlotKeyFromTitle(title) {
     const t = String(title || '').toLowerCase();
@@ -44,7 +45,7 @@
         card.classList.remove('is-active', 'is-ready', 'is-not-ready');
         card.dataset.previewBaseId = '';
         if (status) status.textContent = '?';
-        card.title = 'Турель не знайдена';
+        card.title = t('turret_not_found', 'Турель не знайдена');
         return;
       }
       const baseId = String(base.id || '');
@@ -54,10 +55,10 @@
       card.classList.toggle('is-not-ready', !ready);
       card.classList.toggle('is-active', !!focusedId && focusedId === baseId);
       card.setAttribute('aria-pressed', (!!focusedId && focusedId === baseId) ? 'true' : 'false');
-      card.title = `${String(base.title || baseId).split('/')[0].trim()} — ${ready ? 'готова' : 'без капітана'}`;
+      card.title = `${String(base.title || baseId).split('/')[0].trim()} — ${ready ? t('ready', 'готова').toLowerCase() : t('no_captain_short', 'без капітана').toLowerCase()}`;
       if (status) {
         status.textContent = ready ? '✓' : '!';
-        status.setAttribute('aria-label', ready ? 'Турель готова' : 'Турель не готова');
+        status.setAttribute('aria-label', ready ? t('turret_ready_aria', 'Турель готова') : t('turret_not_ready_aria', 'Турель не готова'));
       }
     });
   }

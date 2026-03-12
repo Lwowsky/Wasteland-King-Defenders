@@ -2,6 +2,9 @@
   const PNS = window.PNS;
   if (!PNS) return;
   const { state } = PNS;
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
+  const roleLabel = (value, plural = false) => (typeof PNS.roleLabel === 'function' ? PNS.roleLabel(value, plural) : String(value || ''));
+  const shiftLabel = (value) => (typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(value) : String(value || ''));
 
   function setRowStatus(player, text, level = '') {
     const status = player?.actionCellEl?.querySelector?.('.row-status');
@@ -96,8 +99,8 @@
   }
 
   function validateAssign(player, base, kind) {
-    if (!player || !base) return 'Гравця або турель не знайдено.';
-    if (!PNS.ROLE_KEYS?.includes?.(player.role)) return `Не вдалося визначити тип військ для ${player.name}.`;
+    if (!player || !base) return t('player_or_turret_not_found', 'Гравця або турель не знайдено.');
+    if (!PNS.ROLE_KEYS?.includes?.(player.role)) return `${t('troop_type_unknown_for', 'Не вдалося визначити тип військ для')} ${player.name}.`;
 
     const policy = readAssignmentPolicy(player, base, kind);
     const allowCrossShiftReuse = !!policy.allowCrossShiftReuse;
@@ -110,16 +113,16 @@
       player.shift !== 'both' &&
       base.shift !== player.shift
     ) {
-      return `Невідповідність зміни: ${player.shiftLabel} vs ${base.title.split('/')[0].trim()}.`;
+      return `${t('shift_mismatch', 'Невідповідність зміни')}: ${shiftLabel(player.shiftLabel || player.shift)} vs ${String(base.title || '').split('/')[0].trim()}.`;
     }
 
     if (kind === 'helper' && !base.captainId) {
-      return `Спочатку постав капітана в турель «${base.title}».`;
+      return `${t('place_captain_first', 'Спочатку постав капітана в турель')} «${base.title}».`;
     }
 
     const effectiveRole = (typeof PNS.getBaseRole === 'function') ? PNS.getBaseRole(base) : null;
     if (kind === 'helper' && (policy.sameTroopOnly ?? sameTroopOnlyEnabled()) && effectiveRole && player.role !== effectiveRole) {
-      return `Невідповідність типу військ: ${player.role} не може бути призначений у турель типу ${effectiveRole}.`;
+      return `${t('troop_mismatch', 'Невідповідність типу військ')}: ${roleLabel(player.role)} ${t('cannot_be_assigned_to', 'не може бути призначений у турель типу')} ${roleLabel(effectiveRole)}.`;
     }
 
     if (kind === 'helper' && (policy.noCrossShiftDupes ?? noCrossShiftDupesEnabled())) {
@@ -129,14 +132,14 @@
           || policy.otherShiftHit
           || (typeof PNS.getOtherShiftBlocker === 'function' ? PNS.getOtherShiftBlocker(player.id, curShift, kind) : null)
           || (typeof PNS.isPlayerUsedInOtherShift === 'function' ? PNS.isPlayerUsedInOtherShift(player.id, curShift) : null);
-        if (hit) return `Гравець уже призначений у ${hit.label || hit.shift || 'іншій зміні'}.`;
+        if (hit) return `${t('already_assigned_in', 'Гравець уже призначений у')} ${hit.label || shiftLabel(hit.shift) || t('other_shift', 'іншій зміні')}.`;
       }
     }
 
     if (kind === 'helper') {
       const helperCountAfter = base.helperIds.filter((id) => id !== player.id).length + 1;
       if (Number.isFinite(base.maxHelpers) && base.maxHelpers > 0 && helperCountAfter > base.maxHelpers) {
-        return `Ліміт помічників заповнений: ${helperCountAfter}/${base.maxHelpers}.`;
+        return `${t('helpers_limit_full', 'Ліміт помічників заповнений')}: ${helperCountAfter}/${base.maxHelpers}.`;
       }
 
       const captain = state.playerById.get(base.captainId);
@@ -149,7 +152,7 @@
 
       const totalAfter = (captain?.march || 0) + helpersSum + helperMarchForBase(base, player);
       if (limit && totalAfter > limit) {
-        return `Перевищено ліміт: ${PNS.formatNum(totalAfter)} > ${PNS.formatNum(limit)}.`;
+        return `${t('limit_exceeded', 'Перевищено ліміт')}: ${PNS.formatNum(totalAfter)} > ${PNS.formatNum(limit)}.`;
       }
     }
 
@@ -333,12 +336,12 @@
         }
 
         if (editorActionBtn.dataset.baseEditorAction === 'remove') {
-          if (!pid) { alert('Select player to remove from this tower'); return; }
-          if (!removePlayerFromSpecificBase(baseId, pid)) alert('Selected player is not assigned to this tower.');
+          if (!pid) { alert(t('select_player_to_remove', 'Вибери гравця, якого треба прибрати з цієї турелі')); return; }
+          if (!removePlayerFromSpecificBase(baseId, pid)) alert(t('selected_player_not_assigned', 'Вибраний гравець не призначений до цієї турелі.'));
           return;
         }
 
-        if (!pid) { alert('Спочатку вибери гравця'); return; }
+        if (!pid) { alert(t('choose_player_first', 'Спочатку вибери гравця')); return; }
         assignPlayerToBase(pid, baseId, editorActionBtn.dataset.baseEditorAction);
         return;
       }
@@ -362,26 +365,26 @@
 
   function getPlacementSummary(player, shiftKey) {
     const shift = String(shiftKey || '').toLowerCase();
-    const shiftLabel = typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(shift) : (shift === 'shift1' ? 'Зміна 1' : 'Зміна 2');
+    const shiftLabel = typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(shift) : (shift === 'shift1' ? t('shift1', 'Зміна 1') : t('shift2', 'Зміна 2'));
     const assignment = getShiftAssignment(player, shift);
     if (!assignment?.baseId) {
       return {
         shift,
         shiftLabel,
         assigned: false,
-        title: 'Резерв',
-        detail: 'Не призначено',
+        title: t('reserve', 'Резерв'),
+        detail: t('not_assigned', 'Не призначено'),
       };
     }
 
     const base = state.baseById?.get?.(assignment.baseId) || null;
-    const baseName = String(base?.title || 'Башта').split('/')[0].trim() || 'Башта';
+    const baseName = String(base?.title || t('turret', 'Турель')).split('/')[0].trim() || t('turret', 'Турель');
     return {
       shift,
       shiftLabel,
       assigned: true,
       title: baseName,
-      detail: assignment.kind === 'captain' ? 'Капітан' : 'Помічник',
+      detail: assignment.kind === 'captain' ? t('captain', 'Капітан') : t('helper', 'Помічник'),
     };
   }
 
@@ -408,7 +411,7 @@
     return `
       <div class="player-placement-card">
         <div class="player-placement-grid">${itemsHtml}</div>
-        <button type="button" class="btn btn-xs btn-placement-edit" data-edit-player-placement="${PNS.escapeHtml(String(player.id || ''))}">✎ Редагувати</button>
+        <button type="button" class="btn btn-xs btn-placement-edit" data-edit-player-placement="${PNS.escapeHtml(String(player.id || ''))}">✎ ${PNS.escapeHtml(t('edit', 'Редагувати'))}</button>
         <div class="row-status"></div>
       </div>`;
   }

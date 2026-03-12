@@ -1,6 +1,7 @@
 (function () {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const t = (key, fallback = '') => (typeof window.PNS?.t === 'function' ? window.PNS.t(key, fallback) : fallback);
 
   const state = {
     page: 1,
@@ -32,13 +33,13 @@
   }
 
   function ensureSortButtons() {
-    const map = { tier: 'тіром', rally: 'розміром ралі' };
+    const map = { tier: t('sort_by_tier_label', 'Сортувати за тіром'), rally: t('sort_by_rally_label', 'Сортувати за розміром ралі') };
     Object.entries(map).forEach(([field, label]) => {
       const th = document.querySelector(`#playersDataTable thead th[data-field="${field}"]`);
       if (!th || th.querySelector('.sort-btn')) return;
       const btn = document.createElement('button');
       btn.type = 'button'; btn.className = 'sort-btn'; btn.dataset.sort = field;
-      btn.setAttribute('aria-label', `Сортувати за ${label}`); btn.title = `Сортувати за ${label}`; btn.textContent = '↓';
+      btn.setAttribute('aria-label', label); btn.title = label; btn.textContent = '↓';
       th.appendChild(document.createTextNode(' ')); th.appendChild(btn);
     });
   }
@@ -109,8 +110,8 @@
 
     const info = $('#pageInfoText');
     if (info) info.textContent = pageSize === 'all'
-      ? `Сторінка 1 / 1 • показано ${rows.length}`
-      : `Сторінка ${state.page} / ${pages} • показано ${rows.length}`;
+      ? `${t('page_word', 'Сторінка')} 1 / 1 • ${t('shown_word', 'показано')} ${rows.length}`
+      : `${t('page_word', 'Сторінка')} ${state.page} / ${pages} • ${t('shown_word', 'показано')} ${rows.length}`;
     const prev = $('#pagePrevBtn'); const next = $('#pageNextBtn');
     if (prev) prev.disabled = pageSize === 'all' || state.page <= 1;
     if (next) next.disabled = pageSize === 'all' || state.page >= pages;

@@ -6,6 +6,7 @@
 
   const $ = PNS.$ || ((sel, root = document) => root.querySelector(sel));
   const $$ = PNS.$$ || ((sel, root = document) => Array.from(root.querySelectorAll(sel)));
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
 
   function closeDrawerIfOpen() {
     const burgerBtn = document.getElementById('burgerBtn');
@@ -79,12 +80,12 @@ function getButtons() {
     if (b.showAllData) {
       b.showAllData.setAttribute('aria-pressed', String(on));
       b.showAllData.classList.toggle('toggle-on', on);
-      b.showAllData.textContent = on ? 'Сховати дані' : 'Показати всі дані';
+      b.showAllData.textContent = on ? t('hide_data', 'Сховати дані') : t('show_all_data', 'Показати всі дані');
     }
     if (b.showAllColumns) {
       b.showAllColumns.setAttribute('aria-pressed', String(on));
       b.showAllColumns.classList.toggle('toggle-on', on);
-      b.showAllColumns.textContent = on ? 'Сховати вибрані колонки' : 'Показати вибрані колонки';
+      b.showAllColumns.textContent = on ? t('hide_selected_columns', 'Сховати вибрані колонки') : t('show_selected_columns', 'Показати вибрані колонки');
     }
   }
 

@@ -61,7 +61,7 @@
         <span class="lang-caret" aria-hidden="true">▾</span>
       </button>
 
-      <div class="lang-menu" id="langMenu" role="listbox" aria-label="Мова">
+      <div class="lang-menu" id="langMenu" role="listbox" aria-label="Мова" data-i18n-aria-label="lang_menu">
         <button
           class="lang-item"
           type="button"
@@ -178,17 +178,17 @@
 
   <article class="stat-card stat-card--rich stat-card--plain" data-stat-card="roles">
     <div class="stat-split stat-split--roles" id="roleCountsDisplay" aria-label="Розподіл ролей">
-      <span class="stat-chip stat-chip--role is-fighter"><b>0</b><small>Бійці</small></span>
-      <span class="stat-chip stat-chip--role is-rider"><b>0</b><small>Наїзники</small></span>
-      <span class="stat-chip stat-chip--role is-shooter"><b>0</b><small>Стрільці</small></span>
+      <span class="stat-chip stat-chip--role is-fighter"><b>0</b><small data-i18n="fighter_plural">Бійці</small></span>
+      <span class="stat-chip stat-chip--role is-rider"><b>0</b><small data-i18n="rider_plural">Наїзники</small></span>
+      <span class="stat-chip stat-chip--role is-shooter"><b>0</b><small data-i18n="shooter_plural">Стрільці</small></span>
     </div>
   </article>
 
   <article class="stat-card stat-card--rich stat-card--plain" data-stat-card="shifts">
     <div class="stat-split stat-split--shifts" id="shiftCountsDisplay" aria-label="Розподіл по змінах">
-      <span class="stat-chip stat-chip--shift is-shift1"><b>0</b><small>Зміна 1</small></span>
-      <span class="stat-chip stat-chip--shift is-shift2"><b>0</b><small>Зміна 2</small></span>
-      <span class="stat-chip stat-chip--shift is-both"><b>0</b><small>Обидві</small></span>
+      <span class="stat-chip stat-chip--shift is-shift1"><b>0</b><small data-i18n="shift1">Зміна 1</small></span>
+      <span class="stat-chip stat-chip--shift is-shift2"><b>0</b><small data-i18n="shift2">Зміна 2</small></span>
+      <span class="stat-chip stat-chip--shift is-both"><b>0</b><small data-i18n="both">Обидві</small></span>
     </div>
   </article>
 </div>
@@ -224,17 +224,17 @@
     </label>
 
     <label>
-      <span>Статус</span>
+      <span data-i18n="status">Статус</span>
       <select id="topStatusFilter">
-        <option>Усі</option>
-        <option>Вільні</option>
-        <option>У базі</option>
-        <option>Капітани</option>
+        <option value="all" data-i18n="all">Усі</option>
+        <option value="free" data-i18n="status_free">Вільні</option>
+        <option value="assigned" data-i18n="status_assigned">У турелі</option>
+        <option value="captains" data-i18n="status_captains">Капітани</option>
       </select>
     </label>
 
     <label>
-      <span>Тір</span>
+      <span data-i18n="tier">Тір</span>
       <select id="topTierFilter">
         <option value="all" data-i18n="all">Усі</option>
         <option>T14</option>
@@ -247,7 +247,7 @@
     </label>
 
     <label>
-      <span>Рядків</span>
+      <span data-i18n="rows">Рядків</span>
       <select id="pageSizeSelect">
         <option selected>10</option>
         <option>20</option>
@@ -261,7 +261,7 @@
       id="resetFiltersBtn"
       type="button"
     >
-      Скинути фільтри
+      <span data-i18n="reset_filters">Скинути фільтри</span>
     </button>
   </div>
 
@@ -269,40 +269,40 @@
     <table class="data-table" id="playersDataTable">
       <thead>
         <tr>
-          <th data-field="name">Нік гравця</th>
-          <th data-field="alliance">Альянс</th>
-          <th data-field="role">Тип військ</th>
-          <th data-field="tier">
+          <th data-field="name" data-i18n="player_name">Нік гравця</th>
+          <th data-field="alliance" data-i18n="alliance">Альянс</th>
+          <th data-field="role" data-i18n="troop_type">Тип військ</th>
+          <th data-field="tier" data-i18n="tier">
             Тір
             <button
               class="sort-btn"
               data-sort="tier"
               type="button"
-              title="Сортувати за тіром"
-              aria-label="Сортувати за тіром"
+              title="Сортувати за тіром" data-i18n-title="sort_by_tier"
+              aria-label="Сортувати за тіром" data-i18n-aria-label="sort_by_tier"
             >
               ↓
             </button>
           </th>
-          <th data-field="march">Розмір маршу</th>
+          <th data-field="march" data-i18n="march_size">Розмір маршу</th>
           <th data-field="rally">
             Розмір ралі
             <button
               class="sort-btn"
               data-sort="rally"
               type="button"
-              title="Сортувати за розміром ралі"
-              aria-label="Сортувати за розміром ралі"
+              title="Сортувати за розміром ралі" data-i18n-title="sort_by_rally"
+              aria-label="Сортувати за розміром ралі" data-i18n-aria-label="sort_by_rally"
             >
               ↓
             </button>
           </th>
-          <th data-field="captainReady">Капітан</th>
-          <th data-field="shiftLabel">Зміна</th>
-          <th class="optional-col is-hidden-col" data-col-key="lair_level" data-field="lair">
+          <th data-field="captainReady" data-i18n="captain">Капітан</th>
+          <th data-field="shiftLabel" data-i18n="shift">Зміна</th>
+          <th class="optional-col is-hidden-col" data-col-key="lair_level" data-field="lair" data-i18n="lair_level">
             Рівень лігва
           </th>
-          <th data-col-key="actions" data-field="actions">Розміщення</th>
+          <th data-col-key="actions" data-field="actions" data-i18n="placement">Розміщення</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -311,21 +311,18 @@
 
   <div class="table-pagination">
     <button class="btn btn-sm" id="pagePrevBtn" type="button">◀</button>
-    <span id="pageInfoText">Сторінка 1 / 1</span>
+    <span id="pageInfoText" data-i18n="page_word">Сторінка 1 / 1</span>
     <button class="btn btn-sm" id="pageNextBtn" type="button">▶</button>
   </div>
 </section>
       <aside class="panel bases-panel">
   <div class="panel-head">
     <div>
-      <h2>5 баз (головна сторінка)</h2>
-      <p class="muted">
-        Швидке керування турелями: капітан, помічники й автозаповнення без змішування типів військ
-        військ
-      </p>
+      <h2 data-i18n="bases_title">5 турелей і техно-центр</h2>
+      <p class="muted" data-i18n="bases_subtitle">Швидке керування турелями: обирай капітанів, додавай помічників і керуй змінами без зайвої плутанини.</p>
     </div>
     <div class="panel-actions wrap">
-      <span class="muted small">Налаштування перенесені в першу колонку нижче</span>
+      <span class="muted small" data-i18n="settings_moved_notice">Усі головні налаштування зібрані в першій колонці.</span>
     </div>
   </div>
 
@@ -334,43 +331,43 @@
     <section class="base-settings-card" id="basesSettingsCard" data-settings-card="1" data-shift="both" style="display:flex;flex-direction:column;min-height:100%;">
       <header class="base-card-head">
         <div>
-          <h3>Налаштування</h3>
-          <p class="base-type">Тип турелі визначається капітаном</p>
+          <h3 data-i18n="settings">Налаштування</h3>
+          <p class="base-type" data-i18n="type_defined_by_captain">Тип турелі визначається капітаном</p>
         </div>
-        <span class="base-role badge is-auto" id="settingsShiftBadge">Зміна 2</span>
+        <span class="base-role badge is-auto" id="settingsShiftBadge" data-i18n="shift2">Зміна 2</span>
       </header>
 
       <div class="captain-box settings-tools-box">
-        <div class="captain-title">План змін</div>
+        <div class="captain-title" data-i18n="shift_plan">План зміни</div>
         <div class="row gap wrap settings-top-row">
-          <button class="btn btn-sm shift-tab" data-shift-tab="shift1" type="button">Зміна 1</button>
-          <button class="btn btn-sm shift-tab active" data-shift-tab="shift2" type="button">Зміна 2</button>
-          <button class="btn btn-sm" id="toggleTowerFocusBtn" data-action="toggle-towers-view" type="button">Приховати інші</button>
-          <button class="btn btn-sm" id="openTowerPickerBtn" data-action="open-tower-picker" type="button">Налаштування турелей</button>
-          <div class="settings-focus-inline compact" title="Турель праворуч">
-            <button class="btn btn-xs" id="focusTowerPrevBtn" type="button" aria-label="Попередня турель">‹</button>
-            <select id="focusTowerSelect" class="settings-focus-select" aria-label="Турель праворуч"></select>
-            <button class="btn btn-xs" id="focusTowerNextBtn" type="button" aria-label="Наступна турель">›</button>
+          <button class="btn btn-sm shift-tab" data-shift-tab="shift1" type="button" data-i18n="shift1">Зміна 1</button>
+          <button class="btn btn-sm shift-tab active" data-shift-tab="shift2" type="button" data-i18n="shift2">Зміна 2</button>
+          <button class="btn btn-sm" id="toggleTowerFocusBtn" data-action="toggle-towers-view" type="button" data-i18n="hide_others">Приховати інші</button>
+          <button class="btn btn-sm" id="openTowerPickerBtn" data-action="open-tower-picker" type="button" data-i18n="tower_settings">Налаштування турелей</button>
+          <div class="settings-focus-inline compact" title="Турель праворуч" data-i18n-title="right_turret">
+            <button class="btn btn-xs" id="focusTowerPrevBtn" type="button" aria-label="Попередня турель" data-i18n-aria-label="previous_turret">‹</button>
+            <select id="focusTowerSelect" class="settings-focus-select" aria-label="Турель праворуч" data-i18n-aria-label="right_turret"></select>
+            <button class="btn btn-xs" id="focusTowerNextBtn" type="button" aria-label="Наступна турель" data-i18n-aria-label="next_turret">›</button>
           </div>
         </div>
         <div class="row gap wrap top-space">
-          <button class="btn btn-sm" id="autoFillAllBasesBtn" type="button">Автозаповнити все</button>
-          <button class="btn btn-sm" id="clearCurrentShiftBtn" type="button">Очистити поточну зміну</button>
+          <button class="btn btn-sm" id="autoFillAllBasesBtn" type="button" data-i18n="auto_fill_all">Автозаповнити все</button>
+          <button class="btn btn-sm" id="clearCurrentShiftBtn" type="button" data-i18n="clear_current_shift">Очистити поточну зміну</button>
           <button class="btn btn-sm" id="openBoardFromSettingsColBtn" data-action="open-board" type="button" data-i18n="final_plan">Фінальний план</button>
         </div>
-        <div class="muted small top-space">Зміна 1 / Зміна 2 — окремі плани. Автозаповнення не дублює гравців між ними.</div>
-        <div class="shift-towers-preview top-space" aria-label="Схема Налаштування турелей">
+        <div class="muted small top-space" data-i18n="separate_shift_note">Кожна зміна має окремий план. Автозаповнення не дублює гравців між ними.</div>
+        <div class="shift-towers-preview top-space" aria-label="Схема турелей" data-i18n-aria-label="tower_scheme">
           <div class="tower-slot tower-slot-north">
             <figure class="tower-thumb-card" data-preview-slot-card role="button" tabindex="0" aria-pressed="false">
               <img
                 class="tower-thumb-img"
                 src="img/tower_turret.webp"
-                alt="Північна турель"
+                alt="Північна турель" data-i18n-alt="north_turret"
                 loading="lazy"
                 decoding="async"
               />
               <span class="tower-thumb-status" aria-hidden="true">!</span>
-              <figcaption class="tower-thumb-name" data-preview-slot="north">Північна турель</figcaption>
+              <figcaption class="tower-thumb-name" data-preview-slot="north" data-i18n="north_turret">Північна турель</figcaption>
             </figure>
           </div>
 
@@ -379,12 +376,12 @@
               <img
                 class="tower-thumb-img"
                 src="img/tower_turret.webp"
-                alt="Західна турель"
+                alt="Західна турель" data-i18n-alt="west_turret"
                 loading="lazy"
                 decoding="async"
               />
               <span class="tower-thumb-status" aria-hidden="true">!</span>
-              <figcaption class="tower-thumb-name" data-preview-slot="west">Західна турель</figcaption>
+              <figcaption class="tower-thumb-name" data-preview-slot="west" data-i18n="west_turret">Західна турель</figcaption>
             </figure>
           </div>
 
@@ -407,12 +404,12 @@
               <img
                 class="tower-thumb-img"
                 src="img/tower_turret.webp"
-                alt="Східна турель"
+                alt="Східна турель" data-i18n-alt="east_turret"
                 loading="lazy"
                 decoding="async"
               />
               <span class="tower-thumb-status" aria-hidden="true">!</span>
-              <figcaption class="tower-thumb-name" data-preview-slot="east">Східна турель</figcaption>
+              <figcaption class="tower-thumb-name" data-preview-slot="east" data-i18n="east_turret">Східна турель</figcaption>
             </figure>
           </div>
 
@@ -421,12 +418,12 @@
               <img
                 class="tower-thumb-img"
                 src="img/tower_turret.webp"
-                alt="Південна турель"
+                alt="Південна турель" data-i18n-alt="south_turret"
                 loading="lazy"
                 decoding="async"
               />
               <span class="tower-thumb-status" aria-hidden="true">!</span>
-              <figcaption class="tower-thumb-name" data-preview-slot="south">Південна турель</figcaption>
+              <figcaption class="tower-thumb-name" data-preview-slot="south" data-i18n="south_turret">Південна турель</figcaption>
             </figure>
           </div>
         </div>
@@ -437,58 +434,58 @@
     <section class="base-card shooter-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Техно-Центр</h3>
-          <p class="base-type">Тип турелі визначається капітаном</p>
+          <h3 data-i18n="hub">Техно-Центр</h3>
+          <p class="base-type" data-i18n="type_defined_by_captain">Тип турелі визначається капітаном</p>
         </div>
-        <span class="base-role badge is-auto">Авто</span>
+        <span class="base-role badge is-auto" data-i18n="auto_mode">Авто</span>
       </header>
 
       <div class="captain-box">
         <div class="captain-grid">
           <div class="captain-col">
-            <div class="captain-title">Капітан</div>
+            <div class="captain-title" data-i18n="captain">Капітан</div>
             <div class="captain-main">
-              <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
+              <div class="captain-name captain-empty" data-i18n="captain_empty">— Капітана не обрано —</div>
+              <div class="captain-meta"><span data-i18n="type_defined_by_captain">Тип визначається капітаном</span> · <span data-i18n="both">Обидві</span></div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
-            <div class="captain-title">План</div>
+            <div class="captain-title" data-i18n="plan_label">План</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
+              <div class="captain-meta"><span data-i18n="players_in_turret">Гравців у турелі</span>: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Марш капітана</span><strong>0</strong></div>
-        <div><span>Розмір ралі</span><strong>0</strong></div>
-        <div><span>Разом</span><strong>0</strong></div>
-        <div><span>Вільне місце</span><strong>0</strong></div>
+        <div><span data-i18n="captain_march">Марш капітана</span><strong>0</strong></div>
+        <div><span data-i18n="rally_size">Розмір ралі</span><strong>0</strong></div>
+        <div><span data-i18n="total_sum">Разом</span><strong>0</strong></div>
+        <div><span data-i18n="free_space">Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
-        <span>Автозаповнення:</span>
-        <span class="quota-summary">Ліміти маршу за тірами: авто</span>
-        <span class="quota-max">Макс. помічників: 29</span>
+        <span data-i18n="auto_fill">Автозаповнення</span><span aria-hidden="true">:</span>
+        <span class="quota-summary"><span data-i18n="tier_march_limits">Ліміти маршу за тірами</span>: <span data-i18n="auto_tier_limits">авто</span></span>
+        <span class="quota-max"><span data-i18n="max_helpers">Макс. помічників</span>: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
         <table class="mini-table">
           <thead>
             <tr>
-              <th>Гравець</th>
-              <th>Альянс</th>
-              <th>Тір</th>
-              <th>Марш</th>
+              <th data-i18n="player">Гравець</th>
+              <th data-i18n="alliance">Альянс</th>
+              <th data-i18n="tier">Тір</th>
+              <th data-i18n="march">Марш</th>
               <th class="edit-col">✎</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">Помічників ще не призначено</td>
+              <td class="muted" colspan="5" data-i18n="helpers_not_assigned">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>
@@ -499,58 +496,58 @@
     <section class="base-card fighter-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Північна турель</h3>
-          <p class="base-type">Тип турелі визначається капітаном</p>
+          <h3 data-i18n="north_turret">Північна турель</h3>
+          <p class="base-type" data-i18n="type_defined_by_captain">Тип турелі визначається капітаном</p>
         </div>
-        <span class="base-role badge is-auto">Авто</span>
+        <span class="base-role badge is-auto" data-i18n="auto_mode">Авто</span>
       </header>
 
       <div class="captain-box">
         <div class="captain-grid">
           <div class="captain-col">
-            <div class="captain-title">Капітан</div>
+            <div class="captain-title" data-i18n="captain">Капітан</div>
             <div class="captain-main">
-              <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
+              <div class="captain-name captain-empty" data-i18n="captain_empty">— Капітана не обрано —</div>
+              <div class="captain-meta"><span data-i18n="type_defined_by_captain">Тип визначається капітаном</span> · <span data-i18n="both">Обидві</span></div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
-            <div class="captain-title">План</div>
+            <div class="captain-title" data-i18n="plan_label">План</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
+              <div class="captain-meta"><span data-i18n="players_in_turret">Гравців у турелі</span>: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Марш капітана</span><strong>0</strong></div>
-        <div><span>Розмір ралі</span><strong>0</strong></div>
-        <div><span>Разом</span><strong>0</strong></div>
-        <div><span>Вільне місце</span><strong>0</strong></div>
+        <div><span data-i18n="captain_march">Марш капітана</span><strong>0</strong></div>
+        <div><span data-i18n="rally_size">Розмір ралі</span><strong>0</strong></div>
+        <div><span data-i18n="total_sum">Разом</span><strong>0</strong></div>
+        <div><span data-i18n="free_space">Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
-        <span>Автозаповнення:</span>
-        <span class="quota-summary">Ліміти маршу за тірами: авто</span>
-        <span class="quota-max">Макс. помічників: 29</span>
+        <span data-i18n="auto_fill">Автозаповнення</span><span aria-hidden="true">:</span>
+        <span class="quota-summary"><span data-i18n="tier_march_limits">Ліміти маршу за тірами</span>: <span data-i18n="auto_tier_limits">авто</span></span>
+        <span class="quota-max"><span data-i18n="max_helpers">Макс. помічників</span>: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
         <table class="mini-table">
           <thead>
             <tr>
-              <th>Гравець</th>
-              <th>Альянс</th>
-              <th>Тір</th>
-              <th>Марш</th>
+              <th data-i18n="player">Гравець</th>
+              <th data-i18n="alliance">Альянс</th>
+              <th data-i18n="tier">Тір</th>
+              <th data-i18n="march">Марш</th>
               <th class="edit-col">✎</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">Помічників ще не призначено</td>
+              <td class="muted" colspan="5" data-i18n="helpers_not_assigned">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>
@@ -561,58 +558,58 @@
     <section class="base-card fighter-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Західна турель</h3>
-          <p class="base-type">Тип турелі визначається капітаном</p>
+          <h3 data-i18n="west_turret">Західна турель</h3>
+          <p class="base-type" data-i18n="type_defined_by_captain">Тип турелі визначається капітаном</p>
         </div>
-        <span class="base-role badge is-auto">Авто</span>
+        <span class="base-role badge is-auto" data-i18n="auto_mode">Авто</span>
       </header>
 
       <div class="captain-box">
         <div class="captain-grid">
           <div class="captain-col">
-            <div class="captain-title">Капітан</div>
+            <div class="captain-title" data-i18n="captain">Капітан</div>
             <div class="captain-main">
-              <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
+              <div class="captain-name captain-empty" data-i18n="captain_empty">— Капітана не обрано —</div>
+              <div class="captain-meta"><span data-i18n="type_defined_by_captain">Тип визначається капітаном</span> · <span data-i18n="both">Обидві</span></div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
-            <div class="captain-title">План</div>
+            <div class="captain-title" data-i18n="plan_label">План</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
+              <div class="captain-meta"><span data-i18n="players_in_turret">Гравців у турелі</span>: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Марш капітана</span><strong>0</strong></div>
-        <div><span>Розмір ралі</span><strong>0</strong></div>
-        <div><span>Разом</span><strong>0</strong></div>
-        <div><span>Вільне місце</span><strong>0</strong></div>
+        <div><span data-i18n="captain_march">Марш капітана</span><strong>0</strong></div>
+        <div><span data-i18n="rally_size">Розмір ралі</span><strong>0</strong></div>
+        <div><span data-i18n="total_sum">Разом</span><strong>0</strong></div>
+        <div><span data-i18n="free_space">Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
-        <span>Автозаповнення:</span>
-        <span class="quota-summary">Ліміти маршу за тірами: авто</span>
-        <span class="quota-max">Макс. помічників: 29</span>
+        <span data-i18n="auto_fill">Автозаповнення</span><span aria-hidden="true">:</span>
+        <span class="quota-summary"><span data-i18n="tier_march_limits">Ліміти маршу за тірами</span>: <span data-i18n="auto_tier_limits">авто</span></span>
+        <span class="quota-max"><span data-i18n="max_helpers">Макс. помічників</span>: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
         <table class="mini-table">
           <thead>
             <tr>
-              <th>Гравець</th>
-              <th>Альянс</th>
-              <th>Тір</th>
-              <th>Марш</th>
+              <th data-i18n="player">Гравець</th>
+              <th data-i18n="alliance">Альянс</th>
+              <th data-i18n="tier">Тір</th>
+              <th data-i18n="march">Марш</th>
               <th class="edit-col">✎</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">Помічників ще не призначено</td>
+              <td class="muted" colspan="5" data-i18n="helpers_not_assigned">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>
@@ -623,58 +620,58 @@
     <section class="base-card rider-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Східна турель</h3>
-          <p class="base-type">Тип турелі визначається капітаном</p>
+          <h3 data-i18n="east_turret">Східна турель</h3>
+          <p class="base-type" data-i18n="type_defined_by_captain">Тип турелі визначається капітаном</p>
         </div>
-        <span class="base-role badge is-auto">Авто</span>
+        <span class="base-role badge is-auto" data-i18n="auto_mode">Авто</span>
       </header>
 
       <div class="captain-box">
         <div class="captain-grid">
           <div class="captain-col">
-            <div class="captain-title">Капітан</div>
+            <div class="captain-title" data-i18n="captain">Капітан</div>
             <div class="captain-main">
-              <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
+              <div class="captain-name captain-empty" data-i18n="captain_empty">— Капітана не обрано —</div>
+              <div class="captain-meta"><span data-i18n="type_defined_by_captain">Тип визначається капітаном</span> · <span data-i18n="both">Обидві</span></div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
-            <div class="captain-title">План</div>
+            <div class="captain-title" data-i18n="plan_label">План</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
+              <div class="captain-meta"><span data-i18n="players_in_turret">Гравців у турелі</span>: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Марш капітана</span><strong>0</strong></div>
-        <div><span>Розмір ралі</span><strong>0</strong></div>
-        <div><span>Разом</span><strong>0</strong></div>
-        <div><span>Вільне місце</span><strong>0</strong></div>
+        <div><span data-i18n="captain_march">Марш капітана</span><strong>0</strong></div>
+        <div><span data-i18n="rally_size">Розмір ралі</span><strong>0</strong></div>
+        <div><span data-i18n="total_sum">Разом</span><strong>0</strong></div>
+        <div><span data-i18n="free_space">Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
-        <span>Автозаповнення:</span>
-        <span class="quota-summary">Ліміти маршу за тірами: авто</span>
-        <span class="quota-max">Макс. помічників: 29</span>
+        <span data-i18n="auto_fill">Автозаповнення</span><span aria-hidden="true">:</span>
+        <span class="quota-summary"><span data-i18n="tier_march_limits">Ліміти маршу за тірами</span>: <span data-i18n="auto_tier_limits">авто</span></span>
+        <span class="quota-max"><span data-i18n="max_helpers">Макс. помічників</span>: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
         <table class="mini-table">
           <thead>
             <tr>
-              <th>Гравець</th>
-              <th>Альянс</th>
-              <th>Тір</th>
-              <th>Марш</th>
+              <th data-i18n="player">Гравець</th>
+              <th data-i18n="alliance">Альянс</th>
+              <th data-i18n="tier">Тір</th>
+              <th data-i18n="march">Марш</th>
               <th class="edit-col">✎</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">Помічників ще не призначено</td>
+              <td class="muted" colspan="5" data-i18n="helpers_not_assigned">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>
@@ -685,58 +682,58 @@
     <section class="base-card rider-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Південна турель</h3>
-          <p class="base-type">Тип турелі визначається капітаном</p>
+          <h3 data-i18n="south_turret">Південна турель</h3>
+          <p class="base-type" data-i18n="type_defined_by_captain">Тип турелі визначається капітаном</p>
         </div>
-        <span class="base-role badge is-auto">Авто</span>
+        <span class="base-role badge is-auto" data-i18n="auto_mode">Авто</span>
       </header>
 
       <div class="captain-box">
         <div class="captain-grid">
           <div class="captain-col">
-            <div class="captain-title">Капітан</div>
+            <div class="captain-title" data-i18n="captain">Капітан</div>
             <div class="captain-main">
-              <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
+              <div class="captain-name captain-empty" data-i18n="captain_empty">— Капітана не обрано —</div>
+              <div class="captain-meta"><span data-i18n="type_defined_by_captain">Тип визначається капітаном</span> · <span data-i18n="both">Обидві</span></div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
-            <div class="captain-title">План</div>
+            <div class="captain-title" data-i18n="plan_label">План</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
+              <div class="captain-meta"><span data-i18n="players_in_turret">Гравців у турелі</span>: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Марш капітана</span><strong>0</strong></div>
-        <div><span>Розмір ралі</span><strong>0</strong></div>
-        <div><span>Разом</span><strong>0</strong></div>
-        <div><span>Вільне місце</span><strong>0</strong></div>
+        <div><span data-i18n="captain_march">Марш капітана</span><strong>0</strong></div>
+        <div><span data-i18n="rally_size">Розмір ралі</span><strong>0</strong></div>
+        <div><span data-i18n="total_sum">Разом</span><strong>0</strong></div>
+        <div><span data-i18n="free_space">Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
-        <span>Автозаповнення:</span>
-        <span class="quota-summary">Ліміти маршу за тірами: авто</span>
-        <span class="quota-max">Макс. помічників: 29</span>
+        <span data-i18n="auto_fill">Автозаповнення</span><span aria-hidden="true">:</span>
+        <span class="quota-summary"><span data-i18n="tier_march_limits">Ліміти маршу за тірами</span>: <span data-i18n="auto_tier_limits">авто</span></span>
+        <span class="quota-max"><span data-i18n="max_helpers">Макс. помічників</span>: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
         <table class="mini-table">
           <thead>
             <tr>
-              <th>Гравець</th>
-              <th>Альянс</th>
-              <th>Тір</th>
-              <th>Марш</th>
+              <th data-i18n="player">Гравець</th>
+              <th data-i18n="alliance">Альянс</th>
+              <th data-i18n="tier">Тір</th>
+              <th data-i18n="march">Марш</th>
               <th class="edit-col">✎</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">Помічників ще не призначено</td>
+              <td class="muted" colspan="5" data-i18n="helpers_not_assigned">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>
@@ -756,13 +753,13 @@
     <div id="partials-modals-root">
   <!-- SETTINGS MODAL (CSS only via :target) -->
   <section
-    aria-label="Налаштування та імпорт"
+    aria-label="Налаштування та імпорт" data-i18n-aria-label="settings_import"
     class="modal"
     data-modal="settings"
     id="settings-modal"
   >
     <a
-      aria-label="Закрити"
+      aria-label="Закрити" data-i18n-aria-label="close_menu"
       class="modal-backdrop"
       data-close-modal=""
       href="#top"
@@ -771,13 +768,11 @@
     <div aria-modal="true" class="modal-card" role="dialog">
       <div class="modal-head">
         <div>
-          <h2>Налаштування / Імпорт</h2>
-          <p class="muted">
-            Імпорт таблиці та налаштування мапінгу колонок
-          </p>
+          <h2 data-i18n="settings_import">Налаштування / Імпорт</h2>
+          <p class="muted" data-i18n="settings_import_subtitle">Завантаж список гравців, звір колонки й підготуй сайт до розподілу по турелях.</p>
         </div>
         <a
-          aria-label="Закрити"
+          aria-label="Закрити" data-i18n-aria-label="close_menu"
           class="btn btn-icon"
           data-close-modal=""
           href="#top"
@@ -789,16 +784,16 @@
         <section class="panel subpanel import-source-panel">
           <div class="mapping-section-head">
             <div>
-              <h3>1. Джерело імпорту</h3>
-              <p class="mapping-section-note">Завантаж файл або встав публічне CSV-посилання.</p>
+              <h3 data-i18n="import_source_title">1. Звідки взяти список гравців</h3>
+              <p class="mapping-section-note" data-i18n="import_source_note">Завантаж файл або встав публічне посилання на таблицю.</p>
             </div>
           </div>
           <div class="stack import-source-stack">
             <div class="import-source-grid">
               <label class="file-drop import-source-card import-upload-card">
-                <span class="import-card-kicker">Файл</span>
-                <span class="drop-title">Завантажити CSV / Excel</span>
-                <span class="muted">CSV, XLSX, XLS, TXT. Найшвидший спосіб імпорту таблиці.</span>
+                <span class="import-card-kicker" data-i18n="import_source_file">Файл</span>
+                <span class="drop-title" data-i18n="import_upload_title">Завантажити CSV / Excel</span>
+                <span class="muted" data-i18n="import_upload_desc">Підтримуються CSV, XLSX, XLS і TXT. Це найзручніший спосіб швидко додати таблицю.</span>
                 <input
                   accept=".csv,.xlsx,.xls,.txt"
                   id="fileInputMock"
@@ -807,33 +802,33 @@
               </label>
 
               <label class="import-source-card import-url-card">
-                <span class="import-card-kicker">Посилання</span>
-                <span class="drop-title">Google Sheets / CSV посилання</span>
-                <span class="muted">Працює з публічним CSV export або відкритим CSV-посиланням Google Sheets.</span>
+                <span class="import-card-kicker" data-i18n="import_source_link">Посилання</span>
+                <span class="drop-title" data-i18n="import_url_title">Google Sheets / CSV посилання</span>
+                <span class="muted" data-i18n="import_url_desc">Працює з публічним CSV export або відкритим CSV-посиланням із Google Sheets.</span>
                 <input id="urlInputMock" placeholder="https://..." type="url" />
               </label>
             </div>
 
             <div class="import-tools-row import-tools-row-main">
-              <button class="btn btn-sm" id="detectColumnsMockBtn" type="button">
-                Визначити колонки
+              <button class="btn btn-sm" id="detectColumnsMockBtn" type="button" data-i18n="detect_columns">
+                Знайти колонки
               </button>
-              <button class="btn btn-sm" id="loadUrlMockBtn" type="button">
-                Завантажити URL
+              <button class="btn btn-sm" id="loadUrlMockBtn" type="button" data-i18n="load_url">
+                Завантажити посилання
               </button>
             </div>
 
             <div class="import-status-grid">
               <div class="import-status-card">
-                <div class="import-status-title">Поточне джерело</div>
-                <div class="muted small" id="importLoadedInfo">
-                  Файл ще не завантажено.
+                <div class="import-status-title" data-i18n="current_source">Поточне джерело</div>
+                <div class="muted small" id="importLoadedInfo" data-i18n="file_not_loaded">
+                  Файл або посилання ще не завантажено.
                 </div>
               </div>
               <div class="import-status-card">
-                <div class="import-status-title">Статус</div>
-                <div class="muted small" id="importStatusInfo">
-                  Завантаж файл або посилання, визнач колонки, застосуй імпорт.
+                <div class="import-status-title" data-i18n="import_status_title">Статус імпорту</div>
+                <div class="muted small" id="importStatusInfo" data-i18n="import_status_hint">
+                  Завантаж джерело, перевір колонки й натисни «Застосувати імпорт».
                 </div>
               </div>
             </div>
@@ -844,6 +839,7 @@
                   class="btn btn-primary"
                   id="applyImportMockBtn"
                   type="button"
+                  data-i18n="apply_import"
                 >
                   Застосувати імпорт
                 </button>
@@ -855,11 +851,11 @@
         <section class="panel subpanel">
           <div class="mapping-section-head">
             <div>
-              <h3>2. Обов'язкові колонки</h3>
-              <p class="mapping-section-note">Ім’я гравця, тип військ, тір, розмір маршу, розмір групової атаки, альянс, готовність бути капітаном, доступність по зміні.</p>
+              <h3 data-i18n="required_columns_title">2. Обов’язкові колонки</h3>
+              <p class="mapping-section-note" data-i18n="required_columns_note">Ім’я гравця, тип військ, тір, розмір маршу, розмір групової атаки, альянс, готовність бути капітаном і доступність по змінах.</p>
             </div>
             <div class="mapping-section-head-actions">
-              <button class="btn btn-sm btn-ghost" data-save-import-template="1" type="button">Зберегти шаблон</button>
+              <button class="btn btn-sm btn-ghost" data-save-import-template="1" type="button" data-i18n="save_template">Зберегти шаблон</button>
             </div>
           </div>
           <div class="stack mapping-grid-2" id="requiredMappingContainer"></div>
@@ -868,11 +864,11 @@
         <section class="panel subpanel">
           <div class="mapping-section-head">
             <div>
-              <h3>3. Додаткові колонки</h3>
-              <p class="mapping-section-note">Рівень лігва, резервний тип військ: боєць / наїздник / стрілець та твої власні додаткові колонки.</p>
+              <h3 data-i18n="optional_columns_title">3. Додаткові колонки</h3>
+              <p class="mapping-section-note" data-i18n="optional_columns_note">Рівень лігва, резервний тип військ і будь-які твої власні додаткові поля.</p>
             </div>
             <div class="mapping-section-head-actions">
-              <button class="btn btn-sm btn-ghost" data-save-import-template="1" type="button">Зберегти шаблон</button>
+              <button class="btn btn-sm btn-ghost" data-save-import-template="1" type="button" data-i18n="save_template">Зберегти шаблон</button>
             </div>
           </div>
           <div
@@ -884,8 +880,8 @@
         <section class="panel subpanel">
           <div class="mapping-section-head">
             <div>
-              <h3>4. Видимі колонки</h3>
-              <p class="mapping-section-note">Обери, які додаткові колонки треба показувати в таблиці гравців при натисканні «Показати всі дані».</p>
+              <h3 data-i18n="visible_columns_title">4. Які дані показувати в таблиці</h3>
+              <p class="mapping-section-note" data-i18n="visible_columns_note">Обери, які додаткові колонки бачити в таблиці гравців після натискання «Показати всі дані».</p>
             </div>
           </div>
           <div
@@ -896,7 +892,7 @@
                         <button
               class="btn btn-sm"
               id="saveVisibleColumnsMockBtn"
-              type="button"
+              type="button" data-i18n="save_visible_columns"
             >
               Зберегти видимі колонки
             </button>
@@ -906,22 +902,22 @@
         <section class="panel subpanel">
           <div class="mapping-section-head">
             <div>
-              <h3>5. Скидання даних</h3>
-              <p class="mapping-section-note">Обережно: ці дії скидають збережені налаштування або дані таблиць.</p>
+              <h3 data-i18n="reset_data_title">5. Скидання даних</h3>
+              <p class="mapping-section-note" data-i18n="reset_data_note">Обережно: ці дії очищають збережені налаштування або дані таблиць.</p>
             </div>
           </div>
           <div class="stack reset-actions-grid">
-            <button class="btn btn-sm btn-danger-soft" id="resetAllStorageBtn" type="button">Повністю скинути LocalStorage</button>
-            <button class="btn btn-sm btn-ghost" id="resetColumnDataBtn" type="button">Скинути дані колонок</button>
-            <button class="btn btn-sm btn-ghost" id="resetTableDataBtn" type="button">Скинути дані таблиць</button>
+            <button class="btn btn-sm btn-danger-soft" id="resetAllStorageBtn" type="button" data-i18n="reset_storage">Повністю очистити LocalStorage</button>
+            <button class="btn btn-sm btn-ghost" id="resetColumnDataBtn" type="button" data-i18n="reset_column_data">Скинути дані колонок</button>
+            <button class="btn btn-sm btn-ghost" id="resetTableDataBtn" type="button" data-i18n="reset_table_data">Скинути дані таблиць</button>
           </div>
         </section>
 
       </div>
 
       <div class="modal-foot">
-        <div class="muted">
-          Підтримуються CSV/XLSX та публічне CSV-посилання Google Sheets.
+        <div class="muted" data-i18n="import_footer_note">
+          Підтримуються CSV/XLSX і публічні CSV-посилання з Google Sheets.
         </div>
       </div>
     </div>
@@ -929,13 +925,13 @@
 
   <!-- FINAL BOARD MODAL (CSS only preview) -->
   <section
-    aria-label="Фінальний план"
+    aria-label="Фінальний план" data-i18n-aria-label="final_plan"
     class="modal board-modal"
     data-modal="board"
     id="board-modal"
   >
     <a
-      aria-label="Закрити"
+      aria-label="Закрити" data-i18n-aria-label="close_menu"
       class="modal-backdrop"
       data-close-modal=""
       href="#top"
@@ -944,11 +940,8 @@
     <div aria-modal="true" class="modal-card board-card" role="dialog">
       <div class="modal-head">
         <div>
-          <h2>Фінальний план</h2>
-          <p class="muted">
-            Вигляд для офіцерів / скріншота / PDF. Експорт PNG/PDF працює через
-            JS.
-          </p>
+          <h2 data-i18n="final_plan">Фінальний план</h2>
+          <p class="muted" data-i18n="board_subtitle">Перегляд для офіцерів: зручно показати фінальний план, зробити скрін або поділитися ним.</p>
         </div>
 
         <div class="row gap wrap board-head-actions">
@@ -957,18 +950,18 @@
               class="btn btn-sm board-shift-tab"
               data-shift-tab="shift1"
               type="button"
-            >Зміна 1</button>
+             data-i18n="shift1">Зміна 1</button>
             <button
               class="btn btn-sm board-shift-tab active"
               data-shift-tab="shift2"
               type="button"
-            >Зміна 2</button>
+             data-i18n="shift2">Зміна 2</button>
           </div>
 
-          <button class="btn btn-sm" id="exportPngBtn" type="button">
-            Експорт PNG
+          <button class="btn btn-sm" id="exportPngBtn" type="button" data-i18n="export_png">
+            Завантажити PNG
           </button>
-          <button class="btn btn-sm" id="shareBoardBtn" type="button">
+          <button class="btn btn-sm" id="shareBoardBtn" type="button" data-i18n="final_plan_share">
             Поділитися
           </button>
           <a class="btn btn-icon" data-close-modal="" href="#top">✕</a>
@@ -976,63 +969,63 @@
       </div>
 
       <div class="board-sheet">
-        <div class="board-title" id="boardTitle">
+        <div class="board-title" id="boardTitle" data-i18n="board_title_shift2">
           Зміна 2 / Друга половина
         </div>
 
         <div class="board-grid">
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Техно-Центр</h4>
-              <div class="is-auto board-sub">Тип визначається капітаном</div>
+              <h4 data-i18n="hub">Техно-Центр</h4>
+              <div class="is-auto board-sub" data-i18n="type_defined_by_captain">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">Немає призначених гравців</li>
+              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
             </ul>
           </section>
 
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Північна турель</h4>
-              <div class="is-auto board-sub">Тип визначається капітаном</div>
+              <h4 data-i18n="north_turret">Північна турель</h4>
+              <div class="is-auto board-sub" data-i18n="type_defined_by_captain">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">Немає призначених гравців</li>
+              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
             </ul>
           </section>
 
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Західна турель</h4>
-              <div class="is-auto board-sub">Тип визначається капітаном</div>
+              <h4 data-i18n="west_turret">Західна турель</h4>
+              <div class="is-auto board-sub" data-i18n="type_defined_by_captain">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">Немає призначених гравців</li>
+              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
             </ul>
           </section>
 
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Східна турель</h4>
-              <div class="is-auto board-sub">Тип визначається капітаном</div>
+              <h4 data-i18n="east_turret">Східна турель</h4>
+              <div class="is-auto board-sub" data-i18n="type_defined_by_captain">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">Немає призначених гравців</li>
+              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
             </ul>
           </section>
 
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Південна турель</h4>
-              <div class="is-auto board-sub">Тип визначається капітаном</div>
+              <h4 data-i18n="south_turret">Південна турель</h4>
+              <div class="is-auto board-sub" data-i18n="type_defined_by_captain">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
-              <li class="empty-row">Немає призначених гравців</li>
+              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
             </ul>
           </section>
         </div>
@@ -1042,12 +1035,12 @@
 
   <!-- TOWER CALCULATOR MODAL (moved from JS ensureTowerCalcModal) -->
   <section
-    aria-label="Розподіл по турелях"
+    aria-label="Розподіл по турелях" data-i18n-aria-label="tower_planning"
     class="modal tower-calc-modal"
     id="towerCalcModal"
   >
     <a
-      aria-label="Закрити"
+      aria-label="Закрити" data-i18n-aria-label="close_menu"
       class="modal-backdrop"
       href="#top"
       data-close-modal=""
@@ -1056,13 +1049,11 @@
     <div class="modal-card" role="dialog" aria-modal="true">
       <div class="modal-head">
         <div>
-          <h2 style="margin: 0">Розподіл по турелях</h2>
-          <p class="muted" style="margin: 4px 0 0">
-            Тут ти готуєш склад для двох змін: розподіляєш гравців по турелях, перевіряєш резерв і формуєш фінальний план для альянсу.
-          </p>
+          <h2 style="margin: 0" data-i18n="tower_planning">Розподіл по турелях</h2>
+          <p class="muted" style="margin: 4px 0 0" data-i18n="calc_modal_subtitle">Тут ти готуєш склад для двох змін: розподіляєш гравців по турелях, перевіряєш резерв і збираєш фінальний план.</p>
         </div>
         <a
-          aria-label="Закрити"
+          aria-label="Закрити" data-i18n-aria-label="close_menu"
           class="btn btn-icon"
           href="#top"
           data-close-modal=""
@@ -1073,13 +1064,14 @@
       <div class="modal-grid" style="grid-template-columns: 1fr; gap: 10px">
         <section class="panel subpanel" id="towerCalcMainTabsWrap">
           <div class="tower-calc-main-tabs" id="towerCalcMainTabs">
-            <button class="btn btn-sm" type="button" data-calc-main-tab="setup">
+            <button class="btn btn-sm" type="button" data-calc-main-tab="setup" data-i18n="settings">
               Налаштування
             </button>
             <button
               class="btn btn-sm"
               type="button"
               data-calc-main-tab="towers"
+              data-i18n="tower_settings"
             >
               Налаштування турелей
             </button>
@@ -1087,6 +1079,7 @@
               class="btn btn-sm"
               type="button"
               data-calc-main-tab="overflow"
+              data-i18n="player_status"
             >
               Статус гравців
             </button>
@@ -1094,6 +1087,7 @@
               class="btn btn-sm"
               type="button"
               data-calc-main-tab="preview"
+              data-i18n="final_plan"
             >
               Фінальний план
             </button>
@@ -1118,16 +1112,18 @@
                   class="btn btn-sm"
                   type="button"
                   id="towerCalcLoadCaptainsBtn"
+                  data-i18n="load_captains_from_turrets"
                 >
-                  Підтягнути капітанів з турелей
+                  Підтягнути капітанів із турелей
                 </button>
-                <button class="btn btn-sm" type="button" id="towerCalcFitBtn">
+                <button class="btn btn-sm" type="button" id="towerCalcFitBtn" data-i18n="calculate">
                   Порахувати
                 </button>
                 <button
                   class="btn btn-sm"
                   type="button"
                   id="towerCalcApplyToTowersBtn"
+                  data-i18n="prepare_limits_for_turrets"
                 >
                   Підготувати ліміти для турелей
                 </button>
@@ -1135,6 +1131,7 @@
                   class="btn btn-sm"
                   type="button"
                   id="towerCalcQuickApplyBtn"
+                  data-i18n="auto_fill_turrets"
                 >
                   Автоматично заповнити турелі
                 </button>
@@ -1143,20 +1140,18 @@
                 class="tower-calc-controls muted small"
                 style="margin-top: 2px"
               >
-                <label
-                  >Режим
+                <label><span data-i18n="mode">Режим</span>
                   <select id="towerCalcModeUi" style="min-width: 130px">
-                    <option value="assisted">З підказками</option>
-                    <option value="auto">Авто</option>
-                    <option value="manual">Вручну</option>
+                    <option value="assisted" data-i18n="assisted_mode">З підказками</option>
+                    <option value="auto" data-i18n="auto_mode">Авто</option>
+                    <option value="manual" data-i18n="manual_mode">Вручну</option>
                   </select>
                 </label>
-                <label
-                  >Застосування
+                <label><span data-i18n="apply_mode">Застосування</span>
                   <select id="towerCalcApplyModeUi" style="min-width: 160px">
-                    <option value="topup">Лише дозаповнення</option>
-                    <option value="empty">Лише порожні</option>
-                    <option value="rebalance">Перерозподілити все</option>
+                    <option value="topup" data-i18n="topup_only">Лише дозаповнення</option>
+                    <option value="empty" data-i18n="empty_only">Лише порожні</option>
+                    <option value="rebalance" data-i18n="rebalance_all">Перерозподілити все</option>
                   </select>
                 </label>
                 <span class="muted"
@@ -1164,7 +1159,7 @@
                 >
               </div>
               <details class="tower-calc-advanced" id="towerCalcAdvanced">
-                <summary>Додатково</summary>
+                <summary data-i18n="advanced">Додатково</summary>
                 <div class="inner">
                   <div
                     class="tower-calc-controls"
@@ -1177,13 +1172,12 @@
                   >
                     <label
                       ><input type="checkbox" id="towerCalcBoth50" />
-                      Автобаланс гравців «Обидві»</label
+                      <span data-i18n="auto_balance_both">Автобаланс гравців «Обидві»</span></label
                     >
                     <label
-                      ><input type="checkbox" id="towerCalcMinHelpersOn" /> Мінімум гравців на турель</label
+                      ><input type="checkbox" id="towerCalcMinHelpersOn" /> <span data-i18n="min_players_per_turret">Мінімум гравців на турель</span></label
                     >
-                    <label
-                      >Кількість
+                    <label><span data-i18n="quantity">Кількість</span>
                       <input
                         id="towerCalcMinHelpersCount"
                         type="number"
@@ -1195,12 +1189,13 @@
                     /></label>
                     <label
                       ><input type="checkbox" id="towerCalcTierAuto" checked />
-                      Авто-ліміт тіру</label
+                      <span data-i18n="auto_tier_limit">Авто-ліміт тіру</span></label
                     >
                     <button
                       class="btn btn-sm"
                       type="button"
                       id="towerCalcApplyAndAssignBtn"
+                      data-i18n="apply_and_assign_players"
                     >
                       Застосувати й розставити гравців по турелях
                     </button>
@@ -1209,12 +1204,13 @@
                       type="button"
                       id="towerCalcRecalcBtn"
                       style="display: none"
+                      data-i18n="recalc_composition"
                     >
                       Перерахувати
                     </button>
                   </div>
                   <div class="muted small" style="margin-top: 8px">
-                    Ліміт маршу за тіром (на 1 гравця):
+                    <span data-i18n="tier_march_limit_single">Ліміт маршу за тіром (на 1 гравця):</span>
                     <span
                       style="
                         display: inline-flex;
@@ -1281,7 +1277,7 @@
                     </span>
                   </div>
                   <div class="muted small" style="margin-top: 6px">
-                    Порада: спочатку порахуй склад, потім підготуй ліміти для турелей або одразу запусти автозаповнення.
+                    <span data-i18n="calc_tip_text">Порада: спочатку порахуй склад, потім підготуй ліміти для турелей або одразу запусти автозаповнення.</span>
                   </div>
                 </div>
               </details>
@@ -1289,28 +1285,28 @@
               <div id="towerCalcShiftBalance" class="tower-calc-shift-balance">
                 <div class="tower-calc-shift-balance-head">
                   <div class="muted small">
-                    <strong>Статистика змін</strong>
+                    <strong data-i18n="shift_stats">Статистика змін</strong>
                   </div>
                   <div class="muted small" id="towerCalcShiftCountsLine"></div>
                 </div>
 
                 <div class="tower-calc-shift-cards">
                   <div class="tower-calc-shift-card">
-                    <span>Зміна 1</span>
+                    <span data-i18n="shift1">Зміна 1</span>
                     <strong id="tcShift1Count">0</strong>
                     <div class="muted small" id="tcShift1Roles">
                       F / R / S: 0 / 0 / 0
                     </div>
                   </div>
                   <div class="tower-calc-shift-card">
-                    <span>Зміна 2</span>
+                    <span data-i18n="shift2">Зміна 2</span>
                     <strong id="tcShift2Count">0</strong>
                     <div class="muted small" id="tcShift2Roles">
                       F / R / S: 0 / 0 / 0
                     </div>
                   </div>
                   <div class="tower-calc-shift-card">
-                    <span>Обидві</span>
+                    <span data-i18n="both">Обидві</span>
                     <strong id="tcBothCount">0</strong>
                     <div class="muted small" id="tcBothRoles">
                       F / R / S: 0 / 0 / 0
@@ -1320,26 +1316,27 @@
 
                 <div class="tower-calc-shift-controls">
                   <div class="tower-calc-shift-controls-left">
-                    <label
-                      >Ліміт зміни 1
+                    <label>
+                      <span data-i18n="shift1_limit">Ліміт зміни 1</span>
                       <input id="shiftLimitS1" type="number" min="0" max="100" value="100" />
                     </label>
-                    <label
-                      >Ліміт зміни 2
+                    <label>
+                      <span data-i18n="shift2_limit">Ліміт зміни 2</span>
                       <input id="shiftLimitS2" type="number" min="0" max="100" value="100" />
                     </label>
-                    <label
-                      >Додати в зміну 1
+                    <label>
+                      <span data-i18n="add_to_shift1">Додати в зміну 1</span>
                       <input id="shiftAddS1" type="number" min="0" value="0" />
                     </label>
-                    <label
-                      >Додати в зміну 2
+                    <label>
+                      <span data-i18n="add_to_shift2">Додати в зміну 2</span>
                       <input id="shiftAddS2" type="number" min="0" value="0" />
                     </label>
                     <button
                       class="btn btn-sm"
                       id="applyShiftAddBtn"
                       type="button"
+                      data-i18n="apply"
                     >
                       Застосувати
                     </button>
@@ -1347,12 +1344,13 @@
                       class="btn btn-sm"
                       id="towerCalcRestoreImportShiftsBtn"
                       type="button"
+                      data-i18n="restore_from_import"
                     >
                       Відновити з імпорту
                     </button>
                     <label class="tower-calc-shift-force">
                       <input id="shiftSplitForceChk" type="checkbox" />
-                      Скинути поточний розподіл в «Обидві» перед застосуванням
+                      <span data-i18n="reset_both_before_apply">Скинути поточний розподіл в «Обидві» перед застосуванням</span>
                     </label>
                     <div class="muted small" id="towerCalcShiftLimitNote"></div>
                   </div>
@@ -1360,7 +1358,7 @@
                   <div class="tower-calc-shift-controls-right">
                     <label class="tower-calc-ignore-both">
                       <input id="towerCalcIgnoreBoth" type="checkbox" />
-                      Планувати зміни 1/2 без групи «Обидві»
+                      <span data-i18n="plan_without_both">Планувати зміни 1/2 без групи «Обидві»</span>
                     </label>
 
                     <div class="tower-calc-autoslots">
@@ -1368,6 +1366,7 @@
                         class="btn btn-sm"
                         id="towerCalcAutoFitBtn"
                         type="button"
+                        data-i18n="auto_fill_turrets"
                       >
                         Автозаповнення турелей
                       </button>
@@ -1398,10 +1397,10 @@
               align-items: center;
             "
           >
-            <button class="btn btn-sm" type="button" data-calc-tab="shift1">Зміна 1</button>
-            <button class="btn btn-sm" type="button" data-calc-tab="shift2">Зміна 2</button>
+            <button class="btn btn-sm" type="button" data-calc-tab="shift1" data-i18n="shift1">Зміна 1</button>
+            <button class="btn btn-sm" type="button" data-calc-tab="shift2" data-i18n="shift2">Зміна 2</button>
             <span class="muted small" style="margin-left: 6px"
-              >Показується тільки одна зміна, щоб план був зручнішим для перегляду</span
+               data-i18n="preview_single_shift_note">Показується тільки одна зміна, щоб план був зручнішим для перегляду</span
             >
           </div>
         </section>
@@ -1416,7 +1415,7 @@
           data-calc-main-panel="overflow"
         >
           <div class="tower-calc-placeholder muted small">
-            Натисни «Порахувати», щоб побачити, хто вже стоїть у турелях, хто в резерві та кого ще треба розподілити.
+            <span data-i18n="overflow_placeholder">Натисни «Порахувати», щоб побачити, хто вже стоїть у турелях, хто в резерві та кого ще треба розподілити.</span>
           </div>
         </section>
         <section

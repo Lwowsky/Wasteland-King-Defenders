@@ -3,6 +3,8 @@
   const PNS = window.PNS; if (!PNS) return;
   const MS = (PNS.ModalsShift = PNS.ModalsShift || {});
   const { state } = PNS; if (!state) return;
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
+  const roleLabel = (value, plural = false) => (typeof PNS.roleLabel === 'function' ? PNS.roleLabel(value, plural) : String(value || ''));
 
   function pickerManualFindPlayerByInput(modal) {
     const root = modal || document.getElementById('towerPickerModal');
@@ -54,7 +56,7 @@
     const marchEl = root.querySelector('#pickerManualMarch'); if (marchEl) marchEl.value = String(Number(player.march || 0) || '');
     const rallyEl = root.querySelector('#pickerManualRally'); if (rallyEl) rallyEl.value = String(Number(player.rally || 0) || '');
     const hint = root.querySelector('#pickerManualHint');
-    if (hint) hint.textContent = `Знайдено: ${player.name} · ${player.alliance || '—'} · ${player.role || '—'} · ${player.tier || '—'}`;
+    if (hint) hint.textContent = `${t('found_player', 'Знайдено')}: ${player.name} · ${player.alliance || '—'} · ${roleLabel(player.role || '') || '—'} · ${player.tier || '—'}`;
     return true;
   }
 
@@ -77,8 +79,8 @@
     const hint = root?.querySelector?.('#pickerManualHint');
     if (hint) {
       if (!matches.length) hint.textContent = '';
-      else if (matches.length === 1) hint.textContent = `Натисни Enter або вибери зі списку: ${matches[0].name}`;
-      else hint.textContent = `Знайдено кілька (${matches.length}) — вибери точний нік зі списку.`;
+      else if (matches.length === 1) hint.textContent = `${t('press_enter_or_choose', 'Натисни Enter або вибери зі списку')}: ${matches[0].name}`;
+      else hint.textContent = `${t('multiple_matches_choose_exact', 'Знайдено кілька')} (${matches.length}) — ${t('choose_exact_nick', 'вибери точний нік зі списку')}.`;
     }
     return false;
   }
@@ -87,7 +89,7 @@
     try { PNS.savePlayersSnapshot?.(state.players); } catch {}
     try { PNS.ModalsShift?.saveCurrentShiftPlanSnapshot?.(); } catch {}
     try { PNS.saveTowersSnapshot?.(); } catch {}
-    try { PNS.setImportStatus?.(`Saved tower table${reason ? ` (${reason})` : ''}.`, 'good'); } catch {}
+    try { PNS.setImportStatus?.(`${t('saved_turret_table', 'Збережено таблицю турелі')}${reason ? ` (${reason})` : ''}.`, 'good'); } catch {}
   }
 
   function towerPickerScopeRoot(el) {
@@ -183,7 +185,7 @@ function syncPickerFlagsFromScope(root) {
         edit.dataset.forceAssignKind = assignKind || '';
         const sub = edit.querySelector('#tpeSubtitle');
         if (sub && !edit.dataset.playerId) {
-          sub.textContent = assignKind === 'captain' ? 'Новий капітан у турель' : 'Новий помічник у турель';
+          sub.textContent = assignKind === 'captain' ? t('new_captain_in_turret', 'Новий капітан у турель') : t('new_helper_in_turret', 'Новий помічник у турель');
         }
       }
       try { const em = document.getElementById('towerPlayerEditModal'); if (em) em.style.zIndex = '80000'; } catch {}
@@ -313,7 +315,7 @@ function syncPickerFlagsFromScope(root) {
         syncPickerFlagsFromScope(root);
         syncPickerRuleFromScope(baseId, root);
         const sel = root?.querySelector?.('#towerPickerCaptainSelect');
-        if (!sel?.value) { alert('Оберіть капітана'); return; }
+        if (!sel?.value) { alert(t('choose_captain_first', 'Оберіть капітана')); return; }
         try {
           const sk = towerPickerScopeShift(pickerSetCaptain);
           if (pickerSetCaptain.closest('#towerCalcModal') && MS.applyShiftFilter && String(state.activeShift || '') !== String(sk || '')) MS.applyShiftFilter(sk);
@@ -352,7 +354,7 @@ function syncPickerFlagsFromScope(root) {
         syncPickerFlagsFromScope(root);
         try { const sk = towerPickerScopeShift(pickerClrH); if (pickerClrH.closest('#towerCalcModal') && MS.applyShiftFilter && String(state.activeShift || '') !== String(sk || '')) MS.applyShiftFilter(sk); } catch {}
         try { PNS.clearBase?.(pickerClrH.dataset.pickerClearHelpers, true); } catch {}
-        saveTowerTableNow('очищення помічників');
+        saveTowerTableNow(t('helpers_cleared', 'очищення помічників'));
         setTimeout(() => { refreshTowerPickerScope(root); }, 40);
         return;
       }
@@ -365,7 +367,7 @@ function syncPickerFlagsFromScope(root) {
         syncPickerFlagsFromScope(root);
         try { const sk = towerPickerScopeShift(pickerClrB); if (pickerClrB.closest('#towerCalcModal') && MS.applyShiftFilter && String(state.activeShift || '') !== String(sk || '')) MS.applyShiftFilter(sk); } catch {}
         try { PNS.clearBase?.(pickerClrB.dataset.pickerClearBase, false); } catch {}
-        saveTowerTableNow('clear base');
+        saveTowerTableNow(t('turret_cleared', 'очищення турелі'));
         setTimeout(() => { refreshTowerPickerScope(root); }, 40);
         return;
       }
@@ -375,7 +377,7 @@ function syncPickerFlagsFromScope(root) {
         e.preventDefault();
         const root = towerPickerScopeRoot(pickerSaveBoard);
         setActiveTowerPickerScope(root);
-        saveTowerTableNow('manual');
+        saveTowerTableNow(t('saved_manually', 'вручну'));
         setTimeout(() => { refreshTowerPickerScope(root); }, 20);
         return;
       }
@@ -427,7 +429,7 @@ function syncPickerFlagsFromScope(root) {
         try { recalc = window.calcRecalculateTowerComposition?.(baseId, shiftKey) || null; } catch {}
         try {
           const free = Number(recalc?.free || 0) || 0;
-          PNS.setImportStatus?.(`Склад башні перераховано. Вільне місце: ${free.toLocaleString('en-US')}.`, 'good');
+          PNS.setImportStatus?.(`${t('turret_recalculated_free', 'Склад турелі перераховано. Вільне місце')}: ${free.toLocaleString('en-US')}.`, 'good');
         } catch {}
         setTimeout(() => { refreshTowerPickerScope(root); }, 40);
         return;
@@ -765,7 +767,7 @@ document.addEventListener('click', (e) => {
         try {
           const matches = pickerManualSearchMatches(root);
           const hint = root?.querySelector?.('#pickerManualHint');
-          if (hint) hint.textContent = matches.length > 1 ? `Знайдено кілька (${matches.length}) — вибери точний нік зі списку.` : (matches.length === 1 ? `Знайдено 1 — вибери зі списку / Enter` : '');
+          if (hint) hint.textContent = matches.length > 1 ? `${t('multiple_matches_choose_exact', 'Знайдено кілька')} (${matches.length}) — ${t('choose_exact_nick', 'вибери точний нік зі списку')}.` : (matches.length === 1 ? `${t('found_one_choose_enter', 'Знайдено 1 — вибери зі списку / Enter')}` : '');
         } catch {}
       }, 120);
     });
@@ -829,7 +831,7 @@ document.addEventListener('change', (e) => {
   function refreshTowerPickerLauncherUI() {
     try {
       const openBtn = document.getElementById('openTowerPickerBtn');
-      if (openBtn) openBtn.textContent = 'Налаштування турелей';
+      if (openBtn) openBtn.textContent = t('tower_settings', 'Налаштування турелей');
       const wrap = document.querySelector('.settings-focus-inline');
       if (wrap) wrap.style.display = 'none';
       const prev = document.getElementById('focusTowerPrevBtn');
@@ -921,6 +923,10 @@ document.addEventListener('change', (e) => {
     exposeLegacyPNSApi();
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scheduleResyncUIAfterSwap);
     else scheduleResyncUIAfterSwap();
+    setTimeout(() => {
+      try { PNS.restoreSessionStateNow?.({ soft: false }); } catch {}
+      try { window.PNSI18N?.apply?.(document); } catch {}
+    }, 80);
     document.addEventListener('htmx:afterSwap', scheduleResyncUIAfterSwap);
     document.addEventListener('htmx:afterSettle', scheduleResyncUIAfterSwap);
     document.addEventListener('pns:partials:loaded', scheduleResyncUIAfterSwap);

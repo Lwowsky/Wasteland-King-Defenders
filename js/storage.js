@@ -242,6 +242,55 @@
     try { localStorage.removeItem(KEY_PLAYERS_SNAPSHOT); } catch {}
   }
 
+  function restoreBasesFromPlayerAssignments() {
+    if (!Array.isArray(state?.bases) || !state.bases.length) return false;
+    if (!Array.isArray(state?.players) || !state.players.length) return false;
+
+    const baseMap = state.baseById instanceof Map && state.baseById.size
+      ? state.baseById
+      : new Map((state.bases || []).map((b) => [String(b?.id || ''), b]));
+    state.baseById = baseMap;
+
+    (state.bases || []).forEach((b) => {
+      if (!b) return;
+      b.captainId = null;
+      b.helperIds = [];
+      b.role = null;
+      try { PNS.applyBaseRoleUI?.(b, null); } catch {}
+    });
+
+    let restoredAny = false;
+    (state.players || []).forEach((player) => {
+      if (!player?.assignment?.baseId) return;
+      const base = baseMap.get(String(player.assignment.baseId || ''));
+      if (!base) return;
+      const pid = String(player.id || '');
+      if (!pid) return;
+      restoredAny = true;
+      if (player.assignment.kind === 'captain') {
+        base.captainId = pid;
+        base.role = player.role || base.role || null;
+        try { PNS.applyBaseRoleUI?.(base, player.role || null); } catch {}
+      } else {
+        if (!Array.isArray(base.helperIds)) base.helperIds = [];
+        if (!base.helperIds.includes(pid)) base.helperIds.push(pid);
+      }
+    });
+
+    (state.bases || []).forEach((b) => {
+      if (!b) return;
+      if (!Array.isArray(b.helperIds)) b.helperIds = [];
+      b.helperIds = Array.from(new Set(b.helperIds.filter(Boolean)));
+      if (b.captainId && !b.role) {
+        const captain = state.playerById?.get?.(b.captainId);
+        if (captain?.role) b.role = captain.role;
+      }
+      try { PNS.applyBaseRoleUI?.(b, b.role || null); } catch {}
+    });
+
+    return restoredAny;
+  }
+
   // ===== Status helpers (swap-safe) =====
   function setImportStatus(msg, tone) {
     const el = resolveControl('importStatusInfo', 'importStatusInfo');
@@ -257,7 +306,7 @@
   function setImportLoadedInfo(msg) {
     const el = resolveControl('importLoadedInfo', 'importLoadedInfo');
     if (!el) return;
-    el.textContent = msg || 'Файл ще не завантажено.';
+    el.textContent = msg || ((typeof PNS?.t === 'function' ? PNS.t('file_not_loaded', 'Файл або посилання ще не завантажено.') : 'Файл або посилання ще не завантажено.'));
   }
 
   // expose
@@ -286,6 +335,7 @@
   PNS.savePlayersSnapshot = savePlayersSnapshot;
   PNS.loadPlayersSnapshot = loadPlayersSnapshot;
   PNS.clearPlayersSnapshot = clearPlayersSnapshot;
+  PNS.restoreBasesFromPlayerAssignments = restoreBasesFromPlayerAssignments;
 
   PNS.setImportStatus = setImportStatus;
   PNS.setImportLoadedInfo = setImportLoadedInfo;
@@ -478,6 +528,38 @@
     return true;
   }
 
+  let __persistTimer = 0;
+  function persistSessionStateSoon(delay = 40) {
+    try { clearTimeout(__persistTimer); } catch {}
+    __persistTimer = setTimeout(() => {
+      __persistTimer = 0;
+      try { saveAllPersistenceNow('auto'); } catch {}
+    }, Math.max(0, Number(delay) || 0));
+    return true;
+  }
+
+  function restoreSessionStateNow(opts = {}) {
+    let restored = false;
+    const targetShift = state.activeShift || 'shift1';
+    try { if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(targetShift); } catch {}
+    try {
+      if (typeof PNS.tryRestoreTowersSnapshot === 'function') {
+        restored = !!PNS.tryRestoreTowersSnapshot({ soft: !!opts.soft });
+      }
+    } catch {}
+    if (!restored) {
+      try { restored = !!PNS.restoreBasesFromPlayerAssignments?.(); } catch {}
+    }
+    try { PNS.ModalsShift?.saveCurrentShiftPlanSnapshot?.(); } catch {}
+    try { PNS.renderAll?.(); } catch {}
+    try { PNS.calcSyncCaptainsFromTowersIntoCalculator?.({ keepHelpers: true, render: false }); } catch {}
+    try { window.calcRenderInlineTowerSettings?.(document.getElementById('towerCalcModal')); } catch {}
+    try { window.calcRenderLiveFinalBoard?.(document.getElementById('towerCalcModal')); } catch {}
+    try { window.calcUpdateShiftStatsUI?.(document.getElementById('towerCalcModal')); } catch {}
+    try { PNS.refreshBaseCards?.(); } catch {}
+    return restored;
+  }
+
   // expose additive API
   PNS.getTowerMarchOverride = getTowerMarchOverride;
   PNS.setTowerMarchOverride = setTowerMarchOverride;
@@ -487,6 +569,8 @@
   PNS.saveTowersSnapshot = saveTowersSnapshot;
   PNS.loadTowersSnapshot = loadTowersSnapshot;
   PNS.saveAllPersistenceNow = saveAllPersistenceNow;
+  PNS.persistSessionStateSoon = persistSessionStateSoon;
+  PNS.restoreSessionStateNow = restoreSessionStateNow;
   PNS.tryRestoreTowersSnapshot = tryRestoreTowersSnapshot;
   PNS.clearTowersSnapshot = clearTowersSnapshot;
 })();

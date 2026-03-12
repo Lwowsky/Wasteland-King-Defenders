@@ -317,13 +317,13 @@
         const changes = [];
         if (beforeCaptain !== afterCaptain) changes.push("captain");
         if (beforeHelpers !== afterHelpers)
-          changes.push(`помічники ${beforeHelpers}→${afterHelpers}`);
+          changes.push(`${t('helpers_short', 'помічники')} ${beforeHelpers}→${afterHelpers}`);
         if (Number(tp?.shortageMarch || 0) > 0)
-          changes.push(`shortage ${fm(tp.shortageMarch)}`);
-        changes.push("limits");
+          changes.push(`${t('shortage', 'Нестача')} ${fm(tp.shortageMarch)}`);
+        changes.push(t('limits_short', 'ліміти'));
         rows.push({
-          shift: sk,
-          tower: String(slot.title || slot.baseId || `Турель ${i + 1}`),
+          shift: shiftLabel(sk),
+          tower: String(slot.title || slot.baseId || `${t('turret', 'Турель')} ${i + 1}`),
           beforeCaptain: beforeCaptain
             ? state.playerById?.get?.(beforeCaptain)?.name || beforeCaptain
             : "—",
@@ -339,7 +339,7 @@
       ? `
     <div class="helpers-table-wrap top-space" style="max-height:48vh;overflow:auto">
       <table class="mini-table tower-calc-tier-table">
-        <thead><tr><th>Зміна</th><th>Турель</th><th>Було (капітан/помічники)</th><th>Стане (капітан/помічники)</th><th>Використаний марш</th><th>Зміни</th></tr></thead>
+        <thead><tr><th>${t('shift', 'Зміна')}</th><th>${t('turret', 'Турель')}</th><th>${t('before_captain_helpers', 'Було (капітан/помічники)')}</th><th>${t('after_captain_helpers', 'Стане (капітан/помічники)')}</th><th>${t('used_march', 'Використано марш')}</th><th>${t('changes', 'Зміни')}</th></tr></thead>
         <tbody>
           ${rows
             .map(
@@ -356,7 +356,7 @@
         </tbody>
       </table>
     </div>`
-      : '<div class="tower-calc-placeholder muted small">Немає даних для preview.</div>';
+      : `<div class="tower-calc-placeholder muted small">${t('no_preview_data', 'Немає даних для preview.')}</div>`;
     let preview = out.querySelector?.("#towerCalcPreviewDiff");
     if (!preview) {
       preview = document.createElement("div");
@@ -1143,13 +1143,13 @@
         (tp?.notFitPlayers || []).forEach((p) => {
           const pid = String(p?.id || "");
           if (!pid) return;
-          detailsById.set(pid, { status: "Не вліз", sourceShift: sk });
+          detailsById.set(pid, { status: t('not_fit', 'Не вліз'), sourceShift: sk });
         });
         (tp?.partialPlayers || []).forEach((p) => {
           const pid = String(p?.id || "");
           if (!pid) return;
           detailsById.set(pid, {
-            status: `Частково ${fm(p?.sent || 0)} / ${fm(p?.full || 0)}`,
+            status: `${t('partial_short', 'частково')} ${fm(p?.sent || 0)} / ${fm(p?.full || 0)}`,
             sourceShift: sk,
           });
         });
@@ -1180,8 +1180,8 @@
         status:
           extra.status ||
           (shift === "both" && tc.ignoreBoth
-            ? "Група «Обидві» зараз не враховується"
-            : "Не використано"),
+            ? t('both_not_counted', 'Група «Обидві» зараз не враховується')
+            : t('not_used', 'Не використано')),
       });
     }
 
@@ -1201,7 +1201,7 @@
           ? `
         <div class="helpers-table-wrap top-space" style="max-height:26vh;overflow:auto">
           <table class="mini-table tower-calc-tier-table">
-            <thead><tr><th>Нік</th><th>Альянс</th><th>Роль</th><th>Тір</th><th>Марш</th><th>Статус</th><th>Дії</th></tr></thead>
+            <thead><tr><th>${t('nickname', 'Нік')}</th><th>${t('alliance', 'Альянс')}</th><th>${t('role', 'Роль')}</th><th>${t('tier', 'Тір')}</th><th>${t('march', 'Марш')}</th><th>${t('status', 'Статус')}</th><th>${t('actions', 'Дії')}</th></tr></thead>
             <tbody>
               ${rows
                 .map((r) => {
@@ -1221,9 +1221,9 @@
                   <td>${fm(r.march)}</td>
                   <td>${calcEsc(r.status || "")}</td>
                   <td>
-                    <button type="button" class="btn btn-xs" data-calc-set-player-shift="${calcEsc(r.playerId)}" data-target-shift="shift1"${disableS1}>→ Зміна 1</button>
-                    <button type="button" class="btn btn-xs" data-calc-set-player-shift="${calcEsc(r.playerId)}" data-target-shift="shift2"${disableS2}>→ Зміна 2</button>
-                    <button type="button" class="btn btn-xs" data-calc-set-player-shift="${calcEsc(r.playerId)}" data-target-shift="both">→ Обидві</button>
+                    <button type="button" class="btn btn-xs" data-calc-set-player-shift="${calcEsc(r.playerId)}" data-target-shift="shift1"${disableS1}>→ ${t('shift1', 'Зміна 1')}</button>
+                    <button type="button" class="btn btn-xs" data-calc-set-player-shift="${calcEsc(r.playerId)}" data-target-shift="shift2"${disableS2}>→ ${t('shift2', 'Зміна 2')}</button>
+                    <button type="button" class="btn btn-xs" data-calc-set-player-shift="${calcEsc(r.playerId)}" data-target-shift="both">→ ${t('both', 'Обидві')}</button>
                   </td>
                 </tr>`;
                 })
@@ -1231,16 +1231,16 @@
             </tbody>
           </table>
         </div>`
-          : '<div class="tower-calc-placeholder muted small">Порожньо</div>'
+          : `<div class="tower-calc-placeholder muted small">${t('empty_short', 'Порожньо')}</div>`
       }
     </section>`;
 
     out.innerHTML = `
-    <div class="muted small"><strong>Резерв і гравці поза турелями</strong> · Зміна 1: ${fm(groups.shift1.length)} · Зміна 2: ${fm(groups.shift2.length)} · Обидві: ${fm(groups.both.length)}</div>
-    ${section("shift1", "Зміна 1", groups.shift1, `гравців: ${fm(counts.shift1)} / ${fm(limits.shift1)}${counts.shift1 > limits.shift1 ? ` · понад ліміт: ${fm(counts.shift1 - limits.shift1)}` : ""}`)}
-    ${section("shift2", "Зміна 2", groups.shift2, `гравців: ${fm(counts.shift2)} / ${fm(limits.shift2)}${counts.shift2 > limits.shift2 ? ` · понад ліміт: ${fm(counts.shift2 - limits.shift2)}` : ""}`)}
-    ${section("both", "Обидві", groups.both, `гравців: ${fm(counts.both)}${tc.ignoreBoth ? " · зараз не враховуються в змінах 1 і 2" : ""}`)}
-    <div class="muted small top-space">Кнопки нижче одразу переводять гравця в потрібну зміну та запускають перерахунок.</div>`;
+    <div class="muted small"><strong>${t('reserve_and_outside', 'Резерв і гравці поза турелями')}</strong> · ${t('shift1', 'Зміна 1')}: ${fm(groups.shift1.length)} · ${t('shift2', 'Зміна 2')}: ${fm(groups.shift2.length)} · ${t('both', 'Обидві')}: ${fm(groups.both.length)}</div>
+    ${section("shift1", t('shift1', 'Зміна 1'), groups.shift1, `${t('players_short', 'гравців')}: ${fm(counts.shift1)} / ${fm(limits.shift1)}${counts.shift1 > limits.shift1 ? ` · ${t('over_limit', 'понад ліміт')}: ${fm(counts.shift1 - limits.shift1)}` : ""}`)}
+    ${section("shift2", t('shift2', 'Зміна 2'), groups.shift2, `${t('players_short', 'гравців')}: ${fm(counts.shift2)} / ${fm(limits.shift2)}${counts.shift2 > limits.shift2 ? ` · ${t('over_limit', 'понад ліміт')}: ${fm(counts.shift2 - limits.shift2)}` : ""}`)}
+    ${section("both", t('both', 'Обидві'), groups.both, `${t('players_short', 'гравців')}: ${fm(counts.both)}${tc.ignoreBoth ? ` · ${t('both_ignored_in_shifts', 'зараз не враховуються в змінах 1 і 2')}` : ""}`)}
+    <div class="muted small top-space">${t('shift_move_hint', 'Кнопки нижче одразу переводять гравця в потрібну зміну та запускають перерахунок.')}</div>`;
   }
 
   function calcNormalizeRegisteredShift(value) {
@@ -1339,15 +1339,15 @@
     setText("tcBothCount", s.both.total);
     setText(
       "tcShift1Roles",
-      `Стрільці / Бійці / Наїзники: ${s.shift1.shooter} / ${s.shift1.fighter} / ${s.shift1.rider}`,
+      `${t('shooter_plural', 'Стрільці')} / ${t('fighter_plural', 'Бійці')} / ${t('rider_plural', 'Наїзники')}: ${s.shift1.shooter} / ${s.shift1.fighter} / ${s.shift1.rider}`,
     );
     setText(
       "tcShift2Roles",
-      `Стрільці / Бійці / Наїзники: ${s.shift2.shooter} / ${s.shift2.fighter} / ${s.shift2.rider}`,
+      `${t('shooter_plural', 'Стрільці')} / ${t('fighter_plural', 'Бійці')} / ${t('rider_plural', 'Наїзники')}: ${s.shift2.shooter} / ${s.shift2.fighter} / ${s.shift2.rider}`,
     );
     setText(
       "tcBothRoles",
-      `Стрільці / Бійці / Наїзники: ${s.both.shooter} / ${s.both.fighter} / ${s.both.rider}`,
+      `${t('shooter_plural', 'Стрільці')} / ${t('fighter_plural', 'Бійці')} / ${t('rider_plural', 'Наїзники')}: ${s.both.shooter} / ${s.both.fighter} / ${s.both.rider}`,
     );
     setText("tcTotalCount", s.total);
 
@@ -1358,15 +1358,15 @@
     if (cards) cards.style.display = "none";
 
     const pieces = [
-      `Зміна 1: ${s.shift1.total}/${limits.shift1} (Стрільці/Бійці/Наїзники ${s.shift1.shooter}/${s.shift1.fighter}/${s.shift1.rider})`,
-      `Зміна 2: ${s.shift2.total}/${limits.shift2} (Стрільці/Бійці/Наїзники ${s.shift2.shooter}/${s.shift2.fighter}/${s.shift2.rider})`,
-      `Обидві: ${s.both.total} (Стрільці/Бійці/Наїзники ${s.both.shooter}/${s.both.fighter}/${s.both.rider})`,
+      `${t('shift1', 'Зміна 1')}: ${s.shift1.total}/${limits.shift1} (${t('shooter_plural', 'Стрільці')}/${t('fighter_plural', 'Бійці')}/${t('rider_plural', 'Наїзники')} ${s.shift1.shooter}/${s.shift1.fighter}/${s.shift1.rider})`,
+      `${t('shift2', 'Зміна 2')}: ${s.shift2.total}/${limits.shift2} (${t('shooter_plural', 'Стрільці')}/${t('fighter_plural', 'Бійці')}/${t('rider_plural', 'Наїзники')} ${s.shift2.shooter}/${s.shift2.fighter}/${s.shift2.rider})`,
+      `${t('both', 'Обидві')}: ${s.both.total} (${t('shooter_plural', 'Стрільці')}/${t('fighter_plural', 'Бійці')}/${t('rider_plural', 'Наїзники')} ${s.both.shooter}/${s.both.fighter}/${s.both.rider})`,
     ];
     if (s.shift1.total > limits.shift1)
-      pieces.push(`⚠ Зміна 1 понад ліміт на ${s.shift1.total - limits.shift1}`);
+      pieces.push(`⚠ ${t('shift1', 'Зміна 1')} ${t('over_limit', 'понад ліміт')} ${t('by_word', 'на')} ${s.shift1.total - limits.shift1}`);
     if (s.shift2.total > limits.shift2)
-      pieces.push(`⚠ Зміна 2 понад ліміт на ${s.shift2.total - limits.shift2}`);
-    pieces.push(`Усього: ${s.total}`);
+      pieces.push(`⚠ ${t('shift2', 'Зміна 2')} ${t('over_limit', 'понад ліміт')} ${t('by_word', 'на')} ${s.shift2.total - limits.shift2}`);
+    pieces.push(`${t('overall', 'Усього')}: ${s.total}`);
     setText("towerCalcShiftCountsLine", pieces.join(" · "));
 
     try {
@@ -1465,7 +1465,7 @@
     const tc = calcLoadStateFromLS();
     const pool = getCalcCaptainPool();
     const opt = (selectedId) =>
-      ['<option value="">— капітан —</option>']
+      [`<option value="">${calcEsc(t('captain_option_placeholder', '— капітан —'))}</option>`]
         .concat(
           pool.map((p) => {
             const role = roleNorm(p.role) || "";
@@ -1491,11 +1491,11 @@
         <div class="tower-calc-row" data-calc-row data-calc-shift="${shiftKey}" data-row-index="${idx}">
           <select data-calc-captain>${opt(r.captainId)}</select>
           <select data-calc-troop>
-            <option value="fighter" ${troop === "fighter" ? "selected" : ""}>Бійці</option>
-            <option value="rider" ${troop === "rider" ? "selected" : ""}>Наїзники</option>
-            <option value="shooter" ${troop === "shooter" ? "selected" : ""}>Стрільці</option>
+            <option value="fighter" ${troop === "fighter" ? "selected" : ""}>${calcEsc(t('fighter_plural', 'Бійці'))}</option>
+            <option value="rider" ${troop === "rider" ? "selected" : ""}>${calcEsc(t('rider_plural', 'Наїзники'))}</option>
+            <option value="shooter" ${troop === "shooter" ? "selected" : ""}>${calcEsc(t('shooter_plural', 'Стрільці'))}</option>
           </select>
-          <input data-calc-helpers type="number" min="0" placeholder="Гравці" value="${calcEsc(String(helpersVal))}" />
+          <input data-calc-helpers type="number" min="0" placeholder="${calcEsc(t('players_placeholder', 'Гравці'))}" value="${calcEsc(String(helpersVal))}" />
         </div>`;
         })
         .join("");
@@ -1643,7 +1643,7 @@
   function calcRecalculateTowerComposition(baseId, shiftKey) {
     const base = state.baseById?.get?.(String(baseId || ""));
     const sk = String(shiftKey || "shift1").toLowerCase() === "shift2" ? "shift2" : "shift1";
-    if (!base) return { ok: false, reason: "Башню не знайдено." };
+    if (!base) return { ok: false, reason: t('tower_not_found', 'Турель не знайдено.') };
 
     const stats = calcTowerStatsForShiftBase(base, sk);
     const helpers = Array.isArray(stats.helpers) ? stats.helpers.slice() : [];
@@ -1811,7 +1811,7 @@
         const playersCount =
           Number(done ? 1 : 0) + Number(stats.helpers.length || 0);
         const title = calcEsc(
-          String(base.title || base.id || `Турель ${idx + 1}`)
+          String(base.title || base.id || `${t('turret', 'Турель')} ${idx + 1}`)
             .split("/")[0]
             .trim(),
         );
@@ -1893,8 +1893,8 @@
         const themeCls = captain ? " " + roleKey + "-theme" : " is-auto";
         const titleShort = calcEsc(
           typeof window.PNS?.towerLabel === "function"
-            ? window.PNS.towerLabel(String(base.title || base.id || `Турель ${idx + 1}`))
-            : towerLabel(String(base.title || base.id || `Турель ${idx + 1}`)),
+            ? window.PNS.towerLabel(String(base.title || base.id || `${t('turret', 'Турель')} ${idx + 1}`))
+            : towerLabel(String(base.title || base.id || `${t('turret', 'Турель')} ${idx + 1}`)),
         );
         const rows = [];
         if (captain)
@@ -1973,7 +1973,7 @@
         : "shift2";
     const label = shiftLabel(shiftKey);
     try {
-      if (status) status.textContent = `Готуємо PNG · ${label}…`;
+      if (status) status.textContent = `${t('preparing_png', 'Готуємо PNG')} · ${label}…`;
       const canvas = await window.html2canvas(target, {
         backgroundColor: "#ffffff",
         scale: 2,
@@ -1985,7 +1985,7 @@
       document.body.appendChild(a);
       a.click();
       a.remove();
-      if (status) status.textContent = `PNG збережено · ${label}.`;
+      if (status) status.textContent = `${t('png_saved', 'PNG збережено')} · ${label}.`;
       return true;
     } catch (err) {
       console.error(err);
@@ -2011,7 +2011,7 @@
       return false;
     }
     try {
-      if (status) status.textContent = `Готуємо поширення · ${label}…`;
+      if (status) status.textContent = `${t('preparing_share', 'Готуємо поширення')} · ${label}…`;
       if (typeof window.html2canvas === "function") {
         const canvas = await window.html2canvas(target, {
           backgroundColor: "#ffffff",
@@ -2036,7 +2036,7 @@
                 text: `${t('final_plan', 'Фінальний план')} ${label}`,
                 files: [file],
               });
-              if (status) status.textContent = `Board поширено · ${label}.`;
+              if (status) status.textContent = `${t('board_shared', 'План поширено')} · ${label}.`;
               return true;
             }
           }
@@ -2049,7 +2049,7 @@
               new ClipboardItem({ "image/png": blob }),
             ]);
             if (status)
-              status.textContent = `PNG board скопійовано в буфер · ${label}.`;
+              status.textContent = `${t('board_copied_image', 'PNG план скопійовано в буфер')} · ${label}.`;
             return true;
           }
         }
@@ -2057,15 +2057,15 @@
       const boardUrl = location.href.split("#")[0] + "#board-modal";
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(boardUrl);
-        if (status) status.textContent = `Посилання скопійовано · ${label}.`;
+        if (status) status.textContent = `${t('link_copied', 'Посилання скопійовано')} · ${label}.`;
         return true;
       }
       alert(boardUrl);
-      if (status) status.textContent = `Посилання показано · ${label}.`;
+      if (status) status.textContent = `${t('link_shown', 'Посилання показано')} · ${label}.`;
       return true;
     } catch (err) {
       console.error(err);
-      if (status) status.textContent = "Не вдалося поширити board.";
+      if (status) status.textContent = t('share_board_failed', 'Не вдалося поширити фінальний план.');
       return false;
     }
   }
@@ -2534,15 +2534,15 @@
       let applySkipReason = "";
       if (towerLocked) {
         helpersWanted = 0;
-        applySkipReason = "турель заблокована";
+        applySkipReason = t('skipped_turret_locked', 'турель заблокована (пропущено)').replace(/ \(.*$/, "");
       } else if (applyMode === "empty") {
         if (existingHasCaptain || existingHelperCount > 0) {
           helpersWanted = 0;
-          applySkipReason = "не порожня";
+          applySkipReason = t('skipped_not_empty', 'не порожня (пропущено)').replace(/ \(.*$/, "");
         }
       } else if (applyMode === "topup") {
         helpersWanted = Math.max(0, helpersWantedRaw - existingHelperCount);
-        if (helpersWanted <= 0) applySkipReason = "вже заповнено";
+        if (helpersWanted <= 0) applySkipReason = t('already_filled', 'вже заповнено');
       }
 
       selectedCaptains.push({
@@ -2789,8 +2789,8 @@
           <td>${calcEsc(hp?.name || "—")}</td><td>${calcEsc(String(hp?.tier || ""))}</td><td>${calcEsc(typeof window.PNS?.roleLabel === "function" ? window.PNS.roleLabel(roleNorm(hp?.role) || "", false) : (roleNorm(hp?.role) || ""))}</td>
           <td>${fm(sent)}</td><td>${fm(full)}</td>
           <td>
-            ${pid ? `<button type="button" class="btn btn-xs" data-calc-toggle-exclude="${calcEsc(pid)}">${pref?.excluded ? "Повернути" : "Прибрати"}</button>` : ""}
-            ${pid && baseId ? `<button type="button" class="btn btn-xs" data-calc-toggle-lock-helper="${calcEsc(pid)}" data-base-id="${calcEsc(baseId)}">${String(pref?.lockedBaseId || "") === baseId ? "Відкріпити" : "Закріпити"}</button>` : ""}
+            ${pid ? `<button type="button" class="btn btn-xs" data-calc-toggle-exclude="${calcEsc(pid)}">${pref?.excluded ? t('return_action', 'Повернути') : t('remove_action', 'Прибрати')}</button>` : ""}
+            ${pid && baseId ? `<button type="button" class="btn btn-xs" data-calc-toggle-lock-helper="${calcEsc(pid)}" data-base-id="${calcEsc(baseId)}">${String(pref?.lockedBaseId || "") === baseId ? t('unpin_action', 'Відкріпити') : t('pin_action', 'Закріпити')}</button>` : ""}
           </td>
         </tr>`;
               })
@@ -2798,24 +2798,24 @@
             return `
       <div class="tower-calc-panel top-space" data-calc-tower-card data-shift="${calcEsc(result.shiftKey)}" data-base-id="${calcEsc(baseId)}">
         <div class="tower-calc-head">
-          <div><h4 style="margin:0">#${i + 1} ${calcEsc(tp.captain?.name || "—")}</h4><div class="muted small">${calcEsc(typeof window.PNS?.roleLabel === "function" ? window.PNS.roleLabel(tp.troop || "", true) : (tp.troop || ""))} · ${calcEsc(baseTitle || "Турель")}</div></div>
+          <div><h4 style="margin:0">#${i + 1} ${calcEsc(tp.captain?.name || "—")}</h4><div class="muted small">${calcEsc(typeof window.PNS?.roleLabel === "function" ? window.PNS.roleLabel(tp.troop || "", true) : (tp.troop || ""))} · ${calcEsc(baseTitle || t('turret', 'Турель'))}</div></div>
           <div class="tower-calc-controls">
-            ${baseId ? `<button type="button" class="btn btn-xs" data-calc-open-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey || "")}">Турель</button>` : ""}
-            ${baseId ? `<button type="button" class="btn btn-xs" data-calc-edit-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey || "")}">Редагувати гравців</button>` : ""}
-            ${baseId ? `<button type="button" class="btn btn-xs" data-calc-pick-overflow-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey || "")}">Взяти з резерву</button>` : ""}
-            ${baseId ? `<button type="button" class="btn btn-xs" data-calc-manual-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey || "")}">Додати вручну</button>` : ""}
-            ${baseId ? `<button type="button" class="btn btn-xs ${isLockedTower ? "btn-primary" : ""}" data-calc-lock-tower="${calcEsc(baseId)}">${isLockedTower ? "Розблокувати турель" : "Заблокувати турель"}</button>` : ""}
+            ${baseId ? `<button type="button" class="btn btn-xs" data-calc-open-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey || "")}">${t('turret', 'Турель')}</button>` : ""}
+            ${baseId ? `<button type="button" class="btn btn-xs" data-calc-edit-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey || "")}">${t('edit_players', 'Редагувати гравців')}</button>` : ""}
+            ${baseId ? `<button type="button" class="btn btn-xs" data-calc-pick-overflow-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey || "")}">${t('take_from_reserve', 'Взяти з резерву')}</button>` : ""}
+            ${baseId ? `<button type="button" class="btn btn-xs" data-calc-manual-base="${calcEsc(baseId)}" data-calc-shift="${calcEsc(result.shiftKey || "")}">${t('add_player_manually', 'Додати гравця вручну')}</button>` : ""}
+            ${baseId ? `<button type="button" class="btn btn-xs ${isLockedTower ? "btn-primary" : ""}" data-calc-lock-tower="${calcEsc(baseId)}">${isLockedTower ? t('unlock_turret', 'Розблокувати турель') : t('lock_turret', 'Заблокувати турель')}</button>` : ""}
           </div>
         </div>
         <div class="tower-calc-summary">
-          <div><span class="muted small">Гравці</span><strong>${fm(tp.helpersPlaced)} / ${fm(tp.helpersWanted)}${Number(tp.helpersWantedRaw || 0) !== Number(tp.helpersWanted || 0) ? ` (без обмежень: ${fm(tp.helpersWantedRaw)})` : ""}</strong></div>
-          <div><span class="muted small">Місткість турелі</span><strong>${fm(tp.towerCapacity || (Number(tp.rallySize || 0) || 0) + (Number(tp.captainMarch || 0) || 0))}</strong></div>
-          <div><span class="muted small">Використано / нестача</span><strong>${fm(tp.usedMarch)} / ${fm(tp.shortageMarch)}</strong></div>
-          <div><span class="muted small">Рекомендований мінімум за тіром</span><strong>${tp.suggestedTierText?.length ? calcEsc(tp.suggestedTierText.join(" · ")) : "—"}</strong></div>
+          <div><span class="muted small">${t('players', 'Гравці')}</span><strong>${fm(tp.helpersPlaced)} / ${fm(tp.helpersWanted)}${Number(tp.helpersWantedRaw || 0) !== Number(tp.helpersWanted || 0) ? ` (${t('without_limits', 'без обмежень')}: ${fm(tp.helpersWantedRaw)})` : ""}</strong></div>
+          <div><span class="muted small">${t('turret_capacity', 'Місткість турелі')}</span><strong>${fm(tp.towerCapacity || (Number(tp.rallySize || 0) || 0) + (Number(tp.captainMarch || 0) || 0))}</strong></div>
+          <div><span class="muted small">${t('used_shortage', 'Використано / нестача')}</span><strong>${fm(tp.usedMarch)} / ${fm(tp.shortageMarch)}</strong></div>
+          <div><span class="muted small">${t('recommended_min_tier', 'Рекомендований мінімум за тіром')}</span><strong>${tp.suggestedTierText?.length ? calcEsc(tp.suggestedTierText.join(" · ")) : "—"}</strong></div>
         </div>
         <div class="muted small top-space">${t('rally_size', 'Розмір ралі')} ${fm(tp.rallySize)} · ${t('captain_march', 'Марш капітана')} ${fm(tp.captainMarch)} · ${t('helper_slots', 'Місць для помічників')} ${fm(tp.helperCapacity)}</div>
         <div class="muted small">${tp.tierMix.length ? calcEsc(tp.tierMix.join(" · ")) : "—"}</div>
-        <div class="muted small">${tp.towerLocked ? "🔒 Турель заблокована — зміни не застосовано" : tp.applySkipReason ? calcEsc(`ℹ ${tp.applySkipReason}`) : (tp.lockedPicked || 0) > 0 ? calcEsc(`🔒 Закріплених помічників: ${tp.lockedPicked}`) : ""}</div>
+        <div class="muted small">${tp.towerLocked ? `🔒 ${t('turret_locked_not_applied', 'Турель заблокована — зміни не застосовано')}` : tp.applySkipReason ? calcEsc(`ℹ ${tp.applySkipReason}`) : (tp.lockedPicked || 0) > 0 ? calcEsc(`🔒 ${t('locked_helpers', 'Закріплених помічників')}: ${tp.lockedPicked}`) : ""}</div>
         <div class="muted small">${
           tp.notFitPlayers?.length || tp.partialPlayers?.length
             ? calcEsc(
@@ -2827,7 +2827,7 @@
                     .slice(0, 2)
                     .map(
                       (p) =>
-                        `${p.name || "—"} частково ${Number(p.sent || 0).toLocaleString("en-US")}/${Number(p.full || 0).toLocaleString("en-US")}`,
+                        `${p.name || "—"} ${t('partial_short', 'частково')} ${Number(p.sent || 0).toLocaleString("en-US")}/${Number(p.full || 0).toLocaleString("en-US")}`,
                     ),
                 ].join(" · "),
               ) +
@@ -2836,26 +2836,26 @@
               6
                 ? " …"
                 : "")
-            : "✅ Усі гравці розмістилися"
+            : `✅ ${t('all_players_placed', 'Усі гравці розмістилися')}`
         }</div>
-        ${(tp.pickedPlayers || []).length ? `<details class="top-space"><summary class="small">Відібрані гравці (${fm(tp.pickedPlayers.length)})</summary><div class="helpers-table-wrap top-space" style="max-height:180px;overflow:auto"><table class="mini-table tower-calc-tier-table"><thead><tr><th>Нік</th><th>Тір</th><th>Тип</th><th>Відправлено</th><th>Повний</th><th>Дії</th></tr></thead><tbody>${helperRows}</tbody></table></div></details>` : ""}
+        ${(tp.pickedPlayers || []).length ? `<details class="top-space"><summary class="small">${t('picked_players', 'Відібрані гравці')} (${fm(tp.pickedPlayers.length)})</summary><div class="helpers-table-wrap top-space" style="max-height:180px;overflow:auto"><table class="mini-table tower-calc-tier-table"><thead><tr><th>${t('nickname', 'Нік')}</th><th>${t('tier', 'Тір')}</th><th>${t('troop_type', 'Тип військ')}</th><th>${t('sent', 'Відправлено')}</th><th>${t('full', 'Повний')}</th><th>${t('actions', 'Дії')}</th></tr></thead><tbody>${helperRows}</tbody></table></div></details>` : ""}
       </div>`;
           })
           .join("")
-      : `<div class="tower-calc-placeholder muted small">Капітанів не вибрано</div>`;
+      : `<div class="tower-calc-placeholder muted small">${t('captains_not_selected', 'Капітанів не вибрано')}</div>`;
 
     mount.innerHTML = `
       <div class="tower-calc-summary">
-        <div><span class="muted small">Обрано капітанів</span><strong>${result.selectedCaptains.length}</strong></div>
-        <div><span class="muted small">Гравці (потрібно / поставлено)</span><strong>${fm(result.totalHelpersWanted)} / ${fm(result.totalHelpersPlaced)}${Number(result.totalHelpersWantedRaw || 0) !== Number(result.totalHelpersWanted || 0) ? ` (без обмежень: ${fm(result.totalHelpersWantedRaw)})` : ""}</strong></div>
-        <div><span class="muted small">Марш гравців</span><strong>${fm(result.totalSupplied)}</strong></div>
-        <div><span class="muted small">Нестача</span><strong>${fm(result.remaining)}</strong></div>
+        <div><span class="muted small">${t('selected_captains', 'Обрано капітанів')}</span><strong>${result.selectedCaptains.length}</strong></div>
+        <div><span class="muted small">${t('players_needed_placed', 'Гравці (потрібно / поставлено)')}</span><strong>${fm(result.totalHelpersWanted)} / ${fm(result.totalHelpersPlaced)}${Number(result.totalHelpersWantedRaw || 0) !== Number(result.totalHelpersWanted || 0) ? ` (${t('without_limits', 'без обмежень')}: ${fm(result.totalHelpersWantedRaw)})` : ""}</strong></div>
+        <div><span class="muted small">${t('player_march_total', 'Марш гравців')}</span><strong>${fm(result.totalSupplied)}</strong></div>
+        <div><span class="muted small">${t('shortage', 'Нестача')}</span><strong>${fm(result.remaining)}</strong></div>
       </div>
-      <div class="muted small">Місткість за типом військ (від капітанів): ${troopBadges}</div>
+      <div class="muted small">${t('capacity_by_troop', 'Місткість за типом військ (від капітанів)')}: ${troopBadges}</div>
       <div class="top-space">${cardsHtml}</div>
-      <details class="top-space"><summary class="small">Підсумок по тірах</summary>
+      <details class="top-space"><summary class="small">${t('tier_summary', 'Підсумок по тірах')}</summary>
         <table class="tower-calc-tier-table top-space">
-          <thead><tr><th>Тір</th><th>Доступно гравців</th><th>Доступний марш</th><th>Використано гравців</th><th>Використано марш</th></tr></thead>
+          <thead><tr><th>${t('tier', 'Тір')}</th><th>${t('available_players', 'Доступно гравців')}</th><th>${t('available_march', 'Доступний марш')}</th><th>${t('used_players', 'Використано гравців')}</th><th>${t('used_march', 'Використано марш')}</th></tr></thead>
           <tbody>
             ${tiers.map((t) => `<tr><td>${t}</td><td>${fm(result.mergedAvail[t].count)}</td><td>${fm(result.mergedAvail[t].march)}</td><td>${fm(result.mergedUsed[t].count)}</td><td>${fm(result.mergedUsed[t].march)}</td></tr>`).join("")}
           </tbody>
@@ -2925,7 +2925,7 @@
       return {
         index: idx,
         baseId: String(base?.id || ""),
-        title: String(base?.title || base?.id || `Турель ${idx + 1}`),
+        title: String(base?.title || base?.id || `${t('turret', 'Турель')} ${idx + 1}`),
         captainId,
         helperIds: helperIds.slice ? helperIds.slice() : [],
         helperCount: Array.isArray(helperIds) ? helperIds.length : 0,
@@ -3045,7 +3045,7 @@
     if (!towerPlansCount) {
       try {
         PNS.setImportStatus?.(
-          "Калькулятор не знайшов капітанів у турелях. Спочатку постав капітанів у турелях або натисни «Підтягнути капітанів з турелей».",
+          t('calc_no_captains_in_turrets', 'Калькулятор не знайшов капітанів у турелях. Спочатку постав капітанів у турелях або натисни «Підтягнути капітанів із турелей».'),
           "bad",
         );
       } catch {}
@@ -3063,7 +3063,7 @@
     if (!bases.length) {
       try {
         PNS.setImportStatus?.(
-          "Не знайдено турелей для застосування лімітів.",
+          t('calc_no_turrets_for_limits', 'Не знайдено турелей для застосування лімітів.'),
           "bad",
         );
       } catch {}
@@ -3157,10 +3157,10 @@
       modal.querySelector("#towerCalcPreviewStatus") ||
       modal.querySelector("#towerCalcGlobalOut");
     if (out)
-      out.textContent = `✅ Налаштування калькулятора застосовано до ${applied} tower settings.`;
+      out.textContent = t('calc_settings_applied_preview', '✅ Налаштування калькулятора застосовано до {count} налаштувань турелей.').replace(/\{count\}/g, String(applied));
     try {
       PNS.setImportStatus?.(
-        `Налаштування калькулятора застосовано до турелей (${applied}).`,
+        t('calc_settings_applied_status', 'Налаштування калькулятора застосовано до турелей ({count}).').replace(/\{count\}/g, String(applied)),
         "good",
       );
     } catch {}
@@ -3224,7 +3224,7 @@
 
           if (calcIsTowerLocked(baseId)) {
             warnings.push(
-              `${shiftKey} ${slot?.title || baseId}: турель заблокована (пропущено)`,
+              `${shiftLabel(shiftKey)} ${slot?.title || baseId}: ${t('skipped_turret_locked', 'турель заблокована (пропущено)')}`,
             );
             continue;
           }
@@ -3239,7 +3239,7 @@
             (preHasCaptain || preHelperIds.length > 0)
           ) {
             warnings.push(
-              `${shiftKey} ${slot?.title || baseId}: не порожня (пропущено)`,
+              `${shiftLabel(shiftKey)} ${slot?.title || baseId}: ${t('skipped_not_empty', 'не порожня (пропущено)')}`,
             );
             continue;
           }
@@ -3268,17 +3268,17 @@
                   assignedCaptains += 1;
                 else
                   warnings.push(
-                    `${shiftKey} ${slot?.title || baseId}: captain ${tp.captain?.name || tp.captain?.id} (not assigned)`,
+                    `${shiftLabel(shiftKey)} ${slot?.title || baseId}: ${t('captain_not_assigned', 'капітан {name} (не призначено)').replace(/\{name\}/g, String(tp.captain?.name || tp.captain?.id || ""))}`,
                   );
               } catch (err) {
                 warnings.push(
-                  `${shiftKey} ${slot?.title || baseId}: captain ${tp.captain?.name || tp.captain?.id} (${err?.message || "помилка призначення"})`,
+                  `${shiftLabel(shiftKey)} ${slot?.title || baseId}: ${t('captain', 'Капітан').toLowerCase()} ${tp.captain?.name || tp.captain?.id} (${err?.message || t('assignment_error', 'помилка призначення')})`,
                 );
               }
             }
           } else if (String(currentCaptainId) !== String(tp.captain.id || "")) {
             warnings.push(
-              `${shiftKey} ${slot?.title || baseId}: капітан залишився (режим ${applyMode})`,
+              `${shiftLabel(shiftKey)} ${slot?.title || baseId}: ${t('captain_kept_mode', 'капітан залишився (режим {mode})').replace(/\{mode\}/g, String(applyMode || ""))}`,
             );
           }
 
@@ -3333,11 +3333,11 @@
                   remainingToAdd = Math.max(0, remainingToAdd - 1);
               } else
                 warnings.push(
-                  `${shiftKey} ${slot?.title || baseId}: помічник ${hp?.name || pid} (не призначено / перевищено ліміт)`,
+                  `${shiftLabel(shiftKey)} ${slot?.title || baseId}: ${t('helper_not_assigned_or_limit', 'помічник {name} (не призначено / перевищено ліміт)').replace(/\{name\}/g, String(hp?.name || pid || ""))}`,
                 );
             } catch (err) {
               warnings.push(
-                `${shiftKey} ${slot?.title || baseId}: помічник ${hp?.name || pid} (${err?.message || "помилка призначення"})`,
+                `${shiftLabel(shiftKey)} ${slot?.title || baseId}: ${t('helper', 'Помічник').toLowerCase()} ${hp?.name || pid} (${err?.message || t('assignment_error', 'помилка призначення')})`,
               );
             }
           }
@@ -3377,10 +3377,10 @@
       modal.querySelector("#towerCalcGlobalOut");
     if (out) {
       out.textContent =
-        `✅ Перенесено у турелі: капітани ${assignedCaptains}, гравці ${assignedHelpers}.` +
+        `✅ ${t('moved_to_turrets', 'Перенесено у турелі')}: ${t('captains_word', 'капітанів')} ${assignedCaptains}, ${t('players_word', 'гравців')} ${assignedHelpers}.` +
         (suppressedAlerts
-          ? ` (приглушено popup-вікон: ${suppressedAlerts})`
-          : "");
+          ? ` (${t('popups_suppressed', 'приглушено popup-вікон')}: ${suppressedAlerts})`
+          : '');
       const notFitLines = [];
       try {
         for (const sk of ["shift1", "shift2"]) {
@@ -3400,9 +3400,9 @@
         }
       } catch {}
       if (notFitLines.length && out)
-        out.textContent += ` · Не влізли: ${notFitLines.length}`;
+        out.textContent += ` · ${t('not_fit_plural', 'Не влізли')}: ${notFitLines.length}`;
       if (warnings.length && out)
-        out.textContent += ` · Попередження: ${warnings.length}`;
+        out.textContent += ` · ${t('warnings', 'Попередження')}: ${warnings.length}`;
     }
     try {
       calcRenderLiveFinalBoard(modal);
@@ -3454,7 +3454,7 @@
     renderCalcShiftOut(shift2, modal.querySelector("#towerCalcOutShift2"));
     const mini = modal.querySelector("#towerCalcMiniSummary");
     if (mini) {
-      mini.textContent = `Зміна 1: ${Number(shift1.totalHelpersWanted || 0)}→${Number(shift1.totalHelpersPlaced || 0)} · Зміна 2: ${Number(shift2.totalHelpersWanted || 0)}→${Number(shift2.totalHelpersPlaced || 0)} · Обидві: ${Number(calcComputeShiftRoleStats().both.total || 0)} · Нестача: ${Number(Math.max(0, shift1.totalDemand + shift2.totalDemand - (shift1.totalSupplied + shift2.totalSupplied)) || 0).toLocaleString("en-US")}`;
+      mini.textContent = `${t('shift1', 'Зміна 1')}: ${Number(shift1.totalHelpersWanted || 0)}→${Number(shift1.totalHelpersPlaced || 0)} · ${t('shift2', 'Зміна 2')}: ${Number(shift2.totalHelpersWanted || 0)}→${Number(shift2.totalHelpersPlaced || 0)} · ${t('both', 'Обидві')}: ${Number(calcComputeShiftRoleStats().both.total || 0)} · ${t('shortage', 'Нестача')}: ${Number(Math.max(0, shift1.totalDemand + shift2.totalDemand - (shift1.totalSupplied + shift2.totalSupplied)) || 0).toLocaleString("en-US")}`;
     }
     try {
       calcRenderOverflowPanel(modal, state.towerCalcLastResults);
@@ -3519,9 +3519,9 @@
       if (!res?.ok) {
         const msg =
           res?.reason === "limit-shift1"
-            ? `Для зміни 1 вже встановлено ліміт ${res?.limits?.shift1 || 0}.`
+            ? t('shift_limit_already_set', 'Для {shift} вже встановлено ліміт {limit}.').replace(/\{shift\}/g, shiftLabel('shift1')).replace(/\{limit\}/g, String(res?.limits?.shift1 || 0))
             : res?.reason === "limit-shift2"
-              ? `Для зміни 2 вже встановлено ліміт ${res?.limits?.shift2 || 0}.`
+              ? t('shift_limit_already_set', 'Для {shift} вже встановлено ліміт {limit}.').replace(/\{shift\}/g, shiftLabel('shift2')).replace(/\{limit\}/g, String(res?.limits?.shift2 || 0))
               : t('change_shift_failed', 'Не вдалося змінити зміну гравця.');
         try {
           PNS.setImportStatus?.(msg, "warn");

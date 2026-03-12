@@ -15,6 +15,12 @@
   const txt = (el) => String(el?.textContent || '').replace(/\s+/g, ' ').trim();
   const fm = (n) => Number(n || 0).toLocaleString('en-US');
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m] || m));
+  const t = (key, fallback = '') => (typeof window.PNS?.t === 'function' ? window.PNS.t(key, fallback) : fallback);
+  function fmtMsg(key, fallback, vars = {}) {
+    let out = t(key, fallback);
+    Object.entries(vars || {}).forEach(([k, v]) => { out = out.replace(new RegExp('\\{' + k + '\\}', 'g'), String(v ?? '')); });
+    return out;
+  }
 
   function readUiState() {
     try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') || {}; } catch { return {}; }
@@ -62,7 +68,7 @@
     if (!player) return false;
     const safe = normalizeShift(shiftKey);
     player.shift = safe;
-    player.shiftLabel = typeof window.PNS?.shiftLabel === 'function' ? window.PNS.shiftLabel(safe) : (safe === 'shift1' ? 'Зміна 1' : safe === 'shift2' ? 'Зміна 2' : 'Обидві');
+    player.shiftLabel = typeof window.PNS?.shiftLabel === 'function' ? window.PNS.shiftLabel(safe) : (safe === 'shift1' ? t('shift1', 'Зміна 1') : safe === 'shift2' ? t('shift2', 'Зміна 2') : t('both', 'Обидві'));
     if (player.rowEl) {
       player.rowEl.dataset.shift = safe;
       const shiftCell = player.rowEl.querySelector('td[data-field="shiftLabel"]');
@@ -147,7 +153,7 @@
       (Array.isArray(slots) ? slots : []).forEach((slot, idx) => {
         const baseId = String(slot?.baseId || '');
         const tower = titleByBaseId.get(baseId)
-          || cleanTowerTitle(slot?.title, `Турель ${idx + 1}`);
+          || cleanTowerTitle(slot?.title, `${t('turret', 'Турель')} ${idx + 1}`);
         addAssignment(out, sk, slot?.captainId, tower, 'captain');
         (Array.isArray(slot?.helperIds) ? slot.helperIds : []).forEach((id) => addAssignment(out, sk, id, tower, 'helper'));
       });
@@ -155,7 +161,7 @@
 
     const addFromBases = (sk, bases) => {
       (Array.isArray(bases) ? bases : []).forEach((base, idx) => {
-        const tower = titleByBaseId.get(String(base?.id || '')) || cleanTowerTitle(base?.title, `Турель ${idx + 1}`);
+        const tower = titleByBaseId.get(String(base?.id || '')) || cleanTowerTitle(base?.title, `${t('turret', 'Турель')} ${idx + 1}`);
         addAssignment(out, sk, base?.captainId, tower, 'captain');
         (Array.isArray(base?.helperIds) ? base.helperIds : []).forEach((id) => addAssignment(out, sk, id, tower, 'helper'));
       });
@@ -165,7 +171,7 @@
       const planBases = plan?.bases && typeof plan.bases === 'object' ? plan.bases : null;
       if (planBases) {
         Object.entries(planBases).forEach(([baseId, base], idx) => {
-          const tower = titleByBaseId.get(String(baseId || '')) || cleanTowerTitle(base?.title, `Турель ${idx + 1}`);
+          const tower = titleByBaseId.get(String(baseId || '')) || cleanTowerTitle(base?.title, `${t('turret', 'Турель')} ${idx + 1}`);
           addAssignment(out, sk, base?.captainId, tower, 'captain');
           (Array.isArray(base?.helperIds) ? base.helperIds : []).forEach((id) => addAssignment(out, sk, id, tower, 'helper'));
         });
@@ -223,16 +229,16 @@
     for (const sk of ['shift1', 'shift2']) {
       const plans = Array.isArray(res?.[sk]?.towerPlans) ? res[sk].towerPlans : [];
       plans.forEach((tp, idx) => {
-        const tower = cleanTowerTitle(tp?.captain?.name, `Турель ${idx + 1}`);
+        const tower = cleanTowerTitle(tp?.captain?.name, `${t('turret', 'Турель')} ${idx + 1}`);
         (Array.isArray(tp?.notFitPlayers) ? tp.notFitPlayers : []).forEach((p) => {
           const id = String(p?.id || '');
           if (!id) return;
-          map.set(id, { kind: 'notfit', shift: sk, tower, note: 'Не вліз' });
+          map.set(id, { kind: 'notfit', shift: sk, tower, note: t('summary_not_fit', 'Не вліз') });
         });
         (Array.isArray(tp?.partialPlayers) ? tp.partialPlayers : []).forEach((p) => {
           const id = String(p?.id || '');
           if (!id) return;
-          map.set(id, { kind: 'partial', shift: sk, tower, note: 'Частково' });
+          map.set(id, { kind: 'partial', shift: sk, tower, note: t('summary_partial', 'Частково') });
         });
       });
     }
@@ -292,7 +298,7 @@
         <span class="tcv7-role-icon" aria-hidden="true"><img src="img/${file}" alt="" loading="lazy" decoding="async"></span>
         <strong>${fm(n)}</strong>
       </div>`;
-    return `<div class="tcv7-role-row">${item('is-fighter', stats.fighter, 'Бійці', 'fighter.webp')}${item('is-rider', stats.rider, 'Наїзники', 'rider.webp')}${item('is-shooter', stats.shooter, 'Стрільці', 'shooter.webp')}</div>`;
+    return `<div class="tcv7-role-row">${item('is-fighter', stats.fighter, t('fighter_plural', 'Бійці'), 'fighter.webp')}${item('is-rider', stats.rider, t('rider_plural', 'Наїзники'), 'rider.webp')}${item('is-shooter', stats.shooter, t('shooter_plural', 'Стрільці'), 'shooter.webp')}</div>`;
   }
 
   function card(title, primary, kicker, details, stats, extra) {
@@ -324,8 +330,8 @@
     }
 
     const shiftDetails = (bucket) => manualEdit
-      ? `У турелях ${fm(bucket.inTowers)} · Вільно ${fm(bucket.free)} із ${fm(bucket.limit)} · Резерв ${fm(bucket.reserve)}`
-      : `У турелях ${fm(bucket.inTowers)} · Резерв ${fm(bucket.reserve)} із ${fm(bucket.total)}`;
+      ? `${t('in_turrets', 'У турелях')} ${fm(bucket.inTowers)} · ${t('free_space', 'Вільне місце')} ${fm(bucket.free)} ${t('from_total', 'із')} ${fm(bucket.limit)} · ${t('reserve', 'Резерв')} ${fm(bucket.reserve)}`
+      : `${t('in_turrets', 'У турелях')} ${fm(bucket.inTowers)} · ${t('reserve', 'Резерв')} ${fm(bucket.reserve)} ${t('from_total', 'із')} ${fm(bucket.total)}`;
 
     const totalStats = {
       fighter: Number(s.shift1.fighter || 0) + Number(s.shift2.fighter || 0) + Number(s.both.fighter || 0),
@@ -335,10 +341,10 @@
 
     box.innerHTML = `
       <div class="tcv7-grid">
-        ${card('Зміна 1', fm(s.shift1.total), 'усього гравців', shiftDetails(s.shift1), s.shift1, s.shift1.over > 0 ? `<div class="tcv7-warn">+${fm(s.shift1.over)} понад ліміт</div>` : '')}
-        ${card('Зміна 2', fm(s.shift2.total), 'усього гравців', shiftDetails(s.shift2), s.shift2, s.shift2.over > 0 ? `<div class="tcv7-warn">+${fm(s.shift2.over)} понад ліміт</div>` : '')}
-        ${card('Обидві', fm(s.both.total), 'окремо від основного плану', `У турелях ${fm(s.both.inTowers)} · Резерв ${fm(s.both.reserve)}`, s.both, '')}
-        ${card('Усього', fm(s.total), 'загальна кількість гравців', `У турелях ${fm(s.inTowersTotal)} · Резерв ${fm(s.reserveTotal)}${s.shortage > 0 ? ` · Нестача ${fm(s.shortage)}` : ''}`, totalStats, '')}
+        ${card(t('shift1', 'Зміна 1'), fm(s.shift1.total), t('total_players_short', 'усього гравців'), shiftDetails(s.shift1), s.shift1, s.shift1.over > 0 ? `<div class="tcv7-warn">+${fm(s.shift1.over)} ${t('over_limit', 'понад ліміт')}</div>` : '')}
+        ${card(t('shift2', 'Зміна 2'), fm(s.shift2.total), t('total_players_short', 'усього гравців'), shiftDetails(s.shift2), s.shift2, s.shift2.over > 0 ? `<div class="tcv7-warn">+${fm(s.shift2.over)} ${t('over_limit', 'понад ліміт')}</div>` : '')}
+        ${card(t('both', 'Обидві'), fm(s.both.total), t('separate_from_main_plan', 'окремо від основного плану'), `${t('in_turrets', 'У турелях')} ${fm(s.both.inTowers)} · ${t('reserve', 'Резерв')} ${fm(s.both.reserve)}`, s.both, '')}
+        ${card(t('overall', 'Усього'), fm(s.total), t('overall_player_count', 'загальна кількість гравців'), `${t('in_turrets', 'У турелях')} ${fm(s.inTowersTotal)} · ${t('reserve', 'Резерв')} ${fm(s.reserveTotal)}${s.shortage > 0 ? ` · ${t('shortage', 'Нестача')} ${fm(s.shortage)}` : ''}`, totalStats, '')}
       </div>`;
 
     const balance = q('#towerCalcShiftBalance', root);
@@ -402,7 +408,7 @@
         const reserveShift = normalizeReserveValue(reserveMap[id]);
         const status = assigned ? 'in' : reserveShift ? 'reserve' : 'out';
         const towerLabel = assigned
-          ? (active === 'both' ? `${assigned.shift === 'shift1' ? 'Зміна 1' : 'Зміна 2'} · ${assigned.tower}` : assigned.tower)
+          ? (active === 'both' ? `${assigned.shift === 'shift1' ? t('shift1', 'Зміна 1') : t('shift2', 'Зміна 2')} · ${assigned.tower}` : assigned.tower)
           : '—';
         return {
           id,
@@ -416,7 +422,7 @@
           assignedShift: assigned?.shift || '',
           reserve: reserveShift,
           status,
-          statusLabel: assigned ? 'У турелі' : reserveShift ? 'Резерв' : 'Поза туреллю',
+          statusLabel: assigned ? t('in_turret_status', 'У турелі') : reserveShift ? t('reserve', 'Резерв') : t('outside_turret_status', 'Поза туреллю'),
         };
       })
       .sort((a, b) => {
@@ -470,7 +476,7 @@
   function updateMainTabLabels(root) {
     qa('[data-calc-main-tab="overflow"]', root || document).forEach((btn) => {
       const current = txt(btn);
-      if (current !== 'Статус гравців') btn.textContent = 'Статус гравців';
+      if (current !== t('player_status', 'Статус гравців')) btn.textContent = t('player_status', 'Статус гравців');
     });
   }
 
@@ -486,48 +492,48 @@
     const meta = summarizeOverflowRows(allRows);
     const activeFilter = getOverflowFilter(active);
     const items = applyOverflowFilter(allRows, activeFilter);
-    const title = active === 'shift1' ? 'Зміна 1' : active === 'shift2' ? 'Зміна 2' : 'Обидві';
+    const title = active === 'shift1' ? t('shift1', 'Зміна 1') : active === 'shift2' ? t('shift2', 'Зміна 2') : t('both', 'Обидві');
     const subtitle = active === 'both'
-      ? 'Тут видно всіх гравців із групи «Обидві»: хто вже стоїть у турелях, хто поза турелями, і хто вручну відправлений у резерв.'
-      : 'Одна таблиця з поточним статусом гравця: у турелі, поза туреллю або в резерві.';
+      ? t('player_status_subtitle_both', 'Тут видно всіх гравців із групи «Обидві»: хто вже стоїть у турелях, хто поза турелями, і хто вручну відправлений у резерв.')
+      : t('player_status_note', 'Одна таблиця з поточним статусом гравця: у турелі, поза туреллю або в резерві.');
     const savedScroll = Number(ui['overflowScroll_' + active] || 0) || 0;
 
     panel.innerHTML = `
       <div class="tcv5-overflow-wrap tcv5-status-view">
         <div class="tcv5-overflow-head">
           <div>
-            <h3>Статус гравців</h3>
+            <h3>${t('player_status', 'Статус гравців')}</h3>
             <div class="muted small">${subtitle}</div>
           </div>
           <div class="tcv5-tabs" role="tablist">
-            <button class="btn btn-sm ${active === 'shift1' ? 'is-active' : ''}" type="button" data-ov5-tab="shift1">Зміна 1</button>
-            <button class="btn btn-sm ${active === 'shift2' ? 'is-active' : ''}" type="button" data-ov5-tab="shift2">Зміна 2</button>
-            <button class="btn btn-sm ${active === 'both' ? 'is-active' : ''}" type="button" data-ov5-tab="both">Обидві</button>
+            <button class="btn btn-sm ${active === 'shift1' ? 'is-active' : ''}" type="button" data-ov5-tab="shift1">${t('shift1', 'Зміна 1')}</button>
+            <button class="btn btn-sm ${active === 'shift2' ? 'is-active' : ''}" type="button" data-ov5-tab="shift2">${t('shift2', 'Зміна 2')}</button>
+            <button class="btn btn-sm ${active === 'both' ? 'is-active' : ''}" type="button" data-ov5-tab="both">${t('both', 'Обидві')}</button>
           </div>
         </div>
 
         <div class="tcv5-overflow-summary">
-          ${renderMiniStat('У турелях', meta.in, 'Зараз реально стоять у турелях', 'is-in')}
-          ${renderMiniStat('Поза турелями', meta.out, 'Не стоять у жодній турелі', 'is-out')}
-          ${renderMiniStat('У резерві', meta.reserve, 'Гравці, яких вручну відправили в резерв зміни 1/2', 'is-reserve')}
+          ${renderMiniStat(t('in_turrets', 'У турелях'), meta.in, t('now_in_turrets', 'Зараз реально стоять у турелях'), 'is-in')}
+          ${renderMiniStat(t('outside_turrets', 'Поза турелями'), meta.out, t('not_in_any_turret', 'Не стоять у жодній турелі'), 'is-out')}
+          ${renderMiniStat(t('in_reserve', 'У резерві'), meta.reserve, t('reserve_manual_hint', 'Гравці, яких вручну відправили в резерв зміни 1/2'), 'is-reserve')}
         </div>
 
         <section class="tcv5-panel is-active" data-ov5-panel="${active}">
           <div class="tcv5-panel-head">
             <div>
               <strong>${title}</strong>
-              <div class="muted small">Показано ${fm(items.length)} із ${fm(allRows.length)}</div>
+              <div class="muted small">${t('shown_count', 'Показано')} ${fm(items.length)} ${t('from_total', 'із')} ${fm(allRows.length)}</div>
             </div>
-            <div class="tcv5-filters" role="tablist" aria-label="Фільтр статусу">
-              <button class="btn btn-xs ${activeFilter === 'all' ? 'is-active' : ''}" type="button" data-ov5-filter="all">Усі ${fm(meta.total)}</button>
-              <button class="btn btn-xs ${activeFilter === 'in' ? 'is-active' : ''}" type="button" data-ov5-filter="in">У турелях ${fm(meta.in)}</button>
-              <button class="btn btn-xs ${activeFilter === 'out' ? 'is-active' : ''}" type="button" data-ov5-filter="out">Поза турелями ${fm(meta.out)}</button>
-              <button class="btn btn-xs ${activeFilter === 'reserve' ? 'is-active' : ''}" type="button" data-ov5-filter="reserve">У резерві ${fm(meta.reserve)}</button>
+            <div class="tcv5-filters" role="tablist" aria-label="${t('status_filter', 'Фільтр статусу')}">
+              <button class="btn btn-xs ${activeFilter === 'all' ? 'is-active' : ''}" type="button" data-ov5-filter="all">${t('all', 'Усі')} ${fm(meta.total)}</button>
+              <button class="btn btn-xs ${activeFilter === 'in' ? 'is-active' : ''}" type="button" data-ov5-filter="in">${t('in_turrets', 'У турелях')} ${fm(meta.in)}</button>
+              <button class="btn btn-xs ${activeFilter === 'out' ? 'is-active' : ''}" type="button" data-ov5-filter="out">${t('outside_turrets', 'Поза турелями')} ${fm(meta.out)}</button>
+              <button class="btn btn-xs ${activeFilter === 'reserve' ? 'is-active' : ''}" type="button" data-ov5-filter="reserve">${t('in_reserve', 'У резерві')} ${fm(meta.reserve)}</button>
             </div>
             <div class="tcv17-overflow-actions">
-              <button class="btn btn-xs" type="button" data-ov5-reset-shift="shift1">Очистити резерв Зміни 1</button>
-              <button class="btn btn-xs" type="button" data-ov5-reset-shift="shift2">Очистити резерв Зміни 2</button>
-              <button class="btn btn-xs" type="button" data-ov5-restore-import="1">Відновити з імпорту</button>
+              <button class="btn btn-xs" type="button" data-ov5-reset-shift="shift1">${t('clear_reserve_s1', 'Скинути резерв зміни 1')}</button>
+              <button class="btn btn-xs" type="button" data-ov5-reset-shift="shift2">${t('clear_reserve_s2', 'Скинути резерв зміни 2')}</button>
+              <button class="btn btn-xs" type="button" data-ov5-restore-import="1">${t('restore_from_import', 'Відновити з імпорту')}</button>
             </div>
           </div>
 
@@ -536,14 +542,14 @@
               <table class="mini-table tower-calc-tier-table tcv5-table">
                 <thead>
                   <tr>
-                    <th>Гравець</th>
-                    <th>Альянс</th>
-                    <th>Роль / Тір</th>
-                    <th>Марш</th>
-                    <th>Статус</th>
-                    <th>Турель</th>
-                    <th>Резерв</th>
-                    <th>Дії</th>
+                    <th>${t('player', 'Гравець')}</th>
+                    <th>${t('alliance', 'Альянс')}</th>
+                    <th>${t('role_tier', 'Роль / Тір')}</th>
+                    <th>${t('march', 'Марш')}</th>
+                    <th>${t('status', 'Статус')}</th>
+                    <th>${t('turret', 'Турель')}</th>
+                    <th>${t('reserve', 'Резерв')}</th>
+                    <th>${t('actions', 'Дії')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -557,16 +563,16 @@
                       <td>${fm(r.march)}</td>
                       <td>${renderStatusPill(r.status, r.statusLabel)}</td>
                       <td>${esc(r.tower)}</td>
-                      <td>${r.reserve === 'shift1' ? 'Зміна 1' : r.reserve === 'shift2' ? 'Зміна 2' : '—'}</td>
+                      <td>${r.reserve === 'shift1' ? t('shift1', 'Зміна 1') : r.reserve === 'shift2' ? t('shift2', 'Зміна 2') : '—'}</td>
                       <td>
                         ${r.status === 'in' ? '<span class="muted">—</span>' : `
-                          <button class="btn btn-xs ${r.reserve === 'shift1' ? 'is-active' : ''}" type="button" data-ui-reserve-shift="shift1" data-player-id="${esc(r.id)}">Зміна 1</button>
-                          <button class="btn btn-xs ${r.reserve === 'shift2' ? 'is-active' : ''}" type="button" data-ui-reserve-shift="shift2" data-player-id="${esc(r.id)}">Зміна 2</button>`}
+                          <button class="btn btn-xs ${r.reserve === 'shift1' ? 'is-active' : ''}" type="button" data-ui-reserve-shift="shift1" data-player-id="${esc(r.id)}">${t('shift1', 'Зміна 1')}</button>
+                          <button class="btn btn-xs ${r.reserve === 'shift2' ? 'is-active' : ''}" type="button" data-ui-reserve-shift="shift2" data-player-id="${esc(r.id)}">${t('shift2', 'Зміна 2')}</button>`}
                       </td>
                     </tr>`).join('')}
                 </tbody>
               </table>
-            </div>` : '<div class="tower-calc-placeholder muted small top-space">За цим фільтром зараз порожньо.</div>'}
+            </div>` : `<div class="tower-calc-placeholder muted small top-space">${t('empty_filter_now', 'За цим фільтром зараз порожньо.')}</div>`}
         </section>
       </div>`;
 
@@ -699,7 +705,7 @@
     refreshStatusPlayersUi();
     try { requestAnimationFrame(() => refreshStatusPlayersUi()); } catch {}
     try { setTimeout(() => refreshStatusPlayersUi(), 60); } catch {}
-    try { PNS.setImportStatus?.(`Очищено ${sk === 'shift1' ? 'зміну 1' : 'зміну 2'} як у налаштуваннях турелей.`, 'good'); } catch {}
+    try { PNS.setImportStatus?.(fmtMsg('cleared_shift_by_settings', 'Очищено {shift} як у налаштуваннях турелей.', { shift: sk === 'shift1' ? t('shift1', 'Зміна 1').toLowerCase() : t('shift2', 'Зміна 2').toLowerCase() }), 'good'); } catch {}
     return { changed, shiftKey: sk, delegated };
   }
 
@@ -725,7 +731,7 @@
     try { requestAnimationFrame(() => refreshStatusPlayersUi()); } catch {}
     try { setTimeout(() => refreshStatusPlayersUi(), 60); } catch {}
     try {
-      const text = counts ? `Відновлено з імпорту після очищення змін 1 + 2: Зміна 1 — ${counts.shift1}, Зміна 2 — ${counts.shift2}, Обидві — ${counts.both}.` : 'Відновлено з імпорту після очищення змін 1 + 2.';
+      const text = counts ? fmtMsg('restored_from_import_after_clear_counts', 'Відновлено з імпорту після очищення змін 1 + 2: {shift1} — {count1}, {shift2} — {count2}, {both} — {countBoth}.', { shift1: t('shift1', 'Зміна 1'), count1: counts.shift1, shift2: t('shift2', 'Зміна 2'), count2: counts.shift2, both: t('both', 'Обидві'), countBoth: counts.both }) : t('restored_from_import_after_clear', 'Відновлено з імпорту після очищення змін 1 + 2.');
       PNS.setImportStatus?.(text, 'good');
     } catch {}
     return counts;
@@ -751,7 +757,7 @@
     writeOverflowReserveStorage(next);
 
     try { window.calcSetOverflowReserve?.(id, next[id] || ''); } catch {}
-    try { persistPlayersAfterShiftMove(`Гравця ${p.name || ''} переведено в ${sk === 'shift1' ? 'Зміну 1' : 'Зміну 2'}.`); } catch {}
+    try { persistPlayersAfterShiftMove(fmtMsg('player_moved_to_shift', 'Гравця {name} переведено в {shift}.', { name: p.name || '', shift: sk === 'shift1' ? t('shift1', 'Зміна 1') : t('shift2', 'Зміна 2') })); } catch {}
     patchState({ overflowTab: sk });
     refreshStatusPlayersUi();
     return true;

@@ -7,6 +7,7 @@
   window[KEY] = true;
 
   const $ = (sel, root = document) => root.querySelector(sel);
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
 
   function readNoCross() {
     try {
@@ -161,12 +162,12 @@
     }
     row.innerHTML = '';
 
-    const btnLoad = makeBtn('Підтягнути капітанів', function () { clickEl(loadBtn); });
-    const btnRebalance = makeBtn('Застосувати перерозподіл', function () {
+    const btnLoad = makeBtn(t('load_captains', 'Підтягнути капітанів'), function () { clickEl(loadBtn); });
+    const btnRebalance = makeBtn(t('rebalance', 'Застосувати перерозподіл'), function () {
       setApplyMode(root, 'rebalance');
       clickEl(quickApplyBtn);
     });
-    const btnTopup = makeBtn('Дозаповнити турелі', function () {
+    const btnTopup = makeBtn(t('topup_turrets', 'Дозаповнити турелі'), function () {
       setApplyMode(root, 'topup');
       clickEl(quickApplyBtn);
     });
@@ -177,7 +178,7 @@
     const menu = document.createElement('div');
     menu.id = 'tcv35-clearMenu';
 
-    const clearBtn = makeBtn('Очистити ▾', function (e) {
+    const clearBtn = makeBtn(`${t('clear', 'Очистити')} ▾`, function (e) {
       e.stopPropagation();
       const opening = !menu.classList.contains('open');
       menu.classList.toggle('open', opening);
@@ -198,11 +199,11 @@
       return b;
     }
 
-    menu.appendChild(menuItem('Очистити зміну 1', clear1Btn));
-    menu.appendChild(menuItem('Очистити зміну 2', clear2Btn));
-    menu.appendChild(menuItem('Очистити зміну 1 + 2', clearAllBtn));
+    menu.appendChild(menuItem(t('clear_shift_1', 'Очистити зміну 1'), clear1Btn));
+    menu.appendChild(menuItem(t('clear_shift_2', 'Очистити зміну 2'), clear2Btn));
+    menu.appendChild(menuItem(t('clear_shift_both', 'Очистити зміну 1 + 2'), clearAllBtn));
     if (restoreBtn) {
-      menu.appendChild(menuItem('Відновити з імпорту', restoreBtn));
+      menu.appendChild(menuItem(t('restore_from_import', 'Відновити з імпорту'), restoreBtn));
     }
 
     clearWrap.appendChild(clearBtn);

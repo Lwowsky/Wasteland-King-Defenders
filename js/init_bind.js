@@ -1,6 +1,7 @@
 (function () {
   const PNS = window.PNS; if (!PNS) return;
   const { state } = PNS;
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
 
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -23,14 +24,14 @@
   function exportBoardAsPNG() {
     const board = document.querySelector('.board-sheet');
     if (!board) return;
-    if (typeof window.html2canvas !== 'function') return alert(window.__PNS_OFFLINE_NO_HTML2CANVAS__ ? 'PNG export недоступний в offline-пакеті без локальної бібліотеки html2canvas.' : 'html2canvas не завантажився.');
+    if (typeof window.html2canvas !== 'function') return alert(window.__PNS_OFFLINE_NO_HTML2CANVAS__ ? t('png_export_offline', 'PNG export недоступний в offline-пакеті без локальної бібліотеки html2canvas.') : t('html2canvas_missing', 'html2canvas не завантажився.'));
     window.html2canvas(board, { backgroundColor: '#ffffff', scale: 2 }).then((canvas) => {
       const a = document.createElement('a');
       const shift = state.activeShift || 'all';
       a.download = `pns-board-${shift}.png`;
       a.href = canvas.toDataURL('image/png');
       a.click();
-    }).catch((e) => { console.error(e); alert('Не вдалося згенерувати PNG'); });
+    }).catch((e) => { console.error(e); alert(t('png_failed', 'Не вдалося згенерувати PNG')); });
   }
 
   function exportBoardAsPDF() {
@@ -94,6 +95,7 @@
       const showAll = typeof PNS.safeReadBool === 'function' ? PNS.safeReadBool(PNS.KEYS.KEY_SHOW_ALL, false) : false;
       PNS.applyColumnVisibility(showAll);
     }
+    try { PNS.restoreSessionStateNow?.({ soft: true }); } catch {}
 
     // Restore saved shift (do not force Shift 1 on every rebuild — it causes flicker/race after HTMX swaps)
     let shiftSaved = state.activeShift || 'shift1';
@@ -164,6 +166,26 @@
     // settings card buttons (optional)
     onClick('#settingsShowAllBasesBtn, [data-show-all-bases]', (e) => { e.preventDefault(); PNS.showAllBaseCards?.(); });
     onClick('#settingsHideOtherBasesBtn, [data-hide-other-bases]', (e) => { e.preventDefault(); PNS.showOnlyActiveBaseCard?.(); });
+    onClick('#openTowerPickerBtn, [data-action="open-tower-picker"], [data-open-picker-base]', (e, el) => {
+      e.preventDefault();
+      try { PNS.ModalsShift?.initIfReady?.(); } catch {}
+      const baseId = el.dataset.openPickerBase || el.closest('.base-card')?.dataset?.baseId || '';
+      if (baseId) PNS.state.towerPickerSelectedBaseId = baseId;
+      try { if (baseId) PNS.ModalsShift?.focusTowerById?.(baseId); } catch {}
+      PNS.ModalsShift?.openTowerPickerModal?.();
+    });
+    onClick('#toggleTowerFocusBtn, [data-action="toggle-towers-view"]', (e) => {
+      e.preventDefault();
+      try { PNS.ModalsShift?.initIfReady?.(); } catch {}
+      PNS.toggleTowerFocusMode?.();
+    });
+    onClick('[data-edit-assigned-player]', (e, el) => {
+      e.preventDefault();
+      try { PNS.ModalsShift?.initIfReady?.(); } catch {}
+      const baseId = el.dataset.baseId || '';
+      const playerId = el.dataset.editAssignedPlayer || '';
+      if (baseId && playerId) PNS.ModalsShift?.openTowerPlayerEditModal?.(baseId, playerId);
+    });
 
     onClick('[data-close-modal]', (e) => { e.preventDefault(); PNS.closeModal?.(); clearModalHashIfNeeded(); });
 

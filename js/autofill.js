@@ -1,6 +1,10 @@
 (function () {
   const PNS = window.PNS; if (!PNS) return;
   const { state } = PNS;
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
+  const roleLabel = (value, plural = false) => (typeof PNS.roleLabel === 'function' ? PNS.roleLabel(value, plural) : String(value || ''));
+  const shiftLabel = (value) => (typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(value) : String(value || ''));
+  const baseName = (base) => String(base?.title || t('turret', 'Турель')).split('/')[0].trim() || t('turret', 'Турель');
 
   function num(x) { return Number.isFinite(+x) ? +x : 0; }
   function uniqPush(arr, id) { if (!arr.includes(id)) arr.push(id); }
@@ -108,7 +112,7 @@
 
   function autoFillBase(baseId) {
     const base = state.baseById?.get?.(baseId);
-    if (!base) return { added: 0, reason: 'Турель не знайдена' };
+    if (!base) return { added: 0, reason: t('turret_not_found', 'Турель не знайдена') };
 
     // нормалізуємо структуру
     if (!Array.isArray(base.helperIds)) base.helperIds = [];
@@ -120,13 +124,13 @@
     base.maxHelpers = num(base.maxHelpers) || defaultMax;
 
     if (!base.captainId) {
-      const msg = `Спочатку обери капітана для ${base.title.split('/')[0].trim()}`;
+      const msg = `${t('choose_captain_for_turret', 'Спочатку обери капітана для')} ${baseName(base)}`;
       alert(msg);
       return { added: 0, reason: msg };
     }
 
     const captain = state.playerById?.get?.(base.captainId);
-    if (!captain) return { added: 0, reason: 'Капітана не знайдено' };
+    if (!captain) return { added: 0, reason: t('captain_not_found', 'Капітана не знайдено') };
 
     // підтягуємо rule з UI (якщо існує)
     try {
@@ -192,24 +196,24 @@ const commonCandidates = () => (state.players || [])
     if (added <= 0) {
       let reason = '';
       const d = autoFillDiagnostics(base, captain);
-      if (!d.sameRole && enforceSameTroopRole()) reason = `Немає вільних гравців типу ${captain.role}.`;
-      else if (!ignoreShift && matchRegisteredShiftEnabled() && !d.byActiveShift) reason = `Немає ${captain.role} для shift ${resolveTowerShift(base)}.`;
-      else if (!ignoreShift && matchRegisteredShiftEnabled() && !d.byBaseShift) reason = `Немає ${captain.role}, які підходять під зміну цієї турелі.`;
-      else if (!d.passTierMin) reason = 'Немає гравців, які підходять під ліміти маршу за тірами.';
-      else if ((base.maxHelpers || 0) > 0 && base.helperIds.length >= base.maxHelpers) reason = `Ліміт помічників заповнений (${base.maxHelpers}).`;
-      else if (room !== Infinity && d.fitRoom === 0) reason = `Ніхто не вміщується в залишок ралі (${PNS.formatNum?.(Math.max(0, d.room)) ?? Math.max(0, d.room)}).`;
-      else reason = 'Після перевірок не знайшлося відповідних гравців.';
+      if (!d.sameRole && enforceSameTroopRole()) reason = `${t('no_free_players_of_role', 'Немає вільних гравців типу')} ${roleLabel(captain.role)}.`;
+      else if (!ignoreShift && matchRegisteredShiftEnabled() && !d.byActiveShift) reason = `${t('no_role_for_shift', 'Немає гравців цього типу для зміни')} ${shiftLabel(resolveTowerShift(base))}.`;
+      else if (!ignoreShift && matchRegisteredShiftEnabled() && !d.byBaseShift) reason = `${t('no_role_for_turret_shift', 'Немає гравців цього типу, які підходять під зміну цієї турелі')}.`;
+      else if (!d.passTierMin) reason = t('no_players_for_tier_limits', 'Немає гравців, які підходять під ліміти маршу за тірами.');
+      else if ((base.maxHelpers || 0) > 0 && base.helperIds.length >= base.maxHelpers) reason = `${t('helpers_limit_full_simple', 'Ліміт помічників заповнений')} (${base.maxHelpers}).`;
+      else if (room !== Infinity && d.fitRoom === 0) reason = `${t('no_one_fits_rally_room', 'Ніхто не вміщується в залишок ралі')} (${PNS.formatNum?.(Math.max(0, d.room)) ?? Math.max(0, d.room)}).`;
+      else reason = t('no_players_after_checks', 'Після перевірок не знайшлося відповідних гравців.');
 
       const debug = ` [free:${d.free}, role:${d.sameRole}, shift:${d.byActiveShift}, tower:${d.byBaseShift}, tierMin:${d.passTierMin}, fit:${d.fitRoom}]`;
 
       if (typeof PNS.setImportStatus === 'function') {
-        PNS.setImportStatus(`Автозаповнення: ${base.title.split('/')[0].trim()} → додано 0. ${reason}${debug}`, 'danger');
+        PNS.setImportStatus(`${t('auto_fill', 'Автозаповнення')}: ${baseName(base)} → ${t('autofill_added_zero', 'додано 0')}. ${reason}${debug}`, 'danger');
       }
       return { added: 0, reason };
     }
 
     if (typeof PNS.setImportStatus === 'function') {
-      PNS.setImportStatus(`Автозаповнення: ${base.title.split('/')[0].trim()} → +${added} помічників.`, 'good');
+      PNS.setImportStatus(`${t('auto_fill', 'Автозаповнення')}: ${baseName(base)} → +${added} ${t('helpers_short', 'помічники')}.`, 'good');
     }
     return { added };
   }
@@ -232,7 +236,7 @@ const commonCandidates = () => (state.players || [])
       const visible = visibleBases.length;
       if (typeof PNS.setImportStatus === 'function') {
         PNS.setImportStatus(
-          `Автозаповнення всіх: немає видимих башт із капітаном (видимих башт: ${visible}). Спочатку обери капітана.`,
+          `${t('auto_fill_all', 'Автозаповнити все')}: ${t('autofill_all_no_visible_captains', 'немає видимих турелей із капітаном')} (${t('shown_count', 'Показано').toLowerCase()}: ${visible}). ${t('choose_captain_first', 'Оберіть капітана')}.`,
           'danger'
         );
       }
@@ -241,7 +245,7 @@ const commonCandidates = () => (state.players || [])
 
     if (typeof PNS.setImportStatus === 'function') {
       PNS.setImportStatus(
-        `Автозаповнення: +${totalAdded} помічників у ${touched} турелях.`,
+        `${t('auto_fill', 'Автозаповнення')}: +${totalAdded} ${t('helpers_short', 'помічники')} ${t('autofill_in_turrets', 'у турелях')}: ${touched}.`,
         totalAdded ? 'good' : 'danger'
       );
     }

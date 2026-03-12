@@ -1,6 +1,7 @@
 (function () {
   const PNS = window.PNS = window.PNS || {};
   const state = PNS.state = PNS.state || {};
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
   const LS_INIT = 'pns_v53_picker_core_init_done';
 
   function q(sel, root) { return (root || document).querySelector(sel); }
@@ -102,7 +103,7 @@
     hideLabelForInput('towerCalcNoCrossShift', root);
     qa('label,.form-check,.row,div', root).forEach((el) => {
       const t = txt(el);
-      if (/^Без дублювання helper-ів між shifts$/i.test(t) || /No cross-shift duplicates/i.test(t)) {
+      if (/^Без дублювання helper-ів між shifts$/i.test(t) || /No cross-shift duplicates/i.test(t) || /Без дублювання помощников между сменами/i.test(t)) {
         el.style.display = 'none';
       }
     });
@@ -123,8 +124,8 @@
     if (!modal) return;
     hideLabelForInput('pickerOnlyCaptains', modal);
     hideLabelForInput('pickerNoCrossShiftDupes', modal);
-    setLabelTextForInput('pickerMatchRegisteredShift', 'Зазначений Shift', modal);
-    setLabelTextForInput('pickerNoMixTroops', 'Лише той самий тип військ', modal);
+    setLabelTextForInput('pickerMatchRegisteredShift', t('indicated_shift', 'Зазначена зміна'), modal);
+    setLabelTextForInput('pickerNoMixTroops', t('same_troop_only', 'Лише той самий тип військ'), modal);
 
     const onlyCb = q('#pickerOnlyCaptains', modal);
     const shiftCb = q('#pickerMatchRegisteredShift', modal);

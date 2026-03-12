@@ -17,6 +17,7 @@
   };
   const byId = (id, r = document) => (r || document).getElementById ? (r || document).getElementById(id) : document.getElementById(id);
   const txt = (el) => String(el?.textContent || '').replace(/\s+/g, ' ').trim();
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
 
   function ensureClearButtons(root) {
     const toolbar = q('.tower-calc-toolbar-main', root);
@@ -33,9 +34,9 @@
       btn.textContent = label;
       return btn;
     };
-    ensureBtn('towerCalcClearShift1Btn', 'Очистити зміну 1');
-    ensureBtn('towerCalcClearShift2Btn', 'Очистити зміну 2');
-    ensureBtn('towerCalcClearHelpersAllBtn', 'Очистити зміну 1 + 2');
+    ensureBtn('towerCalcClearShift1Btn', t('clear_shift_1', 'Очистити зміну 1'));
+    ensureBtn('towerCalcClearShift2Btn', t('clear_shift_2', 'Очистити зміну 2'));
+    ensureBtn('towerCalcClearHelpersAllBtn', t('clear_shift_both', 'Очистити зміну 1 + 2'));
     return true;
   }
 
@@ -77,7 +78,7 @@
     if (!ph) {
       ph = document.createElement('span');
       ph.className = 'tcv19-apply-placeholder';
-      ph.textContent = 'Застосування';
+      ph.textContent = t('apply_mode', 'Застосування');
       wrap.appendChild(ph);
     }
 
@@ -110,7 +111,7 @@
     const label = select.closest('label');
     if (label) {
       const txtNodes = Array.from(label.childNodes || []).filter((n) => n.nodeType === Node.TEXT_NODE);
-      txtNodes.forEach((n) => { if ((n.textContent || '').includes('Застосування')) n.textContent = ''; });
+      txtNodes.forEach((n) => { if ((n.textContent || '').includes(t('apply_mode', 'Застосування'))) n.textContent = ''; });
       label.classList.add('tcv22-apply-label');
     }
 
@@ -118,14 +119,14 @@
     if (!ph) {
       ph = document.createElement('option');
       ph.value = '';
-      ph.textContent = 'Застосування';
+      ph.textContent = t('apply_mode', 'Застосування');
       ph.disabled = true;
       ph.hidden = true;
       ph.setAttribute('data-tcv22-placeholder', '1');
       select.insertBefore(ph, select.firstChild || null);
     }
 
-    const map = { topup: 'Лише дозаповнення', empty: 'Лише порожні', rebalance: 'Повний перерозподіл' };
+    const map = { topup: t('topup_only', 'Лише дозаповнення'), empty: t('empty_only', 'Лише порожні'), rebalance: t('rebalance_all', 'Повний перерозподіл') };
     qa('option', select).forEach((o) => {
       if (o.value && map[o.value]) o.textContent = map[o.value];
     });

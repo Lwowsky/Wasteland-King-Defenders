@@ -2,6 +2,7 @@
   const PNS = window.PNS; if (!PNS) return;
   const MS = (PNS.ModalsShift = PNS.ModalsShift || {});
   const { state } = PNS; if (!state) return;
+  const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
 
   function getTowerCards() {
     return Array.from(document.querySelectorAll('.bases-grid .base-card')).filter(c => !c.matches('[data-settings-card]'));
@@ -46,7 +47,7 @@
     const b = (MS.getButtons?.().toggleTowerView) || document.querySelector('#toggleTowerFocusBtn');
     if (!b) return;
     const focusMode = (state.towerViewMode || 'all') === 'focus';
-    b.textContent = focusMode ? 'Показати всі турелі' : 'Показати одну турель';
+    b.textContent = focusMode ? t('all_turrets', 'Показати всі турелі') : t('one_turret_only', 'Показати одну турель');
     b.dataset.mode = focusMode ? 'focus' : 'all';
     b.setAttribute('aria-pressed', String(focusMode));
   }
@@ -66,7 +67,7 @@
         id = String(base.id || id || `card-${idx}`);
         if (!card.dataset.baseId) card.dataset.baseId = id;
       }
-      const title = (base?.title || card.querySelector('h3')?.textContent || `Турель ${idx + 1}`).split('/')[0].trim();
+      const title = (base?.title || card.querySelector('h3')?.textContent || `${t('turret', 'Турель')} ${idx + 1}`).split('/')[0].trim();
       const opt = document.createElement('option');
       opt.value = id || `card-${idx}`;
       opt.dataset.towerTitle = title;
@@ -144,7 +145,7 @@
 
   function clearCurrentShiftPlan() {
     if (!['shift1', 'shift2'].includes(state.activeShift)) {
-      alert('Оберіть зміну 1 або зміну 2.');
+      alert(t('choose_shift_1_or_2', 'Оберіть зміну 1 або зміну 2.'));
       return;
     }
     (state.players || []).forEach((p) => { p.assignment = null; });
