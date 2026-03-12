@@ -18,6 +18,7 @@
       tower_settings: 'Налаштування турелей',
       player_status: 'Статус гравців',
       search: 'Пошук',
+      search_placeholder: 'Пошук по ніку / альянсу',
       role: 'Роль',
       tier: 'Тір',
       shift: 'Зміна',
@@ -107,7 +108,44 @@
       restore_from_import: 'Відновити з імпорту',
       clear_reserve_s1: 'Скинути резерв зміни 1',
       clear_reserve_s2: 'Скинути резерв зміни 2',
-      overall: 'Усього'
+      overall: 'Усього',
+      ready: 'Готова',
+      no_captain_short: 'Без капітана',
+      players_short: 'гравців',
+      player_choice: 'Вибір гравця для турелі',
+      remove_selected: 'Прибрати вибраного',
+      manual_player_title: 'Ручне редагування або додавання гравця',
+      player_nickname: 'Нік гравця',
+      march_power: 'Сила маршу',
+      manual_status_hint: 'Обери гравця, щоб змінити марш або тір, або введи нового й збережи.',
+      captain_not_selected: 'Капітана ще не обрано',
+      turret_type: 'Тип турелі',
+      turret_type_restricted: 'Можна додавати лише помічників цього типу.',
+      player_select_placeholder: '— вибери гравця —',
+      captain_tag_short: 'КАП',
+      in_turret_tag: 'У ТУРЕЛІ',
+      helper_tag_short: 'ПОМ',
+      tier_march_limits: 'Ліміти маршу за тірами',
+      auto_tier_limits: 'автоматично',
+      max_helpers: 'Макс. помічників',
+      final_plan_status: 'Фінальний план',
+      helper_slots: 'Місць для помічників',
+      turret_capacity: 'Місткість турелі',
+      used_shortage: 'Використано / нестача',
+      rally_captain_helper_space: 'Ралі · Марш капітана · Місць для помічників',
+      troop_type: 'Тип військ',
+      lair_level: 'Рівень лігва',
+      yes: 'Так',
+      no: 'Ні',
+      manual_save_enter_name: 'Ручне збереження: введи нік гравця',
+      manual_save_enter_march: 'Ручне збереження: введи розмір маршу',
+      no_players_assigned_yet: 'Гравців ще не призначено',
+      no_final_plan_export: 'Немає фінального плану для експорту.',
+      no_final_plan_share: 'Немає фінального плану для поширення.',
+      html2canvas_missing: 'html2canvas не завантажився.',
+      png_failed: 'Не вдалося згенерувати PNG.',
+      calc_window_not_loaded: 'Вікно розподілу ще не завантажилось. Спробуй ще раз через секунду.',
+      change_shift_failed: 'Не вдалося змінити зміну гравця.'
     },
     en: {
       lang_name: 'English',
@@ -121,6 +159,7 @@
       tower_settings: 'Turret Settings',
       player_status: 'Player Status',
       search: 'Search',
+      search_placeholder: 'Search by nickname / alliance',
       role: 'Role',
       tier: 'Tier',
       shift: 'Shift',
@@ -210,7 +249,44 @@
       restore_from_import: 'Restore from import',
       clear_reserve_s1: 'Clear reserve S1',
       clear_reserve_s2: 'Clear reserve S2',
-      overall: 'Overall'
+      overall: 'Overall',
+      ready: 'Ready',
+      no_captain_short: 'No captain',
+      players_short: 'players',
+      player_choice: 'Choose player for turret',
+      remove_selected: 'Remove selected',
+      manual_player_title: 'Manual edit or add player',
+      player_nickname: 'Player nickname',
+      march_power: 'March power',
+      manual_status_hint: 'Select a player to change march or tier, or enter a new one and save.',
+      captain_not_selected: 'Captain is not selected yet',
+      turret_type: 'Turret type',
+      turret_type_restricted: 'You can add helpers of this type only.',
+      player_select_placeholder: '— choose a player —',
+      captain_tag_short: 'CAP',
+      in_turret_tag: 'IN TURRET',
+      helper_tag_short: 'HELP',
+      tier_march_limits: 'Tier march limits',
+      auto_tier_limits: 'automatic',
+      max_helpers: 'Max helpers',
+      final_plan_status: 'Final plan',
+      helper_slots: 'Helper slots',
+      turret_capacity: 'Turret capacity',
+      used_shortage: 'Used / shortage',
+      troop_type: 'Troop type',
+      lair_level: 'Lair level',
+      yes: 'Yes',
+      no: 'No',
+      manual_save_enter_name: 'Manual save: enter player nickname',
+      manual_save_enter_march: 'Manual save: enter march power',
+      no_players_assigned_yet: 'No players assigned yet',
+      no_final_plan_export: 'There is no final plan to export.',
+      no_final_plan_share: 'There is no final plan to share.',
+      html2canvas_missing: 'html2canvas is not loaded.',
+      png_failed: 'Failed to generate PNG.',
+      calc_window_not_loaded: 'The planning window is not loaded yet. Please try again.',
+      change_shift_failed: 'Failed to change the player shift.',
+      rally_captain_helper_space: 'Rally · Captain march · Helper slots'
     },
     ru: {
       lang_name: 'Русский',
@@ -224,6 +300,7 @@
       tower_settings: 'Настройки турелей',
       player_status: 'Статус игроков',
       search: 'Поиск',
+      search_placeholder: 'Поиск по нику / альянсу',
       role: 'Роль',
       tier: 'Тир',
       shift: 'Смена',
@@ -313,7 +390,44 @@
       restore_from_import: 'Восстановить из импорта',
       clear_reserve_s1: 'Сбросить резерв С1',
       clear_reserve_s2: 'Сбросить резерв С2',
-      overall: 'Всего'
+      overall: 'Всего',
+      ready: 'Готово',
+      no_captain_short: 'Без капитана',
+      players_short: 'игроков',
+      player_choice: 'Выбор игрока для турели',
+      remove_selected: 'Убрать выбранного',
+      manual_player_title: 'Ручное редактирование или добавление игрока',
+      player_nickname: 'Ник игрока',
+      march_power: 'Сила марша',
+      manual_status_hint: 'Выбери игрока, чтобы изменить марш или тир, или введи нового и сохрани.',
+      captain_not_selected: 'Капитан ещё не выбран',
+      turret_type: 'Тип турели',
+      turret_type_restricted: 'Можно добавлять только помощников этого типа.',
+      player_select_placeholder: '— выбери игрока —',
+      captain_tag_short: 'КАП',
+      in_turret_tag: 'В ТУРЕЛИ',
+      helper_tag_short: 'ПОМ',
+      tier_march_limits: 'Лимиты марша по тирам',
+      auto_tier_limits: 'автоматически',
+      max_helpers: 'Макс. помощников',
+      final_plan_status: 'Финальный план',
+      helper_slots: 'Мест для помощников',
+      turret_capacity: 'Вместимость турели',
+      used_shortage: 'Использовано / нехватка',
+      troop_type: 'Тип войск',
+      lair_level: 'Уровень логова',
+      yes: 'Да',
+      no: 'Нет',
+      manual_save_enter_name: 'Ручное сохранение: введи ник игрока',
+      manual_save_enter_march: 'Ручное сохранение: введи размер марша',
+      no_players_assigned_yet: 'Игроки ещё не назначены',
+      no_final_plan_export: 'Нет финального плана для экспорта.',
+      no_final_plan_share: 'Нет финального плана для отправки.',
+      html2canvas_missing: 'html2canvas не загрузился.',
+      png_failed: 'Не удалось создать PNG.',
+      calc_window_not_loaded: 'Окно распределения ещё не загрузилось. Попробуй ещё раз.',
+      change_shift_failed: 'Не удалось изменить смену игрока.',
+      rally_captain_helper_space: 'Ралли · Марш капитана · Мест для помощников'
     }
   };
 
@@ -406,6 +520,24 @@
     save_turret_table: ['Зберегти таблицю турелі', 'Save turret table', 'Сохранить таблицу турели'],
     limits_by_tier: ['Налаштування турелі · ліміти по тірах (макс. марш)', 'Налаштування турелі · ліміти по тірах', 'Turret settings · tier limits', 'Настройки турели · лимиты по тирам'],
     max_players: ['Макс. гравців', 'Max players', 'Макс. игроков'],
+    max_helpers: ['Макс. помічників', 'Max helpers', 'Макс. помощников'],
+    ready: ['Готова', 'Ready', 'Готово'],
+    no_captain_short: ['Без капітана', 'No captain', 'Без капитана'],
+    players_short: ['гравців', 'players', 'игроков'],
+    remove_selected: ['Прибрати вибраного', 'Remove selected', 'Убрать выбранного'],
+    manual_player_title: ['Ручне редагування або додавання гравця', 'Manual edit or add player', 'Ручное редактирование или добавление игрока'],
+    player_nickname: ['Нік гравця', 'Player nickname', 'Ник игрока'],
+    march_power: ['Сила маршу', 'March power', 'Сила марша'],
+    manual_status_hint: ['Обери гравця, щоб змінити марш або тір, або введи нового й збережи.', 'Select a player to change march or tier, or enter a new one and save.', 'Выбери игрока, чтобы изменить марш или тир, или введи нового и сохрани.'],
+    captain_not_selected: ['Капітана ще не обрано', 'Captain is not selected yet', 'Капитан ещё не выбран'],
+    turret_type: ['Тип турелі', 'Turret type', 'Тип турели'],
+    turret_type_restricted: ['Можна додавати лише помічників цього типу.', 'You can add helpers of this type only.', 'Можно добавлять только помощников этого типа.'],
+    player_select_placeholder: ['— вибери гравця —', '— choose a player —', '— выбери игрока —'],
+    captain_tag_short: ['КАП', 'CAP', 'КАП'],
+    in_turret_tag: ['У ТУРЕЛІ', 'IN TURRET', 'В ТУРЕЛИ'],
+    helper_tag_short: ['ПОМ', 'HELP', 'ПОМ'],
+    tier_march_limits: ['Ліміти маршу за тірами', 'Tier march limits', 'Лимиты марша по тирам'],
+    auto_tier_limits: ['автоматично', 'automatic', 'автоматически'],
     save_limits: ['Зберегти ліміти', 'Save limits', 'Сохранить лимиты'],
     recalc_composition: ['Перерахувати склад', 'Recalculate roster', 'Пересчитать состав'],
     reset_limits: ['Скинути ліміти (T14–T9 → 0)', 'Скинути ліміти', 'Reset limits', 'Сбросить лимиты'],
@@ -546,6 +678,19 @@
     out = out.replace(/Східна турель|East Turret|Восточная турель/gi, get('east_turret'));
     out = out.replace(/Південна турель|South Turret|Южная турель/gi, get('south_turret'));
 
+    out = out.replace(/^players:\s*(\d+)$/i, `${get('players_short')}: $1`);
+    out = out.replace(/^(Готова|Ready|Готово)$/i, get('ready'));
+    out = out.replace(/^(Без капітана|No captain|Без капитана)$/i, get('no_captain_short'));
+    out = out.replace(/^(Капітан і гравці|Captain and players|Капитан и игроки)$/i, get('captain_and_players'));
+    out = out.replace(/^(Немає призначених гравців|No assigned players|Нет назначенных игроков)$/i, get('no_assigned_players'));
+    out = out.replace(/^(Ручне редагування або додавання гравця|Manual edit or add player|Ручное редактирование или добавление игрока)$/i, get('manual_player_title'));
+    out = out.replace(/^(Нік гравця|Player nickname|Ник игрока)$/i, get('player_nickname'));
+    out = out.replace(/^(Сила маршу|March power|Сила марша)$/i, get('march_power'));
+    out = out.replace(/^(Прибрати вибраного|Remove selected|Убрать выбранного)$/i, get('remove_selected'));
+    out = out.replace(/^(— вибери гравця —|— choose a player —|— выбери игрока —)$/i, get('player_select_placeholder'));
+    out = out.replace(/^(Макс\. помічників|Max helpers|Макс\. помощников):\s*(\d+)$/i, `${get('max_helpers')}: $2`);
+    out = out.replace(/^(Ліміти маршу за тірами|Tier march limits|Лимиты марша по тирам):\s*(.+)$/i, `${get('tier_march_limits')}: $2`);
+
     return out;
   }
 
@@ -570,13 +715,30 @@
     html.lang = getLocale();
     html.dataset.locale = getLocale();
 
-    // static exact translations
+    const translatableNodes = [];
+    if (scope && scope.nodeType === 1) translatableNodes.push(scope);
+    if (scope && scope.querySelectorAll) {
+      scope.querySelectorAll('[data-i18n],[data-i18n-placeholder],[data-i18n-title],[data-i18n-aria-label]').forEach((el) => translatableNodes.push(el));
+    }
+    translatableNodes.forEach((el) => {
+      if (!el || !el.getAttribute) return;
+      const key = el.getAttribute('data-i18n');
+      if (key) el.textContent = get(key, el.textContent || '');
+      const ph = el.getAttribute('data-i18n-placeholder');
+      if (ph) el.setAttribute('placeholder', get(ph, el.getAttribute('placeholder') || ''));
+      const ttl = el.getAttribute('data-i18n-title');
+      if (ttl) el.setAttribute('title', get(ttl, el.getAttribute('title') || ''));
+      const aria = el.getAttribute('data-i18n-aria-label');
+      if (aria) el.setAttribute('aria-label', get(aria, el.getAttribute('aria-label') || ''));
+    });
+
+    // legacy fallback for old markup; runs on init / language switch / targeted HTMX swaps only.
     scope.querySelectorAll('*').forEach((el) => {
       if (el.closest && el.closest('script,style')) return;
-      translateAttr(el, 'placeholder');
-      translateAttr(el, 'title');
-      translateAttr(el, 'aria-label');
-      if (el.tagName === 'OPTION' || el.tagName === 'BUTTON' || el.tagName === 'SPAN' || el.tagName === 'DIV' || el.tagName === 'P' || el.tagName === 'TH' || el.tagName === 'TD' || el.tagName === 'LABEL' || el.tagName === 'H1' || el.tagName === 'H2' || el.tagName === 'H3' || el.tagName === 'H4' || el.tagName === 'SMALL' || el.tagName === 'STRONG' || el.tagName === 'SUMMARY') {
+      if (!el.hasAttribute('data-i18n-placeholder')) translateAttr(el, 'placeholder');
+      if (!el.hasAttribute('data-i18n-title')) translateAttr(el, 'title');
+      if (!el.hasAttribute('data-i18n-aria-label')) translateAttr(el, 'aria-label');
+      if (!el.hasAttribute('data-i18n') && (el.tagName === 'OPTION' || el.tagName === 'BUTTON' || el.tagName === 'SPAN' || el.tagName === 'DIV' || el.tagName === 'P' || el.tagName === 'TH' || el.tagName === 'TD' || el.tagName === 'LABEL' || el.tagName === 'H1' || el.tagName === 'H2' || el.tagName === 'H3' || el.tagName === 'H4' || el.tagName === 'SMALL' || el.tagName === 'STRONG' || el.tagName === 'SUMMARY')) {
         translateLeafText(el);
       }
     });
@@ -605,17 +767,8 @@
 
   let observerStarted = false;
   function observe() {
-    if (observerStarted || !document.body || !window.MutationObserver) return;
     observerStarted = true;
-    const mo = new MutationObserver((mutations) => {
-      mutations.forEach((m) => {
-        m.addedNodes.forEach((node) => {
-          if (node.nodeType === 1) apply(node);
-        });
-      });
-    });
-    mo.observe(document.body, { childList: true, subtree: true });
-    I18N.observer = mo;
+    return null;
   }
 
   function markReady() {
@@ -640,8 +793,8 @@
     if (opts.persist !== false) {
       try { localStorage.setItem(STORAGE_KEY, next); } catch {}
     }
-    apply(document);
     if (opts.rerender) rerenderApp();
+    apply(document);
     markReady();
     document.dispatchEvent(new CustomEvent('pns:i18n-changed', { detail: { locale: next } }));
     return next;
@@ -650,7 +803,6 @@
   function init() {
     try { I18N.locale = safeLocale(localStorage.getItem(STORAGE_KEY) || document.documentElement.dataset.locale || 'uk'); } catch { I18N.locale = safeLocale(document.documentElement.dataset.locale || 'uk'); }
     apply(document);
-    observe();
     markReady();
   }
 

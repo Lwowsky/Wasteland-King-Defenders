@@ -1,9 +1,14 @@
 (() => {
-  // щоб не біндити двічі
   if (window.__pnsLangBound) return;
   window.__pnsLangBound = true;
 
   const DEFAULT_LANG = 'uk';
+  const supported = new Set(['uk', 'en', 'ru']);
+
+  function normalizeLang(lang) {
+    const value = String(lang || '').trim().toLowerCase();
+    return supported.has(value) ? value : DEFAULT_LANG;
+  }
 
   function closeAllLangMenus() {
     document.querySelectorAll('.lang.is-open').forEach((root) => {
@@ -13,51 +18,44 @@
     });
   }
 
-  function getSavedLang() {
+  function currentLang() {
     try {
-      return localStorage.getItem('pns_lang');
+      return normalizeLang(window.PNSI18N?.locale || localStorage.getItem('pns_lang') || document.documentElement.dataset.locale || DEFAULT_LANG);
     } catch {
-      return null;
+      return normalizeLang(document.documentElement.dataset.locale || DEFAULT_LANG);
     }
-  }
-
-  function setSavedLang(lang) {
-    try {
-      localStorage.setItem('pns_lang', lang);
-    } catch {}
   }
 
   function applyLangToUI(lang) {
     const root = document.querySelector('.lang');
     if (!root) return;
-
-    const item = root.querySelector(`.lang-item[data-lang="${lang}"]`);
+    const safe = normalizeLang(lang);
+    const item = root.querySelector(`.lang-item[data-lang="${safe}"]`);
     if (!item) return;
 
     const name = item.querySelector('.lang-name')?.textContent?.trim();
     const label = root.querySelector('.lang-label');
     if (label && name) label.textContent = name;
 
-    root.querySelectorAll('.lang-item').forEach(x => x.setAttribute('aria-selected', 'false'));
-    item.setAttribute('aria-selected', 'true');
+    root.querySelectorAll('.lang-item').forEach((x) => x.setAttribute('aria-selected', String(x === item)));
+  }
+
+  function applyLanguage(lang, opts = {}) {
+    const safe = normalizeLang(lang);
+    if (typeof window.PNS?.setLocale === 'function') {
+      window.PNS.setLocale(safe, { persist: opts.persist !== false, rerender: opts.rerender !== false });
+    } else {
+      try { localStorage.setItem('pns_lang', safe); } catch {}
+      document.documentElement.lang = safe;
+      document.documentElement.dataset.locale = safe;
+    }
+    applyLangToUI(safe);
   }
 
   function applySavedLang() {
-    let lang = getSavedLang();
-
-    // якщо ще нічого не вибирали — ставимо українську як дефолт
-    if (!lang) {
-      lang = DEFAULT_LANG;
-      setSavedLang(lang);
-    }
-
-    applyLangToUI(lang);
-
-    // якщо у тебе є реальна i18n логіка — можеш викликати тут:
-    // if (window.setLanguage) window.setLanguage(lang);
+    applyLanguage(currentLang(), { rerender: false });
   }
 
-  // 1) Toggle меню
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.lang-btn');
     if (!btn) return;
@@ -67,7 +65,6 @@
 
     e.preventDefault();
     e.stopPropagation();
-    e.stopImmediatePropagation();
 
     const willOpen = !root.classList.contains('is-open');
     closeAllLangMenus();
@@ -75,40 +72,28 @@
     btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
   });
 
-  // 2) Select language
   document.addEventListener('click', (e) => {
     const item = e.target.closest('.lang-item');
     if (!item) return;
 
-    const root = item.closest('.lang');
-    if (!root) return;
-
     e.preventDefault();
     e.stopPropagation();
-    e.stopImmediatePropagation();
 
-    const lang = item.dataset.lang || DEFAULT_LANG;
-    setSavedLang(lang);
-    applyLangToUI(lang);
+    applyLanguage(item.dataset.lang || DEFAULT_LANG, { rerender: true });
     closeAllLangMenus();
-
-    // якщо у тебе є реальна i18n логіка — можеш викликати тут:
-    // if (window.setLanguage) window.setLanguage(lang);
   });
 
-  // 3) click outside -> close (не закриваємо, якщо клік всередині .lang)
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.lang')) return;
-    closeAllLangMenus();
+    if (!e.target.closest('.lang')) closeAllLangMenus();
   });
 
-  // 4) Esc -> close
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeAllLangMenus();
   });
 
-  // 5) HTMX + старт
-  document.addEventListener('htmx:afterSwap', applySavedLang);
-  document.addEventListener('htmx:afterSettle', applySavedLang);
+  document.addEventListener('pns:i18n-applied', () => applyLangToUI(currentLang()));
+  document.addEventListener('pns:i18n-changed', (e) => applyLangToUI(e?.detail?.locale || currentLang()));
   document.addEventListener('DOMContentLoaded', applySavedLang);
+
+  if (document.readyState !== 'loading') applySavedLang();
 })();

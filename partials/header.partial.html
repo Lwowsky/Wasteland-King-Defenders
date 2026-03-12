@@ -61,6 +61,7 @@
     </div>
     <button
       class="burger-btn"
+      data-i18n-aria-label="open_menu"
       id="burgerBtn"
       aria-label="Відкрити меню"
       aria-expanded="false"
@@ -77,11 +78,11 @@
 
   <aside class="drawer-panel" role="dialog" aria-modal="true" aria-label="Меню">
     <div class="drawer-top">
-      <div class="drawer-title">Меню</div>
+      <div class="drawer-title" data-i18n="menu">Меню</div>
       <button
         class="drawer-close"
         id="drawerClose"
-        aria-label="Закрити меню"
+        aria-label="Закрити меню" data-i18n-aria-label="close_menu"
         type="button"
       >
         ✕
@@ -89,13 +90,13 @@
     </div>
 
     <div class="drawer-body">
-      <button class="btn btn-primary" id="openSettingsBtnMobile" type="button">
+      <button class="btn btn-primary" id="openSettingsBtnMobile" type="button" data-i18n="settings_import">
         Налаштування / Імпорт
       </button>
-      <button class="btn" id="openBoardBtnMobile" type="button">
+      <button class="btn" id="openBoardBtnMobile" type="button" data-i18n="final_plan">
         Фінальний план
       </button>
-      <button class="btn" id="openTowerCalcBtnMobile" type="button">
+      <button class="btn" id="openTowerCalcBtnMobile" type="button" data-i18n="tower_planning">
         Розподіл по турелях
       </button>
     </div>

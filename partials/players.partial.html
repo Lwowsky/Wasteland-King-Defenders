@@ -1,8 +1,8 @@
 <section class="panel players-panel">
   <div class="panel-head">
     <div>
-      <h2>Гравці</h2>
-      <p class="players-panel-lead">
+      <h2 data-i18n="players">Гравці</h2>
+      <p class="players-panel-lead" data-i18n="players_panel_lead">
         Склад альянсу в одному місці: імпортуй список, фільтруй гравців і швидко розподіляй їх по турелях та змінах.
       </p>
     </div>
@@ -12,10 +12,10 @@
         class="btn btn-sm"
         id="showAllDataBtn"
         type="button"
-      >
+       data-i18n="show_all_data">
         Показати всі дані
       </button>
-      <button class="btn btn-sm" id="openImportQuickBtn" type="button">
+      <button class="btn btn-sm" id="openImportQuickBtn" type="button" data-i18n="import_label">
         Імпорт CSV/XLSX/URL
       </button>
     </div>
@@ -24,12 +24,12 @@
   <div class="stats-grid stats-grid--players">
   <article class="stat-card stat-card--duo" data-stat-card="summary">
     <div class="stat-duo-item" data-stat-card="total">
-      <span>Всього гравців</span>
+      <span data-i18n="total_players">Всього гравців</span>
       <strong>0</strong>
     </div>
     <div class="stat-duo-divider" aria-hidden="true"></div>
     <div class="stat-duo-item" data-stat-card="captains">
-      <span>Капітанів готові</span>
+      <span data-i18n="captains_ready">Капітанів готові</span>
       <strong>0</strong>
     </div>
   </article>
@@ -53,31 +53,31 @@
 
   <div class="filters-row">
     <label>
-      <span>Пошук</span>
+      <span data-i18n="search">Пошук</span>
       <input
         id="topSearchFilter"
-        placeholder="Пошук по ніку / альянсу"
+        placeholder="Пошук по ніку / альянсу" data-i18n-placeholder="search_placeholder"
         type="text"
       />
     </label>
 
     <label>
-      <span>Роль</span>
+      <span data-i18n="role">Роль</span>
       <select id="topRoleFilter">
-        <option value="all">Усі</option>
-        <option value="Shooter">Стрільці</option>
-        <option value="Fighter">Бійці</option>
-        <option value="Rider">Наїзники</option>
+        <option value="all" data-i18n="all">Усі</option>
+        <option value="Shooter" data-i18n="shooter_plural">Стрільці</option>
+        <option value="Fighter" data-i18n="fighter_plural">Бійці</option>
+        <option value="Rider" data-i18n="rider_plural">Наїзники</option>
       </select>
     </label>
 
     <label>
-      <span>Зміна</span>
+      <span data-i18n="shift">Зміна</span>
       <select id="topShiftFilter">
-        <option value="all">Усі</option>
-        <option value="shift1">Зміна 1</option>
-        <option value="shift2">Зміна 2</option>
-        <option value="both">Обидві</option>
+        <option value="all" data-i18n="all">Усі</option>
+        <option value="shift1" data-i18n="shift1">Зміна 1</option>
+        <option value="shift2" data-i18n="shift2">Зміна 2</option>
+        <option value="both" data-i18n="both">Обидві</option>
       </select>
     </label>
 
@@ -94,7 +94,7 @@
     <label>
       <span>Тір</span>
       <select id="topTierFilter">
-        <option value="all">Усі</option>
+        <option value="all" data-i18n="all">Усі</option>
         <option>T14</option>
         <option>T13</option>
         <option>T12</option>
@@ -110,7 +110,7 @@
         <option selected>10</option>
         <option>20</option>
         <option>50</option>
-        <option value="all">Усі</option>
+        <option value="all" data-i18n="all">Усі</option>
       </select>
     </label>
 
