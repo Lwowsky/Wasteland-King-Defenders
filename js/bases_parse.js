@@ -59,7 +59,7 @@
       const sub = $('.board-sub', base.boardEl);
       if (sub) {
         sub.classList.toggle('is-auto', !base.role);
-        sub.textContent = base.role ? `${base.role} / ${base.role}` : 'Type auto by captain';
+        sub.textContent = base.role ? `${typeof PNS.roleLabel === 'function' ? PNS.roleLabel(base.role) : base.role} / ${typeof PNS.roleLabel === 'function' ? PNS.roleLabel(base.role) : base.role}` : 'Тип визначається капітаном';
       }
     }
   }

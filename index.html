@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Puzzle &amp; Survival — Tower Planner (HTML/CSS Layout)</title>
+    <title>Puzzle &amp; Survival — Планувальник турелей (HTML/CSS Layout)</title>
 
     <link href="css/styles.css" rel="stylesheet" />
     <link href="css/header.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
       />
       <div class="brand-text">
         <h1>Wasteland <span>King</span> Defenders</h1>
-        <p class="muted">Puzzle &amp; Survival — Tower Planner</p>
+        <p class="muted">Puzzle &amp; Survival — Планувальник турелей</p>
       </div>
     </div>
 
@@ -46,7 +46,7 @@
         <span class="lang-caret" aria-hidden="true">▾</span>
       </button>
 
-      <div class="lang-menu" id="langMenu" role="listbox" aria-label="Language">
+      <div class="lang-menu" id="langMenu" role="listbox" aria-label="Мова">
         <button
           class="lang-item"
           type="button"
@@ -83,7 +83,7 @@
     <button
       class="burger-btn"
       id="burgerBtn"
-      aria-label="Open menu"
+      aria-label="Відкрити меню"
       aria-expanded="false"
       type="button"
     >
@@ -96,13 +96,13 @@
 <div class="drawer" id="drawer" aria-hidden="true">
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
 
-  <aside class="drawer-panel" role="dialog" aria-modal="true" aria-label="Menu">
+  <aside class="drawer-panel" role="dialog" aria-modal="true" aria-label="Меню">
     <div class="drawer-top">
-      <div class="drawer-title">Menu</div>
+      <div class="drawer-title">Меню</div>
       <button
         class="drawer-close"
         id="drawerClose"
-        aria-label="Close menu"
+        aria-label="Закрити меню"
         type="button"
       >
         ✕
@@ -114,10 +114,10 @@
         Налаштування / Імпорт
       </button>
       <button class="btn" id="openBoardBtnMobile" type="button">
-        Final Board View
+        Фінальний план
       </button>
       <button class="btn" id="openTowerCalcBtnMobile" type="button">
-        Tower Calculator
+        Розподіл по турелях
       </button>
     </div>
   </aside>
@@ -128,8 +128,8 @@
   <div class="panel-head">
     <div>
       <h2>Гравці</h2>
-      <p class="muted">
-        Імпорт CSV / Excel / Google Sheets link + розподіл по 5 базах
+      <p class="players-panel-lead">
+        Склад альянсу в одному місці: імпортуй список, фільтруй гравців і швидко розподіляй їх по турелях та змінах.
       </p>
     </div>
     <div class="panel-actions">
@@ -162,17 +162,17 @@
 
   <article class="stat-card stat-card--rich stat-card--plain" data-stat-card="roles">
     <div class="stat-split stat-split--roles" id="roleCountsDisplay" aria-label="Розподіл ролей">
-      <span class="stat-chip stat-chip--role is-fighter"><b>0</b><small>Fighter</small></span>
-      <span class="stat-chip stat-chip--role is-rider"><b>0</b><small>Rider</small></span>
-      <span class="stat-chip stat-chip--role is-shooter"><b>0</b><small>Shooter</small></span>
+      <span class="stat-chip stat-chip--role is-fighter"><b>0</b><small>Бійці</small></span>
+      <span class="stat-chip stat-chip--role is-rider"><b>0</b><small>Наїзники</small></span>
+      <span class="stat-chip stat-chip--role is-shooter"><b>0</b><small>Стрільці</small></span>
     </div>
   </article>
 
   <article class="stat-card stat-card--rich stat-card--plain" data-stat-card="shifts">
     <div class="stat-split stat-split--shifts" id="shiftCountsDisplay" aria-label="Розподіл по змінах">
-      <span class="stat-chip stat-chip--shift is-shift1"><b>0</b><small>Shift 1</small></span>
-      <span class="stat-chip stat-chip--shift is-shift2"><b>0</b><small>Shift 2</small></span>
-      <span class="stat-chip stat-chip--shift is-both"><b>0</b><small>Both</small></span>
+      <span class="stat-chip stat-chip--shift is-shift1"><b>0</b><small>Зміна 1</small></span>
+      <span class="stat-chip stat-chip--shift is-shift2"><b>0</b><small>Зміна 2</small></span>
+      <span class="stat-chip stat-chip--shift is-both"><b>0</b><small>Обидві</small></span>
     </div>
   </article>
 </div>
@@ -190,20 +190,20 @@
     <label>
       <span>Роль</span>
       <select id="topRoleFilter">
-        <option>Усі</option>
-        <option>Shooter</option>
-        <option>Fighter</option>
-        <option>Rider</option>
+        <option value="all">Усі</option>
+        <option value="Shooter">Стрільці</option>
+        <option value="Fighter">Бійці</option>
+        <option value="Rider">Наїзники</option>
       </select>
     </label>
 
     <label>
-      <span>Shift</span>
+      <span>Зміна</span>
       <select id="topShiftFilter">
         <option value="all">Усі</option>
-        <option value="shift1">Shift 1</option>
-        <option value="shift2">Shift 2</option>
-        <option value="both">Both</option>
+        <option value="shift1">Зміна 1</option>
+        <option value="shift2">Зміна 2</option>
+        <option value="both">Обидві</option>
       </select>
     </label>
 
@@ -218,7 +218,7 @@
     </label>
 
     <label>
-      <span>Tier</span>
+      <span>Тір</span>
       <select id="topTierFilter">
         <option value="all">Усі</option>
         <option>T14</option>
@@ -231,7 +231,7 @@
     </label>
 
     <label>
-      <span>Rows</span>
+      <span>Рядків</span>
       <select id="pageSizeSelect">
         <option selected>10</option>
         <option>20</option>
@@ -253,40 +253,40 @@
     <table class="data-table" id="playersDataTable">
       <thead>
         <tr>
-          <th data-field="name">Player name</th>
-          <th data-field="alliance">Alliance</th>
-          <th data-field="role">Focus troop</th>
+          <th data-field="name">Нік гравця</th>
+          <th data-field="alliance">Альянс</th>
+          <th data-field="role">Тип військ</th>
           <th data-field="tier">
-            Tier
+            Тір
             <button
               class="sort-btn"
               data-sort="tier"
               type="button"
-              title="Sort by Tier"
-              aria-label="Sort by Tier"
+              title="Сортувати за тіром"
+              aria-label="Сортувати за тіром"
             >
               ↓
             </button>
           </th>
-          <th data-field="march">March size</th>
+          <th data-field="march">Розмір маршу</th>
           <th data-field="rally">
-            Rally size
+            Розмір ралі
             <button
               class="sort-btn"
               data-sort="rally"
               type="button"
-              title="Sort by Rally size"
-              aria-label="Sort by Rally size"
+              title="Сортувати за розміром ралі"
+              aria-label="Сортувати за розміром ралі"
             >
               ↓
             </button>
           </th>
-          <th data-field="captainReady">Captain</th>
-          <th data-field="shiftLabel">Shift</th>
+          <th data-field="captainReady">Капітан</th>
+          <th data-field="shiftLabel">Зміна</th>
           <th class="optional-col is-hidden-col" data-col-key="lair_level" data-field="lair">
-            Lair level
+            Рівень лігва
           </th>
-          <th data-col-key="actions" data-field="actions">Actions</th>
+          <th data-col-key="actions" data-field="actions">Розміщення</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -295,7 +295,7 @@
 
   <div class="table-pagination">
     <button class="btn btn-sm" id="pagePrevBtn" type="button">◀</button>
-    <span id="pageInfoText">Page 1 / 1</span>
+    <span id="pageInfoText">Сторінка 1 / 1</span>
     <button class="btn btn-sm" id="pageNextBtn" type="button">▶</button>
   </div>
 </section>
@@ -304,7 +304,7 @@
     <div>
       <h2>5 баз (головна сторінка)</h2>
       <p class="muted">
-        Живий розподіл: Captain / Helper, auto-fill, без змішування типів
+        Швидке керування турелями: капітан, помічники й автозаповнення без змішування типів військ
         військ
       </p>
     </div>
@@ -321,28 +321,28 @@
           <h3>Налаштування / Settings</h3>
           <p class="base-type">Тип бази: автоматично по капітану</p>
         </div>
-        <span class="base-role badge is-auto" id="settingsShiftBadge">Shift 2</span>
+        <span class="base-role badge is-auto" id="settingsShiftBadge">Зміна 2</span>
       </header>
 
       <div class="captain-box settings-tools-box">
         <div class="captain-title">Shift plan</div>
         <div class="row gap wrap settings-top-row">
-          <button class="btn btn-sm shift-tab" data-shift-tab="shift1" type="button">Shift 1</button>
-          <button class="btn btn-sm shift-tab active" data-shift-tab="shift2" type="button">Shift 2</button>
+          <button class="btn btn-sm shift-tab" data-shift-tab="shift1" type="button">Зміна 1</button>
+          <button class="btn btn-sm shift-tab active" data-shift-tab="shift2" type="button">Зміна 2</button>
           <button class="btn btn-sm" id="toggleTowerFocusBtn" data-action="toggle-towers-view" type="button">Приховати інші</button>
           <button class="btn btn-sm" id="openTowerPickerBtn" data-action="open-tower-picker" type="button">5 башень</button>
           <div class="settings-focus-inline compact" title="Башня справа">
-            <button class="btn btn-xs" id="focusTowerPrevBtn" type="button" aria-label="Попередня башня">‹</button>
+            <button class="btn btn-xs" id="focusTowerPrevBtn" type="button" aria-label="Попередня турель">‹</button>
             <select id="focusTowerSelect" class="settings-focus-select" aria-label="Башня справа"></select>
-            <button class="btn btn-xs" id="focusTowerNextBtn" type="button" aria-label="Наступна башня">›</button>
+            <button class="btn btn-xs" id="focusTowerNextBtn" type="button" aria-label="Наступна турель">›</button>
           </div>
         </div>
         <div class="row gap wrap top-space">
-          <button class="btn btn-sm" id="autoFillAllBasesBtn" type="button">Auto-fill all</button>
+          <button class="btn btn-sm" id="autoFillAllBasesBtn" type="button">Автозаповнити все</button>
           <button class="btn btn-sm" id="clearCurrentShiftBtn" type="button">Очистити поточний Shift</button>
-          <button class="btn btn-sm" id="openBoardFromSettingsColBtn" data-action="open-board" type="button">Final Board View</button>
+          <button class="btn btn-sm" id="openBoardFromSettingsColBtn" data-action="open-board" type="button">Фінальний план</button>
         </div>
-        <div class="muted small top-space">Shift 1 / Shift 2 — окремі плани. Auto-fill не дублює гравців між ними.</div>
+        <div class="muted small top-space">Зміна 1 / Зміна 2 — окремі плани. Автозаповнення не дублює гравців між ними.</div>
         <div class="shift-towers-preview top-space" aria-label="Схема 5 башень">
           <div class="tower-slot tower-slot-north">
             <figure class="tower-thumb-card" data-preview-slot-card role="button" tabindex="0" aria-pressed="false">
@@ -421,7 +421,7 @@
     <section class="base-card shooter-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Техно-Центр / Hub</h3>
+          <h3>Техно-Центр</h3>
           <p class="base-type">Тип бази: автоматично по капітану</p>
         </div>
         <span class="base-role badge is-auto">Auto</span>
@@ -433,30 +433,30 @@
             <div class="captain-title">Капітан</div>
             <div class="captain-main">
               <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Type auto by captain · Both</div>
+              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
             <div class="captain-title">План / Plan</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Rally size</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Free space</span><strong>0</strong></div>
+        <div><span>Марш капітана</span><strong>0</strong></div>
+        <div><span>Розмір ралі</span><strong>0</strong></div>
+        <div><span>Разом</span><strong>0</strong></div>
+        <div><span>Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
         <span class="quota-summary">Tier max march: auto (not set)</span>
-        <span class="quota-max">Max helpers: 29</span>
+        <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
@@ -472,7 +472,7 @@
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">No helpers assigned</td>
+              <td class="muted" colspan="5">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>
@@ -483,7 +483,7 @@
     <section class="base-card fighter-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Північна башня / North Tower</h3>
+          <h3>Північна турель</h3>
           <p class="base-type">Тип бази: автоматично по капітану</p>
         </div>
         <span class="base-role badge is-auto">Auto</span>
@@ -495,30 +495,30 @@
             <div class="captain-title">Капітан</div>
             <div class="captain-main">
               <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Type auto by captain · Both</div>
+              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
             <div class="captain-title">План / Plan</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Rally size</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Free space</span><strong>0</strong></div>
+        <div><span>Марш капітана</span><strong>0</strong></div>
+        <div><span>Розмір ралі</span><strong>0</strong></div>
+        <div><span>Разом</span><strong>0</strong></div>
+        <div><span>Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
         <span class="quota-summary">Tier max march: auto (not set)</span>
-        <span class="quota-max">Max helpers: 29</span>
+        <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
@@ -534,7 +534,7 @@
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">No helpers assigned</td>
+              <td class="muted" colspan="5">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>
@@ -545,7 +545,7 @@
     <section class="base-card fighter-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Західна башня / West Tower</h3>
+          <h3>Західна турель</h3>
           <p class="base-type">Тип бази: автоматично по капітану</p>
         </div>
         <span class="base-role badge is-auto">Auto</span>
@@ -557,30 +557,30 @@
             <div class="captain-title">Капітан</div>
             <div class="captain-main">
               <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Type auto by captain · Both</div>
+              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
             <div class="captain-title">План / Plan</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Rally size</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Free space</span><strong>0</strong></div>
+        <div><span>Марш капітана</span><strong>0</strong></div>
+        <div><span>Розмір ралі</span><strong>0</strong></div>
+        <div><span>Разом</span><strong>0</strong></div>
+        <div><span>Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
         <span class="quota-summary">Tier max march: auto (not set)</span>
-        <span class="quota-max">Max helpers: 29</span>
+        <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
@@ -596,7 +596,7 @@
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">No helpers assigned</td>
+              <td class="muted" colspan="5">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>
@@ -607,7 +607,7 @@
     <section class="base-card rider-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Східна башня / East Tower</h3>
+          <h3>Східна турель</h3>
           <p class="base-type">Тип бази: автоматично по капітану</p>
         </div>
         <span class="base-role badge is-auto">Auto</span>
@@ -619,30 +619,30 @@
             <div class="captain-title">Капітан</div>
             <div class="captain-main">
               <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Type auto by captain · Both</div>
+              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
             <div class="captain-title">План / Plan</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Rally size</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Free space</span><strong>0</strong></div>
+        <div><span>Марш капітана</span><strong>0</strong></div>
+        <div><span>Розмір ралі</span><strong>0</strong></div>
+        <div><span>Разом</span><strong>0</strong></div>
+        <div><span>Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
         <span class="quota-summary">Tier max march: auto (not set)</span>
-        <span class="quota-max">Max helpers: 29</span>
+        <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
@@ -658,7 +658,7 @@
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">No helpers assigned</td>
+              <td class="muted" colspan="5">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>
@@ -669,7 +669,7 @@
     <section class="base-card rider-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Південна башня / South Tower</h3>
+          <h3>Південна турель</h3>
           <p class="base-type">Тип бази: автоматично по капітану</p>
         </div>
         <span class="base-role badge is-auto">Auto</span>
@@ -681,30 +681,30 @@
             <div class="captain-title">Капітан</div>
             <div class="captain-main">
               <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Type auto by captain · Both</div>
+              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
             <div class="captain-title">План / Plan</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Rally size</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Free space</span><strong>0</strong></div>
+        <div><span>Марш капітана</span><strong>0</strong></div>
+        <div><span>Розмір ралі</span><strong>0</strong></div>
+        <div><span>Разом</span><strong>0</strong></div>
+        <div><span>Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
         <span class="quota-summary">Tier max march: auto (not set)</span>
-        <span class="quota-max">Max helpers: 29</span>
+        <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
@@ -720,7 +720,7 @@
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">No helpers assigned</td>
+              <td class="muted" colspan="5">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>
@@ -913,7 +913,7 @@
 
   <!-- FINAL BOARD MODAL (CSS only preview) -->
   <section
-    aria-label="Final board view"
+    aria-label="Фінальний план"
     class="modal board-modal"
     data-modal="board"
     id="board-modal"
@@ -941,20 +941,16 @@
               class="btn btn-sm board-shift-tab"
               data-shift-tab="shift1"
               type="button"
-            >
-              Shift 1
-            </button>
+            >Зміна 1</button>
             <button
               class="btn btn-sm board-shift-tab active"
               data-shift-tab="shift2"
               type="button"
-            >
-              Shift 2
-            </button>
+            >Зміна 2</button>
           </div>
 
           <button class="btn btn-sm" id="exportPngBtn" type="button">
-            Export PNG
+            Експорт PNG
           </button>
           <button class="btn btn-sm" id="shareBoardBtn" type="button">
             Поділитися
@@ -965,14 +961,14 @@
 
       <div class="board-sheet">
         <div class="board-title" id="boardTitle">
-          2nd shift / Вторая половина
+          Зміна 2 / Друга половина
         </div>
 
         <div class="board-grid">
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Техно-Центр / Hub</h4>
-              <div class="is-auto board-sub">Type auto by captain</div>
+              <h4>Техно-Центр</h4>
+              <div class="is-auto board-sub">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
@@ -982,8 +978,8 @@
 
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Северная башня / North tower</h4>
-              <div class="is-auto board-sub">Type auto by captain</div>
+              <h4>Північна турель</h4>
+              <div class="is-auto board-sub">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
@@ -993,8 +989,8 @@
 
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Западная башня / West Tower</h4>
-              <div class="is-auto board-sub">Type auto by captain</div>
+              <h4>Західна турель</h4>
+              <div class="is-auto board-sub">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
@@ -1004,8 +1000,8 @@
 
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Восточная башня / East tower</h4>
-              <div class="is-auto board-sub">Type auto by captain</div>
+              <h4>Східна турель</h4>
+              <div class="is-auto board-sub">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
@@ -1015,8 +1011,8 @@
 
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Южная башня / South tower</h4>
-              <div class="is-auto board-sub">Type auto by captain</div>
+              <h4>Південна турель</h4>
+              <div class="is-auto board-sub">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
@@ -1030,7 +1026,7 @@
 
   <!-- TOWER CALCULATOR MODAL (moved from JS ensureTowerCalcModal) -->
   <section
-    aria-label="Tower Calculator"
+    aria-label="Розподіл по турелях"
     class="modal tower-calc-modal"
     id="towerCalcModal"
   >
@@ -1044,10 +1040,10 @@
     <div class="modal-card" role="dialog" aria-modal="true">
       <div class="modal-head">
         <div>
-          <h2 style="margin: 0">Tower Calculator</h2>
+          <h2 style="margin: 0">Розподіл по турелях</h2>
           <p class="muted" style="margin: 4px 0 0">
             План на 10 капітанів (5 + 5), розрахунок вміщення гравців по
-            башнях і тірах (капітани не входять у tier-пул)
+            розклад гравців по турелях і тірах для двох змін. Капітани рахуються окремо.
           </p>
         </div>
         <a
@@ -1118,14 +1114,14 @@
                   type="button"
                   id="towerCalcApplyToTowersBtn"
                 >
-                  Використати на башнях (ліміти)
+                  Підготувати ліміти для турелей
                 </button>
                 <button
                   class="btn btn-sm"
                   type="button"
                   id="towerCalcQuickApplyBtn"
                 >
-                  Заповнити башні + ліміти (авто)
+                  Автоматично заповнити турелі
                 </button>
               </div>
               <div
@@ -1166,10 +1162,10 @@
                   >
                     <label
                       ><input type="checkbox" id="towerCalcBoth50" />
-                      Автобаланс гравців Both</label
+                      Автобаланс гравців «Обидві»</label
                     >
                     <label
-                      ><input type="checkbox" id="towerCalcMinHelpersOn" /> Мінімум гравців на башню</label
+                      ><input type="checkbox" id="towerCalcMinHelpersOn" /> Мінімум гравців на турель</label
                     >
                     <label
                       >Кількість
@@ -1191,7 +1187,7 @@
                       type="button"
                       id="towerCalcApplyAndAssignBtn"
                     >
-                      Застосувати + перенести гравців у башні
+                      Застосувати й розставити гравців по турелях
                     </button>
                     <button
                       class="btn btn-sm"
@@ -1270,9 +1266,9 @@
                     </span>
                   </div>
                   <div class="muted small" style="margin-top: 6px">
-                    Порада: “Порахувати” → “Використати на башнях (ліміти)”
-                    налаштовує ліміти. Кнопка “Заповнити башні + ліміти (авто)”
-                    — налаштовує ліміти і одразу переносить гравців у башні.
+                    Порада: “Порахувати” → “Підготувати ліміти для турелей”
+                    налаштовує ліміти. Кнопка “Автоматично заповнити турелі”
+                    — одразу готує ліміти й розставляє гравців по турелях.
                   </div>
                 </div>
               </details>
@@ -1287,21 +1283,21 @@
 
                 <div class="tower-calc-shift-cards">
                   <div class="tower-calc-shift-card">
-                    <span>Shift 1</span>
+                    <span>Зміна 1</span>
                     <strong id="tcShift1Count">0</strong>
                     <div class="muted small" id="tcShift1Roles">
                       F / R / S: 0 / 0 / 0
                     </div>
                   </div>
                   <div class="tower-calc-shift-card">
-                    <span>Shift 2</span>
+                    <span>Зміна 2</span>
                     <strong id="tcShift2Count">0</strong>
                     <div class="muted small" id="tcShift2Roles">
                       F / R / S: 0 / 0 / 0
                     </div>
                   </div>
                   <div class="tower-calc-shift-card">
-                    <span>Both</span>
+                    <span>Обидві</span>
                     <strong id="tcBothCount">0</strong>
                     <div class="muted small" id="tcBothRoles">
                       F / R / S: 0 / 0 / 0
@@ -1312,19 +1308,19 @@
                 <div class="tower-calc-shift-controls">
                   <div class="tower-calc-shift-controls-left">
                     <label
-                      >Ліміт Shift 1
+                      >Ліміт зміни 1
                       <input id="shiftLimitS1" type="number" min="0" max="100" value="100" />
                     </label>
                     <label
-                      >Ліміт Shift 2
+                      >Ліміт зміни 2
                       <input id="shiftLimitS2" type="number" min="0" max="100" value="100" />
                     </label>
                     <label
-                      >Додати в Shift 1
+                      >Додати в зміну 1
                       <input id="shiftAddS1" type="number" min="0" value="0" />
                     </label>
                     <label
-                      >Додати в Shift 2
+                      >Додати в зміну 2
                       <input id="shiftAddS2" type="number" min="0" value="0" />
                     </label>
                     <button
@@ -1343,7 +1339,7 @@
                     </button>
                     <label class="tower-calc-shift-force">
                       <input id="shiftSplitForceChk" type="checkbox" />
-                      Скинути поточний розподіл у Both перед застосуванням
+                      Скинути поточний розподіл в «Обидві» перед застосуванням
                     </label>
                     <div class="muted small" id="towerCalcShiftLimitNote"></div>
                   </div>
@@ -1351,7 +1347,7 @@
                   <div class="tower-calc-shift-controls-right">
                     <label class="tower-calc-ignore-both">
                       <input id="towerCalcIgnoreBoth" type="checkbox" />
-                      Планувати Shift 1/2 без Both
+                      Планувати зміни 1/2 без групи «Обидві»
                     </label>
 
                     <div class="tower-calc-autoslots">
@@ -1389,12 +1385,8 @@
               align-items: center;
             "
           >
-            <button class="btn btn-sm" type="button" data-calc-tab="shift1">
-              Shift 1
-            </button>
-            <button class="btn btn-sm" type="button" data-calc-tab="shift2">
-              Shift 2
-            </button>
+            <button class="btn btn-sm" type="button" data-calc-tab="shift1">Зміна 1</button>
+            <button class="btn btn-sm" type="button" data-calc-tab="shift2">Зміна 2</button>
             <span class="muted small" style="margin-left: 6px"
               >Показується тільки один Shift, щоб було більше місця для
               даних</span
@@ -1412,7 +1404,7 @@
           data-calc-main-panel="overflow"
         >
           <div class="tower-calc-placeholder muted small">
-            Натисни “Порахувати”, щоб побачити фактичний статус гравців по Shift і башнях.
+            Натисни «Порахувати», щоб побачити, хто вже стоїть у турелях, хто в резерві та кого ще треба розподілити.
           </div>
         </section>
         <section
@@ -1441,6 +1433,7 @@
     <script src="js/table.js" defer></script>
     <script src="js/modals.js" defer></script>
     <script src="js/language.js" defer></script>
+    <script src="js/ui_uk.js" defer></script>
 
     <script src="js/tower_calc_summary_ui_core.js" defer></script>
     <script src="js/tower_calc_layout_ui_core.js" defer></script>

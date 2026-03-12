@@ -103,21 +103,21 @@
 
         // Власна валідація для кейсу "капітан в іншому shift як helper тут"
         let err = '';
-        if (!PNS.ROLE_KEYS?.includes?.(player.role)) err = `Unknown role for ${player.name}.`;
+        if (!PNS.ROLE_KEYS?.includes?.(player.role)) err = `Не вдалося визначити тип військ для ${player.name}.`;
         else if (!ignoreShiftAutoFill && baseShift !== 'both' && playerShift !== 'both' && playerShift !== baseShift) {
           // дозволяємо цей mismatch лише якщо він капітан в іншому shift
           err = '';
         }
-        if (!err && !base.captainId) err = `Set a captain first for "${base.title}".`;
+        if (!err && !base.captainId) err = `Спочатку постав капітана в турель «${base.title}».`;
         const effectiveRole = (typeof PNS.getBaseRole === 'function') ? PNS.getBaseRole(base) : null;
-        if (!err && sameTroopOnlyEnabled() && effectiveRole && player.role !== effectiveRole) err = `Role mismatch: ${player.role} cannot go to ${effectiveRole} base.`;
+        if (!err && sameTroopOnlyEnabled() && effectiveRole && player.role !== effectiveRole) err = `Тип військ не підходить: ${player.role} не можна поставити в турель типу ${effectiveRole}.`;
         if (!err && noCrossShiftDupesEnabled()) {
           const hit = wrappedOther(player.id, activeShift);
-          if (hit) err = `Player already assigned in ${hit.label || hit.shift || 'other shift'}.`;
+          if (hit) err = `Гравець уже призначений у ${hit.label || hit.shift || 'іншій зміні'}.`;
         }
         if (!err) {
           const helperCountAfter = (base.helperIds || []).filter((id) => id !== player.id).length + 1;
-          if (Number.isFinite(base.maxHelpers) && base.maxHelpers > 0 && helperCountAfter > base.maxHelpers) err = `Max helpers reached: ${helperCountAfter}/${base.maxHelpers}.`;
+          if (Number.isFinite(base.maxHelpers) && base.maxHelpers > 0 && helperCountAfter > base.maxHelpers) err = `Ліміт помічників заповнений: ${helperCountAfter}/${base.maxHelpers}.`;
         }
         if (!err) {
           const captain = state.playerById?.get?.(base.captainId);
@@ -127,7 +127,7 @@
             return sum + helperMarchForBase(base, state.playerById?.get?.(id));
           }, 0);
           const totalAfter = Number(captain?.march || 0) + helpersSum + helperMarchForBase(base, player);
-          if (limit && totalAfter > limit) err = `Over limit: ${PNS.formatNum?.(totalAfter) || totalAfter} > ${PNS.formatNum?.(limit) || limit}.`;
+          if (limit && totalAfter > limit) err = `Перевищено ліміт: ${PNS.formatNum?.(totalAfter) || totalAfter} > ${PNS.formatNum?.(limit) || limit}.`;
         }
         if (err) {
           try { PNS.setRowStatus?.(player, err, 'danger'); } catch {}

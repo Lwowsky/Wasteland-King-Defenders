@@ -3,7 +3,7 @@
     <div>
       <h2>5 баз (головна сторінка)</h2>
       <p class="muted">
-        Живий розподіл: Captain / Helper, auto-fill, без змішування типів
+        Швидке керування турелями: капітан, помічники й автозаповнення без змішування типів військ
         військ
       </p>
     </div>
@@ -20,28 +20,28 @@
           <h3>Налаштування / Settings</h3>
           <p class="base-type">Тип бази: автоматично по капітану</p>
         </div>
-        <span class="base-role badge is-auto" id="settingsShiftBadge">Shift 2</span>
+        <span class="base-role badge is-auto" id="settingsShiftBadge">Зміна 2</span>
       </header>
 
       <div class="captain-box settings-tools-box">
         <div class="captain-title">Shift plan</div>
         <div class="row gap wrap settings-top-row">
-          <button class="btn btn-sm shift-tab" data-shift-tab="shift1" type="button">Shift 1</button>
-          <button class="btn btn-sm shift-tab active" data-shift-tab="shift2" type="button">Shift 2</button>
+          <button class="btn btn-sm shift-tab" data-shift-tab="shift1" type="button">Зміна 1</button>
+          <button class="btn btn-sm shift-tab active" data-shift-tab="shift2" type="button">Зміна 2</button>
           <button class="btn btn-sm" id="toggleTowerFocusBtn" data-action="toggle-towers-view" type="button">Приховати інші</button>
           <button class="btn btn-sm" id="openTowerPickerBtn" data-action="open-tower-picker" type="button">5 башень</button>
           <div class="settings-focus-inline compact" title="Башня справа">
-            <button class="btn btn-xs" id="focusTowerPrevBtn" type="button" aria-label="Попередня башня">‹</button>
+            <button class="btn btn-xs" id="focusTowerPrevBtn" type="button" aria-label="Попередня турель">‹</button>
             <select id="focusTowerSelect" class="settings-focus-select" aria-label="Башня справа"></select>
-            <button class="btn btn-xs" id="focusTowerNextBtn" type="button" aria-label="Наступна башня">›</button>
+            <button class="btn btn-xs" id="focusTowerNextBtn" type="button" aria-label="Наступна турель">›</button>
           </div>
         </div>
         <div class="row gap wrap top-space">
-          <button class="btn btn-sm" id="autoFillAllBasesBtn" type="button">Auto-fill all</button>
+          <button class="btn btn-sm" id="autoFillAllBasesBtn" type="button">Автозаповнити все</button>
           <button class="btn btn-sm" id="clearCurrentShiftBtn" type="button">Очистити поточний Shift</button>
-          <button class="btn btn-sm" id="openBoardFromSettingsColBtn" data-action="open-board" type="button">Final Board View</button>
+          <button class="btn btn-sm" id="openBoardFromSettingsColBtn" data-action="open-board" type="button">Фінальний план</button>
         </div>
-        <div class="muted small top-space">Shift 1 / Shift 2 — окремі плани. Auto-fill не дублює гравців між ними.</div>
+        <div class="muted small top-space">Зміна 1 / Зміна 2 — окремі плани. Автозаповнення не дублює гравців між ними.</div>
         <div class="shift-towers-preview top-space" aria-label="Схема 5 башень">
           <div class="tower-slot tower-slot-north">
             <figure class="tower-thumb-card" data-preview-slot-card role="button" tabindex="0" aria-pressed="false">
@@ -120,7 +120,7 @@
     <section class="base-card shooter-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Техно-Центр / Hub</h3>
+          <h3>Техно-Центр</h3>
           <p class="base-type">Тип бази: автоматично по капітану</p>
         </div>
         <span class="base-role badge is-auto">Auto</span>
@@ -132,30 +132,30 @@
             <div class="captain-title">Капітан</div>
             <div class="captain-main">
               <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Type auto by captain · Both</div>
+              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
             <div class="captain-title">План / Plan</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Rally size</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Free space</span><strong>0</strong></div>
+        <div><span>Марш капітана</span><strong>0</strong></div>
+        <div><span>Розмір ралі</span><strong>0</strong></div>
+        <div><span>Разом</span><strong>0</strong></div>
+        <div><span>Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
         <span class="quota-summary">Tier max march: auto (not set)</span>
-        <span class="quota-max">Max helpers: 29</span>
+        <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
@@ -171,7 +171,7 @@
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">No helpers assigned</td>
+              <td class="muted" colspan="5">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>
@@ -182,7 +182,7 @@
     <section class="base-card fighter-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Північна башня / North Tower</h3>
+          <h3>Північна турель</h3>
           <p class="base-type">Тип бази: автоматично по капітану</p>
         </div>
         <span class="base-role badge is-auto">Auto</span>
@@ -194,30 +194,30 @@
             <div class="captain-title">Капітан</div>
             <div class="captain-main">
               <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Type auto by captain · Both</div>
+              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
             <div class="captain-title">План / Plan</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Rally size</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Free space</span><strong>0</strong></div>
+        <div><span>Марш капітана</span><strong>0</strong></div>
+        <div><span>Розмір ралі</span><strong>0</strong></div>
+        <div><span>Разом</span><strong>0</strong></div>
+        <div><span>Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
         <span class="quota-summary">Tier max march: auto (not set)</span>
-        <span class="quota-max">Max helpers: 29</span>
+        <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
@@ -233,7 +233,7 @@
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">No helpers assigned</td>
+              <td class="muted" colspan="5">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>
@@ -244,7 +244,7 @@
     <section class="base-card fighter-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Західна башня / West Tower</h3>
+          <h3>Західна турель</h3>
           <p class="base-type">Тип бази: автоматично по капітану</p>
         </div>
         <span class="base-role badge is-auto">Auto</span>
@@ -256,30 +256,30 @@
             <div class="captain-title">Капітан</div>
             <div class="captain-main">
               <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Type auto by captain · Both</div>
+              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
             <div class="captain-title">План / Plan</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Rally size</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Free space</span><strong>0</strong></div>
+        <div><span>Марш капітана</span><strong>0</strong></div>
+        <div><span>Розмір ралі</span><strong>0</strong></div>
+        <div><span>Разом</span><strong>0</strong></div>
+        <div><span>Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
         <span class="quota-summary">Tier max march: auto (not set)</span>
-        <span class="quota-max">Max helpers: 29</span>
+        <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
@@ -295,7 +295,7 @@
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">No helpers assigned</td>
+              <td class="muted" colspan="5">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>
@@ -306,7 +306,7 @@
     <section class="base-card rider-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Східна башня / East Tower</h3>
+          <h3>Східна турель</h3>
           <p class="base-type">Тип бази: автоматично по капітану</p>
         </div>
         <span class="base-role badge is-auto">Auto</span>
@@ -318,30 +318,30 @@
             <div class="captain-title">Капітан</div>
             <div class="captain-main">
               <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Type auto by captain · Both</div>
+              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
             <div class="captain-title">План / Plan</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Rally size</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Free space</span><strong>0</strong></div>
+        <div><span>Марш капітана</span><strong>0</strong></div>
+        <div><span>Розмір ралі</span><strong>0</strong></div>
+        <div><span>Разом</span><strong>0</strong></div>
+        <div><span>Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
         <span class="quota-summary">Tier max march: auto (not set)</span>
-        <span class="quota-max">Max helpers: 29</span>
+        <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
@@ -357,7 +357,7 @@
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">No helpers assigned</td>
+              <td class="muted" colspan="5">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>
@@ -368,7 +368,7 @@
     <section class="base-card rider-theme" data-shift="both">
       <header class="base-card-head">
         <div>
-          <h3>Південна башня / South Tower</h3>
+          <h3>Південна турель</h3>
           <p class="base-type">Тип бази: автоматично по капітану</p>
         </div>
         <span class="base-role badge is-auto">Auto</span>
@@ -380,30 +380,30 @@
             <div class="captain-title">Капітан</div>
             <div class="captain-main">
               <div class="captain-name captain-empty">— Капітан не обраний —</div>
-              <div class="captain-meta">Type auto by captain · Both</div>
+              <div class="captain-meta">Тип визначається капітаном · Обидві</div>
             </div>
           </div>
           <div class="captain-col captain-col-right">
             <div class="captain-title">План / Plan</div>
             <div class="captain-main">
               <div class="captain-name captain-shift">—</div>
-              <div class="captain-meta">Players in tower: <span class="captain-count">0</span></div>
+              <div class="captain-meta">Гравців у турелі: <span class="captain-count">0</span></div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="limit-grid limit-grid-compact">
-        <div><span>Captain march</span><strong>0</strong></div>
-        <div><span>Rally size</span><strong>0</strong></div>
-        <div><span>Total Σ</span><strong>0</strong></div>
-        <div><span>Free space</span><strong>0</strong></div>
+        <div><span>Марш капітана</span><strong>0</strong></div>
+        <div><span>Розмір ралі</span><strong>0</strong></div>
+        <div><span>Разом</span><strong>0</strong></div>
+        <div><span>Вільне місце</span><strong>0</strong></div>
       </div>
 
       <div class="quota-row">
         <span>Auto-fill:</span>
         <span class="quota-summary">Tier max march: auto (not set)</span>
-        <span class="quota-max">Max helpers: 29</span>
+        <span class="quota-max">Макс. помічників: 29</span>
       </div>
 
       <div class="helpers-table-wrap">
@@ -419,7 +419,7 @@
           </thead>
           <tbody>
             <tr>
-              <td class="muted" colspan="5">No helpers assigned</td>
+              <td class="muted" colspan="5">Помічників ще не призначено</td>
             </tr>
           </tbody>
         </table>

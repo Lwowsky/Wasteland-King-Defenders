@@ -6,7 +6,7 @@
   function getTierCapForBase(base, tier) {
     const key = String(tier || '').toUpperCase();
     const v = Number(base?.tierMinMarch?.[key] || 0) || 0;
-    return v > 0 ? v : 0; // 0 => no cap
+    return v > 0 ? v : 0;
   }
 
   function getPlayerCurrentTowerMarch(base, player, isCaptain) {
@@ -25,6 +25,39 @@
     return cap > 0 ? Math.min(raw, cap) : raw;
   }
 
+  function normalizeEditableShift(value) {
+    const raw = String(value || '').toLowerCase();
+    if (raw === 'shift2') return 'shift2';
+    return 'shift1';
+  }
+
+  function getPlanAssignment(playerId, shiftKey) {
+    const shift = normalizeEditableShift(shiftKey);
+    if (!playerId) return null;
+
+    if (String(state.activeShift || '').toLowerCase() === shift) {
+      const player = state.playerById?.get?.(playerId);
+      return player?.assignment ? { ...player.assignment } : null;
+    }
+
+    const plan = state.shiftPlans?.[shift] || null;
+    const assignment = plan?.players?.[playerId] || null;
+    return assignment ? { ...assignment } : null;
+  }
+
+  function getPreferredRosterShift(playerId) {
+    const activeShift = String(state.activeShift || '').toLowerCase();
+    if (activeShift === 'shift1' || activeShift === 'shift2') return activeShift;
+    if (getPlanAssignment(playerId, 'shift1')?.baseId) return 'shift1';
+    if (getPlanAssignment(playerId, 'shift2')?.baseId) return 'shift2';
+    return 'shift1';
+  }
+
+  function getBaseLabel(baseId) {
+    const base = state.baseById?.get?.(baseId) || null;
+    return String(base?.title || 'Башта').split('/')[0].trim() || 'Башта';
+  }
+
   function ensureModal() {
     let modal = document.getElementById('towerPlayerEditModal');
     if (modal) return modal;
@@ -34,34 +67,123 @@
     modal.className = 'modal';
     modal.innerHTML = `
       <div class="modal-backdrop" data-close-tower-player-edit></div>
-      <div class="modal-card" role="dialog" aria-modal="true" style="width:min(560px, calc(100vw - 24px));">
+      <div class="modal-card" role="dialog" aria-modal="true" style="width:min(640px, calc(100vw - 24px));">
         <div class="modal-head">
           <div>
             <h2>Редагування гравця</h2>
-            <p class="muted" id="tpeSubtitle">Зміна даних / видалення з башні</p>
+            <p class="muted" id="tpeSubtitle">Зміна даних / видалення з турелі</p>
           </div>
           <button class="btn btn-icon" type="button" data-close-tower-player-edit>✕</button>
         </div>
         <div class="modal-grid" style="grid-template-columns:minmax(0,1fr);">
           <section class="panel subpanel stack" style="max-width:100%;">
+            <div class="placement-editor stack compact">
+              <div>
+                <strong>Куди поставити гравця</strong>
+                <div class="muted small" id="tpePlacementCopy">Вибери зміну, башню та роль або залиш гравця в резерві.</div>
+              </div>
+              <div class="placement-editor-grid">
+                <label class="placement-editor-field">
+                  <span>Зміна</span>
+                  <select id="tpePlacementShift" style="color:#eef3ff">
+                    <option value="shift1">Зміна 1</option>
+                    <option value="shift2">Зміна 2</option>
+                  </select>
+                </label>
+                <label class="placement-editor-field">
+                  <span>Турель</span>
+                  <select id="tpePlacementBase" style="color:#eef3ff"></select>
+                </label>
+                <label class="placement-editor-field">
+                  <span>Роль у башті</span>
+                  <select id="tpePlacementKind" style="color:#eef3ff">
+                    <option value="helper">Помічник</option>
+                    <option value="captain">Капітан</option>
+                  </select>
+                </label>
+              </div>
+              <div id="tpePlacementHint" class="muted small"></div>
+            </div>
+
             <input id="tpeName" placeholder="Нік" style="color:#eef3ff" />
             <input id="tpeAlly" placeholder="Альянс" style="color:#eef3ff" />
             <select id="tpeRole" style="color:#eef3ff">
-              <option>Shooter</option><option>Fighter</option><option>Rider</option>
+              <option value="Shooter">Стрілець</option><option value="Fighter">Боєць</option><option value="Rider">Наїзник</option>
             </select>
             <input id="tpeTier" placeholder="T14" style="color:#eef3ff" />
-            <input id="tpeMarch" type="number" min="0" placeholder="March" style="color:#eef3ff" />
-            <input id="tpeRally" type="number" min="0" placeholder="Rally size (для капітана)" style="color:#eef3ff" />
+            <input id="tpeMarch" type="number" min="0" placeholder="Марш" style="color:#eef3ff" />
+            <input id="tpeRally" type="number" min="0" placeholder="Розмір ралі" style="color:#eef3ff" />
             <div id="tpeCapHint" class="muted small"></div>
             <div class="row gap wrap">
               <button class="btn btn-primary" type="button" id="tpeSaveBtn">Зберегти</button>
-              <button class="btn" type="button" id="tpeRemoveBtn">Видалити з башні</button>
+              <button class="btn" type="button" id="tpeRemoveBtn">Видалити з турелі</button>
             </div>
           </section>
         </div>
       </div>`;
     document.body.appendChild(modal);
     return modal;
+  }
+
+  function populatePlacementBaseOptions(modal, selectedBaseId = '') {
+    if (!modal) return;
+    const baseSelect = modal.querySelector('#tpePlacementBase');
+    if (!baseSelect) return;
+
+    const options = ['<option value="">Резерв</option>'];
+    (state.bases || []).forEach((base) => {
+      const label = getBaseLabel(base.id);
+      options.push(`<option value="${PNS.escapeHtml(String(base.id || ''))}">${PNS.escapeHtml(label)}</option>`);
+    });
+    baseSelect.innerHTML = options.join('');
+
+    const hasSelected = selectedBaseId && Array.from(baseSelect.options).some((opt) => opt.value === selectedBaseId);
+    baseSelect.value = hasSelected ? selectedBaseId : '';
+  }
+
+  function updatePlacementHint(modal) {
+    if (!modal) return;
+    const hint = modal.querySelector('#tpePlacementHint');
+    if (!hint) return;
+
+    const shift = normalizeEditableShift(modal.querySelector('#tpePlacementShift')?.value || state.activeShift || 'shift1');
+    const baseId = String(modal.querySelector('#tpePlacementBase')?.value || '');
+    const kind = String(modal.querySelector('#tpePlacementKind')?.value || 'helper');
+    const shiftLabel = typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(shift) : (shift === 'shift2' ? 'Зміна 2' : 'Зміна 1');
+
+    modal.dataset.baseId = baseId;
+    modal.dataset.kind = kind;
+
+    if (!baseId) {
+      hint.textContent = `Гравець буде в резерві у ${shiftLabel}.`;
+      return;
+    }
+
+    const action = kind === 'captain' ? 'капітаном' : 'помічником';
+    hint.textContent = `${shiftLabel} · ${getBaseLabel(baseId)} · ${action}.`;
+  }
+
+  function syncPlacementFromSelectedShift(modal) {
+    if (!modal) return;
+    const playerId = modal.dataset.playerId || '';
+    const shift = normalizeEditableShift(modal.querySelector('#tpePlacementShift')?.value || state.activeShift || 'shift1');
+    const assignment = getPlanAssignment(playerId, shift);
+    const selectedBaseId = assignment?.baseId || '';
+    const selectedKind = assignment?.kind === 'captain' ? 'captain' : 'helper';
+
+    populatePlacementBaseOptions(modal, selectedBaseId);
+    const kindSelect = modal.querySelector('#tpePlacementKind');
+    if (kindSelect) kindSelect.value = selectedKind;
+
+    const removeBtn = modal.querySelector('#tpeRemoveBtn');
+    if (removeBtn) {
+      const rosterMode = modal.dataset.mode === 'roster';
+      const sameAsActive = normalizeEditableShift(state.activeShift || 'shift1') === shift;
+      removeBtn.hidden = rosterMode || !sameAsActive || !assignment?.baseId;
+      removeBtn.textContent = 'Видалити з турелі';
+    }
+
+    updatePlacementHint(modal);
   }
 
   function closeTowerPlayerEditModal() {
@@ -75,28 +197,54 @@
 
   function updateModalCapUI(modal) {
     if (!modal) return;
-    const baseId = modal.dataset.baseId || '';
+    const mode = modal.dataset.mode || 'tower';
+    const baseId = modal.querySelector('#tpePlacementBase')?.value || modal.dataset.baseId || '';
     const playerId = modal.dataset.playerId || '';
-    const base = state.baseById?.get?.(baseId);
+    const base = baseId ? state.baseById?.get?.(baseId) : null;
     const p = playerId ? state.playerById?.get?.(playerId) : null;
-    const isCaptain = modal.dataset.kind === 'captain';
+    const kind = String(modal.querySelector('#tpePlacementKind')?.value || modal.dataset.kind || 'helper');
     const tierInp = modal.querySelector('#tpeTier');
     const marchInp = modal.querySelector('#tpeMarch');
     const hint = modal.querySelector('#tpeCapHint');
     const tier = (typeof PNS.normalizeTierText === 'function')
       ? PNS.normalizeTierText(tierInp?.value || p?.tier || 'T10')
       : String(tierInp?.value || p?.tier || 'T10').toUpperCase();
-    const cap = (!isCaptain && base) ? getTierCapForBase(base, tier) : 0;
+    const cap = (kind !== 'captain' && base) ? getTierCapForBase(base, tier) : 0;
 
-    if (marchInp) {
-      // Manual edit may override tower cap for THIS tower + THIS shift only.
-      marchInp.removeAttribute('max');
+    if (marchInp) marchInp.removeAttribute('max');
+
+    if (!hint) return;
+    if (mode === 'roster') {
+      hint.textContent = 'Редагування зі списку: march та rally оновлюються в картці гравця.';
+      return;
     }
+    if (kind === 'captain') {
+      hint.textContent = 'Капітан: обмеження за тіром не застосовується.';
+      return;
+    }
+    if (!base) {
+      hint.textContent = 'Оберіть турель, щоб побачити підказку по ліміту маршу.';
+      return;
+    }
+    if (cap > 0) {
+      hint.textContent = `Ліміт автозаповнення для ${tier}: ${Number(cap).toLocaleString('en-US')} (ручне значення можна задати лише для цієї башти / цієї зміни).`;
+    } else {
+      hint.textContent = `Для ${tier} у цій турелі ліміт не заданий (0 = без обмеження).`;
+    }
+  }
 
-    if (hint) {
-      if (isCaptain) hint.textContent = 'Капітан: ліміт Tier cap не застосовується.';
-      else if (cap > 0) hint.textContent = `Auto-fill cap для ${tier}: ${Number(cap).toLocaleString('en-US')} (ручне значення можна задати тільки для цієї башні / цього Shift).`;
-      else hint.textContent = `Для ${tier} у цій башні ліміт не заданий (0 = без обмеження).`;
+  function fillPlayerFields(modal, player, marchValue, forceRallyVisible = false) {
+    modal.querySelector('#tpeName').value = player?.name || '';
+    modal.querySelector('#tpeAlly').value = player?.alliance || '';
+    modal.querySelector('#tpeRole').value = player?.role || 'Fighter';
+    modal.querySelector('#tpeTier').value = player?.tier || 'T10';
+    modal.querySelector('#tpeMarch').value = player ? String(Number(marchValue || 0) || '') : '';
+
+    const rallyInp = modal.querySelector('#tpeRally');
+    if (rallyInp) {
+      rallyInp.value = player ? String(Number(player.rally || 0) || '') : '';
+      rallyInp.style.display = forceRallyVisible ? '' : 'none';
+      rallyInp.disabled = !forceRallyVisible;
     }
   }
 
@@ -108,49 +256,89 @@
     const isCaptain = !!(playerId && base.captainId === playerId);
     const modal = ensureModal();
 
+    modal.dataset.mode = 'tower';
     modal.dataset.baseId = String(baseId || '');
     modal.dataset.playerId = String(playerId || '');
     modal.dataset.kind = isCaptain ? 'captain' : 'helper';
 
-    const currentInTower = getPlayerCurrentTowerMarch(base, p, isCaptain);
+    const activeEditableShift = normalizeEditableShift(state.activeShift || 'shift1');
+    const placementShift = modal.querySelector('#tpePlacementShift');
+    if (placementShift) placementShift.value = activeEditableShift;
+    populatePlacementBaseOptions(modal, baseId);
+    const placementKind = modal.querySelector('#tpePlacementKind');
+    if (placementKind) placementKind.value = isCaptain ? 'captain' : 'helper';
 
-    modal.querySelector('#tpeName').value = p?.name || '';
-    modal.querySelector('#tpeAlly').value = p?.alliance || '';
-    modal.querySelector('#tpeRole').value = p?.role || (PNS.getBaseRole?.(base) || 'Fighter');
-    modal.querySelector('#tpeTier').value = p?.tier || 'T10';
-    // Для helper показуємо "поточний внесок у башню" (після cap/autofill), а не весь зареєстрований загін
-    modal.querySelector('#tpeMarch').value = p ? String(currentInTower || '') : '';
-    const rallyInp = modal.querySelector('#tpeRally');
-    if (rallyInp) {
-      rallyInp.value = p ? String(Number(p.rally || 0) || '') : '';
-      rallyInp.style.display = isCaptain ? '' : 'none';
-      rallyInp.disabled = !isCaptain;
-    }
-    modal.querySelector('#tpeRemoveBtn').hidden = !playerId;
+    const currentInTower = getPlayerCurrentTowerMarch(base, p, isCaptain);
+    fillPlayerFields(modal, p, currentInTower, isCaptain);
 
     const subtitle = modal.querySelector('#tpeSubtitle');
     if (subtitle) {
-      const towerName = String(base.title || base.id || '').split('/')[0].trim();
+      const towerName = getBaseLabel(base.id);
       subtitle.textContent = isCaptain
         ? `Капітан · ${towerName}`
-        : `Хелпер у башні · ${towerName}`;
+        : `Помічник у турелі · ${towerName}`;
     }
 
+    const placementCopy = modal.querySelector('#tpePlacementCopy');
+    if (placementCopy) placementCopy.textContent = 'Можна швидко перенести гравця в іншу турель або в іншу зміну.';
+
+    const removeBtn = modal.querySelector('#tpeRemoveBtn');
+    if (removeBtn) removeBtn.hidden = !playerId;
+
+    updatePlacementHint(modal);
     updateModalCapUI(modal);
 
     modal.classList.add('is-open');
     MS.syncBodyModalLock?.();
   }
 
+  function openRosterPlayerEditModal(playerId) {
+    const player = state.playerById?.get?.(playerId);
+    if (!player) return;
+
+    const modal = ensureModal();
+    modal.dataset.mode = 'roster';
+    modal.dataset.playerId = String(playerId || '');
+    modal.dataset.baseId = '';
+    modal.dataset.kind = 'helper';
+
+    const preferredShift = getPreferredRosterShift(playerId);
+    const placementShift = modal.querySelector('#tpePlacementShift');
+    if (placementShift) placementShift.value = preferredShift;
+
+    fillPlayerFields(modal, player, player.march, true);
+
+    const subtitle = modal.querySelector('#tpeSubtitle');
+    if (subtitle) subtitle.textContent = 'Вибери башню, роль і зміну для гравця або залиш його в резерві.';
+
+    const placementCopy = modal.querySelector('#tpePlacementCopy');
+    if (placementCopy) placementCopy.textContent = 'Редагування зі списку гравців: зміни застосовуються до вибраної зміни.';
+
+    syncPlacementFromSelectedShift(modal);
+    updateModalCapUI(modal);
+
+    modal.classList.add('is-open');
+    MS.syncBodyModalLock?.();
+  }
+
+  function persistPlayerAndBoardState() {
+    try { PNS.persistSessionStateSoon?.(10); } catch {}
+    try { PNS.savePlayersSnapshot?.(state.players); } catch {}
+    try { PNS.ModalsShift?.saveCurrentShiftPlanSnapshot?.(); } catch {}
+    try { PNS.saveTowersSnapshot?.(); } catch {}
+    try { PNS.renderAll?.(); } catch {}
+  }
+
   function saveTowerPlayerEditModal() {
     const modal = document.getElementById('towerPlayerEditModal');
     if (!modal) return;
 
-    const baseId = modal.dataset.baseId || '';
+    const mode = modal.dataset.mode || 'tower';
     const playerId = modal.dataset.playerId || '';
-    const base = state.baseById?.get?.(baseId);
-    if (!base) return;
-    const isCaptain = modal.dataset.kind === 'captain' || (!!playerId && base.captainId === playerId);
+    const targetShift = normalizeEditableShift(modal.querySelector('#tpePlacementShift')?.value || state.activeShift || 'shift1');
+    const targetBaseId = String(modal.querySelector('#tpePlacementBase')?.value || '');
+    const targetKind = String(modal.querySelector('#tpePlacementKind')?.value || 'helper') === 'captain' ? 'captain' : 'helper';
+    const targetBase = targetBaseId ? state.baseById?.get?.(targetBaseId) : null;
 
     const name = String(modal.querySelector('#tpeName')?.value || '').trim();
     const ally = String(modal.querySelector('#tpeAlly')?.value || '').trim();
@@ -171,23 +359,19 @@
       p.alliance = ally;
       p.role = role;
       p.tier = tier;
-      // March for existing imported players: store scoped override per tower + shift (do not mutate raw roster value globally)
-      if (isCaptain) {
-        p.march = march; // captain edit remains direct (current app uses captain.march in many places)
-        p.rally = rally;
-      } else {
-        try { PNS.setTowerMarchOverride?.(base.id, p.id, march, state.activeShift); } catch {}
-      }
       if (typeof PNS.tierRank === 'function') p.tierRank = PNS.tierRank(tier);
-      const forceKindExisting = String(modal.dataset.forceAssignKind || '').toLowerCase();
-      if (forceKindExisting === 'captain' || forceKindExisting === 'helper') {
-        const alreadySame = !!(p.assignment && String(p.assignment.baseId) === String(base.id) && String(p.assignment.kind) === forceKindExisting);
-        if (!alreadySame) {
-          try { PNS.assignPlayerToBase?.(p.id, base.id, forceKindExisting); } catch {}
-        }
+
+      if (mode === 'roster') {
+        p.march = march;
+        p.rally = rally;
+      } else if (targetKind === 'captain') {
+        p.march = march;
+        p.rally = rally;
+        try { if (targetBase) PNS.clearTowerMarchOverride?.(targetBase.id, p.id, targetShift); } catch {}
+      } else if (targetBase) {
+        try { PNS.setTowerMarchOverride?.(targetBase.id, p.id, march, targetShift); } catch {}
       }
     } else {
-      const shift = state.activeShift === 'all' ? 'both' : (state.activeShift || 'both');
       p = {
         id: `m_${Date.now()}_${Math.floor(Math.random() * 1e5)}`,
         name,
@@ -197,15 +381,15 @@
         tier,
         tierRank: (typeof PNS.tierRank === 'function' ? PNS.tierRank(tier) : 0),
         march,
-        rally: isCaptain ? rally : 0,
+        rally,
         captainReady: false,
-        shift,
-        shiftLabel: (PNS.formatShiftLabelForCell ? PNS.formatShiftLabelForCell(shift) : shift),
+        shift: targetShift,
+        shiftLabel: (PNS.formatShiftLabelForCell ? PNS.formatShiftLabelForCell(targetShift) : targetShift),
         lairLevel: '',
         secondaryRole: '',
         secondaryTier: '',
         troop200k: '',
-        notes: 'Manual entry',
+        notes: 'Ручне додавання',
         raw: null,
         rowEl: null,
         actionCellEl: null,
@@ -213,17 +397,28 @@
       };
       state.players.push(p);
       state.playerById?.set?.(p.id, p);
-      const forceKind = String(modal.dataset.forceAssignKind || '').toLowerCase();
-      const assignKind = (forceKind === 'captain' || isCaptain) ? 'captain' : 'helper';
-      try { PNS.assignPlayerToBase?.(p.id, base.id, assignKind); } catch {}
-      try { PNS.clearTowerMarchOverride?.(base.id, p.id, state.activeShift); } catch {}
     }
 
-    try { PNS.persistSessionStateSoon?.(10); } catch {}
-    try { PNS.savePlayersSnapshot?.(state.players); } catch {}
-    try { PNS.ModalsShift?.saveCurrentShiftPlanSnapshot?.(); } catch {}
-    try { PNS.saveTowersSnapshot?.(); } catch {}
-    try { PNS.renderAll?.(); } catch {}
+    if (String(state.activeShift || '').toLowerCase() !== targetShift) {
+      MS.applyShiftFilter?.(targetShift);
+    }
+
+    if (targetBaseId && targetBase) {
+      const err = typeof PNS.validateAssign === 'function' ? PNS.validateAssign(p, targetBase, targetKind) : '';
+      if (err) {
+        try { PNS.setRowStatus?.(p, err, 'danger'); } catch {}
+        alert(err);
+        return;
+      }
+      try { PNS.assignPlayerToBase?.(p.id, targetBase.id, targetKind); } catch {}
+      if (mode === 'roster' && targetKind === 'helper') {
+        try { PNS.clearTowerMarchOverride?.(targetBase.id, p.id, targetShift); } catch {}
+      }
+    } else {
+      try { if (p.assignment) PNS.clearPlayerFromBase?.(p.id); } catch {}
+    }
+
+    persistPlayerAndBoardState();
     modal.classList.remove('is-open');
     if (!document.querySelector('#towerPickerModal.is-open')) MS.syncBodyModalLock?.();
 
@@ -231,25 +426,39 @@
     try { MS.updateTowerPickerDetail?.(); } catch {}
 
     try {
-      document.dispatchEvent(new CustomEvent('pns:assignment-changed', { detail: { baseId: base.id, playerId: p.id } }));
+      document.dispatchEvent(new CustomEvent('pns:assignment-changed', { detail: { baseId: targetBase?.id || '', playerId: p.id, shift: targetShift } }));
     } catch {}
   }
 
-  // Keep cap hint/max updated when tier changes in the modal
   document.addEventListener('input', (e) => {
     const t = e.target;
     if (!t) return;
     if (t.id === 'tpeTier') updateModalCapUI(document.getElementById('towerPlayerEditModal'));
   });
+
   document.addEventListener('change', (e) => {
     const t = e.target;
-    if (!t) return;
-    if (t.id === 'tpeTier') updateModalCapUI(document.getElementById('towerPlayerEditModal'));
+    const modal = document.getElementById('towerPlayerEditModal');
+    if (!t || !modal) return;
+    if (t.id === 'tpeTier') {
+      updateModalCapUI(modal);
+      return;
+    }
+    if (t.id === 'tpePlacementShift') {
+      syncPlacementFromSelectedShift(modal);
+      updateModalCapUI(modal);
+      return;
+    }
+    if (t.id === 'tpePlacementBase' || t.id === 'tpePlacementKind') {
+      updatePlacementHint(modal);
+      updateModalCapUI(modal);
+    }
   });
 
   Object.assign(MS, {
     getTierCapForBase,
     openTowerPlayerEditModal,
+    openRosterPlayerEditModal,
     closeTowerPlayerEditModal,
     saveTowerPlayerEditModal,
   });

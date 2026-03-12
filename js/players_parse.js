@@ -7,9 +7,9 @@
   function normalizeRole(text) {
     const raw = String(text || '').trim();
     if (!raw) return 'Unknown';
-    if (/(shoot|стрел|стріл|стріле|shooter|marksman|tirador|射手|弓兵|狙撃|狙击|사수)/i.test(raw)) return 'Shooter';
-    if (/(fight|infantry|боец|боєц|fighter|пехот|піхот|战士|步兵|歩兵|전투)/i.test(raw)) return 'Fighter';
-    if (/(ride|rider|наезд|наїзд|cavalry|кавал|骑|骑兵|騎兵|기병|ライダー)/i.test(raw)) return 'Rider';
+    if (/(shoot|стрел|стріл|стріле|стрільц|shooter|marksman|tirador|射手|弓兵|狙撃|狙击|사수)/i.test(raw)) return 'Shooter';
+    if (/(fight|infantry|боец|боєц|бойц|бійц|fighter|пехот|піхот|战士|步兵|歩兵|전투)/i.test(raw)) return 'Fighter';
+    if (/(ride|rider|наезд|наїзд|наїзн|cavalry|кавал|骑|骑兵|騎兵|기병|ライダー)/i.test(raw)) return 'Rider';
     return raw;
   }
 
@@ -72,11 +72,11 @@
 
   function normalizeShiftLabel(v) {
     const n = normalizeShiftValue(v);
-    return n === 'shift1' ? 'Shift 1' : n === 'shift2' ? 'Shift 2' : 'Both';
+    return n === 'shift1' ? 'Зміна 1' : n === 'shift2' ? 'Зміна 2' : 'Обидві';
   }
 
   function formatShiftLabelForCell(shift) {
-    return shift === 'shift1' ? 'Shift 1' : shift === 'shift2' ? 'Shift 2' : 'Both';
+    return shift === 'shift1' ? 'Зміна 1' : shift === 'shift2' ? 'Зміна 2' : 'Обидві';
   }
 
   function getPlayerRows() {
@@ -173,7 +173,7 @@
         byField('shiftLabel') ||
         tds[7]?.textContent?.trim() ||
         tr.dataset.shift ||
-        'Both';
+        'Обидві';
 
       const player = {
         id: `p${idx + 1}`,

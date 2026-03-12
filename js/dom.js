@@ -40,17 +40,19 @@
   }
 
 function roleCountsHtml(fighter, rider, shooter) {
+  const roleLabel = (role, plural = false) => typeof PNS.roleLabel === 'function' ? PNS.roleLabel(role, { plural }) : role;
   return `
-      <span class="stat-chip stat-chip--role is-fighter"><b>${fighter}</b><small>Fighter</small></span>
-      <span class="stat-chip stat-chip--role is-rider"><b>${rider}</b><small>Rider</small></span>
-      <span class="stat-chip stat-chip--role is-shooter"><b>${shooter}</b><small>Shooter</small></span>`;
+      <span class="stat-chip stat-chip--role is-fighter"><b>${fighter}</b><small>${roleLabel('Fighter', true)}</small></span>
+      <span class="stat-chip stat-chip--role is-rider"><b>${rider}</b><small>${roleLabel('Rider', true)}</small></span>
+      <span class="stat-chip stat-chip--role is-shooter"><b>${shooter}</b><small>${roleLabel('Shooter', true)}</small></span>`;
 }
 
 function shiftCountsHtml(shift1, shift2, both) {
+  const shiftLabel = (shift) => typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(shift) : shift;
   return `
-      <span class="stat-chip stat-chip--shift is-shift1"><b>${shift1}</b><small>Shift 1</small></span>
-      <span class="stat-chip stat-chip--shift is-shift2"><b>${shift2}</b><small>Shift 2</small></span>
-      <span class="stat-chip stat-chip--shift is-both"><b>${both}</b><small>Both</small></span>`;
+      <span class="stat-chip stat-chip--shift is-shift1"><b>${shift1}</b><small>${shiftLabel('shift1')}</small></span>
+      <span class="stat-chip stat-chip--shift is-shift2"><b>${shift2}</b><small>${shiftLabel('shift2')}</small></span>
+      <span class="stat-chip stat-chip--shift is-both"><b>${both}</b><small>${shiftLabel('both')}</small></span>`;
 }
 
 function scheduleUpdateStats() {
@@ -62,24 +64,44 @@ function scheduleUpdateStats() {
 }
 
   function updateStats() {
-    const rows = $$('#playersDataTable tbody tr');
-    const total = rows.length;
-    let capReady = 0, shooter = 0, fighter = 0, rider = 0;
+    const players = Array.isArray(PNS?.state?.players) && PNS.state.players.length
+      ? PNS.state.players
+      : [];
 
-    rows.forEach((tr) => {
-      const tds = $$('td', tr);
-      const roleText = (tr.querySelector('td[data-field="role"]') || tds[2])?.textContent || '';
-      const capText = (
-        tr.querySelector('td[data-field="captainReady"]') ||
-        tr.querySelector('td[data-col-key="captain_ready"]') ||
-        tds[6]
-      )?.textContent || '';
+    let total = 0, capReady = 0, shooter = 0, fighter = 0, rider = 0, shift1 = 0, shift2 = 0, both = 0;
 
-      if (/yes|так|да/i.test(capText)) capReady++;
-      if (/shoot|стрел|стріл/i.test(roleText)) shooter++;
-      else if (/fight|боец|боєц|infantry/i.test(roleText)) fighter++;
-      else if (/ride|наезд|наїзд|caval/i.test(roleText)) rider++;
-    });
+    if (players.length) {
+      total = players.length;
+      players.forEach((player) => {
+        const role = typeof PNS.normalizeRole === 'function' ? PNS.normalizeRole(player.role) : String(player.role || '');
+        const shift = typeof PNS.normalizeShiftValue === 'function' ? PNS.normalizeShiftValue(player.shift || player.shiftLabel || 'both') : String(player.shift || 'both');
+        if (player.captainReady) capReady++;
+        if (role === 'Shooter') shooter++;
+        else if (role === 'Fighter') fighter++;
+        else if (role === 'Rider') rider++;
+        if (shift === 'shift1') shift1++;
+        else if (shift === 'shift2') shift2++;
+        else both++;
+      });
+    } else {
+      const rows = $$('#playersDataTable tbody tr');
+      total = rows.length;
+      rows.forEach((tr) => {
+        const tds = $$('td', tr);
+        const roleText = (tr.querySelector('td[data-field="role"]') || tds[2])?.textContent || '';
+        const capText = (tr.querySelector('td[data-field="captainReady"]') || tds[6])?.textContent || '';
+        const shiftText = (tr.querySelector('td[data-field="shiftLabel"]') || tds[7])?.textContent || tr.dataset.shift || 'both';
+        const role = typeof PNS.normalizeRole === 'function' ? PNS.normalizeRole(roleText) : roleText;
+        const shift = typeof PNS.normalizeShiftValue === 'function' ? PNS.normalizeShiftValue(shiftText) : shiftText;
+        if (/yes|так|да/i.test(capText)) capReady++;
+        if (role === 'Shooter') shooter++;
+        else if (role === 'Fighter') fighter++;
+        else if (role === 'Rider') rider++;
+        if (shift === 'shift1') shift1++;
+        else if (shift === 'shift2') shift2++;
+        else both++;
+      });
+    }
 
     const totalStrong = document.querySelector('[data-stat-card="total"] strong');
     const captainsStrong = document.querySelector('[data-stat-card="captains"] strong');
@@ -88,26 +110,6 @@ function scheduleUpdateStats() {
 
     const roleEl = document.getElementById('roleCountsDisplay');
     if (roleEl) roleEl.innerHTML = roleCountsHtml(fighter, rider, shooter);
-
-    let shift1 = 0, shift2 = 0, both = 0;
-    if (typeof PNS?.getShiftCounts === 'function' && Array.isArray(PNS?.state?.players)) {
-      const c = PNS.getShiftCounts(PNS.state.players);
-      shift1 = Number(c.shift1 || 0);
-      shift2 = Number(c.shift2 || 0);
-      both = Number(c.both || 0);
-    } else {
-      rows.forEach((tr) => {
-        const shiftText = (
-          tr.querySelector('td[data-field="shiftLabel"]') ||
-          tr.querySelector('td[data-col-key="shift"]')
-        )?.textContent || tr.dataset.shift || 'both';
-        const s = String(shiftText || '').toLowerCase();
-        if (s.includes('shift 1') || s === 'shift1') shift1++;
-        else if (s.includes('shift 2') || s === 'shift2') shift2++;
-        else both++;
-      });
-    }
-
     const shiftDisplayEl = document.getElementById('shiftCountsDisplay');
     if (shiftDisplayEl) shiftDisplayEl.innerHTML = shiftCountsHtml(shift1, shift2, both);
     const shiftEl = document.getElementById('shiftCounts');

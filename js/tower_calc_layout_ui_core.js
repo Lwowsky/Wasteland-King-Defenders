@@ -91,7 +91,7 @@ function enforceIgnoreBoth(root) {
     if (forceLabel) forceLabel.style.display = 'none';
 
     const loadBtn = q('#towerCalcLoadCaptainsBtn', root);
-    if (loadBtn) loadBtn.textContent = 'Підтягнути капітанів з башень';
+    if (loadBtn) loadBtn.textContent = 'Взяти капітанів із турелей';
     const applyBtn = q('#towerCalcApplyToTowersBtn', root);
     if (applyBtn) applyBtn.textContent = 'Застосувати ліміти';
     const quickBtn = q('#towerCalcQuickApplyBtn', root);
@@ -114,8 +114,8 @@ function enforceIgnoreBoth(root) {
     qa('.muted.small', root).forEach((el) => {
       const t = txt(el);
       if (/UI skeleton/i.test(t)) el.style.display = 'none';
-      if (/Auto slots =|helper-slots/i.test(t)) {
-        el.textContent = 'Автослоти = швидкий розподіл helper-слотів по башнях за кількістю гравців без капітанів.';
+      if (/Auto slots =|місця для помічників/i.test(t)) {
+        el.textContent = 'Автослоти = швидкий розподіл місць для помічників по турелях за кількістю вільних гравців без капітанів.';
       }
       if (/Порада:|Порахувати/i.test(t)) {
         el.textContent = 'Спочатку вистав ліміти shift-ів і башень, потім використай “Застосувати ліміти” або “Автозаповнення башень”.';

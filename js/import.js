@@ -833,21 +833,21 @@
 
   function loadDemoIntoImportWizard() {
     const гравців = state.players || [];
-    const headers = ['Player name','Alliance alias','Troop Tier','What is your focus troop?','March size','Rally size','Are you ready to be a captain?','Which shift can you join? (each shift is 4 hours)','Which lair level can you take?','Reserve troop type','Reserve troop tier','Reserve troop type (200k+)','Notes'];
+    const headers = ['Нік гравця','Альянс','Тір військ','Основний тип військ','Розмір маршу','Розмір ралі','Готовий бути капітаном','Яка зміна підходить','Рівень лігва','Тип резервних військ','Тір резервних військ','Тип резерву (200k+)','Примітки'];
     const rows = гравців.map((p) => ({
-      'Player name': p.name || '',
-      'Alliance alias': p.alliance || '',
-      'Troop Tier': p.tier || '',
-      'What is your focus troop?': p.role || '',
-      'March size': String(p.march || ''),
-      'Rally size': String(p.rally || ''),
-      'Are you ready to be a captain?': p.captainReady ? 'Yes' : 'No',
-      'Which shift can you join? (each shift is 4 hours)': p.shift === 'shift1' ? 'Shift 1' : p.shift === 'shift2' ? 'Shift 2' : 'Both',
-      'Which lair level can you take?': p.lairLevel || '',
-      'Reserve troop type': p.secondaryRole && p.secondaryRole !== 'Unknown' ? p.secondaryRole : '',
-      'Reserve troop tier': p.secondaryTier || '',
-      'Reserve troop type (200k+)': p.troop200k || '',
-      'Notes': p.notes || '',
+      'Нік гравця': p.name || '',
+      'Альянс': p.alliance || '',
+      'Тір військ': p.tier || '',
+      'Основний тип військ': p.role || '',
+      'Розмір маршу': String(p.march || ''),
+      'Розмір ралі': String(p.rally || ''),
+      'Готовий бути капітаном': p.captainReady ? 'Так' : 'Ні',
+      'Яка зміна підходить': p.shift === 'shift1' ? 'Зміна 1' : p.shift === 'shift2' ? 'Зміна 2' : 'Обидві',
+      'Рівень лігва': p.lairLevel || '',
+      'Тип резервних військ': p.secondaryRole && p.secondaryRole !== 'Unknown' ? p.secondaryRole : '',
+      'Тір резервних військ': p.secondaryTier || '',
+      'Тип резерву (200k+)': p.troop200k || '',
+      'Примітки': p.notes || '',
     }));
     setRawImportDataset(headers, rows, 'Вбудовані демо-дані', 'demo');
     setImportStatus('Демо-набір завантажено в майстер імпорту.', 'good');

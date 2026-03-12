@@ -46,7 +46,7 @@
     const b = (MS.getButtons?.().toggleTowerView) || document.querySelector('#toggleTowerFocusBtn');
     if (!b) return;
     const focusMode = (state.towerViewMode || 'all') === 'focus';
-    b.textContent = focusMode ? 'Показати всі башні' : 'Приховати інші';
+    b.textContent = focusMode ? 'Показати всі турелі' : 'Показати одну турель';
     b.dataset.mode = focusMode ? 'focus' : 'all';
     b.setAttribute('aria-pressed', String(focusMode));
   }
@@ -66,7 +66,7 @@
         id = String(base.id || id || `card-${idx}`);
         if (!card.dataset.baseId) card.dataset.baseId = id;
       }
-      const title = (base?.title || card.querySelector('h3')?.textContent || `Башня ${idx + 1}`).split('/')[0].trim();
+      const title = (base?.title || card.querySelector('h3')?.textContent || `Турель ${idx + 1}`).split('/')[0].trim();
       const opt = document.createElement('option');
       opt.value = id || `card-${idx}`;
       opt.dataset.towerTitle = title;
@@ -144,7 +144,7 @@
 
   function clearCurrentShiftPlan() {
     if (!['shift1', 'shift2'].includes(state.activeShift)) {
-      alert('Оберіть Shift 1 або Shift 2.');
+      alert('Оберіть зміну 1 або зміну 2.');
       return;
     }
     (state.players || []).forEach((p) => { p.assignment = null; });

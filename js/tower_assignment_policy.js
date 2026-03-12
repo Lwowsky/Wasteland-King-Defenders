@@ -84,7 +84,7 @@
   }
 
   function getShiftLabel(shiftKey) {
-    return shiftKey === 'shift1' ? 'Shift 1' : shiftKey === 'shift2' ? 'Shift 2' : 'Both';
+    return shiftKey === 'shift1' ? 'Зміна 1' : shiftKey === 'shift2' ? 'Зміна 2' : 'Обидві';
   }
 
   function getPlayerUseInShift(playerId, shiftKey) {

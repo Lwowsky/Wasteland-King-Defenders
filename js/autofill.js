@@ -126,7 +126,7 @@
     }
 
     const captain = state.playerById?.get?.(base.captainId);
-    if (!captain) return { added: 0, reason: 'Captain not found' };
+    if (!captain) return { added: 0, reason: 'Капітана не знайдено' };
 
     // підтягуємо rule з UI (якщо існує)
     try {
@@ -194,9 +194,9 @@ const commonCandidates = () => (state.players || [])
       const d = autoFillDiagnostics(base, captain);
       if (!d.sameRole && enforceSameTroopRole()) reason = `Немає вільних гравців типу ${captain.role}.`;
       else if (!ignoreShift && matchRegisteredShiftEnabled() && !d.byActiveShift) reason = `Немає ${captain.role} для shift ${resolveTowerShift(base)}.`;
-      else if (!ignoreShift && matchRegisteredShiftEnabled() && !d.byBaseShift) reason = `Немає ${captain.role}, які підходять під shift башні.`;
+      else if (!ignoreShift && matchRegisteredShiftEnabled() && !d.byBaseShift) reason = `Немає ${captain.role}, які підходять під зміну цієї турелі.`;
       else if (!d.passTierMin) reason = 'No candidates pass per-tier min march rules.';
-      else if ((base.maxHelpers || 0) > 0 && base.helperIds.length >= base.maxHelpers) reason = `Max helpers reached (${base.maxHelpers}).`;
+      else if ((base.maxHelpers || 0) > 0 && base.helperIds.length >= base.maxHelpers) reason = `Ліміт помічників заповнений (${base.maxHelpers}).`;
       else if (room !== Infinity && d.fitRoom === 0) reason = `No players fit remaining rally room (${PNS.formatNum?.(Math.max(0, d.room)) ?? Math.max(0, d.room)}).`;
       else reason = 'No eligible candidates after checks.';
 
@@ -232,7 +232,7 @@ const commonCandidates = () => (state.players || [])
       const visible = visibleBases.length;
       if (typeof PNS.setImportStatus === 'function') {
         PNS.setImportStatus(
-          `Auto-fill all: no visible bases with captain (visible bases: ${visible}). Set captain first.`,
+          `Автозаповнення всіх: немає видимих башт із капітаном (видимих башт: ${visible}). Спочатку обери капітана.`,
           'danger'
         );
       }
@@ -241,7 +241,7 @@ const commonCandidates = () => (state.players || [])
 
     if (typeof PNS.setImportStatus === 'function') {
       PNS.setImportStatus(
-        `Auto-fill all: +${totalAdded} helper(s) across ${touched} base(s).`,
+        `Автозаповнення: +${totalAdded} помічників у ${touched} турелях.`,
         totalAdded ? 'good' : 'danger'
       );
     }

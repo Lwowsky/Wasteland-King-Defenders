@@ -87,7 +87,7 @@
     const plan = state.shiftPlans?.[key];
     const a = plan?.players?.[playerId] || null;
     if (!a || !a.baseId) return null;
-    return { shift: key, label: key === 'shift1' ? 'Shift 1' : 'Shift 2', assignment: a };
+    return { shift: key, label: key === 'shift1' ? 'Зміна 1' : 'Зміна 2', assignment: a };
   }
 
   function isPlayerUsedInOtherShift(playerId, currentShift) {
@@ -107,7 +107,7 @@
   function syncSettingsShiftBadge() {
     const badge = document.getElementById('settingsShiftBadge');
     if (!badge) return;
-    const label = state.activeShift === 'shift1' ? 'Shift 1' : state.activeShift === 'shift2' ? 'Shift 2' : 'All';
+    const label = state.activeShift === 'shift1' ? 'Зміна 1' : state.activeShift === 'shift2' ? 'Зміна 2' : 'Усі';
     badge.textContent = label;
   }
 

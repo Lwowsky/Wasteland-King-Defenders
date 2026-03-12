@@ -55,11 +55,11 @@
           if ((in1 && in2) || (!in1 && !in2)) return;
           restore.push([p, p.shift, p.shiftLabel, p.rowEl?.dataset?.shift || '']);
           p.shift = 'both';
-          p.shiftLabel = 'Both';
+          p.shiftLabel = 'Обидві';
           if (p.rowEl) {
             p.rowEl.dataset.shift = 'both';
             const cell = p.rowEl.querySelector('td[data-field="shiftLabel"]');
-            if (cell) cell.textContent = 'Both';
+            if (cell) cell.textContent = 'Обидві';
           }
         });
       } catch {}
@@ -77,7 +77,7 @@
               const cell = p.rowEl.querySelector('td[data-field="shiftLabel"]');
               if (cell) {
                 const norm = normalizeShift(shift || 'both');
-                cell.textContent = shiftLabel || (norm === 'shift1' ? 'Shift 1' : norm === 'shift2' ? 'Shift 2' : 'Both');
+                cell.textContent = shiftLabel || (norm === 'shift1' ? 'Зміна 1' : norm === 'shift2' ? 'Зміна 2' : 'Обидві');
               }
             }
           } catch {}

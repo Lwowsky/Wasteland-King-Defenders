@@ -152,8 +152,8 @@
     try { window.computeTowerCalcResults?.(); } catch {}
     try {
       const msg = mode === 'all'
-        ? 'Очищено helper-ів у Shift 1 і Shift 2. Капітани залишилися.'
-        : `Очищено helper-ів: ${mode === 'shift1' ? 'Shift 1' : 'Shift 2'}. Капітани залишилися.`;
+        ? 'Очищено помічників у змінах 1 і 2. Капітани залишилися.'
+        : `Очищено помічників: ${mode === 'shift1' ? 'Зміна 1' : 'Зміна 2'}. Капітани залишилися.`;
       PNS.setImportStatus?.(msg, 'good');
     } catch {}
     return true;

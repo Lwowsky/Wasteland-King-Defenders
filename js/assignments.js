@@ -96,8 +96,8 @@
   }
 
   function validateAssign(player, base, kind) {
-    if (!player || !base) return 'Player or base not found.';
-    if (!PNS.ROLE_KEYS?.includes?.(player.role)) return `Unknown role for ${player.name}.`;
+    if (!player || !base) return 'Гравця або турель не знайдено.';
+    if (!PNS.ROLE_KEYS?.includes?.(player.role)) return `Не вдалося визначити тип військ для ${player.name}.`;
 
     const policy = readAssignmentPolicy(player, base, kind);
     const allowCrossShiftReuse = !!policy.allowCrossShiftReuse;
@@ -110,16 +110,16 @@
       player.shift !== 'both' &&
       base.shift !== player.shift
     ) {
-      return `Shift mismatch: ${player.shiftLabel} vs ${base.title.split('/')[0].trim()}.`;
+      return `Невідповідність зміни: ${player.shiftLabel} vs ${base.title.split('/')[0].trim()}.`;
     }
 
     if (kind === 'helper' && !base.captainId) {
-      return `Set a captain first for "${base.title}".`;
+      return `Спочатку постав капітана в турель «${base.title}».`;
     }
 
     const effectiveRole = (typeof PNS.getBaseRole === 'function') ? PNS.getBaseRole(base) : null;
     if (kind === 'helper' && (policy.sameTroopOnly ?? sameTroopOnlyEnabled()) && effectiveRole && player.role !== effectiveRole) {
-      return `Role mismatch: ${player.role} cannot go to ${effectiveRole} base.`;
+      return `Невідповідність типу військ: ${player.role} не може бути призначений у турель типу ${effectiveRole}.`;
     }
 
     if (kind === 'helper' && (policy.noCrossShiftDupes ?? noCrossShiftDupesEnabled())) {
@@ -129,14 +129,14 @@
           || policy.otherShiftHit
           || (typeof PNS.getOtherShiftBlocker === 'function' ? PNS.getOtherShiftBlocker(player.id, curShift, kind) : null)
           || (typeof PNS.isPlayerUsedInOtherShift === 'function' ? PNS.isPlayerUsedInOtherShift(player.id, curShift) : null);
-        if (hit) return `Player already assigned in ${hit.label || hit.shift || 'other shift'}.`;
+        if (hit) return `Гравець уже призначений у ${hit.label || hit.shift || 'іншій зміні'}.`;
       }
     }
 
     if (kind === 'helper') {
       const helperCountAfter = base.helperIds.filter((id) => id !== player.id).length + 1;
       if (Number.isFinite(base.maxHelpers) && base.maxHelpers > 0 && helperCountAfter > base.maxHelpers) {
-        return `Max helpers reached: ${helperCountAfter}/${base.maxHelpers}.`;
+        return `Ліміт помічників заповнений: ${helperCountAfter}/${base.maxHelpers}.`;
       }
 
       const captain = state.playerById.get(base.captainId);
@@ -149,7 +149,7 @@
 
       const totalAfter = (captain?.march || 0) + helpersSum + helperMarchForBase(base, player);
       if (limit && totalAfter > limit) {
-        return `Over limit: ${PNS.formatNum(totalAfter)} > ${PNS.formatNum(limit)}.`;
+        return `Перевищено ліміт: ${PNS.formatNum(totalAfter)} > ${PNS.formatNum(limit)}.`;
       }
     }
 
@@ -338,7 +338,7 @@
           return;
         }
 
-        if (!pid) { alert('Select player first'); return; }
+        if (!pid) { alert('Спочатку вибери гравця'); return; }
         assignPlayerToBase(pid, baseId, editorActionBtn.dataset.baseEditorAction);
         return;
       }
@@ -347,58 +347,93 @@
     state._baseToolsDelegationBound = true;
   }
 
+  function getShiftAssignment(player, shiftKey) {
+    const shift = String(shiftKey || '').toLowerCase();
+    if (shift !== 'shift1' && shift !== 'shift2') return null;
+
+    if (String(state.activeShift || '').toLowerCase() === shift) {
+      return player?.assignment ? { ...player.assignment } : null;
+    }
+
+    const plan = state.shiftPlans?.[shift] || null;
+    const assignment = plan?.players?.[player?.id] || null;
+    return assignment ? { ...assignment } : null;
+  }
+
+  function getPlacementSummary(player, shiftKey) {
+    const shift = String(shiftKey || '').toLowerCase();
+    const shiftLabel = typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(shift) : (shift === 'shift1' ? 'Зміна 1' : 'Зміна 2');
+    const assignment = getShiftAssignment(player, shift);
+    if (!assignment?.baseId) {
+      return {
+        shift,
+        shiftLabel,
+        assigned: false,
+        title: 'Резерв',
+        detail: 'Не призначено',
+      };
+    }
+
+    const base = state.baseById?.get?.(assignment.baseId) || null;
+    const baseName = String(base?.title || 'Башта').split('/')[0].trim() || 'Башта';
+    return {
+      shift,
+      shiftLabel,
+      assigned: true,
+      title: baseName,
+      detail: assignment.kind === 'captain' ? 'Капітан' : 'Помічник',
+    };
+  }
+
+  function buildPlacementHtml(player) {
+    const activeShift = String(state.activeShift || '').toLowerCase();
+    const itemsHtml = ['shift1', 'shift2'].map((shiftKey) => {
+      const summary = getPlacementSummary(player, shiftKey);
+      const classes = [
+        'player-placement-item',
+        summary.assigned ? 'is-assigned' : 'is-reserve',
+        activeShift === shiftKey ? 'is-active' : '',
+      ].filter(Boolean).join(' ');
+
+      return `
+        <div class="${classes}">
+          <span class="player-placement-shift">${summary.shiftLabel}</span>
+          <div class="player-placement-main">
+            <strong>${PNS.escapeHtml(summary.title)}</strong>
+            <small>${PNS.escapeHtml(summary.detail)}</small>
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="player-placement-card">
+        <div class="player-placement-grid">${itemsHtml}</div>
+        <button type="button" class="btn btn-xs btn-placement-edit" data-edit-player-placement="${PNS.escapeHtml(String(player.id || ''))}">✎ Редагувати</button>
+        <div class="row-status"></div>
+      </div>`;
+  }
+
   function buildRowActions() {
-    // Після partial swap / render DOM може бути новий:
-    // state.players є, але actionCellEl можуть бути ще не проставлені - тоді просто пропускаємо.
     state.players.forEach((player) => {
       const cell = player.actionCellEl;
       if (!cell) return;
 
       cell.classList.remove('muted');
-      cell.innerHTML = '';
+      cell.innerHTML = buildPlacementHtml(player);
 
-      const wrap = document.createElement('div');
-      wrap.className = 'row-actions';
-
-      const select = document.createElement('select');
-      select.setAttribute('aria-label', `Base for ${player.name}`);
-
-      state.bases.forEach((base) => {
-        const opt = document.createElement('option');
-        opt.value = base.id;
-        opt.textContent = base.title.split('/')[0].trim();
-        select.appendChild(opt);
-      });
-
-      const btnCaptain = document.createElement('button');
-      btnCaptain.type = 'button';
-      btnCaptain.className = 'btn btn-xs';
-      btnCaptain.textContent = 'Captain';
-      btnCaptain.addEventListener('click', () => assignPlayerToBase(player.id, select.value, 'captain'));
-
-      const btnHelper = document.createElement('button');
-      btnHelper.type = 'button';
-      btnHelper.className = 'btn btn-xs';
-      btnHelper.textContent = 'Helper';
-      btnHelper.addEventListener('click', () => assignPlayerToBase(player.id, select.value, 'helper'));
-
-      const btnClear = document.createElement('button');
-      btnClear.type = 'button';
-      btnClear.className = 'btn btn-xs';
-      btnClear.textContent = 'Clear';
-      btnClear.addEventListener('click', () => {
-        clearPlayerFromBase(player.id);
-        if (typeof PNS.renderAll === 'function') PNS.renderAll();
-        persistAfterTowerChange({ type: 'clear-player', playerId: player.id });
-      });
-
-      wrap.append(select, btnCaptain, btnHelper, btnClear);
-
-      const status = document.createElement('div');
-      status.className = 'row-status';
-      status.textContent = player.assignment ? 'Assigned' : 'Not assigned';
-
-      cell.append(wrap, status);
+      const editBtn = cell.querySelector('[data-edit-player-placement]');
+      if (editBtn) {
+        editBtn.addEventListener('click', () => {
+          if (PNS.ModalsShift?.openRosterPlayerEditModal) {
+            PNS.ModalsShift.openRosterPlayerEditModal(player.id);
+            return;
+          }
+          const firstBaseId = state.bases?.[0]?.id || '';
+          if (firstBaseId && PNS.ModalsShift?.openTowerPlayerEditModal) {
+            PNS.ModalsShift.openTowerPlayerEditModal(firstBaseId, player.id);
+          }
+        });
+      }
     });
 
     bindBaseToolsDelegationOnce();

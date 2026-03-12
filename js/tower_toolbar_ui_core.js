@@ -166,7 +166,7 @@
       setApplyMode(root, 'rebalance');
       clickEl(quickApplyBtn);
     });
-    const btnTopup = makeBtn('Дозаповнити башні', function () {
+    const btnTopup = makeBtn('Дозаповнити турелі', function () {
       setApplyMode(root, 'topup');
       clickEl(quickApplyBtn);
     });
@@ -198,9 +198,9 @@
       return b;
     }
 
-    menu.appendChild(menuItem('Очистити Shift 1', clear1Btn));
-    menu.appendChild(menuItem('Очистити Shift 2', clear2Btn));
-    menu.appendChild(menuItem('Очистити Shift 1 + 2', clearAllBtn));
+    menu.appendChild(menuItem('Очистити зміну 1', clear1Btn));
+    menu.appendChild(menuItem('Очистити зміну 2', clear2Btn));
+    menu.appendChild(menuItem('Очистити зміну 1 + 2', clearAllBtn));
     if (restoreBtn) {
       menu.appendChild(menuItem('Відновити з імпорту', restoreBtn));
     }

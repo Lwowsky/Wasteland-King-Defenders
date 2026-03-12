@@ -44,7 +44,7 @@
         card.classList.remove('is-active', 'is-ready', 'is-not-ready');
         card.dataset.previewBaseId = '';
         if (status) status.textContent = '?';
-        card.title = 'Башня не знайдена';
+        card.title = 'Турель не знайдена';
         return;
       }
       const baseId = String(base.id || '');
@@ -57,7 +57,7 @@
       card.title = `${String(base.title || baseId).split('/')[0].trim()} — ${ready ? 'готова' : 'без капітана'}`;
       if (status) {
         status.textContent = ready ? '✓' : '!';
-        status.setAttribute('aria-label', ready ? 'Башня готова' : 'Башня не готова');
+        status.setAttribute('aria-label', ready ? 'Турель готова' : 'Турель не готова');
       }
     });
   }

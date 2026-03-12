@@ -79,6 +79,12 @@
   font-size: 12px;
   margin-top: 3px;
 }
+.players-panel-lead {
+  max-width: 620px;
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 13px;
+  line-height: 1.55;
+}
 .panel-actions {
   display: flex;
   gap: 8px;
@@ -162,6 +168,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .stat-chip {
+  position: relative;
   display: grid;
   justify-items: center;
   gap: 6px;
@@ -171,14 +178,27 @@
   border: 1px solid rgba(255,255,255,.08);
   background: rgba(255,255,255,.03);
   text-align: center;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 12px 30px rgba(0,0,0,.18);
+}
+.stat-chip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), transparent 46%);
+  pointer-events: none;
 }
 .stat-chip b {
   font-size: 18px;
   line-height: 1;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0,0,0,.25);
 }
 .stat-chip small {
-  color: var(--muted);
+  color: rgba(255,255,255,.92);
   font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 .stat-chip--role {
   align-content: center;
@@ -326,35 +346,74 @@ select:disabled {
 .data-table tbody tr:hover {
   background: rgba(255, 255, 255, 0.025);
 }
+.data-table td[data-field="actions"] {
+  white-space: normal;
+}
 
 .tag,
 .badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 7px;
   border-radius: 999px;
-  padding: 4px 8px;
-  font-weight: 600;
+  padding: 6px 11px;
+  font-weight: 700;
   font-size: 12px;
+  color: #fff;
   border: 1px solid transparent;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 22px rgba(0,0,0,.18);
+}
+.tag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 4px rgba(255,255,255,.08);
+  flex: 0 0 auto;
 }
 .tag.shooter,
 .badge.shooter {
-  color: #d7f0ff;
-  background: rgba(90, 183, 255, 0.16);
-  border-color: rgba(90, 183, 255, 0.28);
+  color: #fff;
+  background: linear-gradient(180deg, rgba(90, 183, 255, 0.28), rgba(90, 183, 255, 0.12));
+  border-color: rgba(90, 183, 255, 0.34);
 }
 .tag.fighter,
 .badge.fighter {
-  color: #fff0d4;
-  background: rgba(255, 178, 71, 0.15);
-  border-color: rgba(255, 178, 71, 0.28);
+  color: #fff;
+  background: linear-gradient(180deg, rgba(255, 178, 71, 0.28), rgba(255, 178, 71, 0.12));
+  border-color: rgba(255, 178, 71, 0.34);
 }
 .tag.rider,
 .badge.rider {
-  color: #e8ffe0;
-  background: rgba(142, 211, 123, 0.15);
-  border-color: rgba(142, 211, 123, 0.28);
+  color: #fff;
+  background: linear-gradient(180deg, rgba(142, 211, 123, 0.28), rgba(142, 211, 123, 0.12));
+  border-color: rgba(142, 211, 123, 0.34);
+}
+.shift-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 82px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 22px rgba(0,0,0,.16);
+}
+.shift-badge--shift1 {
+  background: linear-gradient(180deg, rgba(79,140,255,.28), rgba(79,140,255,.12));
+  border-color: rgba(79,140,255,.34);
+}
+.shift-badge--shift2 {
+  background: linear-gradient(180deg, rgba(141,107,255,.28), rgba(141,107,255,.12));
+  border-color: rgba(141,107,255,.34);
+}
+.shift-badge--both {
+  background: linear-gradient(180deg, rgba(244,185,74,.28), rgba(244,185,74,.12));
+  border-color: rgba(244,185,74,.34);
 }
 
 .pill {

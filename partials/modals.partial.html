@@ -174,7 +174,7 @@
 
   <!-- FINAL BOARD MODAL (CSS only preview) -->
   <section
-    aria-label="Final board view"
+    aria-label="Фінальний план"
     class="modal board-modal"
     data-modal="board"
     id="board-modal"
@@ -202,20 +202,16 @@
               class="btn btn-sm board-shift-tab"
               data-shift-tab="shift1"
               type="button"
-            >
-              Shift 1
-            </button>
+            >Зміна 1</button>
             <button
               class="btn btn-sm board-shift-tab active"
               data-shift-tab="shift2"
               type="button"
-            >
-              Shift 2
-            </button>
+            >Зміна 2</button>
           </div>
 
           <button class="btn btn-sm" id="exportPngBtn" type="button">
-            Export PNG
+            Експорт PNG
           </button>
           <button class="btn btn-sm" id="shareBoardBtn" type="button">
             Поділитися
@@ -226,14 +222,14 @@
 
       <div class="board-sheet">
         <div class="board-title" id="boardTitle">
-          2nd shift / Вторая половина
+          Зміна 2 / Друга половина
         </div>
 
         <div class="board-grid">
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Техно-Центр / Hub</h4>
-              <div class="is-auto board-sub">Type auto by captain</div>
+              <h4>Техно-Центр</h4>
+              <div class="is-auto board-sub">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
@@ -243,8 +239,8 @@
 
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Северная башня / North tower</h4>
-              <div class="is-auto board-sub">Type auto by captain</div>
+              <h4>Північна турель</h4>
+              <div class="is-auto board-sub">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
@@ -254,8 +250,8 @@
 
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Западная башня / West Tower</h4>
-              <div class="is-auto board-sub">Type auto by captain</div>
+              <h4>Західна турель</h4>
+              <div class="is-auto board-sub">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
@@ -265,8 +261,8 @@
 
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Восточная башня / East tower</h4>
-              <div class="is-auto board-sub">Type auto by captain</div>
+              <h4>Східна турель</h4>
+              <div class="is-auto board-sub">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
@@ -276,8 +272,8 @@
 
           <section class="board-col" data-shift="both">
             <header>
-              <h4>Южная башня / South tower</h4>
-              <div class="is-auto board-sub">Type auto by captain</div>
+              <h4>Південна турель</h4>
+              <div class="is-auto board-sub">Тип визначається капітаном</div>
               <div class="board-cap">0 <span>0</span></div>
             </header>
             <ul>
@@ -291,7 +287,7 @@
 
   <!-- TOWER CALCULATOR MODAL (moved from JS ensureTowerCalcModal) -->
   <section
-    aria-label="Tower Calculator"
+    aria-label="Розподіл по турелях"
     class="modal tower-calc-modal"
     id="towerCalcModal"
   >
@@ -305,10 +301,10 @@
     <div class="modal-card" role="dialog" aria-modal="true">
       <div class="modal-head">
         <div>
-          <h2 style="margin: 0">Tower Calculator</h2>
+          <h2 style="margin: 0">Розподіл по турелях</h2>
           <p class="muted" style="margin: 4px 0 0">
             План на 10 капітанів (5 + 5), розрахунок вміщення гравців по
-            башнях і тірах (капітани не входять у tier-пул)
+            розклад гравців по турелях і тірах для двох змін. Капітани рахуються окремо.
           </p>
         </div>
         <a
@@ -379,14 +375,14 @@
                   type="button"
                   id="towerCalcApplyToTowersBtn"
                 >
-                  Використати на башнях (ліміти)
+                  Підготувати ліміти для турелей
                 </button>
                 <button
                   class="btn btn-sm"
                   type="button"
                   id="towerCalcQuickApplyBtn"
                 >
-                  Заповнити башні + ліміти (авто)
+                  Автоматично заповнити турелі
                 </button>
               </div>
               <div
@@ -427,10 +423,10 @@
                   >
                     <label
                       ><input type="checkbox" id="towerCalcBoth50" />
-                      Автобаланс гравців Both</label
+                      Автобаланс гравців «Обидві»</label
                     >
                     <label
-                      ><input type="checkbox" id="towerCalcMinHelpersOn" /> Мінімум гравців на башню</label
+                      ><input type="checkbox" id="towerCalcMinHelpersOn" /> Мінімум гравців на турель</label
                     >
                     <label
                       >Кількість
@@ -452,7 +448,7 @@
                       type="button"
                       id="towerCalcApplyAndAssignBtn"
                     >
-                      Застосувати + перенести гравців у башні
+                      Застосувати й розставити гравців по турелях
                     </button>
                     <button
                       class="btn btn-sm"
@@ -531,9 +527,9 @@
                     </span>
                   </div>
                   <div class="muted small" style="margin-top: 6px">
-                    Порада: “Порахувати” → “Використати на башнях (ліміти)”
-                    налаштовує ліміти. Кнопка “Заповнити башні + ліміти (авто)”
-                    — налаштовує ліміти і одразу переносить гравців у башні.
+                    Порада: “Порахувати” → “Підготувати ліміти для турелей”
+                    налаштовує ліміти. Кнопка “Автоматично заповнити турелі”
+                    — одразу готує ліміти й розставляє гравців по турелях.
                   </div>
                 </div>
               </details>
@@ -548,21 +544,21 @@
 
                 <div class="tower-calc-shift-cards">
                   <div class="tower-calc-shift-card">
-                    <span>Shift 1</span>
+                    <span>Зміна 1</span>
                     <strong id="tcShift1Count">0</strong>
                     <div class="muted small" id="tcShift1Roles">
                       F / R / S: 0 / 0 / 0
                     </div>
                   </div>
                   <div class="tower-calc-shift-card">
-                    <span>Shift 2</span>
+                    <span>Зміна 2</span>
                     <strong id="tcShift2Count">0</strong>
                     <div class="muted small" id="tcShift2Roles">
                       F / R / S: 0 / 0 / 0
                     </div>
                   </div>
                   <div class="tower-calc-shift-card">
-                    <span>Both</span>
+                    <span>Обидві</span>
                     <strong id="tcBothCount">0</strong>
                     <div class="muted small" id="tcBothRoles">
                       F / R / S: 0 / 0 / 0
@@ -573,19 +569,19 @@
                 <div class="tower-calc-shift-controls">
                   <div class="tower-calc-shift-controls-left">
                     <label
-                      >Ліміт Shift 1
+                      >Ліміт зміни 1
                       <input id="shiftLimitS1" type="number" min="0" max="100" value="100" />
                     </label>
                     <label
-                      >Ліміт Shift 2
+                      >Ліміт зміни 2
                       <input id="shiftLimitS2" type="number" min="0" max="100" value="100" />
                     </label>
                     <label
-                      >Додати в Shift 1
+                      >Додати в зміну 1
                       <input id="shiftAddS1" type="number" min="0" value="0" />
                     </label>
                     <label
-                      >Додати в Shift 2
+                      >Додати в зміну 2
                       <input id="shiftAddS2" type="number" min="0" value="0" />
                     </label>
                     <button
@@ -604,7 +600,7 @@
                     </button>
                     <label class="tower-calc-shift-force">
                       <input id="shiftSplitForceChk" type="checkbox" />
-                      Скинути поточний розподіл у Both перед застосуванням
+                      Скинути поточний розподіл в «Обидві» перед застосуванням
                     </label>
                     <div class="muted small" id="towerCalcShiftLimitNote"></div>
                   </div>
@@ -612,7 +608,7 @@
                   <div class="tower-calc-shift-controls-right">
                     <label class="tower-calc-ignore-both">
                       <input id="towerCalcIgnoreBoth" type="checkbox" />
-                      Планувати Shift 1/2 без Both
+                      Планувати зміни 1/2 без групи «Обидві»
                     </label>
 
                     <div class="tower-calc-autoslots">
@@ -650,12 +646,8 @@
               align-items: center;
             "
           >
-            <button class="btn btn-sm" type="button" data-calc-tab="shift1">
-              Shift 1
-            </button>
-            <button class="btn btn-sm" type="button" data-calc-tab="shift2">
-              Shift 2
-            </button>
+            <button class="btn btn-sm" type="button" data-calc-tab="shift1">Зміна 1</button>
+            <button class="btn btn-sm" type="button" data-calc-tab="shift2">Зміна 2</button>
             <span class="muted small" style="margin-left: 6px"
               >Показується тільки один Shift, щоб було більше місця для
               даних</span
@@ -673,7 +665,7 @@
           data-calc-main-panel="overflow"
         >
           <div class="tower-calc-placeholder muted small">
-            Натисни “Порахувати”, щоб побачити фактичний статус гравців по Shift і башнях.
+            Натисни «Порахувати», щоб побачити, хто вже стоїть у турелях, хто в резерві та кого ще треба розподілити.
           </div>
         </section>
         <section

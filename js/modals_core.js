@@ -84,7 +84,7 @@ function getButtons() {
     if (b.showAllColumns) {
       b.showAllColumns.setAttribute('aria-pressed', String(on));
       b.showAllColumns.classList.toggle('toggle-on', on);
-      b.showAllColumns.textContent = on ? 'Hide selected columns' : 'Show selected columns';
+      b.showAllColumns.textContent = on ? 'Сховати вибрані колонки' : 'Показати вибрані колонки';
     }
   }
 

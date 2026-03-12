@@ -33,9 +33,9 @@
       btn.textContent = label;
       return btn;
     };
-    ensureBtn('towerCalcClearShift1Btn', 'Очистити Shift 1');
-    ensureBtn('towerCalcClearShift2Btn', 'Очистити Shift 2');
-    ensureBtn('towerCalcClearHelpersAllBtn', 'Очистити Shift 1 + 2');
+    ensureBtn('towerCalcClearShift1Btn', 'Очистити зміну 1');
+    ensureBtn('towerCalcClearShift2Btn', 'Очистити зміну 2');
+    ensureBtn('towerCalcClearHelpersAllBtn', 'Очистити зміну 1 + 2');
     return true;
   }
 
