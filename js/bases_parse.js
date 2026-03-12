@@ -132,9 +132,36 @@
   function renderQuotaRow(base) { /* real impl in render.js */ }
   PNS.renderQuotaRow = PNS.renderQuotaRow || renderQuotaRow;
 
+  // стабільний слот турелі, незалежний від мови UI
+  function towerSlotFromText(text, fallbackIdx = 0) {
+    const src = String(text || '').toLowerCase();
+    if (/(техно|tech|hub|центр)/i.test(src)) return 'hub';
+    if (/(північ|north|север)/i.test(src)) return 'north';
+    if (/(захід|west|запад)/i.test(src)) return 'west';
+    if (/(схід|east|восток)/i.test(src)) return 'east';
+    if (/(півден|south|юж)/i.test(src)) return 'south';
+    const order = ['hub','north','west','east','south'];
+    return order[Number(fallbackIdx) || 0] || `slot-${fallbackIdx}`;
+  }
+
+  function stableBaseId(slot, shift = 'both') {
+    const normShift = String(shift || 'both').toLowerCase();
+    return normShift && normShift !== 'both' ? `base-${normShift}-${slot}` : `base-${slot}`;
+  }
+
   // нормалізація назви для мапінгу card(h3) -> board(h4)
-  function keyFromTitle(t) {
-    return slug(String(t || '').split('/')[0].trim());
+  function keyFromTitle(t, fallbackIdx = 0) {
+    return towerSlotFromText(String(t || '').split('/')[0].trim(), fallbackIdx) || slug(String(t || '').split('/')[0].trim());
+  }
+
+  function resolveCurrentBaseId(storedId) {
+    const raw = String(storedId || '').trim();
+    if (!raw) return '';
+    if (state.baseById?.has?.(raw)) return raw;
+    const slot = towerSlotFromText(raw);
+    const bases = Array.isArray(state.bases) ? state.bases : [];
+    const bySlot = bases.find((b) => String(b?.slot || '') === slot);
+    return String(bySlot?.id || '');
   }
 
   function parseBasesFromCards() {
@@ -147,9 +174,9 @@
 
     // будуємо map по назві для boardCols
     const boardMap = new Map();
-    boardCols.forEach((col) => {
+    boardCols.forEach((col, boardIdx) => {
       const h4 = $('h4', col)?.textContent?.trim() || '';
-      const k = keyFromTitle(h4);
+      const k = keyFromTitle(h4, boardIdx);
       if (!boardMap.has(k)) boardMap.set(k, col);
     });
 
@@ -166,10 +193,10 @@
       // shift: якщо в HTML є data-shift, беремо його, інакше both
       const shift = card.dataset.shift || 'both';
 
-      const baseKey = keyFromTitle(titleText);
-      let id = `b-${idx + 1}-${baseKey}`;
+      const slot = keyFromTitle(titleText, state.bases.length);
+      const baseKey = slot;
+      let id = stableBaseId(slot, shift);
       if (usedIds.has(id)) {
-        // якщо через кирилицю/однакові назви знов однаково — додаємо суфікс
         let n = 2;
         while (usedIds.has(`${id}-${n}`)) n++;
         id = `${id}-${n}`;
@@ -177,10 +204,11 @@
       usedIds.add(id);
 
       card.dataset.baseId = id;
+      card.dataset.baseSlot = slot;
 
-      // boardEl: спочатку пробуємо по назві, потім по індексу
+      // boardEl: спочатку пробуємо по стабільному слоту, потім по індексу
       const boardEl = boardMap.get(baseKey) || boardCols[idx] || null;
-      if (boardEl) boardEl.dataset.baseId = id;
+      if (boardEl) { boardEl.dataset.baseId = id; boardEl.dataset.baseSlot = slot; }
 
       // додаємо інструменти 1 раз
       if (!$('.base-tools', card)) {
@@ -206,6 +234,7 @@
 
       const base = {
         id,
+        slot,
         title: titleText,
         role: null,
         shift,
@@ -235,5 +264,7 @@
   PNS.getBaseRole = getBaseRole;
   PNS.syncBaseEditorSettingsInputs = syncBaseEditorSettingsInputs;
   PNS.readBaseEditorSettingsInputs = readBaseEditorSettingsInputs;
+  PNS.towerSlotFromText = towerSlotFromText;
+  PNS.resolveCurrentBaseId = resolveCurrentBaseId;
 
 })();

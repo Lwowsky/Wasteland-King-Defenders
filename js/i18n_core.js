@@ -2091,6 +2091,89 @@
   }
 
   let observerStarted = false;
+
+  Object.assign(dict.uk, {
+    choose_file: 'Вибрати файл',
+    no_file_selected: 'Файл не вибрано',
+    import_status: 'Статус імпорту',
+    restored_players_from_storage: 'Відновлено {count} гравців із LocalStorage.',
+    reading_file: 'Читаю файл...',
+    file_loaded_check_mapping: 'Файл завантажено. Перевір зіставлення колонок і натисни «Застосувати імпорт».',
+    failed_parse_file: 'Не вдалося розібрати файл: {error}',
+    paste_csv_or_sheet_link_first: 'Спочатку встав CSV-посилання або посилання Google Sheets.',
+    loading_url: 'Завантажую посилання...',
+    url_loaded_check_mapping: 'Посилання завантажено. Перевір зіставлення колонок і натисни «Застосувати імпорт».',
+    failed_load_url: 'Не вдалося завантажити посилання. Переконайся, що таблиця публічна і доступний CSV export.',
+    load_file_or_link_first: 'Спочатку завантаж файл або посилання.',
+    import_ready_rows_cols: 'Готово до імпорту • {rows} рядків • {cols} колонок',
+    fill_required_columns: 'Заповни обов’язкові колонки: {fields}',
+    missing_required_mappings: 'Бракує обов’язкових зіставлень: {fields}',
+    no_players_after_import: 'Після імпорту не знайдено жодного гравця. Перевір зіставлення колонок і порожні рядки.',
+    imported_players_template_updated: 'Імпортовано {count} гравців. Шаблон автоматично оновлено у сховищі браузера.',
+    import_source_missing_save: 'Немає що зберігати: спочатку завантаж файл або посилання.',
+    load_file_or_link_then_detect: 'Спочатку завантаж файл або посилання, потім визнач колонки.',
+    load_file_or_link_for_template: 'Спочатку завантаж файл або посилання, щоб застосувати відповідний шаблон.',
+    apply_saved_template_exact: 'Застосовано збережений шаблон (точний збіг).',
+    apply_saved_template_partial: 'Застосовано збережений шаблон (частковий збіг).',
+    upload_file_or_public_link_first: 'Спочатку завантаж CSV/XLSX файл або встав публічне CSV-посилання Google Sheets.',
+    current_source_none: 'Файл або посилання ще не завантажено.',
+    file_not_loaded_yet: 'Файл ще не завантажено. Завантаж файл або встав публічне CSV-посилання.'
+  });
+  Object.assign(dict.en, {
+    choose_file: 'Choose file',
+    no_file_selected: 'No file selected',
+    import_status: 'Import status',
+    restored_players_from_storage: 'Restored {count} players from local storage.',
+    reading_file: 'Reading file...',
+    file_loaded_check_mapping: 'File loaded. Check the column mapping and click “Apply import”.',
+    failed_parse_file: 'Could not parse the file: {error}',
+    paste_csv_or_sheet_link_first: 'Paste a CSV link or a Google Sheets link first.',
+    loading_url: 'Loading link...',
+    url_loaded_check_mapping: 'Link loaded. Check the column mapping and click “Apply import”.',
+    failed_load_url: 'Could not load the link. Make sure the sheet is public and CSV export is available.',
+    load_file_or_link_first: 'Load a file or link first.',
+    import_ready_rows_cols: 'Ready to import • {rows} rows • {cols} columns',
+    fill_required_columns: 'Fill in the required columns: {fields}',
+    missing_required_mappings: 'Missing required mappings: {fields}',
+    no_players_after_import: 'No players were found after import. Check the column mapping and empty rows.',
+    imported_players_template_updated: 'Imported {count} players. The template was updated automatically in browser storage.',
+    import_source_missing_save: 'Nothing to save yet: load a file or link first.',
+    load_file_or_link_then_detect: 'Load a file or link first, then detect the columns.',
+    load_file_or_link_for_template: 'Load a file or link first to apply a matching template.',
+    apply_saved_template_exact: 'Saved template applied (exact match).',
+    apply_saved_template_partial: 'Saved template applied (partial match).',
+    upload_file_or_public_link_first: 'Upload a CSV/XLSX file or paste a public Google Sheets CSV link first.',
+    current_source_none: 'No file or link has been loaded yet.',
+    file_not_loaded_yet: 'No file has been loaded yet. Upload a file or paste a public CSV link.'
+  });
+  Object.assign(dict.ru, {
+    choose_file: 'Выбрать файл',
+    no_file_selected: 'Файл не выбран',
+    import_status: 'Статус импорта',
+    restored_players_from_storage: 'Восстановлено {count} игроков из LocalStorage.',
+    reading_file: 'Читаю файл...',
+    file_loaded_check_mapping: 'Файл загружен. Проверь сопоставление колонок и нажми «Применить импорт».',
+    failed_parse_file: 'Не удалось разобрать файл: {error}',
+    paste_csv_or_sheet_link_first: 'Сначала вставь CSV-ссылку или ссылку Google Sheets.',
+    loading_url: 'Загружаю ссылку...',
+    url_loaded_check_mapping: 'Ссылка загружена. Проверь сопоставление колонок и нажми «Применить импорт».',
+    failed_load_url: 'Не удалось загрузить ссылку. Убедись, что таблица публичная и доступен CSV export.',
+    load_file_or_link_first: 'Сначала загрузи файл или ссылку.',
+    import_ready_rows_cols: 'Готово к импорту • {rows} строк • {cols} колонок',
+    fill_required_columns: 'Заполни обязательные колонки: {fields}',
+    missing_required_mappings: 'Не хватает обязательных сопоставлений: {fields}',
+    no_players_after_import: 'После импорта не найдено ни одного игрока. Проверь сопоставление колонок и пустые строки.',
+    imported_players_template_updated: 'Импортировано {count} игроков. Шаблон автоматически обновлён в хранилище браузера.',
+    import_source_missing_save: 'Пока нечего сохранять: сначала загрузи файл или ссылку.',
+    load_file_or_link_then_detect: 'Сначала загрузи файл или ссылку, затем определи колонки.',
+    load_file_or_link_for_template: 'Сначала загрузи файл или ссылку, чтобы применить подходящий шаблон.',
+    apply_saved_template_exact: 'Сохранённый шаблон применён (точное совпадение).',
+    apply_saved_template_partial: 'Сохранённый шаблон применён (частичное совпадение).',
+    upload_file_or_public_link_first: 'Сначала загрузи CSV/XLSX файл или вставь публичную CSV-ссылку Google Sheets.',
+    current_source_none: 'Файл или ссылка ещё не загружены.',
+    file_not_loaded_yet: 'Файл ещё не загружен. Загрузи файл или вставь публичную CSV-ссылку.'
+  });
+
   function observe() {
     observerStarted = true;
     return null;
@@ -2131,7 +2214,7 @@
     markReady();
   }
 
-  I18N.locale = safeLocale(document.documentElement.dataset.locale || 'uk');
+  try { I18N.locale = safeLocale(localStorage.getItem(STORAGE_KEY) || document.documentElement.dataset.locale || 'uk'); } catch { I18N.locale = safeLocale(document.documentElement.dataset.locale || 'uk'); }
   I18N.dict = dict;
   I18N.t = get;
   I18N.setLocale = setLocale;

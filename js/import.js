@@ -2,6 +2,11 @@
   const PNS = window.PNS; if (!PNS) return;
   const { state, $$ } = PNS;
   const t = (key, fallback = '') => (typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback);
+  function fmtMsg(key, fallback, vars = {}) {
+    let text = t(key, fallback);
+    Object.entries(vars || {}).forEach(([k, v]) => { text = String(text).replaceAll(`{${k}}`, String(v ?? '')); });
+    return text;
+  }
 
   const FIELD_LABEL_KEYS = {
     player_name: 'player_name',
@@ -242,6 +247,75 @@
     };
   }
 
+
+  function syncFileInputMockUI() {
+    const b = getButtons();
+    const input = b.fileInputMock;
+    if (!input) return;
+    const host = input.closest('.file-drop, .import-upload-card') || input.parentElement;
+    if (!host) return;
+    host.style.position = host.style.position || 'relative';
+    input.classList.add('pns-file-input-native');
+    input.style.position = 'absolute';
+    input.style.left = '-9999px';
+    input.style.width = '1px';
+    input.style.height = '1px';
+    input.style.opacity = '0';
+    input.style.pointerEvents = 'none';
+    input.style.zIndex = '-1';
+
+    let ui = host.querySelector('.pns-file-input-ui');
+    if (!ui) {
+      ui = document.createElement('div');
+      ui.className = 'pns-file-input-ui';
+      ui.style.display = 'flex';
+      ui.style.alignItems = 'center';
+      ui.style.gap = '14px';
+      ui.style.marginTop = '12px';
+      ui.style.padding = '12px 16px';
+      ui.style.border = '1px solid rgba(255,255,255,.08)';
+      ui.style.borderRadius = '18px';
+      ui.style.background = 'rgba(6,13,29,.55)';
+      ui.style.pointerEvents = 'auto';
+      ui.innerHTML = '<span class="pns-file-input-btn"></span><span class="pns-file-input-name"></span>';
+      host.appendChild(ui);
+    }
+    if (!ui.dataset.boundClick) {
+      ui.dataset.boundClick = '1';
+      ui.addEventListener('click', (ev) => { ev.preventDefault(); try { input.click(); } catch {} });
+    }
+    if (!host.dataset.boundFileClick) {
+      host.dataset.boundFileClick = '1';
+      host.addEventListener('click', (ev) => {
+        if (ev.target && ev.target.closest('.pns-file-input-ui')) return;
+        if (ev.target === input) return;
+        try { input.click(); } catch {}
+      });
+    }
+    const btn = ui.querySelector('.pns-file-input-btn');
+    const name = ui.querySelector('.pns-file-input-name');
+    if (btn) {
+      btn.textContent = t('choose_file', 'Вибрати файл');
+      btn.style.display = 'inline-flex';
+      btn.style.alignItems = 'center';
+      btn.style.justifyContent = 'center';
+      btn.style.padding = '10px 16px';
+      btn.style.minWidth = '148px';
+      btn.style.borderRadius = '16px';
+      btn.style.background = 'rgba(255,255,255,.08)';
+      btn.style.border = '1px solid rgba(255,255,255,.14)';
+      btn.style.color = '#eef4ff';
+      btn.style.fontWeight = '700';
+      btn.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,.04)';
+    }
+    if (name) {
+      const fileName = input.files && input.files[0] ? input.files[0].name : '';
+      name.textContent = fileName || t('no_file_selected', 'Файл не вибрано');
+      name.style.color = 'rgba(232,240,255,.86)';
+      name.style.fontWeight = '600';
+    }
+  }
+
   function setImportLoadedInfo(text) {
     const c = getControls();
     if (c.importLoadedInfo) c.importLoadedInfo.textContent = text || '';
@@ -466,10 +540,10 @@
 
   function updateImportReadinessHint() {
     const headers = state.importData.headers || [];
-    if (!headers.length) { setImportStatus('Спочатку завантаж CSV/XLSX файл або встав публічне CSV-посилання Google Sheets.'); return; }
+    if (!headers.length) { setImportStatus(t('upload_file_or_public_link_first', 'Спочатку завантаж CSV/XLSX файл або встав публічне CSV-посилання Google Sheets.')); return; }
     const missing = FIELD_DEFS.filter(f => f.required && !state.importData.mapping?.[f.key]).map(f => getFieldLabel(f.key));
-    if (missing.length) setImportStatus(`Заповни обов’язкові колонки: ${missing.join(', ')}`, 'danger');
-    else setImportStatus(`Готово до імпорту • ${state.importData.rows.length} рядків • ${headers.length} колонок`, 'good');
+    if (missing.length) setImportStatus(fmtMsg('fill_required_columns', 'Заповни обов’язкові колонки: {fields}', { fields: missing.join(', ') }), 'danger');
+    else setImportStatus(fmtMsg('import_ready_rows_cols', 'Готово до імпорту • {rows} рядків • {cols} колонок', { rows: state.importData.rows.length, cols: headers.length }), 'good');
   }
 
   function renderImportUI() {
@@ -631,7 +705,7 @@
   }
 
   function saveCurrentImportTemplate() {
-    if (!(state.importData.headers || []).length) { setImportStatus('Немає що зберігати: спочатку завантаж файл або посилання.', 'danger'); return; }
+    if (!(state.importData.headers || []).length) { setImportStatus(t('import_source_missing_save', 'Немає що зберігати: спочатку завантаж файл або посилання.'), 'danger'); return; }
     const tpl = getCurrentImportTemplate();
     const templates = getImportTemplates().filter(t => t.fingerprint !== tpl.fingerprint);
     templates.unshift(tpl);
@@ -680,7 +754,7 @@
       if (typeof PNS.saveVisibleOptionalColumns === 'function') PNS.saveVisibleOptionalColumns();
       if (typeof PNS.applyColumnVisibility === 'function') PNS.applyColumnVisibility(state.showAllColumns);
     }
-    setImportStatus(`Застосовано збережений шаблон${template.fingerprint === fingerprintHeaders(headers) ? ' (точний збіг)' : ' (частковий збіг)'}.`, 'good');
+    setImportStatus(template.fingerprint === fingerprintHeaders(headers) ? t('apply_saved_template_exact', 'Застосовано збережений шаблон (точний збіг).') : t('apply_saved_template_partial', 'Застосовано збережений шаблон (частковий збіг).'), 'good');
     return true;
   }
 
@@ -716,7 +790,7 @@
   }
 
   function handleDetectColumns() {
-    if (!(state.importData.headers || []).length) { setImportStatus('Спочатку завантаж файл або посилання, потім визнач колонки.', 'danger'); return; }
+    if (!(state.importData.headers || []).length) { setImportStatus(t('load_file_or_link_then_detect', 'Спочатку завантаж файл або посилання, потім визнач колонки.'), 'danger'); return; }
     ensureCustomOptionalDefs();
     const detected = autoDetectMapping(state.importData.headers);
     getCustomOptionalDefs().forEach((f) => { detected[f.key] = autoDetectCustomOptionalMapping(state.importData.headers, f); });
@@ -728,8 +802,8 @@
   function buildImportedPlayersFromRaw() {
     readMappingFromUI();
     const mapping = state.importData.mapping || {};
-    const missing = FIELD_DEFS.filter(f => f.required && !mapping[f.key]).map(f => f.label);
-    if (missing.length) { setImportStatus(`Бракує обов’язкових зіставлень: ${missing.join(', ')}`, 'danger'); return null; }
+    const missing = FIELD_DEFS.filter(f => f.required && !mapping[f.key]).map(f => getFieldLabel(f.key));
+    if (missing.length) { setImportStatus(fmtMsg('missing_required_mappings', 'Бракує обов’язкових зіставлень: {fields}', { fields: missing.join(', ') }), 'danger'); return null; }
 
     const customDefs = getCustomOptionalDefs();
     const customFieldLabels = Object.fromEntries(customDefs.map((d) => [d.key, d.label]));
@@ -806,7 +880,7 @@
   function applyImportedPlayers() {
     const players = buildImportedPlayersFromRaw();
     if (!players) return;
-    if (!players.length) { setImportStatus('Після імпорту не знайдено жодного гравця. Перевір мапінг колонок і порожні рядки.', 'danger'); return; }
+    if (!players.length) { setImportStatus(t('no_players_after_import', 'Після імпорту не знайдено жодного гравця. Перевір мапінг колонок і порожні рядки.'), 'danger'); return; }
 
     state.players = players;
     state.playerById = new Map(players.map((p) => [p.id, p]));
@@ -828,7 +902,7 @@
     try { PNS.persistSessionStateSoon?.(20); } catch {}
     // auto-save latest import template so you don't need to press Save after every refresh
     try { saveCurrentImportTemplate(); } catch {}
-    setImportStatus(`Імпортовано ${players.length} гравців. Шаблон автоматично оновлено в LocalStorage.`, 'good');
+    setImportStatus(fmtMsg('imported_players_template_updated', 'Імпортовано {count} гравців. Шаблон автоматично оновлено у сховищі браузера.', { count: players.length }), 'good');
     setImportLoadedInfo(`${state.importData.джерелоName || 'джерело'} • імпортовано ${players.length} гравців`);
   }
 
@@ -837,36 +911,37 @@
     const file = ev.target.files?.[0];
     if (!file) return;
     try {
-      setImportStatus('Читаю файл...');
+      setImportStatus(t('reading_file', 'Читаю файл...'));
       const { headers, rows } = await parseFileToDataset(file);
       if (!headers.length) throw new Error('Не вдалося знайти заголовки колонок');
       setRawImportDataset(headers, rows, file.name, 'file');
-      setImportStatus('Файл завантажено. Перевір мапінг і натисни «Застосувати імпорт».', 'good');
+      syncFileInputMockUI();
+      setImportStatus(t('file_loaded_check_mapping', 'Файл завантажено. Перевір зіставлення колонок і натисни «Застосувати імпорт».'), 'good');
     } catch (e) {
       console.error(e);
-      setImportStatus(`Не вдалося розібрати файл: ${e.message || e}`, 'danger');
+      setImportStatus(fmtMsg('failed_parse_file', 'Не вдалося розібрати файл: {error}', { error: e.message || e }), 'danger');
     }
   }
 
   async function handleLoadUrlClick() {
     const b = getButtons();
     const raw = b.urlInputMock?.value?.trim();
-    if (!raw) { setImportStatus('Спочатку встав CSV-посилання або посилання Google Sheets.', 'danger'); return; }
+    if (!raw) { setImportStatus(t('paste_csv_or_sheet_link_first', 'Спочатку встав CSV-посилання або посилання Google Sheets.'), 'danger'); return; }
 
     try {
-      setImportStatus('Завантажую URL...');
+      setImportStatus(t('loading_url', 'Завантажую посилання...'));
       const { headers, rows } = await loadDatasetFromUrl(raw);
       if (!headers.length) throw new Error('Не вдалося знайти заголовки колонок');
       setRawImportDataset(headers, rows, raw, 'url');
-      setImportStatus('URL завантажено. Перевір мапінг і натисни «Застосувати імпорт».', 'good');
+      setImportStatus(t('url_loaded_check_mapping', 'Посилання завантажено. Перевір зіставлення колонок і натисни «Застосувати імпорт».'), 'good');
     } catch (e) {
       console.error(e);
-      setImportStatus('Не вдалося завантажити URL. Переконайся, що таблиця публічна (Anyone with link / CSV export) і що CORS дозволений.', 'danger');
+      setImportStatus(t('failed_load_url', 'Не вдалося завантажити посилання. Переконайся, що таблиця публічна і доступний CSV export.'), 'danger');
     }
   }
 
   function handleUseSavedTemplateClick() {
-    if (!(state.importData.headers || []).length) { setImportStatus('Спочатку завантаж файл або посилання, щоб застосувати відповідний шаблон.', 'danger'); return; }
+    if (!(state.importData.headers || []).length) { setImportStatus(t('load_file_or_link_for_template', 'Спочатку завантаж файл або посилання, щоб застосувати відповідний шаблон.'), 'danger'); return; }
     const ok = applyImportTemplate(findBestImportTemplate(state.importData.headers));
     renderImportUI();
     if (!ok) updateImportReadinessHint();
@@ -1024,7 +1099,7 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
     }
 
     if (restoredPlayers) {
-      setImportLoadedInfo(`Відновлено ${state.players.length} гравців із LocalStorage.`);
+      setImportLoadedInfo(fmtMsg('restored_players_from_storage', 'Відновлено {count} гравців із LocalStorage.', { count: state.players.length }));
       setImportStatus(t('restored_previous_session', 'Гравців відновлено з попередньої сесії. У будь-який момент можна завантажити нову таблицю і замінити їх.'), 'good');
     }
     return true;
@@ -1263,6 +1338,9 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
       b.fileInputMock.dataset.bound = '1';
       b.fileInputMock.addEventListener('change', handleImportFileChange);
     }
+    if (b.fileInputMock) {
+      try { syncFileInputMockUI(); } catch {}
+    }
     if (b.loadUrlMockBtn && !b.loadUrlMockBtn.dataset.bound) {
       b.loadUrlMockBtn.dataset.bound = '1';
       b.loadUrlMockBtn.addEventListener('click', handleLoadUrlClick);
@@ -1326,7 +1404,7 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
     ensureImportMappingDefaults();
     renderImportUI();
     const restored = tryRestorePlayersFromLocalStorage();
-    if (!restored) setImportLoadedInfo('Файл ще не завантажено. Завантаж файл або встав публічне CSV-посилання.');
+    if (!restored) setImportLoadedInfo(t('file_not_loaded_yet', 'Файл ще не завантажено. Завантаж файл або встав публічне CSV-посилання.'));
     scheduleLateSessionRestore();
     bindImportWizardButtons();
   }

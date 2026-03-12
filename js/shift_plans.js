@@ -34,6 +34,11 @@
   }
 
   function cloneAssignment(a) { return a ? { baseId: a.baseId, kind: a.kind } : null; }
+  function planHasAssignments(plan) {
+    if (!plan || typeof plan !== 'object') return false;
+    const players = plan.players && typeof plan.players === 'object' ? plan.players : {};
+    return Object.values(players).some((a) => a && a.baseId);
+  }
   function snapshotShiftPlan() {
     const players = {};
     (state.players || []).forEach((p) => { players[p.id] = cloneAssignment(p.assignment); });
@@ -67,25 +72,62 @@
       }
     });
   }
-  function saveCurrentShiftPlanSnapshot() {
+  function saveCurrentShiftPlanSnapshot(opts = {}) {
     if (!['shift1', 'shift2'].includes(state.activeShift)) return;
     ensureShiftPlansLoaded();
     state.shiftPlans = state.shiftPlans || {};
-    state.shiftPlans[state.activeShift] = snapshotShiftPlan();
+    const nextPlan = snapshotShiftPlan();
+    const existingStore = safeReadShiftPlansStore();
+    const existingPlan = existingStore?.[state.activeShift] || state.shiftPlans?.[state.activeShift] || null;
+    const hasPlayers = Array.isArray(state.players) && state.players.length > 0;
+    const overwriteEmpty = !!opts.forceEmpty;
+
+    // Guard: during early boot, DOM/state can briefly rebuild with empty towers before players restore.
+    // Do not overwrite a previously saved non-empty shift plan with an empty snapshot in that window.
+    if (!overwriteEmpty && (!hasPlayers || !planHasAssignments(nextPlan)) && planHasAssignments(existingPlan)) {
+      return false;
+    }
+
+    state.shiftPlans[state.activeShift] = nextPlan;
     persistShiftPlansStore();
+    return true;
   }
   function loadShiftPlanSnapshot(shift) {
     if (!['shift1', 'shift2'].includes(shift)) return;
     ensureShiftPlansLoaded();
     state.shiftPlans = state.shiftPlans || {};
-    restoreShiftPlan(state.shiftPlans[shift] || null);
+    restoreShiftPlan(normalizePlanForCurrentBases(state.shiftPlans[shift] || null));
+  }
+
+  function resolveBaseIdForPlan(baseId) {
+    const raw = String(baseId || '');
+    if (!raw) return '';
+    return typeof PNS.resolveCurrentBaseId === 'function' ? (PNS.resolveCurrentBaseId(raw) || raw) : raw;
+  }
+
+  function normalizePlanForCurrentBases(plan) {
+    if (!plan || typeof plan !== 'object') return plan;
+    const next = { players: {}, bases: {} };
+    const players = plan.players && typeof plan.players === 'object' ? plan.players : {};
+    Object.entries(players).forEach(([pid, a]) => {
+      if (!a || !a.baseId) { next.players[pid] = cloneAssignment(a); return; }
+      const resolvedBaseId = resolveBaseIdForPlan(a.baseId);
+      next.players[pid] = resolvedBaseId ? { ...a, baseId: resolvedBaseId } : cloneAssignment(a);
+    });
+    const bases = plan.bases && typeof plan.bases === 'object' ? plan.bases : {};
+    Object.entries(bases).forEach(([bid, b]) => {
+      const resolvedBaseId = resolveBaseIdForPlan(bid) || String(bid || '');
+      if (!resolvedBaseId) return;
+      next.bases[resolvedBaseId] = { ...(next.bases[resolvedBaseId] || {}), ...(b || {}) };
+    });
+    return next;
   }
 
   function isPlayerUsedInShift(playerId, shift) {
     if (!playerId || !['shift1', 'shift2'].includes(String(shift || '').toLowerCase())) return null;
     ensureShiftPlansLoaded();
     const key = String(shift).toLowerCase();
-    const plan = state.shiftPlans?.[key];
+    const plan = normalizePlanForCurrentBases(state.shiftPlans?.[key]);
     const a = plan?.players?.[playerId] || null;
     if (!a || !a.baseId) return null;
     return { shift: key, label: key === 'shift1' ? t('shift1', 'Зміна 1') : t('shift2', 'Зміна 2'), assignment: a };
@@ -145,7 +187,11 @@
     state.activeShift = nextShift;
 
     if (nextShift === 'shift1' || nextShift === 'shift2') {
-      loadShiftPlanSnapshot(nextShift);
+      const plan = normalizePlanForCurrentBases(state.shiftPlans?.[nextShift] || null);
+      const hasLiveAssignments = (state.bases || []).some((b) => b?.captainId || (Array.isArray(b?.helperIds) && b.helperIds.length));
+      const preserveLive = !!state._preserveRestoredAssignmentsOnNextShiftApply && hasLiveAssignments && !planHasAssignments(plan);
+      if (!preserveLive) loadShiftPlanSnapshot(nextShift);
+      try { state._preserveRestoredAssignmentsOnNextShiftApply = false; } catch {}
       if (typeof PNS.renderAll === 'function') PNS.renderAll();
     }
 

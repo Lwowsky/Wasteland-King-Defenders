@@ -95,7 +95,8 @@
       const showAll = typeof PNS.safeReadBool === 'function' ? PNS.safeReadBool(PNS.KEYS.KEY_SHOW_ALL, false) : false;
       PNS.applyColumnVisibility(showAll);
     }
-    try { PNS.restoreSessionStateNow?.({ soft: true }); } catch {}
+    let _restoredSession = false;
+    try { _restoredSession = !!PNS.restoreSessionStateNow?.({ soft: true }); } catch {}
 
     // Restore saved shift (do not force Shift 1 on every rebuild — it causes flicker/race after HTMX swaps)
     let shiftSaved = state.activeShift || 'shift1';
@@ -104,6 +105,7 @@
       if (ls === 'shift1' || ls === 'shift2' || ls === 'all') shiftSaved = ls;
     } catch {}
     state.activeShift = shiftSaved;
+    try { state._preserveRestoredAssignmentsOnNextShiftApply = !!_restoredSession; } catch {}
     PNS.applyShiftFilter?.(shiftSaved);
     PNS.applyPlayerTableFilters?.();
 
@@ -161,6 +163,37 @@
       const url = document.querySelector('#urlInputMock')?.value?.trim() || '';
       const hasHeaders = (state.importData?.headers || []).length > 0;
       if (url && !hasHeaders) PNS.handleLoadUrlClick?.(); else PNS.handleDetectColumns?.();
+    });
+
+    // strong fallbacks for tower settings interactions (work even if split modules init later)
+    onClick('[data-captain-edit-btn]', (e, el) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const baseId = String(el.dataset.baseId || el.dataset.openPickerBase || el.closest('.base-card')?.dataset?.baseId || el.closest('.base-card')?.dataset?.baseid || '');
+      if (!baseId) return;
+      try { state.focusedBaseId = baseId; } catch {}
+      try { PNS.ModalsShift?.focusTowerById?.(baseId); } catch {}
+      const playerId = String(el.dataset.editAssignedPlayer || '');
+      if (playerId) {
+        try { PNS.ModalsShift?.openTowerPlayerEditModal?.(baseId, playerId); } catch {}
+      } else {
+        try { PNS.state.towerPickerSelectedBaseId = baseId; } catch {}
+        try { PNS.ModalsShift?.openTowerPickerModal?.(); } catch {}
+      }
+      setTimeout(() => {
+        try { PNS.ModalsShift?.syncSettingsTowerPreview?.(); } catch {}
+        try { window.calcRenderInlineTowerSettings?.(document.getElementById('towerCalcModal')); } catch {}
+      }, 20);
+    });
+
+    onClick('.shift-towers-preview .tower-thumb-card, .shift-towers-preview [data-preview-slot]', (e, el) => {
+      e.preventDefault();
+      const card = el.closest('.tower-thumb-card') || el;
+      try { PNS.ModalsShift?.focusTowerFromPreviewElement?.(card); } catch {}
+      setTimeout(() => {
+        try { PNS.ModalsShift?.syncSettingsTowerPreview?.(); } catch {}
+        try { window.calcRenderInlineTowerSettings?.(document.getElementById('towerCalcModal')); } catch {}
+      }, 20);
     });
 
     // settings card buttons (optional)

@@ -725,7 +725,28 @@ document.addEventListener('click', (e) => {
 
     document.addEventListener('click', (e) => {
       const card = e.target.closest('.bases-grid .base-card');
-      if (card) { MS.markFocusedCard?.(card); setTimeout(() => MS.syncSettingsTowerPreview?.(), 20); }
+      if (!card) return;
+      const baseId = String(card.dataset.baseId || card.dataset.baseid || '');
+      try {
+        if (baseId && typeof window.calcSetInlineSelectedBaseId === 'function') {
+          window.calcSetInlineSelectedBaseId(String(state.activeShift || 'shift1'), baseId);
+        }
+      } catch {}
+      try {
+        if (baseId && typeof MS.focusTowerById === 'function') MS.focusTowerById(baseId);
+        else MS.markFocusedCard?.(card);
+      } catch {}
+      setTimeout(() => {
+        try { MS.syncSettingsTowerPreview?.(); } catch {}
+        try {
+          const calc = document.getElementById('towerCalcModal');
+          if (calc?.classList.contains('is-open')) {
+            window.calcRenderInlineTowerSettings?.(calc);
+            window.calcRenderLiveFinalBoard?.(calc);
+            window.calcUpdateShiftStatsUI?.(calc);
+          }
+        } catch {}
+      }, 20);
     });
 
     document.addEventListener('change', (e) => {

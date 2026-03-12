@@ -219,7 +219,7 @@
       raw: p.raw && typeof p.raw === 'object' ? p.raw : {},
       rowEl: null,
       actionCellEl: null,
-      assignment: p.assignment || null,
+      assignment: (p.assignment && p.assignment.baseId) ? { ...p.assignment, baseId: (typeof PNS.resolveCurrentBaseId === 'function' ? (PNS.resolveCurrentBaseId(p.assignment.baseId) || p.assignment.baseId) : p.assignment.baseId) } : (p.assignment || null),
     };
   }
 
@@ -262,11 +262,13 @@
     let restoredAny = false;
     (state.players || []).forEach((player) => {
       if (!player?.assignment?.baseId) return;
-      const base = baseMap.get(String(player.assignment.baseId || ''));
+      const resolvedBaseId = (typeof PNS.resolveCurrentBaseId === 'function' ? (PNS.resolveCurrentBaseId(String(player.assignment.baseId || '')) || String(player.assignment.baseId || '')) : String(player.assignment.baseId || ''));
+      const base = baseMap.get(resolvedBaseId);
       if (!base) return;
       const pid = String(player.id || '');
       if (!pid) return;
       restoredAny = true;
+      player.assignment.baseId = resolvedBaseId;
       if (player.assignment.kind === 'captain') {
         base.captainId = pid;
         base.role = player.role || base.role || null;
@@ -455,7 +457,14 @@
       if (hasLiveAssignments) return false;
     }
 
-    const byId = new Map(raw.map(x => [String(x?.id || ''), x || {}]));
+    const byId = new Map();
+    raw.forEach((x) => {
+      const rawId = String(x?.id || '');
+      if (!rawId) return;
+      byId.set(rawId, x || {});
+      const resolved = typeof PNS.resolveCurrentBaseId === 'function' ? PNS.resolveCurrentBaseId(rawId) : '';
+      if (resolved && !byId.has(resolved)) byId.set(resolved, x || {});
+    });
 
     // clear current assignments first
     (state.players || []).forEach((p) => { if (p) p.assignment = null; });
