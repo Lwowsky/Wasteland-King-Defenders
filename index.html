@@ -3,7 +3,22 @@
   <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Puzzle &amp; Survival — Планувальник турелей (HTML/CSS Layout)</title>
+    <title>Puzzle &amp; Survival — Планувальник турелей</title>
+    <script id="i18n-boot">
+      (function () {
+        try {
+          var lang = localStorage.getItem('pns_lang') || 'uk';
+          if (!/^(uk|en|ru)$/.test(lang)) lang = 'uk';
+          document.documentElement.lang = lang;
+          document.documentElement.dataset.locale = lang;
+          document.documentElement.classList.add('i18n-pending');
+        } catch (e) {
+          document.documentElement.lang = 'uk';
+          document.documentElement.dataset.locale = 'uk';
+          document.documentElement.classList.add('i18n-pending');
+        }
+      })();
+    </script>
 
     <link href="css/styles.css" rel="stylesheet" />
     <link href="css/header.css" rel="stylesheet" />

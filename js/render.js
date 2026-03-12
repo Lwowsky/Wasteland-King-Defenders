@@ -150,7 +150,7 @@ function optionalColumnClass(key) {
 
     row.innerHTML = '';
     const lead = document.createElement('span');
-    lead.textContent = 'Автозаповнення:';
+    lead.textContent = typeof PNS.t === 'function' ? PNS.t('auto_fill') + ':' : 'Автозаповнення:';
     row.appendChild(lead);
 
     const activeRules = [];
@@ -162,13 +162,13 @@ function optionalColumnClass(key) {
     const summary = document.createElement('span');
     summary.className = 'quota-summary';
     summary.textContent = activeRules.length
-      ? `Ліміти маршу за тірами: ${activeRules.join(' · ')}`
-      : 'Ліміти маршу за тірами: авто';
+      ? `${typeof PNS.t === 'function' ? (document.documentElement.dataset.locale === 'en' ? 'Tier march limits' : document.documentElement.dataset.locale === 'ru' ? 'Лимиты марша по тирам' : 'Ліміти маршу за тірами') : 'Ліміти маршу за тірами'}: ${activeRules.join(' · ')}`
+      : (typeof PNS.t === 'function' ? (PNS.t('auto_fill') + ': ліміти за тірами — автоматично') : 'Ліміти маршу за тірами: авто');
     row.appendChild(summary);
 
     const mh = document.createElement('span');
     mh.className = 'quota-max';
-    mh.textContent = `Макс. помічників: ${Number(base.maxHelpers || 0)}`;
+    mh.textContent = `${(document.documentElement.dataset.locale === 'en' ? 'Max helpers' : document.documentElement.dataset.locale === 'ru' ? 'Макс. помощников' : 'Макс. помічників')}: ${Number(base.maxHelpers || 0)}`;
     row.appendChild(mh);
   }
   PNS.renderQuotaRow = renderQuotaRow;
@@ -437,7 +437,7 @@ function optionalColumnClass(key) {
         nameEl.classList.remove('captain-empty');
       } else {
         nameEl.textContent = '— Капітан не обраний —';
-        metaEl.textContent = `Тип визначається капітаном · ${typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(base.shift === 'both' ? 'both' : base.shift) : (base.shift === 'both' ? 'Обидві' : base.shift.replace('shift', 'Зміна '))}`;
+        metaEl.textContent = `${typeof PNS.t === 'function' ? PNS.t('type_defined_by_captain') : 'Тип визначається капітаном'} · ${typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(base.shift === 'both' ? 'both' : base.shift) : (base.shift === 'both' ? 'Обидві' : base.shift.replace('shift', 'Зміна '))}`;
         nameEl.classList.add('captain-empty');
       }
     }
@@ -578,7 +578,7 @@ function optionalColumnClass(key) {
     const sub = $('.board-sub', col);
     if (sub) {
       sub.classList.toggle('is-auto', !captain);
-      sub.textContent = captain ? `${typeof PNS.roleLabel === 'function' ? PNS.roleLabel(captain.role) : captain.role} / ${typeof PNS.roleLabel === 'function' ? PNS.roleLabel(captain.role) : captain.role}` : 'Тип визначається капітаном';
+      sub.textContent = captain ? `${typeof PNS.roleLabel === 'function' ? PNS.roleLabel(captain.role) : captain.role}` : (typeof PNS.t === 'function' ? PNS.t('type_defined_by_captain') : 'Тип визначається капітаном');
     }
 
     const cap = $('.board-cap', col);

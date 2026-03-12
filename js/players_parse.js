@@ -72,11 +72,11 @@
 
   function normalizeShiftLabel(v) {
     const n = normalizeShiftValue(v);
-    return n === 'shift1' ? 'Зміна 1' : n === 'shift2' ? 'Зміна 2' : 'Обидві';
+    return typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(n) : (n === 'shift1' ? 'Зміна 1' : n === 'shift2' ? 'Зміна 2' : 'Обидві');
   }
 
   function formatShiftLabelForCell(shift) {
-    return shift === 'shift1' ? 'Зміна 1' : shift === 'shift2' ? 'Зміна 2' : 'Обидві';
+    return typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(shift) : (shift === 'shift1' ? 'Зміна 1' : shift === 'shift2' ? 'Зміна 2' : 'Обидві');
   }
 
   function getPlayerRows() {

@@ -39,18 +39,18 @@
 
     if (typeEl) {
       typeEl.textContent = base.role
-        ? `Тип турелі: ${typeof PNS.roleLabel === 'function' ? PNS.roleLabel(base.role, true).toLowerCase() : String(base.role || '').toLowerCase()}`
-        : 'Тип турелі визначається капітаном';
+        ? `${typeof PNS.t === 'function' ? PNS.t('turret') : 'Турель'}: ${typeof PNS.roleLabel === 'function' ? PNS.roleLabel(base.role, true).toLowerCase() : String(base.role || '').toLowerCase()}`
+        : (typeof PNS.t === 'function' ? PNS.t('type_defined_by_captain') : 'Тип турелі визначається капітаном');
     }
 
     if (badgeEl) {
       badgeEl.classList.remove('shooter', 'fighter', 'rider', 'is-auto', 'is-hidden');
 
       if (!base.role) {
-        badgeEl.textContent = 'Auto';
+        badgeEl.textContent = typeof PNS.t === 'function' ? PNS.t('type_defined_by_captain') : 'Auto';
         badgeEl.classList.add('is-auto');
       } else {
-        badgeEl.textContent = base.role;
+        badgeEl.textContent = typeof PNS.roleLabel === 'function' ? PNS.roleLabel(base.role) : base.role;
         badgeEl.classList.add(base.role.toLowerCase());
       }
     }
@@ -59,7 +59,7 @@
       const sub = $('.board-sub', base.boardEl);
       if (sub) {
         sub.classList.toggle('is-auto', !base.role);
-        sub.textContent = base.role ? `${typeof PNS.roleLabel === 'function' ? PNS.roleLabel(base.role) : base.role} / ${typeof PNS.roleLabel === 'function' ? PNS.roleLabel(base.role) : base.role}` : 'Тип визначається капітаном';
+        sub.textContent = base.role ? `${typeof PNS.roleLabel === 'function' ? PNS.roleLabel(base.role) : base.role}` : (typeof PNS.t === 'function' ? PNS.t('type_defined_by_captain') : 'Тип визначається капітаном');
       }
     }
   }

@@ -117,3 +117,6 @@
   .lang-label{ display: none; } /* лишаємо 🌐 + caret */
   .lang-menu{ width: 220px; }
 }
+
+html.i18n-pending body{opacity:0;transition:none !important;}
+html.i18n-ready body{opacity:1;transition:opacity .08s ease;}

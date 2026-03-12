@@ -62,7 +62,7 @@
     if (!player) return false;
     const safe = normalizeShift(shiftKey);
     player.shift = safe;
-    player.shiftLabel = safe === 'shift1' ? 'Зміна 1' : safe === 'shift2' ? 'Зміна 2' : 'Обидві';
+    player.shiftLabel = typeof window.PNS?.shiftLabel === 'function' ? window.PNS.shiftLabel(safe) : (safe === 'shift1' ? 'Зміна 1' : safe === 'shift2' ? 'Зміна 2' : 'Обидві');
     if (player.rowEl) {
       player.rowEl.dataset.shift = safe;
       const shiftCell = player.rowEl.querySelector('td[data-field="shiftLabel"]');

@@ -77,7 +77,7 @@
               const cell = p.rowEl.querySelector('td[data-field="shiftLabel"]');
               if (cell) {
                 const norm = normalizeShift(shift || 'both');
-                cell.textContent = shiftLabel || (norm === 'shift1' ? 'Зміна 1' : norm === 'shift2' ? 'Зміна 2' : 'Обидві');
+                cell.textContent = shiftLabel || (typeof window.PNS?.shiftLabel === 'function' ? window.PNS.shiftLabel(norm) : (norm === 'shift1' ? 'Зміна 1' : norm === 'shift2' ? 'Зміна 2' : 'Обидві'));
               }
             }
           } catch {}
