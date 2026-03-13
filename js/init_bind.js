@@ -95,17 +95,32 @@
       const showAll = typeof PNS.safeReadBool === 'function' ? PNS.safeReadBool(PNS.KEYS.KEY_SHOW_ALL, false) : false;
       PNS.applyColumnVisibility(showAll);
     }
-    let _restoredSession = false;
-    try { _restoredSession = !!PNS.restoreSessionStateNow?.({ soft: true }); } catch {}
-
-    // Restore saved shift (do not force Shift 1 on every rebuild — it causes flicker/race after HTMX swaps)
+    // Restore saved shift before session restore, so boot does not accidentally revive Shift 1 over Shift 2.
     let shiftSaved = state.activeShift || 'shift1';
     try {
       const ls = localStorage.getItem(PNS.KEYS.KEY_SHIFT_FILTER);
       if (ls === 'shift1' || ls === 'shift2' || ls === 'all') shiftSaved = ls;
     } catch {}
     state.activeShift = shiftSaved;
-    try { state._preserveRestoredAssignmentsOnNextShiftApply = !!_restoredSession; } catch {}
+    try { PNS.hydrateShiftPlansFromStore?.(true); } catch {}
+
+    let _restoredSession = false;
+    try { _restoredSession = !!PNS.restoreSessionStateNow?.({ soft: true }); } catch {}
+
+    // IMPORTANT: preserve restored live assignments only for legacy states without a real per-shift store.
+    // When a shift-plan store exists, keeping live assignments on the next shift switch makes Shift 1/Shift 2
+    // look identical after refresh because the restored generic tower snapshot bleeds into the empty/other shift.
+    let hasShiftPlansStore = false;
+    try {
+      const raw = JSON.parse(localStorage.getItem('pns_layout_shift_plans_store_v1') || '{}');
+      const hasAssignments = (plan) => {
+        if (!plan || typeof plan !== 'object') return false;
+        const players = plan.players && typeof plan.players === 'object' ? Object.values(plan.players) : [];
+        return players.some((a) => a && a.baseId);
+      };
+      hasShiftPlansStore = !!(raw && typeof raw === 'object' && (hasAssignments(raw.shift1) || hasAssignments(raw.shift2) || raw.shift1 === null || raw.shift2 === null));
+    } catch {}
+    try { state._preserveRestoredAssignmentsOnNextShiftApply = !!_restoredSession && !hasShiftPlansStore; } catch {}
     PNS.applyShiftFilter?.(shiftSaved);
     PNS.applyPlayerTableFilters?.();
 
@@ -196,9 +211,43 @@
     root.id = 'boardLangDialogRoot';
     root.className = 'board-lang-dialog-root';
     root.innerHTML = '<div class="board-lang-dialog-backdrop" data-close-board-lang-picker="1"></div><div class="board-lang-dialog-shell" data-board-lang-dialog-shell="1"></div>';
+    root.setAttribute('aria-hidden', 'true');
     document.body.appendChild(root);
     return root;
   }
+
+  function getBoardLanguagePickerRenderer() {
+    return PNS.renderBoardLanguagePickerMarkup
+      || window.renderBoardLanguagePickerMarkup
+      || PNS.ModalsShift?.renderBoardLanguagePickerMarkup
+      || null;
+  }
+
+  function getBoardLanguageDialogRenderer() {
+    return PNS.renderBoardLanguageDialogMarkup
+      || window.renderBoardLanguageDialogMarkup
+      || PNS.ModalsShift?.renderBoardLanguageDialogMarkup
+      || null;
+  }
+
+  function getBoardLanguageSummaryFn() {
+    return PNS.boardLanguageSummary
+      || window.boardLanguageSummary
+      || PNS.ModalsShift?.boardLanguageSummary
+      || null;
+  }
+
+  function handleBoardLangTriggerClick(btn, ev) {
+    try { ev?.preventDefault?.(); ev?.stopPropagation?.(); ev?.stopImmediatePropagation?.(); } catch {}
+    const button = btn?.closest ? (btn.closest('[data-open-board-lang-picker]') || btn) : btn;
+    if (!button) return false;
+    const kind = String(button.dataset.boardLangKind || button.dataset.openBoardLangPicker || 'board');
+    const alreadyOpen = !!document.querySelector('#boardLangDialogRoot.is-open') && boardLangDialogAnchor === button;
+    if (alreadyOpen) closeBoardLanguageDialog();
+    else openBoardLanguageDialog(kind, button);
+    return false;
+  }
+  PNS.handleBoardLangTriggerClick = handleBoardLangTriggerClick;
 
   function wireBoardLanguageButtons(scope = document) {
     (scope.querySelectorAll ? scope.querySelectorAll('[data-open-board-lang-picker]') : []).forEach((btn) => {
@@ -206,15 +255,7 @@
         btn.setAttribute('aria-haspopup', 'dialog');
         if (!btn.hasAttribute('aria-expanded')) btn.setAttribute('aria-expanded', 'false');
       } catch {}
-      if (btn.dataset.boardLangBound === '1') return;
       btn.dataset.boardLangBound = '1';
-      btn.onclick = function(ev) {
-        try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); } catch {}
-        const alreadyOpen = !!document.querySelector('#boardLangDialogRoot.is-open') && boardLangDialogAnchor === btn;
-        if (alreadyOpen) closeBoardLanguageDialog();
-        else openBoardLanguageDialog(String(btn.dataset.boardLangKind || btn.dataset.openBoardLangPicker || 'board'), btn);
-        return false;
-      };
     });
   }
 
@@ -225,7 +266,7 @@
     if (root) {
       root.classList.remove('is-open');
       root.setAttribute('aria-hidden', 'true');
-      try { root.style.display = ''; root.style.visibility = ''; } catch {}
+      try { root.style.display = ''; root.style.visibility = ''; root.style.pointerEvents = ''; } catch {}
     }
     document.querySelectorAll('.board-lang-picker-wrap.is-open').forEach((host) => host.classList.remove('is-open'));
     document.querySelectorAll('[data-open-board-lang-picker]').forEach((btn) => {
@@ -246,14 +287,16 @@
     closeBoardLanguageDialog();
     boardLangDialogKind = safeKind;
     boardLangDialogAnchor = anchor;
-    const markup = typeof PNS.renderBoardLanguageDialogMarkup === 'function'
-      ? PNS.renderBoardLanguageDialogMarkup(boardLangDialogKind)
+    const renderDialog = getBoardLanguageDialogRenderer();
+    const markup = typeof renderDialog === 'function'
+      ? renderDialog(boardLangDialogKind)
       : '';
     if (!markup) return;
     shell.innerHTML = markup;
     try {
       root.style.display = 'block';
       root.style.visibility = 'visible';
+      root.style.pointerEvents = 'auto';
       shell.style.display = 'flex';
       shell.style.alignItems = 'center';
       shell.style.justifyContent = 'center';
@@ -290,13 +333,15 @@
       ? PNS.getBoardLanguageLocales()
       : (typeof window.getBoardLanguageLocales === 'function' ? window.getBoardLanguageLocales() : ['en']));
     const localeNames = { en: 'English', uk: 'Українська', ru: 'Русский' };
-    const summary = typeof PNS.boardLanguageSummary === 'function'
-      ? PNS.boardLanguageSummary(locales)
+    const boardSummary = getBoardLanguageSummaryFn();
+    const summary = typeof boardSummary === 'function'
+      ? boardSummary(locales)
       : (Array.isArray(locales) ? locales.map((code) => localeNames[String(code || '').toLowerCase()] || String(code || '').toUpperCase()).join(' + ') : 'English');
     document.querySelectorAll('[data-board-lang-picker-host]').forEach((host) => {
       try {
-        if (typeof PNS.renderBoardLanguagePickerMarkup === 'function') {
-          host.innerHTML = PNS.renderBoardLanguagePickerMarkup('board');
+        const renderPicker = getBoardLanguagePickerRenderer();
+        if (typeof renderPicker === 'function') {
+          host.innerHTML = renderPicker('board');
           host.style.display = 'flex';
           host.style.alignItems = 'center';
         }
@@ -315,16 +360,18 @@
     });
     const root = document.getElementById('boardLangDialogRoot');
     const shell = root?.querySelector('[data-board-lang-dialog-shell]') || null;
-    if (root?.classList.contains('is-open') && shell && typeof PNS.renderBoardLanguageDialogMarkup === 'function') {
-      shell.innerHTML = PNS.renderBoardLanguageDialogMarkup(boardLangDialogKind);
+    const renderDialog = getBoardLanguageDialogRenderer();
+    if (root?.classList.contains('is-open') && shell && typeof renderDialog === 'function') {
+      shell.innerHTML = renderDialog(boardLangDialogKind);
     }
     wireBoardLanguageButtons(document);
   }
   PNS.syncBoardLanguageSelects = syncBoardLanguageSelects;
   PNS.syncBoardLanguagePickerUI = syncBoardLanguageSelects;
+  PNS.wireBoardLanguageButtons = wireBoardLanguageButtons;
 
   function ensureBoardLanguagePickerHosts() {
-    const renderPicker = typeof PNS.renderBoardLanguagePickerMarkup === 'function' ? PNS.renderBoardLanguagePickerMarkup : null;
+    const renderPicker = getBoardLanguagePickerRenderer();
     if (!renderPicker) return;
     document.querySelectorAll('[data-board-lang-picker-host]').forEach((host) => {
       try {
@@ -348,10 +395,8 @@
     }
     const openBtn = e.target.closest('[data-open-board-lang-picker]');
     if (openBtn) {
-      try { e.preventDefault(); e.stopPropagation(); } catch {}
-      const alreadyOpen = !!document.querySelector('#boardLangDialogRoot.is-open') && boardLangDialogAnchor === openBtn;
-      if (alreadyOpen) closeBoardLanguageDialog();
-      else openBoardLanguageDialog(String(openBtn.dataset.openBoardLangPicker || 'board'), openBtn);
+      try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation?.(); } catch {}
+      handleBoardLangTriggerClick(openBtn, e);
       return;
     }
     if (document.querySelector('#boardLangDialogRoot.is-open') && !e.target.closest('[data-board-lang-dialog-card]')) {

@@ -865,6 +865,7 @@ document.addEventListener('change', (e) => {
     try { if (typeof window.setBoardLanguageLocales === 'function') window.setBoardLanguageLocales(checked); } catch {}
     try { window.PNS?.syncBoardLanguageSelects?.(); } catch {}
     try { window.PNS?.renderBoard?.(); } catch {}
+    try { window.renderStandaloneFinalBoard?.(document.getElementById('board-modal')); } catch {}
     try { window.calcRenderLiveFinalBoard?.(document.getElementById('towerCalcModal')); } catch {}
     return;
   }
@@ -873,5 +874,6 @@ document.addEventListener('change', (e) => {
   try { if (typeof window.setBoardLanguageMode === 'function') window.setBoardLanguageMode(String(sel.value || 'en_local')); } catch {}
   try { window.PNS?.syncBoardLanguageSelects?.(); } catch {}
   try { window.PNS?.renderBoard?.(); } catch {}
+  try { window.renderStandaloneFinalBoard?.(document.getElementById('board-modal')); } catch {}
   try { window.calcRenderLiveFinalBoard?.(document.getElementById('towerCalcModal')); } catch {}
 });

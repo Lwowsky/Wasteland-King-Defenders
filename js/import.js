@@ -878,19 +878,68 @@
     });
   }
 
+  function clearLiveTableStateForNewImport(opts = {}) {
+    const preserveImportData = opts?.preserveImportData !== false;
+    try { PNS.clearPlayersSnapshot?.(); } catch {}
+    try { PNS.clearTowersSnapshot?.(); } catch {}
+    try { PNS.clearTowerMarchOverrides?.(); } catch {}
+    removeLsKey(PNS.KEYS?.KEY_ASSIGNMENTS_STORE);
+    removeLsKey(PNS.KEYS?.KEY_ASSIGNMENT_PRESETS);
+    removeLsKey(PNS.KEYS?.KEY_TOP_FILTERS);
+    removeLsKey(PNS.KEYS?.KEY_SHIFT_FILTER);
+    removeLsKey(PNS.KEYS?.KEY_SHOW_ALL);
+    removeLsKey('pns_layout_shift_plans_store_v1');
+    removeLsKey('pns_tower_calc_state');
+
+    state.players = [];
+    state.playerById = new Map();
+    state.shiftPlans = { shift1: null, shift2: null };
+    state._shiftPlansLoadedFromLS = true;
+    try { localStorage.setItem('pns_layout_shift_plans_store_v1', JSON.stringify({ shift1: null, shift2: null })); } catch {}
+    state.activeShift = 'shift1';
+    state.towerCalcLastResults = null;
+    if (state.topFilters && typeof state.topFilters === 'object') state.topFilters.shift = 'all';
+
+    (state.bases || []).forEach((b) => {
+      if (!b) return;
+      b.captainId = null;
+      b.helperIds = [];
+      b.role = null;
+      try { PNS.applyBaseRoleUI?.(b, null); } catch {}
+    });
+
+    if (!preserveImportData) {
+      state.importData = { headers: [], rows: [], mapping: {}, loaded: false, customOptionalDefs: ensureCustomOptionalDefs() };
+    }
+
+    try { PNS.renderPlayersTableFromState?.(); } catch {}
+    try { PNS.buildRowActions?.(); } catch {}
+    try { PNS.renderAll?.(); } catch {}
+    try { PNS.applyShiftFilter?.('shift1'); } catch {}
+    try { window.calcRenderInlineTowerSettings?.(document.getElementById('towerCalcModal')); } catch {}
+    try { window.calcRenderLiveFinalBoard?.(document.getElementById('towerCalcModal')); } catch {}
+    try { window.calcUpdateShiftStatsUI?.(document.getElementById('towerCalcModal')); } catch {}
+    try { window.renderStandaloneFinalBoard?.(document.getElementById('board-modal')); } catch {}
+    return true;
+  }
+
   function applyImportedPlayers() {
     const players = buildImportedPlayersFromRaw();
     if (!players) return;
     if (!players.length) { setImportStatus(t('no_players_after_import', 'Після імпорту не знайдено жодного гравця. Перевір мапінг колонок і порожні рядки.'), 'danger'); return; }
 
+    clearLiveTableStateForNewImport({ preserveImportData: true });
+
     state.players = players;
     state.playerById = new Map(players.map((p) => [p.id, p]));
     resetAssignmentsForImportedData();
 
-    // New імпортовано roster must reset tower assignments (but keep tower settings/limits)
+    // New imported roster must fully reset tower/shift state before rebuilding UI.
     try { PNS.clearTowersSnapshot?.(); } catch {}
     try { PNS.clearTowerMarchOverrides?.(); } catch {}
-    try { if (state && typeof state === 'object') state.shiftPlans = {}; } catch {}
+    try { if (state && typeof state === 'object') state.shiftPlans = { shift1: null, shift2: null }; } catch {}
+    try { localStorage.setItem('pns_layout_shift_plans_store_v1', JSON.stringify({ shift1: null, shift2: null })); } catch {}
+    removeLsKey('pns_tower_calc_state');
 
     if (typeof PNS.renderPlayersTableFromState === 'function') PNS.renderPlayersTableFromState();
     if (typeof PNS.buildRowActions === 'function') PNS.buildRowActions();
@@ -915,6 +964,7 @@
       setImportStatus(t('reading_file', 'Читаю файл...'));
       const { headers, rows } = await parseFileToDataset(file);
       if (!headers.length) throw new Error('Не вдалося знайти заголовки колонок');
+      clearLiveTableStateForNewImport({ preserveImportData: true });
       setRawImportDataset(headers, rows, file.name, 'file');
       syncFileInputMockUI();
       setImportStatus(t('file_loaded_check_mapping', 'Файл завантажено. Перевір зіставлення колонок і натисни «Застосувати імпорт».'), 'good');
@@ -933,6 +983,7 @@
       setImportStatus(t('loading_url', 'Завантажую посилання...'));
       const { headers, rows } = await loadDatasetFromUrl(raw);
       if (!headers.length) throw new Error('Не вдалося знайти заголовки колонок');
+      clearLiveTableStateForNewImport({ preserveImportData: true });
       setRawImportDataset(headers, rows, raw, 'url');
       setImportStatus(t('url_loaded_check_mapping', 'Посилання завантажено. Перевір зіставлення колонок і натисни «Застосувати імпорт».'), 'good');
     } catch (e) {
@@ -991,20 +1042,31 @@
         state.playerById = new Map((state.players || []).map((p) => [p.id, p]));
       }
       let restoredTowers = false;
-      try { if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift || 'shift1'); } catch {}
-      if (typeof PNS.tryRestoreTowersSnapshot === 'function') {
-        restoredTowers = !!PNS.tryRestoreTowersSnapshot();
+      let hasShiftPlansStore = false;
+      try {
+        const raw = JSON.parse(localStorage.getItem('pns_layout_shift_plans_store_v1') || '{}');
+        hasShiftPlansStore = !!(raw && typeof raw === 'object' && !Array.isArray(raw)
+          && (Object.prototype.hasOwnProperty.call(raw, 'shift1') || Object.prototype.hasOwnProperty.call(raw, 'shift2')));
+      } catch {}
+      if (hasShiftPlansStore) {
+        try { PNS.hydrateShiftPlansFromStore?.(true); } catch {}
+        try { if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift || 'shift1'); } catch {}
+      } else {
+        try { if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift || 'shift1'); } catch {}
+        if (typeof PNS.tryRestoreTowersSnapshot === 'function') {
+          restoredTowers = !!PNS.tryRestoreTowersSnapshot();
+        }
+        if (!restoredTowers) {
+          try { restoredTowers = !!PNS.restoreBasesFromPlayerAssignments?.(); } catch {}
+        }
+        try { PNS.ModalsShift?.saveCurrentShiftPlanSnapshot?.(); } catch {}
       }
-      if (!restoredTowers) {
-        try { restoredTowers = !!PNS.restoreBasesFromPlayerAssignments?.(); } catch {}
-      }
-      try { PNS.ModalsShift?.saveCurrentShiftPlanSnapshot?.(); } catch {}
       if (typeof PNS.renderAll === 'function') PNS.renderAll();
       try { PNS.calcSyncCaptainsFromTowersIntoCalculator?.({ keepHelpers: true, render: false }); } catch {}
       try { window.calcRenderInlineTowerSettings?.(document.getElementById('towerCalcModal')); } catch {}
       try { window.calcRenderLiveFinalBoard?.(document.getElementById('towerCalcModal')); } catch {}
       try { window.calcUpdateShiftStatsUI?.(document.getElementById('towerCalcModal')); } catch {}
-      return restoredTowers;
+      return hasShiftPlansStore ? true : restoredTowers;
     } catch { return false; }
   }
 
@@ -1262,10 +1324,16 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
     removeLsKey(PNS.KEYS?.KEY_TOP_FILTERS);
     removeLsKey(PNS.KEYS?.KEY_SHIFT_FILTER);
     removeLsKey(PNS.KEYS?.KEY_SHOW_ALL);
+    removeLsKey('pns_layout_shift_plans_store_v1');
+    removeLsKey('pns_tower_calc_state');
 
     state.players = [];
     state.playerById = new Map();
-    state.shiftPlans = {};
+    state.shiftPlans = { shift1: null, shift2: null };
+    state._shiftPlansLoadedFromLS = true;
+    try { localStorage.setItem('pns_layout_shift_plans_store_v1', JSON.stringify({ shift1: null, shift2: null })); } catch {}
+    state.activeShift = 'shift1';
+    state.towerCalcLastResults = null;
     (state.bases || []).forEach((b) => {
       if (!b) return;
       b.captainId = null;

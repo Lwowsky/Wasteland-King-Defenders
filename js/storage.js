@@ -522,10 +522,15 @@
   if (!PNS._towersSnapshotEventBindDone) {
     PNS._towersSnapshotEventBindDone = true;
     document.addEventListener('pns:assignment-changed', () => { try { saveTowersSnapshot(); } catch {} });
-    window.addEventListener('beforeunload', () => {
+    const flushPersistenceNow = () => {
       if (isPersistenceSuppressed()) return;
-      try { if (typeof PNS.savePlayersSnapshot === 'function') PNS.savePlayersSnapshot(state.players); } catch {}
+      try { PNS.saveAllPersistenceNow?.('flush'); } catch {}
       try { saveTowersSnapshot(); } catch {}
+    };
+    window.addEventListener('beforeunload', flushPersistenceNow);
+    window.addEventListener('pagehide', flushPersistenceNow);
+    document.addEventListener('visibilitychange', () => {
+      try { if (document.visibilityState === 'hidden') flushPersistenceNow(); } catch {}
     });
   }
 
@@ -548,18 +553,45 @@
   }
 
   function restoreSessionStateNow(opts = {}) {
+    // Run full session restore only once per page load.
+    // A second forced restore after init can smear one live tower snapshot across shifts on hard reload.
+    if (state?._sessionStateRestoreDone) {
+      try { if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(state.activeShift || 'shift1'); } catch {}
+      try { PNS.renderAll?.(); } catch {}
+      try { PNS.refreshBaseCards?.(); } catch {}
+      return false;
+    }
+    try { state._sessionStateRestoreDone = true; } catch {}
+
     let restored = false;
     const targetShift = state.activeShift || 'shift1';
-    try { if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(targetShift); } catch {}
+
+    // If a real per-shift store exists, it is the source of truth.
+    // Do not re-apply the generic towers snapshot on top of it.
+    let hasShiftPlansStore = false;
     try {
-      if (typeof PNS.tryRestoreTowersSnapshot === 'function') {
-        restored = !!PNS.tryRestoreTowersSnapshot({ soft: !!opts.soft });
-      }
+      const raw = JSON.parse(localStorage.getItem('pns_layout_shift_plans_store_v1') || '{}');
+      hasShiftPlansStore = !!(raw && typeof raw === 'object' && !Array.isArray(raw)
+        && (Object.prototype.hasOwnProperty.call(raw, 'shift1') || Object.prototype.hasOwnProperty.call(raw, 'shift2')));
     } catch {}
-    if (!restored) {
-      try { restored = !!PNS.restoreBasesFromPlayerAssignments?.(); } catch {}
+
+    if (hasShiftPlansStore) {
+      try { PNS.hydrateShiftPlansFromStore?.(true); } catch {}
+      try { if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(targetShift); } catch {}
+      restored = true;
+    } else {
+      try {
+        if (typeof PNS.tryRestoreTowersSnapshot === 'function') {
+          restored = !!PNS.tryRestoreTowersSnapshot({ soft: !!opts.soft });
+        }
+      } catch {}
+      if (!restored) {
+        try { restored = !!PNS.restoreBasesFromPlayerAssignments?.(); } catch {}
+      }
+      try { if (typeof PNS.applyShiftFilter === 'function') PNS.applyShiftFilter(targetShift); } catch {}
+      try { PNS.ModalsShift?.saveCurrentShiftPlanSnapshot?.(); } catch {}
     }
-    try { PNS.ModalsShift?.saveCurrentShiftPlanSnapshot?.(); } catch {}
+
     try { PNS.renderAll?.(); } catch {}
     try { PNS.calcSyncCaptainsFromTowersIntoCalculator?.({ keepHelpers: true, render: false }); } catch {}
     try { window.calcRenderInlineTowerSettings?.(document.getElementById('towerCalcModal')); } catch {}

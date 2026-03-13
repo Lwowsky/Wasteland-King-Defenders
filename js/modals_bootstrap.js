@@ -941,7 +941,10 @@ document.addEventListener('change', (e) => {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scheduleResyncUIAfterSwap);
     else scheduleResyncUIAfterSwap();
     setTimeout(() => {
-      try { PNS.restoreSessionStateNow?.({ soft: false }); } catch {}
+      try {
+        if (!state?._sessionStateRestoreDone) PNS.restoreSessionStateNow?.({ soft: true });
+        else PNS.applyShiftFilter?.(state.activeShift || 'shift1');
+      } catch {}
       try { window.PNSI18N?.apply?.(document); } catch {}
     }, 80);
     document.addEventListener('htmx:afterSwap', scheduleResyncUIAfterSwap);

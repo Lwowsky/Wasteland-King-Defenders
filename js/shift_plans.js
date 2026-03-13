@@ -16,20 +16,42 @@
   function safeWriteShiftPlansStore(value) {
     try { localStorage.setItem(KEY_SHIFT_PLANS_STORE, JSON.stringify(value || {})); } catch {}
   }
-  function ensureShiftPlansLoaded() {
-    if (state._shiftPlansLoadedFromLS) return;
-    state._shiftPlansLoadedFromLS = true;
+  function hydrateShiftPlansFromStore(force = false) {
     const saved = safeReadShiftPlansStore();
     state.shiftPlans = (state.shiftPlans && typeof state.shiftPlans === 'object') ? state.shiftPlans : {};
     ['shift1','shift2'].forEach((k) => {
-      if (saved[k] && !state.shiftPlans[k]) state.shiftPlans[k] = saved[k];
+      if (force) {
+        state.shiftPlans[k] = saved[k] || null;
+      } else if (saved[k] && !state.shiftPlans[k]) {
+        state.shiftPlans[k] = saved[k];
+      }
     });
+    if (force) {
+      try { state._shiftPlansLoadedFromLS = true; } catch {}
+    }
+    return state.shiftPlans;
   }
-  function persistShiftPlansStore() {
+  function ensureShiftPlansLoaded() {
+    if (state._shiftPlansLoadedFromLS) return;
+    state._shiftPlansLoadedFromLS = true;
+    hydrateShiftPlansFromStore(false);
+  }
+  function persistShiftPlansStore(opts = {}) {
     ensureShiftPlansLoaded();
+    const existing = safeReadShiftPlansStore();
+    const plans = (state.shiftPlans && typeof state.shiftPlans === 'object') ? state.shiftPlans : {};
+    const preserveOtherShift = opts.preserveOtherShift !== false;
+    const next = { ...existing };
+    ['shift1', 'shift2'].forEach((k) => {
+      if (Object.prototype.hasOwnProperty.call(plans, k)) {
+        next[k] = plans[k] ?? null;
+      } else if (!preserveOtherShift) {
+        next[k] = null;
+      }
+    });
     safeWriteShiftPlansStore({
-      shift1: state.shiftPlans?.shift1 || null,
-      shift2: state.shiftPlans?.shift2 || null,
+      shift1: Object.prototype.hasOwnProperty.call(next, 'shift1') ? (next.shift1 ?? null) : null,
+      shift2: Object.prototype.hasOwnProperty.call(next, 'shift2') ? (next.shift2 ?? null) : null,
     });
   }
 
@@ -89,7 +111,9 @@
     }
 
     state.shiftPlans[state.activeShift] = nextPlan;
-    persistShiftPlansStore();
+    // Persist only the current shift snapshot and preserve the other shift from storage.
+    // This prevents hard refresh / Ctrl+R during early boot from wiping the non-active shift.
+    persistShiftPlansStore({ preserveOtherShift: true });
     return true;
   }
   function loadShiftPlanSnapshot(shift) {
@@ -236,15 +260,17 @@
     restoreShiftPlan,
     saveCurrentShiftPlanSnapshot,
     loadShiftPlanSnapshot,
+    hydrateShiftPlansFromStore,
     isPlayerUsedInShift,
     isPlayerUsedInOtherShift,
     matchesShift,
     syncSettingsShiftBadge,
-    updateShiftTabButtons,
     updateBoardTitle,
     applyShiftFilter,
     handleShiftTabClick,
+    updateShiftTabButtons,
   });
+  PNS.hydrateShiftPlansFromStore = hydrateShiftPlansFromStore;
 })();
 
 (function(){ const PNS = window.PNS; if (!PNS) return; const MS = PNS.ModalsShift || {}; PNS.isPlayerUsedInOtherShift = MS.isPlayerUsedInOtherShift; PNS.isPlayerUsedInShift = MS.isPlayerUsedInShift; })();

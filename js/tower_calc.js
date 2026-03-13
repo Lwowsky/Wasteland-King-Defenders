@@ -1888,10 +1888,9 @@
   }
   function normalizeBoardLocales(locales) {
     const supported = getBoardSupportedLocales();
-    const required = getBoardDefaultLocales().filter((code) => supported.includes(code));
+    const required = ['en'].filter((code) => supported.includes(code));
     const input = Array.isArray(locales) ? locales : [locales];
     const normalized = Array.from(new Set(required));
-    if (required.length === 1 && required[0] === 'en') return normalized;
     input.forEach((code) => {
       const safe = String(code || '').trim().toLowerCase();
       if (!safe || normalized.includes(safe)) return;
@@ -1908,9 +1907,7 @@
       const legacyMode = String(tc.boardLanguageMode || '').toLowerCase();
       normalized = legacyMode === 'en' ? ['en'] : defaults;
     }
-    if (currentLocal === 'en') {
-      normalized = ['en'];
-    } else {
+    if (currentLocal !== 'en') {
       normalized = normalizeBoardLocales(['en', currentLocal].concat(normalized.filter((code) => code !== 'en' && code !== currentLocal)));
     }
     tc.boardLanguageLocales = normalized.slice();
@@ -2025,9 +2022,9 @@
   function renderBoardLanguageDialogMarkup(kind) {
     const inputAttr = kind === 'calc' ? 'data-calc-board-lang-option' : 'data-board-lang-option';
     const locales = getBoardLanguageLocales();
-    const required = new Set(getBoardDefaultLocales());
-    const onlyEnglish = required.size === 1 && required.has('en');
-    const supportedLocales = getBoardSupportedLocales().filter((locale) => !onlyEnglish || String(locale || '').trim().toLowerCase() === 'en');
+    const siteLocales = getBoardDefaultLocales().filter((locale) => String(locale || '').trim().toLowerCase() !== 'en');
+    const required = new Set(['en']);
+    const supportedLocales = getBoardSupportedLocales();
     const options = supportedLocales.map((locale) => {
       const safeLocale = String(locale || '').trim().toLowerCase();
       const isRequired = required.has(safeLocale);
@@ -2056,15 +2053,12 @@
         <button class="btn btn-sm board-shift-tab ${activeShift === 'shift1' ? 'active' : ''}" data-shift-tab="shift1" type="button">${shiftLabel('shift1')}</button>
         <button class="btn btn-sm board-shift-tab ${activeShift === 'shift2' ? 'active' : ''}" data-shift-tab="shift2" type="button">${shiftLabel('shift2')}</button>
       </div>
-      <div class="board-lang-picker-wrap" style="margin-left:auto;">${renderBoardLanguagePickerMarkup('board')}</div>
+      <div class="board-lang-picker-host board-lang-picker-wrap" style="margin-left:auto;" data-board-lang-picker-host>${renderBoardLanguagePickerMarkup('board')}</div>
       <button class="btn btn-sm" id="exportPngBtn" type="button">${calcEsc(t('export_png', 'Завантажити PNG'))}</button>
       <button class="btn btn-sm" id="shareBoardBtn" type="button">${calcEsc(t('final_plan_share', 'Поділитися'))}</button>`;
     status.textContent = `${t('final_plan_status', 'Фінальний план')} · ${shiftLabel(activeShift)}`;
     sheetHost.innerHTML = calcBuildBoardHtmlForShift(activeShift);
-    try {
-      const trigger = toolbar.querySelector('[data-open-board-lang-picker]');
-      if (trigger) trigger.onclick = function(ev){ try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); } catch {} return !!window.PNS?.openBoardLanguageDialog?.('board', trigger); };
-    } catch {}
+    try { window.PNS?.wireBoardLanguageButtons?.(toolbar); } catch {}
     try {
       const exportBtn = toolbar.querySelector('#exportPngBtn');
       if (exportBtn) exportBtn.onclick = function(ev){ try { ev.preventDefault(); } catch {} return !!window.exportBoardAsPNG?.(); };
@@ -2152,7 +2146,7 @@
           <button class="btn btn-sm board-shift-tab ${shiftKey === "shift1" ? "active" : ""}" type="button" data-calc-preview-shift="shift1">${shiftLabel("shift1")}</button>
           <button class="btn btn-sm board-shift-tab ${shiftKey === "shift2" ? "active" : ""}" type="button" data-calc-preview-shift="shift2">${shiftLabel("shift2")}</button>
         </div>
-        <div class="board-lang-picker-wrap" style="margin-left:auto;">${renderBoardLanguagePickerMarkup('calc')}</div>
+        <div class="board-lang-picker-host board-lang-picker-wrap" style="margin-left:auto;" data-board-lang-picker-host>${renderBoardLanguagePickerMarkup('calc')}</div>
         <button class="btn btn-sm" type="button" data-calc-preview-export="1">${t('export_png', 'Завантажити PNG')}</button>
         <button class="btn btn-sm" type="button" data-calc-preview-share="1">${t('final_plan_share', 'Поділитися')}</button>
       </div>
@@ -3818,6 +3812,18 @@
     });
   }
 
+  Object.assign(PNS, {
+    getBoardDefaultLocales,
+    getBoardLanguageMode,
+    setBoardLanguageMode,
+    getBoardLanguageLocales,
+    setBoardLanguageLocales,
+    boardLanguageSummary,
+    renderBoardLanguagePickerMarkup,
+    renderBoardLanguageDialogMarkup,
+    renderStandaloneFinalBoard,
+  });
+
   Object.assign(MS, {
     openTowerCalculatorModal,
     openTowerCalculatorPreviewModal,
@@ -3878,6 +3884,9 @@
   window.setBoardLanguageMode = setBoardLanguageMode;
   window.getBoardLanguageLocales = getBoardLanguageLocales;
   window.setBoardLanguageLocales = setBoardLanguageLocales;
+  window.boardLanguageSummary = boardLanguageSummary;
+  window.renderBoardLanguagePickerMarkup = renderBoardLanguagePickerMarkup;
+  window.renderBoardLanguageDialogMarkup = renderBoardLanguageDialogMarkup;
   window.renderStandaloneFinalBoard = renderStandaloneFinalBoard;
   window.calcRecalculateTowerComposition = calcRecalculateTowerComposition;
   window.applyTowerCalcToTowerSettings = applyTowerCalcToTowerSettings;
