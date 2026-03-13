@@ -1869,6 +1869,44 @@
     </div>`;
   }
 
+  function getBoardLanguageMode() {
+    const tc = getCalcState();
+    const loc = typeof window.PNS?.I18N?.locale === 'string' ? String(window.PNS.I18N.locale).toLowerCase() : (document.documentElement.dataset.locale || 'uk');
+    const mode = String(tc.boardLanguageMode || '').toLowerCase();
+    if (mode === 'en' || mode === 'en_local') return mode;
+    return loc === 'en' ? 'en' : 'en_local';
+  }
+  function setBoardLanguageMode(mode) {
+    const tc = getCalcState();
+    tc.boardLanguageMode = String(mode || '').toLowerCase() === 'en' ? 'en' : 'en_local';
+    try { localStorage.setItem('pns_tower_calc_state', JSON.stringify(tc)); } catch {}
+    return tc.boardLanguageMode;
+  }
+  function boardBilingual(en, lo) {
+    const mode = getBoardLanguageMode();
+    if (!en) return lo;
+    if (mode === 'en' || !lo || lo === en) return en;
+    return `${en} ✦ ${lo}`;
+  }
+  function boardTowerTitle(raw) {
+    const source = String(raw || '');
+    const lower = source.toLowerCase();
+    let en = '';
+    if (/техно|hub|central/.test(lower)) en = 'Tech Hub';
+    else if (/північ|north|север/.test(lower)) en = 'North Turret';
+    else if (/захід|west|запад/.test(lower)) en = 'West Turret';
+    else if (/схід|east|вост/.test(lower)) en = 'East Turret';
+    else if (/півден|south|юж/.test(lower)) en = 'South Turret';
+    const local = typeof window.PNS?.towerLabel === 'function' ? window.PNS.towerLabel(source) : towerLabel(source);
+    return boardBilingual(en || local, local);
+  }
+  function boardRoleLabel(role) {
+    const norm = String(roleNorm(role) || '').toLowerCase();
+    const en = norm === 'fighter' ? 'Fighters' : norm === 'rider' ? 'Riders' : norm === 'shooter' ? 'Shooters' : '';
+    const local = roleLabel(String(role || ''), true);
+    return boardBilingual(en || local, local);
+  }
+
   function calcBuildBoardHtmlForShift(shiftKey) {
     const title = shiftLabel(shiftKey);
     const bases = getCalcTowerBaseOrder()
@@ -1888,14 +1926,10 @@
           );
         const roleKey = String(roleNorm(captain?.role) || "").toLowerCase();
         const roleText = captain
-          ? calcEsc(roleLabel(String(captain.role || ""), true))
+          ? calcEsc(boardRoleLabel(String(captain.role || "")))
           : t('type_defined_by_captain', 'Тип визначається капітаном');
         const themeCls = captain ? " " + roleKey + "-theme" : " is-auto";
-        const titleShort = calcEsc(
-          typeof window.PNS?.towerLabel === "function"
-            ? window.PNS.towerLabel(String(base.title || base.id || `${t('turret', 'Турель')} ${idx + 1}`))
-            : towerLabel(String(base.title || base.id || `${t('turret', 'Турель')} ${idx + 1}`)),
-        );
+        const titleShort = calcEsc(boardTowerTitle(String(base.title || base.id || `${t('turret', 'Турель')} ${idx + 1}`)));
         const rows = [];
         if (captain)
           rows.push(
@@ -1916,7 +1950,7 @@
         return `<section class="board-col${themeCls}" data-shift="${calcEsc(shiftKey)}" data-base-id="${calcEsc(String(base.id || ""))}"><header><h4>${titleShort}</h4><div class="board-sub${captain ? "" : " is-auto"}">${captain ? roleText : t('type_defined_by_captain', 'Тип визначається капітаном')}</div><div class="board-cap"><span class="cap-total">${calcFmt(stats.capacityTotal)}</span><span class="cap-free">${calcFmt(stats.free)}</span><span class="cap-used">${calcFmt(stats.total)}</span></div></header><ul>${rows.join("")}</ul></section>`;
       })
       .join("");
-    return `<div class="board-sheet"><div class="board-title">${title} / ${shiftKey === 'shift1' ? t('first_half', 'Перша половина') : t('second_half', 'Друга половина')}</div><div class="board-grid">${cols}</div></div>`;
+    return `<div class="board-sheet"><div class="board-title">${boardBilingual(shiftKey === 'shift1' ? 'Shift 1 • First half' : 'Shift 2 • Second half', title + ' • ' + (shiftKey === 'shift1' ? t('first_half', 'Перша половина') : t('second_half', 'Друга половина')))}</div><div class="board-grid">${cols}</div></div>`;
   }
 
   function calcSetPreviewShift(shiftKey) {
@@ -1945,6 +1979,13 @@
           <button class="btn btn-sm board-shift-tab ${shiftKey === "shift1" ? "active" : ""}" type="button" data-calc-preview-shift="shift1">${shiftLabel("shift1")}</button>
           <button class="btn btn-sm board-shift-tab ${shiftKey === "shift2" ? "active" : ""}" type="button" data-calc-preview-shift="shift2">${shiftLabel("shift2")}</button>
         </div>
+        <label class="small muted" style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <span>${t('board_language', 'Мова плану')}</span>
+          <select class="input-like" data-calc-board-lang-mode style="min-width:220px;">
+            <option value="en" ${getBoardLanguageMode() === 'en' ? 'selected' : ''}>${t('english_only', 'Лише англійська')}</option>
+            <option value="en_local" ${getBoardLanguageMode() === 'en_local' ? 'selected' : ''}>${t('english_plus_local', 'Англійська ✦ локальна')}</option>
+          </select>
+        </label>
         <button class="btn btn-sm" type="button" data-calc-preview-export="1">${t('export_png', 'Завантажити PNG')}</button>
         <button class="btn btn-sm" type="button" data-calc-preview-share="1">${t('final_plan_share', 'Поділитися')}</button>
       </div>
@@ -3504,6 +3545,17 @@
     }
     MS.syncBodyModalLock?.();
   }
+  if (!state._towerCalcBoardLangBound) {
+    state._towerCalcBoardLangBound = true;
+    document.addEventListener('change', (e) => {
+      const sel = e.target.closest('[data-calc-board-lang-mode]');
+      if (!sel) return;
+      setBoardLanguageMode(String(sel.value || 'en_local'));
+      try { calcRenderLiveFinalBoard(document.getElementById('towerCalcModal')); } catch {}
+      try { PNS.renderBoard?.(); } catch {}
+    });
+  }
+
   if (!state._towerCalcPlayerShiftBound) {
     state._towerCalcPlayerShiftBound = true;
     document.addEventListener("click", (e) => {

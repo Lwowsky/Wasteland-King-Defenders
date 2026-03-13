@@ -98,6 +98,8 @@
       rebalance: 'Застосувати перерозподіл',
       topup_turrets: 'Дозаповнити турелі',
       clear: 'Очистити',
+      cancel: 'Скасувати',
+      confirm_action: 'Підтвердь дію',
       parameters_limits: 'Параметри розподілу і ліміти',
       in_turrets: 'У турелях',
       outside_turrets: 'Поза турелями',
@@ -116,7 +118,7 @@
       remove_selected: 'Прибрати вибраного',
       manual_player_title: 'Ручне редагування або додавання гравця',
       player_nickname: 'Нік гравця',
-      march_power: 'Сила маршу',
+      march_power: 'Марш',
       manual_status_hint: 'Обери гравця, щоб змінити марш або тір, або введи нового й збережи.',
       troop_tier_import: 'Тір військ',
       captain_ready_import: 'Готовність бути капітаном',
@@ -211,6 +213,9 @@
       reset_table_data: 'Скинути дані таблиць',
       import_footer_note: 'Підтримуються CSV/XLSX і публічні CSV-посилання з Google Sheets.',
       board_subtitle: 'Перегляд для офіцерів: зручно показати фінальний план, зробити скрін або поділитися ним.',
+      board_language: 'Мова плану',
+      english_only: 'Лише англійська',
+      english_plus_local: 'Англійська ✦ локальна',
       calc_modal_subtitle: 'Тут ти готуєш склад для двох змін: розподіляєш гравців по турелях, перевіряєш резерв і збираєш фінальний план.',
       load_captains_from_turrets: 'Підтягнути капітанів із турелей',
       calculate: 'Порахувати',
@@ -525,6 +530,8 @@
       rebalance: 'Apply rebalance',
       topup_turrets: 'Top up turrets',
       clear: 'Clear',
+      cancel: 'Cancel',
+      confirm_action: 'Confirm action',
       parameters_limits: 'Distribution settings and limits',
       in_turrets: 'In turrets',
       outside_turrets: 'Outside turrets',
@@ -543,7 +550,7 @@
       remove_selected: 'Remove selected',
       manual_player_title: 'Manual edit or add player',
       player_nickname: 'Player nickname',
-      march_power: 'March power',
+      march_power: 'March',
       manual_status_hint: 'Select a player to change march or tier, or enter a new one and save.',
       troop_tier_import: 'Troop tier',
       captain_ready_import: 'Captain availability',
@@ -639,6 +646,9 @@
       import_footer_note: 'CSV/XLSX files and public Google Sheets CSV links are supported.',
       board_subtitle: 'Officer view: show the final plan, take a screenshot, or share it quickly.',
       calc_modal_subtitle: 'Build both shifts here: assign players to turrets, check reserve slots, and prepare the final plan.',
+      board_language: 'Board language',
+      english_only: 'English only',
+      english_plus_local: 'English ✦ local',
       load_captains_from_turrets: 'Pull captains from turrets',
       calculate: 'Calculate',
       prepare_limits_for_turrets: 'Prepare limits for turrets',
@@ -952,6 +962,8 @@
       rebalance: 'Применить перераспределение',
       topup_turrets: 'Дозаполнить турели',
       clear: 'Очистить',
+      cancel: 'Отмена',
+      confirm_action: 'Подтвердите действие',
       parameters_limits: 'Параметры распределения и лимиты',
       in_turrets: 'В турелях',
       outside_turrets: 'Вне турелей',
@@ -970,7 +982,7 @@
       remove_selected: 'Убрать выбранного',
       manual_player_title: 'Ручное редактирование или добавление игрока',
       player_nickname: 'Ник игрока',
-      march_power: 'Сила марша',
+      march_power: 'Марш',
       manual_status_hint: 'Выбери игрока, чтобы изменить марш или тир, или введи нового и сохрани.',
       troop_tier_import: 'Тир войск',
       captain_ready_import: 'Готовность быть капитаном',
@@ -1065,6 +1077,9 @@
       reset_table_data: 'Сбросить данные таблиц',
       import_footer_note: 'Поддерживаются CSV/XLSX и публичные CSV-ссылки из Google Sheets.',
       board_subtitle: 'Вид для офицеров: удобно показать финальный план, сделать скрин или быстро поделиться им.',
+      board_language: 'Язык плана',
+      english_only: 'Только английский',
+      english_plus_local: 'Английский ✦ локальный',
       calc_modal_subtitle: 'Здесь ты собираешь обе смены: распределяешь игроков по турелям, проверяешь резерв и готовишь финальный план.',
       load_captains_from_turrets: 'Подтянуть капитанов из турелей',
       calculate: 'Посчитать',
@@ -1701,7 +1716,7 @@
     remove_selected: ['Прибрати вибраного', 'Remove selected', 'Убрать выбранного'],
     manual_player_title: ['Ручне редагування або додавання гравця', 'Manual edit or add player', 'Ручное редактирование или добавление игрока'],
     player_nickname: ['Нік гравця', 'Player nickname', 'Ник игрока'],
-    march_power: ['Сила маршу', 'March power', 'Сила марша'],
+    march_power: ['Марш', 'March', 'Марш'],
     manual_status_hint: ['Обери гравця, щоб змінити марш або тір, або введи нового й збережи.', 'Select a player to change march or tier, or enter a new one and save.', 'Выбери игрока, чтобы изменить марш или тир, или введи нового и сохрани.'],
     captain_not_selected: ['Капітана ще не обрано', 'Captain is not selected yet', 'Капитан ещё не выбран'],
     turret_type: ['Тип турелі', 'Turret type', 'Тип турели'],
@@ -1980,6 +1995,11 @@
 
     // tower names
     out = out.replace(/Техно-Центр|Tech Hub/gi, get('hub'));
+    out = out.replace(/Повністю скинути LocalStorage\?|Reset LocalStorage completely\?|Полностью сбросить LocalStorage\?/gi, get('reset_localstorage_title'));
+    out = out.replace(/Усі збережені дані сайту буде видалено і застосунок повернеться до заводських налаштувань\.|All saved site data will be deleted and the app will return to its default state\.|Все сохранённые данные сайта будут удалены, а приложение вернётся к состоянию по умолчанию\./gi, get('reset_localstorage_message'));
+    out = out.replace(/Цю дію не можна скасувати\. Будуть очищені таблиці, колонки, шаблони імпорту, налаштування та інший локально збережений стан\.|This action cannot be undone\. Tables, columns, import templates, settings, and any other locally saved state will be cleared\.|Это действие нельзя отменить\. Будут очищены таблицы, колонки, шаблоны импорта, настройки и другое локально сохранённое состояние\./gi, get('reset_localstorage_note'));
+    out = out.replace(/Скинути все|Reset everything|Сбросить всё/gi, get('reset_all'));
+    out = out.replace(/Скасувати|Cancel|Отмена/gi, get('cancel'));
     out = out.replace(/Північна турель|North Turret|Северная турель/gi, get('north_turret'));
     out = out.replace(/Західна турель|West Turret|Западная турель/gi, get('west_turret'));
     out = out.replace(/Східна турель|East Turret|Восточная турель/gi, get('east_turret'));
@@ -2094,6 +2114,10 @@
 
   Object.assign(dict.uk, {
     choose_file: 'Вибрати файл',
+    reset_localstorage_title: 'Повністю скинути LocalStorage?',
+    reset_localstorage_message: 'Усі збережені дані сайту буде видалено і застосунок повернеться до заводських налаштувань.',
+    reset_localstorage_note: 'Цю дію не можна скасувати. Будуть очищені таблиці, колонки, шаблони імпорту, налаштування та інший локально збережений стан.',
+    reset_all: 'Скинути все',
     no_file_selected: 'Файл не вибрано',
     import_status: 'Статус імпорту',
     restored_players_from_storage: 'Відновлено {count} гравців із LocalStorage.',
@@ -2121,6 +2145,10 @@
   });
   Object.assign(dict.en, {
     choose_file: 'Choose file',
+    reset_localstorage_title: 'Reset LocalStorage completely?',
+    reset_localstorage_message: 'All saved site data will be deleted and the app will return to its default state.',
+    reset_localstorage_note: 'This action cannot be undone. Tables, columns, import templates, settings, and any other locally saved state will be cleared.',
+    reset_all: 'Reset everything',
     no_file_selected: 'No file selected',
     import_status: 'Import status',
     restored_players_from_storage: 'Restored {count} players from local storage.',
@@ -2148,6 +2176,10 @@
   });
   Object.assign(dict.ru, {
     choose_file: 'Выбрать файл',
+    reset_localstorage_title: 'Полностью сбросить LocalStorage?',
+    reset_localstorage_message: 'Все сохранённые данные сайта будут удалены, а приложение вернётся к состоянию по умолчанию.',
+    reset_localstorage_note: 'Это действие нельзя отменить. Будут очищены таблицы, колонки, шаблоны импорта, настройки и другое локально сохранённое состояние.',
+    reset_all: 'Сбросить всё',
     no_file_selected: 'Файл не выбран',
     import_status: 'Статус импорта',
     restored_players_from_storage: 'Восстановлено {count} игроков из LocalStorage.',

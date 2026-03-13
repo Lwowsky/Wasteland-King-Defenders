@@ -469,6 +469,7 @@
         </div>`;
       document.body.appendChild(modal);
     }
+    try { modal.style.zIndex = '300000'; } catch {}
     modal.classList.add("is-open");
     MS.syncBodyModalLock?.();
     MS.updateShiftTabButtons?.();

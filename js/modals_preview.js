@@ -8,10 +8,10 @@
   function towerPreviewSlotKeyFromTitle(title) {
     const t = String(title || '').toLowerCase();
     if (/(техно|hub|central)/i.test(t)) return 'hub';
-    if (/(північ|север|north)/i.test(t)) return 'north';
-    if (/(захід|запад|west)/i.test(t)) return 'west';
-    if (/(схід|восток|east)/i.test(t)) return 'east';
-    if (/(півден|юж|south)/i.test(t)) return 'south';
+    if (/(північ|север|северн|north)/i.test(t)) return 'north';
+    if (/(захід|запад|западн|west)/i.test(t)) return 'west';
+    if (/(схід|восток|восточ|east)/i.test(t)) return 'east';
+    if (/(півден|юж|южн|south)/i.test(t)) return 'south';
     return '';
   }
 

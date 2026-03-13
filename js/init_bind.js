@@ -135,6 +135,115 @@
     }, 40);
   }
 
+  function openTowerPickerSafe(baseId = '') {
+    let pickedBaseId = String(baseId || state.focusedBaseId || '');
+    try { PNS.ModalsShift?.initIfReady?.(); } catch {}
+    try {
+      if (!pickedBaseId) {
+        const current = document.querySelector('.bases-grid .base-card.is-focused')?.dataset?.baseId
+          || PNS.ModalsShift?.getFocusedCard?.()?.dataset?.baseId
+          || PNS.ModalsShift?.findNextIncompleteTower?.()?.dataset?.baseId
+          || PNS.ModalsShift?.getTowerCards?.()?.[0]?.dataset?.baseId
+          || '';
+        pickedBaseId = String(current || '');
+      }
+    } catch {}
+    try {
+      if (pickedBaseId) {
+        state.focusedBaseId = pickedBaseId;
+        PNS.state.towerPickerSelectedBaseId = pickedBaseId;
+        PNS.ModalsShift?.focusTowerById?.(pickedBaseId);
+      }
+    } catch {}
+    try { PNS.ModalsShift?.openTowerPickerModal?.(); } catch {}
+    const modal = document.getElementById('towerPickerModal');
+    if (modal) {
+      try {
+        modal.classList.add('is-open');
+        modal.style.display = 'block';
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        modal.style.pointerEvents = 'auto';
+        modal.style.zIndex = '350000';
+        const card = modal.querySelector('.modal-card');
+        if (card) {
+          card.style.position = 'relative';
+          card.style.zIndex = '1';
+        }
+      } catch {}
+    }
+    setTimeout(() => {
+      try { PNS.ModalsShift?.refreshTowerPickerModalList?.(); } catch {}
+      try { PNS.ModalsShift?.updateTowerPickerDetail?.(); } catch {}
+      try { PNS.ModalsShift?.syncSettingsTowerPreview?.(); } catch {}
+    }, 20);
+    return !!modal;
+  }
+  PNS.openTowerPickerSafe = openTowerPickerSafe;
+
+  function bindStrongTowerSettingsButtons() {
+    document.querySelectorAll('#openTowerPickerBtn, [data-action="open-tower-picker"]').forEach((openBtn) => {
+      if (openBtn.dataset.strongBound) return;
+      openBtn.dataset.strongBound = '1';
+      try { openBtn.style.position = 'relative'; openBtn.style.zIndex = '120'; openBtn.style.pointerEvents = 'auto'; openBtn.style.cursor = 'pointer'; } catch {}
+      openBtn.addEventListener('click', (e) => {
+        try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation?.(); } catch {}
+        openTowerPickerSafe(String(openBtn.dataset.openPickerBase || ''));
+      }, true);
+    });
+    document.querySelectorAll('[data-captain-edit-btn]').forEach((btn) => {
+      if (btn.dataset.strongBound) return;
+      btn.dataset.strongBound = '1';
+      btn.addEventListener('click', (e) => {
+        const baseId = String(btn.dataset.baseId || btn.dataset.openPickerBase || btn.closest('.base-card')?.dataset?.baseId || btn.closest('.base-card')?.dataset?.baseid || '');
+        if (!baseId) return;
+        try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation?.(); } catch {}
+        try { state.focusedBaseId = baseId; } catch {}
+        const playerId = String(btn.dataset.editAssignedPlayer || '');
+        if (playerId) {
+          try { PNS.ModalsShift?.openTowerPlayerEditModal?.(baseId, playerId); } catch {}
+        } else {
+          openTowerPickerSafe(baseId);
+        }
+      }, true);
+    });
+  }
+
+
+  function bindTowerActionsCaptureOnce() {
+    if (state._towerActionsCaptureBound) return;
+    state._towerActionsCaptureBound = true;
+
+    document.addEventListener('click', (e) => {
+      const editBtn = e.target.closest('[data-captain-edit-btn]');
+      if (editBtn) {
+        const baseId = String(editBtn.dataset.baseId || editBtn.dataset.openPickerBase || editBtn.closest('.base-card')?.dataset?.baseId || editBtn.closest('.base-card')?.dataset?.baseid || '');
+        if (!baseId) return;
+        try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation?.(); } catch {}
+        try { PNS.ModalsShift?.initIfReady?.(); } catch {}
+        try { state.focusedBaseId = baseId; PNS.state.towerPickerSelectedBaseId = baseId; } catch {}
+        const playerId = String(editBtn.dataset.editAssignedPlayer || '');
+        if (playerId) {
+          try { PNS.ModalsShift?.openTowerPlayerEditModal?.(baseId, playerId); } catch {}
+        } else {
+          try { PNS.ModalsShift?.focusTowerById?.(baseId); } catch {}
+          openTowerPickerSafe(baseId);
+        }
+        return;
+      }
+
+      const openBtn = e.target.closest('#openTowerPickerBtn, [data-action="open-tower-picker"], [data-open-picker-base]');
+      if (openBtn) {
+        const baseId = String(openBtn.dataset.openPickerBase || openBtn.closest('.base-card')?.dataset?.baseId || openBtn.closest('.base-card')?.dataset?.baseid || state.focusedBaseId || '');
+        try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation?.(); } catch {}
+        try { PNS.ModalsShift?.initIfReady?.(); } catch {}
+        try { if (baseId) { state.focusedBaseId = baseId; PNS.state.towerPickerSelectedBaseId = baseId; PNS.ModalsShift?.focusTowerById?.(baseId); } } catch {}
+        openTowerPickerSafe(baseId);
+        return;
+      }
+    }, true);
+  }
+
   function bindDelegatedOnce() {
     if (state._initBindDelegatedBound) return;
     state._initBindDelegatedBound = true;
@@ -178,7 +287,7 @@
         try { PNS.ModalsShift?.openTowerPlayerEditModal?.(baseId, playerId); } catch {}
       } else {
         try { PNS.state.towerPickerSelectedBaseId = baseId; } catch {}
-        try { PNS.ModalsShift?.openTowerPickerModal?.(); } catch {}
+        openTowerPickerSafe(baseId);
       }
       setTimeout(() => {
         try { PNS.ModalsShift?.syncSettingsTowerPreview?.(); } catch {}
@@ -205,7 +314,7 @@
       const baseId = el.dataset.openPickerBase || el.closest('.base-card')?.dataset?.baseId || '';
       if (baseId) PNS.state.towerPickerSelectedBaseId = baseId;
       try { if (baseId) PNS.ModalsShift?.focusTowerById?.(baseId); } catch {}
-      PNS.ModalsShift?.openTowerPickerModal?.();
+      openTowerPickerSafe(baseId);
     });
     onClick('#toggleTowerFocusBtn, [data-action="toggle-towers-view"]', (e) => {
       e.preventDefault();
@@ -227,6 +336,9 @@
         PNS.closeModal?.(); clearModalHashIfNeeded();
       }
     });
+
+    bindStrongTowerSettingsButtons();
+    bindTowerActionsCaptureOnce();
 
     window.addEventListener('hashchange', () => {
       if (location.hash === '#settings-modal') PNS.openModal?.('settings');
@@ -265,6 +377,8 @@
     }
   }
 
+  PNS.bindStrongTowerSettingsButtons = bindStrongTowerSettingsButtons;
+
   function init() {
     PNS.loadTopFilters?.();
     PNS.loadBaseTowerRulesStore?.();
@@ -275,4 +389,11 @@
   document.addEventListener('DOMContentLoaded', init);
   document.addEventListener('htmx:afterSwap', scheduleRebuild);
   document.addEventListener('htmx:afterSettle', scheduleRebuild);
+})();
+
+(function(){
+  const reb = () => { try { window.PNS?.bindStrongTowerSettingsButtons?.(); } catch {} };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', reb); else reb();
+  document.addEventListener('htmx:afterSwap', reb);
+  document.addEventListener('pns:i18n-changed', reb);
 })();

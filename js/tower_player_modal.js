@@ -336,6 +336,7 @@
     updatePlacementHint(modal);
     updateModalCapUI(modal);
 
+    try { modal.style.zIndex = '310000'; } catch {}
     modal.classList.add('is-open');
     MS.syncBodyModalLock?.();
   }
@@ -358,6 +359,7 @@
     syncPlacementFromSelectedShift(modal);
     refreshTowerPlayerEditModalTexts(modal);
 
+    try { modal.style.zIndex = '310000'; } catch {}
     modal.classList.add('is-open');
     MS.syncBodyModalLock?.();
   }

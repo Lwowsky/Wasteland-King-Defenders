@@ -327,7 +327,7 @@ function optionalColumnClass(key) {
                 <option>T1</option><option>T2</option><option>T3</option><option>T4</option><option>T5</option><option>T6</option><option>T7</option><option>T8</option><option>T9</option><option>T10</option><option>T11</option><option>T12</option><option>T13</option><option>T14</option>
               </select>
             </label>
-            <label><span>${typeof PNS.t === 'function' ? PNS.t('march_power') : 'Сила маршу'}</span><input type="number" min="0" step="1" data-manual-march="${base.id}" placeholder="0"></label>
+            <label><span>${typeof PNS.t === 'function' ? PNS.t('march_power') : 'Марш'}</span><input type="number" min="0" step="1" data-manual-march="${base.id}" placeholder="0"></label>
           </div>
           <div class="editor-row"><button class="btn btn-sm" type="button" data-base-editor-action="manualsave" data-base-id="${base.id}">${typeof PNS.t === 'function' ? PNS.t('save') : 'Зберегти'}</button></div>
           <div class="muted small" data-manual-status="${base.id}">${typeof PNS.t === 'function' ? PNS.t('manual_status_hint') : 'Обери гравця, щоб змінити марш або тір, або введи нового й збережи.'}</div>
@@ -482,18 +482,24 @@ function optionalColumnClass(key) {
         capEditBtn.dataset.openPickerBase = String(base.id);
         capEditBtn.title = typeof PNS.t === 'function' ? PNS.t('choose_captain') : 'Обрати капітана';
       }
+      capEditBtn.style.zIndex = '50';
+      capEditBtn.style.pointerEvents = 'auto';
+      capEditBtn.style.cursor = 'pointer';
+      capEditBtn.dataset.mode = captain?.id ? 'edit' : 'pick';
       capEditBtn.onclick = (ev) => {
-        try { ev.preventDefault(); ev.stopPropagation(); } catch {}
+        try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); } catch {}
         try { PNS.ModalsShift?.initIfReady?.(); } catch {}
         const currentBaseId = String(base.id || capEditBtn.dataset.baseId || capEditBtn.dataset.openPickerBase || '');
-        if (!currentBaseId) return;
+        if (!currentBaseId) return false;
+        try { state.focusedBaseId = currentBaseId; } catch {}
         if (captain?.id) {
           try { PNS.ModalsShift?.openTowerPlayerEditModal?.(currentBaseId, String(captain.id)); } catch {}
         } else {
           try { PNS.state.towerPickerSelectedBaseId = currentBaseId; } catch {}
           try { PNS.ModalsShift?.focusTowerById?.(currentBaseId); } catch {}
-          try { PNS.ModalsShift?.openTowerPickerModal?.(); } catch {}
+          try { PNS.openTowerPickerSafe?.(currentBaseId); } catch {}
         }
+        return false;
       };
     }
 
@@ -744,7 +750,7 @@ function optionalColumnClass(key) {
       <th data-field="alliance">${typeof PNS.t === 'function' ? PNS.t('alliance') : 'Альянс'}</th>
       <th data-field="role">${typeof PNS.t === 'function' ? PNS.t('troop_type') : 'Тип військ'}</th>
       <th data-field="tier">${typeof PNS.t === 'function' ? PNS.t('tier') : 'Тір'} <button type="button" class="sort-btn" data-sort="tier" aria-label="${typeof PNS.t === 'function' ? PNS.t('tier') : 'Тір'}">↓</button></th>
-      <th data-field="march">${typeof PNS.t === 'function' ? PNS.t('march_power') : 'Розмір маршу'}</th>
+      <th data-field="march">${typeof PNS.t === 'function' ? PNS.t('march_power') : 'Марш'}</th>
       <th data-field="rally">${typeof PNS.t === 'function' ? PNS.t('rally_size') : 'Розмір ралі'} <button type="button" class="sort-btn" data-sort="rally" aria-label="${typeof PNS.t === 'function' ? PNS.t('rally_size') : 'Розмір ралі'}">↓</button></th>
       <th data-field="captainReady">${typeof PNS.t === 'function' ? PNS.t('captain') : 'Капітан'}</th>
       <th data-field="shiftLabel">${typeof PNS.t === 'function' ? PNS.t('shift') : 'Зміна'}</th>

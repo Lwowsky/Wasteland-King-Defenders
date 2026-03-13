@@ -541,7 +541,7 @@
   function updateImportReadinessHint() {
     const headers = state.importData.headers || [];
     if (!headers.length) { setImportStatus(t('upload_file_or_public_link_first', 'Спочатку завантаж CSV/XLSX файл або встав публічне CSV-посилання Google Sheets.')); return; }
-    const missing = FIELD_DEFS.filter(f => f.required && !state.importData.mapping?.[f.key]).map(f => getFieldLabel(f.key));
+    const missing = FIELD_DEFS.filter(f => f.required && !state.importData.mapping?.[f.key]).map(f => getDefaultFieldLabel(f.key, getFieldLabel(f.key)));
     if (missing.length) setImportStatus(fmtMsg('fill_required_columns', 'Заповни обов’язкові колонки: {fields}', { fields: missing.join(', ') }), 'danger');
     else setImportStatus(fmtMsg('import_ready_rows_cols', 'Готово до імпорту • {rows} рядків • {cols} колонок', { rows: state.importData.rows.length, cols: headers.length }), 'good');
   }
@@ -681,6 +681,7 @@
     }
 
     updateImportReadinessHint();
+    try { syncFileInputMockUI(); } catch {}
   }
 
   function getImportTemplates() {
@@ -802,7 +803,7 @@
   function buildImportedPlayersFromRaw() {
     readMappingFromUI();
     const mapping = state.importData.mapping || {};
-    const missing = FIELD_DEFS.filter(f => f.required && !mapping[f.key]).map(f => getFieldLabel(f.key));
+    const missing = FIELD_DEFS.filter(f => f.required && !mapping[f.key]).map(f => getDefaultFieldLabel(f.key, getFieldLabel(f.key)));
     if (missing.length) { setImportStatus(fmtMsg('missing_required_mappings', 'Бракує обов’язкових зіставлень: {fields}', { fields: missing.join(', ') }), 'danger'); return null; }
 
     const customDefs = getCustomOptionalDefs();
@@ -1152,14 +1153,14 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
           <div class="pns-confirm-head">
             <div class="pns-confirm-icon">⚠️</div>
             <div>
-              <h3 class="pns-confirm-title" id="pnsConfirmTitle">${String(options.title || 'Підтверди дію')}</h3>
+              <h3 class="pns-confirm-title" id="pnsConfirmTitle">${String(options.title || t('confirm_action', 'Підтверди дію'))}</h3>
               <p class="pns-confirm-sub">${String(options.message || '')}</p>
             </div>
           </div>
           ${options.note ? `<div class="pns-confirm-body"><p class="pns-confirm-note">${String(options.note)}</p></div>` : ''}
           <div class="pns-confirm-actions">
-            <button type="button" class="pns-confirm-btn" data-confirm-cancel>${String(options.cancelText || 'Скасувати')}</button>
-            <button type="button" class="pns-confirm-btn pns-confirm-btn--danger" data-confirm-ok>${String(options.confirmText || 'Очистити')}</button>
+            <button type="button" class="pns-confirm-btn" data-confirm-cancel>${String(options.cancelText || t('cancel', 'Скасувати'))}</button>
+            <button type="button" class="pns-confirm-btn pns-confirm-btn--danger" data-confirm-ok>${String(options.confirmText || t('clear', 'Очистити'))}</button>
           </div>
         </div>
       `;
@@ -1282,10 +1283,11 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
 
   async function resetAllLocalStorage() {
     const ok = await showDangerConfirm({
-      title: 'Повністю скинути LocalStorage?',
-      message: 'Усі збережені дані сайту буде видалено і застосунок повернеться до заводських налаштувань.',
-      note: 'Цю дію не можна скасувати. Будуть очищені таблиці, колонки, шаблони імпорту, налаштування та інший локально збережений стан.',
-      confirmText: 'Скинути все'
+      title: t('reset_localstorage_title', 'Повністю скинути LocalStorage?'),
+      message: t('reset_localstorage_message', 'Усі збережені дані сайту буде видалено і застосунок повернеться до заводських налаштувань.'),
+      note: t('reset_localstorage_note', 'Цю дію не можна скасувати. Будуть очищені таблиці, колонки, шаблони імпорту, налаштування та інший локально збережений стан.'),
+      cancelText: t('cancel', 'Скасувати'),
+      confirmText: t('reset_all', 'Скинути все')
     });
     if (!ok) return;
 
@@ -1448,6 +1450,6 @@ function hydrateCustomOptionalDefsFromPlayers(players) {
 
   // custom event (якщо ти сам робиш fetch partials)
   document.addEventListener('pns:partials:loaded', reInitImportWizard);
-  document.addEventListener('pns:i18n-changed', reInitImportWizard);
+  document.addEventListener('pns:i18n-changed', () => { reInitImportWizard(); try { syncFileInputMockUI(); } catch {} });
 
 })();
