@@ -541,16 +541,12 @@ function syncPickerFlagsFromScope(root) {
       const btn = e.target.closest('#openBoardFromSettingsColBtn,#openBoardBtnSettings,#openBoardBtnFromSettings,[data-action="open-board"]');
       if (!btn) return;
       e.preventDefault();
-      try {
-        const bm = document.getElementById('board-modal');
-        if (bm) {
-          bm.style.zIndex = '120000';
-          bm.style.position = 'fixed';
-          bm.style.inset = '0';
-        }
-      } catch {}
-      MS.openModal?.('board');
+      try { e.stopPropagation(); e.stopImmediatePropagation?.(); } catch {}
+      try { PNS.ensureBoardLanguagePickerHosts?.(); } catch {}
+      try { PNS.openModal?.('board'); } catch {}
       try { PNS.renderBoard?.(); } catch {}
+      try { PNS.syncBoardLanguageSelects?.(); } catch {}
+      try { PNS.ensureBoardLanguagePickerHosts?.(); } catch {}
     });
 
     document.addEventListener('click', (e) => {

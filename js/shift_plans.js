@@ -172,6 +172,7 @@
   function updateBoardTitle() {
     const title = $('#boardTitle');
     if (!title) return;
+    if (String(title.getAttribute('data-no-fallback-i18n') || '') === '1') return;
     const t = typeof PNS?.t === 'function' ? PNS.t : ((_, f='') => f);
     const shiftLabel = typeof PNS?.shiftLabel === 'function'
       ? PNS.shiftLabel
@@ -218,6 +219,8 @@
       try { MS.refreshTowerPickerModalList?.(); MS.updateTowerPickerDetail?.(); } catch {}
     }, 0);
     saveCurrentShiftPlanSnapshot();
+    try { window.renderStandaloneFinalBoard?.(document.getElementById('board-modal')); } catch {}
+    try { window.calcRenderLiveFinalBoard?.(document.getElementById('towerCalcModal')); } catch {}
   }
 
   function handleShiftTabClick(e) {

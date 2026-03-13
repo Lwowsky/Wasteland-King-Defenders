@@ -22,7 +22,7 @@
   }
 
   function exportBoardAsPNG() {
-    const board = document.querySelector('.board-sheet');
+    const board = document.querySelector('#board-modal .board-sheet') || document.querySelector('.board-modal .board-sheet') || document.querySelector('.board-sheet');
     if (!board) return;
     if (typeof window.html2canvas !== 'function') return alert(window.__PNS_OFFLINE_NO_HTML2CANVAS__ ? t('png_export_offline', 'PNG export недоступний в offline-пакеті без локальної бібліотеки html2canvas.') : t('html2canvas_missing', 'html2canvas не завантажився.'));
     window.html2canvas(board, { backgroundColor: '#ffffff', scale: 2 }).then((canvas) => {
@@ -181,20 +181,223 @@
   }
   PNS.openTowerPickerSafe = openTowerPickerSafe;
 
+  let boardLangDialogAnchor = null;
+  let boardLangDialogKind = 'board';
+
+  function getBoardLangHost(anchorEl = null) {
+    const anchor = anchorEl || boardLangDialogAnchor || null;
+    return anchor?.closest?.('.board-lang-picker-wrap') || null;
+  }
+
+  function ensureBoardLanguageDialogRoot() {
+    let root = document.getElementById('boardLangDialogRoot');
+    if (root) return root;
+    root = document.createElement('div');
+    root.id = 'boardLangDialogRoot';
+    root.className = 'board-lang-dialog-root';
+    root.innerHTML = '<div class="board-lang-dialog-backdrop" data-close-board-lang-picker="1"></div><div class="board-lang-dialog-shell" data-board-lang-dialog-shell="1"></div>';
+    document.body.appendChild(root);
+    return root;
+  }
+
+  function wireBoardLanguageButtons(scope = document) {
+    (scope.querySelectorAll ? scope.querySelectorAll('[data-open-board-lang-picker]') : []).forEach((btn) => {
+      try {
+        btn.setAttribute('aria-haspopup', 'dialog');
+        if (!btn.hasAttribute('aria-expanded')) btn.setAttribute('aria-expanded', 'false');
+      } catch {}
+      if (btn.dataset.boardLangBound === '1') return;
+      btn.dataset.boardLangBound = '1';
+      btn.onclick = function(ev) {
+        try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); } catch {}
+        const alreadyOpen = !!document.querySelector('#boardLangDialogRoot.is-open') && boardLangDialogAnchor === btn;
+        if (alreadyOpen) closeBoardLanguageDialog();
+        else openBoardLanguageDialog(String(btn.dataset.boardLangKind || btn.dataset.openBoardLangPicker || 'board'), btn);
+        return false;
+      };
+    });
+  }
+
+  function closeBoardLanguageDialog() {
+    const root = document.getElementById('boardLangDialogRoot');
+    const shell = root?.querySelector('[data-board-lang-dialog-shell]') || null;
+    if (shell) shell.innerHTML = '';
+    if (root) {
+      root.classList.remove('is-open');
+      root.setAttribute('aria-hidden', 'true');
+      try { root.style.display = ''; root.style.visibility = ''; } catch {}
+    }
+    document.querySelectorAll('.board-lang-picker-wrap.is-open').forEach((host) => host.classList.remove('is-open'));
+    document.querySelectorAll('[data-open-board-lang-picker]').forEach((btn) => {
+      try { btn.setAttribute('aria-expanded', 'false'); } catch {}
+    });
+    boardLangDialogAnchor = null;
+  }
+
+  PNS.closeBoardLanguageDialog = closeBoardLanguageDialog;
+
+  function openBoardLanguageDialog(kind = 'board', anchorEl = null) {
+    const safeKind = String(kind || 'board');
+    const anchor = anchorEl || document.querySelector(`[data-open-board-lang-picker="${safeKind}"]`) || null;
+    const host = anchor?.closest?.('.board-lang-picker-wrap') || null;
+    const root = ensureBoardLanguageDialogRoot();
+    const shell = root?.querySelector('[data-board-lang-dialog-shell]') || null;
+    if (!anchor || !root || !shell) return;
+    closeBoardLanguageDialog();
+    boardLangDialogKind = safeKind;
+    boardLangDialogAnchor = anchor;
+    const markup = typeof PNS.renderBoardLanguageDialogMarkup === 'function'
+      ? PNS.renderBoardLanguageDialogMarkup(boardLangDialogKind)
+      : '';
+    if (!markup) return;
+    shell.innerHTML = markup;
+    try {
+      root.style.display = 'block';
+      root.style.visibility = 'visible';
+      shell.style.display = 'flex';
+      shell.style.alignItems = 'center';
+      shell.style.justifyContent = 'center';
+      shell.style.pointerEvents = 'auto';
+      const card = shell.querySelector('[data-board-lang-dialog-card]');
+      if (card) {
+        card.style.display = 'flex';
+        card.style.flexDirection = 'column';
+        card.style.position = 'relative';
+        card.style.zIndex = '2147483647';
+        card.style.outline = '1px solid rgba(255,255,255,.16)';
+      }
+    } catch {}
+    if (host) host.classList.add('is-open');
+    root.classList.add('is-open');
+    root.setAttribute('aria-hidden', 'false');
+    try { anchor.setAttribute('aria-expanded', 'true'); } catch {}
+    requestAnimationFrame(() => {
+      try { shell.querySelector('input[type="checkbox"]')?.focus?.(); } catch {}
+    });
+  }
+  PNS.openBoardLanguageDialog = openBoardLanguageDialog;
+  PNS.toggleBoardLanguageDialogFromButton = function toggleBoardLanguageDialogFromButton(btn) {
+    try {
+      const alreadyOpen = !!document.querySelector('#boardLangDialogRoot.is-open') && boardLangDialogAnchor === btn;
+      if (alreadyOpen) closeBoardLanguageDialog();
+      else openBoardLanguageDialog(String(btn?.dataset?.boardLangKind || btn?.dataset?.openBoardLangPicker || 'board'), btn || null);
+    } catch {}
+    return false;
+  };
+
+  function syncBoardLanguageSelects() {
+    const locales = (typeof PNS.getBoardLanguageLocales === 'function'
+      ? PNS.getBoardLanguageLocales()
+      : (typeof window.getBoardLanguageLocales === 'function' ? window.getBoardLanguageLocales() : ['en']));
+    const localeNames = { en: 'English', uk: 'Українська', ru: 'Русский' };
+    const summary = typeof PNS.boardLanguageSummary === 'function'
+      ? PNS.boardLanguageSummary(locales)
+      : (Array.isArray(locales) ? locales.map((code) => localeNames[String(code || '').toLowerCase()] || String(code || '').toUpperCase()).join(' + ') : 'English');
+    document.querySelectorAll('[data-board-lang-picker-host]').forEach((host) => {
+      try {
+        if (typeof PNS.renderBoardLanguagePickerMarkup === 'function') {
+          host.innerHTML = PNS.renderBoardLanguagePickerMarkup('board');
+          host.style.display = 'flex';
+          host.style.alignItems = 'center';
+        }
+      } catch {}
+    });
+    document.querySelectorAll('[data-board-lang-picker-label], [data-calc-board-lang-picker-label]').forEach((el) => {
+      try { el.textContent = summary; } catch {}
+    });
+    document.querySelectorAll('[data-board-lang-option], [data-calc-board-lang-option]').forEach((box) => {
+      try { box.checked = locales.includes(String(box.value || '').toLowerCase()); } catch {}
+    });
+    document.querySelectorAll('[data-board-lang-mode], [data-calc-board-lang-mode]').forEach((sel) => {
+      try {
+        sel.value = locales.length === 1 && locales[0] === 'en' ? 'en' : 'en_local';
+      } catch {}
+    });
+    const root = document.getElementById('boardLangDialogRoot');
+    const shell = root?.querySelector('[data-board-lang-dialog-shell]') || null;
+    if (root?.classList.contains('is-open') && shell && typeof PNS.renderBoardLanguageDialogMarkup === 'function') {
+      shell.innerHTML = PNS.renderBoardLanguageDialogMarkup(boardLangDialogKind);
+    }
+    wireBoardLanguageButtons(document);
+  }
+  PNS.syncBoardLanguageSelects = syncBoardLanguageSelects;
+  PNS.syncBoardLanguagePickerUI = syncBoardLanguageSelects;
+
+  function ensureBoardLanguagePickerHosts() {
+    const renderPicker = typeof PNS.renderBoardLanguagePickerMarkup === 'function' ? PNS.renderBoardLanguagePickerMarkup : null;
+    if (!renderPicker) return;
+    document.querySelectorAll('[data-board-lang-picker-host]').forEach((host) => {
+      try {
+        const existing = host.querySelector('[data-open-board-lang-picker]');
+        if (!existing) host.innerHTML = renderPicker('board');
+        host.style.display = 'flex';
+        host.style.alignItems = 'center';
+      } catch {}
+    });
+    wireBoardLanguageButtons(document);
+  }
+  PNS.ensureBoardLanguagePickerHosts = ensureBoardLanguagePickerHosts;
+  setTimeout(() => { try { ensureBoardLanguagePickerHosts(); } catch {} }, 0);
+
+  document.addEventListener('click', (e) => {
+    const closeBtn = e.target.closest('[data-close-board-lang-picker]');
+    if (closeBtn) {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+      closeBoardLanguageDialog();
+      return;
+    }
+    const openBtn = e.target.closest('[data-open-board-lang-picker]');
+    if (openBtn) {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+      const alreadyOpen = !!document.querySelector('#boardLangDialogRoot.is-open') && boardLangDialogAnchor === openBtn;
+      if (alreadyOpen) closeBoardLanguageDialog();
+      else openBoardLanguageDialog(String(openBtn.dataset.openBoardLangPicker || 'board'), openBtn);
+      return;
+    }
+    if (document.querySelector('#boardLangDialogRoot.is-open') && !e.target.closest('[data-board-lang-dialog-card]')) {
+      closeBoardLanguageDialog();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (!boardLangDialogAnchor) return;
+    try { e.preventDefault(); } catch {}
+    closeBoardLanguageDialog();
+  });
   function bindStrongTowerSettingsButtons() {
     document.querySelectorAll('#openTowerPickerBtn, [data-action="open-tower-picker"]').forEach((openBtn) => {
       if (openBtn.dataset.strongBound) return;
       openBtn.dataset.strongBound = '1';
       try { openBtn.style.position = 'relative'; openBtn.style.zIndex = '120'; openBtn.style.pointerEvents = 'auto'; openBtn.style.cursor = 'pointer'; } catch {}
-      openBtn.addEventListener('click', (e) => {
+      const openHandler = (e) => {
         try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation?.(); } catch {}
-        openTowerPickerSafe(String(openBtn.dataset.openPickerBase || ''));
-      }, true);
+        const baseId = String(openBtn.dataset.openPickerBase || state.focusedBaseId || '');
+        let opened = false;
+        try { opened = !!openTowerPickerSafe(baseId); } catch {}
+        if (!opened) {
+          try { if (baseId) { state.focusedBaseId = baseId; PNS.state.towerPickerSelectedBaseId = baseId; PNS.ModalsShift?.focusTowerById?.(baseId); } } catch {}
+          try { PNS.ModalsShift?.openTowerPickerModal?.(); opened = true; } catch {}
+        }
+        return false;
+      };
+      openBtn.onclick = openHandler;
     });
+    const toggleBtn = document.getElementById('toggleTowerFocusBtn');
+    if (toggleBtn && !toggleBtn.dataset.strongBound) {
+      toggleBtn.dataset.strongBound = '1';
+      try { toggleBtn.style.position = 'relative'; toggleBtn.style.zIndex = '120'; toggleBtn.style.pointerEvents = 'auto'; toggleBtn.style.cursor = 'pointer'; } catch {}
+      toggleBtn.onclick = (e) => {
+        try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation?.(); } catch {}
+        try { PNS.toggleTowerFocusMode?.(); } catch {}
+        return false;
+      };
+    }
+
     document.querySelectorAll('[data-captain-edit-btn]').forEach((btn) => {
       if (btn.dataset.strongBound) return;
       btn.dataset.strongBound = '1';
-      btn.addEventListener('click', (e) => {
+      btn.onclick = (e) => {
         const baseId = String(btn.dataset.baseId || btn.dataset.openPickerBase || btn.closest('.base-card')?.dataset?.baseId || btn.closest('.base-card')?.dataset?.baseid || '');
         if (!baseId) return;
         try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation?.(); } catch {}
@@ -203,9 +406,13 @@
         if (playerId) {
           try { PNS.ModalsShift?.openTowerPlayerEditModal?.(baseId, playerId); } catch {}
         } else {
-          openTowerPickerSafe(baseId);
+          let opened = false;
+          try { opened = !!openTowerPickerSafe(baseId); } catch {}
+          if (!opened) {
+            try { PNS.ModalsShift?.openTowerPickerModal?.(); } catch {}
+          }
         }
-      }, true);
+      };
     });
   }
 
@@ -397,3 +604,14 @@
   document.addEventListener('htmx:afterSwap', reb);
   document.addEventListener('pns:i18n-changed', reb);
 })();
+
+
+document.addEventListener('pns:i18n-changed', () => {
+  try { window.setBoardLanguageLocales?.((window.getBoardDefaultLocales?.() || (typeof window.getBoardLanguageLocales === 'function' ? window.getBoardLanguageLocales() : ['en']))); } catch {}
+  try { window.renderStandaloneFinalBoard?.(document.getElementById('board-modal')); } catch {}
+  try { window.PNS?.renderBoard?.(); } catch {}
+  try { window.calcRenderLiveFinalBoard?.(document.getElementById('towerCalcModal')); } catch {}
+  try { window.PNS?.syncBoardLanguageSelects?.(); } catch {}
+});
+
+document.addEventListener('pns:i18n-applied', () => { try { window.PNS?.syncBoardLanguageSelects?.(); } catch {} try { window.renderStandaloneFinalBoard?.(document.getElementById('board-modal')); } catch {} try { window.PNS?.renderBoard?.(); } catch {} try { window.calcRenderLiveFinalBoard?.(document.getElementById('towerCalcModal')); } catch {} });

@@ -135,6 +135,20 @@ function getButtons() {
     try { MS.updateShiftTabButtons?.(); } catch {}
     syncBodyModalLock();
     state.activeModal = key;
+    if (key === 'board') {
+      requestAnimationFrame(() => {
+        try { window.renderStandaloneFinalBoard?.(modal); } catch {}
+        try { window.PNS?.renderBoard?.(); } catch {}
+        try { window.PNS?.ensureBoardLanguagePickerHosts?.(); } catch {}
+        try { window.PNS?.syncBoardLanguageSelects?.(); } catch {}
+      });
+      setTimeout(() => {
+        try { window.renderStandaloneFinalBoard?.(modal); } catch {}
+        try { window.PNS?.renderBoard?.(); } catch {}
+        try { window.PNS?.ensureBoardLanguagePickerHosts?.(); } catch {}
+        try { window.PNS?.syncBoardLanguageSelects?.(); } catch {}
+      }, 40);
+    }
   }
 
   function closeModal() {

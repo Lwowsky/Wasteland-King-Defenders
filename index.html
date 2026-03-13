@@ -937,97 +937,84 @@
       href="#top"
     ></a>
 
-    <div aria-modal="true" class="modal-card board-card" role="dialog">
-      <div class="modal-head">
-        <div>
-          <h2 data-i18n="final_plan">Фінальний план</h2>
-          <p class="muted" data-i18n="board_subtitle">Перегляд для офіцерів: зручно показати фінальний план, зробити скрін або поділитися ним.</p>
-        </div>
-
-        <div class="row gap wrap board-head-actions">
+    <div aria-modal="true" class="modal-card board-card board-standalone-card" role="dialog">
+      <div class="modal-head board-standalone-title"><div><h2 data-i18n="final_plan">Фінальний план</h2><div class="muted" data-i18n="board_subtitle">Перегляд для офіцерів: зручно показати фінальний план, зробити скрін або поділитися ним.</div></div><a class="btn btn-icon board-standalone-close" data-close-modal="" href="#top" aria-label="Закрити" data-i18n-aria-label="close_menu">✕</a></div>
+      <div class="tower-calc-board-preview board-modal-preview board-standalone-preview">
+        <div class="row gap wrap board-head-actions tower-calc-preview-toolbar">
           <div class="row gap">
             <button
               class="btn btn-sm board-shift-tab"
               data-shift-tab="shift1"
               type="button"
-             data-i18n="shift1">Зміна 1</button>
+              data-i18n="shift1">Зміна 1</button>
             <button
               class="btn btn-sm board-shift-tab active"
               data-shift-tab="shift2"
               type="button"
-             data-i18n="shift2">Зміна 2</button>
+              data-i18n="shift2">Зміна 2</button>
           </div>
 
+          <div class="board-lang-picker-host board-lang-picker-wrap" style="margin-left:auto;" data-board-lang-picker-host><button class="btn btn-sm board-lang-trigger" type="button" data-open-board-lang-picker="board" data-board-lang-kind="board" aria-haspopup="dialog" aria-expanded="false"><span class="board-lang-trigger-text" data-i18n="board_language">Мова плану</span><strong class="board-lang-picker-label" data-board-lang-picker-label>English + Українська</strong></button></div>
           <button class="btn btn-sm" id="exportPngBtn" type="button" data-i18n="export_png">
             Завантажити PNG
           </button>
           <button class="btn btn-sm" id="shareBoardBtn" type="button" data-i18n="final_plan_share">
             Поділитися
           </button>
-          <a class="btn btn-icon" data-close-modal="" href="#top">✕</a>
-        </div>
-      </div>
-
-      <div class="board-sheet">
-        <div class="board-title" id="boardTitle" data-i18n="board_title_shift2">
-          Зміна 2 / Друга половина
         </div>
 
-        <div class="board-grid">
-          <section class="board-col" data-shift="both">
-            <header>
-              <h4 data-i18n="hub">Техно-Центр</h4>
-              <div class="is-auto board-sub" data-i18n="type_defined_by_captain">Тип визначається капітаном</div>
-              <div class="board-cap">0 <span>0</span></div>
-            </header>
-            <ul>
-              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
-            </ul>
-          </section>
+        <div id="boardPreviewStatus" class="muted small">Фінальний план · Зміна 2</div>
+        <div id="boardModalPreviewSheet">
+          <div class="board-sheet">
+            <div class="board-title" id="boardTitle" data-i18n="board_title_shift2">
+              Зміна 2 / Друга половина
+            </div>
 
-          <section class="board-col" data-shift="both">
-            <header>
-              <h4 data-i18n="north_turret">Північна турель</h4>
-              <div class="is-auto board-sub" data-i18n="type_defined_by_captain">Тип визначається капітаном</div>
-              <div class="board-cap">0 <span>0</span></div>
-            </header>
-            <ul>
-              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
-            </ul>
-          </section>
-
-          <section class="board-col" data-shift="both">
-            <header>
-              <h4 data-i18n="west_turret">Західна турель</h4>
-              <div class="is-auto board-sub" data-i18n="type_defined_by_captain">Тип визначається капітаном</div>
-              <div class="board-cap">0 <span>0</span></div>
-            </header>
-            <ul>
-              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
-            </ul>
-          </section>
-
-          <section class="board-col" data-shift="both">
-            <header>
-              <h4 data-i18n="east_turret">Східна турель</h4>
-              <div class="is-auto board-sub" data-i18n="type_defined_by_captain">Тип визначається капітаном</div>
-              <div class="board-cap">0 <span>0</span></div>
-            </header>
-            <ul>
-              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
-            </ul>
-          </section>
-
-          <section class="board-col" data-shift="both">
-            <header>
-              <h4 data-i18n="south_turret">Південна турель</h4>
-              <div class="is-auto board-sub" data-i18n="type_defined_by_captain">Тип визначається капітаном</div>
-              <div class="board-cap">0 <span>0</span></div>
-            </header>
-            <ul>
-              <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
-            </ul>
-          </section>
+            <div class="board-grid">
+              <section class="board-col" data-shift="both">
+                <header>
+                  <h4 data-i18n="hub">Техно-Центр</h4>
+                  <div class="is-auto board-sub" data-i18n="type_defined_by_captain">Тип визначається капітаном</div>
+                  <div class="board-cap">0 <span>0</span></div>
+                </header>
+                <ul>
+                  <li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li>
+                </ul>
+              </section>
+              <section class="board-col">
+                <header>
+                  <h4 data-i18n="base_north">Північна турель</h4>
+                  <div class="board-sub" data-i18n="role_fighter">Бійці</div>
+                  <div class="board-cap">0 <span>0</span></div>
+                </header>
+                <ul><li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li></ul>
+              </section>
+              <section class="board-col">
+                <header>
+                  <h4 data-i18n="base_west">Західна турель</h4>
+                  <div class="board-sub" data-i18n="role_shooter">Стрільці</div>
+                  <div class="board-cap">0 <span>0</span></div>
+                </header>
+                <ul><li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li></ul>
+              </section>
+              <section class="board-col">
+                <header>
+                  <h4 data-i18n="base_east">Східна турель</h4>
+                  <div class="board-sub" data-i18n="role_fighter">Бійці</div>
+                  <div class="board-cap">0 <span>0</span></div>
+                </header>
+                <ul><li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li></ul>
+              </section>
+              <section class="board-col">
+                <header>
+                  <h4 data-i18n="base_south">Південна турель</h4>
+                  <div class="board-sub" data-i18n="role_rider">Наїзники</div>
+                  <div class="board-cap">0 <span>0</span></div>
+                </header>
+                <ul><li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li></ul>
+              </section>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1423,6 +1410,9 @@
           id="towerCalcGlobalOut"
           data-calc-main-panel="preview"
         ></section>
+        </div>
+      </div>
+
       </div>
     </div>
   </section>

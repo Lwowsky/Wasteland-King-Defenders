@@ -139,7 +139,16 @@
     // mobile buttons -> call PNS directly (NO d.click to avoid double triggers)
     const actions = [
       ['openSettingsBtnMobile', () => window.PNS?.openModal?.('settings')],
-      ['openBoardBtnMobile', () => { window.PNS?.openModal?.('board'); window.PNS?.renderBoard?.(); }],
+      ['openBoardBtnMobile', () => {
+        window.PNS?.openModal?.('board');
+        window.PNS?.renderBoard?.();
+        window.PNS?.syncBoardLanguageSelects?.();
+        window.PNS?.ensureBoardLanguagePickerHosts?.();
+        setTimeout(() => {
+          window.PNS?.syncBoardLanguageSelects?.();
+          window.PNS?.ensureBoardLanguagePickerHosts?.();
+        }, 40);
+      }],
       ['openTowerCalcBtnMobile', () => (window.PNS?.openTowerCalculatorModal?.() || window.PNS?.ModalsShift?.openTowerCalculatorModal?.())],
     ];
 

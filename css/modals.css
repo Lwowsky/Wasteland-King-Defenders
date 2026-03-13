@@ -578,7 +578,7 @@
 .tower-calc-board-preview .board-cap{gap:6px;font-size:10px}
 .tower-calc-board-preview .board-col li{font-size:10px;padding:4px 4px;grid-template-columns:minmax(0,1.25fr) .5fr .38fr .72fr}
 .tower-calc-board-preview .board-col li span,.tower-calc-board-preview .board-col li em,.tower-calc-board-preview .board-col li b,.tower-calc-board-preview .board-col li strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tower-calc-preview-toolbar{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:4px;padding-bottom:2px}
+.tower-calc-preview-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;overflow:visible;-webkit-overflow-scrolling:touch;margin-bottom:4px;padding-bottom:2px}
 .tower-calc-preview-toolbar > *{flex:0 0 auto}
 .tower-calc-preview-toolbar .row.gap{display:flex;flex-wrap:nowrap;gap:8px;flex:0 0 auto}
 .tower-calc-preview-toolbar .board-shift-tab.active{box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
@@ -1206,4 +1206,160 @@
 }
 @media (max-width: 980px){
   #settings-modal .reset-actions-grid{ grid-template-columns:1fr; }
+}
+
+
+/* Final board modal should match tower calculator final plan 1:1 */
+.board-modal .modal-head {
+  display: grid;
+  gap: 12px;
+}
+.board-modal .board-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  overflow: visible;
+  -webkit-overflow-scrolling: touch;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  background: linear-gradient(180deg,rgba(12,20,42,.96),rgba(9,16,34,.92));
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 24px rgba(0,0,0,.16);
+  position: relative;
+  z-index: 6;
+}
+.board-modal .board-head-actions > * { flex: 0 0 auto; }
+.board-modal .board-head-actions .row.gap {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.board-modal .board-sheet {
+  background: #d9ccb2;
+  padding: 10px 12px;
+  border-radius: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.board-modal .board-grid {
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.board-modal .board-col {
+  min-width: 0;
+  min-height: 0;
+}
+.board-modal .board-col header { padding: 7px 6px; }
+.board-modal .board-col h4 {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.1;
+  min-height: 24px;
+}
+.board-modal .board-sub { font-size: 10px; }
+.board-modal .board-cap { gap: 6px; font-size: 10px; }
+.board-modal .board-col li {
+  font-size: 10px;
+  padding: 4px 4px;
+  grid-template-columns: minmax(0,1.24fr) .5fr .4fr .72fr;
+}
+.board-modal .board-col li span,
+.board-modal .board-col li em,
+.board-modal .board-col li b,
+.board-modal .board-col li strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 980px){
+  .board-modal .board-sheet { padding: 8px !important; }
+  .board-modal .board-grid { gap: 8px !important; }
+}
+@media (max-width: 640px){
+  .board-modal .board-sheet { padding: 8px 6px !important; }
+  .board-modal .board-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
+  .board-modal .board-col { width: 100% !important; }
+  .board-modal .board-col h4 { font-size: 11px !important; line-height: 1.15 !important; }
+}
+@media (max-width: 520px){
+  .board-modal .board-sheet { padding: 6px 4px !important; }
+  .board-modal .board-title { font-size: 13px !important; line-height: 1.15; overflow-wrap: anywhere; }
+  .board-modal .board-col li { font-size: 9px !important; }
+}
+
+
+/* Board modal preview must mirror Tower Calculator final plan 1:1 */
+.board-modal .board-modal-preview{max-width:100%;min-width:0;position:relative;isolation:isolate}
+.board-modal #boardModalPreviewSheet{max-width:100%;width:100%;overflow-x:hidden;overflow-y:hidden;padding-bottom:2px}
+.board-modal .board-modal-preview .board-sheet{background:#d9ccb2;padding:10px 12px;border-radius:0;width:100% !important;min-width:0 !important;max-width:100% !important;box-sizing:border-box;overflow:hidden !important}
+.board-modal .board-modal-preview .board-grid{width:100% !important;min-width:0 !important;grid-template-columns:repeat(5,minmax(0,1fr)) !important;gap:6px !important}
+.board-modal .board-modal-preview .board-col{min-width:0;width:auto !important;min-height:0}
+.board-modal .board-modal-preview .board-col header{padding:7px 6px}
+.board-modal .board-modal-preview .board-col h4{margin:0;font-size:11px;line-height:1.1;min-height:24px}
+.board-modal .board-modal-preview .board-sub{font-size:10px}
+.board-modal .board-modal-preview .board-cap{gap:6px;font-size:10px}
+.board-modal .board-modal-preview .board-col li{font-size:10px;padding:4px 4px;grid-template-columns:minmax(0,1.24fr) .5fr .4fr .72fr !important}
+.board-modal .board-modal-preview .board-col li span,
+.board-modal .board-modal-preview .board-col li em,
+.board-modal .board-modal-preview .board-col li b,
+.board-modal .board-modal-preview .board-col li strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board-modal .board-modal-preview .tower-calc-preview-toolbar{position:sticky;top:0;z-index:4}
+.board-modal .board-modal-preview #boardPreviewStatus{margin-top:8px}
+@media (max-width:980px){
+  .board-modal .board-modal-preview .board-sheet{padding:8px !important}
+  .board-modal .board-modal-preview .board-grid{gap:8px !important}
+}
+@media (max-width:640px){
+  .board-modal .board-modal-preview .board-sheet{padding:8px 6px !important}
+  .board-modal .board-modal-preview .board-grid{grid-template-columns:1fr !important;gap:8px !important}
+  .board-modal .board-modal-preview .board-col{width:100% !important}
+  .board-modal .board-modal-preview .board-col h4{font-size:11px !important;line-height:1.15 !important}
+}
+@media (max-width:520px){
+  .board-modal .board-modal-preview .board-sheet{padding:6px 4px !important}
+  .board-modal .board-modal-preview .board-title{font-size:13px !important;line-height:1.15;overflow-wrap:anywhere}
+  .board-modal .board-modal-preview .board-col li{font-size:9px !important}
+}
+
+
+.board-modal .board-standalone-card{
+  padding: 18px 26px 22px;
+}
+.board-modal .board-standalone-preview{
+  display: grid;
+  gap: 8px;
+}
+.board-modal .board-standalone-preview > .tower-calc-preview-toolbar{
+  margin-bottom: 0;
+}
+.board-modal .board-standalone-preview #boardPreviewStatus{
+  margin-top: 4px;
+}
+.board-modal .board-standalone-card .board-lang-picker-wrap{
+  z-index: 7;
+}
+#boardLangDialogRoot,
+#boardLangDialogRoot .board-lang-dialog-shell,
+#boardLangDialogRoot .board-lang-dialog-card{
+  visibility: visible;
+}
+
+.board-modal .board-standalone-title{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+}
+.board-modal .board-standalone-close{
+  margin-left:auto;
+  flex:0 0 auto;
 }

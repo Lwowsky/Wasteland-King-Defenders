@@ -451,7 +451,7 @@ function optionalColumnClass(key) {
       if (!capEditBtn) {
         capEditBtn = document.createElement('button');
         capEditBtn.type = 'button';
-        capEditBtn.className = 'btn btn-xs btn-icon';
+        capEditBtn.className = 'btn btn-xs btn-icon captain-edit-btn';
         capEditBtn.dataset.captainEditBtn = '1';
         capEditBtn.title = typeof PNS.t === 'function' ? PNS.t('edit') : 'Редагувати';
         capEditBtn.setAttribute('aria-label', typeof PNS.t === 'function' ? PNS.t('edit') : 'Редагувати');
@@ -497,7 +497,11 @@ function optionalColumnClass(key) {
         } else {
           try { PNS.state.towerPickerSelectedBaseId = currentBaseId; } catch {}
           try { PNS.ModalsShift?.focusTowerById?.(currentBaseId); } catch {}
-          try { PNS.openTowerPickerSafe?.(currentBaseId); } catch {}
+          let opened = false;
+          try { opened = !!PNS.openTowerPickerSafe?.(currentBaseId); } catch {}
+          if (!opened) {
+            try { PNS.ModalsShift?.openTowerPickerModal?.(); opened = true; } catch {}
+          }
         }
         return false;
       };
@@ -649,20 +653,14 @@ function optionalColumnClass(key) {
   }
 
   function renderBoardFromTowerCalcResults() {
-    const activeShift = String(state.activeShift || '').toLowerCase();
-    if (!(activeShift === 'shift1' || activeShift === 'shift2')) return false;
+    const calcState = typeof window.getCalcState === 'function' ? window.getCalcState() : null;
+    const activeShift = String(state.activeShift || calcState?.previewShift || '').toLowerCase() === 'shift2' ? 'shift2' : 'shift1';
 
-    const results = state.towerCalcLastResults || null;
-    const hasPlans = !!(results?.shift1?.towerPlans?.length || results?.shift2?.towerPlans?.length);
-    if (!hasPlans) return false;
+    const boardModal = document.getElementById('board-modal');
+    const previewHost = boardModal?.querySelector('#boardModalPreviewSheet') || document.querySelector('#board-modal #boardModalPreviewSheet');
+    const statusEl = boardModal?.querySelector('#boardPreviewStatus') || document.querySelector('#board-modal #boardPreviewStatus');
+    if (!previewHost) return false;
 
-    const sheet = document.querySelector('.board-sheet');
-    const grid = sheet?.querySelector('.board-grid');
-    const titleEl = sheet?.querySelector('#boardTitle');
-    if (!sheet || !grid || !titleEl) return false;
-
-    // Variant 2: use the exact same renderer as Tower Calculator Final Plan
-    // so burger/settings board can never drift from calculator preview.
     const boardHtml =
       (typeof PNS.calcBuildBoardHtmlForShift === 'function'
         ? PNS.calcBuildBoardHtmlForShift(activeShift)
@@ -671,15 +669,26 @@ function optionalColumnClass(key) {
         ? window.calcBuildBoardHtmlForShift(activeShift)
         : null);
 
+    const shiftLabel = typeof PNS.shiftLabel === 'function'
+      ? PNS.shiftLabel
+      : ((value) => String(value || ''));
+    const t = typeof PNS.t === 'function' ? PNS.t : ((_, fallback = '') => fallback);
+    if (statusEl) statusEl.textContent = `${t('final_plan_status', 'Фінальний план')} · ${shiftLabel(activeShift)}`;
+
     if (boardHtml) {
       const host = document.createElement('div');
       host.innerHTML = String(boardHtml || '').trim();
       const builtSheet = host.querySelector('.board-sheet');
       const builtTitle = builtSheet?.querySelector('.board-title');
-      const builtGrid = builtSheet?.querySelector('.board-grid');
-      if (builtSheet && builtGrid) {
-        titleEl.textContent = String(builtTitle?.textContent || titleEl.textContent || '');
-        grid.innerHTML = String(builtGrid.innerHTML || '');
+      if (builtSheet) {
+        const liveTitle = builtTitle || document.createElement('div');
+        try {
+          liveTitle.id = 'boardTitle';
+          liveTitle.setAttribute('data-no-fallback-i18n', '1');
+          builtSheet.setAttribute('data-no-fallback-i18n', '1');
+        } catch {}
+        previewHost.innerHTML = '';
+        previewHost.appendChild(builtSheet);
 
         state.bases.forEach((base) => {
           base.boardEl = null;
@@ -689,7 +698,7 @@ function optionalColumnClass(key) {
       }
     }
 
-    // Fallback to legacy payload builder if calculator HTML renderer is unavailable.
+    const results = state.towerCalcLastResults || null;
     const payload =
       (typeof PNS.getTowerCalcBoardPayloadForShift === 'function'
         ? PNS.getTowerCalcBoardPayloadForShift(activeShift, results)
@@ -699,8 +708,8 @@ function optionalColumnClass(key) {
         : null);
     if (!payload?.colsHtml) return false;
 
-    titleEl.textContent = String(payload.title || titleEl.textContent || '');
-    grid.innerHTML = String(payload.colsHtml || '');
+    previewHost.innerHTML = `<div class="board-sheet"><div class="board-title" id="boardTitle">${String(payload.title || '')}</div><div class="board-grid">${String(payload.colsHtml || '')}</div></div>`;
+    try { previewHost.querySelector('#boardTitle')?.setAttribute('data-no-fallback-i18n', '1'); } catch {}
 
     state.bases.forEach((base) => {
       base.boardEl = null;
@@ -712,10 +721,14 @@ function optionalColumnClass(key) {
 
   function renderBoard() {
     state.bases.forEach(resolveBaseEls);
-    if (!renderBoardFromTowerCalcResults()) {
+    let renderedStandalone = false;
+    try { renderedStandalone = !!window.renderStandaloneFinalBoard?.(document.getElementById('board-modal')); } catch {}
+    if (!renderedStandalone && !renderBoardFromTowerCalcResults()) {
+      try { document.querySelector('#boardTitle')?.removeAttribute('data-no-fallback-i18n'); } catch {}
       state.bases.forEach(updateBoardCol);
     }
     try { PNS.ModalsShift?.updateBoardTitle?.(); } catch {}
+    try { PNS.syncBoardLanguageSelects?.(); } catch {}
   }
 
   function renderAll() {
@@ -840,3 +853,25 @@ function optionalColumnClass(key) {
   });
 
 })();
+
+document.addEventListener('change', (e) => {
+  const langBox = e.target.closest('[data-board-lang-option], [data-calc-board-lang-option]');
+  if (langBox) {
+    const scope = langBox.closest('[data-board-lang-dialog-card]') || document;
+    const checked = Array.from(scope.querySelectorAll('[data-board-lang-option], [data-calc-board-lang-option]'))
+      .filter((el) => el.checked)
+      .map((el) => String(el.value || '').toLowerCase())
+      .filter(Boolean);
+    try { if (typeof window.setBoardLanguageLocales === 'function') window.setBoardLanguageLocales(checked); } catch {}
+    try { window.PNS?.syncBoardLanguageSelects?.(); } catch {}
+    try { window.PNS?.renderBoard?.(); } catch {}
+    try { window.calcRenderLiveFinalBoard?.(document.getElementById('towerCalcModal')); } catch {}
+    return;
+  }
+  const sel = e.target.closest('[data-board-lang-mode]');
+  if (!sel) return;
+  try { if (typeof window.setBoardLanguageMode === 'function') window.setBoardLanguageMode(String(sel.value || 'en_local')); } catch {}
+  try { window.PNS?.syncBoardLanguageSelects?.(); } catch {}
+  try { window.PNS?.renderBoard?.(); } catch {}
+  try { window.calcRenderLiveFinalBoard?.(document.getElementById('towerCalcModal')); } catch {}
+});

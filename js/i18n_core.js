@@ -5,6 +5,19 @@
   const STORAGE_KEY = 'pns_lang';
   const SUPPORTED = ['uk', 'en', 'ru'];
 
+  function registerLocale(code, entries = {}, meta = {}) {
+    const safe = String(code || '').trim().toLowerCase();
+    if (!safe) return false;
+    dict[safe] = Object.assign({}, dict[safe] || {}, entries || {});
+    if (!SUPPORTED.includes(safe)) SUPPORTED.push(safe);
+    if (meta && meta.lang_name) dict[safe].lang_name = String(meta.lang_name);
+    return true;
+  }
+
+  function getSupportedLocales() {
+    return SUPPORTED.slice();
+  }
+
   const dict = {
     uk: {
       lang_name: 'Українська',
@@ -214,6 +227,7 @@
       import_footer_note: 'Підтримуються CSV/XLSX і публічні CSV-посилання з Google Sheets.',
       board_subtitle: 'Перегляд для офіцерів: зручно показати фінальний план, зробити скрін або поділитися ним.',
       board_language: 'Мова плану',
+      board_language_picker_note: 'Познач мови, які треба показувати у фінальному плані.',
       english_only: 'Лише англійська',
       english_plus_local: 'Англійська ✦ локальна',
       calc_modal_subtitle: 'Тут ти готуєш склад для двох змін: розподіляєш гравців по турелях, перевіряєш резерв і збираєш фінальний план.',
@@ -647,6 +661,7 @@
       board_subtitle: 'Officer view: show the final plan, take a screenshot, or share it quickly.',
       calc_modal_subtitle: 'Build both shifts here: assign players to turrets, check reserve slots, and prepare the final plan.',
       board_language: 'Board language',
+      board_language_picker_note: 'Choose which languages to show in the final plan.',
       english_only: 'English only',
       english_plus_local: 'English ✦ local',
       load_captains_from_turrets: 'Pull captains from turrets',
@@ -1078,6 +1093,7 @@
       import_footer_note: 'Поддерживаются CSV/XLSX и публичные CSV-ссылки из Google Sheets.',
       board_subtitle: 'Вид для офицеров: удобно показать финальный план, сделать скрин или быстро поделиться им.',
       board_language: 'Язык плана',
+      board_language_picker_note: 'Отметь языки, которые надо показывать в финальном плане.',
       english_only: 'Только английский',
       english_plus_local: 'Английский ✦ локальный',
       calc_modal_subtitle: 'Здесь ты собираешь обе смены: распределяешь игроков по турелям, проверяешь резерв и готовишь финальный план.',
@@ -2080,6 +2096,7 @@
     // legacy fallback for old markup; runs on init / language switch / targeted HTMX swaps only.
     scope.querySelectorAll('*').forEach((el) => {
       if (el.closest && el.closest('script,style')) return;
+      if (el.closest && el.closest('[data-no-fallback-i18n]')) return;
       if (!el.hasAttribute('data-i18n-placeholder')) translateAttr(el, 'placeholder');
       if (!el.hasAttribute('data-i18n-title')) translateAttr(el, 'title');
       if (!el.hasAttribute('data-i18n-aria-label')) translateAttr(el, 'aria-label');
@@ -2257,6 +2274,7 @@
   I18N.apply = apply;
   I18N.observe = observe;
   I18N.markReady = markReady;
+  I18N.getSupportedLocales = getSupportedLocales;
 
   PNS.t = get;
   window.t = get;
@@ -2265,6 +2283,7 @@
   PNS.shiftLabel = shiftLabel;
   PNS.towerLabelUk = towerLabel;
   PNS.towerLabel = towerLabel;
+  PNS.getSupportedLocales = getSupportedLocales;
 
   document.addEventListener('DOMContentLoaded', init);
 })();
