@@ -1,0 +1,2 @@
+/* Default tower rules and captain fallbacks */
+(function(){const e=window.PNS;if(!e)return;const t=e.ModalsShift=e.ModalsShift||{},a=e.state||(e.state={});Object.assign(t,{eligibleCaptainsForBase:function(){return[]}}),Object.assign(e,{isTowerOnlyCaptainsEnabled:function(){return!1},isTowerMatchRegisteredShiftEnabled:function(){return!0},isTowerNoMixTroopsEnabled:function(){return!0},isTowerNoCrossShiftDupesEnabled:function(){return!1}})}());

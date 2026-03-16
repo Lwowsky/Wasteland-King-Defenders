@@ -1,0 +1,182 @@
+/* ==== import-field-defs.js ==== */
+/* Import wizard: required/optional field definitions */
+(function () {
+  const e = window.PNS;
+  if (!e) return;
+  const wiz = (e.ImportWizard = e.ImportWizard || {});
+  const i = [
+      {
+        key: "player_name",
+        label: "Ім’я гравця",
+        required: !0,
+        aliases: [
+          "player name",
+          "name",
+          "nickname",
+          "nick",
+          "имя игрока",
+          "имя",
+          "імя гравця",
+          "імя",
+          "player",
+        ],
+      },
+      {
+        key: "focus_troop",
+        label: "Тип військ",
+        required: !0,
+        aliases: [
+          "focus troop",
+          "main troop",
+          "main role",
+          "troop role",
+          "what is your focus troop",
+          "основной тип войск",
+          "главная роль",
+          "головна роль",
+          "role",
+        ],
+      },
+      {
+        key: "troop_tier",
+        label: "Тір військ",
+        required: !0,
+        aliases: [
+          "troop tier",
+          "tier",
+          "main tier",
+          "главный тир",
+          "головний тір",
+          "тир",
+          "тір",
+        ],
+      },
+      {
+        key: "march_size",
+        label: "Розмір маршу",
+        required: !0,
+        aliases: [
+          "march size",
+          "squad size",
+          "troop size",
+          "размер отряда",
+          "розмір твого отряду",
+          "march",
+        ],
+      },
+      {
+        key: "rally_size",
+        label: "Розмір групової атаки",
+        required: !0,
+        colKey: "rally_size",
+        aliases: [
+          "rally size",
+          "group attack",
+          "group atk",
+          "размер групповой атаки",
+          "розмір групової атаки",
+          "rally",
+        ],
+      },
+      {
+        key: "alliance_alias",
+        label: "Альянс",
+        required: !0,
+        colKey: "alliance",
+        aliases: ["alliance alias", "alliance", "альянс", "ally", "tag"],
+      },
+      {
+        key: "captain_ready",
+        label: "Готовність бути капітаном",
+        required: !0,
+        aliases: [
+          "captain",
+          "ready to be captain",
+          "готов быть капитаном",
+          "готовий бути капітаном",
+          "captain ready",
+        ],
+      },
+      {
+        key: "shift_availability",
+        label: "Доступність по зміні",
+        required: !0,
+        aliases: ["shift", "смена", "зміна", "which shift can you join"],
+      },
+      {
+        key: "lair_level",
+        label: "Рівень лігва",
+        required: !1,
+        colKey: "lair_level",
+        visibleDefault: !0,
+        aliases: ["lair", "логово", "which lair level can you take"],
+      },
+      {
+        key: "secondary_role",
+        label: "Тип резервних військ",
+        required: !1,
+        colKey: "secondary_role",
+        visibleDefault: !1,
+        aliases: [
+          "secondary troop role",
+          "secondary role",
+          "reserve troop type",
+          "reserve troop",
+          "дополнительная роль",
+          "додаткова роль",
+        ],
+      },
+      {
+        key: "secondary_tier",
+        label: "Тір резервних військ",
+        required: !1,
+        colKey: "secondary_tier",
+        visibleDefault: !1,
+        aliases: [
+          "secondary troop tier",
+          "secondary tier",
+          "reserve troop tier",
+          "дополнительный тир",
+          "додатковий тір",
+        ],
+      },
+      {
+        key: "troop_200k",
+        label: "Тип резервних військ (200k+)",
+        required: !1,
+        colKey: "troop_200k",
+        visibleDefault: !1,
+        aliases: [
+          "200k",
+          "at least 200k",
+          "provide at least 200k",
+          "reserve troop type 200k",
+          "200к",
+        ],
+      },
+      {
+        key: "notes",
+        label: "Нотатки",
+        required: !1,
+        colKey: "notes",
+        visibleDefault: !1,
+        aliases: [
+          "note",
+          "notes",
+          "комментарий",
+          "коментар",
+          "примітка",
+          "comment",
+        ],
+      },
+    ],
+    s = i.filter((e) => !e.required),
+    l = new Set(["lair_level"]),
+    c = s.filter((e) => l.has(e.key));
+
+  Object.assign(wiz, {
+    REQUIRED_FIELDS: i,
+    OPTIONAL_FIELDS: s,
+    CUSTOM_VISIBLE_FIELDS: c,
+  });
+})();
