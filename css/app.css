@@ -5320,6 +5320,19 @@ html.i18n-ready body {
 .tower-calc-controls-muted {
   margin-top: 2px;
 }
+
+#towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline {
+  align-items: stretch !important;
+}
+#towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+#towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar > * {
+  width: 100% !important;
+  min-width: 0 !important;
+}
 .select-min-130 {
   min-width: 130px;
 }
@@ -7687,5 +7700,1213 @@ body:after {
   }
   #towerCalcModal #towerPickerLimitsBlock .row.gap.wrap {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+
+/* v5 responsive corrections */
+#board-modal .board-lang-trigger .board-lang-picker-label {
+  display: none !important;
+}
+#board-modal .board-lang-trigger {
+  gap: 10px;
+}
+#board-modal .board-modal-preview .board-grid,
+#board-modal .board-grid {
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+}
+#board-modal .board-modal-preview .board-col,
+#board-modal .board-col {
+  width: 100% !important;
+}
+#board-modal #boardModalPreviewSheet {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.players-panel [data-stat-card="summary"].stat-card--duo {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 2px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 20px !important;
+  padding: 18px 22px !important;
+}
+.players-panel [data-stat-card="summary"] .stat-duo-item {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  min-width: 0;
+}
+.players-panel [data-stat-card="summary"] .stat-duo-item span,
+.players-panel [data-stat-card="summary"] .stat-duo-item strong {
+  width: 100%;
+  text-align: center !important;
+}
+.players-panel [data-stat-card="summary"] .stat-duo-divider {
+  display: block !important;
+  width: 2px !important;
+  min-height: 118px !important;
+  height: 100% !important;
+  align-self: stretch !important;
+  justify-self: center !important;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0),
+    rgba(120, 181, 255, 0.78) 16%,
+    rgba(255, 176, 102, 0.95) 50%,
+    rgba(120, 181, 255, 0.78) 84%,
+    rgba(255,255,255,0)
+  ) !important;
+  box-shadow:
+    0 0 18px rgba(120, 181, 255, 0.34),
+    0 0 24px rgba(255, 176, 102, 0.16) !important;
+}
+
+.drawer-lang-group {
+  display: none;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.drawer-lang-list {
+  display: grid;
+  gap: 8px;
+}
+.drawer-lang-item {
+  background: #ffffff08;
+  border-color: rgba(255,255,255,0.08);
+}
+
+#tcv7AdvancedTopLayout .tcv9-compact-controls,
+#tcv7AdvancedTopLayout .tcv9-tier-panel {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+#tcv7AdvancedTopLayout .tcv9-left-panel {
+  gap: 16px;
+}
+#towerCalcAdvanced #towerCalcTierTargetRow {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 12px;
+  width: 100%;
+  margin-top: 10px;
+}
+#towerCalcAdvanced #towerCalcTierTargetRow > label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  align-items: start;
+}
+#towerCalcAdvanced #towerCalcTierTargetRow input {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+#towerCalcModal .tower-picker-detail .picker-limits-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) repeat(3, minmax(132px, auto));
+  gap: 8px;
+  align-items: end;
+}
+#towerCalcModal .tower-picker-detail .picker-limits-head > label {
+  min-width: 0;
+}
+#towerCalcModal .tower-picker-detail .picker-manual-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+#towerCalcModal .tower-picker-detail .picker-manual-row2 {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+}
+#towerCalcModal .tower-picker-detail .picker-manual-row > *,
+#towerCalcModal .tower-picker-detail .picker-manual-row2 > * {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 980px) {
+  .app-header .header-inner {
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    grid-template-areas: "brand lang burger" !important;
+    align-items: center;
+  }
+  .lang {
+    grid-area: lang;
+    justify-self: end;
+    width: auto;
+  }
+  .lang-btn {
+    width: auto;
+    max-width: none;
+    min-width: 46px;
+    padding-inline: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  .players-panel [data-stat-card="summary"].stat-card--duo {
+    grid-template-columns: minmax(0, 1fr) 2px minmax(0, 1fr) !important;
+    gap: 14px !important;
+    padding: 16px 14px !important;
+  }
+  .players-panel [data-stat-card="summary"] .stat-duo-divider {
+    display: block !important;
+    min-height: 92px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .app-header .header-inner {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas: "brand burger" !important;
+  }
+  .app-header .lang {
+    display: none !important;
+  }
+  .drawer-lang-group {
+    display: grid;
+  }
+}
+
+@media (max-width: 480px) {
+  #towerCalcAdvanced #towerCalcTierTargetRow {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head {
+    grid-template-columns: minmax(0, 1fr) minmax(120px, auto) !important;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head > label {
+    grid-column: 1 / -1;
+  }
+  #towerCalcModal .tower-picker-detail .picker-manual-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  #towerCalcModal .tower-picker-detail .picker-manual-row2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  #towerCalcModal .tower-picker-detail .picker-manual-row2 > .btn:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 360px) {
+  #towerCalcAdvanced #towerCalcTierTargetRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+
+/* v6 fixes */
+.players-panel [data-stat-card="summary"].stat-card--duo {
+  position: relative;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0 !important;
+  align-items: stretch !important;
+}
+.players-panel [data-stat-card="summary"].stat-card--duo::after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0),
+    rgba(120, 181, 255, 0.76) 18%,
+    rgba(255, 186, 112, 0.94) 50%,
+    rgba(120, 181, 255, 0.76) 82%,
+    rgba(255,255,255,0)
+  );
+  box-shadow: 0 0 18px rgba(120, 181, 255, 0.26);
+  pointer-events: none;
+}
+.players-panel [data-stat-card="summary"] .stat-duo-divider {
+  display: none !important;
+}
+.players-panel [data-stat-card="summary"] .stat-duo-item {
+  display: grid !important;
+  place-items: center !important;
+  place-content: center !important;
+  min-height: 132px;
+  padding: 10px 22px !important;
+}
+.players-panel [data-stat-card="summary"] .stat-duo-item span,
+.players-panel [data-stat-card="summary"] .stat-duo-item strong {
+  justify-self: center !important;
+  align-self: center !important;
+  text-align: center !important;
+}
+
+.drawer-lang-group {
+  display: none;
+  margin: 0 0 10px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.drawer-lang-summary {
+  list-style: none;
+  cursor: pointer;
+}
+.drawer-lang-summary::-webkit-details-marker {
+  display: none;
+}
+.drawer-lang-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.drawer-lang-item {
+  background: #ffffff08;
+  border-color: rgba(255,255,255,0.08);
+}
+
+#board-modal .board-head-actions {
+  display: grid !important;
+  gap: 10px !important;
+  overflow: visible !important;
+}
+#board-modal .board-toolbar-row {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+#board-modal .board-toolbar-row--primary,
+#board-modal .board-toolbar-row--exports {
+  flex-wrap: nowrap !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+#board-modal .board-toolbar-row--primary .board-shift-group {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+#board-modal .board-toolbar-row--primary .board-lang-picker-wrap {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+#board-modal .board-toolbar-row--exports .btn {
+  flex: 1 0 180px;
+  min-width: 180px;
+  white-space: nowrap !important;
+}
+#board-modal .board-lang-trigger::before {
+  content: none !important;
+}
+#board-modal .board-lang-trigger {
+  gap: 0 !important;
+}
+#board-modal .board-lang-trigger .board-lang-picker-label {
+  display: none !important;
+}
+#board-modal #boardModalPreviewSheet {
+  overflow: auto !important;
+  overscroll-behavior: contain;
+}
+#board-modal .board-sheet {
+  width: max-content !important;
+  min-width: 100% !important;
+  max-width: none !important;
+  overflow: visible !important;
+}
+#board-modal .board-modal-preview .board-grid,
+#board-modal .board-grid {
+  width: max-content !important;
+  min-width: 980px !important;
+  grid-template-columns: repeat(5, minmax(170px, 1fr)) !important;
+  gap: 8px !important;
+}
+#board-modal .board-modal-preview .board-col,
+#board-modal .board-col {
+  min-width: 170px !important;
+  width: auto !important;
+}
+
+#towerCalcAdvanced,
+#towerCalcModal .tower-calc-advanced,
+#towerCalcModal .tower-calc-advanced > summary,
+#towerCalcModal .tower-calc-advanced > .inner,
+#tcv7AdvancedTopLayout,
+#tcv7AdvancedTopLayout .tcv9-left-panel,
+#tcv7AdvancedTopLayout .tcv9-right-col {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+#towerCalcModal .tower-calc-advanced > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+@media (max-width: 820px) {
+  #towerCalcModal.tower-calc-modal .tower-calc-main-tabs {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  #towerCalcModal.tower-calc-modal .tower-calc-main-tabs .btn {
+    flex: 0 0 auto !important;
+    min-width: max-content !important;
+    white-space: nowrap !important;
+    text-align: center;
+  }
+  #towerCalcModal.tower-calc-modal .tower-calc-preview-toolbar,
+  #towerCalcModal.tower-calc-modal #tcv35-row {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+  #towerCalcModal.tower-calc-modal .tower-calc-preview-toolbar .btn,
+  #towerCalcModal.tower-calc-modal #tcv35-row .btn {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .players-panel [data-stat-card="summary"] .stat-duo-item {
+    min-height: 112px;
+    padding: 8px 14px !important;
+  }
+  .players-panel [data-stat-card="summary"].stat-card--duo::after {
+    top: 14px;
+    bottom: 14px;
+  }
+}
+
+@media (max-width: 560px) {
+  .drawer-lang-group {
+    display: block;
+  }
+  #board-modal .board-toolbar-row--primary .board-lang-picker-wrap {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 460px) {
+  #board-modal .board-toolbar-row--exports .btn {
+    min-width: 150px;
+    flex-basis: 150px;
+  }
+  #board-modal .board-modal-preview .board-grid,
+  #board-modal .board-grid {
+    min-width: 860px !important;
+  }
+}
+
+
+/* v7 fixes */
+.drawer-lang-group:not([open]) .drawer-lang-list {
+  display: none !important;
+}
+.drawer-lang-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#board-modal .board-head-actions--single {
+  display: flex !important;
+  align-items: center;
+  gap: 8px !important;
+  flex-wrap: wrap;
+  overflow: visible !important;
+}
+#board-modal .board-head-actions--single > * {
+  flex: 0 0 auto;
+}
+#board-modal .board-head-actions--single .board-shift-group {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+#board-modal .board-head-actions--single .board-lang-picker-wrap {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+#board-modal .board-head-actions--single .board-mobile-menu {
+  display: none;
+  flex: 0 0 auto;
+}
+#board-modal .board-head-actions--single .btn {
+  flex: 0 0 auto;
+  white-space: nowrap !important;
+}
+#board-modal .board-lang-trigger::before {
+  content: none !important;
+}
+#board-modal .board-lang-trigger .board-lang-picker-label {
+  display: none !important;
+}
+#board-modal #boardModalPreviewSheet {
+  overflow: auto !important;
+  overscroll-behavior: contain;
+}
+#board-modal .board-modal-preview .board-sheet,
+#board-modal .board-sheet {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+#board-modal .board-modal-preview .board-grid,
+#board-modal .board-grid {
+  width: 100% !important;
+  min-width: 0 !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+}
+#board-modal .board-modal-preview .board-col,
+#board-modal .board-col {
+  min-width: 0 !important;
+  width: auto !important;
+}
+
+#towerCalcModal .tower-calc-advanced,
+#towerCalcModal .tower-calc-advanced > .inner,
+#towerCalcModal .tower-calc-advanced > summary,
+#tcv7AdvancedTopLayout,
+#tcv7AdvancedTopLayout .tcv9-left-panel,
+#tcv7AdvancedTopLayout .tcv9-right-col,
+#tcv7AdvancedTopLayout .tcv9-right-col > #towerCalcShiftBalance {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+#towerCalcModal .tower-calc-advanced > summary {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+#tcv7AdvancedTopLayout {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+#towerCalcShiftBalance.tcv7-shift-balance .tcv14-btn-row {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+#towerCalcShiftBalance.tcv7-shift-balance .tcv14-btn-row > .btn {
+  width: 100%;
+  min-width: 0;
+}
+#towerCalcModal .tower-picker-detail .picker-limits-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) repeat(3, minmax(132px, auto));
+  gap: 8px;
+  align-items: end;
+}
+#tcv35-row {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  #tcv7AdvancedTopLayout {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 700px) {
+  #towerCalcModal .tower-picker-detail .picker-limits-head {
+    grid-template-columns: minmax(0, 1fr) minmax(148px, auto) !important;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head > label {
+    grid-column: 1;
+    min-width: 0;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head > [data-picker-save-rule] {
+    grid-column: 2;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head > [data-picker-recalc-rule] {
+    grid-column: 1;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head > [data-picker-reset-rule] {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 640px) {
+  #board-modal .board-head-actions--single {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  #board-modal .board-head-actions--single .board-lang-picker-wrap {
+    display: none !important;
+  }
+  #board-modal .board-head-actions--single .board-mobile-menu {
+    display: flex !important;
+  }
+  #board-modal .board-head-actions--single .btn,
+  #board-modal .board-head-actions--single .board-mobile-menu-trigger {
+    flex: 0 0 auto !important;
+    min-width: max-content !important;
+  }
+  #board-modal .board-modal-preview,
+  #board-modal #boardModalPreviewSheet {
+    max-width: 100% !important;
+    width: 100% !important;
+    overflow-x: hidden !important;
+  }
+  #board-modal .board-modal-preview .board-sheet,
+  #board-modal .board-sheet {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 8px 6px !important;
+  }
+  #board-modal .board-modal-preview .board-grid,
+  #board-modal .board-grid {
+    grid-template-columns: 1fr !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+  #board-modal .board-modal-preview .board-col,
+  #board-modal .board-col {
+    width: 100% !important;
+  }
+
+  #towerCalcModal.tower-calc-modal #tcv35-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  #towerCalcModal.tower-calc-modal #tcv35-row .btn,
+  #towerCalcModal.tower-calc-modal #tcv35-clearWrap {
+    flex: 0 0 auto !important;
+    min-width: max-content !important;
+  }
+}
+
+@media (max-width: 520px) {
+  #towerCalcShiftBalance.tcv7-shift-balance .tcv14-btn-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 460px) {
+  #towerCalcModal .tower-picker-detail .picker-limits-head {
+    grid-template-columns: minmax(0, 1fr) minmax(120px, auto) !important;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head > label {
+    grid-column: 1 / -1;
+  }
+}
+
+
+/* v8 final plan + modal width corrections */
+#board-modal .board-head-actions--single {
+  display: flex !important;
+  align-items: center;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+#board-modal .board-head-actions--single > *,
+#board-modal .board-head-actions--single .board-shift-group,
+#board-modal .board-head-actions--single .board-lang-picker-wrap,
+#board-modal .board-head-actions--single .btn {
+  flex: 0 0 auto !important;
+  min-width: max-content;
+}
+#board-modal .board-head-actions--single .board-lang-picker-wrap {
+  margin-left: auto;
+}
+#board-modal .board-head-actions--single .board-mobile-menu,
+#board-modal .board-mobile-menu {
+  display: none !important;
+}
+#board-modal .board-lang-trigger::before {
+  content: none !important;
+}
+#board-modal .board-lang-trigger .board-lang-picker-label {
+  display: none !important;
+}
+#board-modal .board-standalone-preview,
+#board-modal .board-modal-preview,
+#board-modal #boardModalPreviewSheet {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+#board-modal #boardModalPreviewSheet {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+#board-modal .board-modal-preview .board-sheet,
+#board-modal .board-sheet {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box;
+}
+#board-modal .board-modal-preview .board-grid,
+#board-modal .board-grid {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+}
+#board-modal .board-modal-preview .board-col,
+#board-modal .board-col {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+#board-modal .board-modal-preview .board-col li,
+#board-modal .board-col li {
+  grid-template-columns: minmax(0, 1.22fr) 0.52fr 0.42fr 0.72fr !important;
+}
+
+#towerCalcModal .tower-calc-grid,
+#towerCalcModal .tower-calc-inline-shell,
+#towerCalcModal .tower-calc-main-panel,
+#towerCalcModal #towerCalcGlobalOut,
+#towerCalcModal #towerCalcGrid,
+#towerCalcModal .tower-picker-detail,
+#towerCalcModal .tower-picker-detail > *,
+#towerCalcModal #towerCalcAdvanced,
+#towerCalcModal #towerCalcAdvanced > .inner,
+#towerCalcModal #tcv7AdvancedTopLayout,
+#towerCalcModal #tcv7AdvancedTopLayout > *,
+#towerCalcModal #towerCalcShiftBalance {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+#towerCalcModal .tower-picker-detail,
+#towerCalcModal #towerCalcGlobalOut,
+#towerCalcModal #towerCalcGrid,
+#towerCalcModal .tower-calc-main-panel {
+  overflow-x: hidden !important;
+}
+#towerCalcModal .tower-picker-detail details.tower-collapsible,
+#towerCalcModal .tower-picker-detail details.tower-collapsible > .inner {
+  min-width: 0;
+  max-width: 100%;
+}
+#towerCalcModal .tower-picker-detail .picker-limits-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(144px, auto) !important;
+  gap: 10px !important;
+  align-items: end !important;
+  width: 100% !important;
+}
+#towerCalcModal .tower-picker-detail .picker-limits-head > label {
+  grid-column: 1 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+#towerCalcModal .tower-picker-detail .picker-limits-head > [data-picker-save-rule] {
+  grid-column: 2 !important;
+  min-width: 144px;
+}
+#towerCalcModal .tower-picker-detail .picker-limits-head > [data-picker-recalc-rule] {
+  grid-column: 1 !important;
+  width: 100%;
+}
+#towerCalcModal .tower-picker-detail .picker-limits-head > [data-picker-reset-rule] {
+  grid-column: 2 !important;
+  width: 100%;
+}
+#towerCalcModal .tower-picker-detail .picker-limits-head .btn {
+  min-width: 0;
+  white-space: normal;
+  text-align: center;
+  justify-content: center;
+}
+#towerCalcAdvanced > summary,
+#towerCalcModal .tower-calc-advanced > summary {
+  width: 100% !important;
+  max-width: 100% !important;
+  text-align: center !important;
+  justify-content: center !important;
+}
+#towerCalcShiftBalance.tcv7-shift-balance .tcv14-btn-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+@media (max-width: 700px) {
+  #board-modal .board-head-actions--single {
+    gap: 8px !important;
+  }
+  #board-modal .board-head-actions--single .btn,
+  #board-modal .board-head-actions--single .board-lang-picker-wrap {
+    min-width: max-content;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head {
+    grid-template-columns: minmax(0, 1fr) minmax(132px, auto) !important;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head > [data-picker-save-rule] {
+    min-width: 132px;
+  }
+}
+
+@media (max-width: 520px) {
+  #towerCalcModal .tower-picker-detail .picker-limits-head {
+    grid-template-columns: minmax(0, 1fr) minmax(124px, auto) !important;
+  }
+  #towerCalcShiftBalance.tcv7-shift-balance .tcv14-btn-row {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 460px) {
+  #towerCalcModal .tower-picker-detail .picker-limits-head {
+    grid-template-columns: minmax(0, 1fr) minmax(116px, auto) !important;
+  }
+}
+
+@media (max-width: 420px) {
+  #towerCalcShiftBalance.tcv7-shift-balance .tcv14-btn-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* v9 final plan parity + modal overflow fixes */
+#board-modal .board-standalone-preview,
+#board-modal .board-modal-preview,
+#board-modal #boardModalPreviewSheet {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+#board-modal .board-standalone-preview {
+  display: grid !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+#board-modal .tower-calc-preview-toolbar,
+#board-modal .board-head-actions--single {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scroll-behavior: smooth;
+}
+#board-modal .tower-calc-preview-toolbar > *,
+#board-modal .board-head-actions--single > * {
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+}
+#board-modal .tower-calc-preview-toolbar .row,
+#board-modal .board-head-actions--single .board-shift-group {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  flex: 0 0 auto !important;
+}
+#board-modal .board-lang-picker-wrap,
+#board-modal .board-head-actions--single .board-lang-picker-wrap {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  margin-left: 0 !important;
+}
+#board-modal .board-lang-trigger,
+#board-modal .board-head-actions--single .board-lang-trigger {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+}
+#board-modal .board-lang-trigger .board-lang-trigger-text {
+  display: inline !important;
+}
+#board-modal .board-lang-trigger .board-lang-picker-label {
+  display: none !important;
+}
+#board-modal .board-mobile-menu,
+#board-modal .board-head-actions--single .board-mobile-menu {
+  display: none !important;
+}
+#board-modal #boardModalPreviewSheet {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  min-width: 0 !important;
+}
+#board-modal .board-modal-preview .board-sheet,
+#board-modal .board-sheet {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+#board-modal .board-modal-preview .board-grid,
+#board-modal .board-grid {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+}
+#board-modal .board-modal-preview .board-col,
+#board-modal .board-col {
+  width: auto !important;
+  min-width: 0 !important;
+}
+#board-modal .board-modal-preview .board-col li,
+#board-modal .board-col li {
+  grid-template-columns: minmax(0, 1.24fr) 0.5fr 0.4fr 0.72fr !important;
+}
+@media (max-width: 820px) {
+  #board-modal .board-modal-preview,
+  #board-modal #boardModalPreviewSheet {
+    overflow-x: hidden !important;
+  }
+  #board-modal .board-modal-preview .board-sheet,
+  #board-modal .board-sheet {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 8px 6px !important;
+  }
+  #board-modal .board-modal-preview .board-grid,
+  #board-modal .board-grid {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+  #board-modal .board-modal-preview .board-col,
+  #board-modal .board-col {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  #board-modal .board-modal-preview .board-col h4,
+  #board-modal .board-col h4 {
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+    min-height: 0 !important;
+    overflow-wrap: anywhere;
+  }
+  #board-modal .board-modal-preview .board-col li,
+  #board-modal .board-col li {
+    font-size: 10px !important;
+    padding: 4px !important;
+  }
+}
+@media (max-width: 520px) {
+  #board-modal .board-modal-preview .board-sheet,
+  #board-modal .board-sheet {
+    padding: 6px 4px !important;
+  }
+  #board-modal .board-modal-preview .board-title,
+  #board-modal .board-title {
+    font-size: 13px !important;
+    line-height: 1.15 !important;
+  }
+  #board-modal .board-modal-preview .board-col li,
+  #board-modal .board-col li {
+    font-size: 9px !important;
+  }
+}
+
+#towerCalcModal .tower-calc-main-tabs,
+#towerCalcModal .tower-calc-preview-toolbar,
+#towerCalcModal #tcv35-row {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+#towerCalcModal .tower-calc-main-tabs {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+#towerCalcModal .tower-calc-main-tabs .btn,
+#towerCalcModal .tower-calc-preview-toolbar .btn,
+#towerCalcModal #tcv35-row .btn,
+#towerCalcModal #tcv35-row #tcv35-clearWrap {
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+}
+#towerCalcModal .tower-calc-main-panel,
+#towerCalcModal #towerCalcGrid,
+#towerCalcModal #towerCalcGlobalOut,
+#towerCalcModal #towerCalcOverflowOut {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+#towerCalcModal .tower-picker-detail .picker-limits-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(144px, auto) !important;
+  gap: 10px !important;
+  align-items: end !important;
+}
+#towerCalcModal .tower-picker-detail .picker-limits-head > label {
+  grid-column: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+#towerCalcModal .tower-picker-detail .picker-limits-head > [data-picker-save-rule] {
+  grid-column: 2 !important;
+  width: auto !important;
+  min-width: 144px !important;
+}
+#towerCalcModal .tower-picker-detail .picker-limits-head > [data-picker-recalc-rule] {
+  grid-column: 1 !important;
+  width: 100% !important;
+}
+#towerCalcModal .tower-picker-detail .picker-limits-head > [data-picker-reset-rule] {
+  grid-column: 2 !important;
+  width: 100% !important;
+}
+@media (max-width: 700px) {
+  #towerCalcModal .tower-picker-detail .picker-limits-head {
+    grid-template-columns: minmax(0, 1fr) minmax(136px, auto) !important;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head > label {
+    grid-column: 1 !important;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head > [data-picker-save-rule] {
+    grid-column: 2 !important;
+    min-width: 136px !important;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head > [data-picker-recalc-rule] {
+    grid-column: 1 !important;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head > [data-picker-reset-rule] {
+    grid-column: 2 !important;
+  }
+}
+@media (max-width: 480px) {
+  #towerCalcModal .tower-picker-detail .picker-limits-head {
+    grid-template-columns: minmax(0, 1fr) minmax(126px, auto) !important;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head > label {
+    grid-column: 1 !important;
+  }
+  #towerCalcModal .tower-picker-detail .picker-limits-head > [data-picker-save-rule] {
+    grid-column: 2 !important;
+    min-width: 126px !important;
+  }
+}
+
+/* v10 mobile shift-limit rows + flatter final-plan toolbar */
+@media (max-width: 640px) {
+  #towerCalcShiftBalance.tcv7-shift-balance #tcv14LimitRow,
+  #towerCalcShiftBalance.tcv7-shift-balance #tcv14AddRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  #towerCalcShiftBalance.tcv7-shift-balance #tcv14LimitRow > label,
+  #towerCalcShiftBalance.tcv7-shift-balance #tcv14AddRow > label {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+}
+@media (max-width: 360px) {
+  #towerCalcShiftBalance.tcv7-shift-balance #tcv14LimitRow,
+  #towerCalcShiftBalance.tcv7-shift-balance #tcv14AddRow {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+#board-modal .tower-calc-preview-toolbar,
+#board-modal .board-head-actions--single {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+#board-modal .tower-calc-preview-toolbar .row.gap,
+#board-modal .board-head-actions--single .board-shift-group {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* v11 mobile bottom action row fit */
+@media (max-width: 560px) {
+  #towerCalcModal.tower-calc-modal #tcv35-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 12px !important;
+    overflow: visible !important;
+    width: 100% !important;
+  }
+  #towerCalcModal.tower-calc-modal #tcv35-row .btn,
+  #towerCalcModal.tower-calc-modal #tcv35-row #tcv35-clearWrap,
+  #towerCalcModal.tower-calc-modal #tcv35-row #tcv35-clearWrap > .btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  #towerCalcModal.tower-calc-modal #tcv35-row #tcv35-clearWrap {
+    grid-column: 1 / -1 !important;
+  }
+  #towerCalcModal.tower-calc-modal #tcv35-row #tcv35-clearMenu {
+    right: 0 !important;
+    left: auto !important;
+    width: min(100%, 320px) !important;
+  }
+}
+@media (max-width: 380px) {
+  #towerCalcModal.tower-calc-modal #tcv35-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* v12: full-width collapsed parameters panel */
+#towerCalcModal [data-calc-main-panel="setup"] #towerCalcAdvanced,
+#towerCalcModal [data-calc-main-panel="setup"] .tower-calc-advanced {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  flex: 1 0 100% !important;
+  align-self: stretch !important;
+  box-sizing: border-box !important;
+}
+#towerCalcModal [data-calc-main-panel="setup"] #towerCalcAdvanced > summary,
+#towerCalcModal [data-calc-main-panel="setup"] .tower-calc-advanced > summary {
+  display: flex !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+
+/* v14: compact collapsed parameters panel without shrinking other setup controls */
+#towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar > * {
+  width: auto !important;
+}
+#towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar > .tower-calc-toolbar-main,
+#towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar > .tower-calc-controls-muted,
+#towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar > #towerCalcAdvanced,
+#towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar > .tower-calc-advanced {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+#towerCalcModal [data-calc-main-panel="setup"] #towerCalcAdvanced:not([open]),
+#towerCalcModal [data-calc-main-panel="setup"] .tower-calc-advanced:not([open]) {
+  min-height: 0 !important;
+  height: auto !important;
+}
+#towerCalcModal [data-calc-main-panel="setup"] #towerCalcAdvanced:not([open]) > summary,
+#towerCalcModal [data-calc-main-panel="setup"] .tower-calc-advanced:not([open]) > summary {
+  min-height: 56px !important;
+  padding: 12px 18px !important;
+  line-height: 1.2 !important;
+}
+@media (min-width: 641px) {
+  #towerCalcModal [data-calc-main-panel="setup"] #towerCalcAdvanced:not([open]) > summary,
+  #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-advanced:not([open]) > summary {
+    min-height: 52px !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+}
+
+
+/* v15: keep collapsed distribution parameters compact and full-width */
+#towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar > #towerCalcAdvanced:not([open]),
+#towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar > .tower-calc-advanced:not([open]),
+#towerCalcModal [data-calc-main-panel="setup"] #towerCalcAdvanced:not([open]),
+#towerCalcModal [data-calc-main-panel="setup"] .tower-calc-advanced:not([open]) {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 72px !important;
+  overflow: hidden !important;
+  align-self: stretch !important;
+}
+#towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar > #towerCalcAdvanced:not([open]) > summary,
+#towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar > .tower-calc-advanced:not([open]) > summary,
+#towerCalcModal [data-calc-main-panel="setup"] #towerCalcAdvanced:not([open]) > summary,
+#towerCalcModal [data-calc-main-panel="setup"] .tower-calc-advanced:not([open]) > summary {
+  display: flex !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 72px !important;
+  height: 72px !important;
+  max-height: 72px !important;
+  margin: 0 !important;
+  padding: 0 20px !important;
+  box-sizing: border-box !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  line-height: 1.15 !important;
+}
+#towerCalcModal [data-calc-main-panel="setup"] #towerCalcAdvanced:not([open]) > .inner,
+#towerCalcModal [data-calc-main-panel="setup"] .tower-calc-advanced:not([open]) > .inner {
+  display: none !important;
+}
+@media (min-width: 768px) {
+  #towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar > #towerCalcAdvanced:not([open]),
+  #towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar > .tower-calc-advanced:not([open]),
+  #towerCalcModal [data-calc-main-panel="setup"] #towerCalcAdvanced:not([open]),
+  #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-advanced:not([open]) {
+    max-height: 64px !important;
+  }
+  #towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar > #towerCalcAdvanced:not([open]) > summary,
+  #towerCalcModal [data-calc-main-panel="setup"] > .tower-calc-controls-inline > .tower-calc-toolbar > .tower-calc-advanced:not([open]) > summary,
+  #towerCalcModal [data-calc-main-panel="setup"] #towerCalcAdvanced:not([open]) > summary,
+  #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-advanced:not([open]) > summary {
+    min-height: 64px !important;
+    height: 64px !important;
+    max-height: 64px !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
   }
 }

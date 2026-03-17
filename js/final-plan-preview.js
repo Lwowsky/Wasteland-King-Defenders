@@ -326,6 +326,7 @@
       shift_text: shiftLabel(previewShift),
       sheet_html: renderBoardSheet(previewShift)
     });
+    try { target.querySelector('.tower-calc-preview-toolbar')?.scrollTo?.({ left: 0, top: 0 }); } catch {}
   }
 
   function renderStandaloneFinalBoard(modal) {
@@ -352,8 +353,11 @@
       export_txt_text: escapeHtml(tr('export_txt', 'TXT')),
       share_text: escapeHtml(tr('final_plan_share', 'Поділитися'))
     });
+    try { toolbar.classList.add('board-head-actions--single'); } catch {}
+    try { toolbar.scrollLeft = 0; } catch {}
     status.textContent = `${tr('final_plan_status', 'Фінальний план')} · ${shiftLabel(previewShift)}`;
     sheet.innerHTML = renderBoardSheet(previewShift);
+    try { sheet.scrollTop = 0; sheet.scrollLeft = 0; } catch {}
 
     try { window.PNS?.wireBoardLanguageButtons?.(toolbar); } catch {}
     try {

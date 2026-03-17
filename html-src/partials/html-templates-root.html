@@ -212,17 +212,16 @@
 </article>
 </template>
 <template id="tpl-board-modal-toolbar">
-<div class="board-toolbar-row board-toolbar-row--primary">
+<div class="row gap wrap board-head-actions board-head-actions--single tower-calc-preview-toolbar">
 <div class="row gap board-shift-group">
 <button class="btn btn-sm board-shift-tab {{shift1_active}}" data-shift-tab="shift1" type="button">{{shift1_text}}</button>
 <button class="btn btn-sm board-shift-tab {{shift2_active}}" data-shift-tab="shift2" type="button">{{shift2_text}}</button>
 </div>
 <div class="board-lang-picker-host board-lang-picker-wrap board-lang-picker-wrap-auto" data-board-lang-picker-host="">{{lang_picker_html}}</div>
-<div class="board-mobile-menu" data-board-mobile-menu="1"><button aria-expanded="false" aria-haspopup="menu" class="btn btn-sm board-mobile-menu-trigger" data-board-mobile-menu-trigger="1" type="button">☰</button><div class="board-mobile-menu-panel" data-board-mobile-menu-panel="1"><button class="btn btn-sm" data-open-board-lang-picker="board" type="button">{{board_language_text}}</button></div></div>
-</div>
-<div class="board-toolbar-row board-toolbar-row--exports"><button class="btn btn-sm" data-preview-export-png="1" type="button">{{export_png_text}}</button>
+<button class="btn btn-sm" data-preview-export-png="1" type="button">{{export_png_text}}</button>
 <button class="btn btn-sm" data-preview-export-txt="1" type="button">{{export_txt_text}}</button>
-<button class="btn btn-sm" data-preview-share-board="1" type="button">{{share_text}}</button></div>
+<button class="btn btn-sm" data-preview-share-board="1" type="button">{{share_text}}</button>
+</div>
 </template>
 <template id="tpl-tower-calc-preview">
 <div class="tower-calc-board-preview">
