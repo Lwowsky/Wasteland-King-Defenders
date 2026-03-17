@@ -53,7 +53,7 @@ function V(e, a, r, n) {
           "";
       }),
       (t.importData.mapping = nextMapping),
-      T(`${r} • ${a.length} рядків • ${e.length} колонок`),
+      T(r('import_source_rows_cols', '{source} • {rows} рядків • {cols} колонок').replace(/\{source\}/g, String(r || '')).replace(/\{rows\}/g, String(a.length)).replace(/\{cols\}/g, String(e.length))),
       O(),
       matchedTemplate && j(matchedTemplate),
       O());

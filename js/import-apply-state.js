@@ -282,7 +282,7 @@
       ),
       'good',
     );
-    wiz.setImportLoadedInfo?.(`${t.importData.джерелоName || 'джерело'} • імпортовано ${players.length} гравців`);
+    wiz.setImportLoadedInfo?.(n('imported_players_loaded_info', '{source} • імпортовано {count} гравців', { source: t.importData.джерелоName || r('source_word', 'джерело'), count: players.length }));
   }
 
   function clonePlanState(value) {
@@ -533,7 +533,7 @@
       );
     }
     wiz.setImportLoadedInfo?.(
-      `${t.importData.джерелоName || 'джерело'} • ${merged.length} гравців • ${r('plan_preserved_hint', 'план збережено')}`,
+      `${t.importData.джерелоName || r('source_word', 'джерело')} • ${merged.length} ${r('players_word', 'гравців')} • ${r('plan_preserved_hint', 'план збережено')}`,
     );
   }
 

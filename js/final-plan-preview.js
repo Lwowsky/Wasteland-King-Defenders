@@ -347,6 +347,7 @@
       shift1_text: shiftLabel('shift1'),
       shift2_text: shiftLabel('shift2'),
       lang_picker_html: renderBoardLanguagePickerMarkup('board'),
+      board_language_text: escapeHtml(tr('board_language', 'Мова плану')),
       export_png_text: escapeHtml(tr('export_png', 'Завантажити PNG')),
       export_txt_text: escapeHtml(tr('export_txt', 'TXT')),
       share_text: escapeHtml(tr('final_plan_share', 'Поділитися'))
@@ -369,14 +370,14 @@
           return false;
         };
       });
-      const exportBtn = toolbar.querySelector('#exportPngBtn');
+      const exportBtn = toolbar.querySelector('[data-preview-export-png], #exportPngBtn');
       if (exportBtn) {
         exportBtn.onclick = function(ev) {
           try { ev.preventDefault(); } catch {}
           return !!window.exportBoardAsPNG?.();
         };
       }
-      const txtBtn = toolbar.querySelector('#exportBoardTxtBtn');
+      const txtBtn = toolbar.querySelector('[data-preview-export-txt], #exportBoardTxtBtn');
       if (txtBtn) {
         txtBtn.onclick = function(ev) {
           try { ev.preventDefault(); } catch {}
@@ -385,7 +386,7 @@
           return !!window.exportBoardAsTXT?.();
         };
       }
-      const shareBtn = toolbar.querySelector('#shareBoardBtn');
+      const shareBtn = toolbar.querySelector('[data-preview-share-board], #shareBoardBtn');
       if (shareBtn) {
         shareBtn.onclick = async function(ev) {
           try { ev.preventDefault(); } catch {}
@@ -397,6 +398,28 @@
             statusEl: status
           }) || false);
         };
+      }
+
+      const mobileMenu = toolbar.querySelector('[data-board-mobile-menu]');
+      const mobileMenuTrigger = toolbar.querySelector('[data-board-mobile-menu-trigger]');
+      const mobileMenuPanel = toolbar.querySelector('[data-board-mobile-menu-panel]');
+      if (mobileMenu && mobileMenuTrigger) {
+        mobileMenuTrigger.onclick = function(ev) {
+          try { ev.preventDefault(); } catch {}
+          try { ev.stopPropagation(); } catch {}
+          const willOpen = !mobileMenu.classList.contains('is-open');
+          mobileMenu.classList.toggle('is-open', willOpen);
+          mobileMenuTrigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+          return false;
+        };
+      }
+      if (mobileMenuPanel) {
+        mobileMenuPanel.querySelectorAll('button').forEach((button) => {
+          button.addEventListener('click', () => {
+            mobileMenu?.classList.remove('is-open');
+            mobileMenuTrigger?.setAttribute('aria-expanded', 'false');
+          });
+        });
       }
     } catch {}
     return true;

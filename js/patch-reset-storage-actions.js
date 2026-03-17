@@ -8,6 +8,7 @@
   const PNS=window.PNS=window.PNS||{};
   const api=PNS.resetStorageActions=PNS.resetStorageActions||{};
   const confirmApi=PNS.resetConfirm=PNS.resetConfirm||{};
+  const tr=(key,fallback='')=>typeof PNS.t==='function'?PNS.t(key,fallback):fallback;
 
   function removeMatching(prefix){
     try{
@@ -71,11 +72,11 @@
   function resetColumns(ev){
     try{ ev?.preventDefault?.(); ev?.stopPropagation?.(); ev?.stopImmediatePropagation?.(); }catch{}
     return (confirmApi.showResetConfirm||function(){return false;})({
-      title:'Скинути дані колонок?',
-      message:'Колонки та їхні налаштування буде повернуто до заводського стану.',
-      note:'Буде очищено шаблони імпорту, видимі колонки та перевизначення назв колонок.',
-      confirmText:'Скинути колонки',
-      cancelText:'Скасувати'
+      title:tr('reset_columns_title','Скинути дані колонок?'),
+      message:tr('reset_columns_message','Колонки та їхні налаштування буде повернуто до заводського стану.'),
+      note:tr('reset_columns_note','Буде очищено шаблони імпорту, видимі колонки та перевизначення назв колонок.'),
+      confirmText:tr('reset_columns_confirm','Скинути колонки'),
+      cancelText:tr('cancel','Скасувати')
     }, ()=>{
       const K=PNS.KEYS||{};
       [K.KEY_IMPORT_TEMPLATES,K.KEY_IMPORT_VISIBLE_COLUMNS,K.KEY_FIELD_LABEL_OVERRIDES].filter(Boolean).forEach(k=>{ try{ localStorage.removeItem(k); }catch{} });
@@ -88,18 +89,18 @@
         PNS.state.importData.customOptionalDefs=[];
       }catch{}
       refreshAfterReset();
-      try{ confirmApi.notify?.('Дані колонок скинуто.'); }catch{}
+      try{ confirmApi.notify?.(tr('reset_columns_done','Дані колонок скинуто.')); }catch{}
     });
   }
 
   function resetTables(ev){
     try{ ev?.preventDefault?.(); ev?.stopPropagation?.(); ev?.stopImmediatePropagation?.(); }catch{}
     return (confirmApi.showResetConfirm||function(){return false;})({
-      title:'Скинути дані таблиць?',
-      message:'Буде очищено таблицю гравців, призначення і плани змін.',
-      note:'Після цього список гравців, призначення в турелі та плани змін доведеться завантажити або зібрати заново.',
-      confirmText:'Скинути таблиці',
-      cancelText:'Скасувати'
+      title:tr('reset_tables_title','Скинути дані таблиць?'),
+      message:tr('reset_tables_message','Буде очищено таблицю гравців, призначення і плани змін.'),
+      note:tr('reset_tables_note','Після цього список гравців, призначення в турелі та плани змін доведеться завантажити або зібрати заново.'),
+      confirmText:tr('reset_tables_confirm','Скинути таблиці'),
+      cancelText:tr('cancel','Скасувати')
     }, ()=>{
       const K=PNS.KEYS||{};
       [K.KEY_ASSIGNMENTS_STORE,K.KEY_ASSIGNMENT_PRESETS,K.KEY_TOP_FILTERS,K.KEY_SHIFT_FILTER,K.KEY_SHOW_ALL,
@@ -120,18 +121,18 @@
         try{ localStorage.setItem('pns_layout_shift_plans_store_v1', JSON.stringify({shift1:null,shift2:null})); }catch{}
       }catch{}
       refreshAfterReset();
-      try{ confirmApi.notify?.('Дані таблиць скинуто.'); }catch{}
+      try{ confirmApi.notify?.(tr('reset_tables_done','Дані таблиць скинуто.')); }catch{}
     });
   }
 
   function resetAllStorage(ev){
     try{ ev?.preventDefault?.(); ev?.stopPropagation?.(); ev?.stopImmediatePropagation?.(); }catch{}
     return (confirmApi.showResetConfirm||function(){return false;})({
-      title:'Повністю скинути LocalStorage?',
-      message:'Усі збережені дані сайту буде видалено і застосунок повернеться до заводських налаштувань.',
-      note:'Цю дію не можна скасувати. Будуть очищені таблиці, колонки, шаблони імпорту, налаштування та інший локально збережений стан.',
-      confirmText:'Скинути все',
-      cancelText:'Скасувати'
+      title:tr('reset_localstorage_title','Повністю скинути LocalStorage?'),
+      message:tr('reset_localstorage_message','Усі збережені дані сайту буде видалено і застосунок повернеться до заводських налаштувань.'),
+      note:tr('reset_localstorage_note','Цю дію не можна скасувати. Будуть очищені таблиці, колонки, шаблони імпорту, налаштування та інший локально збережений стан.'),
+      confirmText:tr('reset_all','Скинути все'),
+      cancelText:tr('cancel','Скасувати')
     }, ()=>{
       try{ PNS.setPersistenceSuppressed?.(true); }catch{}
       try{ window.__PNS_FACTORY_RESET_ACTIVE=true; }catch{}

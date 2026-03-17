@@ -4,6 +4,7 @@
   const t = (key, fallback = '') => (typeof window.PNS?.t === 'function' ? window.PNS.t(key, fallback) : fallback);
   const pager = { page: 1, pageSize: 10, sortField: '', sortDir: 'desc', _raf: 0 };
   const PNS = window.PNS = window.PNS || {};
+  const SORTABLE_FIELDS = ['name', 'alliance', 'role', 'tier', 'march', 'rally', 'captainReady', 'shiftLabel', 'lair', 'actions'];
 
   function getRows() {
     return $$('#playersDataTable tbody tr');
@@ -15,39 +16,96 @@
       .toUpperCase();
   }
 
+  function getCell(row, field) {
+    if (!row || !field) return null;
+    return row.querySelector(`td[data-field="${field}"]`) || row.querySelector(`td[data-col-key="${field}"]`);
+  }
+
+  function getHeaderLabel(th) {
+    if (!th) return '';
+    const clone = th.cloneNode(true);
+    $$('.sort-btn', clone).forEach((button) => button.remove());
+    return (clone.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function parseNumericCell(row, field) {
+    const raw = getCell(row, field)?.textContent || '0';
+    const digits = String(raw || '').replace(/[^\d]/g, '');
+    return digits ? Number(digits) : 0;
+  }
+
+  function getCaptainReadyValue(row) {
+    const cell = getCell(row, 'captainReady');
+    if (!cell) return 0;
+    const pill = cell.querySelector('.pill');
+    if (pill?.classList.contains('yes')) return 1;
+    if (pill?.classList.contains('no')) return 0;
+    const text = (cell.textContent || '').trim().toLowerCase();
+    return /(yes|так|да|ready|готов)/i.test(text) ? 1 : 0;
+  }
+
+  function getShiftOrderValue(row) {
+    const text = (getCell(row, 'shiftLabel')?.textContent || '').trim().toLowerCase();
+    if (/(shift\s*1|зміна\s*1|смена\s*1)/i.test(text)) return 1;
+    if (/(shift\s*2|зміна\s*2|смена\s*2)/i.test(text)) return 2;
+    if (/(both|обидві|обе|обе две)/i.test(text)) return 3;
+    return 0;
+  }
+
   function getSortValue(row, field) {
-    if (field === 'rally') {
-      const raw = row.querySelector('td[data-field="rally"]')?.textContent
-        || row.querySelector('td[data-col-key="rally_size"]')?.textContent
-        || '0';
-      const digits = String(raw || '').replace(/[^\d]/g, '');
-      return digits ? Number(digits) : 0;
-    }
     if (field === 'tier') {
       const match = getTierText(row).match(/T?(\d+)/i);
       return match ? Number(match[1]) : 0;
     }
-    return 0;
+    if (field === 'march' || field === 'rally' || field === 'lair') {
+      return parseNumericCell(row, field);
+    }
+    if (field === 'captainReady') {
+      return getCaptainReadyValue(row);
+    }
+    if (field === 'shiftLabel') {
+      return getShiftOrderValue(row);
+    }
+    const text = (getCell(row, field)?.textContent || '').replace(/\s+/g, ' ').trim();
+    return text.toLocaleLowerCase();
+  }
+
+  function compareRows(rowA, rowB, field, dir) {
+    const valueA = getSortValue(rowA, field);
+    const valueB = getSortValue(rowB, field);
+    const isNumeric = typeof valueA === 'number' && typeof valueB === 'number';
+
+    if (isNumeric && valueA !== valueB) {
+      return dir === 'desc' ? valueB - valueA : valueA - valueB;
+    }
+    if (!isNumeric) {
+      const textCompare = String(valueA).localeCompare(String(valueB), undefined, { numeric: true, sensitivity: 'base' });
+      if (textCompare !== 0) {
+        return dir === 'desc' ? -textCompare : textCompare;
+      }
+    }
+    return (rowA.textContent || '').localeCompare(rowB.textContent || '', undefined, { numeric: true, sensitivity: 'base' });
   }
 
   function ensureSortButtons() {
-    const labels = {
-      tier: t('sort_by_tier_label', 'Сортувати за тіром'),
-      rally: t('sort_by_rally_label', 'Сортувати за розміром ралі'),
-    };
-
-    Object.entries(labels).forEach(([field, label]) => {
-      const th = document.querySelector(`#playersDataTable thead th[data-field="${field}"]`);
-      if (!th || th.querySelector('.sort-btn')) return;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'sort-btn';
-      button.dataset.sort = field;
-      button.setAttribute('aria-label', label);
-      button.title = label;
-      button.textContent = '↓';
-      th.appendChild(document.createTextNode(' '));
-      th.appendChild(button);
+    $$(`#playersDataTable thead th[data-field]`).forEach((th) => {
+      const field = String(th.dataset.field || '').trim();
+      if (!SORTABLE_FIELDS.includes(field)) return;
+      let button = th.querySelector('.sort-btn');
+      if (!button) {
+        const label = getHeaderLabel(th) || field;
+        button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'sort-btn';
+        button.dataset.sort = field;
+        button.setAttribute('aria-label', label);
+        button.title = label;
+        button.textContent = '↓';
+        th.appendChild(document.createTextNode(' '));
+        th.appendChild(button);
+      } else if (!button.dataset.sort) {
+        button.dataset.sort = field;
+      }
     });
   }
 
@@ -74,14 +132,7 @@
     const filteredRows = tier === 'all' ? visibleRows : visibleRows.filter((row) => getTierText(row) === tier);
 
     if (pager.sortField) {
-      filteredRows.sort((rowA, rowB) => {
-        const valueA = getSortValue(rowA, pager.sortField);
-        const valueB = getSortValue(rowB, pager.sortField);
-        if (valueA !== valueB) {
-          return pager.sortDir === 'desc' ? valueB - valueA : valueA - valueB;
-        }
-        return (rowA.textContent || '').localeCompare(rowB.textContent || '');
-      });
+      filteredRows.sort((rowA, rowB) => compareRows(rowA, rowB, pager.sortField, pager.sortDir));
       filteredRows.forEach((row) => tbody.appendChild(row));
     }
 
@@ -127,8 +178,10 @@
     ensureSortButtons();
     $$('.sort-btn').forEach((button) => {
       const field = button.dataset.sort;
-      if (!['tier', 'rally'].includes(field)) return;
-      button.textContent = pager.sortField === field
+      if (!SORTABLE_FIELDS.includes(field)) return;
+      const isActive = pager.sortField === field;
+      button.classList.toggle('is-active', isActive);
+      button.textContent = isActive
         ? (pager.sortDir === 'desc' ? '↓' : '↑')
         : '↓';
     });
@@ -213,8 +266,8 @@
     bindOnce(document.documentElement, 'v4boundSortDelegated', (event) => {
       const button = event.target.closest('.sort-btn');
       if (!button) return;
-      const field = button.dataset.sort;
-      if (!['tier', 'rally'].includes(field)) return;
+      const field = String(button.dataset.sort || '').trim();
+      if (!field) return;
       if (pager.sortField !== field) {
         pager.sortField = field;
         pager.sortDir = 'desc';

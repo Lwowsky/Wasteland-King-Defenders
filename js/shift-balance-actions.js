@@ -4,6 +4,7 @@
   const e = window.PNS;
   if (!e) return;
   const { state: t, $$: a } = e;
+  const tr = (key, fallback='') => typeof e.t === 'function' ? e.t(key, fallback) : fallback;
 
   function ensureTowerCalcShiftUi(){
     const shell = document.getElementById('towerCalcShiftBalance');
@@ -45,7 +46,8 @@
       try { e.refreshShiftUi?.(); } catch {}
       try {
         const warn = result.remaining?.shift1 || result.remaining?.shift2;
-        e.setImportStatus?.(`Оновлено shifts: +${result.added1} у Shift 1, +${result.added2} у Shift 2. Зараз ${result.counts.shift1}/${result.counts.shift2}/${result.counts.both}.${warn ? ` Не вистачило місця по ліміту: S1 ${result.remaining.shift1 || 0}, S2 ${result.remaining.shift2 || 0}.` : ''}`, warn ? 'warn' : 'good');
+        const warnText = warn ? tr('shifts_updated_warn_suffix', ' Не вистачило місця по ліміту: S1 {shift1}, S2 {shift2}.').replace(/\{shift1\}/g, String(result.remaining.shift1 || 0)).replace(/\{shift2\}/g, String(result.remaining.shift2 || 0)) : '';
+        e.setImportStatus?.(tr('shifts_updated_status', 'Оновлено shifts: +{added1} у Shift 1, +{added2} у Shift 2. Зараз {shift1}/{shift2}/{both}.{warn}').replace(/\{added1\}/g, String(result.added1)).replace(/\{added2\}/g, String(result.added2)).replace(/\{shift1\}/g, String(result.counts.shift1)).replace(/\{shift2\}/g, String(result.counts.shift2)).replace(/\{both\}/g, String(result.counts.both)).replace(/\{warn\}/g, warnText), warn ? 'warn' : 'good');
       } catch {}
     });
 
@@ -63,7 +65,8 @@
       try { e.applyPlayerTableFilters?.(); } catch {}
       try { e.refreshShiftUi?.(); } catch {}
       try {
-        e.setImportStatus?.(`Shifts відновлено з імпорту. Shift 1: ${restored.shift1}, Shift 2: ${restored.shift2}, Both: ${restored.both}${restored.unknown ? `, Невідомо: ${restored.unknown}` : ''}.`, restored.unknown ? 'warn' : 'good');
+        const unknownText = restored.unknown ? tr('shifts_restored_unknown_suffix', ', Невідомо: {count}').replace(/\{count\}/g, String(restored.unknown)) : '';
+        e.setImportStatus?.(tr('shifts_restored_status', 'Shifts відновлено з імпорту. Shift 1: {shift1}, Shift 2: {shift2}, Both: {both}{unknown}.').replace(/\{shift1\}/g, String(restored.shift1)).replace(/\{shift2\}/g, String(restored.shift2)).replace(/\{both\}/g, String(restored.both)).replace(/\{unknown\}/g, unknownText), restored.unknown ? 'warn' : 'good');
       } catch {}
     });
 
@@ -71,7 +74,7 @@
       if (!evt.target.closest('#shiftLimitS1,#shiftLimitS2')) return;
       const limits = e.syncTowerCalcShiftLimitUi();
       try { e.refreshShiftUi?.(); } catch {}
-      try { e.setImportStatus?.(`Оновлено ліміти змін: Зміна 1 — ${limits.shift1}, Зміна 2 — ${limits.shift2}.`, 'good'); } catch {}
+      try { e.setImportStatus?.(tr('shift_limits_updated_status', 'Оновлено ліміти змін: Зміна 1 — {shift1}, Зміна 2 — {shift2}.').replace(/\{shift1\}/g, String(limits.shift1)).replace(/\{shift2\}/g, String(limits.shift2)), 'good'); } catch {}
     });
   }
 

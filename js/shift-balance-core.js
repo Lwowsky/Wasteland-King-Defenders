@@ -4,6 +4,7 @@
   const e = window.PNS;
   if (!e) return;
   const { state: t } = e;
+  const tr = (key, fallback='') => typeof e.t === 'function' ? e.t(key, fallback) : fallback;
 
   function getShiftCounts(players){
     const list = Array.isArray(players) ? players : (Array.isArray(t.players) ? t.players : []);
@@ -111,28 +112,28 @@
 
     const addShift1 = document.getElementById('shiftAddS1');
     const addShift2 = document.getElementById('shiftAddS2');
-    if (addShift1 && !addShift1.placeholder) addShift1.placeholder = '+ до зміни 1';
-    if (addShift2 && !addShift2.placeholder) addShift2.placeholder = '+ до зміни 2';
+    if (addShift1 && !addShift1.placeholder) addShift1.placeholder = tr('shift_limit_add_shift1_placeholder', '+ до зміни 1');
+    if (addShift2 && !addShift2.placeholder) addShift2.placeholder = tr('shift_limit_add_shift2_placeholder', '+ до зміни 2');
 
     const limitInput1 = document.getElementById('shiftLimitS1');
     const limitInput2 = document.getElementById('shiftLimitS2');
     if (limitInput1) {
       limitInput1.min = '0';
       limitInput1.max = '100';
-      limitInput1.title = 'Максимум 100 гравців у зміні 1';
+      limitInput1.title = tr('shift_limit_input1_title', 'Максимум 100 гравців у зміні 1');
     }
     if (limitInput2) {
       limitInput2.min = '0';
       limitInput2.max = '100';
-      limitInput2.title = 'Максимум 100 гравців у зміні 2';
+      limitInput2.title = tr('shift_limit_input2_title', 'Максимум 100 гравців у зміні 2');
     }
 
     const note = document.getElementById('towerCalcShiftLimitNote');
     if (note) {
       const warnings = [];
-      if (counts.shift1 > limits.shift1) warnings.push('Зміна 1 переповнена на ' + (counts.shift1 - limits.shift1));
-      if (counts.shift2 > limits.shift2) warnings.push('Зміна 2 переповнена на ' + (counts.shift2 - limits.shift2));
-      note.textContent = warnings.length ? warnings.join(' · ') : `Ліміти змін: Зміна 1 — ${limits.shift1}, Зміна 2 — ${limits.shift2} (макс. 100).`;
+      if (counts.shift1 > limits.shift1) warnings.push(tr('shift_limit_overflow_s1', 'Зміна 1 переповнена на {count}').replace(/\{count\}/g, String(counts.shift1 - limits.shift1)));
+      if (counts.shift2 > limits.shift2) warnings.push(tr('shift_limit_overflow_s2', 'Зміна 2 переповнена на {count}').replace(/\{count\}/g, String(counts.shift2 - limits.shift2)));
+      note.textContent = warnings.length ? warnings.join(' · ') : tr('shift_limits_note', 'Ліміти змін: Зміна 1 — {shift1}, Зміна 2 — {shift2} (макс. 100).').replace(/\{shift1\}/g, String(limits.shift1)).replace(/\{shift2\}/g, String(limits.shift2));
     }
   }
 

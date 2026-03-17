@@ -1,0 +1,442 @@
+<div hidden="" id="pnsHtmlTemplates">
+<template id="tpl-pns-alert">
+<div aria-describedby="pnsAlertText" aria-labelledby="pnsAlertTitle" aria-modal="true" class="pns-alert-dialog" role="alertdialog">
+<div class="pns-alert-head">
+<div aria-hidden="true" class="pns-alert-badge">{{icon}}</div>
+<div>
+<h3 class="pns-alert-title" id="pnsAlertTitle">{{title}}</h3>
+<p class="pns-alert-text" id="pnsAlertText">{{text}}</p>
+</div>
+</div>
+<div class="pns-alert-actions">
+<button class="pns-alert-btn" data-pns-alert-ok="" type="button">{{ok_text}}</button>
+</div>
+</div>
+</template>
+<template id="tpl-pns-confirm-note">
+<div class="pns-confirm-body"><p class="pns-confirm-note">{{note}}</p></div>
+</template>
+<template id="tpl-pns-confirm">
+<div aria-labelledby="pnsConfirmTitle" aria-modal="true" class="pns-confirm-dialog" role="dialog">
+<div class="pns-confirm-head">
+<div class="pns-confirm-icon">⚠️</div>
+<div>
+<h3 class="pns-confirm-title" id="pnsConfirmTitle">{{title}}</h3>
+<p class="pns-confirm-sub">{{message}}</p>
+</div>
+</div>
+      {{note_html}}
+      <div class="pns-confirm-actions">
+<button class="pns-confirm-btn" data-confirm-cancel="" type="button">{{cancel_text}}</button>
+<button class="pns-confirm-btn pns-confirm-btn--danger" data-confirm-ok="" type="button">{{confirm_text}}</button>
+</div>
+</div>
+</template>
+<template id="tpl-tower-player-edit-modal">
+<div class="modal-backdrop" data-close-tower-player-edit=""></div>
+<div aria-modal="true" class="modal-card tpe-modal-card" role="dialog">
+<div class="modal-head">
+<div>
+<h2>{{edit_player_title}}</h2>
+<p class="muted" id="tpeSubtitle">{{player_edit_subtitle}}</p>
+</div>
+<button class="btn btn-icon" data-close-tower-player-edit="" type="button">✕</button>
+</div>
+<div class="modal-grid tpe-modal-grid">
+<section class="panel subpanel stack tpe-panel-full">
+<div class="placement-editor stack compact">
+<div>
+<strong>{{where_place_player}}</strong>
+<div class="muted small" id="tpePlacementCopy">{{choose_shift_turret_role_or_reserve}}</div>
+</div>
+<div class="placement-editor-grid">
+<label class="placement-editor-field">
+<span>{{shift_label}}</span>
+<select class="tpe-select-light" id="tpePlacementShift">
+<option value="shift1">{{shift1_label}}</option>
+<option value="shift2">{{shift2_label}}</option>
+</select>
+</label>
+<label class="placement-editor-field">
+<span>{{turret_label}}</span>
+<select class="tpe-select-light" id="tpePlacementBase"></select>
+</label>
+<label class="placement-editor-field">
+<span>{{role_in_turret_label}}</span>
+<select class="tpe-select-light" id="tpePlacementKind">
+<option value="helper">{{helper_label}}</option>
+<option value="captain">{{captain_label}}</option>
+</select>
+</label>
+</div>
+<div class="muted small" id="tpePlacementHint"></div>
+</div>
+<input class="tpe-input-light" id="tpeName" placeholder="{{nickname_placeholder}}"/>
+<input class="tpe-input-light" id="tpeAlly" placeholder="{{ally_placeholder}}"/>
+<select class="tpe-select-light" id="tpeRole">
+<option value="Shooter">{{shooter_label}}</option>
+<option value="Fighter">{{fighter_label}}</option>
+<option value="Rider">{{rider_label}}</option>
+</select>
+<input class="tpe-input-light" id="tpeTier" placeholder="T14"/>
+<input class="tpe-input-light" id="tpeMarch" min="0" placeholder="{{march_placeholder}}" type="number"/>
+<input class="tpe-input-light" id="tpeRally" min="0" placeholder="{{rally_placeholder}}" type="number"/>
+<div class="muted small" id="tpeCapHint"></div>
+<div class="row gap wrap">
+<button class="btn btn-primary" id="tpeSaveBtn" type="button">{{save_label}}</button>
+<button class="btn" id="tpeRemoveBtn" type="button">{{remove_from_turret_label}}</button>
+</div>
+</section>
+</div>
+</div>
+</template>
+<template id="tpl-base-tools">
+<button class="btn btn-sm" data-base-autofill="{{base_slot}}" type="button">{{auto_fill_label}}</button>
+<button class="btn btn-sm" data-base-clear-helpers="{{base_slot}}" type="button">{{clear_helpers_label}}</button>
+<button class="btn btn-sm" data-base-clear-all="{{base_slot}}" type="button">{{clear_base_label}}</button>
+</template>
+<template id="tpl-base-editor">
+<div class="editor-row">
+<select aria-label="{{player_choice_label}}" data-base-editor-select="{{base_id}}"></select>
+<button class="btn btn-sm" data-base-editor-action="captain" data-base-id="{{base_id}}" type="button">{{place_captain_label}}</button>
+<button class="btn btn-sm" data-base-editor-action="helper" data-base-id="{{base_id}}" type="button">{{add_player_manually_label}}</button>
+<button class="btn btn-sm" data-base-editor-action="remove" data-base-id="{{base_id}}" type="button">{{remove_selected_label}}</button>
+</div>
+<div class="editor-row mini-chip-list" data-base-chip-list="{{base_id}}"></div>
+<div class="editor-manual" data-base-manual="{{base_id}}">
+<div class="editor-manual-title">{{manual_player_title_label}}</div>
+<div class="editor-manual-grid">
+<label><span>{{player_nickname_label}}</span><input data-manual-name="{{base_id}}" placeholder="{{player_nickname_label}}" type="text"/></label>
+<label><span>{{alliance_label}}</span><input data-manual-alliance="{{base_id}}" placeholder="{{alliance_label}}" type="text"/></label>
+<label><span>{{tier_label}}</span>
+<select data-manual-tier="{{base_id}}">
+<option>T1</option><option>T2</option><option>T3</option><option>T4</option><option>T5</option><option>T6</option><option>T7</option><option>T8</option><option>T9</option><option>T10</option><option>T11</option><option>T12</option><option>T13</option><option>T14</option>
+</select>
+</label>
+<label><span>{{march_power_label}}</span><input data-manual-march="{{base_id}}" min="0" placeholder="0" step="1" type="number"/></label>
+</div>
+<div class="editor-row"><button class="btn btn-sm" data-base-editor-action="manualsave" data-base-id="{{base_id}}" type="button">{{save_label}}</button></div>
+<div class="muted small" data-manual-status="{{base_id}}">{{manual_status_hint_label}}</div>
+</div>
+<div class="editor-status" data-base-editor-status="{{base_id}}"></div>
+</template>
+<template id="tpl-base-chip-captain">
+<span>{{captain_label}}: {{name}} ({{tier}})</span><button aria-label="{{remove_captain_aria}}" data-base-remove-player="{{base_id}}" data-player-id="{{player_id}}" type="button">×</button>
+</template>
+<template id="tpl-base-chip-helper">
+<span>{{name}} ({{tier}})</span><button aria-label="{{remove_helper_aria}}" data-base-remove-player="{{base_id}}" data-player-id="{{player_id}}" type="button">×</button>
+</template>
+<template id="tpl-base-empty-row">
+<td class="muted" colspan="{{colspan}}">{{helpers_not_assigned}}</td>
+</template>
+<template id="tpl-base-helper-row-editable">
+<td>{{name}}</td><td>{{alliance}}</td><td>{{tier}}</td><td>{{march}}</td><td><button aria-label="{{edit_player_title}}" class="btn btn-xs btn-icon" data-base-id="{{base_id}}" data-edit-assigned-player="{{player_id}}" type="button">✎</button></td>
+</template>
+<template id="tpl-base-helper-row-readonly">
+<td>{{name}}</td><td>{{alliance}}</td><td>{{tier}}</td><td>{{march}}</td>
+</template>
+<template id="tpl-board-col-captain-row">
+<li class="captain-row"><span>{{name}}</span><em>{{alliance}}</em><b>{{tier}}</b><strong class="captain-march-warn">{{march}}</strong></li>
+</template>
+<template id="tpl-board-col-helper-row">
+<li class="helper-row"><span>{{name}}</span><em>{{alliance}}</em><b>{{tier}}</b><strong>{{march}}</strong></li>
+</template>
+<template id="tpl-board-col-empty-row">
+<li class="empty-row">{{message}}</li>
+</template>
+<template id="tpl-board-col">
+<section class="board-col{{mod_class}}" data-base-id="{{base_id}}" data-no-fallback-i18n="1" data-shift="{{shift}}"><header><h4>{{title}}</h4><div class="board-sub{{auto_class}}">{{sub_text}}</div><div class="board-cap"><span class="cap-total">{{cap_total}}</span><span class="cap-free">{{cap_free}}</span><span class="cap-used">{{cap_used}}</span></div></header><ul>{{rows_html}}</ul></section>
+</template>
+<template id="tpl-limit-edit-row">
+<label class="tcv5-limit-toggle"><input id="tcv5EnableShiftLimits" type="checkbox"/><span>{{manual_limit_edit}}</span></label>
+</template>
+<template id="tpl-board-lang-trigger">
+<button aria-expanded="false" aria-haspopup="dialog" class="btn btn-sm board-lang-trigger" data-board-lang-kind="{{kind}}" data-open-board-lang-picker="{{kind}}" type="button" {{picker_attr}}="">
+<span class="board-lang-trigger-text">{{label}}</span>
+<strong class="board-lang-picker-label" {{label_attr}}="">{{value}}</strong>
+</button>
+</template>
+<template id="tpl-board-lang-option">
+<label class="board-lang-option{{required_class}}">
+<input type="checkbox" value="{{value}}" {{checked_attr}}="" {{disabled_attr}}="" {{option_attr}}=""/>
+<span>{{label_text}}</span>
+</label>
+</template>
+<template id="tpl-board-lang-dialog-actions">
+<div class="board-lang-dialog-actions">
+<button class="btn btn-sm" data-close-board-lang-picker="1" type="button">{{done_text}}</button>
+</div>
+</template>
+<template id="tpl-board-lang-dialog">
+<div aria-label="{{aria_label}}" aria-modal="true" class="board-lang-dialog-card" data-board-lang-dialog-card="1" data-board-lang-kind="{{kind}}" role="dialog">
+<div class="board-lang-dialog-head">
+<div>
+<strong>{{title}}</strong>
+<div class="board-lang-dialog-note">{{note}}</div>
+</div>
+<button aria-label="{{close_aria}}" class="btn btn-icon board-lang-dialog-close" data-close-board-lang-picker="1" type="button">✕</button>
+</div>
+<div class="board-lang-dialog-list">{{options_html}}</div>
+      {{actions_html}}
+    </div>
+</template>
+<template id="tpl-tcv7-card-bottom">
+<div class="tcv7-card-bottom">{{bottom}}</div>
+</template>
+<template id="tpl-tcv7-role-item">
+<div class="tcv7-role-item {{role_class}}" title="{{title}}">
+<span aria-hidden="true" class="tcv7-role-icon"><img alt="" decoding="async" loading="lazy" src="img/{{img}}"/></span>
+<strong>{{count}}</strong>
+</div>
+</template>
+<template id="tpl-tcv7-role-row">
+<div class="tcv7-role-row">{{items_html}}</div>
+</template>
+<template id="tpl-tcv7-card">
+<article class="tcv7-card">
+<div class="tcv7-card-head">{{head}}</div>
+<div class="tcv7-card-main">
+<div class="tcv7-card-value">{{value}}</div>
+<div class="tcv7-card-kicker">{{kicker}}</div>
+        {{bottom_html}}
+        {{extra_html}}
+        {{roles_html}}
+      </div>
+</article>
+</template>
+<template id="tpl-tcv5-mini-card">
+<article class="tcv5-mini-card {{extra_class}}">
+<div class="tcv5-mini-card-title">{{title}}</div>
+<div class="tcv5-mini-card-value">{{value}}</div>
+<div class="tcv5-mini-card-hint">{{hint}}</div>
+</article>
+</template>
+<template id="tpl-board-modal-toolbar">
+<div class="board-toolbar-row board-toolbar-row--primary">
+<div class="row gap board-shift-group">
+<button class="btn btn-sm board-shift-tab {{shift1_active}}" data-shift-tab="shift1" type="button">{{shift1_text}}</button>
+<button class="btn btn-sm board-shift-tab {{shift2_active}}" data-shift-tab="shift2" type="button">{{shift2_text}}</button>
+</div>
+<div class="board-lang-picker-host board-lang-picker-wrap board-lang-picker-wrap-auto" data-board-lang-picker-host="">{{lang_picker_html}}</div>
+<div class="board-mobile-menu" data-board-mobile-menu="1"><button aria-expanded="false" aria-haspopup="menu" class="btn btn-sm board-mobile-menu-trigger" data-board-mobile-menu-trigger="1" type="button">☰</button><div class="board-mobile-menu-panel" data-board-mobile-menu-panel="1"><button class="btn btn-sm" data-open-board-lang-picker="board" type="button">{{board_language_text}}</button></div></div>
+</div>
+<div class="board-toolbar-row board-toolbar-row--exports"><button class="btn btn-sm" data-preview-export-png="1" type="button">{{export_png_text}}</button>
+<button class="btn btn-sm" data-preview-export-txt="1" type="button">{{export_txt_text}}</button>
+<button class="btn btn-sm" data-preview-share-board="1" type="button">{{share_text}}</button></div>
+</template>
+<template id="tpl-tower-calc-preview">
+<div class="tower-calc-board-preview">
+<div class="row gap wrap board-head-actions tower-calc-preview-toolbar">
+<div class="row gap">
+<button class="btn btn-sm board-shift-tab {{shift1_active}}" data-calc-preview-shift="shift1" type="button">{{shift1_text}}</button>
+<button class="btn btn-sm board-shift-tab {{shift2_active}}" data-calc-preview-shift="shift2" type="button">{{shift2_text}}</button>
+</div>
+<div class="board-lang-picker-host board-lang-picker-wrap board-lang-picker-wrap-auto" data-board-lang-picker-host="">{{lang_picker_html}}</div>
+<button class="btn btn-sm" data-calc-preview-export="1" type="button">{{export_png_text}}</button>
+<button class="btn btn-sm" data-calc-preview-export-txt="1" type="button">{{export_txt_text}}</button>
+<button class="btn btn-sm" data-calc-preview-share="1" type="button">{{share_text}}</button>
+</div>
+<div class="muted small" id="towerCalcPreviewStatus">{{status_text}} · {{shift_text}}</div>
+<div id="towerCalcBoardPreviewSheet">{{sheet_html}}</div>
+</div>
+</template>
+<template id="tpl-tower-calc-summary">
+<div class="tower-calc-summary">
+<div><span class="muted small">{{selected_captains_label}}</span><strong>{{selected_count}}</strong></div>
+<div><span class="muted small">{{players_needed_label}}</span><strong>{{players_needed_value}}</strong></div>
+<div><span class="muted small">{{player_march_total_label}}</span><strong>{{player_march_total_value}}</strong></div>
+<div><span class="muted small">{{shortage_label}}</span><strong>{{shortage_value}}</strong></div>
+</div>
+<div class="muted small">{{capacity_by_troop_label}}: {{capacity_by_troop_html}}</div>
+<div class="top-space">{{cards_html}}</div>
+<details class="top-space"><summary class="small">{{tier_summary_label}}</summary>
+<table class="tower-calc-tier-table top-space">
+<thead><tr><th>{{tier_label}}</th><th>{{available_players_label}}</th><th>{{available_march_label}}</th><th>{{used_players_label}}</th><th>{{used_march_label}}</th></tr></thead>
+<tbody>{{tier_rows_html}}</tbody>
+</table>
+</details>
+</template>
+<template id="tpl-tcv5-status-view">
+<div class="tcv5-overflow-wrap tcv5-status-view">
+<div class="tcv5-overflow-head">
+<div>
+<h3>{{player_status_title}}</h3>
+<div class="muted small">{{subtitle_text}}</div>
+</div>
+<div class="tcv5-tabs" role="tablist">
+<button class="btn btn-sm {{shift1_tab_class}}" data-ov5-tab="shift1" type="button">{{shift1_text}}</button>
+<button class="btn btn-sm {{shift2_tab_class}}" data-ov5-tab="shift2" type="button">{{shift2_text}}</button>
+<button class="btn btn-sm {{both_tab_class}}" data-ov5-tab="both" type="button">{{both_text}}</button>
+</div>
+</div>
+<div class="tcv5-overflow-summary">{{summary_cards_html}}</div>
+<section class="tcv5-panel is-active" data-ov5-panel="{{panel_shift}}">
+<div class="tcv5-panel-head">
+<div>
+<strong>{{active_shift_label}}</strong>
+<div class="muted small">{{shown_count_label}} {{shown_count_value}} {{from_total_label}} {{from_total_value}}</div>
+</div>
+<div aria-label="{{status_filter_label}}" class="tcv5-filters" role="tablist">
+<button class="btn btn-xs {{filter_all_class}}" data-ov5-filter="all" type="button">{{filter_all_text}}</button>
+<button class="btn btn-xs {{filter_in_class}}" data-ov5-filter="in" type="button">{{filter_in_text}}</button>
+<button class="btn btn-xs {{filter_out_class}}" data-ov5-filter="out" type="button">{{filter_out_text}}</button>
+<button class="btn btn-xs {{filter_reserve_class}}" data-ov5-filter="reserve" type="button">{{filter_reserve_text}}</button>
+</div>
+<div class="tcv17-overflow-actions">
+<button class="btn btn-xs" data-ov5-reset-shift="shift1" type="button">{{reset_shift1_text}}</button>
+<button class="btn btn-xs" data-ov5-reset-shift="shift2" type="button">{{reset_shift2_text}}</button>
+<button class="btn btn-xs" data-ov5-restore-import="1" type="button">{{restore_import_text}}</button>
+</div>
+</div>
+        {{table_or_empty_html}}
+      </section>
+</div>
+</template>
+<template id="tpl-players-table-head">
+<th data-field="name">{{player_name_text}} <button aria-label="{{player_name_text}}" class="sort-btn" data-sort="name" type="button">↓</button></th>
+<th data-field="alliance">{{alliance_text}} <button aria-label="{{alliance_text}}" class="sort-btn" data-sort="alliance" type="button">↓</button></th>
+<th data-field="role">{{troop_type_text}} <button aria-label="{{troop_type_text}}" class="sort-btn" data-sort="role" type="button">↓</button></th>
+<th data-field="tier">{{tier_text}} <button aria-label="{{tier_text}}" class="sort-btn" data-sort="tier" type="button">↓</button></th>
+<th data-field="march">{{march_text}} <button aria-label="{{march_text}}" class="sort-btn" data-sort="march" type="button">↓</button></th>
+<th data-field="rally">{{rally_text}} <button aria-label="{{rally_text}}" class="sort-btn" data-sort="rally" type="button">↓</button></th>
+<th data-field="captainReady">{{captain_text}} <button aria-label="{{captain_text}}" class="sort-btn" data-sort="captainReady" type="button">↓</button></th>
+<th data-field="shiftLabel">{{shift_text}} <button aria-label="{{shift_text}}" class="sort-btn" data-sort="shiftLabel" type="button">↓</button></th>
+<th class="{{lair_col_class}}" data-col-key="lair_level" data-field="lair">{{lair_text}} <button aria-label="{{lair_text}}" class="sort-btn" data-sort="lair" type="button">↓</button></th>
+    {{custom_headers_html}}
+    <th data-col-key="actions" data-field="actions">{{placement_text}} <button aria-label="{{placement_text}}" class="sort-btn" data-sort="actions" type="button">↓</button></th>
+</template>
+<template id="tpl-player-role-tag">
+<span class="tag tag--role {{role_class}}">{{role_text}}</span>
+</template>
+<template id="tpl-player-captain-pill">
+<span class="pill {{pill_class}}">{{pill_text}}</span>
+</template>
+<template id="tpl-player-shift-badge">
+<span class="shift-badge shift-badge--{{shift_class}}">{{shift_label}}</span>
+</template>
+<template id="tpl-player-row">
+<td data-field="name">{{name}}</td>
+<td data-field="alliance">{{alliance}}</td>
+<td data-field="role">{{role_html}}</td>
+<td data-field="tier">{{tier}}</td>
+<td data-field="march">{{march}}</td>
+<td data-field="rally">{{rally}}</td>
+<td data-field="captainReady">{{captain_html}}</td>
+<td data-field="shiftLabel">{{shift_html}}</td>
+<td class="{{lair_col_class}}" data-col-key="lair_level" data-field="lair">{{lair_level}}</td>
+    {{optional_cells_html}}
+    <td class="muted" data-col-key="actions" data-field="actions"></td>
+</template>
+<template id="tpl-stats-role-chips">
+<span class="stat-chip stat-chip--role is-fighter"><b>{{fighter_count}}</b><small>{{fighter_label}}</small></span>
+<span class="stat-chip stat-chip--role is-rider"><b>{{rider_count}}</b><small>{{rider_label}}</small></span>
+<span class="stat-chip stat-chip--role is-shooter"><b>{{shooter_count}}</b><small>{{shooter_label}}</small></span>
+</template>
+<template id="tpl-stats-shift-chips">
+<span class="stat-chip stat-chip--shift is-shift1"><b>{{shift1_count}}</b><small>{{shift1_label}}</small></span>
+<span class="stat-chip stat-chip--shift is-shift2"><b>{{shift2_count}}</b><small>{{shift2_label}}</small></span>
+<span class="stat-chip stat-chip--shift is-both"><b>{{both_count}}</b><small>{{both_label}}</small></span>
+</template>
+<template id="tpl-tcv5-status-pill">
+<span class="tcv5-status-pill {{status_class}}">{{status_text}}</span>
+</template>
+<template id="tpl-tcv5-reserve-actions">
+<button class="btn btn-xs {{shift1_class}}" data-player-id="{{player_id}}" data-ui-reserve-shift="shift1" type="button">{{shift1_text}}</button><button class="btn btn-xs {{shift2_class}}" data-player-id="{{player_id}}" data-ui-reserve-shift="shift2" type="button">{{shift2_text}}</button>
+</template>
+<template id="tpl-tcv5-status-row">
+<tr data-player-status="{{player_status}}">
+<td><div class="tcv5-player-name">{{player_name}}</div></td>
+<td>{{alliance}}</td>
+<td>{{role_text}} <span class="muted">{{tier_text}}</span></td>
+<td>{{march_text}}</td>
+<td>{{status_html}}</td>
+<td>{{tower_text}}</td>
+<td>{{reserve_text}}</td>
+<td>{{actions_html}}</td>
+</tr>
+</template>
+<template id="tpl-tcv5-status-table">
+<div class="helpers-table-wrap top-space tcv5-scroll-wrap" data-ov5-scroll-wrap="{{scroll_key}}">
+<table class="mini-table tower-calc-tier-table tcv5-table">
+<thead><tr><th>{{player_text}}</th><th>{{alliance_text}}</th><th>{{role_tier_text}}</th><th>{{march_text}}</th><th>{{status_text}}</th><th>{{turret_text}}</th><th>{{reserve_text}}</th><th>{{actions_text}}</th></tr></thead>
+<tbody>{{rows_html}}</tbody>
+</table>
+</div>
+</template>
+<template id="tpl-tcv5-status-empty">
+<div class="tower-calc-placeholder muted small top-space">{{empty_text}}</div>
+</template>
+<template id="tpl-tower-calc-inline-shell">
+<div class="tower-calc-inline-shell">
+<aside class="tower-picker-list" id="towerCalcInlineList"></aside>
+<section class="tower-picker-detail" id="towerCalcInlineDetail"></section>
+</div>
+<div class="tower-calc-inline-results tower-calc-inline-results-hidden">
+<div class="tower-calc-results" id="towerCalcOutShift1"></div>
+<div class="tower-calc-results" id="towerCalcOutShift2"></div>
+</div>
+</template>
+<template id="tpl-import-required-mapping-head">
+<div class="row-title-wrap"><div class="row-title">{{title_html}}</div><button class="mapping-edit-btn" type="button"><span aria-hidden="true">✎</span><span>{{edit_text}}</span></button></div>
+</template>
+<template id="tpl-import-optional-mapping-head">
+<div class="row-title-wrap"><div class="row-title">{{title_html}}</div><div class="row-title-actions">{{remove_btn_html}}<button class="mapping-edit-btn" type="button"><span aria-hidden="true">✎</span><span>{{edit_text}}</span></button></div></div>
+</template>
+<template id="tpl-import-add-extra-row">
+<button class="btn btn-sm mapping-add-btn" type="button">{{button_text}}</button>
+</template>
+<template id="tpl-import-column-visibility-check">
+<input data-col-key="{{col_key}}" type="checkbox"/> <span>{{label_text}}</span>
+</template>
+<template id="tpl-tower-calc-inline-empty">
+<div class="muted">{{turrets_text}}: 0</div>
+</template>
+<template id="tpl-tower-picker-item">
+<button class="btn btn-sm tower-picker-item {{active_class}} {{ready_class}}" data-calc-inline-base="{{base_id}}" data-calc-shift="{{shift_key}}" type="button">
+<div class="tower-item-row"><strong>{{title}}</strong><span aria-hidden="true" class="tower-item-status">{{status_icon}}</span></div>
+<span class="muted small">{{ready_text}} · <span class="tower-item-count {{count_class}}">{{players_short_text}}: {{players_count}}</span></span>
+</button>
+</template>
+<template id="tpl-tower-picker-helper-row">
+<tr><td>{{name}}</td><td>{{alliance}}</td><td>{{role}}</td><td>{{tier}}</td><td>{{march}}</td><td><button class="btn btn-xs" data-picker-edit-base="{{base_id}}" data-picker-edit-player="{{player_id}}" type="button">✎</button></td></tr>
+</template>
+<template id="tpl-tower-picker-captain-option">
+<option value="{{player_id}}" {{selected_attr}}="">{{label}}</option>
+</template>
+<template id="tpl-tower-picker-tier-input">
+<label><span class="muted small">{{tier}}</span><input class="picker-tier-input" data-picker-tier="{{tier}}" min="0" type="number" value="{{value}}"/></label>
+</template>
+<template id="tpl-tower-picker-suggestion-option">
+<option label="{{label}}" value="{{value}}"></option>
+</template>
+<template id="tpl-tower-picker-captain-row">
+<tr><td>{{name}}</td><td>{{alliance}}</td><td>{{role}}</td><td>{{tier}}</td><td>{{march}}</td><td><button class="btn btn-xs" data-picker-edit-base="{{base_id}}" data-picker-edit-player="{{player_id}}" type="button">✎</button></td></tr>
+</template>
+<template id="tpl-tower-picker-empty-row">
+<tr><td class="muted" colspan="{{colspan}}">{{message}}</td></tr>
+</template>
+<template id="tpl-board-sheet">
+<div class="board-sheet" data-no-fallback-i18n="1"><div class="board-title" data-board-title="1" data-no-fallback-i18n="1">{{title}}</div><div class="board-grid">{{cols_html}}</div></div>
+</template>
+<template id="tpl-tcv7-grid">
+<div class="tcv7-grid">{{cards_html}}</div>
+</template>
+<template id="tpl-tower-picker-detail">
+<div class="stack tower-picker-scope" data-calc-inline-scope="{{scope}}">
+<h3>{{title}}</h3>
+<div class="picker-meta-row muted small"><span class="picker-meta-shift">{{shift_text}}: {{scope_label}}</span><label class="picker-only-captains"><input id="pickerOnlyCaptains" type="checkbox" {{only_captains_checked}}=""/> {{only_captains_text}}</label><label class="picker-only-captains"><input id="pickerMatchRegisteredShift" type="checkbox" {{match_shift_checked}}=""/> {{match_shift_text}}</label><label class="picker-only-captains"><input id="pickerNoMixTroops" type="checkbox" {{no_mix_checked}}=""/> {{no_mix_text}}</label><label class="picker-only-captains"><input id="pickerNoCrossShiftDupes" type="checkbox" {{use_both_checked}}=""/> {{use_both_text}}</label></div>
+<div class="picker-topline top-space"><select aria-label="{{captain_aria_label}}" class="input-like" id="towerPickerCaptainSelect"><option value="">{{captain_placeholder_text}}</option>{{captain_options_html}}</select><div class="picker-actions"><button class="btn btn-sm" data-picker-set-captain="{{base_id}}" type="button">{{place_captain_text}}</button><button class="btn btn-sm" data-picker-autofill="{{base_id}}" type="button">{{auto_fill_text}}</button><button class="btn btn-sm" data-picker-clear-base="{{base_id}}" type="button">{{clear_turret_text}}</button></div></div>
+<div class="limit-grid limit-grid-compact top-space"><div><span>{{captain_march_text}}</span><strong>{{captain_march_value}}</strong></div><div><span>{{rally_size_text}}</span><strong>{{rally_size_value}}</strong></div><div><span>{{total_sum_text}}</span><strong>{{total_sum_value}}</strong></div><div><span>{{free_space_text}}</span><strong>{{free_space_value}}</strong></div></div>
+<details class="tower-collapsible top-space" id="towerPickerLimitsBlock"><summary>{{limits_by_tier_text}} ({{march_lower_text}})</summary><div class="inner stack"><div class="picker-limits-head"><label><span class="muted small">{{max_players_text}}</span><input id="pickerMaxHelpers" min="0" type="number" value="{{max_helpers_value}}"/></label><button class="btn btn-sm" data-picker-save-rule="{{base_id}}" type="button">{{save_limits_text}}</button><button class="btn btn-sm" data-picker-recalc-rule="{{base_id}}" type="button">{{recalc_composition_text}}</button><button class="btn btn-sm" data-picker-reset-rule="{{base_id}}" type="button">{{reset_limits_text}}</button></div><div class="row gap wrap">{{tier_inputs_html}}</div><div class="muted small">{{flexible_tier_note_text}}</div></div></details>
+<details class="tower-collapsible" id="towerPickerManualBlock"><summary>{{add_player_manually_text}}</summary><div class="inner stack"><div class="picker-manual-row"><input autocomplete="off" id="pickerManualSearch" list="pickerManualPlayerSuggestions" placeholder="{{search_player_text}}" spellcheck="false"/><input autocomplete="off" id="pickerManualName" placeholder="{{nickname_custom_text}}"/><datalist id="pickerManualPlayerSuggestions">{{suggestions_html}}</datalist><input id="pickerManualAlly" placeholder="{{alliance_text}}"/><select id="pickerManualRole"><option value="Fighter">{{fighter_text}}</option><option value="Shooter">{{shooter_text}}</option><option value="Rider">{{rider_text}}</option></select></div><div class="picker-manual-hint muted small" id="pickerManualHint"></div><div class="picker-manual-row2"><input id="pickerManualTier" placeholder="T14"/><input id="pickerManualMarch" min="0" placeholder="{{march_text}}" type="number"/><input id="pickerManualRally" min="0" placeholder="{{rally_size_text}}" type="number"/><button class="btn btn-sm" data-picker-add-manual-captain="{{base_id}}" type="button">{{place_captain_text}}</button><button class="btn btn-sm" data-picker-add-manual="{{base_id}}" type="button">{{add_player_manually_text}}</button></div></div></details>
+<div class="panel subpanel picker-players-panel"><div class="row gap wrap picker-players-head"><strong>{{players_in_turret_title_text}}</strong><span class="muted small">{{players_panel_state_text}}</span></div><div class="helpers-table-wrap top-space"><table class="mini-table"><thead><tr><th>{{player_text}}</th><th>{{ally_text}}</th><th>{{role_text}}</th><th>{{tier_text}}</th><th>{{march_text}}</th><th>✎</th></tr></thead><tbody data-picker-rows-target="1"></tbody></table></div></div>
+</div>
+</template>
+<template id="tpl-tower-calc-reserve-summary">
+<div class="muted small"><strong>{{title}}</strong> · {{shift1_label}}: {{shift1_count}} · {{shift2_label}}: {{shift2_count}} · {{both_label}}: {{both_count}}</div>
+    {{shift1_html}}
+    {{shift2_html}}
+    {{both_html}}
+    <div class="muted small top-space">{{hint_text}}</div>
+</template>
+</div>

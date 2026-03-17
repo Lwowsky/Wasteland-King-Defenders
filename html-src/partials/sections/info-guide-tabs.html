@@ -1,0 +1,48 @@
+<section id="infoGuideTabsSection" class="igt-section" data-default-tab="import" data-no-fallback-i18n>
+  <div class="igt-shell">
+    <button class="igt-toggle" type="button" aria-expanded="false" aria-controls="infoGuideTabsContent">
+      <span class="igt-toggle-main">
+        <span class="igt-badge" data-igt-label="section_label">Інформація та інструкція</span>
+        <span class="igt-toggle-sub" data-igt-label="section_hint">Натисни, щоб відкрити інструкцію по сайту</span>
+      </span>
+      <span class="igt-toggle-icon" aria-hidden="true"></span>
+    </button>
+
+    <div id="infoGuideTabsContent" class="igt-content" hidden>
+      <p class="igt-intro" data-igt-label="intro">
+        Відкрий потрібну вкладку і пройди кроки в рекомендованому порядку: імпорт, таблиця гравців, розподіл по турелях і вже після цього фінальний план.
+      </p>
+
+      <div class="igt-tabs" role="tablist" aria-label="Guide tabs">
+        <button class="igt-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="igt-panel-import" id="igt-tab-import" data-tab="import">
+          <span class="igt-tab-number">1</span>
+          <span class="igt-tab-label" data-igt-label="tab_import">Імпорт</span>
+        </button>
+        <button class="igt-tab" type="button" role="tab" aria-selected="false" aria-controls="igt-panel-players" id="igt-tab-players" data-tab="players">
+          <span class="igt-tab-number">2</span>
+          <span class="igt-tab-label" data-igt-label="tab_players">Таблиця гравців</span>
+        </button>
+        <button class="igt-tab" type="button" role="tab" aria-selected="false" aria-controls="igt-panel-turrets" id="igt-tab-turrets" data-tab="turrets">
+          <span class="igt-tab-number">3</span>
+          <span class="igt-tab-label" data-igt-label="tab_turrets">Розподіл по турелях</span>
+        </button>
+        <button class="igt-tab" type="button" role="tab" aria-selected="false" aria-controls="igt-panel-final-plan" id="igt-tab-final-plan" data-tab="final-plan">
+          <span class="igt-tab-number">4</span>
+          <span class="igt-tab-label" data-igt-label="tab_final_plan">Фінальний план</span>
+        </button>
+        <button class="igt-tab" type="button" role="tab" aria-selected="false" aria-controls="igt-panel-about" id="igt-tab-about" data-tab="about">
+          <span class="igt-tab-number">5</span>
+          <span class="igt-tab-label" data-igt-label="tab_about">Про сайт</span>
+        </button>
+      </div>
+
+      <div class="igt-panels">
+        <article class="igt-panel is-active" role="tabpanel" id="igt-panel-import" aria-labelledby="igt-tab-import" data-panel="import"></article>
+        <article class="igt-panel" role="tabpanel" id="igt-panel-players" aria-labelledby="igt-tab-players" data-panel="players" hidden></article>
+        <article class="igt-panel" role="tabpanel" id="igt-panel-turrets" aria-labelledby="igt-tab-turrets" data-panel="turrets" hidden></article>
+        <article class="igt-panel" role="tabpanel" id="igt-panel-final-plan" aria-labelledby="igt-tab-final-plan" data-panel="final-plan" hidden></article>
+        <article class="igt-panel" role="tabpanel" id="igt-panel-about" aria-labelledby="igt-tab-about" data-panel="about" hidden></article>
+      </div>
+    </div>
+  </div>
+</section>

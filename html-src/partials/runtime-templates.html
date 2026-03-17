@@ -1,0 +1,42 @@
+<template id="tpl-player-placement-base-empty-option">
+<option value="">{{label}}</option>
+</template>
+<template id="tpl-player-placement-base-option">
+<option value="{{value}}">{{label}}</option>
+</template>
+<template id="tpl-tower-calc-btn">
+<button class="btn btn-xs {{btn_class}}" type="button" {{attrs}}="">{{label}}</button>
+</template>
+<template id="tpl-tower-calc-tier-summary-row">
+<tr><td>{{tier}}</td><td>{{avail_count}}</td><td>{{avail_march}}</td><td>{{used_count}}</td><td>{{used_march}}</td></tr>
+</template>
+<template id="tpl-board-player-inline">
+<span>{{name}}</span><em>{{alliance}}</em><b>{{tier}}</b><strong{{warn_attr}}>{{march}}
+</strong{{warn_attr}}></template>
+<template id="tpl-board-cap-pill">
+<span class="board-cap-pill {{mod_class}}">{{value}}</span>
+</template>
+<template id="tpl-base-custom-cell">
+<td class="{{cell_class}}" data-col-key="{{col_key}}" data-field="{{field}}">{{value}}</td>
+</template>
+<template id="tpl-import-mapping-meta">
+    {{title}} <span class="mapping-meta">{{meta_text}}</span>
+</template>
+<template id="tpl-import-remove-button">
+<button aria-label="{{title}}" class="mapping-remove-btn" title="{{title}}" type="button">✕</button>
+</template>
+<template id="tpl-players-table-skeleton">
+<thead><tr></tr></thead><tbody></tbody>
+</template>
+<template id="tpl-players-table-custom-head-cell">
+<th class="{{class_name}}" data-col-key="{{col_key}}" data-field="{{field}}">{{label}}</th>
+</template>
+<template id="tpl-file-input-ui">
+<span class="pns-file-input-btn"></span><span class="pns-file-input-name"></span>
+</template>
+<template id="tpl-import-required-title">
+    {{label}} <strong>*</strong>
+</template>
+<template id="tpl-muted-dash">
+<span class="muted">—</span>
+</template>

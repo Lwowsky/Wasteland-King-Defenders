@@ -1,0 +1,95 @@
+<div aria-hidden="true" class="board-lang-dialog-root" id="boardLangDialogRoot"><div class="board-lang-dialog-backdrop" data-close-board-lang-picker="1"></div><div class="board-lang-dialog-shell" data-board-lang-dialog-shell="1"></div>
+<template id="tpl-tower-calc-reserve-player-row">
+<tr>
+<td>{{name}}</td>
+<td>{{alliance}}</td>
+<td>{{role}}</td>
+<td>{{tier}}</td>
+<td>{{march}}</td>
+<td>{{status}}</td>
+<td>
+<button class="btn btn-xs" data-calc-set-player-shift="{{player_id}}" data-target-shift="shift1" type="button" {{shift1_disabled}}="">→ {{shift1_label}}</button>
+<button class="btn btn-xs" data-calc-set-player-shift="{{player_id}}" data-target-shift="shift2" type="button" {{shift2_disabled}}="">→ {{shift2_label}}</button>
+<button class="btn btn-xs" data-calc-set-player-shift="{{player_id}}" data-target-shift="both" type="button">→ {{both_label}}</button>
+</td>
+</tr>
+</template>
+<template id="tpl-tower-calc-reserve-empty">
+<div class="tower-calc-placeholder muted small">{{empty_text}}</div>
+</template>
+<template id="tpl-tower-calc-reserve-panel">
+<section class="tower-calc-panel top-space">
+<div class="tower-calc-head"><h3 class="tc-no-margin">{{title}}</h3><span class="muted small">{{meta}}</span></div>
+<div class="helpers-table-wrap top-space tower-calc-tier-table-wrap" {{rows_wrap_hidden_attr}}="">
+<table class="mini-table tower-calc-tier-table">
+<thead><tr><th>{{nickname_text}}</th><th>{{alliance_text}}</th><th>{{role_text}}</th><th>{{tier_text}}</th><th>{{march_text}}</th><th>{{status_text}}</th><th>{{actions_text}}</th></tr></thead>
+<tbody>{{rows_html}}</tbody>
+</table>
+</div>
+      {{empty_html}}
+    </section>
+</template>
+<template id="tpl-tower-calc-picked-player-row">
+<tr>
+<td>{{name}}</td><td>{{tier}}</td><td>{{role}}</td>
+<td>{{sent}}</td><td>{{full}}</td>
+<td>{{exclude_button_html}} {{lock_button_html}}</td>
+</tr>
+</template>
+<template id="tpl-tower-calc-no-captains">
+<div class="tower-calc-placeholder muted small">{{message}}</div>
+</template>
+<template id="tpl-tcv7-warn">
+<div class="tcv7-warn">+{{count}} {{label}}</div>
+</template>
+<template id="tpl-player-placement-item">
+<div class="{{item_class}}">
+<span class="player-placement-shift">{{shift_label}}</span>
+<div class="player-placement-main">
+<strong>{{title}}</strong>
+<small>{{detail}}</small>
+</div>
+</div>
+</template>
+<template id="tpl-player-placement-card">
+<div class="player-placement-card">
+<div class="player-placement-grid">{{items_html}}</div>
+<button class="btn btn-xs btn-placement-edit" data-edit-player-placement="{{player_id}}" type="button"><span aria-hidden="true" class="btn-placement-edit-ico">✎</span><span class="btn-placement-edit-text">{{edit_text}}</span></button>
+<div class="row-status"></div>
+</div>
+</template>
+<template id="tpl-board-lang-dialog-root">
+<div class="board-lang-dialog-backdrop" data-close-board-lang-picker="1"></div>
+<div class="board-lang-dialog-shell" data-board-lang-dialog-shell="1"></div>
+</template>
+<template id="tpl-tower-calc-picked-players-section">
+<details class="top-space">
+<summary class="small">{{picked_players_text}} ({{picked_players_count}})</summary>
+<div class="helpers-table-wrap top-space tower-picked-wrap">
+<table class="mini-table tower-calc-tier-table">
+<thead><tr><th>{{nickname_text}}</th><th>{{tier_text}}</th><th>{{troop_type_text}}</th><th>{{sent_text}}</th><th>{{full_text}}</th><th>{{actions_text}}</th></tr></thead>
+<tbody>{{rows_html}}</tbody>
+</table>
+</div>
+</details>
+</template>
+<template id="tpl-tower-calc-panel">
+<div class="tower-calc-panel top-space" data-base-id="{{base_id}}" data-calc-tower-card="" data-shift="{{shift_key}}">
+<div class="tower-calc-head">
+<div><h4 class="tc-no-margin">#{{tower_index}} {{captain_name}}</h4><div class="muted small">{{troop_label}} · {{title}}</div></div>
+<div class="tower-calc-controls">{{open_button_html}}{{edit_button_html}}{{overflow_button_html}}{{manual_button_html}}{{lock_button_html}}</div>
+</div>
+<div class="tower-calc-summary">
+<div><span class="muted small">{{players_text}}</span><strong>{{players_value}}</strong></div>
+<div><span class="muted small">{{turret_capacity_text}}</span><strong>{{turret_capacity_value}}</strong></div>
+<div><span class="muted small">{{used_shortage_text}}</span><strong>{{used_shortage_value}}</strong></div>
+<div><span class="muted small">{{recommended_min_tier_text}}</span><strong>{{recommended_min_tier_value}}</strong></div>
+</div>
+<div class="muted small top-space">{{meta_line}}</div>
+<div class="muted small">{{tier_mix_line}}</div>
+<div class="muted small">{{status_line}}</div>
+<div class="muted small">{{fit_line}}</div>
+      {{picked_players_html}}
+    </div>
+</template>
+</div>
