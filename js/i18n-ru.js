@@ -7,6 +7,16 @@
   const root = window.PNSI18N_DICTS = window.PNSI18N_DICTS || { uk:{}, en:{}, ru:{} };
   root.ru = {
   "lang_name": "Русский",
+  "footer_contact_title": "Написать нам",
+  "footer_contact_subtitle": "Связь и предложения",
+  "footer_support_title": "Поддержать сайт",
+  "footer_support_subtitle": "Поддержка бесплатного проекта",
+  "footer_game_title": "Сайт игры",
+  "footer_game_subtitle": "Puzzle & Survival",
+  "footer_copy_brand": "© Wasteland King Defenders",
+  "footer_copy_created": "Создано",
+  "footer_copy_text": "Полностью бесплатный независимый фанатский инструмент для игроков — для удобного планирования списков, координации команды и подготовки к событию Битва за пустошь.",
+  "footer_copy_legal": "Сайт не является официальным и не аффилирован с правообладателями игры. Все авторские права, торговые марки и другие права интеллектуальной собственности в отношении Puzzle & Survival, включая название, логотипы, изображения и игровые материалы, принадлежат их соответствующим правообладателям.",
   "app_subtitle": "Puzzle & Survival — Планировщик турелей",
   "menu": "Меню",
   "settings_import": "Настройки / Импорт",

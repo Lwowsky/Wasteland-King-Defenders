@@ -343,23 +343,23 @@
 <button class="btn btn-xs {{shift1_class}}" data-player-id="{{player_id}}" data-ui-reserve-shift="shift1" type="button">{{shift1_text}}</button><button class="btn btn-xs {{shift2_class}}" data-player-id="{{player_id}}" data-ui-reserve-shift="shift2" type="button">{{shift2_text}}</button>
 </template>
 <template id="tpl-tcv5-status-row">
-<tr data-player-status="{{player_status}}">
-<td><div class="tcv5-player-name">{{player_name}}</div></td>
-<td>{{alliance}}</td>
-<td>{{role_text}} <span class="muted">{{tier_text}}</span></td>
-<td>{{march_text}}</td>
-<td>{{status_html}}</td>
-<td>{{tower_text}}</td>
-<td>{{reserve_text}}</td>
-<td>{{actions_html}}</td>
-</tr>
+<div class="tcv5-grid-row" data-player-status="{{player_status}}" role="row">
+<div class="tcv5-cell tcv5-col-player" role="cell"><div class="tcv5-player-name">{{player_name}}</div></div>
+<div class="tcv5-cell tcv5-col-alliance" role="cell">{{alliance}}</div>
+<div class="tcv5-cell tcv5-col-role" role="cell">{{role_text}} <span class="muted">{{tier_text}}</span></div>
+<div class="tcv5-cell tcv5-col-march" role="cell">{{march_text}}</div>
+<div class="tcv5-cell tcv5-col-status" role="cell">{{status_html}}</div>
+<div class="tcv5-cell tcv5-col-turret" role="cell">{{tower_text}}</div>
+<div class="tcv5-cell tcv5-col-reserve" role="cell">{{reserve_text}}</div>
+<div class="tcv5-cell tcv5-col-actions" role="cell"><div class="tcv5-action-buttons">{{actions_html}}</div></div>
+</div>
 </template>
 <template id="tpl-tcv5-status-table">
+<div class="tcv5-status-columns" aria-hidden="true"><span>{{player_text}}</span><span>{{alliance_text}}</span><span>{{role_tier_text}}</span><span>{{march_text}}</span><span>{{status_text}}</span><span>{{turret_text}}</span><span>{{reserve_text}}</span><span>{{actions_text}}</span></div>
 <div class="helpers-table-wrap top-space tcv5-scroll-wrap" data-ov5-scroll-wrap="{{scroll_key}}">
-<table class="mini-table tower-calc-tier-table tcv5-table">
-<thead><tr><th>{{player_text}}</th><th>{{alliance_text}}</th><th>{{role_tier_text}}</th><th>{{march_text}}</th><th>{{status_text}}</th><th>{{turret_text}}</th><th>{{reserve_text}}</th><th>{{actions_text}}</th></tr></thead>
-<tbody>{{rows_html}}</tbody>
-</table>
+<div aria-label="{{player_text}} · {{alliance_text}} · {{role_tier_text}} · {{march_text}} · {{status_text}} · {{turret_text}} · {{reserve_text}} · {{actions_text}}" class="tcv5-table" role="table">
+<div class="tcv5-grid-body" role="rowgroup">{{rows_html}}</div>
+</div>
 </div>
 </template>
 <template id="tpl-tcv5-status-empty">

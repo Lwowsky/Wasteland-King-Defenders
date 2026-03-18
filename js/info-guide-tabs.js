@@ -202,36 +202,36 @@
         about: {
           eyebrow: '5. Про сайт',
           title: 'Конструктор для Битви за Пустош у Puzzle & Survival',
-          lead: 'Цей сайт створений як робочий інструмент для підготовки турелей, змін і фінального плану в грі Puzzle & Survival. Він допомагає офіцерам швидше збирати склад, менше помилятися і зручніше відправляти готовий план у чат.',
+          lead: 'Цей сайт — повністю безкоштовний незалежний фанатський інструмент для гравців Puzzle & Survival, створений для підготовки турелей, змін і фінального плану. Він допомагає офіцерам швидше збирати склад, менше помилятися і зручніше готувати план перед подією, але не є офіційним сервісом гри.',
           steps: [
             {
               title: 'Хто розробив сайт',
               purpose: 'Автор ідеї та реалізації',
-              copy: 'Сайт розробив Володимир Потайчук, а його нік у грі — Lwowsky. Це авторський інструмент, зроблений під реальну офіцерську роботу, а не просто статична таблиця.'
+              copy: 'Сайт створений гравцем з ніком Lwowsky як повністю безкоштовний незалежний фанатський інструмент для спільноти. Він не є офіційним продуктом Puzzle & Survival і не афілійований із правовласниками гри; усі права на назву гри, логотипи, зображення та ігрові матеріали належать їхнім відповідним правовласникам.'
             },
             {
               title: 'Для якої гри він створений',
               purpose: 'Контекст використання',
-              copy: 'Інструмент створений для Puzzle & Survival, а саме як конструктор для Битви за Пустош: щоб швидко імпортувати склад, розподіляти людей по турелях і готувати фінальний план для зміни 1 та 2.'
+              copy: 'Інструмент створений фанатом для гравців Puzzle & Survival як безкоштовний допоміжний конструктор для Битви за Пустош: щоб швидко імпортувати склад, розподіляти людей по турелях і готувати фінальний план для зміни 1 та 2. При цьому сама гра Puzzle & Survival, її брендинг і офіційні матеріали належать відповідним правовласникам.'
             },
             {
               title: 'Чим цей сайт корисний',
               purpose: 'Що він дає офіцерам',
-              copy: 'Він поєднує в одному місці імпорт, таблицю гравців, логіку автопідбору, ручне редагування турелей і готовий перегляд для офіцерів. Завдяки цьому підготовка йде швидше, а хаосу в чатах і таблицях стає менше.'
+              copy: 'Він поєднує в одному місці імпорт, таблицю гравців, логіку автопідбору, ручне редагування турелей і готовий перегляд для офіцерів. Це безкоштовний незалежний інструмент спільноти, створений фанатом для зручної координації команди перед Битвою за Пустош, а не офіційний продукт гри.'
             }
           ],
           side: [
             {
               title: 'Красива суть у двох реченнях',
-              text: 'Це не просто список гравців, а командний інструмент, який допомагає перетворити сирий Excel на готовий бойовий план. Він створений людьми з гри і для людей з гри.'
+              text: 'Це не просто список гравців, а командний інструмент, який допомагає перетворити сирий Excel на готовий бойовий план. Це фанатський сервіс для зручної координації команди перед подією.'
             },
             {
-              title: 'Що можна написати тут далі',
-              text: 'За бажанням у цей блок можна ще додати Discord, контакти, changelog або подяку тим, хто тестував і допомагав збирати логіку сайту.'
+              title: 'Правовий статус',
+              text: 'Сайт має фанатський і неофіційний характер. Він створений для зручності гравців і не пов’язаний із правовласниками Puzzle & Survival, а всі права на гру, брендинг, логотипи, зображення та інші матеріали залишаються за їхніми відповідними правовласниками.'
             }
           ],
-          noteTitle: 'Credits',
-          noteText: 'Розробник: Володимир Потайчук · Нік у грі: Lwowsky · Гра: Puzzle & Survival · Призначення: конструктор для Битви за Пустош.'
+          noteTitle: 'Правова примітка',
+          noteText: 'Нік у грі: Lwowsky · Статус: повністю безкоштовний незалежний фанатський інструмент · Права на Puzzle & Survival та пов’язані матеріали належать відповідним правовласникам.'
         }
       }
     },
@@ -362,18 +362,18 @@
       about: {
         eyebrow: '5. О сайте',
         title: 'Конструктор для Битвы за Пустош в Puzzle & Survival',
-        lead: 'Этот сайт создан как рабочий инструмент для подготовки турелей, смен и финального плана в игре Puzzle & Survival. Он помогает офицерам быстрее собирать состав, меньше ошибаться и удобнее отправлять готовый план в чат.',
+        lead: 'Этот сайт — независимый фанатский инструмент для игроков Puzzle & Survival, созданный для подготовки турелей, смен и финального плана. Он помогает офицерам быстрее собирать состав и готовить план, но не является официальным сервисом игры.',
         steps: [
-          { title: 'Кто разработал сайт', purpose: 'Автор идеи и реализации', copy: 'Сайт разработал Владимир Потайчук, а его ник в игре — Lwowsky. Это авторский инструмент, сделанный под реальную офицерскую работу, а не просто статичная таблица.' },
-          { title: 'Для какой игры он создан', purpose: 'Контекст использования', copy: 'Инструмент создан для Puzzle & Survival, а именно как конструктор для Битвы за Пустош: чтобы быстро импортировать состав, распределять людей по турелям и готовить финальный план для смены 1 и 2.' },
-          { title: 'Чем этот сайт полезен', purpose: 'Что он даёт офицерам', copy: 'Он объединяет в одном месте импорт, таблицу игроков, логику автоподбора, ручное редактирование турелей и готовый просмотр для офицеров. Благодаря этому подготовка идёт быстрее, а хаоса в чатах и таблицах становится меньше.' }
+          { title: 'Кто разработал сайт', purpose: 'Автор идеи и реализации', copy: 'Сайт создан игроком с ником Lwowsky как полностью бесплатный независимый фанатский инструмент для сообщества. Он не является официальным продуктом Puzzle & Survival и не аффилирован с правообладателями игры; все права на название игры, логотипы, изображения и игровые материалы принадлежат их соответствующим правообладателям.' },
+          { title: 'Для какой игры он создан', purpose: 'Контекст использования', copy: 'Инструмент создан фанатом для игроков Puzzle & Survival как вспомогательный конструктор для Битвы за Пустош: чтобы быстро импортировать состав, распределять людей по турелям и готовить финальный план для смены 1 и 2. При этом сама игра Puzzle & Survival, её брендинг и официальные материалы принадлежат соответствующим правообладателям.' },
+          { title: 'Чем этот сайт полезен', purpose: 'Что он даёт офицерам', copy: 'Он объединяет в одном месте импорт, таблицу игроков, логику автоподбора, ручное редактирование турелей и готовый просмотр для офицеров. Это независимый инструмент сообщества, созданный фанатом для удобной координации команды перед Битвой за Пустошь, а не официальный продукт игры.' }
         ],
         side: [
-          { title: 'Красивая суть в двух предложениях', text: 'Это не просто список игроков, а командный инструмент, который помогает превратить сырой Excel в готовый боевой план. Он создан людьми из игры и для людей из игры.' },
-          { title: 'Что можно написать здесь дальше', text: 'При желании в этот блок можно ещё добавить Discord, контакты, changelog или благодарность тем, кто тестировал и помогал собирать логику сайта.' }
+          { title: 'Красивая суть в двух предложениях', text: 'Это не просто список игроков, а командный инструмент, который помогает превратить сырой Excel в готовый боевой план. Это фанатский сервис для удобной координации команды перед событием.' },
+          { title: 'Правовой статус', text: 'Сайт носит фанатский и неофициальный характер. Он создан для удобства игроков и не связан с правообладателями Puzzle & Survival, а все права на игру и её материалы остаются у их соответствующих владельцев.' }
         ],
-        noteTitle: 'Credits',
-        noteText: 'Разработчик: Владимир Потайчук · Ник в игре: Lwowsky · Игра: Puzzle & Survival · Назначение: конструктор для Битвы за Пустош.'
+        noteTitle: 'Правовая пометка',
+        noteText: 'Ник в игре: Lwowsky · Статус: полностью бесплатный независимый фанатский инструмент · Права на Puzzle & Survival и связанные материалы принадлежат соответствующим правообладателям.'
       }
     }
   });
@@ -472,18 +472,18 @@
       about: {
         eyebrow: '5. About the site',
         title: 'A Wasteland Battle planner for Puzzle & Survival',
-        lead: 'This site was built as a working tool for turret preparation, shift management and final-plan delivery inside Puzzle & Survival. It helps officers move faster, make fewer mistakes and turn spreadsheet chaos into a ready battle layout.',
+        lead: 'This site is an independent fan-made tool for Puzzle & Survival players, created to prepare turret layouts, shifts and the final plan. It helps officers work faster and cleaner, but it is not an official game service.',
         steps: [
-          { title: 'Who built the site', purpose: 'Author', copy: 'The site was created by Volodymyr Potaychuk, whose in-game nickname is Lwowsky. This is a practical tool built for real officer workflows, not just a static spreadsheet wrapper.' },
-          { title: 'What game it belongs to', purpose: 'Context', copy: 'It was designed for Puzzle & Survival as a planner for Wasteland Battle: import the roster, distribute players into turrets and prepare a final plan for shift 1 and shift 2.' },
-          { title: 'Why the site matters', purpose: 'Officer value', copy: 'It combines import, roster review, automatic balancing, manual turret editing and a clean officer-facing final plan in one place. That makes preparation faster and team coordination easier.' }
+          { title: 'Who built the site', purpose: 'Author', copy: 'The site was created by a player whose in-game nickname is Lwowsky as a completely free independent fan-made tool for the community. It is not an official Puzzle & Survival product and is not affiliated with the game rights holders; all rights to the game name, logos, images and in-game materials belong to their respective owners.' },
+          { title: 'What game it belongs to', purpose: 'Context', copy: 'It was designed by a fan for Puzzle & Survival players as a free helper planner for Wasteland Battle: import the roster, distribute players into turrets and prepare a final plan for shift 1 and shift 2. The game itself, its branding and official materials belong to their respective rights holders.' },
+          { title: 'Why the site matters', purpose: 'Officer value', copy: 'It combines import, roster review, automatic balancing, manual turret editing and a clean officer-facing final plan in one place. It is an independent community tool built by a fan for easier team coordination before Wasteland Battle, not an official game product.' }
         ],
         side: [
-          { title: 'The short version', text: 'This is more than a player list. It is a battle-planning tool that turns raw Excel data into a usable officer plan, built by someone from the game for people inside the game.' },
-          { title: 'What can be added later', text: 'This tab can also hold Discord links, changelog, credits, feedback contacts or alliance-specific notes without touching the rest of the guide.' }
+          { title: 'The short version', text: 'This is more than a player list. It is a fan-made coordination tool that turns raw Excel data into a usable officer plan before the event begins.' },
+          { title: 'Legal status', text: 'This site is fan-made and unofficial. It exists for player convenience and is not connected to the rights holders of Puzzle & Survival; all rights to the game, branding, logos, images and related materials remain with their respective owners.' }
         ],
-        noteTitle: 'Credits',
-        noteText: 'Developer: Volodymyr Potaychuk · In-game nickname: Lwowsky · Game: Puzzle & Survival · Purpose: Wasteland Battle planner.'
+        noteTitle: 'Legal note',
+        noteText: 'In-game nickname: Lwowsky · Status: completely free independent fan-made tool · Rights to Puzzle & Survival and related materials belong to their respective owners.'
       }
     }
   });
@@ -645,8 +645,8 @@
         <div class="igt-stack">
           ${renderSteps(panel.steps)}
         </div>
-        <div class="igt-stack">${renderSide(panel.side)}
-          <div class="igt-note">
+        <div class="igt-stack igt-about-side-stack">${renderSide(panel.side)}
+          <div class="igt-note igt-note--about">
             <div class="igt-note-title">${escapeHtml(panel.noteTitle)}</div>
             <p>${escapeHtml(panel.noteText)}</p>
           </div>

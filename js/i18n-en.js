@@ -7,6 +7,16 @@
   const root = window.PNSI18N_DICTS = window.PNSI18N_DICTS || { uk:{}, en:{}, ru:{} };
   root.en = {
   "lang_name": "English",
+  "footer_contact_title": "Contact us",
+  "footer_contact_subtitle": "Feedback and suggestions",
+  "footer_support_title": "Support the site",
+  "footer_support_subtitle": "Support the free project",
+  "footer_game_title": "Game site",
+  "footer_game_subtitle": "Puzzle & Survival",
+  "footer_copy_brand": "© Wasteland King Defenders",
+  "footer_copy_created": "Created by",
+  "footer_copy_text": "A completely free independent fan-made tool for players — built for easier list planning, team coordination and preparation for the Wasteland Battle event.",
+  "footer_copy_legal": "This site is unofficial and is not affiliated with the game rights holders. All copyrights, trademarks and other intellectual property rights related to Puzzle & Survival, including the name, logos, images and in-game materials, belong to their respective owners.",
   "app_subtitle": "Puzzle & Survival — Turret Planner",
   "menu": "Menu",
   "settings_import": "Setup / Import",

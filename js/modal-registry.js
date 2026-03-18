@@ -164,3 +164,5 @@
     }
   }, true);
 })();
+
+;(()=>{const P=window.PNS||{};const M=P.ModalsShift; if(!M||typeof M.openModal!=='function'||M.__settingsOpenReset) return; const old=M.openModal; M.__settingsOpenReset=true; M.openModal=function(name){const r=old.apply(this,arguments); const key=String(name||'').toLowerCase(); if(key.includes('settings')){ setTimeout(()=>{ const modal=document.getElementById('settings-modal'); const card=modal?.querySelector('.modal-card'); const grid=modal?.querySelector('.modal-grid'); if(card) card.scrollTop=0; if(grid) grid.scrollTop=0; },20);} return r; };})();
