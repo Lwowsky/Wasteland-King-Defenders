@@ -89,7 +89,7 @@
     const t = e.SheetNames[0],
       a = e.Sheets[t];
     return window.XLSX
-      ? XLSX.utils.sheet_to_json(a, { header: 1, defval: "", raw: !1 })
+      ? window.XLSX.utils.sheet_to_json(a, { header: 1, defval: "", raw: !1 })
       : [];
   }
 

@@ -5,7 +5,12 @@
   if (!e) return;
   const wiz = (e.ImportWizard = e.ImportWizard || {});
   const t = e.state;
-  const r = wiz.translate;
+  const tr = (...args) =>
+    typeof wiz.translate === "function"
+      ? wiz.translate(...args)
+      : typeof e.t === "function"
+        ? e.t(...args)
+        : (args[1] ?? args[0] ?? "");
   const i = wiz.REQUIRED_FIELDS || [];
   const b = wiz.ensureCustomOptionalDefs;
   const g = wiz.getCustomOptionalDefs;
@@ -22,11 +27,11 @@
     return fallback && headers.includes(fallback) ? fallback : "";
   }
 
-function V(e, a, r, n) {
-    ((t.importData.headers = e || []),
-      (t.importData.rows = a || []),
-      (t.importData.джерелоName = r || ""),
-      (t.importData.джерелоType = n || ""),
+function V(headersInput, rowsInput, sourceName, sourceType) {
+    ((t.importData.headers = headersInput || []),
+      (t.importData.rows = rowsInput || []),
+      (t.importData.джерелоName = sourceName || ""),
+      (t.importData.джерелоType = sourceType || ""),
       (t.importData.loaded = !0),
       (t.importData.sourcePending = !0),
       (wiz._skipPlayerRestoreUntilApplied = !0),
@@ -53,7 +58,7 @@ function V(e, a, r, n) {
           "";
       }),
       (t.importData.mapping = nextMapping),
-      T(r('import_source_rows_cols', '{source} • {rows} рядків • {cols} колонок').replace(/\{source\}/g, String(r || '')).replace(/\{rows\}/g, String(a.length)).replace(/\{cols\}/g, String(e.length))),
+      T(tr('import_source_rows_cols', '{source} • {rows} рядків • {cols} колонок').replace(/\{source\}/g, String(sourceName || '')).replace(/\{rows\}/g, String(rowsInput.length)).replace(/\{cols\}/g, String(headersInput.length))),
       O(),
       matchedTemplate && j(matchedTemplate),
       O());
@@ -62,7 +67,7 @@ function V(e, a, r, n) {
 function K() {
     if (!(t.importData.headers || []).length)
       return void k(
-        r(
+        tr(
           "load_file_or_link_then_detect",
           "Спочатку завантаж файл або посилання, потім визнач колонки.",
         ),
@@ -94,7 +99,7 @@ function K() {
       O(),
       (function(){ try { M?.({ silent: !0 }); } catch {} })(),
       k(
-        r(
+        tr(
           "columns_auto_detected",
           "Колонки визначено автоматично. Перевір зіставлення обов’язкових колонок.",
         ),
