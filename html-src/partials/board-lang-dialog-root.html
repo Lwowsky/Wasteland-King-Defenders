@@ -54,7 +54,7 @@
 <template id="tpl-player-placement-card">
 <div class="player-placement-card">
 <div class="player-placement-grid">{{items_html}}</div>
-<button class="btn btn-xs btn-placement-edit" data-edit-player-placement="{{player_id}}" type="button"><span aria-hidden="true" class="btn-placement-edit-ico">✎</span><span class="btn-placement-edit-text">{{edit_text}}</span></button>
+<button aria-label="{{edit_text}}" class="btn btn-xs btn-placement-edit" data-edit-player-placement="{{player_id}}" type="button"><span aria-hidden="true" class="btn-placement-edit-ico">✎</span></button>
 <div class="row-status"></div>
 </div>
 </template>

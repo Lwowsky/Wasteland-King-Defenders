@@ -5,12 +5,7 @@
   if (!e) return;
   const wiz = (e.ImportWizard = e.ImportWizard || {});
   const t = e.state;
-  const tr = (...args) =>
-    typeof wiz.translate === "function"
-      ? wiz.translate(...args)
-      : typeof e.t === "function"
-        ? e.t(...args)
-        : (args[1] ?? args[0] ?? "");
+  const tr = wiz.translate;
   const i = wiz.REQUIRED_FIELDS || [];
   const b = wiz.ensureCustomOptionalDefs;
   const g = wiz.getCustomOptionalDefs;
@@ -27,11 +22,11 @@
     return fallback && headers.includes(fallback) ? fallback : "";
   }
 
-function V(headersInput, rowsInput, sourceName, sourceType) {
-    ((t.importData.headers = headersInput || []),
-      (t.importData.rows = rowsInput || []),
-      (t.importData.джерелоName = sourceName || ""),
-      (t.importData.джерелоType = sourceType || ""),
+function V(headersArg, rowsArg, sourceNameArg, sourceTypeArg) {
+    ((t.importData.headers = headersArg || []),
+      (t.importData.rows = rowsArg || []),
+      (t.importData.джерелоName = sourceNameArg || ""),
+      (t.importData.джерелоType = sourceTypeArg || ""),
       (t.importData.loaded = !0),
       (t.importData.sourcePending = !0),
       (wiz._skipPlayerRestoreUntilApplied = !0),
@@ -58,7 +53,7 @@ function V(headersInput, rowsInput, sourceName, sourceType) {
           "";
       }),
       (t.importData.mapping = nextMapping),
-      T(tr('import_source_rows_cols', '{source} • {rows} рядків • {cols} колонок').replace(/\{source\}/g, String(sourceName || '')).replace(/\{rows\}/g, String(rowsInput.length)).replace(/\{cols\}/g, String(headersInput.length))),
+      T(tr('import_source_rows_cols', '{source} • {rows} рядків • {cols} колонок').replace(/\{source\}/g, String(sourceNameArg || '')).replace(/\{rows\}/g, String(rowsArg.length)).replace(/\{cols\}/g, String(headersArg.length))),
       O(),
       matchedTemplate && j(matchedTemplate),
       O());

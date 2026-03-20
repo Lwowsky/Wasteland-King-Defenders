@@ -123,6 +123,34 @@
     return Number.isFinite(value) && value > 0 ? value : 10;
   }
 
+  function getVisiblePageRows() {
+    return getRows().filter((row) => !row.hidden && !row.classList.contains('page-hidden'));
+  }
+
+  function syncPlayersTableViewport(filteredCount = null) {
+    const wrap = $('.players-panel .table-wrap');
+    const table = $('#playersDataTable');
+    if (!wrap || !table) return;
+
+    const headHeight = Math.ceil(table.tHead?.getBoundingClientRect?.().height || table.tHead?.offsetHeight || 0);
+    const visibleRows = getVisiblePageRows();
+    const sampleRows = visibleRows.slice(0, 10);
+    const rowsHeight = sampleRows.reduce((sum, row) => sum + Math.ceil(row.getBoundingClientRect?.().height || row.offsetHeight || 0), 0);
+    const fallbackRowHeight = Number(sampleRows[0]?.offsetHeight || 50) || 50;
+    const targetRows = Math.min(10, Math.max(visibleRows.length, 1));
+    const computedRowsHeight = rowsHeight || fallbackRowHeight * targetRows;
+    const targetHeight = Math.max(0, headHeight + computedRowsHeight + 2);
+
+    if (targetHeight) {
+      wrap.style.setProperty('--players-table-max-height', `${targetHeight}px`);
+    } else {
+      wrap.style.removeProperty('--players-table-max-height');
+    }
+
+    const compareCount = Number.isFinite(filteredCount) ? filteredCount : visibleRows.length;
+    wrap.classList.toggle('has-row-scroll', compareCount > 10);
+  }
+
   function recalcPlayerTable() {
     const tbody = $('#playersDataTable tbody');
     if (!tbody) return;
@@ -175,6 +203,8 @@
     if (prev) prev.disabled = pageSize === 'all' || pager.page <= 1;
     if (next) next.disabled = pageSize === 'all' || pager.page >= totalPages;
 
+    syncPlayersTableViewport(filteredRows.length);
+
     ensureSortButtons();
     $$('.sort-btn').forEach((button) => {
       const field = button.dataset.sort;
@@ -193,6 +223,7 @@
       pager._raf = 0;
       ensureSortButtons();
       recalcPlayerTable();
+      syncPlayersTableViewport();
     });
   }
 
@@ -244,6 +275,11 @@
 
   function initPlayersTableBindings() {
     PNS.ensurePlayerTableSortButtons?.();
+
+    const pageSizeSelect = $('#pageSizeSelect');
+    if (pageSizeSelect && !String(pageSizeSelect.value || '').trim()) pageSizeSelect.value = '10';
+    pager.pageSize = 10;
+    pager.page = 1;
 
     bindOnce($('#topTierFilter'), 'v4boundTier', () => {
       pager.page = 1;
@@ -301,3 +337,5 @@
     initPlayersTableBindings();
   }
 })();
+
+window.addEventListener('resize', () => window.PNS?.schedulePlayerTableRecalc?.(), { passive: true });

@@ -1,0 +1,260 @@
+/* Reference styling for Settings + Turrets section */
+:root{
+  --ref-card-bg:#0d1733;
+  --ref-card-bg-2:#0b1530;
+  --ref-card-line:rgba(116,141,231,.22);
+  --ref-card-line-strong:rgba(145,169,255,.34);
+  --ref-card-glow:rgba(78,105,224,.18);
+  --ref-violet-glow:rgba(136,96,255,.14);
+  --ref-active-from:#6b7dff;
+  --ref-active-to:#9a7cff;
+  --ref-active-line:rgba(186,194,255,.72);
+  --ref-active-shadow:rgba(120,132,255,.34);
+  --ref-ok:#3ecf8e;
+}
+
+.bases-panel{
+  background:
+    radial-gradient(88% 120% at 0% 0%, rgba(86,111,214,.14), transparent 52%),
+    radial-gradient(72% 96% at 100% 0%, rgba(122,84,220,.12), transparent 46%),
+    linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0) 20%),
+    #0c1430;
+}
+
+#basesSettingsCard,
+.bases-panel .bases-grid > .base-card{
+  border-color:var(--ref-card-line);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(86,111,214,.12), transparent 52%),
+    radial-gradient(96% 126% at 100% 0%, rgba(122,84,220,.10), transparent 42%),
+    linear-gradient(180deg, rgba(255,255,255,.022), rgba(255,255,255,0) 24%),
+    var(--ref-card-bg);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.03),
+    0 18px 36px rgba(3,8,24,.18);
+}
+
+#basesSettingsCard .captain-box,
+.bases-panel .bases-grid > .base-card .captain-box{
+  border-color:rgba(119,143,233,.18);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.022), rgba(255,255,255,0) 20%),
+    linear-gradient(180deg, rgba(12,22,48,.96), rgba(10,19,42,.96));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+#basesSettingsCard .shift-towers-preview{
+  border:1px solid rgba(118,144,235,.18);
+  background:
+    radial-gradient(110% 120% at 50% 0%, rgba(74,98,212,.10), transparent 44%),
+    linear-gradient(180deg, rgba(255,255,255,.015), rgba(255,255,255,0) 20%),
+    #09132d;
+}
+
+#basesSettingsCard .tower-thumb-card{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.018), rgba(255,255,255,0) 20%),
+    #101a36;
+  border:1px solid rgba(122,148,239,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.02);
+  transition:border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+#basesSettingsCard .tower-thumb-card.is-active,
+#basesSettingsCard .tower-thumb-card[aria-pressed="true"]{
+  border-color:rgba(127,214,164,.52);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.04),
+    0 0 0 1px rgba(71,179,122,.18),
+    0 14px 30px rgba(26,122,72,.18);
+  background:
+    radial-gradient(90% 110% at 50% 0%, rgba(53,168,107,.16), transparent 38%),
+    linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0) 22%),
+    #0f1c32;
+}
+
+#basesSettingsCard .tower-thumb-card:hover{
+  border-color:rgba(145,169,255,.28);
+}
+
+#basesSettingsCard .settings-actions-row{
+  gap:10px;
+}
+
+#basesSettingsCard .settings-actions-row .btn{
+  min-height:40px;
+  border-radius:14px;
+  border-color:rgba(120,143,228,.16);
+  background:rgba(11,19,42,.74);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.02);
+}
+
+#basesSettingsCard .settings-actions-row .shift-tab.active,
+#basesSettingsCard .settings-actions-row .shift-tab[aria-pressed="true"]{
+  color:#fff;
+  border-color:var(--ref-active-line);
+  background:
+    linear-gradient(135deg, var(--ref-active-from), var(--ref-active-to));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.28),
+    0 0 0 2px rgba(147,159,255,.16),
+    0 12px 26px var(--ref-active-shadow);
+}
+
+#basesSettingsCard .settings-actions-row .shift-tab.active:hover,
+#basesSettingsCard .settings-actions-row .shift-tab[aria-pressed="true"]:hover{
+  filter:brightness(1.03);
+}
+
+#settingsShiftBadge{
+  border-color:rgba(169,188,255,.4);
+  background:
+    linear-gradient(135deg, rgba(87,114,234,.96), rgba(118,145,255,.92));
+  color:#fff;
+  box-shadow:0 10px 22px rgba(71,98,214,.22), inset 0 1px 0 rgba(255,255,255,.24);
+}
+
+.bases-panel .bases-grid > .base-card .base-role.badge{
+  border-width:1px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+.bases-panel .bases-grid > .base-card.shooter-theme .base-role.badge{
+  background:linear-gradient(135deg, rgba(89,125,234,.92), rgba(116,160,255,.88));
+  border-color:rgba(167,199,255,.36);
+}
+.bases-panel .bases-grid > .base-card.fighter-theme .base-role.badge{
+  background:linear-gradient(135deg, rgba(147,104,41,.92), rgba(196,135,54,.9));
+  border-color:rgba(238,193,118,.34);
+}
+.bases-panel .bases-grid > .base-card.rider-theme .base-role.badge{
+  background:linear-gradient(135deg, rgba(58,117,121,.92), rgba(86,156,161,.88));
+  border-color:rgba(136,217,215,.32);
+}
+
+.bases-panel .bases-grid > .base-card .limit-grid > div,
+.bases-panel .bases-grid > .base-card .quota-row,
+.bases-panel .bases-grid > .base-card .helpers-table-wrap{
+  border-color:rgba(117,143,228,.16);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0) 22%),
+    rgba(11,19,42,.76);
+}
+
+.bases-panel .bases-grid > .base-card .mini-table th{
+  background:rgba(255,255,255,.035);
+}
+
+.bases-panel .bases-grid > .base-card .captain-col-right{
+  border-left-color:rgba(132,153,234,.16);
+}
+
+.bases-panel .bases-grid > .base-card .captain-name,
+#basesSettingsCard .base-card-head h3{
+  letter-spacing:-.02em;
+}
+
+.bases-panel .bases-grid > .base-card .captain-name.captain-empty{
+  color:#dbe5ff;
+}
+
+/* Sexy settings + turret styling */
+:root{
+  --ref-fighter-from:#7f7094;
+  --ref-fighter-to:#392846;
+  --ref-rider-from:#557f96;
+  --ref-rider-to:#17475b;
+  --ref-shooter-from:#6f87e8;
+  --ref-shooter-to:#3552a6;
+  --ref-shift1-from:#6d86ff;
+  --ref-shift1-to:#6b7ef2;
+  --ref-shift2-from:#8b6ff0;
+  --ref-shift2-to:#7057d7;
+}
+
+.bases-panel{
+  background:
+    radial-gradient(85% 120% at 0% 0%, rgba(95,121,227,.16), transparent 50%),
+    radial-gradient(72% 96% at 100% 0%, rgba(124,88,222,.14), transparent 46%),
+    linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,0) 22%),
+    #0b1430;
+}
+
+#basesSettingsCard,
+.bases-panel .bases-grid > .base-card{
+  border-radius:28px;
+}
+
+#basesSettingsCard .captain-box{
+  border-radius:30px;
+  padding:26px 22px 20px;
+}
+
+#basesSettingsCard .base-card-head{
+  padding-left:10px;
+  padding-right:10px;
+}
+
+#basesSettingsCard .settings-actions-row .btn,
+#basesSettingsCard .settings-actions-row .shift-tab{
+  min-height:44px;
+  border-radius:17px;
+  padding-inline:18px;
+}
+
+#basesSettingsCard .settings-actions-row .shift-tab.active[data-shift-tab="shift1"],
+#basesSettingsCard .settings-actions-row .shift-tab[aria-pressed="true"][data-shift-tab="shift1"]{
+  color:#fff;
+  border-color:rgba(191,212,255,.82);
+  background:linear-gradient(135deg,var(--ref-shift1-from),var(--ref-shift1-to));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.32),
+    0 0 0 3px rgba(119,145,255,.16),
+    0 14px 34px rgba(74,103,230,.32);
+}
+
+#basesSettingsCard .settings-actions-row .shift-tab.active[data-shift-tab="shift2"],
+#basesSettingsCard .settings-actions-row .shift-tab[aria-pressed="true"][data-shift-tab="shift2"]{
+  color:#fff;
+  border-color:rgba(219,207,255,.82);
+  background:linear-gradient(135deg,var(--ref-shift2-from),var(--ref-shift2-to));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.30),
+    0 0 0 3px rgba(168,142,255,.16),
+    0 14px 34px rgba(109,78,214,.30);
+}
+
+#settingsShiftBadge{
+  border-color:rgba(197,212,255,.44);
+  background:linear-gradient(135deg,var(--ref-shift1-from),var(--ref-shift2-to));
+  color:#fff;
+  box-shadow:0 10px 24px rgba(76,104,220,.24), inset 0 1px 0 rgba(255,255,255,.24);
+}
+
+.bases-panel .bases-grid > .base-card.shooter-theme .base-role.badge{
+  background:linear-gradient(135deg,var(--ref-shooter-from),var(--ref-shooter-to));
+  border-color:rgba(176,197,255,.40);
+  color:#fff;
+}
+.bases-panel .bases-grid > .base-card.fighter-theme .base-role.badge{
+  background:linear-gradient(135deg,var(--ref-fighter-from),var(--ref-fighter-to));
+  border-color:rgba(221,192,255,.24);
+  color:#fff;
+}
+.bases-panel .bases-grid > .base-card.rider-theme .base-role.badge{
+  background:linear-gradient(135deg,var(--ref-rider-from),var(--ref-rider-to));
+  border-color:rgba(147,228,233,.26);
+  color:#fff;
+}
+
+.bases-panel .bases-grid > .base-card.is-focused-tower{
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(102,129,238,.16), transparent 46%),
+    radial-gradient(96% 126% at 100% 0%, rgba(117,84,228,.12), transparent 40%),
+    linear-gradient(180deg, rgba(255,255,255,.026), rgba(255,255,255,0) 20%),
+    var(--ref-card-bg);
+  border-color:rgba(139,162,255,.30);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.04),
+    0 18px 36px rgba(3,8,24,.18),
+    0 0 0 1px rgba(92,122,238,.10);
+}

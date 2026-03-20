@@ -44,7 +44,7 @@
 </div>
 <div class="modal-grid tpe-modal-grid">
 <section class="panel subpanel stack tpe-panel-full">
-<div class="placement-editor stack compact">
+<div class="placement-editor">
 <div>
 <strong>{{where_place_player}}</strong>
 <div class="muted small" id="tpePlacementCopy">{{choose_shift_turret_role_or_reserve}}</div>
@@ -145,7 +145,7 @@
 <li class="empty-row">{{message}}</li>
 </template>
 <template id="tpl-board-col">
-<section class="board-col{{mod_class}}" data-base-id="{{base_id}}" data-no-fallback-i18n="1" data-shift="{{shift}}"><header><h4>{{title}}</h4><div class="board-sub{{auto_class}}">{{sub_text}}</div><div class="board-cap"><span class="cap-total">{{cap_total}}</span><span class="cap-free">{{cap_free}}</span><span class="cap-used">{{cap_used}}</span></div></header><ul>{{rows_html}}</ul></section>
+<section class="board-col{{mod_class}}" data-base-id="{{base_id}}" data-no-fallback-i18n="1" data-shift="{{shift}}"><header><h4>{{title}}</h4><div class="board-sub{{auto_class}}">{{sub_text}}</div><div class="board-cap board-cap-grid"><span class="board-cap-pill board-cap-pill--blue cap-total">{{cap_total}}</span><span class="board-cap-pill board-cap-pill--green cap-free">{{cap_free}}</span><span class="board-cap-pill board-cap-pill--gold cap-used">{{cap_used}}</span></div></header><ul>{{rows_html}}</ul></section>
 </template>
 <template id="tpl-limit-edit-row">
 <label class="tcv5-limit-toggle"><input id="tcv5EnableShiftLimits" type="checkbox"/><span>{{manual_limit_edit}}</span></label>
@@ -212,7 +212,7 @@
 </article>
 </template>
 <template id="tpl-board-modal-toolbar">
-<div class="row gap wrap board-head-actions board-head-actions--single tower-calc-preview-toolbar">
+<div class="board-head-actions board-head-actions--single tower-calc-preview-toolbar">
 <div class="row gap board-shift-group">
 <button class="btn btn-sm board-shift-tab {{shift1_active}}" data-shift-tab="shift1" type="button">{{shift1_text}}</button>
 <button class="btn btn-sm board-shift-tab {{shift2_active}}" data-shift-tab="shift2" type="button">{{shift2_text}}</button>
@@ -225,7 +225,7 @@
 </template>
 <template id="tpl-tower-calc-preview">
 <div class="tower-calc-board-preview">
-<div class="row gap wrap board-head-actions tower-calc-preview-toolbar">
+<div class="board-head-actions tower-calc-preview-toolbar">
 <div class="row gap">
 <button class="btn btn-sm board-shift-tab {{shift1_active}}" data-calc-preview-shift="shift1" type="button">{{shift1_text}}</button>
 <button class="btn btn-sm board-shift-tab {{shift2_active}}" data-calc-preview-shift="shift2" type="button">{{shift2_text}}</button>
@@ -355,8 +355,8 @@
 </div>
 </template>
 <template id="tpl-tcv5-status-table">
+<div class="tcv5-scroll-wrap top-space" data-ov5-scroll-wrap="{{scroll_key}}">
 <div class="tcv5-status-columns" aria-hidden="true"><span>{{player_text}}</span><span>{{alliance_text}}</span><span>{{role_tier_text}}</span><span>{{march_text}}</span><span>{{status_text}}</span><span>{{turret_text}}</span><span>{{reserve_text}}</span><span>{{actions_text}}</span></div>
-<div class="helpers-table-wrap top-space tcv5-scroll-wrap" data-ov5-scroll-wrap="{{scroll_key}}">
 <div aria-label="{{player_text}} · {{alliance_text}} · {{role_tier_text}} · {{march_text}} · {{status_text}} · {{turret_text}} · {{reserve_text}} · {{actions_text}}" class="tcv5-table" role="table">
 <div class="tcv5-grid-body" role="rowgroup">{{rows_html}}</div>
 </div>
@@ -428,7 +428,7 @@
 <div class="limit-grid limit-grid-compact top-space"><div><span>{{captain_march_text}}</span><strong>{{captain_march_value}}</strong></div><div><span>{{rally_size_text}}</span><strong>{{rally_size_value}}</strong></div><div><span>{{total_sum_text}}</span><strong>{{total_sum_value}}</strong></div><div><span>{{free_space_text}}</span><strong>{{free_space_value}}</strong></div></div>
 <details class="tower-collapsible top-space" id="towerPickerLimitsBlock"><summary>{{limits_by_tier_text}} ({{march_lower_text}})</summary><div class="inner stack"><div class="picker-limits-head"><label><span class="muted small">{{max_players_text}}</span><input id="pickerMaxHelpers" min="0" type="number" value="{{max_helpers_value}}"/></label><button class="btn btn-sm" data-picker-save-rule="{{base_id}}" type="button">{{save_limits_text}}</button><button class="btn btn-sm" data-picker-recalc-rule="{{base_id}}" type="button">{{recalc_composition_text}}</button><button class="btn btn-sm" data-picker-reset-rule="{{base_id}}" type="button">{{reset_limits_text}}</button></div><div class="row gap wrap">{{tier_inputs_html}}</div><div class="muted small">{{flexible_tier_note_text}}</div></div></details>
 <details class="tower-collapsible" id="towerPickerManualBlock"><summary>{{add_player_manually_text}}</summary><div class="inner stack"><div class="picker-manual-row"><input autocomplete="off" id="pickerManualSearch" list="pickerManualPlayerSuggestions" placeholder="{{search_player_text}}" spellcheck="false"/><input autocomplete="off" id="pickerManualName" placeholder="{{nickname_custom_text}}"/><datalist id="pickerManualPlayerSuggestions">{{suggestions_html}}</datalist><input id="pickerManualAlly" placeholder="{{alliance_text}}"/><select id="pickerManualRole"><option value="Fighter">{{fighter_text}}</option><option value="Shooter">{{shooter_text}}</option><option value="Rider">{{rider_text}}</option></select></div><div class="picker-manual-hint muted small" id="pickerManualHint"></div><div class="picker-manual-row2"><input id="pickerManualTier" placeholder="T14"/><input id="pickerManualMarch" min="0" placeholder="{{march_text}}" type="number"/><input id="pickerManualRally" min="0" placeholder="{{rally_size_text}}" type="number"/><button class="btn btn-sm" data-picker-add-manual-captain="{{base_id}}" type="button">{{place_captain_text}}</button><button class="btn btn-sm" data-picker-add-manual="{{base_id}}" type="button">{{add_player_manually_text}}</button></div></div></details>
-<div class="panel subpanel picker-players-panel"><div class="row gap wrap picker-players-head"><strong>{{players_in_turret_title_text}}</strong><span class="muted small">{{players_panel_state_text}}</span></div><div class="helpers-table-wrap top-space"><table class="mini-table"><thead><tr><th>{{player_text}}</th><th>{{ally_text}}</th><th>{{role_text}}</th><th>{{tier_text}}</th><th>{{march_text}}</th><th>✎</th></tr></thead><tbody data-picker-rows-target="1"></tbody></table></div></div>
+<div class="panel subpanel picker-players-panel"><div class="picker-players-head"><strong>{{players_in_turret_title_text}}</strong><span class="muted small">{{players_panel_state_text}}</span></div><div class="helpers-table-wrap top-space"><table class="mini-table"><thead><tr><th>{{player_text}}</th><th>{{ally_text}}</th><th>{{role_text}}</th><th>{{tier_text}}</th><th>{{march_text}}</th><th>✎</th></tr></thead><tbody data-picker-rows-target="1"></tbody></table></div></div>
 </div>
 </template>
 <template id="tpl-tower-calc-reserve-summary">

@@ -1,0 +1,1288 @@
+/* Reference final plan + plan language modal */
+@media (min-width:1200px) {
+  #board-modal .modal-card.board-card {
+    width: min(1320px, calc(100vw - 24px));
+    max-width: min(1320px, calc(100vw - 24px));
+    border-radius: 24px;
+    overflow: hidden;
+  }
+  #board-modal .modal-head.board-standalone-title {
+    padding: 18px 22px 16px;
+  }
+  #board-modal .board-standalone-preview {
+    padding: 0 14px 14px;
+    gap: 12px;
+  }
+  #board-modal .board-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: nowrap;
+    overflow: auto hidden;
+    padding: 10px 12px;
+    border: 1px solid rgba(124, 145, 255, 0.14);
+    border-radius: 22px;
+    background: #0b1430;
+  }
+  #board-modal .board-head-actions > * {
+    flex: 0 0 auto;
+  }
+  #board-modal .board-shift-tab,
+  #board-modal .board-lang-trigger,
+  #board-modal #exportPngBtn,
+  #board-modal #shareBoardBtn {
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 14px;
+    background: rgba(8, 14, 31, 0.92);
+    border: 1px solid rgba(124, 145, 255, 0.16);
+    color: #eef3ff;
+    font-weight: 700;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  #board-modal .board-shift-tab.active {
+    border-color: rgba(182, 191, 255, 0.64);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      0 0 0 2px rgba(140, 153, 235, 0.14);
+    background: linear-gradient(
+      180deg,
+      rgba(44, 58, 108, 0.9),
+      rgba(31, 41, 80, 0.96)
+    );
+  }
+  #board-modal .board-lang-trigger {
+    min-width: 0;
+  }
+  #board-modal .board-lang-trigger .board-lang-picker-label {
+    display: none;
+  }
+  #board-modal #boardModalPreviewSheet {
+    max-width: 100%;
+    overflow: hidden;
+  }
+  #board-modal .board-sheet {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    padding: 10px 10px 12px;
+    border-radius: 0;
+    box-sizing: border-box;
+  }
+  #board-modal .board-title {
+    font-size: 16px;
+    line-height: 1.18;
+    margin-bottom: 8px;
+  }
+  #board-modal .board-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+  }
+  #board-modal .board-col {
+    min-width: 0;
+    min-height: 268px;
+  }
+  #board-modal .board-col header {
+    padding: 7px 6px 6px;
+  }
+  #board-modal .board-col h4 {
+    min-height: 22px;
+    font-size: 10px;
+    line-height: 1.15;
+  }
+  #board-modal .board-sub {
+    font-size: 9px;
+    line-height: 1.22;
+    margin-top: 2px;
+  }
+  #board-modal .board-cap {
+    gap: 5px;
+    margin-top: 6px;
+  }
+  #board-modal .board-cap span {
+    padding: 4px 4px;
+    font-size: 9px;
+  }
+  #board-modal .board-col li {
+    grid-template-columns: minmax(0, 1.14fr) 0.42fr 0.34fr 0.58fr;
+    gap: 4px;
+    padding: 4px 4px;
+    font-size: 9px;
+  }
+}
+.board-lang-dialog-root.is-open .board-lang-dialog-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(2, 6, 18, 0.38);
+  backdrop-filter: blur(4px);
+}
+.board-lang-dialog-root.is-open .board-lang-dialog-card {
+  width: min(410px, calc(100vw - 32px));
+  max-width: min(410px, calc(100vw - 32px));
+  padding: 14px 14px 14px;
+  border-radius: 22px;
+  border: 1px solid rgba(124, 145, 255, 0.22);
+  background:
+    radial-gradient(
+      98% 120% at 0% 0%,
+      rgba(85, 113, 221, 0.14),
+      transparent 54%
+    ),
+    radial-gradient(
+      84% 116% at 100% 0%,
+      rgba(124, 88, 222, 0.12),
+      transparent 44%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.025),
+      rgba(255, 255, 255, 0) 20%
+    ),
+    #081126;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+.board-lang-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.board-lang-dialog-head strong {
+  display: block;
+  font-size: 18px;
+  line-height: 1.15;
+  color: #f3f7ff;
+}
+.board-lang-dialog-note {
+  margin-top: 6px;
+  color: #b8c6e4;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.board-lang-dialog-close {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 16px;
+  border: 1px solid rgba(124, 145, 255, 0.16);
+  background: rgba(8, 14, 31, 0.92);
+}
+.board-lang-dialog-list {
+  display: grid;
+  gap: 10px;
+}
+.board-lang-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(124, 145, 255, 0.16);
+  background: rgba(8, 14, 31, 0.92);
+  color: #eef3ff;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+.board-lang-option input {
+  width: 18px;
+  height: 18px;
+  accent-color: #7f98ff;
+}
+.board-lang-option.is-required,
+.board-lang-option:has(input:checked) {
+  border-color: rgba(124, 145, 255, 0.34);
+  background:
+    radial-gradient(
+      90% 110% at 50% 0%,
+      rgba(95, 121, 227, 0.16),
+      transparent 50%
+    ),
+    linear-gradient(180deg, rgba(42, 58, 111, 0.78), rgba(20, 33, 74, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 0 1px rgba(108, 127, 222, 0.08);
+}
+.board-lang-option.is-required input[disabled] {
+  opacity: 0.65;
+}
+.board-lang-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+.board-lang-dialog-actions .btn {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(124, 145, 255, 0.16);
+  background: rgba(8, 14, 31, 0.92);
+}
+#board-modal .board-head-actions .board-lang-picker-wrap {
+  flex: 0 0 auto;
+}
+#board-modal .board-head-actions .board-lang-trigger,
+#board-modal .board-head-actions .btn {
+  white-space: nowrap;
+}
+
+/* ChatGPT hotfix: compact one-line final-plan toolbar + refreshed turret themes */
+#board-modal .board-head-actions,
+.tower-calc-board-preview .board-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+#board-modal .board-head-actions > *,
+.tower-calc-board-preview .board-head-actions > * {
+  flex: 0 0 auto;
+}
+#board-modal .board-head-actions .board-lang-picker-wrap,
+.tower-calc-board-preview .board-head-actions .board-lang-picker-wrap {
+  margin-left: 0;
+  flex: 0 0 auto;
+}
+#board-modal .board-head-actions .row.gap,
+#board-modal .board-head-actions .board-shift-group,
+.tower-calc-board-preview .board-head-actions .row.gap,
+.tower-calc-board-preview .board-head-actions .board-shift-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  flex: 0 0 auto;
+}
+#board-modal .board-head-actions .btn,
+#board-modal .board-head-actions .board-lang-trigger,
+.tower-calc-board-preview .board-head-actions .btn,
+.tower-calc-board-preview .board-head-actions .board-lang-trigger {
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+}
+#board-modal .board-head-actions .board-lang-trigger .board-lang-picker-label,
+.tower-calc-board-preview
+  .board-head-actions
+  .board-lang-trigger
+  .board-lang-picker-label {
+  display: none;
+}
+#board-modal .board-head-actions .board-lang-trigger,
+.tower-calc-board-preview .board-head-actions .board-lang-trigger {
+  min-width: 0;
+  gap: 0;
+}
+#board-modal .board-head-actions::-webkit-scrollbar,
+.tower-calc-board-preview .board-head-actions::-webkit-scrollbar {
+  height: 6px;
+}
+
+.board-sheet .board-col.is-auto {
+  background: linear-gradient(180deg, #f7f8fc 0%, #eef2f8 100%);
+  border-color: #9eabbe;
+}
+.board-sheet .board-col.is-auto header {
+  background: linear-gradient(180deg, #c7d0de 0%, #aeb9ca 100%);
+  border-bottom-color: #96a3b9;
+  color: #0f1a33;
+}
+.board-sheet .board-col.is-auto h4,
+.board-sheet .board-col.is-auto .board-sub {
+  color: #0f1a33;
+}
+
+.board-sheet .board-col.fighter-theme {
+  background: linear-gradient(180deg, #fbf7ff 0%, #f4eefc 100%);
+  border-color: #70618f;
+  box-shadow: 0 0 0 1px rgba(112, 97, 143, 0.06);
+}
+.board-sheet .board-col.fighter-theme header {
+  background:
+    radial-gradient(
+      120% 140% at 18% 0%,
+      rgba(255, 255, 255, 0.18),
+      transparent 38%
+    ),
+    linear-gradient(180deg, #5f556f 0%, #352646 100%);
+  border-bottom-color: #6f5f95;
+  color: #f9fbff;
+}
+.board-sheet .board-col.fighter-theme h4,
+.board-sheet .board-col.fighter-theme .board-sub {
+  color: #f9fbff;
+}
+
+.board-sheet .board-col.rider-theme {
+  background: linear-gradient(180deg, #f3fbfc 0%, #e7f5f7 100%);
+  border-color: #2e6d7d;
+  box-shadow: 0 0 0 1px rgba(46, 109, 125, 0.06);
+}
+.board-sheet .board-col.rider-theme header {
+  background:
+    radial-gradient(
+      120% 140% at 18% 0%,
+      rgba(255, 255, 255, 0.16),
+      transparent 38%
+    ),
+    linear-gradient(180deg, #2d6171 0%, #173d4a 100%);
+  border-bottom-color: #2f7a8c;
+  color: #f6fdff;
+}
+.board-sheet .board-col.rider-theme h4,
+.board-sheet .board-col.rider-theme .board-sub {
+  color: #f6fdff;
+}
+
+.board-sheet .board-col.shooter-theme {
+  background: linear-gradient(180deg, #f5f8ff 0%, #edf1ff 100%);
+  border-color: #516fca;
+  box-shadow: 0 0 0 1px rgba(81, 111, 202, 0.06);
+}
+.board-sheet .board-col.shooter-theme header {
+  background:
+    radial-gradient(
+      120% 140% at 18% 0%,
+      rgba(255, 255, 255, 0.18),
+      transparent 38%
+    ),
+    linear-gradient(180deg, #4f69c6 0%, #2e3f8e 100%);
+  border-bottom-color: #6f83dd;
+  color: #f7faff;
+}
+.board-sheet .board-col.shooter-theme h4,
+.board-sheet .board-col.shooter-theme .board-sub {
+  color: #f7faff;
+}
+
+.board-sheet .board-col.fighter-theme .board-sub,
+.board-sheet .board-col.rider-theme .board-sub,
+.board-sheet .board-col.shooter-theme .board-sub {
+  opacity: 0.96;
+}
+.board-sheet .board-col.fighter-theme ul,
+.board-sheet .board-col.rider-theme ul,
+.board-sheet .board-col.shooter-theme ul,
+.board-sheet .board-col.is-auto ul {
+  background: transparent;
+}
+
+/* ChatGPT final-plan palette refresh: cooler board background, stronger captain row, clearer stat pills */
+.board-sheet {
+  background: linear-gradient(180deg, #d9dce4 0%, #cfd4de 100%);
+}
+.board-sheet .board-title {
+  color: #101725;
+}
+.board-sheet .board-grid {
+  align-items: start;
+}
+.board-sheet .board-col {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.18),
+    0 8px 18px rgba(32, 44, 77, 0.06);
+}
+.board-sheet .board-col ul {
+  background: #f9fafc;
+}
+.board-sheet .board-col li {
+  background: #f9fafc;
+}
+.board-sheet .board-col li + li {
+  border-top: 1px solid rgba(132, 143, 167, 0.14);
+}
+.board-sheet .board-col ul li.captain-row,
+.board-sheet .board-col ul li.is-captain-row,
+.board-sheet .board-col ul li.captain-row--highlight {
+  background: linear-gradient(180deg, #fff1c8 0%, #ffe29a 100%);
+  border-left: 4px solid #c88410;
+  box-shadow: inset 0 0 0 1px rgba(200, 132, 16, 0.16);
+}
+.board-sheet .board-col ul li.captain-row span,
+.board-sheet .board-col ul li.captain-row em,
+.board-sheet .board-col ul li.captain-row b,
+.board-sheet .board-col ul li.captain-row strong,
+.board-sheet .board-col ul li.is-captain-row span,
+.board-sheet .board-col ul li.is-captain-row em,
+.board-sheet .board-col ul li.is-captain-row b,
+.board-sheet .board-col ul li.is-captain-row strong,
+.board-sheet .board-col ul li.captain-row--highlight span,
+.board-sheet .board-col ul li.captain-row--highlight em,
+.board-sheet .board-col ul li.captain-row--highlight b,
+.board-sheet .board-col ul li.captain-row--highlight strong {
+  color: #4b2e00;
+}
+.board-sheet .board-col ul li.captain-row strong.captain-march-warn,
+.board-sheet .board-col ul li.is-captain-row strong.captain-march-warn {
+  color: #6a3a00;
+}
+.board-sheet .board-cap span {
+  border-radius: 4px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.board-sheet .board-cap .cap-total {
+  background: linear-gradient(180deg, #3e72c4 0%, #27559d 100%);
+  color: #f7fbff;
+}
+.board-sheet .board-cap .cap-free {
+  background: linear-gradient(180deg, #4a996d 0%, #317752 100%);
+  color: #f7fff8;
+}
+.board-sheet .board-cap .cap-used {
+  background: linear-gradient(180deg, #f0b33a 0%, #de9510 100%);
+  color: #231800;
+}
+
+/* ChatGPT final-plan pass: match burger + tower views, cleaner typography and export-friendly palette */
+:where(
+  #board-modal .board-sheet,
+  #towerCalcModal .board-sheet,
+  .tower-calc-board-preview .board-sheet,
+  .board-modal .board-sheet
+) {
+  padding: 12px 14px 16px;
+  background: linear-gradient(180deg, #d8dde6 0%, #cfd5df 100%);
+  color: #111827;
+}
+:where(
+  #board-modal .board-title,
+  #towerCalcModal .board-title,
+  .tower-calc-board-preview .board-title,
+  .board-modal .board-title
+) {
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  margin-bottom: 10px;
+  color: #111827;
+}
+:where(
+  #board-modal .board-grid,
+  #towerCalcModal .board-grid,
+  .tower-calc-board-preview .board-grid,
+  .board-modal .board-grid
+) {
+  gap: 8px;
+  align-items: start;
+}
+:where(
+  #board-modal .board-col,
+  #towerCalcModal .board-col,
+  .tower-calc-board-preview .board-col,
+  .board-modal .board-col
+) {
+  min-height: 324px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.22),
+    0 10px 20px rgba(31, 41, 55, 0.07);
+}
+:where(
+  #board-modal .board-col header,
+  #towerCalcModal .board-col header,
+  .tower-calc-board-preview .board-col header,
+  .board-modal .board-col header
+) {
+  padding: 10px 10px 9px;
+  text-align: center;
+}
+:where(
+  #board-modal .board-col h4,
+  #towerCalcModal .board-col h4,
+  .tower-calc-board-preview .board-col h4,
+  .board-modal .board-col h4
+) {
+  min-height: 24px;
+  margin: 0;
+  font-size: 9px;
+  line-height: 1.18;
+  font-weight: 800;
+}
+:where(
+  #board-modal .board-sub,
+  #towerCalcModal .board-sub,
+  .tower-calc-board-preview .board-sub,
+  .board-modal .board-sub
+) {
+  margin-top: 5px;
+  font-size: 8px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+:where(
+  #board-modal .board-cap,
+  #towerCalcModal .board-cap,
+  .tower-calc-board-preview .board-cap,
+  .board-modal .board-cap
+) {
+  margin-top: 8px;
+  gap: 8px;
+}
+:where(
+  #board-modal .board-cap span,
+  #towerCalcModal .board-cap span,
+  .tower-calc-board-preview .board-cap span,
+  .board-modal .board-cap span
+) {
+  display: block;
+  text-align: center;
+  padding: 6px 8px;
+  border-radius: 5px;
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 800;
+}
+:where(
+  #board-modal .board-col ul,
+  #towerCalcModal .board-col ul,
+  .tower-calc-board-preview .board-col ul,
+  .board-modal .board-col ul
+) {
+  background: #f8fafc;
+}
+:where(
+  #board-modal .board-col li,
+  #towerCalcModal .board-col li,
+  .tower-calc-board-preview .board-col li,
+  .board-modal .board-col li
+) {
+  display: grid;
+  grid-template-columns: minmax(0, 1.22fr) 0.48fr 0.38fr 0.68fr;
+  gap: 6px;
+  align-items: center;
+  padding: 7px 10px;
+  font-size: 8px;
+  line-height: 1.22;
+  background: #f8fafc;
+}
+:where(
+  #board-modal .board-col li span,
+  #towerCalcModal .board-col li span,
+  .tower-calc-board-preview .board-col li span,
+  .board-modal .board-col li span
+) {
+  font-weight: 700;
+}
+:where(
+  #board-modal .board-col li em,
+  #towerCalcModal .board-col li em,
+  .tower-calc-board-preview .board-col li em,
+  .board-modal .board-col li em
+) {
+  font-style: normal;
+  color: #355c92;
+}
+:where(
+  #board-modal .board-col li b,
+  #towerCalcModal .board-col li b,
+  .tower-calc-board-preview .board-col li b,
+  .board-modal .board-col li b
+) {
+  color: #2f613a;
+}
+:where(
+  #board-modal .board-col li strong,
+  #towerCalcModal .board-col li strong,
+  .tower-calc-board-preview .board-col li strong,
+  .board-modal .board-col li strong
+) {
+  color: #1b1f28;
+  font-weight: 800;
+}
+.board-sheet .board-col ul li.captain-row,
+.board-sheet .board-col ul li.is-captain-row,
+.board-sheet .board-col ul li.captain-row--highlight {
+  background: linear-gradient(180deg, #ffe7a8 0%, #ffd978 100%);
+  border-left: 4px solid #bc7700;
+  box-shadow: inset 0 0 0 1px rgba(188, 119, 0, 0.18);
+}
+.board-sheet .board-col ul li.captain-row span,
+.board-sheet .board-col ul li.captain-row em,
+.board-sheet .board-col ul li.captain-row b,
+.board-sheet .board-col ul li.captain-row strong,
+.board-sheet .board-col ul li.is-captain-row span,
+.board-sheet .board-col ul li.is-captain-row em,
+.board-sheet .board-col ul li.is-captain-row b,
+.board-sheet .board-col ul li.is-captain-row strong,
+.board-sheet .board-col ul li.captain-row--highlight span,
+.board-sheet .board-col ul li.captain-row--highlight em,
+.board-sheet .board-col ul li.captain-row--highlight b,
+.board-sheet .board-col ul li.captain-row--highlight strong {
+  color: #4d2f00;
+}
+.board-sheet .board-cap .cap-total {
+  background: linear-gradient(180deg, #3c5fa7 0%, #27457f 100%);
+  color: #f7fbff;
+}
+.board-sheet .board-cap .cap-free {
+  background: linear-gradient(180deg, #4c9a68 0%, #2f7350 100%);
+  color: #f7fff9;
+}
+.board-sheet .board-cap .cap-used {
+  background: linear-gradient(180deg, #f2b234 0%, #de9214 100%);
+  color: #241700;
+}
+.board-sheet .board-col.empty ul,
+.board-sheet .board-col ul .empty-row {
+  color: #2d3748;
+}
+
+/* ChatGPT final-plan sync patch: burger menu background matches tower preview + cleaner PNG pills */
+#board-modal #boardModalPreviewSheet,
+#towerCalcModal #towerCalcGlobalOut,
+#towerCalcModal #towerCalcBoardPreviewSheet,
+.tower-calc-board-preview #towerCalcBoardPreviewSheet {
+  background: transparent;
+}
+
+#board-modal #boardModalPreviewSheet .board-sheet,
+#towerCalcModal #towerCalcGlobalOut .board-sheet,
+#towerCalcModal #towerCalcBoardPreviewSheet .board-sheet,
+.tower-calc-board-preview .board-sheet {
+  background: linear-gradient(180deg, #d7dce5 0%, #cfd5df 100%);
+  color: #101725;
+}
+
+#board-modal #boardModalPreviewSheet .board-title,
+#towerCalcModal #towerCalcGlobalOut .board-title,
+#towerCalcModal #towerCalcBoardPreviewSheet .board-title,
+.tower-calc-board-preview .board-title {
+  color: #101725;
+}
+
+#board-modal #boardModalPreviewSheet .board-col ul,
+#board-modal #boardModalPreviewSheet .board-col li,
+#towerCalcModal #towerCalcGlobalOut .board-col ul,
+#towerCalcModal #towerCalcGlobalOut .board-col li,
+#towerCalcModal #towerCalcBoardPreviewSheet .board-col ul,
+#towerCalcModal #towerCalcBoardPreviewSheet .board-col li,
+.tower-calc-board-preview .board-col ul,
+.tower-calc-board-preview .board-col li {
+  background: #f8fafc;
+}
+
+#board-modal .board-cap-grid,
+#towerCalcModal .board-cap-grid,
+.tower-calc-board-preview .board-cap-grid {
+  gap: 10px;
+}
+
+#board-modal .board-cap-pill,
+#towerCalcModal .board-cap-pill,
+.tower-calc-board-preview .board-cap-pill {
+  display: block;
+  text-align: center;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 0;
+  box-shadow: none;
+  background-clip: padding-box;
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 800;
+}
+
+#board-modal .board-cap-pill--blue,
+#towerCalcModal .board-cap-pill--blue,
+.tower-calc-board-preview .board-cap-pill--blue {
+  background: linear-gradient(180deg, #6e90da 0%, #436abf 100%);
+  color: #f9fbff;
+}
+
+#board-modal .board-cap-pill--green,
+#towerCalcModal .board-cap-pill--green,
+.tower-calc-board-preview .board-cap-pill--green {
+  background: linear-gradient(180deg, #79be8d 0%, #4b9667 100%);
+  color: #f8fff9;
+}
+
+#board-modal .board-cap-pill--gold,
+#towerCalcModal .board-cap-pill--gold,
+.tower-calc-board-preview .board-cap-pill--gold {
+  background: linear-gradient(180deg, #ffd25d 0%, #efb127 100%);
+  color: #1c1400;
+}
+
+#board-modal .board-sheet.is-exporting-png .board-cap-pill,
+#towerCalcModal .board-sheet.is-exporting-png .board-cap-pill,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-cap-pill {
+  box-shadow: none;
+  outline: 0;
+  border: 0;
+  background-image: none;
+}
+
+#board-modal .board-sheet.is-exporting-png .board-cap-pill--blue,
+#towerCalcModal .board-sheet.is-exporting-png .board-cap-pill--blue,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-cap-pill--blue {
+  background: #4e73c6;
+}
+
+#board-modal .board-sheet.is-exporting-png .board-cap-pill--green,
+#towerCalcModal .board-sheet.is-exporting-png .board-cap-pill--green,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-cap-pill--green {
+  background: #5aa174;
+}
+
+#board-modal .board-sheet.is-exporting-png .board-cap-pill--gold,
+#towerCalcModal .board-sheet.is-exporting-png .board-cap-pill--gold,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-cap-pill--gold {
+  background: #f1bb3e;
+}
+
+/* ChatGPT final-plan sync fix: burger modal typography matches turret final plan + PNG pills export clean */
+#board-modal #boardModalPreviewSheet .board-title {
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 800;
+}
+#board-modal #boardModalPreviewSheet .board-col h4 {
+  font-size: 10px;
+  line-height: 1.18;
+  font-weight: 800;
+}
+#board-modal #boardModalPreviewSheet .board-sub {
+  font-size: 9px;
+  line-height: 1.24;
+  font-weight: 700;
+}
+#board-modal #boardModalPreviewSheet .board-cap > span,
+#board-modal #boardModalPreviewSheet .board-cap-pill {
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 800;
+}
+#board-modal #boardModalPreviewSheet .board-col li {
+  font-size: 11px;
+  line-height: 1.22;
+}
+
+#board-modal .board-cap > span,
+#towerCalcModal .board-cap > span,
+.tower-calc-board-preview .board-cap > span {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  text-shadow: none;
+  background-clip: padding-box;
+}
+
+#board-modal .board-sheet.is-exporting-png .board-cap > span,
+#towerCalcModal .board-sheet.is-exporting-png .board-cap > span,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-cap > span {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  text-shadow: none;
+  background-image: none;
+}
+#board-modal .board-sheet.is-exporting-png .board-cap .cap-total,
+#towerCalcModal .board-sheet.is-exporting-png .board-cap .cap-total,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-cap .cap-total {
+  background: #4e73c6;
+  color: #f9fbff;
+}
+#board-modal .board-sheet.is-exporting-png .board-cap .cap-free,
+#towerCalcModal .board-sheet.is-exporting-png .board-cap .cap-free,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-cap .cap-free {
+  background: #5aa174;
+  color: #f8fff9;
+}
+#board-modal .board-sheet.is-exporting-png .board-cap .cap-used,
+#towerCalcModal .board-sheet.is-exporting-png .board-cap .cap-used,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-cap .cap-used {
+  background: #f1bb3e;
+  color: #1c1400;
+}
+
+
+/* Mobile standalone final-plan modal: fit toolbar and stack board vertically */
+@media (max-width:768px){
+  #board-modal .modal-card.board-standalone-card{
+    width:min(100vw - 12px,100%);
+    max-width:min(100vw - 12px,100%);
+    min-height:96dvh;
+    max-height:96dvh;
+    margin:6px auto;
+    padding:14px 14px 16px;
+    border-radius:24px;
+    overflow:hidden;
+  }
+  #board-modal .modal-head.board-standalone-title{
+    position:sticky;
+    top:0;
+    z-index:5;
+    grid-template-columns:minmax(0,1fr) 48px;
+    padding:6px 0 12px;
+    background:#091126f2;
+  }
+  #board-modal .board-standalone-preview{
+    min-height:0;
+    overflow:auto;
+    padding-right:2px;
+  }
+  #board-modal .board-head-actions.board-head-actions--single{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    overflow:visible;
+    padding:10px;
+  }
+  #board-modal .board-head-actions.board-head-actions--single .board-shift-tabs,
+  #board-modal .board-head-actions.board-head-actions--single .board-lang-picker-wrap{
+    grid-column:1 / -1;
+  }
+  #board-modal .board-head-actions.board-head-actions--single .board-shift-tabs{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  #board-modal .board-head-actions.board-head-actions--single .board-shift-tab,
+  #board-modal .board-head-actions.board-head-actions--single .board-lang-trigger,
+  #board-modal .board-head-actions.board-head-actions--single > .btn{
+    width:100%;
+    min-width:0;
+    justify-content:center;
+    text-align:center;
+    white-space:normal;
+    min-height:46px;
+    padding:10px 12px;
+  }
+  #board-modal .board-head-actions.board-head-actions--single .board-lang-trigger{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  #board-modal #boardModalPreviewSheet{
+    width:100%;
+    max-width:100%;
+    overflow:hidden;
+  }
+  #board-modal #boardModalPreviewSheet .board-sheet{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    padding:10px 8px;
+    overflow:hidden;
+    box-sizing:border-box;
+  }
+  #board-modal #boardModalPreviewSheet .board-grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+    width:100%;
+    min-width:0;
+  }
+  #board-modal #boardModalPreviewSheet .board-col{
+    width:100%;
+    min-width:0;
+    min-height:auto;
+  }
+  #board-modal #boardModalPreviewSheet .board-title{
+    font-size:12px;
+    line-height:1.2;
+    overflow-wrap:anywhere;
+  }
+  #board-modal #boardModalPreviewSheet .board-col header{
+    padding:8px 6px;
+  }
+  #board-modal #boardModalPreviewSheet .board-col h4{
+    font-size:12px;
+    line-height:1.2;
+    min-height:0;
+    overflow-wrap:anywhere;
+  }
+  #board-modal #boardModalPreviewSheet .board-sub{
+    font-size:11px;
+    line-height:1.25;
+  }
+  #board-modal #boardModalPreviewSheet .board-cap{
+    gap:6px;
+  }
+  #board-modal #boardModalPreviewSheet .board-col li{
+    grid-template-columns:minmax(0,1.2fr) .55fr .45fr .75fr;
+    font-size:11px;
+    padding:5px;
+  }
+}
+
+@media (max-width:480px){
+  #board-modal .board-head-actions.board-head-actions--single{
+    grid-template-columns:1fr;
+  }
+  #board-modal .board-head-actions.board-head-actions--single .board-shift-tabs{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+/* ChatGPT fix: real mobile burger final-plan sync + tower action stack */
+#towerCalcTopShiftSummaryV7 .tcv7-card {
+  align-items: center;
+  text-align: center;
+}
+#towerCalcTopShiftSummaryV7 .tcv7-card-main,
+#towerCalcTopShiftSummaryV7 .tcv7-card-head,
+#towerCalcTopShiftSummaryV7 .tcv7-card-value,
+#towerCalcTopShiftSummaryV7 .tcv7-card-kicker,
+#towerCalcTopShiftSummaryV7 .tcv7-card-bottom,
+#towerCalcTopShiftSummaryV7 .tcv7-warn {
+  width: 100%;
+  text-align: center;
+}
+#towerCalcTopShiftSummaryV7 .tcv7-card-main {
+  justify-items: center;
+}
+#towerCalcTopShiftSummaryV7 .tcv7-role-row {
+  justify-content: center;
+}
+#towerCalcTopShiftSummaryV7 .tcv7-role-item {
+  justify-items: center;
+  text-align: center;
+}
+
+@media (max-width:768px) {
+  #towerCalcModal #tcv35-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    width: 100%;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  #towerCalcModal #tcv35-row > .btn,
+  #towerCalcModal #tcv35-row > #tcv35-clearWrap,
+  #towerCalcModal #tcv35-row > #tcv35-clearWrap > .btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #towerCalcModal #tcv35-clearWrap {
+    grid-column: 1 / -1;
+  }
+
+  #towerCalcModal #tcv35-clearWrap > .btn {
+    justify-content: center;
+  }
+
+  #board-modal .modal-card.board-standalone-card {
+    width: min(100vw - 12px, 100%);
+    max-width: min(100vw - 12px, 100%);
+    min-height: 96dvh;
+    max-height: 96dvh;
+    margin: 6px auto;
+    padding: 14px 14px 16px;
+    border-radius: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #board-modal .modal-head.board-standalone-title {
+    flex: 0 0 auto;
+    position: sticky;
+    top: 0;
+    z-index: 8;
+    padding: 6px 0 12px;
+    background: #091126f2;
+  }
+
+  #board-modal .board-standalone-preview {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 2px 10px;
+    overscroll-behavior: contain;
+  }
+
+  #board-modal .board-head-actions.board-head-actions--single,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 8px 0 10px;
+    border: 0;
+    background: transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #board-modal .board-head-actions.board-head-actions--single > *,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar > *,
+  #board-modal .board-head-actions.board-head-actions--single .board-shift-group,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-shift-group,
+  #board-modal .board-head-actions.board-head-actions--single .board-lang-picker-wrap,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-lang-picker-wrap,
+  #board-modal .board-head-actions.board-head-actions--single .btn,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar .btn {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: max-content;
+  }
+
+  #board-modal .board-head-actions.board-head-actions--single .board-shift-group,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-shift-group {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  #board-modal .board-head-actions.board-head-actions--single .board-shift-tab,
+  #board-modal .board-head-actions.board-head-actions--single .board-lang-trigger,
+  #board-modal .board-head-actions.board-head-actions--single > .btn,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-shift-tab,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-lang-trigger,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar > .btn {
+    width: auto;
+    min-width: max-content;
+    min-height: 44px;
+    padding: 0 16px;
+    white-space: nowrap;
+    text-align: center;
+    justify-content: center;
+  }
+
+  #board-modal .board-head-actions.board-head-actions--single .board-lang-picker-wrap,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-lang-picker-wrap {
+    display: flex;
+    margin-left: 0;
+  }
+
+  #board-modal #boardModalPreviewSheet {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 0 10px;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-sheet {
+    width: max-content;
+    min-width: 760px;
+    max-width: none;
+    overflow: visible;
+    padding: 8px 6px;
+    box-sizing: border-box;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(140px, 1fr));
+    gap: 6px;
+    width: max-content;
+    min-width: 760px;
+    max-width: none;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-col {
+    width: auto;
+    min-width: 0;
+    min-height: 0;
+  }
+}
+
+/* ChatGPT mobile sync fix: burger final plan stacks vertically like tower final plan */
+@media (max-width:768px) {
+  #board-modal #boardModalPreviewSheet,
+  #board-modal .board-modal-preview,
+  #board-modal .board-standalone-preview {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-sheet,
+  #board-modal .board-modal-preview .board-sheet,
+  #board-modal .board-sheet {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-grid,
+  #board-modal .board-modal-preview .board-grid,
+  #board-modal .board-grid {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-col,
+  #board-modal .board-modal-preview .board-col,
+  #board-modal .board-col {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-col li,
+  #board-modal .board-modal-preview .board-col li,
+  #board-modal .board-col li {
+    grid-template-columns: minmax(0, 1.2fr) 0.55fr 0.45fr 0.75fr;
+    font-size: 11px;
+    padding: 5px;
+  }
+}
+
+
+/* ChatGPT patch: burger final-plan matches tower final-plan on tablet widths */
+@media (max-width:980px) {
+  #board-modal .modal-card.board-standalone-card {
+    width: min(100vw - 18px, 100%);
+    max-width: min(100vw - 18px, 100%);
+    min-height: min(96dvh, 980px);
+    max-height: min(96dvh, 980px);
+    margin: 9px auto;
+    padding: 16px 16px 18px;
+    border-radius: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #board-modal .modal-head.board-standalone-title {
+    flex: 0 0 auto;
+    position: sticky;
+    top: 0;
+    z-index: 8;
+    padding: 6px 0 14px;
+    background: #091126f2;
+  }
+
+  #board-modal .board-standalone-preview {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 2px 10px;
+    overscroll-behavior: contain;
+  }
+
+  #board-modal .board-head-actions.board-head-actions--single,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px 0 12px;
+    border: 0;
+    background: transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #board-modal .board-head-actions.board-head-actions--single > *,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar > *,
+  #board-modal .board-head-actions.board-head-actions--single .board-shift-group,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-shift-group,
+  #board-modal .board-head-actions.board-head-actions--single .board-lang-picker-wrap,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-lang-picker-wrap,
+  #board-modal .board-head-actions.board-head-actions--single .btn,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar .btn,
+  #board-modal .board-head-actions.board-head-actions--single .board-lang-trigger,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-lang-trigger {
+    flex: 0 0 auto;
+    min-width: max-content;
+    white-space: nowrap;
+  }
+
+  #board-modal #boardModalPreviewSheet,
+  #board-modal .board-modal-preview,
+  #board-modal .board-standalone-preview {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-sheet,
+  #board-modal .board-modal-preview .board-sheet,
+  #board-modal .board-sheet {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+    padding: 10px 8px;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-grid,
+  #board-modal .board-modal-preview .board-grid,
+  #board-modal .board-grid {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-col,
+  #board-modal .board-modal-preview .board-col,
+  #board-modal .board-col {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-col header,
+  #board-modal .board-modal-preview .board-col header,
+  #board-modal .board-col header {
+    padding: 8px 6px;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-col h4,
+  #board-modal .board-modal-preview .board-col h4,
+  #board-modal .board-col h4 {
+    font-size: 12px;
+    line-height: 1.18;
+    min-height: 0;
+    overflow-wrap: anywhere;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-col li,
+  #board-modal .board-modal-preview .board-col li,
+  #board-modal .board-col li {
+    grid-template-columns: minmax(0, 1.2fr) 0.55fr 0.45fr 0.75fr;
+    font-size: 11px;
+    padding: 5px;
+  }
+}

@@ -147,23 +147,97 @@
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
-  async function renderSheetToPngBlob(sheet) {
+  function getPreferredPngScale() {
+    const dpr = Number(window.devicePixelRatio || 1) || 1;
+    if (dpr >= 2.2) return 4;
+    if (dpr >= 1.5) return 3.5;
+    return 3;
+  }
+
+  async function renderSheetToPngBlob(sheet, options = {}) {
     if (!sheet) return null;
     if (typeof window.html2canvas !== "function") {
       throw new Error("html2canvas_missing");
     }
-    const canvas = await window.html2canvas(sheet, {
-      backgroundColor: "#ffffff",
-      scale: 2,
-      useCORS: true
-    });
-    return await new Promise((resolve, reject) => {
+    const rect = typeof sheet.getBoundingClientRect === "function"
+      ? sheet.getBoundingClientRect()
+      : { width: 0, height: 0 };
+    const exportScale = Math.max(2, Math.min(4, Number(options.scale || getPreferredPngScale()) || 3));
+    const cleanup = [];
+    try {
+      sheet.classList?.add("is-exporting-png");
+      cleanup.push(() => sheet.classList?.remove("is-exporting-png"));
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const canvas = await window.html2canvas(sheet, {
+        backgroundColor: null,
+        scale: exportScale,
+        useCORS: true,
+        logging: false,
+        width: Math.max(1, Math.ceil(rect.width || sheet.scrollWidth || 0)),
+        height: Math.max(1, Math.ceil(rect.height || sheet.scrollHeight || 0)),
+        windowWidth: Math.max(
+          Math.ceil(rect.width || 0) + 64,
+          window.innerWidth || document.documentElement?.clientWidth || 0
+        ),
+        windowHeight: Math.max(
+          Math.ceil(rect.height || 0) + 64,
+          window.innerHeight || document.documentElement?.clientHeight || 0
+        ),
+        scrollX: 0,
+        scrollY: 0,
+        onclone: (clonedDoc) => {
+          try {
+            const cloneSheet = clonedDoc.querySelector('.board-sheet');
+            if (cloneSheet) cloneSheet.classList.add('is-exporting-png');
+            const pills = clonedDoc.querySelectorAll('.board-cap > span');
+            pills.forEach((pill, idx) => {
+              try {
+                pill.style.border = '0';
+                pill.style.outline = '0';
+                pill.style.boxShadow = 'none';
+                pill.style.textShadow = 'none';
+                pill.style.backgroundImage = 'none';
+                pill.style.filter = 'none';
+                pill.style.borderRadius = '8px';
+                pill.style.padding = '6px 10px';
+                pill.style.fontWeight = '800';
+                pill.style.lineHeight = '1';
+                pill.style.display = 'block';
+                pill.style.textAlign = 'center';
+                if (idx === 0) {
+                  pill.style.background = '#4e73c6';
+                  pill.style.color = '#f9fbff';
+                } else if (idx === 1) {
+                  pill.style.background = '#5aa174';
+                  pill.style.color = '#f8fff9';
+                } else {
+                  pill.style.background = '#f1bb3e';
+                  pill.style.color = '#1c1400';
+                }
+              } catch {}
+            });
+          } catch {}
+        }
+      });
       try {
-        canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("png_blob_failed")), "image/png");
-      } catch (err) {
-        reject(err);
-      }
-    });
+        const ctx = canvas.getContext?.("2d");
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+        }
+      } catch {}
+      return await new Promise((resolve, reject) => {
+        try {
+          canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("png_blob_failed")), "image/png");
+        } catch (err) {
+          reject(err);
+        }
+      });
+    } finally {
+      cleanup.reverse().forEach((fn) => {
+        try { fn(); } catch {}
+      });
+    }
   }
 
   function downloadBlob(filename, blob) {
@@ -211,6 +285,38 @@
     const value = String(active?.getAttribute?.("data-shift-tab") || active?.getAttribute?.("data-calc-preview-shift") || "shift1");
     return value.toLowerCase() === "shift2" ? "shift2" : "shift1";
   }
+
+  window.exportBoardAsPNG = async function(options = {}) {
+    const sheet = options.sheet || getBoardSheet();
+    const shift = String(options.shift || getBoardShift()).toLowerCase() === "shift2" ? "shift2" : "shift1";
+    const shiftText = shiftLabel(shift);
+    const statusEl = options.statusEl || getBoardStatusEl();
+    if (!sheet) {
+      alert(tr("no_final_plan_export", "Немає фінального плану для експорту."));
+      return false;
+    }
+    if (typeof window.html2canvas !== "function") {
+      const message = window.__PNS_OFFLINE_NO_HTML2CANVAS__
+        ? tr("png_export_offline", "PNG export недоступний в offline-пакеті без локальної бібліотеки html2canvas.")
+        : tr("html2canvas_missing", "html2canvas не завантажився.");
+      if (statusEl) statusEl.textContent = message;
+      alert(message);
+      return false;
+    }
+    try {
+      if (statusEl) statusEl.textContent = `${tr("preparing_png", "Готуємо PNG")} · ${shiftText}…`;
+      const blob = await renderSheetToPngBlob(sheet, { scale: options.scale });
+      const filename = options.filename || `pns-final-board-${shift}.png`;
+      downloadBlob(filename, blob);
+      if (statusEl) statusEl.textContent = `${tr("png_saved", "PNG збережено")} · ${shiftText}.`;
+      return true;
+    } catch (err) {
+      console.error(err);
+      if (statusEl) statusEl.textContent = tr("png_failed", "Не вдалося згенерувати PNG.");
+      alert(tr("png_failed", "Не вдалося згенерувати PNG."));
+      return false;
+    }
+  };
 
   window.shareBoardAsImage = async function(options = {}) {
     const sheet = options.sheet || getBoardSheet();
@@ -271,39 +377,11 @@
   };
 
   window.calcExportPreviewBoardPng = async function(){
-    const sheet = getPreviewSheet();
-    const statusEl = getPreviewStatusEl();
-    if (!sheet) {
-      alert(tr("no_final_plan_export", "Немає фінального плану для експорту."));
-      return false;
-    }
-    if (typeof window.html2canvas !== "function") {
-      alert(tr("html2canvas_missing", "html2canvas не завантажився."));
-      return false;
-    }
-    const shift = getPreviewShift();
-    const shiftText = shiftLabel(shift);
-    try {
-      if (statusEl) statusEl.textContent = `${tr("preparing_png", "Готуємо PNG")} · ${shiftText}…`;
-      const canvas = await window.html2canvas(sheet, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true
-      });
-      const link = document.createElement("a");
-      link.download = `pns-final-board-${shift}.png`;
-      link.href = canvas.toDataURL("image/png");
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      if (statusEl) statusEl.textContent = `${tr("png_saved", "PNG збережено")} · ${shiftText}.`;
-      return true;
-    } catch (err) {
-      console.error(err);
-      if (statusEl) statusEl.textContent = tr("png_failed", "Не вдалося згенерувати PNG.");
-      alert(tr("png_failed", "Не вдалося згенерувати PNG."));
-      return false;
-    }
+    return await window.exportBoardAsPNG({
+      sheet: getPreviewSheet(),
+      shift: getPreviewShift(),
+      statusEl: getPreviewStatusEl()
+    });
   };
 
   window.calcSharePreviewBoard = async function(){

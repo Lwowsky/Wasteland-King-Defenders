@@ -1,0 +1,51 @@
+/* Reference settings layout: left settings, focused turret right, remaining turrets below */
+@media (min-width:1200px){
+  .bases-panel .bases-grid{
+    display:grid;
+    grid-template-columns:minmax(520px, .98fr) minmax(560px, 1.02fr);
+    grid-auto-flow:row dense;
+    gap:18px;
+    max-height:none;
+    overflow:visible;
+    padding-right:0;
+    align-items:start;
+  }
+
+  #basesSettingsCard{
+    grid-column:1;
+    grid-row:1;
+    align-self:start;
+    min-height:0;
+  }
+
+  #basesSettingsCard .shift-towers-preview{
+    display:grid;
+  }
+
+  #basesSettingsCard .captain-box{
+    display:grid;
+    align-content:start;
+    gap:16px;
+    min-height:0;
+  }
+
+  /* the currently focused turret always lives on the right */
+  .bases-panel .bases-grid > .base-card.is-focused-tower{
+    grid-column:2;
+    grid-row:1;
+    align-self:start;
+  }
+
+  /* all remaining turrets flow below in the grid */
+  .bases-panel .bases-grid > .base-card:not(.is-focused-tower){
+    align-self:start;
+  }
+
+  #basesSettingsCard .base-card-head,
+  #basesSettingsCard .captain-box,
+  #basesSettingsCard .settings-actions-row,
+  #basesSettingsCard .settings-top-row,
+  #basesSettingsCard .muted.small.top-space{
+    max-width:100%;
+  }
+}

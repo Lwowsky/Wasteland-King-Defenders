@@ -1,0 +1,411 @@
+#towerCalcModal #towerCalcAdvanced {
+  margin-top: 8px;
+}
+
+#towerCalcModal #towerCalcAdvanced > .inner {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+#towerCalcModal #towerCalcAdvanced > summary {
+  display: none;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv-pro-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 0 2px;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv-pro-head-title {
+  margin: 0;
+  color: #eef3ff;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions #tcv35-row {
+  margin: 0;
+  justify-content: flex-end;
+}
+
+#towerCalcModal #towerCalcAdvanced .inner > #tcv7AdvancedTopLayout {
+  margin-top: 0;
+  margin-bottom: 0;
+  gap: 16px;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv9-left-panel,
+#towerCalcModal #towerCalcAdvanced .tcv9-right-col > #towerCalcShiftBalance {
+  padding: 14px;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv9-compact-controls,
+#towerCalcModal #towerCalcAdvanced .tcv9-tier-panel {
+  padding: 12px;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv9-tier-panel .muted.small {
+  margin-bottom: 0;
+}
+
+#towerCalcModal [data-calc-main-panel="setup"] {
+  padding-bottom: 10px;
+}
+
+#towerCalcModal #tcv35-row {
+  margin: 0;
+}
+
+@media (max-width:1200px) {
+  #towerCalcModal #towerCalcAdvanced .tcv-pro-head {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  #towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions {
+    width: 100%;
+  }
+
+  #towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions #tcv35-row {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width:980px) {
+  #towerCalcModal #towerCalcAdvanced .tcv-pro-head {
+    margin-bottom: 10px;
+  }
+
+  #towerCalcModal #towerCalcAdvanced .tcv-pro-head-title {
+    font-size: 17px;
+  }
+
+  #towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions #tcv35-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+}
+
+
+#towerCalcModal #towerCalcAdvanced .tcv9-left-panel {
+  gap: 8px;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv9-compact-controls {
+  padding-bottom: 4px;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv9-tier-panel {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding-top: 0;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv9-tier-panel > .muted.small,
+#towerCalcModal #towerCalcAdvanced .tcv9-tier-panel .top-space-8,
+#towerCalcModal #towerCalcAdvanced .tcv9-tier-panel .top-space-6 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv9-tier-panel #towerCalcTierTargetRow {
+  margin-top: 6px;
+}
+
+#towerCalcModal #towerCalcAdvanced #tcv7AdvancedRight {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv9-right-col > #towerCalcShiftBalance {
+  width: min(100%, 640px);
+  margin-inline: auto;
+  padding: 18px 20px 20px;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  justify-items: center;
+}
+
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv5-limit-edit-row,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv7-shift-left {
+  width: 100%;
+  max-width: 580px;
+  margin-inline: auto;
+}
+
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv7-shift-left {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  justify-items: center;
+  align-content: start;
+}
+
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14LimitRow,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14AddRow,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv14-btn-row,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv5-limit-edit-row,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv-pro-add-help {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14TopRow {
+  justify-content: center;
+  gap: 12px;
+}
+
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14AddRow {
+  margin-bottom: 0;
+}
+
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv14-btn-row {
+  margin-top: 2px;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv-pro-add-help {
+  width: 100%;
+  max-width: 100%;
+  margin: -2px auto 2px;
+  padding: 12px 14px;
+  border: 1px solid rgba(134, 159, 235, 0.14);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(15, 27, 61, 0.72), rgba(10, 20, 46, 0.54));
+  justify-self: center;
+  text-align: left;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv-pro-add-help-title {
+  display: block;
+  margin-bottom: 4px;
+  color: #edf2ff;
+  font-size: 13px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv-pro-add-help-text {
+  display: block;
+  color: rgba(205, 216, 244, 0.82);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+
+
+/* Center the manual limits sector inside the right column on desktop/tablet */
+#towerCalcModal #towerCalcAdvanced .tcv9-right-col {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv9-right-col > #towerCalcShiftBalance {
+  width: min(100%, 640px);
+  max-width: 640px;
+  margin-inline: auto;
+}
+
+@media (max-width:980px) {
+  #towerCalcModal #towerCalcAdvanced .tcv9-right-col > #towerCalcShiftBalance {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+
+/* True centering for the manual limits sector */
+#towerCalcModal #towerCalcAdvanced .tcv9-right-col {
+  width: 100%;
+  justify-items: center;
+  align-items: start;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv9-right-col > #towerCalcShiftBalance {
+  width: min(100%, 760px);
+  max-width: 760px;
+  margin-inline: auto;
+  justify-items: center;
+  align-content: start;
+}
+
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv7-shift-left {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  justify-items: center;
+}
+
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv5-limit-edit-row,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14TopRow,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14LimitRow,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14AddRow,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv14-btn-row,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv-pro-add-help {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+}
+
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv5-limit-edit-row,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14TopRow,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14LimitRow,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14AddRow,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv14-btn-row {
+  justify-self: center;
+}
+
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14LimitRow,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14AddRow {
+  justify-items: center;
+  align-items: start;
+}
+
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14LimitRow > *,
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14AddRow > * {
+  width: 100%;
+}
+
+#towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv14-btn-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv-pro-add-help {
+  justify-self: center;
+}
+
+@media (max-width:980px) {
+  #towerCalcModal #towerCalcAdvanced .tcv9-right-col > #towerCalcShiftBalance,
+  #towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv7-shift-left,
+  #towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv5-limit-edit-row,
+  #towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14TopRow,
+  #towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14LimitRow,
+  #towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance #tcv14AddRow,
+  #towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv14-btn-row,
+  #towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv-pro-add-help {
+    max-width: 100%;
+  }
+
+  #towerCalcModal #towerCalcAdvanced #towerCalcShiftBalance .tcv14-btn-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Final hard-centering fix for the manual limits sector */
+#towerCalcModal #towerCalcAdvanced #tcv7AdvancedRight {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+}
+
+#towerCalcModal #towerCalcAdvanced #tcv7AdvancedRight > #towerCalcShiftBalance {
+  width: min(100%, 760px);
+  max-width: 760px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#towerCalcModal #towerCalcAdvanced #tcv7AdvancedRight > #towerCalcShiftBalance > .tcv5-limit-edit-row,
+#towerCalcModal #towerCalcAdvanced #tcv7AdvancedRight > #towerCalcShiftBalance .tcv7-shift-left,
+#towerCalcModal #towerCalcAdvanced #tcv7AdvancedRight > #towerCalcShiftBalance #tcv14TopRow,
+#towerCalcModal #towerCalcAdvanced #tcv7AdvancedRight > #towerCalcShiftBalance #tcv14LimitRow,
+#towerCalcModal #towerCalcAdvanced #tcv7AdvancedRight > #towerCalcShiftBalance #tcv14AddRow,
+#towerCalcModal #towerCalcAdvanced #tcv7AdvancedRight > #towerCalcShiftBalance .tcv14-btn-row,
+#towerCalcModal #towerCalcAdvanced #tcv7AdvancedRight > #towerCalcShiftBalance .tcv-pro-add-help {
+  width: min(100%, 620px);
+  max-width: 620px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+/* Keep the clear dropdown above the setup cards */
+#towerCalcModal #towerCalcAdvanced,
+#towerCalcModal #towerCalcAdvanced > .inner,
+#towerCalcModal #towerCalcAdvanced .tcv-pro-head,
+#towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions,
+#towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions #tcv35-row,
+#towerCalcModal #tcv35-clearWrap {
+  overflow: visible;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv-pro-head,
+#towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions,
+#towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions #tcv35-row,
+#towerCalcModal #tcv35-clearWrap {
+  position: relative;
+}
+
+#towerCalcModal #towerCalcAdvanced .tcv-pro-head {
+  z-index: 12;
+}
+
+#towerCalcModal #towerCalcAdvanced .inner > #tcv7AdvancedTopLayout {
+  position: relative;
+  z-index: 1;
+}
+
+#towerCalcModal #tcv35-clearWrap {
+  z-index: 40;
+}
+
+#towerCalcModal #tcv35-clearMenu {
+  z-index: 4000;
+}
+
+
+/* ChatGPT round 4: center summary cards on all screens */
+#towerCalcTopShiftSummaryV7 .tcv7-card {
+  text-align: center;
+  justify-items: center;
+  align-content: start;
+}
+
+#towerCalcTopShiftSummaryV7 .tcv7-card-head,
+#towerCalcTopShiftSummaryV7 .tcv7-card-main,
+#towerCalcTopShiftSummaryV7 .tcv7-card-kicker,
+#towerCalcTopShiftSummaryV7 .tcv7-card-bottom,
+#towerCalcTopShiftSummaryV7 .tcv7-card-value,
+#towerCalcTopShiftSummaryV7 .tcv7-warn {
+  width: 100%;
+  text-align: center;
+}
+
+#towerCalcTopShiftSummaryV7 .tcv7-card-main {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+
+#towerCalcTopShiftSummaryV7 .tcv7-role-row {
+  justify-content: center;
+}
+
+#towerCalcTopShiftSummaryV7 .tcv7-role-item {
+  justify-items: center;
+  text-align: center;
+}

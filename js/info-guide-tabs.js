@@ -4,7 +4,8 @@
   const COPY = {
     uk: {
       section_label: 'Інформація та інструкція',
-      section_hint: 'Натисни, щоб відкрити інструкцію по сайту',
+      section_hint_open: 'Натисни, щоб відкрити інструкцію по сайту',
+      section_hint_close: 'Натисни, щоб закрити інструкцію по сайту',
       intro: 'Відкрий потрібну вкладку і пройди кроки в рекомендованому порядку: імпорт, таблиця гравців, розподіл по турелях і вже після цього фінальний план.',
       tab_import: 'Імпорт',
       tab_players: 'Таблиця гравців',
@@ -12,7 +13,7 @@
       tab_final_plan: 'Фінальний план',
       tab_about: 'Про сайт',
       open_label: 'Відкрити інструкцію',
-      close_label: 'Сховати інструкцію',
+      close_label: 'Закрити інструкцію',
       panels: {
         import: {
           eyebrow: '1. Імпорт',
@@ -237,7 +238,8 @@
     },
     ru: {
       section_label: 'Информация и инструкция',
-      section_hint: 'Нажми, чтобы открыть инструкцию по сайту',
+      section_hint_open: 'Нажми, чтобы открыть инструкцию по сайту',
+      section_hint_close: 'Нажми, чтобы закрыть инструкцию по сайту',
       intro: 'Открой нужную вкладку и пройди шаги в рекомендуемом порядке: импорт, таблица игроков, распределение по турелям и только после этого финальный план.',
       tab_import: 'Импорт',
       tab_players: 'Таблица игроков',
@@ -245,12 +247,13 @@
       tab_final_plan: 'Финальный план',
       tab_about: 'О сайте',
       open_label: 'Открыть инструкцию',
-      close_label: 'Скрыть инструкцию',
+      close_label: 'Закрыть инструкцию',
       panels: {}
     },
     en: {
       section_label: 'Info & Guide',
-      section_hint: 'Click to open the site guide',
+      section_hint_open: 'Click to open the site guide',
+      section_hint_close: 'Click to close the site guide',
       intro: 'Open the needed tab and follow the recommended order: import, players table, turret distribution, and only then the final plan.',
       tab_import: 'Import',
       tab_players: 'Players table',
@@ -258,7 +261,7 @@
       tab_final_plan: 'Final plan',
       tab_about: 'About',
       open_label: 'Open guide',
-      close_label: 'Hide guide',
+      close_label: 'Close guide',
       panels: {}
     }
   };
@@ -270,7 +273,8 @@
 
   COPY.ru = copyUkToOther('ru', {
     section_label: 'Информация и инструкция',
-    section_hint: 'Нажми, чтобы открыть инструкцию по сайту',
+    section_hint_open: 'Нажми, чтобы открыть инструкцию по сайту',
+    section_hint_close: 'Нажми, чтобы закрыть инструкцию по сайту',
     intro: 'Открой нужную вкладку и пройди шаги в рекомендуемом порядке: импорт, таблица игроков, распределение по турелям и только после этого финальный план.',
     tab_import: 'Импорт',
     tab_players: 'Таблица игроков',
@@ -278,7 +282,7 @@
     tab_final_plan: 'Финальный план',
     tab_about: 'О сайте',
     open_label: 'Открыть инструкцию',
-    close_label: 'Скрыть инструкцию',
+    close_label: 'Закрыть инструкцию',
     panels: {
       import: {
         eyebrow: '1. Импорт',
@@ -380,7 +384,8 @@
 
   COPY.en = copyUkToOther('en', {
     section_label: 'Info & Guide',
-    section_hint: 'Click to open the site guide',
+    section_hint_open: 'Click to open the site guide',
+    section_hint_close: 'Click to close the site guide',
     intro: 'Open the needed tab and follow the recommended order: import, players table, turret distribution, and only then the final plan.',
     tab_import: 'Import',
     tab_players: 'Players table',
@@ -388,7 +393,7 @@
     tab_final_plan: 'Final plan',
     tab_about: 'About',
     open_label: 'Open guide',
-    close_label: 'Hide guide',
+    close_label: 'Close guide',
     panels: {
       import: {
         eyebrow: '1. Import',
@@ -665,6 +670,12 @@
   function applyLabels(root, copy, expanded) {
     root.querySelectorAll('[data-igt-label]').forEach((node) => {
       const key = node.getAttribute('data-igt-label');
+      if (key === 'section_hint') {
+        node.textContent = expanded
+          ? (copy.section_hint_close || copy.section_hint_open || '')
+          : (copy.section_hint_open || copy.section_hint || '');
+        return;
+      }
       if (copy[key]) node.textContent = copy[key];
     });
     const toggle = root.querySelector('.igt-toggle');

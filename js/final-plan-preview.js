@@ -378,7 +378,13 @@
       if (exportBtn) {
         exportBtn.onclick = function(ev) {
           try { ev.preventDefault(); } catch {}
-          return !!window.exportBoardAsPNG?.();
+          try { ev.stopPropagation(); } catch {}
+          try { ev.stopImmediatePropagation?.(); } catch {}
+          return !!window.exportBoardAsPNG?.({
+            sheet: sheet.querySelector('.board-sheet') || sheet,
+            shift: getCalcState()?.previewShift || previewShift,
+            statusEl: status
+          });
         };
       }
       const txtBtn = toolbar.querySelector('[data-preview-export-txt], #exportBoardTxtBtn');

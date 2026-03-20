@@ -1,0 +1,730 @@
+/* Reference pass: Settings / Import modal */
+#settings-modal .modal-card.has-settings-side-menu{
+  width:min(1320px,calc(100vw - 48px));
+  max-width:min(1320px,calc(100vw - 48px));
+  height:min(88vh,860px);
+  max-height:min(88vh,860px);
+  margin:24px auto;
+  border-radius:24px;
+  border:1px solid rgba(131,154,230,.16);
+  background:
+    radial-gradient(1100px 520px at 82% 12%, rgba(114,92,255,.12), transparent 55%),
+    radial-gradient(900px 480px at 18% 0%, rgba(78,126,255,.10), transparent 58%),
+    linear-gradient(180deg,#091428 0%,#071121 100%);
+  box-shadow:0 26px 80px rgba(2,6,18,.52), inset 0 1px 0 rgba(255,255,255,.03);
+  grid-template-columns:286px minmax(0,1fr);
+  grid-template-rows:auto minmax(0,1fr);
+  overflow:hidden;
+}
+#settings-modal .modal-head{
+  padding:16px 20px 14px;
+  background:linear-gradient(180deg,rgba(14,23,44,.96),rgba(10,18,33,.92));
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+#settings-modal .modal-head h2{
+  font-size:18px;
+  line-height:1.18;
+  font-weight:800;
+  letter-spacing:-.01em;
+}
+#settings-modal .modal-head p{
+  margin-top:4px;
+  color:rgba(223,232,255,.68);
+  font-size:13px;
+  line-height:1.45;
+}
+#settings-modal .modal-head .btn-icon{
+  width:48px;height:48px;min-width:48px;min-height:48px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.02);
+}
+#settings-modal .settings-side-menu{
+  padding:14px 12px 16px;
+  background:linear-gradient(180deg,rgba(8,14,28,.88),rgba(5,10,22,.96));
+  border-right:1px solid rgba(255,255,255,.07);
+}
+#settings-modal .settings-side-list{gap:10px;top:0}
+#settings-modal .settings-side-btn{
+  min-height:60px;
+  padding:16px 18px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.10);
+  background:linear-gradient(180deg,rgba(14,23,44,.78),rgba(10,17,32,.92));
+  color:#eef3ff;
+  font-size:14px;
+  font-weight:800;
+  line-height:1.2;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+}
+#settings-modal .settings-side-btn.active{
+  border-color:rgba(141,147,255,.48);
+  background:linear-gradient(180deg,rgba(92,101,180,.55),rgba(60,51,118,.62));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10), 0 14px 30px rgba(35,23,84,.22);
+}
+#settings-modal .modal-grid{
+  padding:14px 14px 16px;
+  overflow:auto;
+  background:linear-gradient(180deg,rgba(7,14,28,.10),rgba(7,14,28,0));
+}
+#settings-modal .modal-grid>.panel.subpanel{
+  padding:14px;
+  border-radius:0;
+  border:1px solid rgba(255,255,255,.07);
+  background:linear-gradient(180deg,rgba(18,28,50,.48),rgba(10,18,33,.42));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+#settings-modal .mapping-section-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:12px;
+}
+#settings-modal .mapping-section-head h3{
+  margin:0;
+  font-size:18px;
+  line-height:1.2;
+  letter-spacing:-.01em;
+}
+#settings-modal .mapping-section-note{
+  margin:6px 0 0;
+  color:rgba(223,232,255,.66);
+  font-size:12.5px;
+  line-height:1.45;
+}
+#settings-modal .mapping-section-head-actions .btn,
+#settings-modal [data-save-import-template]{
+  min-height:38px;
+  padding:10px 16px;
+  border-radius:14px;
+  border:1px solid rgba(114,132,208,.26);
+  background:linear-gradient(180deg,rgba(25,37,70,.84),rgba(15,25,47,.84));
+}
+#settings-modal .import-source-grid,
+#settings-modal .import-status-grid,
+#settings-modal .mapping-grid-2,
+#settings-modal .reset-actions-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+#settings-modal .import-source-stack,
+#settings-modal .stack{gap:14px}
+#settings-modal .import-source-card,
+#settings-modal .import-status-card,
+#settings-modal .mapping-row,
+#settings-modal .visibility-panel .checkbox-row,
+#settings-modal .reset-actions-grid .btn{
+  border-radius:18px;
+  border:1px solid rgba(115,132,207,.18);
+  background:linear-gradient(180deg,rgba(15,25,47,.92),rgba(10,18,33,.96));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+}
+#settings-modal .import-source-card{
+  padding:16px 16px 14px;
+  min-height:142px;
+  display:grid;
+  align-content:start;
+  gap:10px;
+}
+#settings-modal .import-card-kicker{
+  display:inline-flex;
+  align-items:center;
+  align-self:start;
+  width:max-content;
+  padding:5px 10px;
+  border-radius:999px;
+  border:1px solid rgba(130,145,220,.26);
+  background:rgba(101,122,204,.16);
+  color:#dce6ff;
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+#settings-modal .drop-title{
+  font-size:17px;
+  font-weight:800;
+  line-height:1.24;
+  color:#eef3ff;
+}
+#settings-modal .import-source-card .muted,
+#settings-modal .import-status-card .muted{
+  color:rgba(223,232,255,.70);
+  font-size:12.5px;
+  line-height:1.5;
+}
+#settings-modal .import-source-card input[type="url"],
+#settings-modal .import-source-card .pns-file-input,
+#settings-modal .mapping-row select,
+#settings-modal .mapping-row input[type="text"],
+#settings-modal .mapping-row input[type="url"],
+#settings-modal .mapping-row input[type="number"]{
+  min-height:54px;
+  border-radius:16px;
+  border:1px solid rgba(110,129,202,.18);
+  background:#071121;
+  padding:14px 16px;
+  font-size:13px;
+  color:#eef3ff;
+}
+#settings-modal input[type="file"]::file-selector-button{
+  margin-right:12px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.10);
+  background:linear-gradient(180deg,rgba(65,78,109,.88),rgba(43,56,87,.90));
+  color:#fff;
+  padding:12px 20px;
+  font-weight:800;
+}
+#settings-modal .import-tools-row{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+#settings-modal .import-tools-row .btn,
+#settings-modal .import-template-tools .btn,
+#settings-modal .reset-actions-grid .btn,
+#settings-modal .row.gap.top-space.wrap .btn{
+  min-height:34px;
+  border-radius:14px;
+  padding:10px 16px;
+  font-size:13px;
+  justify-content:center;
+}
+#settings-modal .import-status-card{padding:14px 16px 16px}
+#settings-modal .import-status-title{
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.04em;
+  color:#dfe7ff;
+  margin-bottom:8px;
+  text-transform:uppercase;
+}
+#settings-modal .import-template-tools{display:flex;justify-content:flex-start}
+#settings-modal .import-source-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:0}
+#settings-modal .import-source-actions .btn-primary,
+#settings-modal #applyImportMockBtn{
+  background:linear-gradient(90deg,#6a88ff,#8d73ff);
+  border-color:rgba(175,183,255,.38);
+  box-shadow:0 10px 28px rgba(69,80,184,.24), inset 0 1px 0 rgba(255,255,255,.14);
+}
+#settings-modal .mapping-grid-2{align-content:start}
+#settings-modal .mapping-row{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+  min-width:0;
+  padding:14px 16px;
+}
+#settings-modal .row-title-wrap,
+#settings-modal .row-title-actions{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+#settings-modal .row-title{
+  font-size:14px;
+  font-weight:800;
+  color:#eef3ff;
+  min-width:0;
+}
+#settings-modal .row-title strong{color:#fff}
+#settings-modal .mapping-meta{
+  margin-left:6px;
+  color:rgba(186,197,237,.72);
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+#settings-modal .mapping-edit-btn,
+#settings-modal .mapping-remove-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:34px;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.10);
+  background:linear-gradient(180deg,rgba(40,51,84,.86),rgba(28,38,66,.88));
+  color:#dce5ff;
+  font-size:12px;
+  font-weight:700;
+  transition:border-color .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+#settings-modal .mapping-edit-btn[data-mode="save"]{
+  border-color:rgba(129,222,170,.34);
+  background:linear-gradient(180deg,rgba(30,86,59,.94),rgba(20,64,44,.96));
+  color:#ecfff4;
+  box-shadow:0 10px 24px rgba(16,82,54,.22), inset 0 1px 0 rgba(255,255,255,.08);
+}
+#settings-modal .mapping-row.edit-open{
+  border-color:rgba(124,190,255,.34);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 10px 26px rgba(28,70,140,.16);
+}
+#settings-modal .mapping-remove-btn{
+  width:38px;
+  min-width:38px;
+  padding:0;
+  border-color:rgba(195,102,130,.34);
+  color:#ffd4df;
+  background:linear-gradient(180deg,rgba(75,32,51,.88),rgba(49,22,35,.88));
+}
+#settings-modal .mapping-add-row{
+  padding:0;
+  background:transparent;
+  border:0;
+  box-shadow:none;
+}
+#settings-modal .mapping-add-btn{
+  width:100%;
+  min-height:58px;
+  border-radius:18px;
+  border:1px dashed rgba(120,138,204,.28);
+  background:linear-gradient(180deg,rgba(31,42,70,.44),rgba(18,28,47,.54));
+  color:#eef3ff;
+  font-weight:800;
+}
+#settings-modal .visibility-panel{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  max-height:none;
+  overflow:visible;
+  padding:0;
+}
+#settings-modal .visibility-panel .checkbox-row{
+  min-height:48px;
+  padding:0 14px;
+  gap:12px;
+}
+#settings-modal .visibility-panel .checkbox-row input{
+  width:20px;height:20px;
+  accent-color:#7ea0ff;
+}
+#settings-modal .visibility-panel .checkbox-row span{font-size:14px;color:#dfe7ff}
+#settings-modal .reset-actions-grid .btn{
+  width:100%;
+  min-height:46px;
+  background:linear-gradient(180deg,rgba(31,42,70,.66),rgba(18,28,47,.70));
+  border-color:rgba(115,132,207,.18);
+}
+#settings-modal .reset-actions-grid .btn-danger-soft,
+#settings-modal #resetAllStorageBtn{
+  background:linear-gradient(180deg,rgba(87,32,48,.88),rgba(65,25,38,.92));
+  border-color:rgba(197,93,118,.34);
+  color:#ffdbe2;
+}
+#settings-modal .modal-foot{display:none}
+@media (max-width:1200px){
+  #settings-modal .modal-card.has-settings-side-menu{
+    width:min(1120px,calc(100vw - 24px));
+    grid-template-columns:240px minmax(0,1fr);
+  }
+}
+@media (max-width:980px){
+  #settings-modal .modal-card.has-settings-side-menu{
+    grid-template-columns:1fr;
+    grid-template-areas:"head" "side" "body";
+    height:min(94vh,920px);
+  }
+  #settings-modal .settings-side-menu{border-right:0;border-bottom:1px solid rgba(255,255,255,.07)}
+  #settings-modal .settings-side-list{grid-template-columns:repeat(2,minmax(0,1fr));}
+  #settings-modal .import-source-grid,
+  #settings-modal .import-status-grid,
+  #settings-modal .mapping-grid-2,
+  #settings-modal .visibility-panel,
+  #settings-modal .reset-actions-grid,
+  #settings-modal .import-tools-row{grid-template-columns:1fr}
+}
+
+/* Targeted fixes requested by user */
+#settings-modal .reset-actions-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+#settings-modal .reset-actions-grid .btn{
+  min-height:44px;
+  white-space:nowrap;
+}
+
+#settings-modal .visibility-panel{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+#settings-modal .visibility-panel .checkbox-row{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  flex-wrap:nowrap;
+  min-height:46px;
+  padding:0 16px;
+  white-space:nowrap;
+}
+#settings-modal .visibility-panel .checkbox-row input{
+  flex:0 0 auto;
+}
+#settings-modal .visibility-panel .checkbox-row span{
+  display:inline-flex;
+  align-items:center;
+  min-width:0;
+}
+
+#settings-modal #requiredMappingContainer,
+#settings-modal #optionalMappingContainer{
+  gap:12px;
+}
+#settings-modal #requiredMappingContainer .mapping-row,
+#settings-modal #optionalMappingContainer .mapping-row{
+  padding:12px 14px;
+  gap:10px;
+  border-color:rgba(125,146,228,.28);
+  background:linear-gradient(180deg,rgba(20,32,58,.92),rgba(12,21,39,.98));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 6px 18px rgba(0,0,0,.12);
+}
+#settings-modal #requiredMappingContainer .row-title,
+#settings-modal #optionalMappingContainer .row-title{
+  color:#f1f5ff;
+}
+#settings-modal #requiredMappingContainer .mapping-meta,
+#settings-modal #optionalMappingContainer .mapping-meta{
+  color:rgba(197,210,255,.86);
+}
+#settings-modal #requiredMappingContainer .mapping-edit-btn,
+#settings-modal #optionalMappingContainer .mapping-edit-btn,
+#settings-modal #requiredMappingContainer .mapping-remove-btn,
+#settings-modal #optionalMappingContainer .mapping-remove-btn{
+  min-height:32px;
+  padding:7px 13px;
+}
+#settings-modal #requiredMappingContainer select,
+#settings-modal #requiredMappingContainer input[type="text"],
+#settings-modal #requiredMappingContainer input[type="url"],
+#settings-modal #requiredMappingContainer input[type="number"],
+#settings-modal #optionalMappingContainer select,
+#settings-modal #optionalMappingContainer input[type="text"],
+#settings-modal #optionalMappingContainer input[type="url"],
+#settings-modal #optionalMappingContainer input[type="number"]{
+  min-height:48px;
+  padding:12px 14px;
+  border-color:rgba(124,144,220,.26);
+  background:#081426;
+}
+#settings-modal #optionalMappingContainer .mapping-add-btn{
+  min-height:52px;
+}
+
+/* Import status colors: success / error */
+#settings-modal #importStatusInfo.is-good,
+#settings-modal #importStatusInfo.good,
+#settings-modal #importStatusInfo.success{
+  color:#35e08a;
+}
+#settings-modal #importStatusInfo.is-danger,
+#settings-modal #importStatusInfo.bad,
+#settings-modal #importStatusInfo.error,
+#settings-modal #importStatusInfo.danger{
+  color:#ff6b7a;
+}
+
+
+@media (max-width:768px){
+  #settings-modal .modal-card.has-settings-side-menu{
+    width:min(100vw - 12px,100%);
+    max-width:min(100vw - 12px,100%);
+    height:min(96vh,940px);
+    margin:6px auto;
+    border-radius:22px;
+  }
+  #settings-modal .modal-head{padding:14px 14px 12px}
+  #settings-modal .modal-grid{padding:10px;gap:10px}
+  #settings-modal .modal-grid>.panel.subpanel{padding:12px;border-radius:18px}
+  #settings-modal .settings-side-list{grid-template-columns:1fr}
+  #settings-modal .settings-side-btn{min-height:52px;padding:12px 14px}
+}
+@media (max-width:480px){
+  #settings-modal .import-source-grid,
+  #settings-modal .import-status-grid,
+  #settings-modal .mapping-grid-2,
+  #settings-modal .visibility-panel,
+  #settings-modal .reset-actions-grid,
+  #settings-modal .import-tools-row{grid-template-columns:1fr}
+  #settings-modal .visibility-panel .checkbox-row{white-space:normal;align-items:flex-start;padding:12px 14px}
+  #settings-modal .row-title-wrap,
+  #settings-modal .row-title-actions,
+  #settings-modal .mapping-section-head{flex-direction:column;align-items:flex-start}
+  #settings-modal .mapping-edit-btn,
+  #settings-modal .mapping-remove-btn,
+  #settings-modal .mapping-section-head-actions .btn,
+  #settings-modal [data-save-import-template]{width:100%}
+}
+
+
+/* Mobile import modal polish: keep section menu visible and mapping actions in one row */
+@media (max-width:768px){
+  #settings-modal .modal-card.has-settings-side-menu{
+    grid-template-rows:auto auto minmax(0,1fr);
+    overflow:hidden;
+  }
+  #settings-modal .modal-card.has-settings-side-menu > .settings-side-menu{
+    position:sticky;
+    top:0;
+    z-index:4;
+    padding:10px 12px;
+    background:linear-gradient(180deg,rgba(11,20,49,.98),rgba(11,20,49,.94));
+    border-bottom:1px solid rgba(124,145,255,.12);
+  }
+  #settings-modal .settings-side-list{
+    display:flex;
+    flex-wrap:nowrap;
+    gap:8px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding-bottom:2px;
+    scrollbar-width:thin;
+  }
+  #settings-modal .settings-side-btn{
+    flex:0 0 auto;
+    width:auto;
+    min-width:152px;
+    white-space:nowrap;
+  }
+  #settings-modal .modal-card.has-settings-side-menu > .modal-grid{
+    overflow:auto;
+    min-height:0;
+  }
+}
+
+@media (max-width:480px){
+  #settings-modal .mapping-section-head{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:10px;
+  }
+  #settings-modal .mapping-section-head-actions{
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    gap:8px;
+    width:100%;
+  }
+  #settings-modal .mapping-section-head-actions .btn,
+  #settings-modal [data-save-import-template]{
+    width:auto;
+  }
+  #settings-modal .row-title-wrap{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:start;
+    gap:10px;
+  }
+  #settings-modal .row-title-actions{
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    flex:0 0 auto;
+    width:auto;
+  }
+  #settings-modal .mapping-edit-btn,
+  #settings-modal .mapping-remove-btn{
+    width:auto;
+    min-width:0;
+    flex:0 0 auto;
+    white-space:nowrap;
+    padding:7px 12px;
+  }
+}
+
+
+/* ChatGPT patch: import tabs stay in one row on tablet widths */
+@media (max-width:980px) {
+  #settings-modal .modal-card.has-settings-side-menu {
+    width: min(980px, calc(100vw - 18px));
+    max-width: min(980px, calc(100vw - 18px));
+  }
+
+  #settings-modal .modal-card.has-settings-side-menu > .settings-side-menu {
+    padding: 10px 12px 12px;
+    overflow: hidden;
+  }
+
+  #settings-modal .settings-side-list {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+
+  #settings-modal .settings-side-btn {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 220px;
+    white-space: nowrap;
+  }
+}
+
+/* Responsive cleanup patch: align burger final plan, import modal tabs, and player stat rows */
+@media (max-width:980px) {
+  /* Burger menu final plan should behave like tower final plan on tablet/mobile widths */
+  #board-modal .modal-card.board-standalone-card {
+    width: min(980px, calc(100vw - 20px));
+    max-width: min(980px, calc(100vw - 20px));
+    min-height: min(96dvh, 980px);
+    max-height: min(96dvh, 980px);
+    margin: 10px auto;
+    overflow: hidden;
+  }
+
+  #board-modal .board-standalone-preview,
+  #board-modal .board-modal-preview,
+  #board-modal #boardModalPreviewSheet {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  #board-modal #boardModalPreviewSheet {
+    padding-right: 2px;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-sheet,
+  #board-modal .board-modal-preview .board-sheet,
+  #board-modal .board-sheet {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    padding: 10px 8px;
+    box-sizing: border-box;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-grid,
+  #board-modal .board-modal-preview .board-grid,
+  #board-modal .board-grid {
+    display: grid;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-col,
+  #board-modal .board-modal-preview .board-col,
+  #board-modal .board-col {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  #board-modal #boardModalPreviewSheet .board-col li,
+  #board-modal .board-modal-preview .board-col li,
+  #board-modal .board-col li {
+    grid-template-columns: minmax(0, 1.22fr) 0.55fr 0.45fr 0.78fr;
+    font-size: 11px;
+    padding: 5px;
+  }
+
+  #board-modal .board-head-actions.board-head-actions--single,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  #board-modal .board-head-actions.board-head-actions--single > *,
+  #board-modal .board-head-actions.tower-calc-preview-toolbar > * {
+    flex: 0 0 auto;
+    min-width: max-content;
+  }
+
+  /* Import modal tabs in one row without overlaying the body */
+  #settings-modal .modal-card.has-settings-side-menu {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "head"
+      "side"
+      "body"
+      "foot";
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    width: min(980px, calc(100vw - 18px));
+    max-width: min(980px, calc(100vw - 18px));
+  }
+
+  #settings-modal .modal-card.has-settings-side-menu > .settings-side-menu {
+    grid-area: side;
+    padding: 10px 14px 8px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: transparent;
+    overflow: hidden;
+  }
+
+  #settings-modal .settings-side-list {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+    position: static;
+  }
+
+  #settings-modal .settings-side-btn {
+    flex: 0 0 auto;
+    min-width: 190px;
+    width: auto;
+    white-space: nowrap;
+  }
+
+  #settings-modal .modal-card.has-settings-side-menu > .modal-grid {
+    grid-area: body;
+    padding: 14px;
+    min-width: 0;
+    overflow: auto;
+  }
+}
+
+@media (min-width:768px) and (max-width:980px) {
+  /* Player stats stay in one centered row on tablets / small laptops */
+  .players-panel .stat-split--roles,
+  .players-panel .stat-split--shifts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .players-panel .stat-chip {
+    min-height: 152px;
+    padding: 18px 12px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+  }
+
+  .players-panel .stat-chip b,
+  .players-panel .stat-chip small {
+    text-align: center;
+    justify-self: center;
+  }
+}
