@@ -513,6 +513,7 @@
   display: grid;
   gap: 8px;
   padding: 18px 22px;
+  text-align: center;
 }
 #towerCalcModal [data-calc-main-panel="overflow"] .tcv5-mini-card-title {
   font-size: 14px;

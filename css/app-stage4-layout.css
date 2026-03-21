@@ -1,1 +1,149 @@
-@media (max-width:1320px){#playersDataTable{min-width:1220px}#playersDataTable:is(th[data-field="actions"],td[data-field="actions"]){min-width:336px;width:336px;max-width:336px}#towerCalcModal .modal-card{max-width:calc(100vw - 24px);max-height:calc(100vh - 24px)}}@media (max-width:980px){#towerCalcModal [data-calc-main-panel="overflow"] .tcv5-overflow-summary{grid-template-columns:1fr}#towerCalcModal [data-calc-main-panel="overflow"] .tcv5-panel-head{gap:10px;flex-wrap:wrap}#towerCalcModal [data-calc-main-panel="overflow"]:is(.tcv17-overflow-actions,.tcv5-filters){width:100%;margin-left:0}}.players-panel,.players-panel .panel-head,.players-panel .stats-grid,.players-panel .table-pagination,#towerCalcModal .tower-calc-modal-grid,#towerCalcModal .tower-calc-main-panel,#towerCalcModal [data-calc-main-panel],#towerCalcModal [data-calc-main-panel="overflow"]:is(.tcv5-status-view,.tcv5-panel,.tcv5-overflow-wrap),#towerCalcModal [data-calc-main-panel="overflow"] .tcv5-cell{min-width:0}.players-panel .table-wrap{position:relative;width:100%;max-width:100%;min-width:0;overflow-x:auto;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable both-edges;border-radius:18px}#playersDataTable{width:max-content;min-width:1260px;table-layout:fixed}#playersDataTable:is(th,td){box-sizing:border-box;vertical-align:middle}#playersDataTable thead th{position:sticky;top:0;z-index:2;text-align:center;white-space:nowrap;background:#0a122dfa}#playersDataTable thead th .sort-btn{display:inline-flex;align-items:center;justify-content:center;margin-left:6px;min-width:22px;height:22px;padding:0 6px}#playersDataTable:is(th[data-field="name"],td[data-field="name"]){min-width:176px}#playersDataTable:is(th[data-field="role"],td[data-field="role"]){min-width:148px;text-align:center}#playersDataTable:is(th[data-field="captainReady"],td[data-field="captainReady"],th[data-field="shiftLabel"],td[data-field="shiftLabel"]){min-width:126px;text-align:center}#playersDataTable:is(th[data-field="actions"],td[data-field="actions"]){min-width:352px;width:352px;max-width:352px}#playersDataTable td[data-field="actions"]{overflow:visible;white-space:normal}#playersDataTable:is(td[data-field="role"] .tag,td[data-field="shiftLabel"] .shift-badge){margin-inline:auto}#towerCalcModal .modal-card{display:flex;flex-direction:column;min-width:0;max-width:min(1440px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:hidden}#towerCalcModal .modal-grid{min-width:0;min-height:0}#towerCalcModal .tower-calc-main-tabs{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:thin}#towerCalcModal .tower-calc-main-tabs .btn{flex:0 0 auto;white-space:nowrap}#towerCalcModal [data-calc-main-panel="overflow"]{min-height:0}#towerCalcModal [data-calc-main-panel="overflow"] .tcv5-overflow-summary{grid-template-columns:repeat(3,minmax(180px,1fr))}#towerCalcModal [data-calc-main-panel="overflow"] .tcv5-panel-head{align-items:flex-start}#towerCalcModal [data-calc-main-panel="overflow"] .tcv17-overflow-actions{justify-content:flex-end;margin-left:auto}#towerCalcModal [data-calc-main-panel="overflow"] .tcv5-scroll-wrap{width:100%;max-width:100%;max-height:min(58vh,540px);overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable both-edges}#towerCalcModal [data-calc-main-panel="overflow"] .tcv5-grid-body{width:max-content;min-width:1220px}#towerCalcModal [data-calc-main-panel="overflow"]:is(.tcv5-status-columns,.tcv5-grid-row){min-width:1220px}#towerCalcModal [data-calc-main-panel="overflow"] .tcv5-status-columns{position:sticky;top:0;z-index:2;background:#0a122dfa}
+
+.players-panel,
+.players-panel .panel-head,
+.players-panel .stats-grid,
+.players-panel .table-pagination,
+#towerCalcModal .tower-calc-modal-grid,
+#towerCalcModal .tower-calc-main-panel,
+#towerCalcModal [data-calc-main-panel],
+#towerCalcModal
+  [data-calc-main-panel="overflow"]:is(
+    .tcv5-status-view,
+    .tcv5-panel,
+    .tcv5-overflow-wrap
+  ),
+#towerCalcModal [data-calc-main-panel="overflow"] .tcv5-cell {
+  min-width: 0;
+}
+.players-panel .table-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;
+  border-radius: 18px;
+}
+#playersDataTable {
+  width: max-content;
+  min-width: 1260px;
+  table-layout: fixed;
+}
+#playersDataTable:is(th, td) {
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+#playersDataTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  text-align: center;
+  white-space: nowrap;
+  background: #0a122dfa;
+}
+#playersDataTable thead th .sort-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+}
+#playersDataTable:is(th[data-field="name"], td[data-field="name"]) {
+  min-width: 176px;
+}
+#playersDataTable:is(th[data-field="role"], td[data-field="role"]) {
+  min-width: 148px;
+  text-align: center;
+}
+#playersDataTable:is(
+  th[data-field="captainReady"],
+  td[data-field="captainReady"],
+  th[data-field="shiftLabel"],
+  td[data-field="shiftLabel"]
+) {
+  min-width: 126px;
+  text-align: center;
+}
+#playersDataTable:is(th[data-field="actions"], td[data-field="actions"]) {
+  min-width: 352px;
+  width: 352px;
+  max-width: 352px;
+}
+#playersDataTable td[data-field="actions"] {
+  overflow: visible;
+  white-space: normal;
+}
+#playersDataTable:is(
+  td[data-field="role"] .tag,
+  td[data-field="shiftLabel"] .shift-badge
+) {
+  margin-inline: auto;
+}
+#towerCalcModal .modal-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: min(1440px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: hidden;
+}
+#towerCalcModal .modal-grid {
+  min-width: 0;
+  min-height: 0;
+}
+#towerCalcModal .tower-calc-main-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+#towerCalcModal .tower-calc-main-tabs .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+#towerCalcModal [data-calc-main-panel="overflow"] {
+  min-height: 0;
+}
+#towerCalcModal [data-calc-main-panel="overflow"] .tcv5-overflow-summary {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+#towerCalcModal [data-calc-main-panel="overflow"] .tcv5-panel-head {
+  align-items: flex-start;
+}
+#towerCalcModal [data-calc-main-panel="overflow"] .tcv17-overflow-actions {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+#towerCalcModal [data-calc-main-panel="overflow"] .tcv5-scroll-wrap {
+  width: 100%;
+  max-width: 100%;
+  max-height: min(58vh, 540px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;
+}
+#towerCalcModal [data-calc-main-panel="overflow"] .tcv5-grid-body {
+  width: max-content;
+  min-width: 1220px;
+}
+#towerCalcModal
+  [data-calc-main-panel="overflow"]:is(.tcv5-status-columns, .tcv5-grid-row) {
+  min-width: 1220px;
+}
+#towerCalcModal [data-calc-main-panel="overflow"] .tcv5-status-columns {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #0a122dfa;
+}

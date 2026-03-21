@@ -314,7 +314,12 @@
   #towerCalcTopShiftSummaryV7 .tcv7-card-bottom {
     text-align: center;
   }
-
+  #towerCalcModal [data-calc-main-panel="overflow"] .tcv5-overflow-head {
+    grid-template-columns: 1fr;
+  }
+  .tcv5-tabs {
+    justify-content: flex-end;
+  }
 }
 
 @media (max-width: 480px) {
@@ -633,6 +638,20 @@
     min-width: 0;
     max-width: 100%;
   }
+  #towerCalcModal [data-calc-main-panel="overflow"] .tcv5-overflow-summary {
+    grid-template-columns: 1fr;
+  }
+  #towerCalcModal
+    .tower-picker-detail
+    #towerPickerLimitsBlock
+    .inner
+    > .row.gap.wrap {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+    flex-wrap: nowrap;
+  }
 }
 
 @media (max-width: 430px) {
@@ -658,6 +677,11 @@
   #towerCalcModal .modal-grid {
     padding: 6px;
     gap: 6px;
+  }
+  #towerCalcModal .tower-picker-detail .picker-manual-row,
+  #towerCalcModal .tower-picker-detail .picker-manual-row2,
+  #towerCalcAdvanced #towerCalcTierTargetRow {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 }
 

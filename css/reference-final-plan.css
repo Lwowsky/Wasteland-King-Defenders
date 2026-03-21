@@ -669,17 +669,6 @@
   color: #101725;
 }
 
-#board-modal #boardModalPreviewSheet .board-col ul,
-#board-modal #boardModalPreviewSheet .board-col li,
-#towerCalcModal #towerCalcGlobalOut .board-col ul,
-#towerCalcModal #towerCalcGlobalOut .board-col li,
-#towerCalcModal #towerCalcBoardPreviewSheet .board-col ul,
-#towerCalcModal #towerCalcBoardPreviewSheet .board-col li,
-.tower-calc-board-preview .board-col ul,
-.tower-calc-board-preview .board-col li {
-  background: #f8fafc;
-}
-
 #board-modal .board-cap-grid,
 #towerCalcModal .board-cap-grid,
 .tower-calc-board-preview .board-cap-grid {

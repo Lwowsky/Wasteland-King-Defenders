@@ -2,169 +2,203 @@
 
 /* Shared responsive support migrated from former fixes-files */
 
-.footer-copy{gap:6px;}
+.footer-copy {
+  gap: 6px;
+}
 .footer-copy-title,
 .footer-copy-text,
-.footer-copy-text-legal{max-width:1200px;}
+.footer-copy-text-legal {
+  max-width: 1200px;
+}
 
-.footer-action-game .footer-action-icon{
-  padding:6px;
+.footer-action-game .footer-action-icon {
+  padding: 6px;
   background:
-    radial-gradient(circle at 50% 20%,rgba(92,159,255,.28),transparent 44%),
-    linear-gradient(180deg,rgba(18,38,92,.98),#091330);
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(92, 159, 255, 0.28),
+      transparent 44%
+    ),
+    linear-gradient(180deg, rgba(18, 38, 92, 0.98), #091330);
 }
-.footer-action-game .footer-action-icon::after{opacity:.08;}
-.footer-action-game .footer-action-icon svg{display:none;}
-.footer-action-game .footer-action-icon img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  border-radius:18px;
-  position:relative;
-  z-index:1;
-  box-shadow:0 10px 22px rgba(8,12,32,.35);
+.footer-action-game .footer-action-icon::after {
+  opacity: 0.08;
+}
+.footer-action-game .footer-action-icon svg {
+  display: none;
+}
+.footer-action-game .footer-action-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 18px;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 10px 22px rgba(8, 12, 32, 0.35);
 }
 
-#settings-modal .modal-card{
-  height:min(96vh,1060px);
-  max-height:min(96vh,1060px);
+#settings-modal .modal-card {
+  height: min(96vh, 1060px);
+  max-height: min(96vh, 1060px);
 }
 
 html:has(#towerCalcModal.is-open),
-body:has(#towerCalcModal.is-open){overflow:hidden;}
+body:has(#towerCalcModal.is-open) {
+  overflow: hidden;
+}
 
-.players-panel{overflow:visible;}
-.players-panel [data-stat-card="summary"].stat-card--duo{
-  position:relative;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:0;
-  align-items:stretch;
+.players-panel {
+  overflow: visible;
 }
-.players-panel [data-stat-card="summary"].stat-card--duo::after{
-  content:"";
-  position:absolute;
-  top:18px;
-  bottom:18px;
-  left:50%;
-  width:2px;
-  border-radius:999px;
-  background:linear-gradient(
+.players-panel [data-stat-card="summary"].stat-card--duo {
+  position: relative;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  align-items: stretch;
+}
+.players-panel [data-stat-card="summary"].stat-card--duo::after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 50%;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
     180deg,
-    rgba(255,255,255,0),
-    rgba(120,181,255,.76) 18%,
-    rgba(255,186,112,.94) 50%,
-    rgba(120,181,255,.76) 82%,
-    rgba(255,255,255,0)
+    rgba(255, 255, 255, 0),
+    rgba(120, 181, 255, 0.76) 18%,
+    rgba(255, 186, 112, 0.94) 50%,
+    rgba(120, 181, 255, 0.76) 82%,
+    rgba(255, 255, 255, 0)
   );
-  pointer-events:none;
+  pointer-events: none;
 }
-.players-panel [data-stat-card="summary"] .stat-duo-divider{display:none;}
-.players-panel [data-stat-card="summary"] .stat-duo-item{
-  display:grid;
-  place-items:center;
-  place-content:center;
-  min-height:132px;
-  padding:10px 22px;
+.players-panel [data-stat-card="summary"] .stat-duo-divider {
+  display: none;
+}
+.players-panel [data-stat-card="summary"] .stat-duo-item {
+  display: grid;
+  place-items: center;
+  place-content: center;
+  min-height: 132px;
+  padding: 10px 22px;
 }
 .players-panel [data-stat-card="summary"] .stat-duo-item span,
-.players-panel [data-stat-card="summary"] .stat-duo-item strong{
-  justify-self:center;
-  align-self:center;
-  text-align:center;
+.players-panel [data-stat-card="summary"] .stat-duo-item strong {
+  justify-self: center;
+  align-self: center;
+  text-align: center;
 }
 
-.drawer-lang-group{
-  display:none;
-  margin:0 0 10px;
-  padding:0 0 10px;
-  border-bottom:1px solid rgba(255,255,255,.08);
+.drawer-lang-group {
+  display: none;
+  margin: 0 0 10px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
-.drawer-lang-list{
-  display:grid;
-  gap:8px;
-  margin-top:10px;
+.drawer-lang-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
 }
-.drawer-lang-summary{
-  display:flex;
-  align-items:center;
-  justify-content:center;
+.drawer-lang-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.drawer-lang-summary::-webkit-details-marker{display:none;}
-.drawer-lang-item{
-  background:rgba(255,255,255,.03);
-  border-color:rgba(255,255,255,.08);
+.drawer-lang-summary::-webkit-details-marker {
+  display: none;
 }
-.drawer-lang-group:not([open]) .drawer-lang-list{display:none;}
+.drawer-lang-item {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.drawer-lang-group:not([open]) .drawer-lang-list {
+  display: none;
+}
 
-#board-modal .tower-calc-preview-toolbar{
-  flex:0 0 auto;
-  position:sticky;
-  top:0;
-  z-index:5;
+#board-modal .tower-calc-preview-toolbar {
+  flex: 0 0 auto;
+  position: relative;
+  top: 0;
+  z-index: 5;
 }
-#board-modal #boardPreviewStatus{
-  flex:0 0 auto;
-  margin:10px 0 8px;
+#board-modal #boardPreviewStatus {
+  flex: 0 0 auto;
+  margin: 10px 0 8px;
 }
-#board-modal .board-standalone-preview{
-  min-width:0;
-  display:grid;
-  gap:8px;
+#board-modal .board-standalone-preview {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
 }
-#board-modal .board-head-actions--single{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  flex-wrap:nowrap;
-  overflow-x:auto;
-  overflow-y:hidden;
-  -webkit-overflow-scrolling:touch;
+#board-modal .board-head-actions--single {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 #board-modal .board-head-actions--single > *,
 #board-modal .board-head-actions--single .board-shift-group,
 #board-modal .board-head-actions--single .board-lang-picker-wrap,
-#board-modal .board-head-actions--single .btn{
-  flex:0 0 auto;
-  min-width:max-content;
+#board-modal .board-head-actions--single .btn {
+  flex: 0 0 auto;
+  min-width: max-content;
 }
-#board-modal .board-head-actions--single .board-shift-group{
-  display:flex;
-  flex-wrap:nowrap;
-  gap:8px;
+#board-modal .board-head-actions--single .board-shift-group {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
 }
-#board-modal .board-head-actions--single .board-lang-picker-wrap{
-  margin-left:auto;
-  display:flex;
-  flex:0 0 auto;
+#board-modal .board-head-actions--single .board-lang-picker-wrap {
+  margin-left: auto;
+  display: flex;
+  flex: 0 0 auto;
 }
-#board-modal .board-lang-trigger::before{content:none;}
-#board-modal .board-lang-trigger .board-lang-picker-label{display:none;}
-#board-modal .board-lang-trigger .board-lang-trigger-text{display:inline;}
+#board-modal .board-lang-trigger::before {
+  content: none;
+}
+#board-modal .board-lang-trigger .board-lang-picker-label {
+  display: none;
+}
+#board-modal .board-lang-trigger .board-lang-trigger-text {
+  display: inline;
+}
 
 #towerCalcModal [data-calc-main-panel="setup"],
 #towerCalcModal [data-calc-main-panel="setup"] > *,
 #towerCalcModal #towerCalcShiftBalance,
-#towerCalcModal #towerCalcShiftBalance > *{
-  overflow:visible;
-  max-height:none;
+#towerCalcModal #towerCalcShiftBalance > * {
+  overflow: visible;
+  max-height: none;
 }
 #towerCalcModal [data-calc-main-panel="towers"],
 #towerCalcModal #towerCalcGrid,
 #towerCalcModal #towerCalcTabsWrap,
 #towerCalcModal .tower-picker-detail,
 #towerCalcModal .tower-picker-detail.panel,
-#towerCalcModal .tower-picker-detail.subpanel{
-  overflow:visible;
+#towerCalcModal .tower-picker-detail.subpanel {
+  overflow: visible;
 }
-#towerCalcModal #towerCalcAdvanced{
-  margin-top:0;
-  border:0;
-  background:transparent;
-  box-shadow:none;
+#towerCalcModal #towerCalcAdvanced {
+  margin-top: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
-#towerCalcModal #towerCalcAdvanced > summary{display:none;}
-#towerCalcModal #towerCalcAdvanced > .inner{padding-top:0;}
-#towerCalcModal #towerCalcAdvanced:not([open]) > .inner{display:block;}
+#towerCalcModal #towerCalcAdvanced > summary {
+  display: none;
+}
+#towerCalcModal #towerCalcAdvanced > .inner {
+  padding-top: 0;
+}
+#towerCalcModal #towerCalcAdvanced:not([open]) > .inner {
+  display: block;
+}
 
 #towerCalcModal .tower-calc-grid,
 #towerCalcModal .tower-calc-inline-shell,
@@ -179,104 +213,159 @@ body:has(#towerCalcModal.is-open){overflow:hidden;}
 #towerCalcModal #tcv7AdvancedTopLayout > *,
 #towerCalcModal #towerCalcShiftBalance,
 #board-modal .board-modal-preview,
-#board-modal #boardModalPreviewSheet{
-  width:100%;
-  max-width:100%;
-  min-width:0;
-  box-sizing:border-box;
+#board-modal #boardModalPreviewSheet {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 #towerCalcModal .tower-picker-detail,
 #towerCalcModal #towerCalcGlobalOut,
 #towerCalcModal #towerCalcGrid,
-#towerCalcModal .tower-calc-main-panel{overflow-x:hidden;}
+#towerCalcModal .tower-calc-main-panel {
+  overflow-x: hidden;
+}
 #towerCalcModal details.tower-collapsible,
-#towerCalcModal details.tower-collapsible > .inner{
-  min-width:0;
-  max-width:100%;
+#towerCalcModal details.tower-collapsible > .inner {
+  min-width: 0;
+  max-width: 100%;
 }
-#towerCalcModal .tower-picker-detail :is(input,select,.btn){
-  min-height:48px;
-  box-sizing:border-box;
+#towerCalcModal .tower-picker-detail :is(input, select, .btn) {
+  min-height: 48px;
+  box-sizing: border-box;
 }
-#towerCalcModal .tower-picker-detail .picker-manual-row{grid-template-columns:repeat(4,minmax(0,1fr));}
-#towerCalcModal .tower-picker-detail .picker-manual-row2{grid-template-columns:repeat(5,minmax(0,1fr));}
+#towerCalcModal .tower-picker-detail .picker-manual-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+#towerCalcModal .tower-picker-detail .picker-manual-row2 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
 #towerCalcModal .tower-picker-detail .picker-manual-row > *,
-#towerCalcModal .tower-picker-detail .picker-manual-row2 > *{
-  width:100%;
-  min-width:0;
+#towerCalcModal .tower-picker-detail .picker-manual-row2 > * {
+  width: 100%;
+  min-width: 0;
 }
-#towerCalcAdvanced #towerCalcTierTargetRow{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:10px 12px;
-  width:100%;
-  margin-top:10px;
+#towerCalcAdvanced #towerCalcTierTargetRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 12px;
+  width: 100%;
+  margin-top: 10px;
 }
-#towerCalcAdvanced #towerCalcTierTargetRow > label{
-  display:grid;
-  gap:6px;
-  min-width:0;
-  align-items:start;
+#towerCalcAdvanced #towerCalcTierTargetRow > label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  align-items: start;
 }
-#towerCalcAdvanced #towerCalcTierTargetRow input{
-  width:100%;
-  min-width:0;
-}
-
-@media (max-width:1320px){
-  .players-panel .stats-grid--players{grid-template-columns:1fr;}
-  .players-panel .filters-row{grid-template-columns:repeat(4,minmax(0,1fr));}
-  .igt-tabs{grid-template-columns:repeat(2,minmax(0,1fr));}
-  .igt-grid{grid-template-columns:1fr;}
+#towerCalcAdvanced #towerCalcTierTargetRow input {
+  width: 100%;
+  min-width: 0;
 }
 
-@media (min-width:1200px){
-  :root{--app-pad:24px;}
-
-  #towerCalcModal .tower-picker-detail #towerPickerLimitsBlock .inner>.row.gap.wrap{
-    display:grid;
-    grid-template-columns:repeat(6,minmax(0,1fr));
-    gap:12px;
-    flex-wrap:nowrap;
+@media (max-width: 1320px) {
+  .players-panel .stats-grid--players {
+    grid-template-columns: 1fr;
   }
-
-  #towerCalcModal .tower-picker-detail #towerPickerLimitsBlock .inner>.row.gap.wrap>label{
-    width:100%;
-    min-width:0;
+  .players-panel .filters-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .igt-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .igt-grid {
+    grid-template-columns: 1fr;
   }
 }
 
-@media (max-width:1200px){
+@media (min-width: 1200px) {
+  :root {
+    --app-pad: 24px;
+  }
+
+  #towerCalcModal
+    .tower-picker-detail
+    #towerPickerLimitsBlock
+    .inner
+    > .row.gap.wrap {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+    flex-wrap: nowrap;
+  }
+
+  #towerCalcModal
+    .tower-picker-detail
+    #towerPickerLimitsBlock
+    .inner
+    > .row.gap.wrap
+    > label {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 1200px) {
   .stats-grid--players,
   .layout,
   .modal-grid,
-  #tcv7AdvancedTopLayout{grid-template-columns:1fr;}
-
-  .bases-grid,
-  .tower-calc-inline-shell{grid-template-columns:1fr;}
-
-  .bases-grid{max-height:none;}
-
-  .stats-grid,
-  #towerCalcTopShiftSummaryV7 .tcv7-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
-
-  .filters-row{grid-template-columns:1fr 1fr;}
-  .igt-tabs{grid-template-columns:repeat(2,minmax(0,1fr));}
-  .igt-grid{grid-template-columns:1fr;}
-
-  .footer-actions{grid-template-columns:1fr;}
-  .footer-action{justify-content:flex-start;min-height:118px;}
-  .footer-copy-title{text-align:center;}
-  .footer-copy-title,
-  .footer-copy-text,
-  .footer-copy-text-legal{max-width:960px;}
-
-  #settings-modal .modal-card{height:min(95vh,980px);max-height:min(95vh,980px);}
-  #settings-modal .modal-card.has-settings-side-menu{
-    width:min(1120px,calc(100vw - 24px));
-    grid-template-columns:240px minmax(0,1fr);
+  #tcv7AdvancedTopLayout {
+    grid-template-columns: 1fr;
   }
 
-  #towerCalcModal .tower-calc-shift-controls{grid-template-columns:1fr;}
-  #towerCalcModal .tower-calc-shift-controls-right{justify-content:flex-start;}
+  .bases-grid,
+  .tower-calc-inline-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .bases-grid {
+    max-height: none;
+  }
+
+  .stats-grid,
+  #towerCalcTopShiftSummaryV7 .tcv7-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filters-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .igt-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .igt-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-actions {
+    grid-template-columns: 1fr;
+  }
+  .footer-action {
+    justify-content: flex-start;
+    min-height: 118px;
+  }
+  .footer-copy-title {
+    text-align: center;
+  }
+  .footer-copy-title,
+  .footer-copy-text,
+  .footer-copy-text-legal {
+    max-width: 960px;
+  }
+
+  #settings-modal .modal-card {
+    height: min(95vh, 980px);
+    max-height: min(95vh, 980px);
+  }
+  #settings-modal .modal-card.has-settings-side-menu {
+    width: min(1120px, calc(100vw - 24px));
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  #towerCalcModal .tower-calc-shift-controls {
+    grid-template-columns: 1fr;
+  }
+  #towerCalcModal .tower-calc-shift-controls-right {
+    justify-content: flex-start;
+  }
 }
