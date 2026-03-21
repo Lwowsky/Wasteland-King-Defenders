@@ -1,0 +1,197 @@
+/* Final mobile modal cleanup: iPhone-safe heights + stable mapping row actions */
+
+@media (max-width: 768px) {
+  :root {
+    --pns-safe-top: max(8px, env(safe-area-inset-top));
+    --pns-safe-right: max(6px, env(safe-area-inset-right));
+    --pns-safe-bottom: max(8px, env(safe-area-inset-bottom));
+    --pns-safe-left: max(6px, env(safe-area-inset-left));
+    --pns-mobile-modal-max-h: calc(100dvh - var(--pns-safe-top) - var(--pns-safe-bottom) - 8px);
+  }
+
+  #settings-modal .modal-card.has-settings-side-menu,
+  #towerCalcModal .modal-card,
+  #towerPlayerEditModal .tpe-modal-card {
+    width: min(calc(100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)), 100%);
+    max-width: min(calc(100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)), 100%);
+    max-height: var(--pns-mobile-modal-max-h);
+    margin: max(4px, calc(var(--pns-safe-top) - 4px)) auto max(4px, calc(var(--pns-safe-bottom) - 4px));
+    overflow: hidden;
+  }
+
+  #settings-modal .modal-head,
+  #towerCalcModal .modal-head,
+  #towerPlayerEditModal .modal-head {
+    padding-top: calc(12px + env(safe-area-inset-top) * 0.35);
+  }
+
+  #settings-modal .modal-head .btn-icon,
+  #towerCalcModal .modal-head .btn-icon,
+  #towerPlayerEditModal .modal-head .btn-icon,
+  #board-modal .modal-head .btn-icon,
+  .board-lang-dialog-close {
+    flex: 0 0 auto;
+    align-self: flex-start;
+  }
+
+  #settings-modal .modal-card.has-settings-side-menu > .modal-grid,
+  #towerCalcModal .modal-grid,
+  #towerPlayerEditModal .tpe-modal-grid {
+    min-height: 0;
+    overflow: auto;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #towerPlayerEditModal .tpe-modal-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #towerPlayerEditModal .tpe-modal-grid,
+  #towerPlayerEditModal .placement-editor-grid,
+  #towerPlayerEditModal .row.gap.wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pns-alert-overlay,
+  .pns-confirm-overlay,
+  .board-lang-dialog-root.is-open .board-lang-dialog-shell {
+    align-items: flex-start;
+    overflow: auto;
+    padding:
+      calc(12px + env(safe-area-inset-top))
+      calc(10px + env(safe-area-inset-right))
+      calc(12px + env(safe-area-inset-bottom))
+      calc(10px + env(safe-area-inset-left));
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pns-alert-dialog,
+  .pns-confirm-dialog,
+  .board-lang-dialog-root.is-open .board-lang-dialog-card {
+    width: min(100%, 640px);
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+    overflow: auto;
+  }
+
+  .pns-alert-actions,
+  .pns-confirm-actions,
+  .board-lang-dialog-actions {
+    flex-wrap: wrap;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+
+  #settings-modal .row-title-wrap,
+  #settings-modal .mapping-row .row-title-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 10px;
+    width: 100%;
+  }
+
+  #settings-modal .row-title,
+  #settings-modal .mapping-row .row-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  #settings-modal .row-title-actions,
+  #settings-modal .mapping-row .row-title-actions {
+    display: inline-flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 8px;
+    width: auto;
+    min-width: max-content;
+    margin-left: auto;
+  }
+
+  #settings-modal .mapping-edit-btn,
+  #settings-modal .mapping-remove-btn,
+  #settings-modal .mapping-row .mapping-edit-btn,
+  #settings-modal .mapping-row .mapping-remove-btn {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  #settings-modal .mapping-remove-btn,
+  #settings-modal .mapping-row .mapping-remove-btn {
+    width: 38px;
+    min-width: 38px;
+  }
+}
+
+@media (max-width: 520px) {
+  #settings-modal .row-title-wrap,
+  #settings-modal .mapping-row .row-title-wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #settings-modal .row-title-actions,
+  #settings-modal .mapping-row .row-title-actions {
+    justify-content: flex-end;
+  }
+
+  #board-modal .modal-card.board-standalone-card,
+  #board-modal .modal-card {
+    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+
+  #board-modal .modal-head,
+  #board-modal .modal-head.board-standalone-title {
+    padding:
+      calc(10px + env(safe-area-inset-top))
+      calc(12px + env(safe-area-inset-right))
+      10px
+      calc(12px + env(safe-area-inset-left));
+  }
+
+  #board-modal .board-standalone-preview {
+    padding:
+      0
+      calc(10px + env(safe-area-inset-right))
+      calc(12px + env(safe-area-inset-bottom))
+      calc(10px + env(safe-area-inset-left));
+  }
+}
+
+@media (max-width: 430px) {
+  #settings-modal .settings-side-btn {
+    min-width: 136px;
+  }
+
+  #settings-modal .mapping-row {
+    padding: 12px;
+  }
+
+  #settings-modal .mapping-edit-btn {
+    padding: 7px 11px;
+    font-size: 11px;
+  }
+
+  #settings-modal .mapping-remove-btn {
+    width: 34px;
+    min-width: 34px;
+    min-height: 34px;
+  }
+
+  #settings-modal .modal-head h2,
+  #towerCalcModal .modal-head h2,
+  #towerPlayerEditModal .modal-head h2 {
+    font-size: 13px;
+  }
+
+  #towerPlayerEditModal .tpe-modal-grid {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  #towerPlayerEditModal .tpe-panel-full {
+    padding: 12px;
+  }
+}
