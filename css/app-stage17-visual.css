@@ -416,7 +416,7 @@
   gap: 6px;
   min-width: 0;
   text-align: center;
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 700;
   color: #eef3ff;
 }
@@ -428,12 +428,12 @@
   height: 56px;
   overflow: hidden;
   border-radius: 16px;
-  background: #ffffff08;
+ 
 }
 #towerCalcTopShiftSummaryV7 .tcv7-role-icon img {
   display: block;
-  width: 44px;
-  height: 44px;
+  width: 100px;
+  height: 100px;
   object-fit: contain;
   max-width: none;
 }
@@ -588,9 +588,6 @@
 }
 
 @media (max-width:1200px) {
-  #towerCalcModal [data-calc-main-panel="overflow"] .tcv5-overflow-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   #towerCalcModal [data-calc-main-panel="overflow"] .tcv5-panel-head {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -607,14 +604,6 @@
       minmax(112px, 0.86fr)
       minmax(86px, 0.68fr)
       minmax(142px, 0.92fr);
-  }
-}
-
-@media (max-width:980px) {
-  #towerCalcModal [data-calc-main-panel="overflow"] .tcv5-overflow-head,
-  #towerCalcModal [data-calc-main-panel="overflow"] .tcv5-overflow-summary,
-  #towerCalcModal [data-calc-main-panel="overflow"] .tcv5-panel-head {
-    grid-template-columns: 1fr;
   }
 }
 

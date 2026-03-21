@@ -1,61 +1,128 @@
 /* Tablet and small-laptop responsive layer */
 
-@media (max-width:980px){
-  .brand-badge.brand-logo{width:140px;height:140px;}
-  .brand-text h1{font-size:20px;}
-
-  .app-header .header-inner{
-    grid-template-columns:minmax(0,1fr) auto auto;
-    grid-template-areas:"brand lang burger";
-    align-items:center;
+@media (max-width: 980px) {
+  .brand-badge.brand-logo {
+    width: 140px;
+    height: 140px;
+  }
+  .brand-text h1 {
+    font-size: 20px;
   }
 
-  .app-header .brand{grid-area:brand;min-width:0;gap:10px;}
-  .app-header .brand-text{
-    position:static;
-    transform:none;
-    width:auto;
-    pointer-events:auto;
-    align-items:flex-start;
-    text-align:left;
+  .app-header .header-inner {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "brand lang burger";
+    align-items: center;
+  }
+
+  .app-header .brand {
+    grid-area: brand;
+    min-width: 0;
+    gap: 10px;
+  }
+  .app-header .brand-text {
+    position: static;
+    transform: none;
+    width: auto;
+    pointer-events: auto;
+    align-items: flex-start;
+    text-align: left;
   }
   .app-header .brand-text h1,
-  .app-header .brand-text p{text-align:left;}
-  .burger-btn{grid-area:burger;justify-self:end;margin-left:0;}
-  .lang{grid-area:lang;justify-self:end;width:auto;}
-  .lang-label{display:none;}
-  .lang-menu{width:220px;}
-  .lang-btn{width:auto;max-width:none;min-width:46px;padding-inline:12px;}
-
-  .panel-head{flex-direction:column;align-items:stretch;}
-  .panel-actions{width:100%;flex-wrap:wrap;}
-  .panel-actions .btn{flex:1 1 180px;}
-  .filters-row{grid-template-columns:repeat(2,minmax(0,1fr));}
-  .bases-grid{grid-template-columns:1fr;gap:12px;max-height:none;overflow:visible;}
-
-  .footer-shell{padding-left:20px;padding-right:20px;}
-  .footer-action{min-height:96px;padding:14px 16px;}
-  .footer-action-title{font-size:1rem;}
-  .footer-action-subtitle{font-size:.86rem;}
-
-  #settings-modal .modal-card{width:min(980px,calc(100vw - 10px));max-height:95vh;margin:1.5vh auto;}
-  #settings-modal .modal-card.has-settings-side-menu{
-    grid-template-columns:1fr;
-    grid-template-areas:"head" "side" "body";
-    grid-template-rows:auto auto minmax(0,1fr);
+  .app-header .brand-text p {
+    text-align: left;
   }
-  #settings-modal .modal-card.has-settings-side-menu>.modal-grid{padding:12px;}
-  #settings-modal .modal-card.has-settings-side-menu>.settings-side-menu{border-right:0;border-bottom:1px solid #ffffff0f;}
-  #settings-modal .settings-side-list{
-    display:flex;
-    flex-wrap:nowrap;
-    gap:10px;
-    overflow-x:auto;
-    overflow-y:hidden;
-    position:static;
-    padding-bottom:4px;
+  .burger-btn {
+    grid-area: burger;
+    justify-self: end;
+    margin-left: 0;
   }
-  #settings-modal .settings-side-btn{flex:0 0 auto;min-width:190px;width:auto;white-space:nowrap;}
+  .lang {
+    grid-area: lang;
+    justify-self: end;
+    width: auto;
+  }
+  .lang-label {
+    display: none;
+  }
+  .lang-menu {
+    width: 220px;
+  }
+  .lang-btn {
+    width: auto;
+    max-width: none;
+    min-width: 46px;
+    padding-inline: 12px;
+  }
+
+  .panel-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .panel-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .panel-actions .btn {
+    flex: 1 1 180px;
+  }
+  .filters-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bases-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .footer-shell {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .footer-action {
+    min-height: 96px;
+    padding: 14px 16px;
+  }
+  .footer-action-title {
+    font-size: 1rem;
+  }
+  .footer-action-subtitle {
+    font-size: 0.86rem;
+  }
+
+  #settings-modal .modal-card {
+    width: min(980px, calc(100vw - 10px));
+    max-height: 95vh;
+    margin: 1.5vh auto;
+  }
+  #settings-modal .modal-card.has-settings-side-menu {
+    grid-template-columns: 1fr;
+    grid-template-areas: "head" "side" "body";
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+  #settings-modal .modal-card.has-settings-side-menu > .modal-grid {
+    padding: 12px;
+  }
+  #settings-modal .modal-card.has-settings-side-menu > .settings-side-menu {
+    border-right: 0;
+    border-bottom: 1px solid #ffffff0f;
+  }
+  #settings-modal .settings-side-list {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    position: static;
+    padding-bottom: 4px;
+  }
+  #settings-modal .settings-side-btn {
+    flex: 0 0 auto;
+    min-width: 190px;
+    width: auto;
+    white-space: nowrap;
+  }
   #settings-modal .mapping-grid-2,
   #settings-modal .visibility-panel,
   #settings-modal .import-source-grid,
@@ -63,7 +130,9 @@
   #settings-modal .reset-actions-grid,
   #settings-modal .import-tools-row,
   .tcv5-panel-head,
-  [data-panel="about"] .igt-grid{grid-template-columns:1fr;}
+  [data-panel="about"] .igt-grid {
+    grid-template-columns: 1fr;
+  }
 
   .stats-grid--players,
   .stat-split--roles,
@@ -73,170 +142,302 @@
   .tower-picker-detail .picker-manual-row2,
   .tower-calc-grid,
   .placement-editor-grid,
-  #towerCalcAdvanced .inner>#tcv7AdvancedTopLayout{grid-template-columns:1fr;}
+  #towerCalcAdvanced .inner > #tcv7AdvancedTopLayout {
+    grid-template-columns: 1fr;
+  }
 
-  .tower-calc-summary{grid-template-columns:1fr 1fr;}
-  #towerCalcShiftBalance #tcv14TopRow{flex-direction:row;align-items:center;}
-  #towerCalcShiftBalance:is(.tower-calc-autoslots,.tcv14-autos-inline){margin-left:0;}
-  .tcv22-apply-label{min-width:160px;width:100%;}
-  .tcv22-apply-label select{min-width:0;width:100%;}
+  .tower-calc-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+  #towerCalcShiftBalance #tcv14TopRow {
+    flex-direction: row;
+    align-items: center;
+  }
+  #towerCalcShiftBalance:is(.tower-calc-autoslots, .tcv14-autos-inline) {
+    margin-left: 0;
+  }
+  .tcv22-apply-label {
+    min-width: 160px;
+    width: 100%;
+  }
+  .tcv22-apply-label select {
+    min-width: 0;
+    width: 100%;
+  }
 
-  .igt-shell{border-radius:22px;}
-  .igt-content{padding:0 16px 16px;}
-  .igt-tabs{
-    display:flex;
-    overflow-x:auto;
-    overscroll-behavior-x:contain;
-    scroll-snap-type:x proximity;
-    padding-bottom:4px;
-    margin-inline:-2px;
+  .igt-shell {
+    border-radius: 22px;
   }
-  .igt-tabs::-webkit-scrollbar{height:6px;}
-  .igt-tabs::-webkit-scrollbar-thumb{background:rgba(128,147,224,.35);border-radius:999px;}
-  .igt-tab{flex:0 0 180px;scroll-snap-align:start;}
+  .igt-content {
+    padding: 0 16px 16px;
+  }
+  .igt-tabs {
+    display: flex;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    padding-bottom: 4px;
+    margin-inline: -2px;
+  }
+  .igt-tabs::-webkit-scrollbar {
+    height: 6px;
+  }
+  .igt-tabs::-webkit-scrollbar-thumb {
+    background: rgba(128, 147, 224, 0.35);
+    border-radius: 999px;
+  }
+  .igt-tab {
+    flex: 0 0 180px;
+    scroll-snap-align: start;
+  }
 
-  #towerCalcModal .modal-card{
-    width:100vw;
-    max-width:100vw;
-    min-height:100dvh;
-    max-height:100dvh;
-    margin:0;
-    border-radius:0;
-    overflow-x:hidden;
-    overscroll-behavior:contain;
+  #towerCalcModal .modal-card {
+    width: 100vw;
+    max-width: 100vw;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
   }
-  #towerCalcModal .modal-head{
-    display:grid;
-    grid-template-columns:minmax(0,1fr) 48px;
-    align-items:start;
-    gap:12px;
-    padding:12px;
+  #towerCalcModal .modal-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 48px;
+    align-items: start;
+    gap: 12px;
+    padding: 12px;
   }
-  #towerCalcModal .modal-grid{padding:8px;gap:8px;overflow-x:hidden;}
-  #towerCalcModal .tower-calc-main-tabs{
-    display:flex;
-    flex-wrap:nowrap;
-    overflow-x:auto;
-    overflow-y:hidden;
-    -webkit-overflow-scrolling:touch;
+  #towerCalcModal .modal-grid {
+    padding: 8px;
+    gap: 8px;
+    overflow-x: hidden;
   }
-  #towerCalcModal .tower-calc-main-tabs .btn{flex:0 0 auto;min-width:max-content;white-space:nowrap;text-align:center;}
+  #towerCalcModal .tower-calc-main-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  #towerCalcModal .tower-calc-main-tabs .btn {
+    flex: 0 0 auto;
+    min-width: max-content;
+    white-space: nowrap;
+    text-align: center;
+  }
   #towerCalcModal #towerCalcBoardPreviewSheet,
   #towerCalcModal .tower-calc-board-preview,
-  #towerCalcModal .tower-calc-board-preview .board-sheet{max-width:100%;width:100%;overflow-x:hidden;}
-  #towerCalcModal .tower-calc-board-preview .board-sheet{min-width:0;padding:8px 6px;box-sizing:border-box;}
-  #towerCalcModal .tower-calc-board-preview .board-grid{min-width:0;width:100%;grid-template-columns:1fr;gap:8px;}
-  #towerCalcModal .tower-calc-board-preview .board-col{min-width:0;width:100%;}
-  #towerCalcModal .tower-calc-board-preview .board-col header{padding:6px 5px;}
-  #towerCalcModal .tower-calc-board-preview .board-col h4{font-size:10px;line-height:1.12;min-height:0;overflow-wrap:anywhere;word-break:break-word;}
-  #towerCalcModal .tower-calc-board-preview .board-sub{font-size:10px;}
-  #towerCalcModal .tower-calc-board-preview .board-cap{gap:4px;font-size:10px;}
-  #towerCalcModal .tower-calc-board-preview .board-col li{grid-template-columns:minmax(0,1.2fr) .52fr .42fr .72fr;font-size:10px;padding:4px;}
+  #towerCalcModal .tower-calc-board-preview .board-sheet {
+    max-width: 100%;
+    width: 100%;
+    overflow-x: hidden;
+  }
+  #towerCalcModal .tower-calc-board-preview .board-sheet {
+    min-width: 0;
+    padding: 8px 6px;
+    box-sizing: border-box;
+  }
+  #towerCalcModal .tower-calc-board-preview .board-grid {
+    min-width: 0;
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  #towerCalcModal .tower-calc-board-preview .board-col {
+    min-width: 0;
+    width: 100%;
+  }
+  #towerCalcModal .tower-calc-board-preview .board-col header {
+    padding: 6px 5px;
+  }
+  #towerCalcModal .tower-calc-board-preview .board-col h4 {
+    font-size: 10px;
+    line-height: 1.12;
+    min-height: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  #towerCalcModal .tower-calc-board-preview .board-sub {
+    font-size: 10px;
+  }
+  #towerCalcModal .tower-calc-board-preview .board-cap {
+    gap: 4px;
+    font-size: 10px;
+  }
+  #towerCalcModal .tower-calc-board-preview .board-col li {
+    grid-template-columns: minmax(0, 1.2fr) 0.52fr 0.42fr 0.72fr;
+    font-size: 10px;
+    padding: 4px;
+  }
 }
 
-@media (min-width:768px) and (max-width:980px){
-  .players-panel .stats-grid.stats-grid--players{grid-template-columns:1fr;gap:16px;}
+@media (min-width: 768px) and (max-width: 980px) {
+  .players-panel .stats-grid.stats-grid--players {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
   .players-panel [data-stat-card="roles"] .stat-split,
   .players-panel [data-stat-card="shifts"] .stat-split,
   .players-panel .stat-split--roles,
-  .players-panel .stat-split--shifts{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
-  .players-panel .stat-chip{
-    min-height:152px;
-    padding:18px 12px;
-    display:grid;
-    place-items:center;
-    text-align:center;
+  .players-panel .stat-split--shifts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .players-panel .stat-chip {
+    min-height: 152px;
+    padding: 18px 12px;
+    display: grid;
+    place-items: center;
+    text-align: center;
   }
   .players-panel .stat-chip b,
-  .players-panel .stat-chip small{justify-self:center;text-align:center;}
-
-  #towerCalcModal .tower-picker-detail #towerPickerLimitsBlock .inner>.row.gap.wrap{
-    display:grid;
-    grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:12px;
-    width:100%;
-    flex-wrap:nowrap;
-  }
-  #towerCalcModal [data-calc-main-panel="setup"] #towerCalcAdvanced:not([open])>summary,
-  #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-advanced:not([open])>summary{
-    min-height:64px;
-    height:64px;
-    max-height:64px;
-    padding-left:24px;
-    padding-right:24px;
+  .players-panel .stat-chip small {
+    justify-self: center;
+    text-align: center;
   }
 
-  #settings-modal .modal-card.has-settings-side-menu{
-    width:min(980px,calc(100vw - 18px));
-    max-width:min(980px,calc(100vw - 18px));
-    grid-template-columns:1fr;
-    grid-template-areas:"head" "side" "body" "foot";
-    grid-template-rows:auto auto minmax(0,1fr) auto;
+  #towerCalcModal
+    .tower-picker-detail
+    #towerPickerLimitsBlock
+    .inner
+    > .row.gap.wrap {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+    flex-wrap: nowrap;
   }
-  #settings-modal .modal-card.has-settings-side-menu>.settings-side-menu{
-    grid-area:side;
-    padding:10px 14px 8px;
-    border-right:0;
-    border-bottom:1px solid rgba(255,255,255,.08);
-    background:transparent;
-    overflow:hidden;
+  #towerCalcModal
+    [data-calc-main-panel="setup"]
+    #towerCalcAdvanced:not([open])
+    > summary,
+  #towerCalcModal
+    [data-calc-main-panel="setup"]
+    .tower-calc-advanced:not([open])
+    > summary {
+    min-height: 64px;
+    height: 64px;
+    max-height: 64px;
+    padding-left: 24px;
+    padding-right: 24px;
   }
-  #settings-modal .settings-side-list{
-    display:flex;
-    flex-wrap:nowrap;
-    align-items:stretch;
-    gap:10px;
-    overflow-x:auto;
-    overflow-y:hidden;
-    padding-bottom:4px;
-    scrollbar-width:thin;
-    position:static;
-  }
-  #settings-modal .settings-side-btn{flex:0 0 auto;min-width:190px;width:auto;white-space:nowrap;}
-  #settings-modal .modal-card.has-settings-side-menu>.modal-grid{grid-area:body;padding:14px;min-width:0;overflow:auto;}
 
-  #board-modal .modal-card.board-standalone-card{
-    width:min(100vw - 18px,100%);
-    max-width:min(100vw - 18px,100%);
-    max-height:96vh;
-    margin:10px auto;
-    padding:16px 16px 18px;
-    overflow:hidden;
-    display:flex;
-    flex-direction:column;
+  #settings-modal .modal-card.has-settings-side-menu {
+    width: min(980px, calc(100vw - 18px));
+    max-width: min(980px, calc(100vw - 18px));
+    grid-template-columns: 1fr;
+    grid-template-areas: "head" "side" "body" "foot";
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
   }
-  #board-modal .board-standalone-preview{
-    display:flex;
-    flex-direction:column;
-    flex:1 1 auto;
-    min-height:0;
-    overflow-y:auto;
-    overflow-x:hidden;
-    padding:0 4px 12px;
+  #settings-modal .modal-card.has-settings-side-menu > .settings-side-menu {
+    grid-area: side;
+    padding: 10px 14px 8px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: transparent;
+    overflow: hidden;
   }
-  #board-modal .board-head-actions.board-head-actions--single{
-    display:flex;
-    flex-wrap:nowrap;
-    gap:8px;
-    overflow-x:auto;
-    overflow-y:hidden;
-    padding-bottom:8px;
-    -webkit-overflow-scrolling:touch;
+  #settings-modal .settings-side-list {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+    position: static;
   }
-  #board-modal .board-head-actions.board-head-actions--single>*{flex:0 0 auto;min-width:max-content;}
-  #board-modal #boardModalPreviewSheet{width:100%;max-width:100%;min-width:0;overflow-x:hidden;overflow-y:visible;padding-bottom:12px;}
-  #board-modal #boardModalPreviewSheet .board-sheet{width:100%;max-width:100%;min-width:0;padding:10px 8px;overflow:hidden;box-sizing:border-box;}
-  #board-modal #boardModalPreviewSheet .board-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;width:100%;min-width:0;max-width:100%;}
-  #board-modal #boardModalPreviewSheet .board-col{width:100%;max-width:100%;min-width:0;min-height:0;}
-  #board-modal #boardModalPreviewSheet .board-col header{padding:8px 6px;}
-  #board-modal #boardModalPreviewSheet .board-col h4{font-size:12px;line-height:1.2;overflow-wrap:anywhere;min-height:0;}
-  #board-modal #boardModalPreviewSheet .board-col li{grid-template-columns:minmax(0,1.2fr) .55fr .45fr .75fr;font-size:11px;padding:5px;}
+  #settings-modal .settings-side-btn {
+    flex: 0 0 auto;
+    min-width: 190px;
+    width: auto;
+    white-space: nowrap;
+  }
+  #settings-modal .modal-card.has-settings-side-menu > .modal-grid {
+    grid-area: body;
+    padding: 14px;
+    min-width: 0;
+    overflow: auto;
+  }
 
-  #towerCalcModal #tcv35-row{display:grid;grid-template-columns:1fr;gap:10px;width:100%;overflow:visible;padding-bottom:0;}
-  #towerCalcModal #tcv35-row>.btn,
-  #towerCalcModal #tcv35-row>#tcv35-clearWrap,
-  #towerCalcModal #tcv35-row>#tcv35-clearWrap>.btn{width:100%;min-width:0;}
-  #towerCalcModal #tcv35-clearWrap{grid-column:1/-1;}
+  #board-modal .modal-card.board-standalone-card {
+    width: min(100vw - 18px, 100%);
+    max-width: min(100vw - 18px, 100%);
+    max-height: 96vh;
+    margin: 10px auto;
+    padding: 16px 16px 18px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  #board-modal .board-standalone-preview {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 4px 12px;
+  }
+  #board-modal .board-head-actions.board-head-actions--single {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+  #board-modal .board-head-actions.board-head-actions--single > * {
+    flex: 0 0 auto;
+    min-width: max-content;
+  }
+  #board-modal #boardModalPreviewSheet {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-y: visible;
+    padding-bottom: 12px;
+  }
+  #board-modal #boardModalPreviewSheet .board-sheet {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 10px 8px;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  #board-modal #boardModalPreviewSheet .board-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  #board-modal #boardModalPreviewSheet .board-col {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+  #board-modal #boardModalPreviewSheet .board-col header {
+    padding: 8px 6px;
+  }
+  #board-modal #boardModalPreviewSheet .board-col h4 {
+    font-size: 12px;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    min-height: 0;
+  }
+  #board-modal #boardModalPreviewSheet .board-col li {
+    grid-template-columns: minmax(0, 1.2fr) 0.55fr 0.45fr 0.75fr;
+    font-size: 11px;
+    padding: 5px;
+  }
 
   #towerCalcTopShiftSummaryV7 .tcv7-card,
   #towerCalcTopShiftSummaryV7 .tcv7-card-main,
@@ -246,213 +447,236 @@
   #towerCalcTopShiftSummaryV7 .tcv7-card-bottom,
   #towerCalcTopShiftSummaryV7 .tcv7-warn,
   #towerCalcTopShiftSummaryV7 .tcv7-role-row,
-  #towerCalcTopShiftSummaryV7 .tcv7-role-item{justify-items:center;text-align:center;}
+  #towerCalcTopShiftSummaryV7 .tcv7-role-item {
+    justify-items: center;
+    text-align: center;
+  }
 }
 
-@media (max-width:980px){
-  #towerCalcAdvanced #towerCalcTierTargetRow{grid-template-columns:1fr;}
+@media (max-width: 980px) {
+  #towerCalcAdvanced #towerCalcTierTargetRow {
+   grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
   #towerCalcModal .tower-picker-detail .picker-manual-row,
-  #towerCalcModal .tower-picker-detail .picker-manual-row2{grid-template-columns:1fr;}
+  #towerCalcModal .tower-picker-detail .picker-manual-row2 {
+    grid-template-columns: 1fr;
+  }
 }
-
 
 /* Tablet pass: sync burger final-plan with tower final-plan, keep import tabs clean, force 3-up stat chips */
-@media (min-width:768px) and (max-width:980px){
+@media (min-width: 768px) and (max-width: 980px) {
   /* Burger final-plan must behave like tower final-plan on tablet widths */
-  #board-modal .modal-card.board-standalone-card{
-    width:min(100vw - 18px, 100%);
-    max-width:min(100vw - 18px, 100%);
-    max-height:96vh;
-    margin:10px auto;
-    padding:16px 16px 18px;
-    overflow:hidden;
-    display:flex;
-    flex-direction:column;
+  #board-modal .modal-card.board-standalone-card {
+    width: min(100vw - 18px, 100%);
+    max-width: min(100vw - 18px, 100%);
+    max-height: 96vh;
+    margin: 10px auto;
+    padding: 16px 16px 18px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
-  #board-modal .modal-head.board-standalone-title{
-    position:sticky;
-    top:0;
-    z-index:5;
-    padding:6px 0 12px;
-    background:#091126f2;
+  #board-modal .modal-head.board-standalone-title {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    padding: 6px 0 12px;
+    background: #091126f2;
   }
-  #board-modal .tower-calc-board-preview.board-modal-preview.board-standalone-preview,
-  #board-modal .board-standalone-preview{
-    display:flex;
-    flex-direction:column;
-    flex:1 1 auto;
-    min-height:0;
-    overflow-y:auto;
-    overflow-x:hidden;
-    padding:0 4px 12px;
+  #board-modal
+    .tower-calc-board-preview.board-modal-preview.board-standalone-preview,
+  #board-modal .board-standalone-preview {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 4px 12px;
   }
   #board-modal .board-head-actions.tower-calc-preview-toolbar,
-  #board-modal .tower-calc-preview-toolbar{
-    display:flex;
-    flex-wrap:nowrap;
-    align-items:center;
-    gap:8px;
-    overflow-x:auto;
-    overflow-y:hidden;
-    padding-bottom:8px;
-    -webkit-overflow-scrolling:touch;
+  #board-modal .tower-calc-preview-toolbar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
   }
   #board-modal .board-head-actions.tower-calc-preview-toolbar > *,
-  #board-modal .tower-calc-preview-toolbar > *{
-    flex:0 0 auto;
-    min-width:max-content;
+  #board-modal .tower-calc-preview-toolbar > * {
+    flex: 0 0 auto;
+    min-width: max-content;
   }
   #board-modal .board-head-actions.tower-calc-preview-toolbar .board-shift-tabs,
-  #board-modal .tower-calc-preview-toolbar .board-shift-tabs{
-    display:flex;
-    flex-wrap:nowrap;
-    gap:8px;
+  #board-modal .tower-calc-preview-toolbar .board-shift-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
   }
-  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-lang-picker-wrap,
-  #board-modal .tower-calc-preview-toolbar .board-lang-picker-wrap{
-    margin-left:0;
-    display:flex;
-    flex:0 0 auto;
+  #board-modal
+    .board-head-actions.tower-calc-preview-toolbar
+    .board-lang-picker-wrap,
+  #board-modal .tower-calc-preview-toolbar .board-lang-picker-wrap {
+    margin-left: 0;
+    display: flex;
+    flex: 0 0 auto;
   }
-  #board-modal #boardPreviewStatus{flex:0 0 auto;margin:10px 0 8px;}
-  #board-modal #boardModalPreviewSheet{
-    width:100%;
-    max-width:100%;
-    min-width:0;
-    overflow:visible;
-    padding-bottom:12px;
+  #board-modal #boardPreviewStatus {
+    flex: 0 0 auto;
+    margin: 10px 0 8px;
   }
-  #board-modal #boardModalPreviewSheet .board-sheet{
-    width:100%;
-    max-width:100%;
-    min-width:0;
-    padding:10px 8px;
-    overflow:hidden;
-    box-sizing:border-box;
+  #board-modal #boardModalPreviewSheet {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: visible;
+    padding-bottom: 12px;
   }
-  #board-modal #boardModalPreviewSheet .board-grid{
-    display:grid;
-    grid-template-columns:minmax(0, 1fr);
-    gap:10px;
-    width:100%;
-    min-width:0;
-    max-width:100%;
+  #board-modal #boardModalPreviewSheet .board-sheet {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 10px 8px;
+    overflow: hidden;
+    box-sizing: border-box;
   }
-  #board-modal #boardModalPreviewSheet .board-col{
-    width:100%;
-    max-width:100%;
-    min-width:0;
-    min-height:0;
+  #board-modal #boardModalPreviewSheet .board-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
   }
-  #board-modal #boardModalPreviewSheet .board-col header{padding:8px 6px;}
-  #board-modal #boardModalPreviewSheet .board-col h4{
-    font-size:12px;
-    line-height:1.2;
-    min-height:0;
-    overflow-wrap:anywhere;
-    word-break:break-word;
+  #board-modal #boardModalPreviewSheet .board-col {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 0;
   }
-  #board-modal #boardModalPreviewSheet .board-col li{
-    grid-template-columns:minmax(0, 1.2fr) .55fr .45fr .75fr;
-    font-size:11px;
-    padding:5px;
+  #board-modal #boardModalPreviewSheet .board-col header {
+    padding: 8px 6px;
+  }
+  #board-modal #boardModalPreviewSheet .board-col h4 {
+    font-size: 12px;
+    line-height: 1.2;
+    min-height: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  #board-modal #boardModalPreviewSheet .board-col li {
+    grid-template-columns: minmax(0, 1.2fr) 0.55fr 0.45fr 0.75fr;
+    font-size: 11px;
+    padding: 5px;
   }
 
   /* Import modal: tabs in one strip with clean spacing on tablet widths */
-  #settings-modal .modal-card.has-settings-side-menu{
-    width:min(100vw - 18px, 980px);
-    max-width:min(100vw - 18px, 980px);
-    max-height:96vh;
-    margin:10px auto;
-    grid-template-columns:1fr;
-    grid-template-areas:"head" "side" "body" "foot";
-    grid-template-rows:auto auto minmax(0, 1fr) auto;
-    overflow:hidden;
+  #settings-modal .modal-card.has-settings-side-menu {
+    width: min(100vw - 18px, 980px);
+    max-width: min(100vw - 18px, 980px);
+    max-height: 96vh;
+    margin: 10px auto;
+    grid-template-columns: 1fr;
+    grid-template-areas: "head" "side" "body" "foot";
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    overflow: hidden;
   }
-  #settings-modal .modal-card.has-settings-side-menu > .settings-side-menu{
-    grid-area:side;
-    position:sticky;
-    top:0;
-    z-index:4;
-    padding:10px 14px 10px;
-    border-right:0;
-    border-bottom:1px solid rgba(255,255,255,.08);
-    background:linear-gradient(180deg, rgba(11,20,49,.98), rgba(11,20,49,.94));
-    overflow:hidden;
+  #settings-modal .modal-card.has-settings-side-menu > .settings-side-menu {
+    grid-area: side;
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    padding: 10px 14px 10px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(
+      180deg,
+      rgba(11, 20, 49, 0.98),
+      rgba(11, 20, 49, 0.94)
+    );
+    overflow: hidden;
   }
-  #settings-modal .settings-side-list{
-    display:flex;
-    flex-wrap:nowrap;
-    align-items:stretch;
-    gap:10px;
-    overflow-x:auto;
-    overflow-y:hidden;
-    padding-bottom:4px;
-    position:static;
+  #settings-modal .settings-side-list {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    position: static;
   }
-  #settings-modal .settings-side-btn{
-    flex:0 0 auto;
-    min-width:180px;
-    width:auto;
-    min-height:54px;
-    white-space:nowrap;
+  #settings-modal .settings-side-btn {
+    flex: 0 0 auto;
+    min-width: 180px;
+    width: auto;
+    min-height: 54px;
+    white-space: nowrap;
   }
-  #settings-modal .modal-card.has-settings-side-menu > .modal-grid{
-    grid-area:body;
-    padding:16px 14px 14px;
-    min-width:0;
-    overflow:auto;
+  #settings-modal .modal-card.has-settings-side-menu > .modal-grid {
+    grid-area: body;
+    padding: 16px 14px 14px;
+    min-width: 0;
+    overflow: auto;
   }
 
   /* Player role/shift chips must stay 3 in a row and centered on tablet */
-  .players-panel .stats-grid.stats-grid--players{grid-template-columns:1fr;gap:16px;}
+  .players-panel .stats-grid.stats-grid--players {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
   .players-panel [data-stat-card="roles"],
-  .players-panel [data-stat-card="shifts"]{
-    width:100%;
-    min-width:0;
+  .players-panel [data-stat-card="shifts"] {
+    width: 100%;
+    min-width: 0;
   }
   .players-panel [data-stat-card="roles"] .stat-split,
   .players-panel [data-stat-card="shifts"] .stat-split,
   .players-panel .stat-split--roles,
-  .players-panel .stat-split--shifts{
-    display:grid;
-    grid-template-columns:repeat(3, minmax(0, 1fr));
-    gap:12px;
+  .players-panel .stat-split--shifts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
   }
-  .players-panel .stat-chip{
-    min-height:152px;
-    padding:18px 12px;
-    display:grid;
-    place-items:center;
-    text-align:center;
+  .players-panel .stat-chip {
+    min-height: 152px;
+    padding: 18px 12px;
+    display: grid;
+    place-items: center;
+    text-align: center;
   }
   .players-panel .stat-chip b,
-  .players-panel .stat-chip small{justify-self:center;text-align:center;}
+  .players-panel .stat-chip small {
+    justify-self: center;
+    text-align: center;
+  }
 }
 
-
 /* Tower calc modal fit fix for small and tablet screens */
-@media (max-width:980px){
-  #towerCalcModal .modal-card{
-    width:min(calc(100vw - 12px), 100%);
-    max-width:calc(100vw - 12px);
-    height:auto;
-    min-height:0;
-    max-height:calc(100dvh - 12px);
-    margin:6px auto;
-    border-radius:22px;
-    overflow:hidden;
-    display:flex;
-    flex-direction:column;
+@media (max-width: 980px) {
+  #towerCalcModal .modal-card {
+    width: min(calc(100vw - 12px), 100%);
+    max-width: calc(100vw - 12px);
+    height: auto;
+    min-height: 0;
+    max-height: calc(100dvh - 12px);
+    margin: 6px auto;
+    border-radius: 22px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
-  #towerCalcModal .modal-head{
-    flex:0 0 auto;
+  #towerCalcModal .modal-head {
+    flex: 0 0 auto;
   }
-  #towerCalcModal .modal-grid{
-    grid-template-columns:minmax(0,1fr);
-    align-content:start;
-    min-width:0;
-    overflow-x:hidden;
+  #towerCalcModal .modal-grid {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    min-width: 0;
+    overflow-x: hidden;
   }
   #towerCalcModal .modal-grid > *,
   #towerCalcModal .panel.subpanel,
@@ -460,65 +684,73 @@
   #towerCalcModal #towerCalcMainTabsWrap,
   #towerCalcModal #towerCalcGlobalOut,
   #towerCalcModal #towerCalcOverflowOut,
-  #towerCalcModal #towerCalcGrid{
-    min-width:0;
-    width:100%;
-    max-width:100%;
-    box-sizing:border-box;
+  #towerCalcModal #towerCalcGrid {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 }
 
-@media (max-width:767px){
-  #towerCalcModal .modal-card{
-    width:calc(100vw - 10px);
-    max-width:calc(100vw - 10px);
-    max-height:calc(100dvh - 10px);
-    margin:5px auto;
-    border-radius:20px;
+@media (max-width: 767px) {
+  #towerCalcModal .modal-card {
+    width: calc(100vw - 10px);
+    max-width: calc(100vw - 10px);
+    max-height: calc(100dvh - 10px);
+    margin: 5px auto;
+    border-radius: 20px;
   }
-  #towerCalcModal .modal-head{
-    padding:12px 12px 10px;
+  #towerCalcModal .modal-head {
+    padding: 12px 12px 10px;
   }
-  #towerCalcModal .modal-grid{
-    padding:8px;
-    gap:8px;
+  #towerCalcModal .modal-grid {
+    padding: 8px;
+    gap: 8px;
   }
-  #towerCalcModal .tower-calc-main-tabs{
-    display:flex;
-    flex-wrap:nowrap;
-    overflow-x:auto;
-    overflow-y:hidden;
-    -webkit-overflow-scrolling:touch;
-    white-space:nowrap;
+  #towerCalcModal .tower-calc-main-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
   }
-  #towerCalcModal .tower-calc-main-tabs .btn{
-    flex:0 0 auto;
-    min-width:max-content;
+  #towerCalcModal .tower-calc-main-tabs .btn {
+    flex: 0 0 auto;
+    min-width: max-content;
   }
   #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-controls-inline,
   #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-toolbar-main,
   #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-controls,
   #towerCalcModal [data-calc-main-panel="setup"] #tcv7AdvancedTopLayout,
-  #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-shift-controls{
-    min-width:0;
-    max-width:100%;
+  #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-shift-controls {
+    min-width: 0;
+    max-width: 100%;
   }
 }
 
-@media (max-width:430px){
-  #towerCalcModal .modal-card{
-    width:calc(100vw - 8px);
-    max-width:calc(100vw - 8px);
-    max-height:calc(100dvh - 8px);
-    margin:4px auto;
-    border-radius:18px;
+@media (max-width: 430px) {
+  #towerCalcModal .modal-card {
+    width: calc(100vw - 8px);
+    max-width: calc(100vw - 8px);
+    max-height: calc(100dvh - 8px);
+    margin: 4px auto;
+    border-radius: 18px;
   }
-  #towerCalcModal .modal-head{
-    grid-template-columns:minmax(0,1fr) 44px;
-    gap:10px;
-    padding:10px;
+  #towerCalcModal .modal-head {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 10px;
+    padding: 10px;
   }
-  #towerCalcModal .modal-head h2{font-size:16px;}
-  #towerCalcModal .modal-head p{font-size:11px;line-height:1.45;}
-  #towerCalcModal .modal-grid{padding:6px;gap:6px;}
+  #towerCalcModal .modal-head h2 {
+    font-size: 16px;
+  }
+  #towerCalcModal .modal-head p {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+  #towerCalcModal .modal-grid {
+    padding: 6px;
+    gap: 6px;
+  }
 }

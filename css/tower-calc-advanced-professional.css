@@ -12,10 +12,10 @@
 }
 
 #towerCalcModal #towerCalcAdvanced .tcv-pro-head {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
+  gap: 14px 18px;
   width: 100%;
   margin: 0 0 12px;
   padding: 0 2px;
@@ -23,6 +23,7 @@
 
 #towerCalcModal #towerCalcAdvanced .tcv-pro-head-title {
   margin: 0;
+  min-width: 0;
   color: #eef3ff;
   font-size: 18px;
   line-height: 1.2;
@@ -31,16 +32,15 @@
 }
 
 #towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex: 1 1 auto;
+  display: block;
+  justify-self: end;
+  width: min(100%, 720px);
   min-width: 0;
 }
 
 #towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions #tcv35-row {
   margin: 0;
-  justify-content: flex-end;
+  width: 100%;
 }
 
 #towerCalcModal #towerCalcAdvanced .inner > #tcv7AdvancedTopLayout {
@@ -68,26 +68,28 @@
 }
 
 #towerCalcModal #tcv35-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
   margin: 0;
 }
 
-@media (max-width:1200px) {
-  #towerCalcModal #towerCalcAdvanced .tcv-pro-head {
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-
-  #towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions {
-    width: 100%;
-  }
-
-  #towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions #tcv35-row {
-    justify-content: flex-start;
-  }
+#towerCalcModal #tcv35-row > .btn,
+#towerCalcModal #tcv35-row > #tcv35-clearWrap,
+#towerCalcModal #tcv35-row > #tcv35-clearWrap > .btn {
+  width: 100%;
+  min-width: 0;
 }
 
-@media (max-width:980px) {
+#towerCalcModal #tcv35-clearWrap {
+  grid-column: auto;
+}
+
+@media (max-width:1000px) {
   #towerCalcModal #towerCalcAdvanced .tcv-pro-head {
+    grid-template-columns: 1fr;
+    align-items: start;
     margin-bottom: 10px;
   }
 
@@ -95,10 +97,27 @@
     font-size: 17px;
   }
 
-  #towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions #tcv35-row {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 4px;
+  #towerCalcModal #towerCalcAdvanced .tcv-pro-head-actions {
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  #towerCalcModal #tcv35-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #towerCalcModal #tcv35-clearWrap {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width:560px) {
+  #towerCalcModal #tcv35-row {
+    grid-template-columns: 1fr;
+  }
+
+  #towerCalcModal #tcv35-clearWrap {
+    grid-column: auto;
   }
 }
 
