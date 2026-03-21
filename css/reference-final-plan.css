@@ -1232,17 +1232,6 @@
     padding: 10px 8px;
   }
 
-  #board-modal #boardModalPreviewSheet .board-grid,
-  #board-modal .board-modal-preview .board-grid,
-  #board-modal .board-grid {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-  }
-
   #board-modal #boardModalPreviewSheet .board-col,
   #board-modal .board-modal-preview .board-col,
   #board-modal .board-col {

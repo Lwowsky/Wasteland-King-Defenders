@@ -238,15 +238,17 @@
     padding: 8px 6px;
     box-sizing: border-box;
   }
-  #towerCalcModal .tower-calc-board-preview .board-grid {
-    min-width: 0;
-    width: 100%;
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
+
   #towerCalcModal .tower-calc-board-preview .board-col {
     min-width: 0;
     width: 100%;
+  }
+  .tower-calc-board-preview .board-grid,
+  .board-modal .board-grid {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
   }
   #towerCalcModal .tower-calc-board-preview .board-col header {
     padding: 6px 5px;
@@ -399,14 +401,7 @@
     overflow: hidden;
     box-sizing: border-box;
   }
-  #board-modal #boardModalPreviewSheet .board-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-  }
+
   #board-modal #boardModalPreviewSheet .board-col {
     width: 100%;
     max-width: 100%;
@@ -444,7 +439,7 @@
 
 @media (max-width: 980px) {
   #towerCalcAdvanced #towerCalcTierTargetRow {
-   grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   #towerCalcModal .tower-picker-detail .picker-manual-row,
   #towerCalcModal .tower-picker-detail .picker-manual-row2 {
@@ -532,14 +527,7 @@
     overflow: hidden;
     box-sizing: border-box;
   }
-  #board-modal #boardModalPreviewSheet .board-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-  }
+
   #board-modal #boardModalPreviewSheet .board-col {
     width: 100%;
     max-width: 100%;

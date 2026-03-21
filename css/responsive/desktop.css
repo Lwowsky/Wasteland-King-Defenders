@@ -368,4 +368,11 @@ body:has(#towerCalcModal.is-open) {
   #towerCalcModal .tower-calc-shift-controls-right {
     justify-content: flex-start;
   }
+  .tower-calc-board-preview .board-grid,
+.board-modal .board-grid {
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
 }

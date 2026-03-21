@@ -47,7 +47,7 @@
   }
   .filters-row,
   .players-panel .filters-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
   }
 
@@ -289,9 +289,12 @@
     overflow: hidden;
     box-sizing: border-box;
   }
-  #board-modal #boardModalPreviewSheet .board-grid {
+  .tower-calc-board-preview .board-grid,
+  .board-modal .board-grid {
+    width: 100%;
+    min-width: 0;
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 6px;
   }
   #board-modal #boardModalPreviewSheet .board-col {
     width: 100%;
@@ -681,7 +684,7 @@
   #towerCalcModal .tower-picker-detail .picker-manual-row,
   #towerCalcModal .tower-picker-detail .picker-manual-row2,
   #towerCalcAdvanced #towerCalcTierTargetRow {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
