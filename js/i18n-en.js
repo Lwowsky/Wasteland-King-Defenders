@@ -4,7 +4,8 @@
  */
 
 (function(){
-  const root = window.PNSI18N_DICTS = window.PNSI18N_DICTS || { uk:{}, en:{}, ru:{} };
+  const root = window.PNSI18N_DICTS = window.PNSI18N_DICTS || { uk:{}, ua:{}, en:{}, ru:{} };
+
   root.en = {
   "lang_name": "English",
   "footer_contact_title": "Contact us",
@@ -536,6 +537,255 @@
   "txt_saved": "TXT saved.",
   "txt_failed": "Failed to save TXT.",
   "export_txt": "TXT",
-  "inline_tower_impl_missing": "Inline tower module not loaded"
+  "inline_tower_impl_missing": "Inline tower module not loaded",
+  "guide_copy": {
+    "section_label": "Info & Guide",
+    "section_hint_open": "Click to open the site guide",
+    "section_hint_close": "Click to close the site guide",
+    "intro": "Open the needed tab and follow the recommended order: import, players table, turret distribution, and only then the final plan.",
+    "tab_import": "Import",
+    "tab_players": "Players table",
+    "tab_turrets": "Turret distribution",
+    "tab_final_plan": "Final plan",
+    "tab_about": "About",
+    "open_label": "Open guide",
+    "close_label": "Close guide",
+    "panels": {
+      "import": {
+        "eyebrow": "1. Import",
+        "title": "Start with correct import and a solid column template",
+        "lead": "Import is the foundation of the whole site. First you load the file, then you verify column mapping, and only after that you apply the data or update the roster without destroying the existing plan.",
+        "steps": [
+          {
+            "title": "Choose the source: Excel, CSV or URL",
+            "purpose": "Why this matters",
+            "copy": "Upload a file or paste a public spreadsheet link. This gives the site the raw data that will later become the players table, turret lists and final plan."
+          },
+          {
+            "title": "Check the 6 required columns",
+            "purpose": "Without them the distribution becomes weak or breaks completely",
+            "copy": "Always verify nickname, alliance, troop role/type, tier, march and shift availability. These six columns are what allow the site to understand who can be placed into which turret and for which shift."
+          },
+          {
+            "title": "Configure additional columns",
+            "purpose": "So you do not lose useful information",
+            "copy": "In “Additional columns” you can bind fields such as lair level, reserve troop type or your own custom fields. This lets you keep more useful roster context without overloading the core table."
+          },
+          {
+            "title": "Choose “What data to show in the table”",
+            "purpose": "So officers only see what is useful in daily work",
+            "copy": "This block controls which columns stay visible in the players table. It does not change the data itself; it only changes the working view of the table."
+          },
+          {
+            "title": "Use the correct apply button",
+            "purpose": "So you do not wipe work that already exists",
+            "copy": "Use “Apply import” when you want to fully load the roster into the site. Use “Update roster + preserve plan” when the roster changed but you want to refresh the table while keeping turret work and the final plan intact."
+          }
+        ],
+        "side": [
+          {
+            "title": "What to do first",
+            "text": "Press “Detect columns”, then manually verify all 6 required fields, then check optional fields if needed, and only after that press the button you actually need."
+          },
+          {
+            "title": "When to use “Apply import”",
+            "text": "Use it when you start a new working session or want to fully refresh the current roster inside the site. After that always open the players table and verify the result quickly."
+          },
+          {
+            "title": "When to use “Update roster + preserve plan”",
+            "text": "Use it when the roster changed but you already have turret work or a final plan and you do not want to rebuild everything from zero."
+          }
+        ],
+        "noteTitle": "Remember this",
+        "noteText": "If your alliance keeps using the same spreadsheet structure, save a column template. It makes the next import much faster and reduces mapping mistakes."
+      },
+      "players": {
+        "eyebrow": "2. Players table",
+        "title": "This is where you verify the roster before any turret work",
+        "lead": "The players table is your working checkpoint before turret distribution. Here you see roles, tiers, march sizes, shift availability, statuses and every detail that matters before assigning players.",
+        "steps": [
+          {
+            "title": "Understand what the table shows",
+            "purpose": "So you can read it fast",
+            "copy": "The table shows nickname, alliance, role, march, tier, shift availability and any additional columns you enabled during import. This helps you instantly spot strong, missing or suspicious entries."
+          },
+          {
+            "title": "Use search",
+            "purpose": "To find a specific player or alliance in seconds",
+            "copy": "Search lets you find players by nickname or alliance. It is useful when you want to confirm a captain, check one specific player or verify that the player really exists after a fresh import."
+          },
+          {
+            "title": "Watch placement and status",
+            "purpose": "So you know who is already involved somewhere",
+            "copy": "The table helps you see whether a player is already used, assigned, blocked by shift logic or missing critical data. This prevents duplicates and bad autofill results later."
+          },
+          {
+            "title": "Edit manually when needed",
+            "purpose": "So a small issue does not force a full re-import",
+            "copy": "If a player has a wrong march, role or another field, it is often faster to fix the row directly than to reload the whole spreadsheet. It also helps before you add someone manually into a turret."
+          }
+        ],
+        "side": [
+          {
+            "title": "Best habit before turret work",
+            "text": "After every import, open the table first and quickly search for captains, strong marches and players marked as “Both”. It immediately shows whether the import was read correctly."
+          },
+          {
+            "title": "What to do when something looks wrong",
+            "text": "If the table contains an empty march, wrong troop type or suspicious shift status, fix it here first and only then continue to turret distribution."
+          }
+        ],
+        "noteTitle": "Practical tip",
+        "noteText": "The players table is the place for verification. One minute spent here can save a lot of time once you start distributing players into turrets."
+      },
+      "turrets": {
+        "eyebrow": "3. Turret distribution",
+        "title": "Work in the right order: captains first, final plan last",
+        "lead": "This is the main operational block of the site. Here you assign captains, tune autofill rules, manage each turret, check player status and prepare the final plan for both shifts.",
+        "sequenceTitle": "Recommended working order",
+        "sequence": [
+          "Open “Turret settings” first and assign captains to every turret. Turret type is defined by the captain, so autofill logic is unreliable until captains are in place.",
+          "Then go back to “Settings” and open “Distribution parameters and limits”. A practical default is “Minimum players per turret” = 29 with the checkbox enabled, because it helps the site keep turrets fuller and more stable.",
+          "After that press “Apply redistribution” when you want a full rebuild using the current rules. If the base layout already exists and you only need to fill gaps, use “Fill turrets”.",
+          "If the result still looks bad by march size, go back to “Turret settings”, select one turret, open “Turret settings · tier march limits”, enter the desired values and press “Recalculate composition”.",
+          "Then check “Player status” to understand who was used, who stayed in reserve and where the logic still left imbalance.",
+          "Only after that go to “Final plan” and verify shift 1 and shift 2 before export."
+        ],
+        "side": [
+          {
+            "title": "Settings",
+            "text": "The “Settings” tab controls the active shift, one-turret vs all-turrets view, redistribution, fill and clear actions. The most important part here is “Distribution parameters and limits” because it sets the boundaries for the whole balancing logic."
+          },
+          {
+            "title": "Turret settings",
+            "text": "This is where one turret is controlled in detail: captain, helpers, type, tier limits, manual addition, clear actions and local recalculation."
+          },
+          {
+            "title": "Player status & Final plan",
+            "text": "“Player status” shows how the roster was consumed by the site: who went into which shift, who stayed in reserve and where the weak spots are. “Final plan” is the clean presentation layer for checking, exporting and sending the result."
+          }
+        ],
+        "blocks": [
+          {
+            "title": "What the autofill options mean",
+            "items": [
+              "“Captains only” lets you place the captain layer first without filling the full helper roster immediately.",
+              "“Respect player shift” forces the site to honour shift availability so players are not assigned into a forbidden shift.",
+              "“Same troop type only” keeps turret composition aligned with the turret troop type defined by the captain or role.",
+              "“Use Both” allows the system to use players available for both shifts when balance requires it or when one shift lacks bodies."
+            ]
+          },
+          {
+            "title": "How to use “Turret settings · tier march limits”",
+            "items": [
+              "This block is needed when automatic march balancing did not create the distribution you wanted.",
+              "You can define how many players of each tier should exist inside that exact turret and then ask the site to rebuild around those limits.",
+              "After changing limits press “Recalculate composition” to see the new result for that turret only."
+            ]
+          },
+          {
+            "title": "Settings buttons",
+            "items": [
+              "“Apply redistribution” performs a full recalculation under the current rules and is best for serious rebuilds.",
+              "“Fill turrets” is softer and is better when the layout mostly exists and you only want to fill empty places.",
+              "“Clear ▾” is a selective reset tool. Use it when you want to remove only one layer of work instead of wiping everything."
+            ]
+          },
+          {
+            "title": "Manual addition",
+            "items": [
+              "You can add a player or even a captain manually even if that person did not appear in the automatic candidate lists.",
+              "This is useful whenever officer knowledge is more important than strict automatic logic."
+            ]
+          }
+        ],
+        "noteTitle": "Best practical scenario",
+        "noteText": "Assign captains first in “Turret settings”, then set the minimum players per turret to 29 in “Settings”, enable the checkbox, and press “Apply redistribution” or “Fill turrets”. If the march spread still looks weak, adjust tier march limits for one turret and recalculate locally."
+      },
+      "final-plan": {
+        "eyebrow": "4. Final plan",
+        "title": "The final plan is the clean officer view and export layer",
+        "lead": "Once turrets look stable, switch to the final plan. This is where you verify both shifts, inspect the ready tables and export PNG or TXT for officers.",
+        "steps": [
+          {
+            "title": "Check shift 1 and shift 2 separately",
+            "purpose": "So you do not send only half of the work",
+            "copy": "Even if you edited only one shift, always open both. This is the fastest way to notice empty turrets, wrong captains or roster drift between shifts."
+          },
+          {
+            "title": "Inspect the tables",
+            "purpose": "So officers receive a clean and readable plan",
+            "copy": "Make sure the correct players are inside the correct turrets and that march, alliance and tier values look readable and consistent."
+          },
+          {
+            "title": "Use the right export for the task",
+            "purpose": "So the plan fits the communication channel",
+            "copy": "PNG is perfect for chat and visual review. TXT is better when you need a raw list for copy/paste, audits or extra text messages."
+          }
+        ],
+        "side": [
+          {
+            "title": "Before sending",
+            "text": "Make sure both shifts are populated correctly, turret names are readable and PNG/TXT export actually opens the way you expect."
+          },
+          {
+            "title": "When to go back",
+            "text": "If final plan reveals a bad march spread or a suspicious turret, go back to turret settings and fix that problem directly instead of rebuilding everything blindly."
+          }
+        ],
+        "noteTitle": "Tip",
+        "noteText": "Final plan is the last step. If it looks clean here, your previous steps were most likely correct."
+      },
+      "about": {
+        "eyebrow": "5. About the site",
+        "title": "A Wasteland Battle planner for Puzzle & Survival",
+        "lead": "This site is an independent fan-made tool for Puzzle & Survival players, created to prepare turret layouts, shifts and the final plan. It helps officers work faster and cleaner, but it is not an official game service.",
+        "steps": [
+          {
+            "title": "Who built the site",
+            "purpose": "Author",
+            "copy": "The site was created by a player whose in-game nickname is Lwowsky as a completely free independent fan-made tool for the community. It is not an official Puzzle & Survival product and is not affiliated with the game rights holders; all rights to the game name, logos, images and in-game materials belong to their respective owners."
+          },
+          {
+            "title": "What game it belongs to",
+            "purpose": "Context",
+            "copy": "It was designed by a fan for Puzzle & Survival players as a free helper planner for Wasteland Battle: import the roster, distribute players into turrets and prepare a final plan for shift 1 and shift 2. The game itself, its branding and official materials belong to their respective rights holders."
+          },
+          {
+            "title": "Why the site matters",
+            "purpose": "Officer value",
+            "copy": "It combines import, roster review, automatic balancing, manual turret editing and a clean officer-facing final plan in one place. It is an independent community tool built by a fan for easier team coordination before Wasteland Battle, not an official game product."
+          }
+        ],
+        "side": [
+          {
+            "title": "The short version",
+            "text": "This is more than a player list. It is a fan-made coordination tool that turns raw Excel data into a usable officer plan before the event begins."
+          },
+          {
+            "title": "Legal status",
+            "text": "This site is fan-made and unofficial. It exists for player convenience and is not connected to the rights holders of Puzzle & Survival; all rights to the game, branding, logos, images and related materials remain with their respective owners."
+          }
+        ],
+        "noteTitle": "Legal note",
+        "noteText": "In-game nickname: Lwowsky · Status: completely free independent fan-made tool · Rights to Puzzle & Survival and related materials belong to their respective owners."
+      }
+    }
+  },
+  "notes": "Notes",
+  "clear_helpers": "Clear helpers",
+  "manual_shift_add_title": "Why extra slots are needed",
+  "manual_shift_add_help": "Use these fields when players with the “Both” shift need extra manual slots added to shift 1 or shift 2.",
+  "base_north": "North Turret",
+  "base_west": "West Turret",
+  "base_east": "East Turret",
+  "base_south": "South Turret",
+  "role_fighter": "Fighters",
+  "role_rider": "Riders",
+  "role_shooter": "Shooters",
+  "headers_not_found": "Could not detect column headers",
+  "apply_import_keep_plan": "Update roster + keep plan",
+  "apply_import_keep_plan_hint": "Refresh the table from the new file without resetting turrets or the final plan.",
+  "final_plan_share_failed": "Failed to share the final plan."
 };
 })();

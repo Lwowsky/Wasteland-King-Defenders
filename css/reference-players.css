@@ -810,3 +810,83 @@
     min-height: 168px;
   }
 }
+
+
+/* v9 hotfix: keep players table stable and avoid container growth */
+.players-panel,
+.players-panel .table-wrap,
+#playersDataTable,
+#playersDataTable thead,
+#playersDataTable tbody,
+#playersDataTable tr,
+#playersDataTable th,
+#playersDataTable td{
+  min-width:0;
+  box-sizing:border-box;
+}
+.players-panel .table-wrap{
+  max-width:100%;
+  overflow-x:auto;
+}
+#playersDataTable{
+  width:100%;
+  max-width:100%;
+}
+#playersDataTable td[data-field="name"],
+#playersDataTable td[data-field="alliance"],
+#playersDataTable td[data-field="actions"]{
+  min-width:0;
+}
+#playersDataTable td[data-field="name"]{
+  max-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#playersDataTable td[data-field="actions"] .player-placement-card,
+#playersDataTable td[data-field="actions"] .player-placement-grid,
+#playersDataTable td[data-field="actions"] .player-placement-item,
+#playersDataTable td[data-field="actions"] .player-placement-main{
+  min-width:0;
+}
+#playersDataTable td[data-field="actions"] .player-placement-main strong,
+#playersDataTable td[data-field="actions"] .player-placement-main small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* hotfix v7: keep players table width stable with long nicknames/symbols */
+#playersDataTable,
+#playersDataTable tbody,
+#playersDataTable tr,
+#playersDataTable td,
+#playersDataTable th{
+  min-width:0;
+}
+#playersDataTable td[data-field="name"],
+#playersDataTable td[data-field="alliance"]{
+  max-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#playersDataTable td[data-field="name"] > *,
+#playersDataTable td[data-field="alliance"] > *{
+  display:block;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#playersDataTable td[data-field="actions"] .player-placement-card,
+#playersDataTable td[data-field="actions"] .player-placement-grid,
+#playersDataTable td[data-field="actions"] .player-placement-item,
+#playersDataTable td[data-field="actions"] .player-placement-main,
+#playersDataTable td[data-field="actions"] .player-placement-main strong,
+#playersDataTable td[data-field="actions"] .player-placement-main small{
+  min-width:0;
+  max-width:100%;
+}

@@ -6,34 +6,35 @@
   const { state: t } = e;
   const wiz = (e.ImportWizard = e.ImportWizard || {});
   const r = wiz.translate || ((e, t = "") => t || e);
-  const d = "pns_layout_import_custom_додаткова_defs_v2",
-    u = [
+  const d = "pns_layout_import_custom_defs_v3";
+  const translatedBuiltinLabel = (key, fallback) => r(key, fallback);
+  const u = [
       {
         key: "reserve_type_fighter",
-        label: "Резервний тип військ: боєць",
+        label: translatedBuiltinLabel("reserve_type_fighter_import", "Резервний тип військ: боєць"),
         isCustom: !0,
         colKey: "reserve_type_fighter",
         visibleDefault: !0,
       },
       {
         key: "reserve_type_rider",
-        label: "Резервний тип військ: наїздник",
+        label: translatedBuiltinLabel("reserve_type_rider_import", "Резервний тип військ: наїзник"),
         isCustom: !0,
         colKey: "reserve_type_rider",
         visibleDefault: !0,
       },
       {
         key: "reserve_type_shooter",
-        label: "Резервний тип військ: стрілець",
+        label: translatedBuiltinLabel("reserve_type_shooter_import", "Резервний тип військ: стрілець"),
         isCustom: !0,
         colKey: "reserve_type_shooter",
         visibleDefault: !0,
       },
     ],
     p = {
-      reserve_type_fighter: "Резервний тип військ: боєць",
-      reserve_type_rider: "Резервний тип військ: наїзник",
-      reserve_type_shooter: "Резервний тип військ: стрілець",
+      reserve_type_fighter: translatedBuiltinLabel("reserve_type_fighter_import", "Резервний тип військ: боєць"),
+      reserve_type_rider: translatedBuiltinLabel("reserve_type_rider_import", "Резервний тип військ: наїзник"),
+      reserve_type_shooter: translatedBuiltinLabel("reserve_type_shooter_import", "Резервний тип військ: стрілець"),
     };
   function h(e) {
     return (
@@ -47,7 +48,7 @@
   function f(e) {
     const t = new Set();
     return (Array.isArray(e) ? e : []).map((e, a) => {
-      let n = String(e?.label || "").trim() || `Кастомна колонка ${a + 1}`,
+      let n = String(e?.label || "").trim() || r("custom_column_numbered", "Кастомна колонка {n}").replace("{n}", String(a + 1)),
         o = String(e?.key || "").trim();
       return (
         o || (o = `custom_opt_${a + 1}_${h(n)}`),
@@ -56,18 +57,9 @@
           const a = String(e || "").trim();
           return (
             {
-              reserve_type_fighter: r(
-                "reserve_type_fighter_import",
-                "Резервний тип військ: боєць",
-              ),
-              reserve_type_rider: r(
-                "reserve_type_rider_import",
-                "Резервний тип військ: наїзник",
-              ),
-              reserve_type_shooter: r(
-                "reserve_type_shooter_import",
-                "Резервний тип військ: стрілець",
-              ),
+              reserve_type_fighter: translatedBuiltinLabel("reserve_type_fighter_import", "Резервний тип військ: боєць"),
+              reserve_type_rider: translatedBuiltinLabel("reserve_type_rider_import", "Резервний тип військ: наїзник"),
+              reserve_type_shooter: translatedBuiltinLabel("reserve_type_shooter_import", "Резервний тип військ: стрілець"),
             }[a] ||
             p[a] ||
             String(t || "").trim() ||

@@ -178,6 +178,10 @@
     scheduleInstall(event && event.target ? event.target : document);
   });
 
+  document.addEventListener('pns:i18n-changed', function () {
+    scheduleInstall(document);
+  });
+
   document.addEventListener('click', function (event) {
     const trigger = event.target && event.target.closest && event.target.closest('[data-modal="towerCalc"], #openTowerCalcBtn, #openTowerCalcBtnMobile, [data-calc-main-tab="setup"]');
     if (trigger) {

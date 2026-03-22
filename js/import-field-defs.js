@@ -4,10 +4,16 @@
   const e = window.PNS;
   if (!e) return;
   const wiz = (e.ImportWizard = e.ImportWizard || {});
+  const t = (key, fallback = '') => (typeof wiz.translate === 'function' ? wiz.translate(key, fallback) : fallback);
+  const label = (fieldKey, fallbackKey, fallbackText) => {
+    if (typeof wiz.columnLabel === 'function') return wiz.columnLabel(fieldKey, t(fallbackKey, fallbackText));
+    return t(fallbackKey, fallbackText);
+  };
+
   const i = [
       {
         key: "player_name",
-        label: "Ім’я гравця",
+        label: label('player_name', 'player_name', 'Нік гравця'),
         required: !0,
         aliases: [
           "player name",
@@ -23,7 +29,7 @@
       },
       {
         key: "focus_troop",
-        label: "Тип військ",
+        label: label('focus_troop', 'troop_type', 'Тип військ'),
         required: !0,
         aliases: [
           "focus troop",
@@ -39,7 +45,7 @@
       },
       {
         key: "troop_tier",
-        label: "Тір військ",
+        label: label('troop_tier', 'troop_tier_import', 'Тір військ'),
         required: !0,
         aliases: [
           "troop tier",
@@ -53,7 +59,7 @@
       },
       {
         key: "march_size",
-        label: "Розмір маршу",
+        label: label('march_size', 'march_size', 'Розмір маршу'),
         required: !0,
         aliases: [
           "march size",
@@ -66,7 +72,7 @@
       },
       {
         key: "rally_size",
-        label: "Розмір групової атаки",
+        label: label('rally_size', 'rally_size', 'Розмір ралі'),
         required: !0,
         colKey: "rally_size",
         aliases: [
@@ -80,14 +86,14 @@
       },
       {
         key: "alliance_alias",
-        label: "Альянс",
+        label: label('alliance_alias', 'alliance', 'Альянс'),
         required: !0,
         colKey: "alliance",
         aliases: ["alliance alias", "alliance", "альянс", "ally", "tag"],
       },
       {
         key: "captain_ready",
-        label: "Готовність бути капітаном",
+        label: label('captain_ready', 'captain_ready_import', 'Готовність бути капітаном'),
         required: !0,
         aliases: [
           "captain",
@@ -99,13 +105,13 @@
       },
       {
         key: "shift_availability",
-        label: "Доступність по зміні",
+        label: label('shift_availability', 'shift_availability_import', 'Доступність по змінах'),
         required: !0,
         aliases: ["shift", "смена", "зміна", "which shift can you join"],
       },
       {
         key: "lair_level",
-        label: "Рівень лігва",
+        label: label('lair_level', 'lair_level', 'Рівень лігва'),
         required: !1,
         colKey: "lair_level",
         visibleDefault: !0,
@@ -113,7 +119,7 @@
       },
       {
         key: "secondary_role",
-        label: "Тип резервних військ",
+        label: label('secondary_role', 'secondary_role_import', 'Тип резервних військ'),
         required: !1,
         colKey: "secondary_role",
         visibleDefault: !1,
@@ -128,7 +134,7 @@
       },
       {
         key: "secondary_tier",
-        label: "Тір резервних військ",
+        label: label('secondary_tier', 'secondary_tier_import', 'Тір резервних військ'),
         required: !1,
         colKey: "secondary_tier",
         visibleDefault: !1,
@@ -142,7 +148,7 @@
       },
       {
         key: "troop_200k",
-        label: "Тип резервних військ (200k+)",
+        label: label('troop_200k', 'troop_200k_import', 'Тип резервних військ (200k+)'),
         required: !1,
         colKey: "troop_200k",
         visibleDefault: !1,
@@ -156,7 +162,7 @@
       },
       {
         key: "notes",
-        label: "Нотатки",
+        label: label('notes', 'notes', 'Нотатки'),
         required: !1,
         colKey: "notes",
         visibleDefault: !1,

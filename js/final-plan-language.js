@@ -55,7 +55,7 @@
     const input = Array.isArray(locales) ? locales : [locales];
     const result = Array.from(new Set(required));
     input.forEach(locale => {
-      const normalized = String(locale || '').trim().toLowerCase();
+      const normalized = String(locale || '').trim().toLowerCase() === 'ua' ? 'uk' : String(locale || '').trim().toLowerCase();
       if (!normalized || result.includes(normalized)) return;
       if (supported.includes(normalized)) result.push(normalized);
     });
@@ -112,10 +112,10 @@
   }
 
   function getBoardLanguageLabel(locale) {
-    const normalized = String(locale || '').trim().toLowerCase();
-    return String({ en: 'English', uk: 'Українська', ru: 'Русский' }[normalized]
-      || window.PNSI18N?.dict?.[normalized]?.lang_name
+    const normalized = String(locale || '').trim().toLowerCase() === 'ua' ? 'uk' : String(locale || '').trim().toLowerCase();
+    return String(window.PNSI18N?.dict?.[normalized]?.lang_name
       || window.PNS?.I18N?.dict?.[normalized]?.lang_name
+      || { en: 'English', uk: 'Українська', ru: 'Русский' }[normalized]
       || normalized.toUpperCase());
   }
 
@@ -169,7 +169,7 @@
     const selectedLocales = getBoardLanguageLocales();
     const requiredLocales = new Set(['en']);
     const optionsHtml = getBoardSupportedLocales().map(locale => {
-      const normalized = String(locale || '').trim().toLowerCase();
+      const normalized = String(locale || '').trim().toLowerCase() === 'ua' ? 'uk' : String(locale || '').trim().toLowerCase();
       const required = requiredLocales.has(normalized);
       const checkedAttr = selectedLocales.includes(normalized) || required ? 'checked' : '';
       const disabledAttr = required ? 'disabled aria-disabled="true"' : '';

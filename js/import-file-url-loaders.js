@@ -39,7 +39,7 @@
           reject(err);
         }
       });
-      if (!headers.length) throw new Error('Не вдалося знайти заголовки колонок');
+      if (!headers.length) throw new Error(r('headers_not_found', 'Не вдалося знайти заголовки колонок'));
       try { wiz._skipPlayerRestoreUntilApplied = !0; } catch {}
       V(headers, rows, file.name, 'file');
       C?.();
@@ -92,7 +92,7 @@
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         return P(x(await resp.text()));
       })(url);
-      if (!headers.length) throw new Error('Не вдалося знайти заголовки колонок');
+      if (!headers.length) throw new Error(r('headers_not_found', 'Не вдалося знайти заголовки колонок'));
       try { wiz._skipPlayerRestoreUntilApplied = !0; } catch {}
       V(headers, rows, url, 'url');
       k(
