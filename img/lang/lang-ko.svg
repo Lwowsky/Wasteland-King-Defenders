@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="koOuter" x1="7" y1="6" x2="57" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DCE7FF"/>
+      <stop offset="1" stop-color="#1B2444"/>
+    </linearGradient>
+    <filter id="koShadow" x="0" y="0" width="64" height="64" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity=".26"/>
+    </filter>
+    <clipPath id="koClip"><rect x="8" y="8" width="48" height="48" rx="16"/></clipPath>
+  </defs>
+  <g filter="url(#koShadow)">
+    <rect x="4" y="4" width="56" height="56" rx="18" fill="url(#koOuter)"/>
+    <rect x="4.5" y="4.5" width="55" height="55" rx="17.5" stroke="#D9E3FF" stroke-opacity=".2"/>
+    <g clip-path="url(#koClip)">
+      <rect x="8" y="8" width="48" height="48" rx="16" fill="#F8FBFF"/>
+      <g transform="translate(32 31)">
+        <path d="M0-11a11 11 0 0 1 0 22 5.5 5.5 0 0 0 0-11 5.5 5.5 0 0 1 0-11z" fill="#E7464B"/>
+        <path d="M0-11a11 11 0 0 0 0 22 5.5 5.5 0 0 1 0-11 5.5 5.5 0 0 0 0-11z" fill="#2457D6"/>
+      </g>
+      <g stroke="#161616" stroke-width="2.1" stroke-linecap="round">
+        <g transform="rotate(-28 18 18)">
+          <path d="M12 16.1h12"/><path d="M12 19h12"/><path d="M12 21.9h12"/>
+        </g>
+        <g transform="rotate(28 46 18)">
+          <path d="M40 16.1h4"/><path d="M46 16.1h6"/><path d="M40 19h12"/><path d="M40 21.9h4"/><path d="M46 21.9h6"/>
+        </g>
+        <g transform="rotate(28 18 44)">
+          <path d="M12 41.1h4"/><path d="M20 41.1h4"/><path d="M12 44h4"/><path d="M20 44h4"/><path d="M12 46.9h12"/>
+        </g>
+        <g transform="rotate(-28 46 44)">
+          <path d="M40 41.1h12"/><path d="M40 44h4"/><path d="M46 44h6"/><path d="M40 46.9h12"/>
+        </g>
+      </g>
+    </g>
+    <rect x="17" y="46" width="30" height="11" rx="5.5" fill="#091127" fill-opacity=".94"/>
+    <rect x="17.5" y="46.5" width="29" height="10" rx="5" stroke="#D8E3FF" stroke-opacity=".14"/>
+    <text x="32" y="54" text-anchor="middle" fill="#F8FBFF" font-family="Inter, Arial, Helvetica, sans-serif" font-size="10" font-weight="800" letter-spacing=".9">KO</text>
+  </g>
+</svg>

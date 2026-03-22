@@ -101,6 +101,9 @@ body:has(#towerCalcModal.is-open) {
   display: grid;
   gap: 8px;
   margin-top: 10px;
+  max-height: 186px;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 .drawer-lang-summary {
   display: flex;

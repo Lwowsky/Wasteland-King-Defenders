@@ -125,8 +125,8 @@
   backdrop-filter: blur(4px);
 }
 .board-lang-dialog-root.is-open .board-lang-dialog-card {
-  width: min(410px, calc(100vw - 32px));
-  max-width: min(410px, calc(100vw - 32px));
+  width: min(560px, calc(100vw - 32px));
+  max-width: min(560px, calc(100vw - 32px));
   padding: 14px 14px 14px;
   border-radius: 22px;
   border: 1px solid rgba(124, 145, 255, 0.22);
@@ -180,13 +180,14 @@
 }
 .board-lang-dialog-list {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 .board-lang-option {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 52px;
+  min-height: 56px;
   padding: 0 14px;
   border-radius: 16px;
   border: 1px solid rgba(124, 145, 255, 0.16);
@@ -1263,4 +1264,30 @@
     font-size: 11px;
     padding: 5px;
   }
+}
+
+
+.board-lang-option-visual {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.board-lang-option-badge {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+  flex: 0 0 34px;
+}
+.board-lang-option-badge img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }

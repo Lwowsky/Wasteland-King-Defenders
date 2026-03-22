@@ -11,7 +11,7 @@
   display:inline-flex;
   align-items:center;
   gap:14px;
-  min-height:56px;
+  min-height:58px;
   padding:8px 16px 8px 10px;
   border-radius:999px;
   border:1px solid rgba(126,146,255,.18);
@@ -67,12 +67,17 @@
   width:max-content;
   min-width:240px;
   max-width:min(320px,calc(100vw - 24px));
+  max-height:min(312px,calc(100vh - 120px));
+  overflow-x:hidden;
+  overflow-y:auto;
   padding:10px;
+  box-sizing:border-box;
   border-radius:22px;
   border:1px solid rgba(126,146,255,.16);
   background:rgba(8,11,21,.98);
   box-shadow:0 22px 48px rgba(0,0,0,.42);
   backdrop-filter:blur(14px);
+  scrollbar-gutter:stable;
   z-index:80;
 }
 
@@ -83,11 +88,12 @@
 
 .app-header .lang-menu .lang-item{
   display:grid;
-  grid-template-columns:40px minmax(0,1fr);
+  grid-template-columns:44px minmax(0,1fr);
   align-items:center;
   gap:12px;
-  min-height:56px;
+  min-height:60px;
   padding:8px 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
   border-radius:18px;
   border:1px solid rgba(126,146,255,.14);
   background:rgba(255,255,255,.03);
@@ -103,8 +109,8 @@
 }
 
 .app-header .lang-menu .lang-flag{
-  width:40px;
-  height:40px;
+  width:44px;
+  height:44px;
   display:grid;
   place-items:center;
   border-radius:999px;
@@ -112,6 +118,7 @@
   color:#eef3ff;
   font-weight:800;
   font-size:15px;
+  border:1px solid rgba(255,255,255,.08);
 }
 
 .app-header .lang-menu .lang-name{
@@ -126,6 +133,28 @@
   display:none;
 }
 
+.app-header .lang-menu .lang-flag,
+.drawer-lang-item .lang-flag,
+.drawer-lang-item .lang-code{
+  overflow:hidden;
+}
+.app-header .lang-menu .lang-flag .lang-flag-img,
+.drawer-lang-item .lang-flag .lang-flag-img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  border-radius:inherit;
+}
+.drawer-lang-item .lang-code{
+  min-width:32px;
+  padding:0 8px;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.08em;
+  color:#f3f7ff;
+}
+
 
 /* Header language + burger tune */
 .app-header .lang-btn{min-height:56px;border-radius:999px}
@@ -137,11 +166,14 @@
 .drawer-lang-group[hidden]{display:none}
 .drawer-lang-item{
   display:grid;
-  grid-template-columns:40px minmax(0,1fr) auto;
+  grid-template-columns:46px minmax(0,1fr) 40px;
   align-items:center;
   gap:12px;
+  width:100%;
+  max-width:100%;
   min-height:56px;
-  padding:10px 14px;
+  padding:10px 12px;
+  box-sizing:border-box;
   border-radius:18px;
   border:1px solid rgba(126,146,255,.14);
   color:#eef3ff;
@@ -151,23 +183,33 @@
 .drawer-lang-item .lang-code{
   width:40px;
   height:40px;
+  min-width:40px;
   display:grid;
   place-items:center;
   border-radius:999px;
   background:rgba(255,255,255,.06);
   font-size:18px;
+  border:1px solid rgba(255,255,255,.08);
+  box-sizing:border-box;
+}
+.drawer-lang-item .lang-flag{
+  width:46px;
+  height:46px;
+  min-width:46px;
 }
 .drawer-lang-item .lang-name{
   min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
   font-size:15px;
   font-weight:700;
   color:#f4f7ff;
 }
 .drawer-lang-item .lang-code{
-  width:32px;
-  height:32px;
+  padding:0;
   font-size:16px;
   background:rgba(124,145,255,.14);
+  justify-self:end;
 }
 .drawer-lang-item[aria-selected="true"]{
   border-color:rgba(141,164,255,.28);
@@ -191,3 +233,41 @@ html.lang-compact:not(.lang-in-drawer) .app-header .lang-btn{
 html.lang-compact:not(.lang-in-drawer) .app-header .lang-label,
 html.lang-compact:not(.lang-in-drawer) .app-header .lang-caret{display:none}
 html.lang-compact:not(.lang-in-drawer) .app-header .lang-ico{margin:0}
+
+
+/* richer language icons + scrollable drawer list */
+.app-header .lang-menu .lang-flag,
+.drawer-lang-item .lang-flag,
+.board-lang-option-badge {
+  box-shadow: 0 8px 20px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.app-header .lang-menu .lang-flag .lang-flag-img,
+.drawer-lang-item .lang-flag .lang-flag-img,
+.board-lang-option-badge img {
+  image-rendering: auto;
+}
+.drawer-lang-list {
+  width:100%;
+  max-height: 186px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+  box-sizing: border-box;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+.drawer-lang-list::-webkit-scrollbar {
+  width: 8px;
+}
+.drawer-lang-list::-webkit-scrollbar-track {
+  background: rgba(255,255,255,.04);
+  border-radius: 999px;
+}
+.drawer-lang-list::-webkit-scrollbar-thumb {
+  background: rgba(157,174,255,.34);
+  border-radius: 999px;
+}
+
+.app-header .lang-menu::-webkit-scrollbar{width:8px}
+.app-header .lang-menu::-webkit-scrollbar-track{background:rgba(255,255,255,.04);border-radius:999px}
+.app-header .lang-menu::-webkit-scrollbar-thumb{background:rgba(157,174,255,.34);border-radius:999px}

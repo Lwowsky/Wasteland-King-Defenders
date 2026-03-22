@@ -115,7 +115,7 @@
     const normalized = String(locale || '').trim().toLowerCase() === 'ua' ? 'uk' : String(locale || '').trim().toLowerCase();
     return String(window.PNSI18N?.dict?.[normalized]?.lang_name
       || window.PNS?.I18N?.dict?.[normalized]?.lang_name
-      || { en: 'English', uk: 'Українська', ru: 'Русский' }[normalized]
+      || window.PNS_LANGS?.getLanguageLabel?.(normalized)
       || normalized.toUpperCase());
   }
 
@@ -164,6 +164,13 @@
     });
   }
 
+  function getBoardLanguageIconMarkup(locale) {
+    const meta = window.PNS_LANGS?.getLanguageMeta?.(locale) || null;
+    const src = meta?.icon ? escapeHtml(meta.icon) : '';
+    if (!src) return '';
+    return `<span class="board-lang-option-badge"><img alt="" loading="lazy" decoding="async" src="${src}"/></span>`;
+  }
+
   function renderBoardLanguageDialogMarkup(kind) {
     const optionAttr = kind === 'calc' ? 'data-calc-board-lang-option' : 'data-board-lang-option';
     const selectedLocales = getBoardLanguageLocales();
@@ -173,13 +180,14 @@
       const required = requiredLocales.has(normalized);
       const checkedAttr = selectedLocales.includes(normalized) || required ? 'checked' : '';
       const disabledAttr = required ? 'disabled aria-disabled="true"' : '';
-      const suffix = required ? ` • ${escapeHtml(tr('always_on', 'Завжди увімкнено'))}` : '';
+      const suffix = '';
       return window.PNS.renderHtmlTemplate('tpl-board-lang-option', {
         required_class: required ? ' is-required' : '',
         option_attr: optionAttr,
         value: escapeHtml(normalized),
         checked_attr: checkedAttr,
         disabled_attr: disabledAttr,
+        icon_html: getBoardLanguageIconMarkup(normalized),
         label_text: `${escapeHtml(getBoardLanguageLabel(normalized))}${suffix}`
       });
     }).join('');
@@ -211,12 +219,14 @@
     getBoardLanguageTextMulti,
     boardLanguageSummary,
     renderBoardLanguagePickerMarkup,
+    getBoardLanguageIconMarkup,
     renderBoardLanguageDialogMarkup
   });
 
   PNS.ModalsShift = PNS.ModalsShift || {};
   Object.assign(PNS.ModalsShift, {
     renderBoardLanguagePickerMarkup,
+    getBoardLanguageIconMarkup,
     renderBoardLanguageDialogMarkup,
     boardLanguageSummary
   });
@@ -235,6 +245,7 @@
     getBoardLanguageTextMulti,
     boardLanguageSummary,
     renderBoardLanguagePickerMarkup,
+    getBoardLanguageIconMarkup,
     renderBoardLanguageDialogMarkup
   });
 })();

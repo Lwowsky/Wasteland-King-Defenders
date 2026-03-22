@@ -1,7 +1,7 @@
 (function () {
   try {
     var lang = localStorage.getItem('pns_lang') || 'uk';
-    if (!/^(uk|ua|en|ru)$/.test(lang)) lang = 'uk';
+    if (!/^(uk|ua|en|ru|pl|de|ja|zh|ko|vi|ar)$/.test(lang)) lang = 'uk';
     if (lang === 'ua') lang = 'uk';
     document.documentElement.lang = lang;
     document.documentElement.dataset.locale = lang;

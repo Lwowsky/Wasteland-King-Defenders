@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="outer" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#742020"/>
+      <stop offset="1" stop-color="#A66D18"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="12" y1="8" x2="50" y2="36" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" stop-opacity=".28"/>
+      <stop offset=".6" stop-color="#ffffff" stop-opacity=".06"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="flagClip">
+      <rect x="9" y="9" width="46" height="36" rx="14"/>
+    </clipPath>
+    <filter id="shadow" x="0" y="0" width="64" height="64" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity=".26"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="4" y="4" width="56" height="56" rx="18" fill="url(#outer)"/>
+    <rect x="4.5" y="4.5" width="55" height="55" rx="17.5" stroke="#C8D5FF" stroke-opacity=".18"/>
+    <rect x="9" y="9" width="46" height="36" rx="14" fill="#0A1022"/>
+    <g clip-path="url(#flagClip)">
+      
+<rect x="9" y="9" width="46" height="36" fill="#D94744"/>
+<polygon points="21.00,12.80 22.53,16.90 26.90,17.08 23.47,19.80 24.64,24.02 21.00,21.60 17.36,24.02 18.53,19.80 15.10,17.08 19.47,16.90" fill="#F4CE51"/>
+<polygon points="31.50,11.10 32.09,12.69 33.78,12.76 32.45,13.81 32.91,15.44 31.50,14.50 30.09,15.44 30.55,13.81 29.22,12.76 30.91,12.69" fill="#F4CE51"/>
+<polygon points="35.20,17.90 35.79,19.49 37.48,19.56 36.15,20.61 36.61,22.24 35.20,21.30 33.79,22.24 34.25,20.61 32.92,19.56 34.61,19.49" fill="#F4CE51"/>
+<polygon points="34.20,25.80 34.79,27.39 36.48,27.46 35.15,28.51 35.61,30.14 34.20,29.20 32.79,30.14 33.25,28.51 31.92,27.46 33.61,27.39" fill="#F4CE51"/>
+<polygon points="28.00,30.80 28.59,32.39 30.28,32.46 28.95,33.51 29.41,35.14 28.00,34.20 26.59,35.14 27.05,33.51 25.72,32.46 27.41,32.39" fill="#F4CE51"/>
+
+    </g>
+    <path d="M12 12c8-6 22-8 34-4 2 .7 4.2 1.7 6 3.2" stroke="url(#shine)" stroke-width="3" stroke-linecap="round"/>
+    <rect x="17" y="46" width="30" height="11" rx="5.5" fill="#091127" fill-opacity=".92"/>
+    <rect x="17.5" y="46.5" width="29" height="10" rx="5" stroke="#D8E3FF" stroke-opacity=".14"/>
+    <text x="32" y="54" text-anchor="middle" fill="#F8FBFF" font-family="Inter, Arial, Helvetica, sans-serif" font-size="10" font-weight="800" letter-spacing=".9">ZH</text>
+  </g>
+</svg>
