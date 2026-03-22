@@ -1,39 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
   <defs>
-    <linearGradient id="outer" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#264FAF"/>
-      <stop offset="1" stop-color="#3D1730"/>
+    <clipPath id="flag-clip"><rect x="9" y="13" width="46" height="38" rx="11"/></clipPath>
+    <linearGradient id="frame" x1="9" y1="13" x2="55" y2="51" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#D9E2F2"/>
     </linearGradient>
-    <linearGradient id="shine" x1="12" y1="8" x2="50" y2="36" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#ffffff" stop-opacity=".28"/>
-      <stop offset=".6" stop-color="#ffffff" stop-opacity=".06"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    <linearGradient id="shine" x1="32" y1="13" x2="32" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
     </linearGradient>
-    <clipPath id="flagClip">
-      <rect x="9" y="9" width="46" height="36" rx="14"/>
-    </clipPath>
-    <filter id="shadow" x="0" y="0" width="64" height="64" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity=".26"/>
-    </filter>
   </defs>
-  <g filter="url(#shadow)">
-    <rect x="4" y="4" width="56" height="56" rx="18" fill="url(#outer)"/>
-    <rect x="4.5" y="4.5" width="55" height="55" rx="17.5" stroke="#C8D5FF" stroke-opacity=".18"/>
-    <rect x="9" y="9" width="46" height="36" rx="14" fill="#0A1022"/>
-    <g clip-path="url(#flagClip)">
-      
-<rect x="9" y="9" width="46" height="36" fill="#214CBE"/>
-<path d="M9 11.5L23.5 22 9 32.5V45h4.8L33 31.1 50.2 45H55v-4.5L41 27.9 55 17V9h-3.8L33 23 15 9H9z" fill="#FFFFFF"/>
-<path d="M9 13.5l13 9.2M55 13.5L42 22.7M9 40.5l13-9.2M55 40.5l-13-9.2" stroke="#D84556" stroke-width="3"/>
-<rect x="27" y="9" width="10" height="36" fill="#FFFFFF"/>
-<rect x="9" y="22" width="46" height="10" fill="#FFFFFF"/>
-<rect x="29" y="9" width="6" height="36" fill="#D84556"/>
-<rect x="9" y="24" width="46" height="6" fill="#D84556"/>
 
-    </g>
-    <path d="M12 12c8-6 22-8 34-4 2 .7 4.2 1.7 6 3.2" stroke="url(#shine)" stroke-width="3" stroke-linecap="round"/>
-    <rect x="17" y="46" width="30" height="11" rx="5.5" fill="#091127" fill-opacity=".92"/>
-    <rect x="17.5" y="46.5" width="29" height="10" rx="5" stroke="#D8E3FF" stroke-opacity=".14"/>
-    <text x="32" y="54" text-anchor="middle" fill="#F8FBFF" font-family="Inter, Arial, Helvetica, sans-serif" font-size="10" font-weight="800" letter-spacing=".9">EN</text>
+  <rect x="8" y="12" width="48" height="40" rx="12" fill="#071126" opacity="0.22"/>
+  <rect x="9" y="13" width="46" height="38" rx="11" fill="url(#frame)"/>
+
+  <g clip-path="url(#flag-clip)">
+    <rect x="9" y="13" width="46" height="38" fill="#1F4AA8"/>
+
+    <!-- broad white diagonals -->
+    <path d="M9 16.2L20.1 13H30.2L9 20.3V16.2Z" fill="#FFFFFF"/>
+    <path d="M55 16.2L43.9 13H33.8L55 20.3V16.2Z" fill="#FFFFFF"/>
+    <path d="M9 47.8L20.1 51H30.2L9 43.7V47.8Z" fill="#FFFFFF"/>
+    <path d="M55 47.8L43.9 51H33.8L55 43.7V47.8Z" fill="#FFFFFF"/>
+    <path d="M9 13L14.4 13L55 42.7V51H49.6L9 21.3V13Z" fill="#FFFFFF"/>
+    <path d="M55 13L49.6 13L9 42.7V51H14.4L55 21.3V13Z" fill="#FFFFFF"/>
+
+    <!-- red diagonals -->
+    <path d="M9 13L9 15.9L32.8 33.1H37.7L9 13Z" fill="#D83349"/>
+    <path d="M55 13L55 15.9L31.2 33.1H26.3L55 13Z" fill="#D83349"/>
+    <path d="M9 51L9 48.1L32.8 30.9H37.7L9 51Z" fill="#D83349"/>
+    <path d="M55 51L55 48.1L31.2 30.9H26.3L55 51Z" fill="#D83349"/>
+
+    <!-- white cross -->
+    <rect x="27.5" y="13" width="9" height="38" fill="#FFFFFF"/>
+    <rect x="9" y="27.5" width="46" height="9" fill="#FFFFFF"/>
+
+    <!-- red cross -->
+    <rect x="29.4" y="13" width="5.2" height="38" fill="#D83349"/>
+    <rect x="9" y="29.4" width="46" height="5.2" fill="#D83349"/>
+
+    <rect x="9" y="13" width="46" height="18" fill="url(#shine)"/>
   </g>
+
+  <rect x="9.5" y="13.5" width="45" height="37" rx="10.5" stroke="#FFFFFF" stroke-opacity="0.82"/>
+  <rect x="9" y="13" width="46" height="38" rx="11" stroke="#0A1430" stroke-width="1.4"/>
 </svg>
