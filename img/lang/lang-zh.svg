@@ -1,24 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" role="img">
   <defs>
     <clipPath id="clip"><rect x="6" y="6" width="52" height="52" rx="16"/></clipPath>
     <linearGradient id="shine" x1="32" y1="6" x2="32" y2="58" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.18"/>
-      <stop offset="0.34" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="0.28" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="0.6" stop-color="#FFFFFF" stop-opacity="0.02"/>
       <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
     </linearGradient>
+    <linearGradient id="rim" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#C7D4FF" stop-opacity="0.85"/>
+    </linearGradient>
+    
   </defs>
-  <rect x="6" y="7.5" width="52" height="52" rx="16" fill="#020817" opacity="0.28"/>
+  <rect x="6" y="7.5" width="52" height="52" rx="16" fill="#020817" opacity="0.34"/>
   <g clip-path="url(#clip)">
-    <rect x="6" y="6" width="52" height="52" fill="#DE3E31"/>
-    <path d="M19.5 15.5 21.8 22.1 28.8 22.2 23.2 26.2 25.3 32.8 19.5 28.7 13.7 32.8 15.8 26.2 10.2 22.2 17.2 22.1 19.5 15.5Z" fill="#F7D34B"/>
-    <g fill="#F7D34B">
-      <path d="M31 14.8 31.9 17.4 34.6 17.4 32.4 19 33.3 21.6 31 20 28.7 21.6 29.6 19 27.4 17.4 30.1 17.4 31 14.8Z"/>
-      <path d="M35.7 20.8 36.6 23.4 39.3 23.4 37.1 25 38 27.6 35.7 26 33.4 27.6 34.3 25 32.1 23.4 34.8 23.4 35.7 20.8Z"/>
-      <path d="M35.2 28 36.1 30.6 38.8 30.6 36.6 32.2 37.5 34.8 35.2 33.2 32.9 34.8 33.8 32.2 31.6 30.6 34.3 30.6 35.2 28Z"/>
-      <path d="M30 33 30.9 35.6 33.6 35.6 31.4 37.2 32.3 39.8 30 38.2 27.7 39.8 28.6 37.2 26.4 35.6 29.1 35.6 30 33Z"/>
-    </g>
-    <rect x="6" y="6" width="52" height="24" fill="url(#shine)"/>
+    
+<rect x="6" y="6" width="52" height="52" fill="#E34A3A"/>
+<path d="M19.5 16.2l1.87 4.78 5.13.35-3.97 3.26 1.29 4.98-4.32-2.95-4.33 2.95 1.29-4.98-3.97-3.26 5.13-.35 1.88-4.78z" fill="#FFD85B"/>
+<path d="M30.9 14.4l.77 1.96 2.1.15-1.62 1.34.52 2.03-1.77-1.21-1.77 1.21.53-2.03-1.62-1.34 2.09-.15.77-1.96z" fill="#FFD85B"/>
+<path d="M35.9 20.4l.77 1.96 2.1.15-1.62 1.34.52 2.03-1.77-1.21-1.77 1.21.53-2.03-1.62-1.34 2.09-.15.77-1.96z" fill="#FFD85B"/>
+<path d="M35.1 28.1l.77 1.96 2.1.15-1.62 1.34.52 2.03-1.77-1.21-1.77 1.21.53-2.03-1.62-1.34 2.09-.15.77-1.96z" fill="#FFD85B"/>
+<path d="M28.9 33.1l.77 1.96 2.1.15-1.62 1.34.52 2.03-1.77-1.21-1.77 1.21.53-2.03-1.62-1.34 2.09-.15.77-1.96z" fill="#FFD85B"/>
+
+    <rect x="6" y="6" width="52" height="23" fill="url(#shine)"/>
   </g>
-  <rect x="6.75" y="6.75" width="50.5" height="50.5" rx="15.25" stroke="#F7FAFF" stroke-opacity="0.95" stroke-width="1.5"/>
-  <rect x="6" y="6" width="52" height="52" rx="16" stroke="#0A1125" stroke-width="2"/>
+  <rect x="6.85" y="6.85" width="50.3" height="50.3" rx="15.15" stroke="url(#rim)" stroke-width="1.7"/>
+  <rect x="6" y="6" width="52" height="52" rx="16" stroke="#0A1227" stroke-width="2"/>
 </svg>
