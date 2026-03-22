@@ -58,7 +58,7 @@
 <div aria-hidden="true" class="footer-orb footer-orb-left"></div>
 <div aria-hidden="true" class="footer-orb footer-orb-right"></div>
 <div aria-label="Footer actions" class="footer-actions">
-<button aria-label="Написати нам" class="footer-action footer-action-contact" data-i18n-aria-label="footer_contact_title" data-i18n-title="footer_contact_title" title="Написати нам" type="button">
+<button aria-label="Написати нам" class="footer-action footer-action-contact" id="openContactModalBtn" data-i18n-aria-label="footer_contact_title" data-i18n-title="footer_contact_title" title="Написати нам" type="button">
 <span aria-hidden="true" class="footer-action-icon">
 <svg fill="none" viewbox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
 <rect height="18" rx="5" stroke="currentColor" stroke-width="2.2" width="22" x="5" y="7"></rect>
@@ -71,7 +71,7 @@
 <span class="footer-action-subtitle" data-i18n="footer_contact_subtitle">Зв'язок та пропозиції</span>
 </span>
 </button>
-<button aria-label="Підтримати сайт" class="footer-action footer-action-donate" data-i18n-aria-label="footer_support_title" data-i18n-title="footer_support_title" title="Підтримати сайт" type="button">
+<button aria-label="Підтримати сайт" class="footer-action footer-action-donate" id="openSupportModalBtn" data-i18n-aria-label="footer_support_title" data-i18n-title="footer_support_title" title="Підтримати сайт" type="button">
 <span aria-hidden="true" class="footer-action-icon">
 <svg fill="none" viewbox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
 <path d="M16 5.5 18.95 11.48l6.6.96-4.78 4.65 1.13 6.57L16 20.56l-5.9 3.1 1.13-6.57-4.78-4.65 6.6-.96L16 5.5Z" stroke="currentColor" stroke-linejoin="round" stroke-width="2.1"></path>
@@ -104,6 +104,190 @@
 <section aria-label="Налаштування та імпорт" class="modal" data-i18n-aria-label="settings_import" data-modal="settings" id="settings-modal"><a aria-label="Закрити" class="modal-backdrop" data-close-modal="" data-i18n-aria-label="close_menu" href="#top"></a><div aria-modal="true" class="modal-card" role="dialog"><div class="modal-head"><div><h2 data-i18n="settings_import">Налаштування / Імпорт</h2><p class="muted" data-i18n="settings_import_subtitle">Завантаж список гравців, звір колонки й підготуй сайт до розподілу по турелях.</p></div><a aria-label="Закрити" class="btn btn-icon" data-close-modal="" data-i18n-aria-label="close_menu" href="#top">✕</a></div><div class="modal-grid"><section class="panel subpanel import-source-panel"><div class="mapping-section-head"><div><h3 data-i18n="import_source_title">1. Звідки взяти список гравців</h3><p class="mapping-section-note" data-i18n="import_source_note">Завантаж файл або встав публічне посилання на таблицю.</p></div></div><div class="stack import-source-stack"><div class="import-source-grid"><label class="file-drop import-source-card import-upload-card"><span class="import-card-kicker" data-i18n="import_source_file">Файл</span> <span class="drop-title" data-i18n="import_upload_title">Завантажити CSV / Excel</span> <span class="muted" data-i18n="import_upload_desc">Підтримуються CSV, XLSX, XLS і TXT. Це найзручніший спосіб швидко додати таблицю.</span> <input accept=".csv,.xlsx,.xls,.txt" id="fileInputMock" name="fileInputMock" type="file"/></label> <label class="import-source-card import-url-card"><span class="import-card-kicker" data-i18n="import_source_link">Посилання</span> <span class="drop-title" data-i18n="import_url_title">Google Sheets / CSV посилання</span> <span class="muted" data-i18n="import_url_desc">Працює з публічним CSV export або відкритим CSV-посиланням із Google Sheets.</span> <input id="urlInputMock" name="urlInputMock" placeholder="https://..." type="url"/></label></div><div class="import-tools-row import-tools-row-main"><button class="btn btn-sm" data-i18n="detect_columns" id="detectColumnsMockBtn" type="button">Знайти колонки</button> <button class="btn btn-sm" data-i18n="load_url" id="loadUrlMockBtn" type="button">Завантажити посилання</button></div><div class="import-status-grid"><div class="import-status-card"><div class="import-status-title" data-i18n="current_source">Поточне джерело</div><div class="muted small" data-i18n="file_not_loaded" id="importLoadedInfo">Файл або посилання ще не завантажено.</div></div><div class="import-status-card"><div class="import-status-title" data-i18n="import_status_title">Статус імпорту</div><div class="muted small" data-i18n="import_status_hint" id="importStatusInfo">Завантаж джерело, перевір колонки й натисни «Застосувати імпорт».</div></div></div><div class="import-template-tools"><div class="import-source-actions"><button class="btn btn-primary" data-i18n="apply_import" id="applyImportMockBtn" type="button">Застосувати імпорт</button></div></div></div></section><section class="panel subpanel"><div class="mapping-section-head"><div><h3 data-i18n="required_columns_title">2. Обов’язкові колонки</h3><p class="mapping-section-note" data-i18n="required_columns_note">Ім’я гравця, тип військ, тір, розмір маршу, розмір групової атаки, альянс, готовність бути капітаном і доступність по змінах.</p></div><div class="mapping-section-head-actions"><button class="btn btn-sm btn-ghost" data-i18n="save_template" data-save-import-template="1" type="button">Зберегти шаблон</button></div></div><div class="mapping-grid-2" id="requiredMappingContainer"></div></section><section class="panel subpanel"><div class="mapping-section-head"><div><h3 data-i18n="optional_columns_title">3. Додаткові колонки</h3><p class="mapping-section-note" data-i18n="optional_columns_note">Рівень лігва, резервний тип військ і будь-які твої власні додаткові поля.</p></div><div class="mapping-section-head-actions"><button class="btn btn-sm btn-ghost" data-i18n="save_template" data-save-import-template="1" type="button">Зберегти шаблон</button></div></div><div class="mapping-grid-2" id="optionalMappingContainer"></div></section><section class="panel subpanel"><div class="mapping-section-head"><div><h3 data-i18n="visible_columns_title">4. Які дані показувати в таблиці</h3><p class="mapping-section-note" data-i18n="visible_columns_note">Обери, які додаткові колонки бачити в таблиці гравців після натискання «Показати всі дані».</p></div></div><div class="visibility-panel" id="columnVisibilityChecks"></div><div class="row gap top-space wrap"><button class="btn btn-sm" data-i18n="save_visible_columns" id="saveVisibleColumnsMockBtn" type="button">Зберегти видимі колонки</button></div></section><section class="panel subpanel"><div class="mapping-section-head"><div><h3 data-i18n="reset_data_title">5. Скидання даних</h3><p class="mapping-section-note" data-i18n="reset_data_note">Обережно: ці дії очищають збережені налаштування або дані таблиць.</p></div></div><div class="stack reset-actions-grid"><button class="btn btn-sm btn-danger-soft" data-i18n="reset_storage" id="resetAllStorageBtn" type="button">Повністю очистити LocalStorage</button> <button class="btn btn-sm btn-ghost" data-i18n="reset_column_data" id="resetColumnDataBtn" type="button">Скинути дані колонок</button> <button class="btn btn-sm btn-ghost" data-i18n="reset_table_data" id="resetTableDataBtn" type="button">Скинути дані таблиць</button></div></section></div><div class="modal-foot"><div class="muted" data-i18n="import_footer_note">Підтримуються CSV/XLSX і публічні CSV-посилання з Google Sheets.</div></div></div></section>
 <section aria-label="Фінальний план" class="modal board-modal" data-i18n-aria-label="final_plan" data-modal="board" id="board-modal"><a aria-label="Закрити" class="modal-backdrop" data-close-modal="" data-i18n-aria-label="close_menu" href="#top"></a><div aria-modal="true" class="modal-card board-card board-standalone-card" role="dialog"><div class="modal-head board-standalone-title"><div><h2 data-i18n="final_plan">Фінальний план</h2><div class="muted" data-i18n="board_subtitle">Перегляд для офіцерів: зручно показати фінальний план, зробити скрін або поділитися ним.</div></div><a aria-label="Закрити" class="btn btn-icon board-standalone-close" data-close-modal="" data-i18n-aria-label="close_menu" href="#top">✕</a></div><div class="tower-calc-board-preview board-modal-preview board-standalone-preview"><div class="board-head-actions tower-calc-preview-toolbar"><div class="board-shift-tabs"><button class="btn btn-sm board-shift-tab" data-i18n="shift1" data-shift-tab="shift1" type="button">Зміна 1</button> <button class="btn btn-sm board-shift-tab active" data-i18n="shift2" data-shift-tab="shift2" type="button">Зміна 2</button></div><div class="board-lang-picker-host board-lang-picker-wrap board-lang-picker-wrap--push" data-board-lang-picker-host=""><button aria-expanded="false" aria-haspopup="dialog" class="btn btn-sm board-lang-trigger" data-board-lang-kind="board" data-open-board-lang-picker="board" type="button"><span class="board-lang-trigger-text" data-i18n="board_language">Мова плану</span><strong class="board-lang-picker-label" data-board-lang-picker-label="">English + Українська</strong></button></div><button class="btn btn-sm" data-i18n="export_png" id="exportPngBtn" type="button">Завантажити PNG</button> <button class="btn btn-sm" data-i18n="export_txt" id="exportBoardTxtBtn" type="button">TXT</button> <button class="btn btn-sm" data-i18n="final_plan_share" id="shareBoardBtn" type="button">Поділитися</button></div><div class="muted small" id="boardPreviewStatus">Фінальний план · Зміна 2</div><div id="boardModalPreviewSheet"><div class="board-sheet"><div class="board-title" data-i18n="board_title_shift2" id="boardTitle">Зміна 2 / Друга половина</div><div class="board-grid"><section class="board-col" data-shift="both"><header><h4 data-i18n="hub">Техно-Центр</h4><div class="is-auto board-sub" data-i18n="type_defined_by_captain">Тип визначається капітаном</div><div class="board-cap">0 <span>0</span></div></header><ul><li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li></ul></section><section class="board-col"><header><h4 data-i18n="base_north">Північна турель</h4><div class="board-sub" data-i18n="role_fighter">Бійці</div><div class="board-cap">0 <span>0</span></div></header><ul><li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li></ul></section><section class="board-col"><header><h4 data-i18n="base_west">Західна турель</h4><div class="board-sub" data-i18n="role_shooter">Стрільці</div><div class="board-cap">0 <span>0</span></div></header><ul><li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li></ul></section><section class="board-col"><header><h4 data-i18n="base_east">Східна турель</h4><div class="board-sub" data-i18n="role_fighter">Бійці</div><div class="board-cap">0 <span>0</span></div></header><ul><li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li></ul></section><section class="board-col"><header><h4 data-i18n="base_south">Південна турель</h4><div class="board-sub" data-i18n="role_rider">Наїзники</div><div class="board-cap">0 <span>0</span></div></header><ul><li class="empty-row" data-i18n="no_assigned_players">Немає призначених гравців</li></ul></section></div></div></div></div></div></section>
 <section aria-label="Розподіл по турелях" class="modal tower-calc-modal" data-i18n-aria-label="tower_planning" id="towerCalcModal"><a aria-label="Закрити" class="modal-backdrop" data-close-modal="" data-close-tower-calc="" data-i18n-aria-label="close_menu" href="#top"></a><div aria-modal="true" class="modal-card" role="dialog"><div class="modal-head"><div><h2 class="tower-calc-title-reset" data-i18n="tower_planning">Розподіл по турелях</h2><p class="muted tower-calc-subtitle-tight" data-i18n="calc_modal_subtitle">Тут ти готуєш склад для двох змін: розподіляєш гравців по турелях, перевіряєш резерв і збираєш фінальний план.</p></div><a aria-label="Закрити" class="btn btn-icon" data-close-modal="" data-close-tower-calc="" data-i18n-aria-label="close_menu" href="#top">✕</a></div><div class="modal-grid tower-calc-modal-grid"><section class="panel subpanel" id="towerCalcMainTabsWrap"><div class="tower-calc-main-tabs" id="towerCalcMainTabs"><button class="btn btn-sm" data-calc-main-tab="setup" data-i18n="settings" type="button">Налаштування</button> <button class="btn btn-sm" data-calc-main-tab="towers" data-i18n="tower_settings" type="button">Налаштування турелей</button> <button class="btn btn-sm" data-calc-main-tab="overflow" data-i18n="player_status" type="button">Статус гравців</button> <button class="btn btn-sm" data-calc-main-tab="preview" data-i18n="final_plan" type="button">Фінальний план</button></div></section><section class="panel subpanel tower-calc-main-panel" data-calc-main-panel="setup"><div class="tower-calc-controls tower-calc-controls-inline"><div class="tower-calc-toolbar"><div class="tower-calc-toolbar-main"><button class="btn btn-sm" data-i18n="calculate" id="towerCalcFitBtn" type="button">Порахувати</button> <button class="btn btn-sm" data-i18n="prepare_limits_for_turrets" id="towerCalcApplyToTowersBtn" type="button">Підготувати ліміти для турелей</button> <button class="btn btn-sm" data-i18n="auto_fill_turrets" id="towerCalcQuickApplyBtn" type="button">Автоматично заповнити турелі</button></div><div class="tower-calc-controls muted small tower-calc-controls-muted"><label><span data-i18n="mode">Режим</span> <select class="select-min-130" id="towerCalcModeUi" name="towerCalcModeUi"><option data-i18n="assisted_mode" value="assisted">З підказками</option><option data-i18n="auto_mode" value="auto">Авто</option><option data-i18n="manual_mode" value="manual">Вручну</option></select></label> <label><span data-i18n="apply_mode">Застосування</span> <select class="select-min-160" id="towerCalcApplyModeUi" name="towerCalcApplyModeUi"><option data-i18n="topup_only" value="topup">Лише дозаповнення</option><option data-i18n="empty_only" value="empty">Лише порожні</option><option data-i18n="rebalance_all" value="rebalance">Перерозподілити все</option></select></label> <span class="muted"></span></div><details class="tower-calc-advanced" id="towerCalcAdvanced" open="open"><summary data-i18n="advanced">Додатково</summary><div class="inner"><div class="tower-calc-controls tower-calc-controls-inline"><label><input id="towerCalcBoth50" name="towerCalcBoth50" type="checkbox"/> <span data-i18n="auto_balance_both">Автобаланс гравців «Обидві»</span></label> <label><input id="towerCalcMinHelpersOn" name="towerCalcMinHelpersOn" type="checkbox"/> <span data-i18n="min_players_per_turret">Мінімум гравців на турель</span></label> <label><span data-i18n="quantity">Кількість</span> <input class="input-w-72" id="towerCalcMinHelpersCount" max="30" min="1" name="towerCalcMinHelpersCount" step="1" type="number" value="10"/></label> <label><input checked="checked" id="towerCalcTierAuto" name="towerCalcTierAuto" type="checkbox"/> <span data-i18n="auto_tier_limit">Авто-ліміт тіру</span></label> <button class="btn btn-sm" data-i18n="apply_and_assign_players" id="towerCalcApplyAndAssignBtn" type="button">Застосувати й розставити гравців по турелях</button> <button class="btn btn-sm is-hidden-inline" data-i18n="recalc_composition" id="towerCalcRecalcBtn" type="button">Перерахувати</button></div><div class="muted small top-space-8"><span data-i18n="tier_march_limit_single">Ліміт маршу за тіром (на 1 гравця):</span> <span class="tier-target-row" id="towerCalcTierTargetRow"><label>T14 <input class="input-w-92" data-calc-tier-target="T14" min="0" name="calc-tier-target_T14" step="1000" type="number"/></label> <label>T13 <input class="input-w-92" data-calc-tier-target="T13" min="0" name="calc-tier-target_T13" step="1000" type="number"/></label> <label>T12 <input class="input-w-92" data-calc-tier-target="T12" min="0" name="calc-tier-target_T12" step="1000" type="number"/></label> <label>T11 <input class="input-w-92" data-calc-tier-target="T11" min="0" name="calc-tier-target_T11" step="1000" type="number"/></label> <label>T10 <input class="input-w-92" data-calc-tier-target="T10" min="0" name="calc-tier-target_T10" step="1000" type="number"/></label> <label>T9 <input class="input-w-92" data-calc-tier-target="T9" min="0" name="calc-tier-target_T9" step="1000" type="number"/></label></span></div><div class="muted small top-space-6"><span data-i18n="calc_tip_text">Порада: спочатку порахуй склад, потім підготуй ліміти для турелей або одразу запусти автозаповнення.</span></div></div></details><div class="tower-calc-shift-balance" id="towerCalcShiftBalance"><div class="tower-calc-shift-balance-head"><div class="muted small"><strong data-i18n="shift_stats">Статистика змін</strong></div><div class="muted small" id="towerCalcShiftCountsLine"></div></div><div class="tower-calc-shift-cards"><div class="tower-calc-shift-card"><span data-i18n="shift1">Зміна 1</span> <strong id="tcShift1Count">0</strong><div class="muted small" id="tcShift1Roles">F / R / S: 0 / 0 / 0</div></div><div class="tower-calc-shift-card"><span data-i18n="shift2">Зміна 2</span> <strong id="tcShift2Count">0</strong><div class="muted small" id="tcShift2Roles">F / R / S: 0 / 0 / 0</div></div><div class="tower-calc-shift-card"><span data-i18n="both">Обидві</span> <strong id="tcBothCount">0</strong><div class="muted small" id="tcBothRoles">F / R / S: 0 / 0 / 0</div></div></div><div class="tower-calc-shift-controls"><div class="tower-calc-shift-controls-left"><label><span data-i18n="shift1_limit">Ліміт зміни 1</span> <input id="shiftLimitS1" max="100" min="0" name="shiftLimitS1" type="number" value="100"/></label> <label><span data-i18n="shift2_limit">Ліміт зміни 2</span> <input id="shiftLimitS2" max="100" min="0" name="shiftLimitS2" type="number" value="100"/></label> <label><span data-i18n="add_to_shift1">Додати в зміну 1</span> <input id="shiftAddS1" min="0" name="shiftAddS1" type="number" value="0"/></label> <label><span data-i18n="add_to_shift2">Додати в зміну 2</span> <input id="shiftAddS2" min="0" name="shiftAddS2" type="number" value="0"/></label> <button class="btn btn-sm" data-i18n="apply" id="applyShiftAddBtn" type="button">Застосувати</button> <button class="btn btn-sm" data-i18n="restore_from_import" id="towerCalcRestoreImportShiftsBtn" type="button">Відновити з імпорту</button> <label class="tower-calc-shift-force"><input id="shiftSplitForceChk" name="shiftSplitForceChk" type="checkbox"/> <span data-i18n="reset_both_before_apply">Скинути поточний розподіл в «Обидві» перед застосуванням</span></label><div class="muted small" id="towerCalcShiftLimitNote"></div></div><div class="tower-calc-shift-controls-right"><label class="tower-calc-ignore-both"><input id="towerCalcIgnoreBoth" name="towerCalcIgnoreBoth" type="checkbox"/> <span data-i18n="plan_without_both">Планувати зміни 1/2 без групи «Обидві»</span></label><div class="tower-calc-autoslots"><button class="btn btn-sm" data-i18n="auto_fill_turrets" id="towerCalcAutoFitBtn" type="button">Автозаповнення турелей</button></div></div></div></div><div class="tower-calc-mini-summary muted small" id="towerCalcMiniSummary"></div></div></div></section><section class="panel subpanel tower-calc-main-panel" data-calc-main-panel="towers" id="towerCalcTabsWrap"><div class="tower-calc-tabs tower-calc-tabs-inline" id="towerCalcTabs"><button class="btn btn-sm" data-calc-tab="shift1" data-i18n="shift1" type="button">Зміна 1</button> <button class="btn btn-sm" data-calc-tab="shift2" data-i18n="shift2" type="button">Зміна 2</button> <span class="muted small ml-6" data-i18n="preview_single_shift_note">Показується тільки одна зміна, щоб план був зручнішим для перегляду</span></div></section><section class="panel subpanel tower-calc-grid tower-calc-main-panel" data-calc-main-panel="towers" id="towerCalcGrid"></section><section class="panel subpanel tower-calc-main-panel" data-calc-main-panel="overflow" id="towerCalcOverflowOut"><div class="tower-calc-placeholder muted small"><span data-i18n="overflow_placeholder">Натисни «Порахувати», щоб побачити, хто вже стоїть у турелях, хто в резерві та кого ще треба розподілити.</span></div></section><section class="panel subpanel tower-calc-main-panel" data-calc-main-panel="preview" id="towerCalcGlobalOut"></section></div></div></section>
+<section aria-label="Написати нам" class="modal contact-modal" data-i18n-aria-label="contact_modal_title" id="contactModal">
+  <button aria-label="Закрити" class="modal-backdrop" data-contact-modal-close type="button"></button>
+  <div aria-modal="true" class="modal-card contact-modal-card" role="dialog" aria-labelledby="contactModalTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="contactModalTitle" data-i18n="contact_modal_title">Написати нам</h2>
+        <p class="muted" data-i18n="contact_modal_subtitle">Зв'язок, ідеї та пропозиції по сайту.</p>
+      </div>
+      <button aria-label="Закрити" class="btn btn-icon" data-contact-modal-close data-i18n-aria-label="close_menu" type="button">✕</button>
+    </div>
+
+    <div class="modal-grid contact-modal-grid">
+      <section class="panel subpanel stack">
+        <div class="contact-modal-kicker" data-i18n="contact_modal_kicker">Зв'язок</div>
+        <h3 data-i18n="contact_intro_title">Напиши нам у зручному форматі</h3>
+        <p class="muted" data-i18n="contact_intro_text">Залиш своє ім'я, нік, регіон, альянс і коротко опиши питання або пропозицію. Форму підготовано під твій стиль сайту, підключення пошти можна додати пізніше.</p>
+        <div class="contact-modal-note" data-i18n="contact_form_note">Після натискання кнопки форма поки не надсилає лист автоматично — вона лише збирає дані в зручному вигляді для майбутнього підключення пошти.</div>
+      </section>
+
+      <form class="panel subpanel stack contact-modal-form" id="contactModalForm" novalidate>
+        <div class="contact-form-grid">
+          <label>
+            <span data-i18n="contact_name">Ім'я</span>
+            <input autocomplete="name" id="contactNameInput" name="contactName" data-i18n-placeholder="contact_placeholder_name" placeholder="Твоє ім'я" type="text" />
+          </label>
+
+          <label>
+            <span data-i18n="contact_nickname">Нікнейм</span>
+            <input autocomplete="nickname" id="contactNicknameInput" name="contactNickname" data-i18n-placeholder="contact_placeholder_nickname" placeholder="Нік у грі" type="text" />
+          </label>
+
+          <label>
+            <span data-i18n="contact_region">Регіон</span>
+            <input id="contactRegionInput" name="contactRegion" data-i18n-placeholder="contact_placeholder_region" placeholder="Наприклад: EU / UA / 694" type="text" />
+          </label>
+
+          <label>
+            <span data-i18n="alliance">Альянс</span>
+            <input id="contactAllianceInput" name="contactAlliance" data-i18n-placeholder="contact_placeholder_alliance" placeholder="Тег альянсу" type="text" />
+          </label>
+
+          <label class="contact-form-full">
+            <span data-i18n="contact_email">Email</span>
+            <input autocomplete="email" id="contactEmailInput" name="contactEmail" data-i18n-placeholder="contact_placeholder_email" placeholder="name@example.com" type="email" />
+          </label>
+
+          <label class="contact-form-full">
+            <span data-i18n="contact_message">Повідомлення</span>
+            <textarea id="contactMessageInput" name="contactMessage" data-i18n-placeholder="contact_placeholder_message" placeholder="Напиши, що хочеш покращити або про що хочеш запитати"></textarea>
+          </label>
+        </div>
+
+        <div aria-live="polite" class="contact-modal-status" id="contactModalStatus"></div>
+
+        <div class="row gap wrap">
+          <button class="btn btn-primary" data-i18n="contact_submit" type="submit">Підготувати повідомлення</button>
+          <button class="btn" data-contact-modal-close data-i18n="cancel" type="button">Скасувати</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+<section aria-label="Підтримати сайт" class="modal support-modal" data-i18n-aria-label="support_modal_title" id="supportModal">
+  <button aria-label="Закрити" class="modal-backdrop" data-support-modal-close type="button"></button>
+  <div aria-modal="true" class="modal-card support-modal-card" role="dialog" aria-labelledby="supportModalTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="supportModalTitle" data-i18n="support_modal_title">Підтримати сайт</h2>
+        <p class="muted" data-i18n="support_modal_subtitle">Допоможи розвитку безкоштовного інструмента для офіцерів та гравців.</p>
+      </div>
+      <button aria-label="Закрити" class="btn btn-icon" data-support-modal-close data-i18n-aria-label="close_menu" type="button">✕</button>
+    </div>
+
+    <div class="modal-grid support-modal-grid">
+      <section class="panel subpanel stack">
+        <div class="contact-modal-kicker" data-i18n="support_modal_kicker">Підтримка</div>
+        <h3 data-i18n="support_intro_title">Обери зручний спосіб донату</h3>
+        <p class="muted" data-i18n="support_intro_text">Тут можна розмістити реквізити для карт у різних валютах і окремий блок для подарункових сертифікатів. Структура вже готова під твій стиль сайту.</p>
+        <div class="contact-modal-note" data-i18n="support_update_note">У реквізитах нижче зараз стоять шаблонні значення. Заміни їх на свої справжні дані перед публікацією.</div>
+      </section>
+
+      <section class="panel subpanel stack support-modal-content">
+        <div aria-label="Вкладки підтримки" class="support-modal-tabs" data-i18n-aria-label="support_tabs_label" role="tablist">
+          <button aria-selected="true" class="btn btn-sm support-modal-tab active" data-support-tab-target="uah" role="tab" type="button" data-i18n="support_tab_uah">UAH картка</button>
+          <button aria-selected="false" class="btn btn-sm support-modal-tab" data-support-tab-target="usd" role="tab" type="button" data-i18n="support_tab_usd">USD картка</button>
+          <button aria-selected="false" class="btn btn-sm support-modal-tab" data-support-tab-target="eur" role="tab" type="button" data-i18n="support_tab_eur">EUR картка</button>
+          <button aria-selected="false" class="btn btn-sm support-modal-tab" data-support-tab-target="gift" role="tab" type="button" data-i18n="support_tab_gift">Подарункові сертифікати</button>
+        </div>
+
+        <div class="support-modal-panels">
+          <section class="support-modal-panel is-active" data-support-tab-panel="uah" role="tabpanel">
+            <div class="support-modal-sheet">
+              <div class="support-modal-sheet-head">
+                <h3 data-i18n="support_tab_uah">UAH картка</h3>
+                <span class="pill">UAH</span>
+              </div>
+              <div class="support-modal-fields">
+                <div class="support-modal-field">
+                  <span data-i18n="support_card_label">Картка</span>
+                  <strong>XXXX XXXX XXXX XXXX</strong>
+                </div>
+                <div class="support-modal-field">
+                  <span data-i18n="support_holder_label">Отримувач</span>
+                  <strong>YOUR NAME</strong>
+                </div>
+                <div class="support-modal-field support-modal-field--full">
+                  <span data-i18n="support_note_label">Нотатка</span>
+                  <div class="muted" data-i18n="support_placeholder_note">Можеш додати банк, коментар до платежу або коротке пояснення для донату.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="support-modal-panel" data-support-tab-panel="usd" hidden role="tabpanel">
+            <div class="support-modal-sheet">
+              <div class="support-modal-sheet-head">
+                <h3 data-i18n="support_tab_usd">USD картка</h3>
+                <span class="pill">USD</span>
+              </div>
+              <div class="support-modal-fields">
+                <div class="support-modal-field">
+                  <span data-i18n="support_card_label">Картка</span>
+                  <strong>XXXX XXXX XXXX XXXX</strong>
+                </div>
+                <div class="support-modal-field">
+                  <span data-i18n="support_holder_label">Отримувач</span>
+                  <strong>YOUR NAME</strong>
+                </div>
+                <div class="support-modal-field support-modal-field--full">
+                  <span data-i18n="support_bank_label">Банк / деталі</span>
+                  <div class="muted">SWIFT / BANK NAME / COMMENT</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="support-modal-panel" data-support-tab-panel="eur" hidden role="tabpanel">
+            <div class="support-modal-sheet">
+              <div class="support-modal-sheet-head">
+                <h3 data-i18n="support_tab_eur">EUR картка</h3>
+                <span class="pill">EUR</span>
+              </div>
+              <div class="support-modal-fields">
+                <div class="support-modal-field">
+                  <span data-i18n="support_card_label">Картка</span>
+                  <strong>XXXX XXXX XXXX XXXX</strong>
+                </div>
+                <div class="support-modal-field">
+                  <span data-i18n="support_holder_label">Отримувач</span>
+                  <strong>YOUR NAME</strong>
+                </div>
+                <div class="support-modal-field support-modal-field--full">
+                  <span data-i18n="support_bank_label">Банк / деталі</span>
+                  <div class="muted">IBAN / BANK NAME / COMMENT</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="support-modal-panel" data-support-tab-panel="gift" hidden role="tabpanel">
+            <div class="support-modal-sheet">
+              <div class="support-modal-sheet-head">
+                <h3 data-i18n="support_tab_gift">Подарункові сертифікати</h3>
+                <span class="pill" data-i18n="support_gift_badge">Gift</span>
+              </div>
+              <div class="stack">
+                <p class="muted" data-i18n="support_gift_text">Якщо хочеш підтримати сайт сертифікатом, можна вказати бажані сервіси та коротку інструкцію для зв'язку перед покупкою.</p>
+                <div class="support-gift-grid">
+                  <div class="support-modal-field"><span>Steam</span><strong>Steam Gift Card</strong></div>
+                  <div class="support-modal-field"><span>Google Play</span><strong>Google Play Gift Card</strong></div>
+                  <div class="support-modal-field"><span>Apple</span><strong>App Store &amp; iTunes</strong></div>
+                </div>
+                <div class="support-modal-field support-modal-field--full">
+                  <span data-i18n="support_note_label">Нотатка</span>
+                  <div class="muted" data-i18n="support_gift_note">Додай тут бажані номінали, країну сертифіката або прохання спершу написати тобі перед покупкою.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
 </div>
 <div hidden="" id="pnsHtmlTemplates">
 <template id="tpl-pns-alert">
@@ -713,6 +897,8 @@
 <script defer="" src="js/final-plan-preview.js"></script>
 <script defer="" src="js/final-plan-actions.js"></script>
 <script defer="" src="js/modals-shell.js"></script>
+<script defer="" src="js/contact-modal.js"></script>
+<script defer="" src="js/support-modal.js"></script>
 <script defer="" src="js/planner-shift-rules.js"></script>
 <script defer="" src="js/shift-normalizers.js"></script>
 <script defer="" src="js/players-dom-sync.js"></script>

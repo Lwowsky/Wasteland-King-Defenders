@@ -1,0 +1,62 @@
+<section aria-label="Написати нам" class="modal contact-modal" data-i18n-aria-label="contact_modal_title" id="contactModal">
+  <button aria-label="Закрити" class="modal-backdrop" data-contact-modal-close type="button"></button>
+  <div aria-modal="true" class="modal-card contact-modal-card" role="dialog" aria-labelledby="contactModalTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="contactModalTitle" data-i18n="contact_modal_title">Написати нам</h2>
+        <p class="muted" data-i18n="contact_modal_subtitle">Зв'язок, ідеї та пропозиції по сайту.</p>
+      </div>
+      <button aria-label="Закрити" class="btn btn-icon" data-contact-modal-close data-i18n-aria-label="close_menu" type="button">✕</button>
+    </div>
+
+    <div class="modal-grid contact-modal-grid">
+      <section class="panel subpanel stack">
+        <div class="contact-modal-kicker" data-i18n="contact_modal_kicker">Зв'язок</div>
+        <h3 data-i18n="contact_intro_title">Напиши нам у зручному форматі</h3>
+        <p class="muted" data-i18n="contact_intro_text">Залиш своє ім'я, нік, регіон, альянс і коротко опиши питання або пропозицію. Форму підготовано під твій стиль сайту, підключення пошти можна додати пізніше.</p>
+        <div class="contact-modal-note" data-i18n="contact_form_note">Після натискання кнопки форма поки не надсилає лист автоматично — вона лише збирає дані в зручному вигляді для майбутнього підключення пошти.</div>
+      </section>
+
+      <form class="panel subpanel stack contact-modal-form" id="contactModalForm" novalidate>
+        <div class="contact-form-grid">
+          <label>
+            <span data-i18n="contact_name">Ім'я</span>
+            <input autocomplete="name" id="contactNameInput" name="contactName" data-i18n-placeholder="contact_placeholder_name" placeholder="Твоє ім'я" type="text" />
+          </label>
+
+          <label>
+            <span data-i18n="contact_nickname">Нікнейм</span>
+            <input autocomplete="nickname" id="contactNicknameInput" name="contactNickname" data-i18n-placeholder="contact_placeholder_nickname" placeholder="Нік у грі" type="text" />
+          </label>
+
+          <label>
+            <span data-i18n="contact_region">Регіон</span>
+            <input id="contactRegionInput" name="contactRegion" data-i18n-placeholder="contact_placeholder_region" placeholder="Наприклад: EU / UA / 694" type="text" />
+          </label>
+
+          <label>
+            <span data-i18n="alliance">Альянс</span>
+            <input id="contactAllianceInput" name="contactAlliance" data-i18n-placeholder="contact_placeholder_alliance" placeholder="Тег альянсу" type="text" />
+          </label>
+
+          <label class="contact-form-full">
+            <span data-i18n="contact_email">Email</span>
+            <input autocomplete="email" id="contactEmailInput" name="contactEmail" data-i18n-placeholder="contact_placeholder_email" placeholder="name@example.com" type="email" />
+          </label>
+
+          <label class="contact-form-full">
+            <span data-i18n="contact_message">Повідомлення</span>
+            <textarea id="contactMessageInput" name="contactMessage" data-i18n-placeholder="contact_placeholder_message" placeholder="Напиши, що хочеш покращити або про що хочеш запитати"></textarea>
+          </label>
+        </div>
+
+        <div aria-live="polite" class="contact-modal-status" id="contactModalStatus"></div>
+
+        <div class="row gap wrap">
+          <button class="btn btn-primary" data-i18n="contact_submit" type="submit">Підготувати повідомлення</button>
+          <button class="btn" data-contact-modal-close data-i18n="cancel" type="button">Скасувати</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>

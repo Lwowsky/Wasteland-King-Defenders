@@ -1,0 +1,122 @@
+<section aria-label="Підтримати сайт" class="modal support-modal" data-i18n-aria-label="support_modal_title" id="supportModal">
+  <button aria-label="Закрити" class="modal-backdrop" data-support-modal-close type="button"></button>
+  <div aria-modal="true" class="modal-card support-modal-card" role="dialog" aria-labelledby="supportModalTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="supportModalTitle" data-i18n="support_modal_title">Підтримати сайт</h2>
+        <p class="muted" data-i18n="support_modal_subtitle">Допоможи розвитку безкоштовного інструмента для офіцерів та гравців.</p>
+      </div>
+      <button aria-label="Закрити" class="btn btn-icon" data-support-modal-close data-i18n-aria-label="close_menu" type="button">✕</button>
+    </div>
+
+    <div class="modal-grid support-modal-grid">
+      <section class="panel subpanel stack">
+        <div class="contact-modal-kicker" data-i18n="support_modal_kicker">Підтримка</div>
+        <h3 data-i18n="support_intro_title">Обери зручний спосіб донату</h3>
+        <p class="muted" data-i18n="support_intro_text">Тут можна розмістити реквізити для карт у різних валютах і окремий блок для подарункових сертифікатів. Структура вже готова під твій стиль сайту.</p>
+        <div class="contact-modal-note" data-i18n="support_update_note">У реквізитах нижче зараз стоять шаблонні значення. Заміни їх на свої справжні дані перед публікацією.</div>
+      </section>
+
+      <section class="panel subpanel stack support-modal-content">
+        <div aria-label="Вкладки підтримки" class="support-modal-tabs" data-i18n-aria-label="support_tabs_label" role="tablist">
+          <button aria-selected="true" class="btn btn-sm support-modal-tab active" data-support-tab-target="uah" role="tab" type="button" data-i18n="support_tab_uah">UAH картка</button>
+          <button aria-selected="false" class="btn btn-sm support-modal-tab" data-support-tab-target="usd" role="tab" type="button" data-i18n="support_tab_usd">USD картка</button>
+          <button aria-selected="false" class="btn btn-sm support-modal-tab" data-support-tab-target="eur" role="tab" type="button" data-i18n="support_tab_eur">EUR картка</button>
+          <button aria-selected="false" class="btn btn-sm support-modal-tab" data-support-tab-target="gift" role="tab" type="button" data-i18n="support_tab_gift">Подарункові сертифікати</button>
+        </div>
+
+        <div class="support-modal-panels">
+          <section class="support-modal-panel is-active" data-support-tab-panel="uah" role="tabpanel">
+            <div class="support-modal-sheet">
+              <div class="support-modal-sheet-head">
+                <h3 data-i18n="support_tab_uah">UAH картка</h3>
+                <span class="pill">UAH</span>
+              </div>
+              <div class="support-modal-fields">
+                <div class="support-modal-field">
+                  <span data-i18n="support_card_label">Картка</span>
+                  <strong>XXXX XXXX XXXX XXXX</strong>
+                </div>
+                <div class="support-modal-field">
+                  <span data-i18n="support_holder_label">Отримувач</span>
+                  <strong>YOUR NAME</strong>
+                </div>
+                <div class="support-modal-field support-modal-field--full">
+                  <span data-i18n="support_note_label">Нотатка</span>
+                  <div class="muted" data-i18n="support_placeholder_note">Можеш додати банк, коментар до платежу або коротке пояснення для донату.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="support-modal-panel" data-support-tab-panel="usd" hidden role="tabpanel">
+            <div class="support-modal-sheet">
+              <div class="support-modal-sheet-head">
+                <h3 data-i18n="support_tab_usd">USD картка</h3>
+                <span class="pill">USD</span>
+              </div>
+              <div class="support-modal-fields">
+                <div class="support-modal-field">
+                  <span data-i18n="support_card_label">Картка</span>
+                  <strong>XXXX XXXX XXXX XXXX</strong>
+                </div>
+                <div class="support-modal-field">
+                  <span data-i18n="support_holder_label">Отримувач</span>
+                  <strong>YOUR NAME</strong>
+                </div>
+                <div class="support-modal-field support-modal-field--full">
+                  <span data-i18n="support_bank_label">Банк / деталі</span>
+                  <div class="muted">SWIFT / BANK NAME / COMMENT</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="support-modal-panel" data-support-tab-panel="eur" hidden role="tabpanel">
+            <div class="support-modal-sheet">
+              <div class="support-modal-sheet-head">
+                <h3 data-i18n="support_tab_eur">EUR картка</h3>
+                <span class="pill">EUR</span>
+              </div>
+              <div class="support-modal-fields">
+                <div class="support-modal-field">
+                  <span data-i18n="support_card_label">Картка</span>
+                  <strong>XXXX XXXX XXXX XXXX</strong>
+                </div>
+                <div class="support-modal-field">
+                  <span data-i18n="support_holder_label">Отримувач</span>
+                  <strong>YOUR NAME</strong>
+                </div>
+                <div class="support-modal-field support-modal-field--full">
+                  <span data-i18n="support_bank_label">Банк / деталі</span>
+                  <div class="muted">IBAN / BANK NAME / COMMENT</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="support-modal-panel" data-support-tab-panel="gift" hidden role="tabpanel">
+            <div class="support-modal-sheet">
+              <div class="support-modal-sheet-head">
+                <h3 data-i18n="support_tab_gift">Подарункові сертифікати</h3>
+                <span class="pill" data-i18n="support_gift_badge">Gift</span>
+              </div>
+              <div class="stack">
+                <p class="muted" data-i18n="support_gift_text">Якщо хочеш підтримати сайт сертифікатом, можна вказати бажані сервіси та коротку інструкцію для зв'язку перед покупкою.</p>
+                <div class="support-gift-grid">
+                  <div class="support-modal-field"><span>Steam</span><strong>Steam Gift Card</strong></div>
+                  <div class="support-modal-field"><span>Google Play</span><strong>Google Play Gift Card</strong></div>
+                  <div class="support-modal-field"><span>Apple</span><strong>App Store &amp; iTunes</strong></div>
+                </div>
+                <div class="support-modal-field support-modal-field--full">
+                  <span data-i18n="support_note_label">Нотатка</span>
+                  <div class="muted" data-i18n="support_gift_note">Додай тут бажані номінали, країну сертифіката або прохання спершу написати тобі перед покупкою.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
