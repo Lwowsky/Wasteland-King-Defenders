@@ -114,11 +114,12 @@
   display:grid;
   place-items:center;
   border-radius:999px;
-  background:rgba(255,255,255,.06);
+  background:transparent;
   color:#eef3ff;
   font-weight:800;
   font-size:15px;
-  border:1px solid rgba(255,255,255,.08);
+  border:none;
+  box-shadow:none;
 }
 
 .app-header .lang-menu .lang-name{
@@ -187,9 +188,9 @@
   display:grid;
   place-items:center;
   border-radius:999px;
-  background:rgba(255,255,255,.06);
+  background:transparent;
   font-size:18px;
-  border:1px solid rgba(255,255,255,.08);
+  border:none;
   box-sizing:border-box;
 }
 .drawer-lang-item .lang-flag{
@@ -239,7 +240,7 @@ html.lang-compact:not(.lang-in-drawer) .app-header .lang-ico{margin:0}
 .app-header .lang-menu .lang-flag,
 .drawer-lang-item .lang-flag,
 .board-lang-option-badge {
-  box-shadow: 0 8px 20px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.08);
+  box-shadow:none;
 }
 .app-header .lang-menu .lang-flag .lang-flag-img,
 .drawer-lang-item .lang-flag .lang-flag-img,
