@@ -2,6 +2,7 @@
   const modal = document.getElementById('supportModal');
   const openBtn = document.getElementById('openSupportModalBtn');
   if (!modal || !openBtn) return;
+  const isDisabled = openBtn.hasAttribute('disabled') || openBtn.dataset.supportDisabled === '1';
 
   let lastTrigger = null;
 
@@ -30,6 +31,7 @@
   }
 
   function openModal(trigger){
+    if (isDisabled) return;
     try { window.PNS?.closeModal?.(); } catch {}
     const contactModal = document.getElementById('contactModal');
     if (contactModal) {
@@ -45,6 +47,7 @@
 
   openBtn.addEventListener('click', function(ev){
     ev.preventDefault();
+    if (isDisabled) return;
     openModal(openBtn);
   });
 

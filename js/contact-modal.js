@@ -5,6 +5,7 @@
   const status = document.getElementById('contactModalStatus');
   const firstField = document.getElementById('contactNameInput');
   if (!modal || !openBtn || !form) return;
+  const isDisabled = openBtn.hasAttribute('disabled') || openBtn.dataset.contactDisabled === '1';
 
   let lastTrigger = null;
 
@@ -20,6 +21,7 @@
   }
 
   function openModal(trigger){
+    if (isDisabled) return;
     try { window.PNS?.closeModal?.(); } catch {}
     const supportModal = document.getElementById('supportModal');
     if (supportModal) {
@@ -37,6 +39,7 @@
 
   openBtn.addEventListener('click', function(ev){
     ev.preventDefault();
+    if (isDisabled) return;
     openModal(openBtn);
   });
 

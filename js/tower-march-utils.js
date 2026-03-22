@@ -48,7 +48,7 @@
     } catch {}
     try {
       const override = PNS.getTowerMarchOverride?.(base?.id, player?.id, state.activeShift);
-      if (Number.isFinite(override) && override > 0) return override;
+      if (Number.isFinite(override) && override >= 0) return Math.max(0, Number(override) || 0);
     } catch {}
     const tierMin = getTierMinMarch(base, player.tier);
     return tierMin > 0 ? Math.min(baseMarch, tierMin) : baseMarch;

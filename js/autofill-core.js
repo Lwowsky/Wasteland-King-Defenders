@@ -55,7 +55,58 @@
     const baseShift = getBaseShift(base);
     const hasValidateAssign = typeof PNS.validateAssign === "function";
 
-    const candidates = (state.players || [])
+    const normalizeDuplicateNick = typeof PNS.normalizeDuplicateNick === "function"
+      ? PNS.normalizeDuplicateNick
+      : (value => String(value || "").trim().toLowerCase());
+    const getRegistrationStamp = (player) => {
+      try {
+        const info = typeof PNS.getPlayerRegistrationInfo === "function" ? PNS.getPlayerRegistrationInfo(player) : null;
+        const raw = info?.raw;
+        if (raw instanceof Date && !Number.isNaN(raw.getTime())) return raw.getTime();
+        if (typeof raw === "number" && Number.isFinite(raw)) {
+          if (raw > 20000 && raw < 100000) {
+            const excelEpoch = Date.UTC(1899, 11, 30);
+            return excelEpoch + raw * 86400000;
+          }
+          return raw;
+        }
+        const parsed = Date.parse(String(raw || "").trim());
+        if (!Number.isNaN(parsed)) return parsed;
+      } catch {}
+      return Number.POSITIVE_INFINITY;
+    };
+
+    const compareAutofillCandidates = (left, right) => (
+      num(right?.tierRank) - num(left?.tierRank)
+      || num(right?.march) - num(left?.march)
+      || getRegistrationStamp(left) - getRegistrationStamp(right)
+      || String(left?.name || '').localeCompare(String(right?.name || ''))
+      || String(left?.id || '').localeCompare(String(right?.id || ''))
+    );
+
+    const resolveAssignedShift = (player, fallbackBase = null) => {
+      const assignedBase = fallbackBase || state.baseById?.get?.(player?.assignment?.baseId);
+      const resolved = String(
+        (typeof PNS.getBaseShift === "function" ? PNS.getBaseShift(assignedBase) : "")
+        || assignedBase?.shift
+        || player?.assignment?.shift
+        || player?.shift
+        || player?.shiftLabel
+        || state.activeShift
+        || ""
+      );
+      return PNS.normalizeShift ? PNS.normalizeShift(resolved) : String(resolved || '').trim().toLowerCase();
+    };
+
+    const assignedNickKeysInShift = new Set(
+      (state.players || [])
+        .filter(player => player && player.assignment?.baseId)
+        .filter(player => resolveAssignedShift(player) === baseShift)
+        .map(player => normalizeDuplicateNick(player?.name || ''))
+        .filter(Boolean)
+    );
+
+    const rawCandidates = (state.players || [])
       .filter(player => player && player.id !== captain.id)
       .filter(player => !player.assignment)
       .filter(player => !isNoMixTroopsEnabled() || player.role === captain.role)
@@ -67,17 +118,45 @@
       .filter(player => (!respectCrossShiftDupes && matchRegisteredShift) ? true : PNS.matchesShift(player.shift, baseShift))
       .filter(player => (!respectCrossShiftDupes && matchRegisteredShift) ? true : base.shift === 'both' || player.shift === 'both' || player.shift === base.shift)
       .filter(player => isEligiblePlayer(0, player))
-      .sort((left, right) => num(right.tierRank) - num(left.tierRank) || num(right.march) - num(left.march) || String(left.name).localeCompare(String(right.name)));
+      .sort(compareAutofillCandidates);
 
-    for (const player of candidates) {
-      if (base.maxHelpers > 0 && base.helperIds.length >= base.maxHelpers) break;
-      const effectiveMarch = getTowerEffectiveMarch(base, player);
-      if (room !== Infinity && effectiveMarch > room) continue;
-      if (hasValidateAssign && PNS.validateAssign(player, base, "helper")) continue;
-      pushUnique(base.helperIds, player.id);
-      player.assignment = { baseId: base.id, kind: "helper" };
-      if (room !== Infinity) room -= effectiveMarch;
+    const groupedByNick = new Map();
+    for (const player of rawCandidates) {
+      const key = normalizeDuplicateNick(player?.name || `__player_${player?.id || ""}`) || `__player_${player?.id || ""}`;
+      if (assignedNickKeysInShift.has(key)) continue;
+      if (!groupedByNick.has(key)) groupedByNick.set(key, []);
+      groupedByNick.get(key).push(player);
     }
+    groupedByNick.forEach((bucket) => bucket.sort(compareAutofillCandidates));
+
+    const pickBestCandidateForGroup = (bucket) => {
+      if (!Array.isArray(bucket) || !bucket.length) return null;
+      for (const player of bucket) {
+        const effectiveMarch = getTowerEffectiveMarch(base, player);
+        if (room !== Infinity && effectiveMarch > room) continue;
+        if (hasValidateAssign && PNS.validateAssign(player, base, "helper")) continue;
+        return { player, effectiveMarch };
+      }
+      return null;
+    };
+
+    while (!(base.maxHelpers > 0 && base.helperIds.length >= base.maxHelpers)) {
+      const candidatePool = [];
+      groupedByNick.forEach((bucket, nickKey) => {
+        if (assignedNickKeysInShift.has(nickKey)) return;
+        const choice = pickBestCandidateForGroup(bucket);
+        if (choice) candidatePool.push({ nickKey, player: choice.player, effectiveMarch: choice.effectiveMarch });
+      });
+      if (!candidatePool.length) break;
+      candidatePool.sort((a, b) => compareAutofillCandidates(a.player, b.player) || a.effectiveMarch - b.effectiveMarch);
+      const selected = candidatePool[0];
+      pushUnique(base.helperIds, selected.player.id);
+      selected.player.assignment = { baseId: base.id, kind: "helper" };
+      assignedNickKeysInShift.add(selected.nickKey);
+      if (room !== Infinity) room -= selected.effectiveMarch;
+      groupedByNick.delete(selected.nickKey);
+    }
+
 
     if (typeof PNS.renderAll === "function") PNS.renderAll();
 

@@ -83,6 +83,13 @@
     // intentionally lightweight; no dedicated select in current layout
   }
 
+
+  function markTowerBootReady() {
+    try {
+      document.documentElement.setAttribute("data-pns-tower-boot", "ready");
+    } catch {}
+  }
+
   function bindToggleButtonOnce() {
     const button = getToggleButton();
     if (!button || button.dataset.toggleBound === "1") return;
@@ -117,6 +124,7 @@
       if (focused) markFocusedCard(focused);
       syncTowerViewToggleButton();
       syncFocusedTowerSelect();
+      markTowerBootReady();
       return;
     }
 
@@ -131,6 +139,7 @@
     });
     syncTowerViewToggleButton();
     syncFocusedTowerSelect();
+    markTowerBootReady();
   }
 
   function showAllTowers() {
@@ -287,6 +296,9 @@
     } catch {}
     try {
       syncTowerViewToggleButton();
+    } catch {}
+    try {
+      applyTowerVisibilityMode();
     } catch {}
   }, 0);
 

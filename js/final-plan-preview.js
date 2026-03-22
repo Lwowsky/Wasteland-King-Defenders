@@ -143,6 +143,42 @@
     });
   }
 
+  function normalizeBoardPlayerName(player) {
+    const raw = String(player?.name || '').trim();
+    if (!raw) return '';
+    try {
+      return raw
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, '');
+    } catch {
+      return raw
+        .toLowerCase()
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9а-яіїєґёё一-龯ぁ-ゖァ-ヺ가-힣]+/g, '');
+    }
+  }
+
+  function dedupeBoardHelpers(baseLike, helpers, captain) {
+    const unique = [];
+    const seenIds = new Set();
+    const seenNames = new Set();
+    const captainNameKey = normalizeBoardPlayerName(captain);
+    if (captainNameKey) seenNames.add(captainNameKey);
+    for (const helper of Array.isArray(helpers) ? helpers : []) {
+      if (!helper) continue;
+      const helperId = String(helper.id || '');
+      const nameKey = normalizeBoardPlayerName(helper);
+      if (helperId && seenIds.has(helperId)) continue;
+      if (nameKey && seenNames.has(nameKey)) continue;
+      if (helperId) seenIds.add(helperId);
+      if (nameKey) seenNames.add(nameKey);
+      unique.push(helper);
+    }
+    return unique;
+  }
+
   function getBoardAssignedMarch(baseLike, player, shift) {
     if (!player) return 0;
     const playerMarch = Math.max(0, Number(player.march || 0) || 0);
@@ -183,7 +219,8 @@
       }
     };
     const captain = baseLike.captainId ? state.playerById?.get?.(baseLike.captainId) : null;
-    const helpers = (Array.isArray(baseLike.helperIds) ? baseLike.helperIds : []).map(id => state.playerById?.get?.(id)).filter(Boolean);
+    const helperPool = (Array.isArray(baseLike.helperIds) ? baseLike.helperIds : []).map(id => state.playerById?.get?.(id)).filter(Boolean);
+    const helpers = dedupeBoardHelpers(baseLike, helperPool, captain);
     const captainMarch = Math.max(0, Number(captain?.march || 0) || 0);
     const rallySize = Math.max(0, Number(captain?.rally || 0) || 0);
     const helpersTotal = helpers.reduce((sum, helper) => sum + getBoardAssignedMarch(baseLike, helper, shift), 0);

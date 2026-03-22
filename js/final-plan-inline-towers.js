@@ -192,43 +192,115 @@
     const towerState = resolveInlineTowerState(base, shiftKey);
     const helpers = Array.isArray(towerState.helpers) ? towerState.helpers.slice() : [];
     const helperRoom = Math.max(0, Math.floor(Number(towerState.rallySize || 0) || 0));
-    const tiers = ['T14', 'T13', 'T12', 'T11', 'T10', 'T9'];
+    const tierOrderLowToHigh = ['T9', 'T10', 'T11', 'T12', 'T13', 'T14'];
     const assignedById = {};
-    let free = helperRoom;
+    const helpersByTier = {};
+    const explicitTierIndices = [];
 
-    for (const tier of tiers) {
-      const tierPlayers = helpers.filter(player => String(player?.tier || '').toUpperCase() === tier);
-      if (!tierPlayers.length) continue;
+    for (const tier of tierOrderLowToHigh) helpersByTier[tier] = [];
 
-      const tierLimit = Math.max(0, Number(towerState?.rule?.tierMinMarch?.[tier] || 0) || 0);
-      const tierWantedById = {};
-      for (const player of tierPlayers) {
-        const playerId = String(player?.id || '');
-        const march = Math.max(0, Math.floor(Number(player?.march || 0) || 0));
-        tierWantedById[playerId] = tierLimit > 0 ? Math.min(march, tierLimit) : march;
-      }
-
-      const tierWantedTotal = Object.values(tierWantedById).reduce((sum, value) => sum + (Math.max(0, Number(value || 0)) || 0), 0);
-      const distribution = tierWantedTotal <= free
-        ? { assignedById: tierWantedById, used: tierWantedTotal, free: Math.max(0, free - tierWantedTotal) }
-        : distributeInlineTierMarch(tierPlayers, tierWantedById, free);
-
-      for (const player of tierPlayers) {
-        const playerId = String(player?.id || '');
-        assignedById[playerId] = Math.max(0, Math.floor(Number(distribution.assignedById?.[playerId] || 0) || 0));
-      }
-      free = Math.max(0, distribution.free);
+    // Base desired assignment:
+    // - explicit tier limit (>0) caps only that tier against the player's full march;
+    // - empty limit (0) keeps the CURRENT assigned march untouched.
+    // This is important because recalculation must not reset higher tiers back to full march
+    // when the user only changes a lower tier limit.
+    for (const helper of helpers) {
+      const playerId = String(helper?.id || '');
+      if (!playerId) continue;
+      const tier = String(helper?.tier || '').toUpperCase();
+      const normalizedTier = tierOrderLowToHigh.includes(tier) ? tier : 'T9';
+      const fullMarch = Math.max(0, Math.floor(Number(helper?.march || 0) || 0));
+      const currentAssigned = Math.max(0, Math.floor(Number(getInlineAssignedMarch(towerState.baseLike, helper, shiftKey) || 0) || 0));
+      const tierLimit = Math.max(0, Number(towerState?.rule?.tierMinMarch?.[normalizedTier] || 0) || 0);
+      if (tierLimit > 0) explicitTierIndices.push(tierOrderLowToHigh.indexOf(normalizedTier));
+      assignedById[playerId] = tierLimit > 0 ? Math.min(fullMarch, tierLimit) : currentAssigned;
+      helpersByTier[normalizedTier].push(helper);
     }
 
+    let totalAssigned = Object.values(assignedById).reduce((sum, value) => sum + (Math.max(0, Number(value || 0)) || 0), 0);
+    let free = Math.max(0, helperRoom - totalAssigned);
+
+    const trimTier = (tier, overflow) => {
+      if (overflow <= 0) return 0;
+      const tierPlayers = helpersByTier[tier] || [];
+      if (!tierPlayers.length) return overflow;
+      const tierCurrentById = {};
+      let tierCurrentTotal = 0;
+      for (const player of tierPlayers) {
+        const playerId = String(player?.id || '');
+        const current = Math.max(0, Math.floor(Number(assignedById?.[playerId] || 0) || 0));
+        tierCurrentById[playerId] = current;
+        tierCurrentTotal += current;
+      }
+      if (tierCurrentTotal <= 0) return overflow;
+
+      if (overflow >= tierCurrentTotal) {
+        // Keep players in tower, but allow their march to become 0 if required.
+        for (const player of tierPlayers) {
+          const playerId = String(player?.id || '');
+          if (playerId) assignedById[playerId] = 0;
+        }
+        return Math.max(0, overflow - tierCurrentTotal);
+      }
+
+      const keepTotal = Math.max(0, tierCurrentTotal - overflow);
+      const distribution = distributeInlineTierMarch(tierPlayers, tierCurrentById, keepTotal);
+      for (const player of tierPlayers) {
+        const playerId = String(player?.id || '');
+        if (playerId) assignedById[playerId] = Math.max(0, Math.floor(Number(distribution.assignedById?.[playerId] || 0) || 0));
+      }
+      return 0;
+    };
+
+    if (totalAssigned > helperRoom) {
+      let overflow = Math.max(0, totalAssigned - helperRoom);
+      const lowestExplicitIndex = explicitTierIndices.length ? Math.min(...explicitTierIndices) : -1;
+      const lowestPresentIndex = tierOrderLowToHigh.findIndex(tier => (helpersByTier[tier] || []).length > 0);
+
+      // First pass:
+      // - if there are explicit limits, trim only tiers LOWER than the lowest explicit tier;
+      // - if all limits are 0, trim only the single lowest present tier.
+      let firstPass = [];
+      if (lowestExplicitIndex >= 0) {
+        firstPass = tierOrderLowToHigh.slice(0, lowestExplicitIndex);
+      } else if (lowestPresentIndex >= 0) {
+        firstPass = [tierOrderLowToHigh[lowestPresentIndex]];
+      }
+      for (const tier of firstPass) {
+        overflow = trimTier(tier, overflow);
+        if (overflow <= 0) break;
+      }
+
+      // Second pass only if the first pass was not enough.
+      if (overflow > 0) {
+        const alreadyTried = new Set(firstPass);
+        for (const tier of tierOrderLowToHigh) {
+          if (alreadyTried.has(tier)) continue;
+          overflow = trimTier(tier, overflow);
+          if (overflow <= 0) break;
+        }
+      }
+
+      totalAssigned = Object.values(assignedById).reduce((sum, value) => sum + (Math.max(0, Number(value || 0)) || 0), 0);
+      free = Math.max(0, helperRoom - totalAssigned);
+    }
+
+    const keptHelperIds = [];
     for (const helper of helpers) {
       const playerId = String(helper?.id || '');
       const fullMarch = Math.max(0, Math.floor(Number(helper?.march || 0) || 0));
       const assigned = Math.max(0, Math.floor(Number(assignedById?.[playerId] || 0) || 0));
       try {
+        if (playerId) keptHelperIds.push(playerId);
         if (assigned >= fullMarch) PNS.clearTowerMarchOverride?.(baseId, playerId, shiftKey);
         else PNS.setTowerMarchOverride?.(baseId, playerId, assigned, shiftKey);
       } catch {}
     }
+    base.helperIds = Array.from(new Set(keptHelperIds));
+    try { PNS.savePlayersSnapshot?.(state.players); } catch {}
+    try { PNS.saveTowersSnapshot?.(); } catch {}
+    try { PNS.ModalsShift?.saveCurrentShiftPlanSnapshot?.(); } catch {}
+    try { PNS.persistSessionStateSoon?.(10); } catch {}
 
     try {
       window.calcRenderInlineTowerSettings?.(document.getElementById('towerCalcModal'));
@@ -240,7 +312,7 @@
     return {
       ok: true,
       helperRoom,
-      used: Math.max(0, helperRoom - free),
+      used: Math.max(0, totalAssigned),
       free,
       helpers: helpers.length,
       assignedById
