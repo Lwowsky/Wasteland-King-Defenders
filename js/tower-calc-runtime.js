@@ -1,3 +1,317 @@
-(function(){"use strict";const e=window.PNS=window.PNS||{},t="__pns_tower_calc_runtime_core__";if(window[t])return;window[t]=!0;const a="towerCalcModal",r=(t,a="")=>"function"==typeof e.t?e.t(t,a):a;let n=0,o=!1;const i=(e,t=document)=>{try{return(t||document).querySelector(e)}catch{return null}},s=(e,t=document)=>(t||document).getElementById?(t||document).getElementById(e):document.getElementById(e);function l(){try{return e.towerCalcGetModal?.()||s(a)}catch{return s(a)}}function c(e){return i("#towerCalcOverflowOut",e)||i('[data-calc-main-panel="overflow"]',e)}function d(e){if(!e)return!1;const t=String(e.textContent||"");return!!(e.querySelector("[data-calc-set-player-shift]")||t.includes("Хто не вліз / резерв")||t.includes("Не використано")||t.includes("Both не чіпається"))}function u(){if(o)return!1;o=!0;try{try{e.ensureTowerCalcStyleCore?.()}catch{}const t=l();if(!t)return!1;if("function"==typeof e.patchTowerCalcPresentation)e.patchTowerCalcPresentation(t);else{try{e.installTowerCalcLayoutUi?.(t)}catch{}try{e.installTowerCalcSummaryUi?.(t)}catch{}}try{!function(t){const a=c(t);if(!a||a.querySelector(".tcv5-status-view")&&!d(a))return!1;try{e.installTowerCalcSummaryUi?.(t)}catch{}}(t)}catch{}try{f()}catch{}return!0}finally{o=!1}}function p(e,t){return clearTimeout(n),n=window.setTimeout(()=>{try{!1!==t&&window.computeTowerCalcResults?.()}catch{}u()},e??80),!0}function h(t){const a=e.ModalsShift||{},n=e.state;if(!n)return!1;const o=t=>{if(!["shift1","shift2"].includes(String(t||"")))return;try{a.saveCurrentShiftPlanSnapshot?.()}catch{}n.shiftPlans=n.shiftPlans||{};const r=n.shiftPlans[t]&&"object"==typeof n.shiftPlans[t]?n.shiftPlans[t]:"function"==typeof a.snapshotShiftPlan?a.snapshotShiftPlan():{players:{},bases:{}};if(r.players=r.players&&"object"==typeof r.players?r.players:{},r.bases=r.bases&&"object"==typeof r.bases?r.bases:{},String(n.activeShift||"")===t){const t=Array.isArray(n.bases)?n.bases:[];for(const a of t){const t=String(a?.id||"");if(!t)continue;const n=Array.isArray(a?.helperIds)?a.helperIds.slice():[];if(n.length&&"function"==typeof e.clearBaseAssignments)try{e.clearBaseAssignments(t,!0)}catch{}else a.helperIds=[];const o=r.bases[t]&&"object"==typeof r.bases[t]?r.bases[t]:r.bases[t]={},i=Array.isArray(o.helperIds)?o.helperIds.slice():n;o.helperIds=[];for(const e of i){const a=String(e||"");a&&r.players[a]?.baseId===t&&"helper"===r.players[a]?.kind&&(r.players[a]=null)}}try{a.saveCurrentShiftPlanSnapshot?.()}catch{}}else{const e=r.bases||{};for(const[t,a]of Object.entries(e)){const n=a&&"object"==typeof a?a:e[t]={},o=Array.isArray(n.helperIds)?n.helperIds.slice():[];n.helperIds=[];for(const e of o){const a=String(e||"");a&&r.players[a]?.baseId===String(t)&&"helper"===r.players[a]?.kind&&(r.players[a]=null)}}n.shiftPlans[t]=r,(()=>{try{localStorage.setItem("pns_layout_shift_plans_store_v1",JSON.stringify({shift1:n.shiftPlans?.shift1||null,shift2:n.shiftPlans?.shift2||null}))}catch{}})()}};"all"===t?(o("shift1"),o("shift2")):o(t);try{e.renderAll?.()}catch{}try{window.computeTowerCalcResults?.()}catch{}try{const a="all"===t?r("clear_helpers_both_done","Очищено помічників у змінах 1 і 2. Капітани залишилися."):`${r("clear_helpers_done_prefix","Очищено помічників:")} ${"shift1"===t?r("shift1","Зміна 1"):r("shift2","Зміна 2")}. ${r("captains_stayed","Капітани залишилися.")}`;e.setImportStatus?.(a,"good")}catch{}return!0}function f(){const e=c(l());return!(!e||"1"===e.dataset.tcRuntimeOverflowObserved||(e.dataset.tcRuntimeOverflowObserved="1",new MutationObserver(()=>{if(o)return;window.clearTimeout(Number(e.dataset.tcRuntimeOverflowTimer||0));const t=window.setTimeout(()=>{o||(d(e)||!e.querySelector(".tcv5-status-view"))&&u()},0);e.dataset.tcRuntimeOverflowTimer=String(t)}).observe(e,{childList:!0,subtree:!0}),0))}function m(){return"1"!==document.documentElement.dataset.towerCalcRuntimeCoreBound&&(document.documentElement.dataset.towerCalcRuntimeCoreBound="1",document.addEventListener("click",t=>{const a=t.target.closest("[data-ov5-tab]");if(a){try{e.towerCalcPatchUiState?.({overflowTab:a.dataset.ov5Tab})}catch{}u()}}),document.addEventListener("click",t=>{const a=t.target.closest("[data-ov5-filter]");if(!a)return;t.preventDefault();const r=e.towerCalcReadUiState?.().overflowTab||"shift1";try{e.towerCalcSetOverflowFilter?.(r,a.dataset.ov5Filter)}catch{}u()}),document.addEventListener("click",t=>{const a=t.target.closest("[data-ov5-reset-shift]");a&&(t.preventDefault(),e.towerCalcResetOverflowReserveForShift?.(a.dataset.ov5ResetShift))}),document.addEventListener("click",t=>{t.target.closest("[data-ov5-restore-import]")&&(t.preventDefault(),e.towerCalcRestoreOverflowFromImport?.(),p(20,!0),setTimeout(()=>{try{window.calcApplyMainTabUI?.(l()||document,"overflow")}catch{}u()},60),setTimeout(()=>{try{window.calcApplyMainTabUI?.(l()||document,"overflow")}catch{}u()},180),setTimeout(()=>{try{window.calcApplyMainTabUI?.(l()||document,"overflow")}catch{}u()},420))}),document.addEventListener("click",t=>{const a=t.target.closest("[data-ui-reserve-shift]");a&&(t.preventDefault(),function(t,a){e.towerCalcToggleReserveCore?.(t,a)&&(p(30,!0),setTimeout(()=>u(),90),setTimeout(()=>u(),220))}(a.dataset.playerId,a.dataset.uiReserveShift))}),document.addEventListener("change",t=>{const a=t.target.closest("#tcv5EnableShiftLimits");if(a){try{e.towerCalcPatchUiState?.({manualLimitEdit:!!a.checked})}catch{}try{e.towerCalcSyncLimitEditability?.(l()||document)}catch{}return void u()}const r=l();!r||!r.contains(t.target)||t.target.closest("select,input,textarea")&&p(100,!0)}),document.addEventListener("click",e=>{!l()||!e.target.closest("#towerCalcApplyToTowersBtn,#towerCalcQuickApplyBtn,#towerCalcRestoreImportShiftsBtn,#applyShiftAddBtn,[data-calc-main-tab],[data-calc-tab],[data-calc-open-base],[data-calc-pick-overflow-base],[data-calc-toggle-exclude],[data-calc-reserve]")||(p(80,!0),setTimeout(()=>u(),160))}),document.addEventListener("players-table-rendered",()=>p(80,!1)),document.addEventListener("pns:assignment-changed",()=>p(40,!0)),document.addEventListener("pns:dom:refreshed",()=>p(80,!1)),window.addEventListener("resize",()=>p(40,!1),{passive:!0})),u(),function(){const e=l();!e||"1"===e.dataset.tcRuntimeCoreObserved||(e.dataset.tcRuntimeCoreObserved="1",new MutationObserver(()=>{(e.classList.contains("is-open")||null!==e.offsetParent)&&p(90,!1)}).observe(e,{attributes:!0,attributeFilter:["class","style"]}))}(),f(),p(120,!1),!0}function y(){try{m()}catch(e){console.warn("[tower_calc_runtime_ui_core]",e)}}e.patchTowerCalcRuntimeUi=u,e.towerCalcScheduleRefresh=p,e.towerCalcClearHelpersUi=h,e.installTowerCalcRuntimeUi=m,"loading"===document.readyState?document.addEventListener("DOMContentLoaded",y,{once:!0}):y(),window.addEventListener("load",y,{once:!0}),document.addEventListener("pns:dom:refreshed",y)}());
+(function(){
+  "use strict";
 
+  const PNS = window.PNS = window.PNS || {};
+  const FLAG = "__pns_tower_calc_runtime_core__";
+  if (window[FLAG]) return;
+  window[FLAG] = true;
 
+  const MODAL_ID = "towerCalcModal";
+  const tr = (key, fallback = "") => typeof PNS.t === "function" ? PNS.t(key, fallback) : fallback;
+
+  let refreshTimer = 0;
+  let patchingUi = false;
+
+  const qs = (selector, root = document) => {
+    try { return (root || document).querySelector(selector); } catch { return null; }
+  };
+  const byId = (id, root = document) => {
+    try { return (root || document).getElementById ? (root || document).getElementById(id) : document.getElementById(id); }
+    catch { return document.getElementById(id); }
+  };
+
+  function getModal(){
+    try { return PNS.towerCalcGetModal?.() || byId(MODAL_ID); }
+    catch { return byId(MODAL_ID); }
+  }
+
+  function getOverflowPanel(root){
+    return qs("#towerCalcOverflowOut", root) || qs('[data-calc-main-panel="overflow"]', root);
+  }
+
+  function overflowLooksReady(node){
+    if (!node) return false;
+    const text = String(node.textContent || "");
+    return !!(
+      node.querySelector("[data-calc-set-player-shift]") ||
+      text.includes("Хто не вліз / резерв") ||
+      text.includes("Не використано") ||
+      text.includes("Both не чіпається")
+    );
+  }
+
+  function isModalVisible(modal){
+    if (!modal) return false;
+    if (modal.classList?.contains("is-open")) return true;
+    if (modal.offsetParent !== null) return true;
+    try {
+      const style = window.getComputedStyle(modal);
+      return style.display !== "none" && style.visibility !== "hidden";
+    } catch {
+      return false;
+    }
+  }
+
+  function applyRuntimeUi(){
+    if (patchingUi) return false;
+    patchingUi = true;
+    try {
+      try { PNS.ensureTowerCalcStyleCore?.(); } catch {}
+      const modal = getModal();
+      if (!modal) return false;
+
+      if (typeof PNS.patchTowerCalcPresentation === "function") {
+        PNS.patchTowerCalcPresentation(modal);
+      } else {
+        try { PNS.installTowerCalcLayoutUi?.(modal); } catch {}
+        try { PNS.installTowerCalcSummaryUi?.(modal); } catch {}
+      }
+
+      try {
+        const overflow = getOverflowPanel(modal);
+        if (overflow && (!overflow.querySelector(".tcv5-status-view") || overflowLooksReady(overflow))) {
+          PNS.installTowerCalcSummaryUi?.(modal);
+        }
+      } catch {}
+
+      try { bindOverflowObserver(); } catch {}
+      try { bindModalObserver(); } catch {}
+      return true;
+    } finally {
+      patchingUi = false;
+    }
+  }
+
+  function scheduleRefresh(delay, shouldCompute){
+    clearTimeout(refreshTimer);
+    refreshTimer = window.setTimeout(() => {
+      const modal = getModal();
+      const visible = isModalVisible(modal);
+      if (!visible) {
+        return;
+      }
+      try {
+        if (shouldCompute !== false) window.computeTowerCalcResults?.();
+      } catch {}
+      applyRuntimeUi();
+    }, delay ?? 80);
+    return true;
+  }
+
+  function clearHelpersUi(shiftKey){
+    const modals = PNS.ModalsShift || {};
+    const state = PNS.state;
+    if (!state) return false;
+
+    const clearForShift = currentShift => {
+      if (!["shift1", "shift2"].includes(String(currentShift || ""))) return;
+      try { modals.saveCurrentShiftPlanSnapshot?.(); } catch {}
+      state.shiftPlans = state.shiftPlans || {};
+      const plan = state.shiftPlans[currentShift] && typeof state.shiftPlans[currentShift] === "object"
+        ? state.shiftPlans[currentShift]
+        : (typeof modals.snapshotShiftPlan === "function" ? modals.snapshotShiftPlan() : { players: {}, bases: {} });
+      plan.players = plan.players && typeof plan.players === "object" ? plan.players : {};
+      plan.bases = plan.bases && typeof plan.bases === "object" ? plan.bases : {};
+
+      if (String(state.activeShift || "") === currentShift) {
+        const bases = Array.isArray(state.bases) ? state.bases : [];
+        for (const base of bases) {
+          const baseId = String(base?.id || "");
+          if (!baseId) continue;
+          const helperIds = Array.isArray(base?.helperIds) ? base.helperIds.slice() : [];
+          if (helperIds.length && typeof PNS.clearBaseAssignments === "function") {
+            try { PNS.clearBaseAssignments(baseId, true); } catch {}
+          } else {
+            base.helperIds = [];
+          }
+          const baseSnap = plan.bases[baseId] && typeof plan.bases[baseId] === "object" ? plan.bases[baseId] : (plan.bases[baseId] = {});
+          const existingHelperIds = Array.isArray(baseSnap.helperIds) ? baseSnap.helperIds.slice() : helperIds;
+          baseSnap.helperIds = [];
+          for (const helperId of existingHelperIds) {
+            const id = String(helperId || "");
+            if (id && plan.players[id]?.baseId === baseId && plan.players[id]?.kind === "helper") {
+              plan.players[id] = null;
+            }
+          }
+        }
+        try { modals.saveCurrentShiftPlanSnapshot?.(); } catch {}
+      } else {
+        const bases = plan.bases || {};
+        for (const [baseId, value] of Object.entries(bases)) {
+          const baseSnap = value && typeof value === "object" ? value : (bases[baseId] = {});
+          const helperIds = Array.isArray(baseSnap.helperIds) ? baseSnap.helperIds.slice() : [];
+          baseSnap.helperIds = [];
+          for (const helperId of helperIds) {
+            const id = String(helperId || "");
+            if (id && plan.players[id]?.baseId === String(baseId) && plan.players[id]?.kind === "helper") {
+              plan.players[id] = null;
+            }
+          }
+        }
+        state.shiftPlans[currentShift] = plan;
+        try {
+          localStorage.setItem("pns_layout_shift_plans_store_v1", JSON.stringify({
+            shift1: state.shiftPlans?.shift1 || null,
+            shift2: state.shiftPlans?.shift2 || null,
+          }));
+        } catch {}
+      }
+    };
+
+    if (shiftKey === "all") {
+      clearForShift("shift1");
+      clearForShift("shift2");
+    } else {
+      clearForShift(shiftKey);
+    }
+
+    try { PNS.renderAll?.(); } catch {}
+    try {
+      if (isModalVisible(getModal())) window.computeTowerCalcResults?.();
+    } catch {}
+    try {
+      const message = shiftKey === "all"
+        ? tr("clear_helpers_both_done", "Очищено помічників у змінах 1 і 2. Капітани залишилися.")
+        : `${tr("clear_helpers_done_prefix", "Очищено помічників:")} ${shiftKey === "shift1" ? tr("shift1", "Зміна 1") : tr("shift2", "Зміна 2")}. ${tr("captains_stayed", "Капітани залишилися.")}`;
+      PNS.setImportStatus?.(message, "good");
+    } catch {}
+    return true;
+  }
+
+  function bindOverflowObserver(){
+    const panel = getOverflowPanel(getModal());
+    if (!panel || panel.dataset.tcRuntimeOverflowObserved === "1") return false;
+    panel.dataset.tcRuntimeOverflowObserved = "1";
+    new MutationObserver(() => {
+      if (patchingUi || !isModalVisible(getModal())) return;
+      window.clearTimeout(Number(panel.dataset.tcRuntimeOverflowTimer || 0));
+      const timer = window.setTimeout(() => {
+        if (!patchingUi && (overflowLooksReady(panel) || !panel.querySelector(".tcv5-status-view"))) {
+          applyRuntimeUi();
+        }
+      }, 16);
+      panel.dataset.tcRuntimeOverflowTimer = String(timer);
+    }).observe(panel, { childList: true, subtree: true });
+    return true;
+  }
+
+  function bindModalObserver(){
+    const modal = getModal();
+    if (!modal || modal.dataset.tcRuntimeCoreObserved === "1") return false;
+    modal.dataset.tcRuntimeCoreObserved = "1";
+    new MutationObserver(() => {
+      if (isModalVisible(modal)) scheduleRefresh(90, false);
+    }).observe(modal, { attributes: true, attributeFilter: ["class", "style"] });
+    return true;
+  }
+
+  function installRuntimeUi(){
+    if (document.documentElement.dataset.towerCalcRuntimeCoreBound === "1") return false;
+    document.documentElement.dataset.towerCalcRuntimeCoreBound = "1";
+
+    document.addEventListener("click", event => {
+      const tab = event.target.closest("[data-ov5-tab]");
+      if (!tab) return;
+      try { PNS.towerCalcPatchUiState?.({ overflowTab: tab.dataset.ov5Tab }); } catch {}
+      applyRuntimeUi();
+    });
+
+    document.addEventListener("click", event => {
+      const filter = event.target.closest("[data-ov5-filter]");
+      if (!filter) return;
+      event.preventDefault();
+      const shift = PNS.towerCalcReadUiState?.().overflowTab || "shift1";
+      try { PNS.towerCalcSetOverflowFilter?.(shift, filter.dataset.ov5Filter); } catch {}
+      applyRuntimeUi();
+    });
+
+    document.addEventListener("click", event => {
+      const reset = event.target.closest("[data-ov5-reset-shift]");
+      if (!reset) return;
+      event.preventDefault();
+      PNS.towerCalcResetOverflowReserveForShift?.(reset.dataset.ov5ResetShift);
+    });
+
+    document.addEventListener("click", event => {
+      if (!event.target.closest("[data-ov5-restore-import]")) return;
+      event.preventDefault();
+      PNS.towerCalcRestoreOverflowFromImport?.();
+      scheduleRefresh(20, true);
+      setTimeout(() => {
+        try { window.calcApplyMainTabUI?.(getModal() || document, "overflow"); } catch {}
+        applyRuntimeUi();
+      }, 60);
+      setTimeout(() => {
+        try { window.calcApplyMainTabUI?.(getModal() || document, "overflow"); } catch {}
+        applyRuntimeUi();
+      }, 180);
+    });
+
+    document.addEventListener("click", event => {
+      const btn = event.target.closest("[data-ui-reserve-shift]");
+      if (!btn) return;
+      event.preventDefault();
+      if (PNS.towerCalcToggleReserveCore?.(btn.dataset.playerId, btn.dataset.uiReserveShift)) {
+        scheduleRefresh(30, true);
+        setTimeout(() => applyRuntimeUi(), 90);
+      }
+    });
+
+    document.addEventListener("change", event => {
+      const limits = event.target.closest("#tcv5EnableShiftLimits");
+      if (limits) {
+        try { PNS.towerCalcPatchUiState?.({ manualLimitEdit: !!limits.checked }); } catch {}
+        try { PNS.towerCalcSyncLimitEditability?.(getModal() || document); } catch {}
+        applyRuntimeUi();
+        return;
+      }
+      const modal = getModal();
+      if (!modal || !isModalVisible(modal) || !modal.contains(event.target)) return;
+      if (event.target.closest("select,input,textarea")) scheduleRefresh(100, true);
+    });
+
+    document.addEventListener("click", event => {
+      const modal = getModal();
+      if (!modal || !isModalVisible(modal)) return;
+      if (!event.target.closest("#towerCalcApplyToTowersBtn,#towerCalcQuickApplyBtn,#towerCalcRestoreImportShiftsBtn,#applyShiftAddBtn,[data-calc-main-tab],[data-calc-tab],[data-calc-open-base],[data-calc-pick-overflow-base],[data-calc-toggle-exclude],[data-calc-reserve]")) {
+        return;
+      }
+      scheduleRefresh(80, true);
+      setTimeout(() => applyRuntimeUi(), 160);
+    });
+
+    document.addEventListener("players-table-rendered", () => {
+      if (isModalVisible(getModal())) scheduleRefresh(80, false);
+    });
+    document.addEventListener("pns:assignment-changed", () => {
+      if (isModalVisible(getModal())) scheduleRefresh(40, true);
+    });
+    document.addEventListener("pns:dom:refreshed", () => {
+      if (isModalVisible(getModal())) scheduleRefresh(80, false);
+    });
+    window.addEventListener("resize", () => {
+      if (isModalVisible(getModal())) scheduleRefresh(40, false);
+    }, { passive: true });
+
+    applyRuntimeUi();
+    bindModalObserver();
+    bindOverflowObserver();
+    if (isModalVisible(getModal())) scheduleRefresh(120, false);
+    return true;
+  }
+
+  function boot(){
+    try { installRuntimeUi(); }
+    catch (error) { console.warn("[tower_calc_runtime_ui_core]", error); }
+  }
+
+  PNS.patchTowerCalcRuntimeUi = applyRuntimeUi;
+  PNS.towerCalcScheduleRefresh = scheduleRefresh;
+  PNS.towerCalcClearHelpersUi = clearHelpersUi;
+  PNS.installTowerCalcRuntimeUi = installRuntimeUi;
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });
+  else boot();
+  window.addEventListener("load", boot, { once: true });
+  document.addEventListener("pns:dom:refreshed", boot);
+})();

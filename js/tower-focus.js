@@ -86,6 +86,7 @@
 
   function markTowerBootReady() {
     try {
+      if (!state?._sessionStateRestoreDone && document.readyState !== "complete") return;
       document.documentElement.setAttribute("data-pns-tower-boot", "ready");
     } catch {}
   }
@@ -306,5 +307,25 @@
     try {
       bindToggleButtonOnce();
     } catch {}
+  });
+
+  document.addEventListener("pns:dom:refreshed", () => {
+    try {
+      applyTowerVisibilityMode();
+    } catch {}
+    try {
+      markTowerBootReady();
+    } catch {}
+  });
+
+  window.addEventListener("load", () => {
+    setTimeout(() => {
+      try {
+        applyTowerVisibilityMode();
+      } catch {}
+      try {
+        markTowerBootReady();
+      } catch {}
+    }, 0);
   });
 })();

@@ -465,7 +465,6 @@
     top: 0;
     z-index: 5;
     padding: 6px 0 12px;
-    background: #091126f2;
   }
   #board-modal
     .tower-calc-board-preview.board-modal-preview.board-standalone-preview,
@@ -703,6 +702,10 @@
   #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-shift-controls {
     min-width: 0;
     max-width: 100%;
+  }
+    .bases-grid,
+  .tower-calc-inline-shell {
+    grid-template-columns: 1fr;
   }
 }
 

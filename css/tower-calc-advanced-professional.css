@@ -428,3 +428,52 @@
   justify-items: center;
   text-align: center;
 }
+
+
+#towerCalcModal #towerCalcHelperFillModeWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  overflow: visible;
+}
+
+#towerCalcModal .tower-calc-fill-mode-label {
+  font-size: 13px;
+  color: rgba(232,240,255,.82);
+}
+
+#towerCalcModal #towerCalcHelperFillModeBtn {
+  min-width: 156px;
+  justify-content: space-between;
+}
+
+#towerCalcModal #towerCalcHelperFillModeMenu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 16px));
+  max-height: min(320px, calc(100dvh - 24px));
+  overflow: auto;
+  background: #101a33;
+  border: 1px solid #ffffff1a;
+  border-radius: 14px;
+  padding: 8px;
+  z-index: 4000;
+  display: none;
+}
+
+#towerCalcModal #towerCalcHelperFillModeMenu.open {
+  display: block;
+}
+
+#towerCalcModal #towerCalcHelperFillModeMenu .tcv35-item.is-active {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+
+#towerCalcModal #towerCalcHelperFillModeSelect {
+  min-width: 60px;
+}

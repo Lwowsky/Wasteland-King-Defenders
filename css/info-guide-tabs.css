@@ -541,3 +541,20 @@
     font-size: 13px;
   }
 }
+
+
+html.i18n-pending #infoGuideTabsSection .igt-badge,
+html.i18n-pending #infoGuideTabsSection .igt-toggle-sub,
+html.i18n-pending #infoGuideTabsSection .igt-intro,
+html.i18n-pending #infoGuideTabsSection .igt-tabs,
+html.i18n-pending #infoGuideTabsSection [data-panel] {
+  visibility: hidden;
+}
+
+html.i18n-ready #infoGuideTabsSection .igt-badge,
+html.i18n-ready #infoGuideTabsSection .igt-toggle-sub,
+html.i18n-ready #infoGuideTabsSection .igt-intro,
+html.i18n-ready #infoGuideTabsSection .igt-tabs,
+html.i18n-ready #infoGuideTabsSection [data-panel] {
+  visibility: visible;
+}

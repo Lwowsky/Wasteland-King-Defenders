@@ -123,9 +123,9 @@ body:has(#towerCalcModal.is-open) {
 
 #board-modal .tower-calc-preview-toolbar {
   flex: 0 0 auto;
-  position: relative;
-  top: 0;
-  z-index: 5;
+  position: static;
+  top: auto;
+  z-index: auto;
 }
 #board-modal #boardPreviewStatus {
   flex: 0 0 auto;
@@ -133,7 +133,8 @@ body:has(#towerCalcModal.is-open) {
 }
 #board-modal .board-standalone-preview {
   min-width: 0;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 #board-modal .board-head-actions--single {
@@ -317,11 +318,6 @@ body:has(#towerCalcModal.is-open) {
     grid-template-columns: 1fr;
   }
 
-  .bases-grid,
-  .tower-calc-inline-shell {
-    grid-template-columns: 1fr;
-  }
-
   .bases-grid {
     max-height: none;
   }
@@ -373,10 +369,71 @@ body:has(#towerCalcModal.is-open) {
     justify-content: flex-start;
   }
   .tower-calc-board-preview .board-grid,
-.board-modal .board-grid {
-  width: 100%;
-  min-width: 0;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
+  .board-modal .board-grid {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
 }
+
+@media (min-width: 981px) {
+  #board-modal .modal-card.board-card.board-standalone-card {
+    max-height: min(94vh, 980px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #board-modal .modal-head.board-standalone-title {
+    flex: 0 0 auto;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  #board-modal .board-standalone-preview {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+  }
+
+  #board-modal #boardModalPreviewSheet {
+    flex: 0 0 auto;
+    min-height: auto;
+    overflow: visible;
+    overscroll-behavior: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .players-panel .panel-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "title actions";
+    align-items: start;
+    gap: 18px;
+  }
+
+  .players-panel .panel-head > div:first-child {
+    grid-area: title;
+    min-width: 0;
+  }
+
+  .players-panel .panel-actions {
+    grid-area: actions;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: center;
+    align-self: center;
+    gap: 12px;
+  }
+
+  .players-panel .panel-actions .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  
 }

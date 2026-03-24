@@ -19,6 +19,36 @@
     ? PNS.escapeHtml(String(value ?? ''))
     : String(value ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch] || ch));
 
+  function getLocale() {
+    try {
+      const locale = typeof window.PNSI18N?.getLocale === 'function'
+        ? window.PNSI18N.getLocale()
+        : (window.PNSI18N?.locale || document.documentElement.dataset.locale || document.documentElement.lang || 'uk');
+      return String(locale || 'uk').toLowerCase() === 'ua' ? 'uk' : String(locale || 'uk').toLowerCase();
+    } catch {}
+    return 'uk';
+  }
+
+  function getIntlLocale() {
+    const locale = getLocale();
+    if (locale === 'en') return 'en-US';
+    if (locale === 'ru') return 'ru-RU';
+    return 'uk-UA';
+  }
+
+  function applyModalI18n() {
+    try { window.PNSI18N?.apply?.(modal); } catch {}
+  }
+
+  function normalizeShiftLabel(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    if (/^(shift\s*1|зміна\s*1|смена\s*1)$/i.test(raw)) return t('shift1', 'Зміна 1');
+    if (/^(shift\s*2|зміна\s*2|смена\s*2)$/i.test(raw)) return t('shift2', 'Зміна 2');
+    if (/^(both|обидві|обе|оба)$/i.test(raw)) return t('both', 'Обидві');
+    return raw;
+  }
+
   function syncLock(){
     try { PNS.syncBodyModalLock?.(); } catch {}
   }
@@ -66,13 +96,14 @@
 
   function renderEmpty() {
     const shift = String(modal.dataset.duplicateShift || '');
-    if (shiftBadge) shiftBadge.textContent = PNS.duplicateShiftLabel?.(shift) || shift || t('duplicate_records', 'Дублікати');
+    if (shiftBadge) shiftBadge.textContent = normalizeShiftLabel(PNS.duplicateShiftLabel?.(shift) || shift || t('duplicate_records', 'Дублікати'));
     if (meta) meta.textContent = t('duplicate_resolved', 'Дублікати вже прибрано');
     if (subtitle) subtitle.textContent = t('duplicate_modal_subtitle', 'Подивись усі однакові реєстрації, залиш одного гравця й прибери зайві дублікати.');
     if (hint) hint.textContent = t('duplicate_modal_empty', 'Для цього ніку в поточній зміні вже залишився тільки один запис.');
     if (list) list.innerHTML = `<div class="muted">${esc(t('duplicate_modal_no_records', 'Зайвих дублікатів більше немає.'))}</div>`;
     if (keepOnlyBtn) keepOnlyBtn.disabled = true;
     if (deleteCurrentBtn) deleteCurrentBtn.disabled = true;
+    applyModalI18n();
   }
 
   function render() {
@@ -88,7 +119,7 @@
       ? currentKeep
       : String(players[0]?.id || '');
 
-    if (shiftBadge) shiftBadge.textContent = PNS.duplicateShiftLabel?.(shift) || shift || t('duplicate_records', 'Дублікати');
+    if (shiftBadge) shiftBadge.textContent = normalizeShiftLabel(PNS.duplicateShiftLabel?.(shift) || shift || t('duplicate_records', 'Дублікати'));
     if (meta) meta.textContent = `${players[0]?.name || ''} · ${players.length}×`;
     if (subtitle) subtitle.textContent = t('duplicate_modal_subtitle', 'Подивись усі однакові реєстрації, залиш одного гравця й прибери зайві дублікати.');
     if (hint) hint.textContent = t('duplicate_modal_hint', 'Вибери один запис, який треба залишити. Решту можна видалити одним кліком.');
@@ -97,7 +128,7 @@
       const playerId = String(player?.id || '');
       const isSelected = playerId === keepId;
       const regInfo = PNS.getPlayerRegistrationInfo?.(player) || { formatted: t('duplicate_unknown_time', 'Невідомо') };
-      const effectiveShift = player?.registeredShiftLabel || player?.shiftLabel || '';
+      const effectiveShift = normalizeShiftLabel(player?.registeredShiftLabel || player?.shiftLabel || player?.registeredShift || player?.shift || '') || t('both', 'Обидві');
       const assigned = PNS.getPlayerPlacementLabel?.(player) || t('reserve', 'Резерв');
       return `
         <article class="duplicate-nick-record${isSelected ? ' is-selected' : ''}" data-duplicate-player-card="${esc(playerId)}">
@@ -117,7 +148,7 @@
               </div>
               <div class="duplicate-nick-field">
                 <span class="duplicate-nick-field__label">${esc(t('shift', 'Зміна'))}</span>
-                <span class="duplicate-nick-field__value">${esc(effectiveShift || t('both', 'Обидві'))}</span>
+                <span class="duplicate-nick-field__value">${esc(effectiveShift)}</span>
               </div>
               <div class="duplicate-nick-field">
                 <span class="duplicate-nick-field__label">${esc(t('alliance', 'Альянс'))}</span>
@@ -147,6 +178,7 @@
 
     if (keepOnlyBtn) keepOnlyBtn.disabled = false;
     if (deleteCurrentBtn) deleteCurrentBtn.disabled = false;
+    applyModalI18n();
   }
 
   function handleKeepOnly() {
@@ -289,6 +321,7 @@
 
   document.addEventListener('pns:i18n-changed', function(){
     if (modal.classList.contains('is-open')) render();
+    else applyModalI18n();
   });
 
   document.addEventListener('pns:assignment-changed', function(){

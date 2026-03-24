@@ -28,10 +28,20 @@
       rows.push({
         captainId: String(row.querySelector("[data-calc-captain]")?.value || ""),
         troop: String(row.querySelector("[data-calc-troop]")?.value || "fighter").toLowerCase(),
-        helpers: Math.max(0, Number(row.querySelector("[data-calc-helpers]")?.value || 15) || 15),
+        helpers: Math.max(0, Math.min(29, Number(row.querySelector("[data-calc-helpers]")?.value || 15) || 15)),
       });
     });
     return rows;
+  }
+
+  function helperFillMode(modal, state) {
+    const explicit = String(modal?.querySelector('#towerCalcHelperFillModeSelect')?.value || modal?.querySelector('#towerCalcHelperFillMode')?.value || state?.helperFillMode || '').toLowerCase();
+    if (typeof window.calcNormalizeHelperFillMode === 'function') return window.calcNormalizeHelperFillMode(explicit);
+    return explicit === 'max' ? 'max' : (explicit === 'min' ? 'min' : 'mid');
+  }
+
+  function helperFillCount(mode) {
+    return mode === 'max' ? 29 : (mode === 'min' ? 1 : 10);
   }
 
   function i(modal) {
@@ -44,8 +54,9 @@
     state.both50 = !!modal?.querySelector("#towerCalcBoth50")?.checked;
     state.ignoreBoth = !!modal?.querySelector("#towerCalcIgnoreBoth")?.checked;
     state.dontTouchBothVersion = 1;
-    state.minHelpersPerTower = !!modal?.querySelector("#towerCalcMinHelpersOn")?.checked;
-    state.minHelpersCount = Math.max(1, Math.min(30, Number(modal?.querySelector("#towerCalcMinHelpersCount")?.value || state.minHelpersCount || 10) || 10));
+    state.helperFillMode = helperFillMode(modal, state);
+    state.minHelpersPerTower = true;
+    state.minHelpersCount = helperFillCount(state.helperFillMode);
     state.activeTab = String(modal?.querySelector("[data-calc-tab].is-active")?.getAttribute("data-calc-tab") || state.activeTab || "shift1").toLowerCase() === "shift2" ? "shift2" : "shift1";
     state.mainTab = String(modal?.querySelector("[data-calc-main-tab].is-active")?.getAttribute("data-calc-main-tab") || state.mainTab || "setup").toLowerCase();
     state.uiMode = String(modal?.querySelector("#towerCalcModeUi")?.value || state.uiMode || "assisted").toLowerCase();
@@ -98,18 +109,14 @@
         row.helpers = 0;
       }
     }
-    const available = l(shift, state);
+    const targetPerTower = Math.max(1, Math.min(29, helperFillCount(state.helperFillMode)));
     if (!openIndexes.length) {
       try { localStorage.setItem("pns_tower_calc_state", JSON.stringify(state)); } catch {}
       try { window.renderTowerCalcModal?.(); } catch {}
       return true;
     }
-    const base = Math.floor(available / openIndexes.length);
-    let extra = available - base * openIndexes.length;
     for (const idx of openIndexes) {
-      const bonus = extra > 0 ? 1 : 0;
-      (state[shift][idx] || {}).helpers = base + bonus;
-      if (extra > 0) extra -= 1;
+      (state[shift][idx] || {}).helpers = targetPerTower;
     }
     try { localStorage.setItem("pns_tower_calc_state", JSON.stringify(state)); } catch {}
     try { window.renderTowerCalcModal?.(); } catch {}

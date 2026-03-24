@@ -135,20 +135,20 @@
   function formatRegistrationValue(value) {
     if (!value && value !== 0) return t('duplicate_unknown_time', 'Невідомо');
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
-      return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(value);
+      return new Intl.DateTimeFormat((document.documentElement.dataset.locale || document.documentElement.lang || 'uk').replace(/^ua$/i, 'uk') === 'en' ? 'en-US' : ((document.documentElement.dataset.locale || document.documentElement.lang || 'uk').replace(/^ua$/i, 'uk') === 'ru' ? 'ru-RU' : 'uk-UA'), { dateStyle: 'medium', timeStyle: 'short' }).format(value);
     }
     if (typeof value === 'number' && Number.isFinite(value) && value > 20000 && value < 100000) {
       const excelEpoch = new Date(Date.UTC(1899, 11, 30));
       const date = new Date(excelEpoch.getTime() + value * 86400000);
       if (!Number.isNaN(date.getTime())) {
-        return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+        return new Intl.DateTimeFormat((document.documentElement.dataset.locale || document.documentElement.lang || 'uk').replace(/^ua$/i, 'uk') === 'en' ? 'en-US' : ((document.documentElement.dataset.locale || document.documentElement.lang || 'uk').replace(/^ua$/i, 'uk') === 'ru' ? 'ru-RU' : 'uk-UA'), { dateStyle: 'medium', timeStyle: 'short' }).format(date);
       }
     }
     const str = String(value || '').trim();
     if (!str) return t('duplicate_unknown_time', 'Невідомо');
     const parsed = new Date(str);
     if (!Number.isNaN(parsed.getTime()) && /\d/.test(str)) {
-      return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(parsed);
+      return new Intl.DateTimeFormat((document.documentElement.dataset.locale || document.documentElement.lang || 'uk').replace(/^ua$/i, 'uk') === 'en' ? 'en-US' : ((document.documentElement.dataset.locale || document.documentElement.lang || 'uk').replace(/^ua$/i, 'uk') === 'ru' ? 'ru-RU' : 'uk-UA'), { dateStyle: 'medium', timeStyle: 'short' }).format(parsed);
     }
     return str;
   }
@@ -161,7 +161,13 @@
   function getPlayerPlacementLabel(player) {
     if (!player?.assignment?.baseId) return t('reserve', 'Резерв');
     const base = state.baseById?.get?.(player.assignment.baseId);
-    const title = String(base?.title || player.assignment.baseId || '').split('/')[0].trim() || String(player.assignment.baseId || '');
+    const rawTitle = String(base?.slot || base?.id || base?.title || player.assignment.baseId || '').split('/')[0].trim() || String(player.assignment.baseId || '');
+    let title = rawTitle;
+    try {
+      if (typeof PNS.towerLabel === 'function') {
+        title = String(PNS.towerLabel(rawTitle) || rawTitle).split('/')[0].trim() || rawTitle;
+      }
+    } catch {}
     const roleLabel = String(player.assignment.kind || '') === 'captain' ? t('captain', 'Капітан') : t('helper', 'Помічник');
     return `${title} · ${roleLabel}`;
   }
@@ -291,14 +297,16 @@
     }
 
     const seenSummaryKeys = new Set();
-    const summary = dupEntries
+    const summaryItems = dupEntries
       .filter(item => {
         const summaryKey = `${item.key}::${item.shift}`;
         if (seenSummaryKeys.has(summaryKey)) return false;
         seenSummaryKeys.add(summaryKey);
         return true;
       })
-      .sort((a, b) => a.shift.localeCompare(b.shift) || a.name.localeCompare(b.name))
+      .sort((a, b) => a.shift.localeCompare(b.shift) || a.name.localeCompare(b.name));
+
+    const summary = summaryItems
       .slice(0, 24)
       .map(item => `
         <button type="button" class="players-duplicate-chip" data-duplicate-open="1" data-duplicate-nick="${escapeHtml(item.key)}" data-duplicate-shift="${escapeHtml(item.shift)}">
@@ -309,7 +317,7 @@
 
     banner.hidden = false;
     banner.innerHTML = `
-      <div class="players-duplicate-banner__title">${escapeHtml(t('duplicate_nicks_found', 'Знайдено повторювані ніки'))}: ${duplicateNameSet.size}</div>
+      <div class="players-duplicate-banner__title">${escapeHtml(t('duplicate_nicks_found', 'Знайдено повторювані ніки'))}: ${summaryItems.length}</div>
       <div class="players-duplicate-banner__text">${escapeHtml(t('duplicate_nicks_hint', 'Такі гравці підсвічені в таблиці. У межах однієї зміни сайт більше не дає призначити однаковий нік двічі.'))}</div>
       <div class="players-duplicate-banner__list">${summary}</div>
     `;

@@ -147,8 +147,9 @@
       controls.search.dataset.boundFilter = '1';
       controls.search.addEventListener('input', () => {
         state.topFilters.search = controls.search.value || '';
+        if (PNS.playersTablePagerState) PNS.playersTablePagerState.page = 1;
         PNS.saveTopFilters();
-        PNS.applyPlayerTableFilters?.();
+        PNS.applyPlayerTableFilters?.({ debounceMs: 140 });
       });
     }
 
@@ -158,8 +159,9 @@
         state.topFilters.role = PNS.normalizeTopFilterRole(
           controls.role.value || controls.role.options[controls.role.selectedIndex]?.textContent
         );
+        if (PNS.playersTablePagerState) PNS.playersTablePagerState.page = 1;
         PNS.saveTopFilters();
-        PNS.applyPlayerTableFilters?.();
+        PNS.applyPlayerTableFilters?.({ debounceMs: 0 });
       });
     }
 
@@ -169,8 +171,9 @@
         state.topFilters.shift = PNS.normalizeTopFilterShift(
           controls.shift.value || controls.shift.options[controls.shift.selectedIndex]?.textContent
         );
+        if (PNS.playersTablePagerState) PNS.playersTablePagerState.page = 1;
         PNS.saveTopFilters();
-        PNS.applyPlayerTableFilters?.();
+        PNS.applyPlayerTableFilters?.({ debounceMs: 0 });
       });
     }
 
@@ -180,8 +183,9 @@
         state.topFilters.status = PNS.normalizeTopFilterStatus(
           controls.status.value || controls.status.options[controls.status.selectedIndex]?.textContent
         );
+        if (PNS.playersTablePagerState) PNS.playersTablePagerState.page = 1;
         PNS.saveTopFilters();
-        PNS.applyPlayerTableFilters?.();
+        PNS.applyPlayerTableFilters?.({ debounceMs: 0 });
       });
     }
   }
@@ -201,51 +205,26 @@
   if (!PNS) return;
   const { state } = PNS;
 
-  function playerMatchesShift(player, activeShift) {
-    const value = PNS.normalizeShiftValue(player);
-    return activeShift === 'all' || value === activeShift;
-  }
+  function applyPlayerTableFilters(options = {}) {
+    const debounceMs = Number(options?.debounceMs);
+    const useDebounce = Number.isFinite(debounceMs) ? debounceMs : 0;
 
-  function applyPlayerTableFilters() {
-    if (!Array.isArray(state.players) || !state.players.length) {
+    if (!Array.isArray(state.players)) {
       try {
         document.dispatchEvent(new CustomEvent('players-table-filters-changed'));
       } catch {}
       return;
     }
 
-    const search = PNS.normalizeTopFilterText(state.topFilters?.search);
-    const role = PNS.normalizeTopFilterRole(state.topFilters?.role || 'all');
-    const status = PNS.normalizeTopFilterStatus(state.topFilters?.status || 'all');
-    const shift = PNS.normalizeTopFilterShift(state.topFilters?.shift || 'all');
-
-    state.players.forEach((player) => {
-      const row = player.rowEl;
-      if (!row) return;
-
-      let visible = true;
-      if (!playerMatchesShift(player.shift || row.dataset.shift || 'both', shift)) visible = false;
-      if (visible && role !== 'all' && PNS.normalizeRole(player.role) !== role) visible = false;
-      if (visible && status !== 'all') {
-        if (status === 'free' && player.assignment) visible = false;
-        if (status === 'assigned' && !player.assignment) visible = false;
-        if (status === 'captains' && !player.captainReady) visible = false;
-      }
-      if (visible && search) {
-        const haystack = [player.name, player.alliance, player.role, player.tier, player.notes]
-          .map(PNS.normalizeTopFilterText)
-          .join(' | ');
-        if (!haystack.includes(search)) visible = false;
-      }
-
-      row.hidden = !visible;
-    });
-
     try {
       document.dispatchEvent(new CustomEvent('players-table-filters-changed'));
     } catch {}
     try {
-      PNS.schedulePlayerTableRecalc?.();
+      if (useDebounce > 0 && typeof PNS.schedulePlayerTableFilterRecalc === 'function') {
+        PNS.schedulePlayerTableFilterRecalc(useDebounce);
+      } else {
+        PNS.schedulePlayerTableRecalc?.();
+      }
     } catch {}
   }
 

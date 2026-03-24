@@ -1,5 +1,5 @@
 /* Reference final plan + plan language modal */
-@media (min-width:1200px) {
+@media (min-width: 1200px) {
   #board-modal .modal-card.board-card {
     width: min(1320px, calc(100vw - 24px));
     max-width: min(1320px, calc(100vw - 24px));
@@ -20,9 +20,7 @@
     flex-wrap: nowrap;
     overflow: auto hidden;
     padding: 10px 12px;
-    border: 1px solid rgba(124, 145, 255, 0.14);
     border-radius: 22px;
-    background: #0b1430;
   }
   #board-modal .board-head-actions > * {
     flex: 0 0 auto;
@@ -34,7 +32,6 @@
     min-height: 44px;
     padding: 0 18px;
     border-radius: 14px;
-    background: rgba(8, 14, 31, 0.92);
     border: 1px solid rgba(124, 145, 255, 0.16);
     color: #eef3ff;
     font-weight: 700;
@@ -804,123 +801,131 @@
   color: #1c1400;
 }
 
-
 /* Mobile standalone final-plan modal: fit toolbar and stack board vertically */
-@media (max-width:768px){
-  #board-modal .modal-card.board-standalone-card{
-    width:min(100vw - 12px,100%);
-    max-width:min(100vw - 12px,100%);
-    min-height:96dvh;
-    max-height:96dvh;
-    margin:6px auto;
-    padding:14px 14px 16px;
-    border-radius:24px;
-    overflow:hidden;
+@media (max-width: 768px) {
+  #board-modal .modal-card.board-standalone-card {
+    width: min(100vw - 12px, 100%);
+    max-width: min(100vw - 12px, 100%);
+    min-height: 96dvh;
+    max-height: 96dvh;
+    margin: 6px auto;
+    padding: 14px 14px 16px;
+    border-radius: 24px;
+    overflow: hidden;
   }
-  #board-modal .modal-head.board-standalone-title{
-    position:sticky;
-    top:0;
-    z-index:5;
-    grid-template-columns:minmax(0,1fr) 48px;
-    padding:6px 0 12px;
-    background:#091126f2;
+  #board-modal .modal-head.board-standalone-title {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    grid-template-columns: minmax(0, 1fr) 48px;
+    padding: 6px 0 12px;
   }
-  #board-modal .board-standalone-preview{
-    min-height:0;
-    overflow:auto;
-    padding-right:2px;
+  #board-modal .board-standalone-preview {
+    min-height: 0;
+    overflow: auto;
+    padding-right: 2px;
   }
-  #board-modal .board-head-actions.board-head-actions--single{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:8px;
-    overflow:visible;
-    padding:10px;
+  #board-modal .board-head-actions.board-head-actions--single {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+    padding: 10px;
   }
   #board-modal .board-head-actions.board-head-actions--single .board-shift-tabs,
-  #board-modal .board-head-actions.board-head-actions--single .board-lang-picker-wrap{
-    grid-column:1 / -1;
+  #board-modal
+    .board-head-actions.board-head-actions--single
+    .board-lang-picker-wrap {
+    grid-column: 1 / -1;
   }
-  #board-modal .board-head-actions.board-head-actions--single .board-shift-tabs{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:8px;
+  #board-modal
+    .board-head-actions.board-head-actions--single
+    .board-shift-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
   #board-modal .board-head-actions.board-head-actions--single .board-shift-tab,
-  #board-modal .board-head-actions.board-head-actions--single .board-lang-trigger,
-  #board-modal .board-head-actions.board-head-actions--single > .btn{
-    width:100%;
-    min-width:0;
-    justify-content:center;
-    text-align:center;
-    white-space:normal;
-    min-height:46px;
-    padding:10px 12px;
+  #board-modal
+    .board-head-actions.board-head-actions--single
+    .board-lang-trigger,
+  #board-modal .board-head-actions.board-head-actions--single > .btn {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+    min-height: 46px;
+    padding: 10px 12px;
   }
-  #board-modal .board-head-actions.board-head-actions--single .board-lang-trigger{
-    display:flex;
-    align-items:center;
-    justify-content:center;
+  #board-modal
+    .board-head-actions.board-head-actions--single
+    .board-lang-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  #board-modal #boardModalPreviewSheet{
-    width:100%;
-    max-width:100%;
-    overflow:hidden;
+  #board-modal #boardModalPreviewSheet {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
   }
-  #board-modal #boardModalPreviewSheet .board-sheet{
-    width:100%;
-    max-width:100%;
-    min-width:0;
-    padding:10px 8px;
-    overflow:hidden;
-    box-sizing:border-box;
+  #board-modal #boardModalPreviewSheet .board-sheet {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 10px 8px;
+    overflow: hidden;
+    box-sizing: border-box;
   }
-  #board-modal #boardModalPreviewSheet .board-grid{
-    display:grid;
-    grid-template-columns:1fr;
-    gap:10px;
-    width:100%;
-    min-width:0;
+  #board-modal #boardModalPreviewSheet .board-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
   }
-  #board-modal #boardModalPreviewSheet .board-col{
-    width:100%;
-    min-width:0;
-    min-height:auto;
+  #board-modal #boardModalPreviewSheet .board-col {
+    width: 100%;
+    min-width: 0;
+    min-height: auto;
   }
-  #board-modal #boardModalPreviewSheet .board-title{
-    font-size:12px;
-    line-height:1.2;
-    overflow-wrap:anywhere;
+  #board-modal #boardModalPreviewSheet .board-title {
+    font-size: 12px;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
   }
-  #board-modal #boardModalPreviewSheet .board-col header{
-    padding:8px 6px;
+  #board-modal #boardModalPreviewSheet .board-col header {
+    padding: 8px 6px;
   }
-  #board-modal #boardModalPreviewSheet .board-col h4{
-    font-size:12px;
-    line-height:1.2;
-    min-height:0;
-    overflow-wrap:anywhere;
+  #board-modal #boardModalPreviewSheet .board-col h4 {
+    font-size: 12px;
+    line-height: 1.2;
+    min-height: 0;
+    overflow-wrap: anywhere;
   }
-  #board-modal #boardModalPreviewSheet .board-sub{
-    font-size:11px;
-    line-height:1.25;
+  #board-modal #boardModalPreviewSheet .board-sub {
+    font-size: 11px;
+    line-height: 1.25;
   }
-  #board-modal #boardModalPreviewSheet .board-cap{
-    gap:6px;
+  #board-modal #boardModalPreviewSheet .board-cap {
+    gap: 6px;
   }
-  #board-modal #boardModalPreviewSheet .board-col li{
-    grid-template-columns:minmax(0,1.2fr) .55fr .45fr .75fr;
-    font-size:11px;
-    padding:5px;
+  #board-modal #boardModalPreviewSheet .board-col li {
+    grid-template-columns: minmax(0, 1.2fr) 0.55fr 0.45fr 0.75fr;
+    font-size: 11px;
+    padding: 5px;
   }
 }
 
-@media (max-width:480px){
-  #board-modal .board-head-actions.board-head-actions--single{
-    grid-template-columns:1fr;
+@media (max-width: 480px) {
+  #board-modal .board-head-actions.board-head-actions--single {
+    grid-template-columns: 1fr;
   }
-  #board-modal .board-head-actions.board-head-actions--single .board-shift-tabs{
-    grid-template-columns:1fr 1fr;
+  #board-modal
+    .board-head-actions.board-head-actions--single
+    .board-shift-tabs {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -949,7 +954,7 @@
   text-align: center;
 }
 
-@media (max-width:768px) {
+@media (max-width: 768px) {
   #towerCalcModal #tcv35-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -993,7 +998,6 @@
     top: 0;
     z-index: 8;
     padding: 6px 0 12px;
-    background: #091126f2;
   }
 
   #board-modal .board-standalone-preview {
@@ -1023,10 +1027,18 @@
 
   #board-modal .board-head-actions.board-head-actions--single > *,
   #board-modal .board-head-actions.tower-calc-preview-toolbar > *,
-  #board-modal .board-head-actions.board-head-actions--single .board-shift-group,
-  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-shift-group,
-  #board-modal .board-head-actions.board-head-actions--single .board-lang-picker-wrap,
-  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-lang-picker-wrap,
+  #board-modal
+    .board-head-actions.board-head-actions--single
+    .board-shift-group,
+  #board-modal
+    .board-head-actions.tower-calc-preview-toolbar
+    .board-shift-group,
+  #board-modal
+    .board-head-actions.board-head-actions--single
+    .board-lang-picker-wrap,
+  #board-modal
+    .board-head-actions.tower-calc-preview-toolbar
+    .board-lang-picker-wrap,
   #board-modal .board-head-actions.board-head-actions--single .btn,
   #board-modal .board-head-actions.tower-calc-preview-toolbar .btn {
     flex: 0 0 auto;
@@ -1034,18 +1046,26 @@
     min-width: max-content;
   }
 
-  #board-modal .board-head-actions.board-head-actions--single .board-shift-group,
-  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-shift-group {
+  #board-modal
+    .board-head-actions.board-head-actions--single
+    .board-shift-group,
+  #board-modal
+    .board-head-actions.tower-calc-preview-toolbar
+    .board-shift-group {
     display: flex;
     flex-wrap: nowrap;
     gap: 8px;
   }
 
   #board-modal .board-head-actions.board-head-actions--single .board-shift-tab,
-  #board-modal .board-head-actions.board-head-actions--single .board-lang-trigger,
+  #board-modal
+    .board-head-actions.board-head-actions--single
+    .board-lang-trigger,
   #board-modal .board-head-actions.board-head-actions--single > .btn,
   #board-modal .board-head-actions.tower-calc-preview-toolbar .board-shift-tab,
-  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-lang-trigger,
+  #board-modal
+    .board-head-actions.tower-calc-preview-toolbar
+    .board-lang-trigger,
   #board-modal .board-head-actions.tower-calc-preview-toolbar > .btn {
     width: auto;
     min-width: max-content;
@@ -1056,8 +1076,12 @@
     justify-content: center;
   }
 
-  #board-modal .board-head-actions.board-head-actions--single .board-lang-picker-wrap,
-  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-lang-picker-wrap {
+  #board-modal
+    .board-head-actions.board-head-actions--single
+    .board-lang-picker-wrap,
+  #board-modal
+    .board-head-actions.tower-calc-preview-toolbar
+    .board-lang-picker-wrap {
     display: flex;
     margin-left: 0;
   }
@@ -1097,7 +1121,7 @@
 }
 
 /* ChatGPT mobile sync fix: burger final plan stacks vertically like tower final plan */
-@media (max-width:768px) {
+@media (max-width: 768px) {
   #board-modal #boardModalPreviewSheet,
   #board-modal .board-modal-preview,
   #board-modal .board-standalone-preview {
@@ -1147,9 +1171,8 @@
   }
 }
 
-
 /* ChatGPT patch: burger final-plan matches tower final-plan on tablet widths */
-@media (max-width:980px) {
+@media (max-width: 980px) {
   #board-modal .modal-card.board-standalone-card {
     width: min(100vw - 18px, 100%);
     max-width: min(100vw - 18px, 100%);
@@ -1169,7 +1192,6 @@
     top: 0;
     z-index: 8;
     padding: 6px 0 14px;
-    background: #091126f2;
   }
 
   #board-modal .board-standalone-preview {
@@ -1199,14 +1221,26 @@
 
   #board-modal .board-head-actions.board-head-actions--single > *,
   #board-modal .board-head-actions.tower-calc-preview-toolbar > *,
-  #board-modal .board-head-actions.board-head-actions--single .board-shift-group,
-  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-shift-group,
-  #board-modal .board-head-actions.board-head-actions--single .board-lang-picker-wrap,
-  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-lang-picker-wrap,
+  #board-modal
+    .board-head-actions.board-head-actions--single
+    .board-shift-group,
+  #board-modal
+    .board-head-actions.tower-calc-preview-toolbar
+    .board-shift-group,
+  #board-modal
+    .board-head-actions.board-head-actions--single
+    .board-lang-picker-wrap,
+  #board-modal
+    .board-head-actions.tower-calc-preview-toolbar
+    .board-lang-picker-wrap,
   #board-modal .board-head-actions.board-head-actions--single .btn,
   #board-modal .board-head-actions.tower-calc-preview-toolbar .btn,
-  #board-modal .board-head-actions.board-head-actions--single .board-lang-trigger,
-  #board-modal .board-head-actions.tower-calc-preview-toolbar .board-lang-trigger {
+  #board-modal
+    .board-head-actions.board-head-actions--single
+    .board-lang-trigger,
+  #board-modal
+    .board-head-actions.tower-calc-preview-toolbar
+    .board-lang-trigger {
     flex: 0 0 auto;
     min-width: max-content;
     white-space: nowrap;
@@ -1265,7 +1299,6 @@
     padding: 5px;
   }
 }
-
 
 .board-lang-option-visual {
   display: inline-flex;

@@ -1,1 +1,23 @@
-<head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>Puzzle &amp; Survival — Планувальник турелей</title><script src="js/i18n-boot.js"></script><script>document.documentElement.setAttribute("data-pns-tower-boot","pending");</script><link href="css/app.css" rel="stylesheet"/><link href="favicon.ico" rel="icon" type="image/x-icon"/></head>
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width,initial-scale=1" name="viewport" />
+  <title>Puzzle &amp; Survival — Планувальник турелей</title>
+  <script src="js/i18n-boot.js"></script>
+  <script>
+    document.documentElement.setAttribute("data-pns-tower-boot", "pending");
+  </script>
+  <script>
+    (function () {
+      var w = window.innerWidth || 0;
+      var root = document.documentElement;
+
+      if (w <= 560) {
+        root.classList.add("lang-in-drawer");
+      } else if (w < 768) {
+        root.classList.add("lang-compact");
+      }
+    })();
+  </script>
+  <link href="css/app.css" rel="stylesheet" />
+  <link href="favicon.ico" rel="icon" type="image/x-icon" />
+</head>
