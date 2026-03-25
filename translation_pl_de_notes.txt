@@ -1,0 +1,8 @@
+Translated in this package:
+- js/i18n-pl.js
+- js/i18n-de.js
+
+Notes:
+- Polish and German dictionaries now contain full key sets (623 keys each), including guide_copy.
+- No other project files were changed.
+- This package is based on: site014_i18n_v11_broken_rollback_browser_boot_fix.zip

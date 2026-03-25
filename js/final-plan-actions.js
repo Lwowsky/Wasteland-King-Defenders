@@ -95,11 +95,11 @@
     );
     const lower = raw.toLowerCase();
     const titleMap = [
-      [/техно|hub|central/, "hub", "Tech Hub"],
-      [/північ|north|север/, "north_turret", "North Turret"],
-      [/захід|west|запад/, "west_turret", "West Turret"],
-      [/схід|east|вост/, "east_turret", "East Turret"],
-      [/півден|south|юж/, "south_turret", "South Turret"],
+      [/테크\s*허브|기술\s*허브|テックハブ|技术中心|trung\s*tâm\s*kỹ\s*thuật|trung\s*tam\s*ky\s*thuat|المركز\s*التقني|техно|hub|central|tech-zentrum|centrum tech|centrum techniczn/, "hub", "Tech Hub"],
+      [/북쪽\s*포탑|北タレット|北炮塔|tháp\s*pháo\s*bắc|thap\s*phao\s*bac|північ|north|север|nord|północ|البرج\s*الشمالي/, "north_turret", "North Turret"],
+      [/서쪽\s*포탑|西タレット|西炮塔|tháp\s*pháo\s*tây|thap\s*phao\s*tay|захід|west|запад|zachod|البرج\s*الغربي/, "west_turret", "West Turret"],
+      [/동쪽\s*포탑|東タレット|东炮塔|tháp\s*pháo\s*đông|thap\s*phao\s*dong|схід|east|вост|ost|wschod|البرج\s*الشرقي/, "east_turret", "East Turret"],
+      [/남쪽\s*포탑|南タレット|南炮塔|tháp\s*pháo\s*nam|thap\s*phao\s*nam|півден|south|юж|süd|sud|połud|البرج\s*الجنوبي/, "south_turret", "South Turret"],
     ];
     const found = titleMap.find(([rx]) => rx.test(lower));
     if (!found) return raw;

@@ -273,11 +273,11 @@
           const raw = String(base.title || base.id || `${tr('turret', 'Турель')} ${index + 1}`);
           const lower = raw.toLowerCase();
           let key = '';
-          if (/техно|hub|central/.test(lower)) key = 'hub';
-          else if (/північ|north|север/.test(lower)) key = 'north_turret';
-          else if (/захід|west|запад/.test(lower)) key = 'west_turret';
-          else if (/схід|east|вост/.test(lower)) key = 'east_turret';
-          else if (/півден|south|юж/.test(lower)) key = 'south_turret';
+          if (/테크\s*허브|기술\s*허브|テックハブ|技术中心|trung\s*tâm\s*kỹ\s*thuật|trung\s*tam\s*ky\s*thuat|المركز\s*التقني|техно|hub|central|tech-zentrum|centrum tech|centrum techniczn/.test(lower)) key = 'hub';
+          else if (/북쪽\s*포탑|北タレット|北炮塔|tháp\s*pháo\s*bắc|thap\s*phao\s*bac|північ|north|север|nord|północ|البرج\s*الشمالي/.test(lower)) key = 'north_turret';
+          else if (/서쪽\s*포탑|西タレット|西炮塔|tháp\s*pháo\s*tây|thap\s*phao\s*tay|захід|west|запад|zachod|البرج\s*الغربي/.test(lower)) key = 'west_turret';
+          else if (/동쪽\s*포탑|東タレット|东炮塔|tháp\s*pháo\s*đông|thap\s*phao\s*dong|схід|east|вост|ost|wschod|البرج\s*الشرقي/.test(lower)) key = 'east_turret';
+          else if (/남쪽\s*포탑|南タレット|南炮塔|tháp\s*pháo\s*nam|thap\s*phao\s*nam|півден|south|юж|süd|sud|połud|البرج\s*الجنوبي/.test(lower)) key = 'south_turret';
           return key ? getBoardLanguageText(key, raw, locale) : raw;
         }));
         const rows = [];

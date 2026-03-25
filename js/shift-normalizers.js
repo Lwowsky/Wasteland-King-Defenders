@@ -8,9 +8,9 @@
   function normalizeRole(value){
     const text = String(value || '').trim();
     if (!text) return 'Unknown';
-    if (/(shoot|стрел|стріл|стріле|стрільц|shooter|marksman|tirador|射手|弓兵|狙撃|狙击|사수)/i.test(text)) return 'Shooter';
-    if (/(fight|infantry|боец|боєц|бойц|бійц|fighter|пехот|піхот|战士|步兵|歩兵|전투)/i.test(text)) return 'Fighter';
-    if (/(ride|rider|наезд|наїзд|наїзн|cavalry|кавал|骑|骑兵|騎兵|기병|ライダー)/i.test(text)) return 'Rider';
+    if (/(shoot|стрел|стріл|стріле|стрільц|shooter|marksman|tirador|射手|弓兵|狙撃|狙击|사수|슈터)/i.test(text)) return 'Shooter';
+    if (/(fight|infantry|боец|боєц|бойц|бійц|fighter|пехот|піхот|战士|步兵|歩兵|전투|전사|파이터)/i.test(text)) return 'Fighter';
+    if (/(ride|rider|наезд|наїзд|наїзн|cavalry|кавал|骑|骑兵|騎兵|기병|라이더|ライダー)/i.test(text)) return 'Rider';
     return text;
   }
 

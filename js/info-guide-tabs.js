@@ -2,9 +2,11 @@
   const ROOT_ID = 'infoGuideTabsSection';
 
   function normalizeLocale(locale) {
-    const value = String(locale || 'uk').toLowerCase();
-    if (value === 'ua') return 'uk';
-    return value === 'ru' || value === 'en' ? value : 'uk';
+    const value = String(locale || 'uk').trim().toLowerCase();
+    const normalized = value === 'ua' ? 'uk' : value;
+    const dicts = window.PNSI18N?.dict || window.PNSI18N_DICTS || {};
+    if (normalized && dicts && Object.prototype.hasOwnProperty.call(dicts, normalized)) return normalized;
+    return normalized || 'uk';
   }
 
   function getLocale() {
@@ -17,7 +19,7 @@
   function getGuideCopy(locale) {
     const normalized = normalizeLocale(locale);
     const dicts = window.PNSI18N?.dict || window.PNSI18N_DICTS || {};
-    return dicts?.[normalized]?.guide_copy || dicts?.uk?.guide_copy || null;
+    return dicts?.[normalized]?.guide_copy || dicts?.en?.guide_copy || dicts?.uk?.guide_copy || null;
   }
 
   function escapeHtml(value) {

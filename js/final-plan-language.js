@@ -40,10 +40,14 @@
     return normalized.length ? normalized : ['uk', 'en', 'ru'];
   }
 
-  function getBoardDefaultLocales() {
-    const current = typeof window.PNS?.I18N?.locale === 'string'
+  function getCurrentUiLocale() {
+    return typeof window.PNS?.I18N?.locale === 'string'
       ? String(window.PNS.I18N.locale).toLowerCase()
       : String(document.documentElement.dataset.locale || 'uk').toLowerCase();
+  }
+
+  function getBoardDefaultLocales() {
+    const current = getCurrentUiLocale();
     const defaults = ['en'];
     if (current && !defaults.includes(current)) defaults.push(current);
     return defaults;
@@ -65,16 +69,22 @@
   function getBoardLanguageLocales() {
     const state = getCalcState();
     const defaults = normalizeBoardLanguageLocales(getBoardDefaultLocales());
+    const currentUiLocale = getCurrentUiLocale();
     const localLocale = defaults.find(locale => locale !== 'en') || 'en';
+    const storedBaseLocale = String(state.boardLanguageBaseLocale || '').toLowerCase();
     let locales = normalizeBoardLanguageLocales(state.boardLanguageLocales || []);
 
-    if (!locales.length) {
+    if (!locales.length || (currentUiLocale && storedBaseLocale && storedBaseLocale !== currentUiLocale)) {
       locales = String(state.boardLanguageMode || '').toLowerCase() === 'en' ? ['en'] : defaults;
+    }
+    if (!storedBaseLocale && currentUiLocale && localLocale !== 'en' && !locales.includes(localLocale)) {
+      locales = defaults;
     }
     if (localLocale !== 'en') {
       locales = normalizeBoardLanguageLocales(['en', localLocale].concat(locales.filter(locale => locale !== 'en' && locale !== localLocale)));
     }
 
+    state.boardLanguageBaseLocale = currentUiLocale || localLocale;
     state.boardLanguageLocales = locales.slice();
     state.boardLanguageMode = locales.length === 1 && locales[0] === 'en' ? 'en' : 'en_local';
     persistCalcState(state);
@@ -84,6 +94,7 @@
   function setBoardLanguageLocales(locales) {
     const state = getCalcState();
     const normalized = normalizeBoardLanguageLocales(locales);
+    state.boardLanguageBaseLocale = getCurrentUiLocale();
     state.boardLanguageLocales = normalized.length ? normalized : normalizeBoardLanguageLocales(getBoardDefaultLocales());
     state.boardLanguageMode = state.boardLanguageLocales.length === 1 && state.boardLanguageLocales[0] === 'en' ? 'en' : 'en_local';
     persistCalcState(state);
