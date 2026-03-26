@@ -1325,3 +1325,22 @@
   object-fit: contain;
   border-radius: 12px;
 }
+
+
+.board-sheet .board-signature {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0a1430;
+  opacity: 0.9;
+}
+
+#board-modal .board-sheet.is-exporting-png .board-signature,
+#towerCalcModal .board-sheet.is-exporting-png .board-signature,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-signature {
+  color: #394766 !important;
+  opacity: 1 !important;
+}
