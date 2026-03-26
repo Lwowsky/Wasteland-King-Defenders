@@ -5,11 +5,6 @@
 .footer-copy {
   gap: 6px;
 }
-.footer-copy-title,
-.footer-copy-text,
-.footer-copy-text-legal {
-  max-width: 1200px;
-}
 
 .footer-action-game .footer-action-icon {
   padding: 6px;
