@@ -1327,68 +1327,147 @@
 }
 
 
+
 .board-sheet .board-signature {
-  margin-top: 12px;
-  text-align: center;
+  margin-top: 18px;
+  padding-bottom: 6px;
+  display: flex;
+  justify-content: center;
 }
 .board-sheet .board-signature .board-signature-chip {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 5px 18px;
+  min-width: 368px;
+  max-width: calc(100% - 32px);
+  padding: 12px 28px;
+  border-radius: 999px;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, #16130d 0%, #090805 52%, #17130c 100%);
+  border: 1px solid rgba(125, 90, 14, 0.98);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 222, 126, 0.12),
+    inset 0 14px 20px rgba(255, 201, 72, 0.04),
+    0 3px 10px rgba(0, 0, 0, 0.16);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+.board-sheet .board-signature .board-signature-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(44% 82% at 50% 48%, rgba(255, 194, 62, 0.30) 0%, rgba(255, 194, 62, 0.08) 44%, rgba(255, 194, 62, 0) 72%),
+    linear-gradient(90deg, rgba(255, 213, 79, 0) 0%, rgba(255, 213, 79, 0.10) 50%, rgba(255, 213, 79, 0) 100%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0 4px, rgba(0, 0, 0, 0.02) 4px 8px);
+  z-index: 0;
+  pointer-events: none;
+}
+.board-sheet .board-signature .board-signature-line {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  height: 3px;
   border-radius: 999px;
   background:
-    linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(214,163,19,0.95) 16%, rgba(255,223,104,0.98) 50%, rgba(214,163,19,0.95) 84%, rgba(0,0,0,0) 100%) top / calc(100% - 28px) 2px no-repeat,
-    linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(214,163,19,0.95) 16%, rgba(255,223,104,0.98) 50%, rgba(214,163,19,0.95) 84%, rgba(0,0,0,0) 100%) bottom / calc(100% - 28px) 2px no-repeat,
-    radial-gradient(60% 130% at 50% 50%, rgba(255,203,46,0.14) 0%, rgba(255,203,46,0.05) 42%, rgba(0,0,0,0) 72%),
-    linear-gradient(180deg, #161718 0%, #0a0b0d 100%);
-  box-shadow:
-    inset 0 0 0 1px rgba(120, 88, 8, 0.9),
-    0 0 10px rgba(255, 196, 0, 0.16),
-    0 3px 8px rgba(0, 0, 0, 0.18);
+    linear-gradient(90deg,
+      rgba(110, 76, 8, 0) 0%,
+      rgba(185, 130, 20, 0.76) 7%,
+      rgba(250, 205, 77, 0.98) 20%,
+      rgba(255, 234, 152, 1) 50%,
+      rgba(250, 205, 77, 0.98) 80%,
+      rgba(185, 130, 20, 0.76) 93%,
+      rgba(110, 76, 8, 0) 100%);
+  box-shadow: 0 0 6px rgba(255, 193, 43, 0.24);
+  z-index: 1;
+  pointer-events: none;
+}
+.board-sheet .board-signature .board-signature-line--top {
+  top: 6px;
+}
+.board-sheet .board-signature .board-signature-line--bottom {
+  bottom: 6px;
+}
+.board-sheet .board-signature .board-signature-inner {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
 .board-sheet .board-signature .board-signature-text {
-  font-size: 11px;
-  font-weight: 800;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #f2d04f;
-  text-shadow: 0 0 8px rgba(255, 199, 64, 0.18);
+  color: #f0c34a;
+  text-shadow:
+    0 1px 0 rgba(89, 57, 0, 0.82),
+    0 0 6px rgba(255, 208, 84, 0.12);
   white-space: nowrap;
 }
 .board-sheet .board-signature .board-signature-flag {
-  width: 18px;
-  height: 12px;
+  width: 26px;
+  height: 18px;
   display: inline-block;
-  border-radius: 2px;
-  background: linear-gradient(180deg, #005BBB 0%, #005BBB 50%, #FFD500 50%, #FFD500 100%);
-  box-shadow: 0 0 0 1px rgba(255, 214, 90, 0.28), 0 1px 2px rgba(0,0,0,0.35);
-  flex: 0 0 18px;
+  position: relative;
+  flex: 0 0 26px;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2072%2048%27%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%27shine%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%270%27%20stop-color%3D%27%23ffffff%27%20stop-opacity%3D%27.52%27/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%27.36%27%20stop-color%3D%27%23ffffff%27%20stop-opacity%3D%27.18%27/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%27.72%27%20stop-color%3D%27%23ffffff%27%20stop-opacity%3D%270%27/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%3C/defs%3E%0A%20%20%3Cpath%20d%3D%27M5%209C14%205%2022%2011%2031%208c9-3%2018%204%2027%200%203-1%206-1.6%209-1v26c-9-4-17%202-26-1-9-3-18%203-27%200-3-1-6-1.4-9-.2Z%27%20fill%3D%27%23005BBB%27/%3E%0A%20%20%3Cpath%20d%3D%27M5%2022c9-4%2017%202%2026-1%209-3%2018%203%2027%200%203-1%206-1.4%209-.2v12c-9-4-17%202-26-1-9-3-18%203-27%200-3-1-6-1.4-9-.2Z%27%20fill%3D%27%23FFD500%27/%3E%0A%20%20%3Cpath%20d%3D%27M5%209C14%205%2022%2011%2031%208c9-3%2018%204%2027%200%203-1%206-1.6%209-1v26c-9-4-17%202-26-1-9-3-18%203-27%200-3-1-6-1.4-9-.2Z%27%20fill%3D%27url%28%23shine%29%27/%3E%0A%20%20%3Cpath%20d%3D%27M5%209C14%205%2022%2011%2031%208c9-3%2018%204%2027%200%203-1%206-1.6%209-1%27%20fill%3D%27none%27%20stroke%3D%27%23fff6c7%27%20stroke-opacity%3D%27.65%27%20stroke-width%3D%271.7%27%20stroke-linecap%3D%27round%27/%3E%0A%20%20%3Cpath%20d%3D%27M5%2033c9-4%2017%202%2026-1%209-3%2018%203%2027%200%203-1%206-1.4%209-.2%27%20fill%3D%27none%27%20stroke%3D%27%238c6700%27%20stroke-opacity%3D%27.38%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27/%3E%0A%3C/svg%3E");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.20));
+}
+.board-sheet .board-signature .board-signature-flag::before {
+  content: none;
 }
 
 #board-modal .board-sheet.is-exporting-png .board-signature .board-signature-chip,
 #towerCalcModal .board-sheet.is-exporting-png .board-signature .board-signature-chip,
 .tower-calc-board-preview .board-sheet.is-exporting-png .board-signature .board-signature-chip {
-  background:
-    linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(214,163,19,0.95) 16%, rgba(255,223,104,0.98) 50%, rgba(214,163,19,0.95) 84%, rgba(0,0,0,0) 100%) top / calc(100% - 28px) 2px no-repeat,
-    linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(214,163,19,0.95) 16%, rgba(255,223,104,0.98) 50%, rgba(214,163,19,0.95) 84%, rgba(0,0,0,0) 100%) bottom / calc(100% - 28px) 2px no-repeat,
-    radial-gradient(60% 130% at 50% 50%, rgba(255,203,46,0.14) 0%, rgba(255,203,46,0.05) 42%, rgba(0,0,0,0) 72%),
-    linear-gradient(180deg, #161718 0%, #0a0b0d 100%) !important;
+  background: linear-gradient(180deg, #15120c 0%, #080705 52%, #15120c 100%) !important;
+  border-color: rgba(125, 90, 14, 0.98) !important;
   box-shadow:
-    inset 0 0 0 1px rgba(120, 88, 8, 0.9),
-    0 0 10px rgba(255, 196, 0, 0.16),
-    0 3px 8px rgba(0, 0, 0, 0.18) !important;
+    inset 0 0 0 1px rgba(255, 222, 126, 0.12),
+    0 2px 7px rgba(0, 0, 0, 0.14) !important;
+}
+#board-modal .board-sheet.is-exporting-png .board-signature .board-signature-glow,
+#towerCalcModal .board-sheet.is-exporting-png .board-signature .board-signature-glow,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-signature .board-signature-glow {
+  background:
+    radial-gradient(44% 82% at 50% 48%, rgba(255, 194, 62, 0.22) 0%, rgba(255, 194, 62, 0.06) 44%, rgba(255, 194, 62, 0) 72%),
+    linear-gradient(90deg, rgba(255, 213, 79, 0) 0%, rgba(255, 213, 79, 0.08) 50%, rgba(255, 213, 79, 0) 100%) !important;
+}
+#board-modal .board-sheet.is-exporting-png .board-signature .board-signature-line,
+#towerCalcModal .board-sheet.is-exporting-png .board-signature .board-signature-line,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-signature .board-signature-line {
+  height: 3px !important;
+  background:
+    linear-gradient(90deg,
+      rgba(110, 76, 8, 0) 0%,
+      rgba(185, 130, 20, 0.76) 7%,
+      rgba(250, 205, 77, 0.98) 20%,
+      rgba(255, 234, 152, 1) 50%,
+      rgba(250, 205, 77, 0.98) 80%,
+      rgba(185, 130, 20, 0.76) 93%,
+      rgba(110, 76, 8, 0) 100%) !important;
+  box-shadow: none !important;
 }
 #board-modal .board-sheet.is-exporting-png .board-signature .board-signature-text,
 #towerCalcModal .board-sheet.is-exporting-png .board-signature .board-signature-text,
 .tower-calc-board-preview .board-sheet.is-exporting-png .board-signature .board-signature-text {
-  color: #f2d04f !important;
-  text-shadow: 0 0 8px rgba(255, 199, 64, 0.18) !important;
+  color: #f0c34a !important;
+  text-shadow: 0 1px 0 rgba(89, 57, 0, 0.82) !important;
 }
 #board-modal .board-sheet.is-exporting-png .board-signature .board-signature-flag,
 #towerCalcModal .board-sheet.is-exporting-png .board-signature .board-signature-flag,
 .tower-calc-board-preview .board-sheet.is-exporting-png .board-signature .board-signature-flag {
-  background: linear-gradient(180deg, #005BBB 0%, #005BBB 50%, #FFD500 50%, #FFD500 100%) !important;
-  box-shadow: 0 0 0 1px rgba(255, 214, 90, 0.28), 0 1px 2px rgba(0,0,0,0.35) !important;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2072%2048%27%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%27shine%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%270%27%20stop-color%3D%27%23ffffff%27%20stop-opacity%3D%27.52%27/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%27.36%27%20stop-color%3D%27%23ffffff%27%20stop-opacity%3D%27.18%27/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%27.72%27%20stop-color%3D%27%23ffffff%27%20stop-opacity%3D%270%27/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%3C/defs%3E%0A%20%20%3Cpath%20d%3D%27M5%209C14%205%2022%2011%2031%208c9-3%2018%204%2027%200%203-1%206-1.6%209-1v26c-9-4-17%202-26-1-9-3-18%203-27%200-3-1-6-1.4-9-.2Z%27%20fill%3D%27%23005BBB%27/%3E%0A%20%20%3Cpath%20d%3D%27M5%2022c9-4%2017%202%2026-1%209-3%2018%203%2027%200%203-1%206-1.4%209-.2v12c-9-4-17%202-26-1-9-3-18%203-27%200-3-1-6-1.4-9-.2Z%27%20fill%3D%27%23FFD500%27/%3E%0A%20%20%3Cpath%20d%3D%27M5%209C14%205%2022%2011%2031%208c9-3%2018%204%2027%200%203-1%206-1.6%209-1v26c-9-4-17%202-26-1-9-3-18%203-27%200-3-1-6-1.4-9-.2Z%27%20fill%3D%27url%28%23shine%29%27/%3E%0A%20%20%3Cpath%20d%3D%27M5%209C14%205%2022%2011%2031%208c9-3%2018%204%2027%200%203-1%206-1.6%209-1%27%20fill%3D%27none%27%20stroke%3D%27%23fff6c7%27%20stroke-opacity%3D%27.65%27%20stroke-width%3D%271.7%27%20stroke-linecap%3D%27round%27/%3E%0A%20%20%3Cpath%20d%3D%27M5%2033c9-4%2017%202%2026-1%209-3%2018%203%2027%200%203-1%206-1.4%209-.2%27%20fill%3D%27none%27%20stroke%3D%27%238c6700%27%20stroke-opacity%3D%27.38%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27/%3E%0A%3C/svg%3E") !important;
+  filter: none !important;
 }
+
