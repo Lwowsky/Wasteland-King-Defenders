@@ -1328,19 +1328,67 @@
 
 
 .board-sheet .board-signature {
-  margin-top: 10px;
+  margin-top: 12px;
   text-align: center;
+}
+.board-sheet .board-signature .board-signature-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 5px 18px;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(214,163,19,0.95) 16%, rgba(255,223,104,0.98) 50%, rgba(214,163,19,0.95) 84%, rgba(0,0,0,0) 100%) top / calc(100% - 28px) 2px no-repeat,
+    linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(214,163,19,0.95) 16%, rgba(255,223,104,0.98) 50%, rgba(214,163,19,0.95) 84%, rgba(0,0,0,0) 100%) bottom / calc(100% - 28px) 2px no-repeat,
+    radial-gradient(60% 130% at 50% 50%, rgba(255,203,46,0.14) 0%, rgba(255,203,46,0.05) 42%, rgba(0,0,0,0) 72%),
+    linear-gradient(180deg, #161718 0%, #0a0b0d 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(120, 88, 8, 0.9),
+    0 0 10px rgba(255, 196, 0, 0.16),
+    0 3px 8px rgba(0, 0, 0, 0.18);
+}
+.board-sheet .board-signature .board-signature-text {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #0a1430;
-  opacity: 0.9;
+  color: #f2d04f;
+  text-shadow: 0 0 8px rgba(255, 199, 64, 0.18);
+  white-space: nowrap;
+}
+.board-sheet .board-signature .board-signature-flag {
+  width: 18px;
+  height: 12px;
+  display: inline-block;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #005BBB 0%, #005BBB 50%, #FFD500 50%, #FFD500 100%);
+  box-shadow: 0 0 0 1px rgba(255, 214, 90, 0.28), 0 1px 2px rgba(0,0,0,0.35);
+  flex: 0 0 18px;
 }
 
-#board-modal .board-sheet.is-exporting-png .board-signature,
-#towerCalcModal .board-sheet.is-exporting-png .board-signature,
-.tower-calc-board-preview .board-sheet.is-exporting-png .board-signature {
-  color: #394766 !important;
-  opacity: 1 !important;
+#board-modal .board-sheet.is-exporting-png .board-signature .board-signature-chip,
+#towerCalcModal .board-sheet.is-exporting-png .board-signature .board-signature-chip,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-signature .board-signature-chip {
+  background:
+    linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(214,163,19,0.95) 16%, rgba(255,223,104,0.98) 50%, rgba(214,163,19,0.95) 84%, rgba(0,0,0,0) 100%) top / calc(100% - 28px) 2px no-repeat,
+    linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(214,163,19,0.95) 16%, rgba(255,223,104,0.98) 50%, rgba(214,163,19,0.95) 84%, rgba(0,0,0,0) 100%) bottom / calc(100% - 28px) 2px no-repeat,
+    radial-gradient(60% 130% at 50% 50%, rgba(255,203,46,0.14) 0%, rgba(255,203,46,0.05) 42%, rgba(0,0,0,0) 72%),
+    linear-gradient(180deg, #161718 0%, #0a0b0d 100%) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(120, 88, 8, 0.9),
+    0 0 10px rgba(255, 196, 0, 0.16),
+    0 3px 8px rgba(0, 0, 0, 0.18) !important;
+}
+#board-modal .board-sheet.is-exporting-png .board-signature .board-signature-text,
+#towerCalcModal .board-sheet.is-exporting-png .board-signature .board-signature-text,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-signature .board-signature-text {
+  color: #f2d04f !important;
+  text-shadow: 0 0 8px rgba(255, 199, 64, 0.18) !important;
+}
+#board-modal .board-sheet.is-exporting-png .board-signature .board-signature-flag,
+#towerCalcModal .board-sheet.is-exporting-png .board-signature .board-signature-flag,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-signature .board-signature-flag {
+  background: linear-gradient(180deg, #005BBB 0%, #005BBB 50%, #FFD500 50%, #FFD500 100%) !important;
+  box-shadow: 0 0 0 1px rgba(255, 214, 90, 0.28), 0 1px 2px rgba(0,0,0,0.35) !important;
 }
