@@ -296,8 +296,8 @@
   .png-export-sheet .board-sub,
   .png-export-sheet .board-cap,
   .png-export-sheet .board-col li {
-    text-shadow: none !important;
-    filter: none !important;
+    text-shadow: none;
+    filter: none;
   }
   .png-export-sheet .board-signature {
     margin-top: 16px;
