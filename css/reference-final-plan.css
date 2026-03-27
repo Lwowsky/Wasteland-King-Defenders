@@ -1328,20 +1328,27 @@
 
 
 .board-sheet .board-signature {
-  margin-top: 10px;
-  text-align: center;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.9;
-  color: #0a1430;
-  opacity: 0.9;
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+.board-sheet .board-signature .board-signature-image {
+  display: block;
+  width: 220px;
+  max-width: calc(100% - 32px);
+  height: auto;
 }
 
-#board-modal .board-sheet.is-exporting-png .board-signature,
-#towerCalcModal .board-sheet.is-exporting-png .board-signature,
-.tower-calc-board-preview .board-sheet.is-exporting-png .board-signature {
-  color: #394766 !important;
-  opacity: 1 !important;
+.board-sheet .board-signature .board-signature-chip {
+  display: none;
 }
+
+#board-modal .board-sheet.is-exporting-png .board-signature .board-signature-image,
+#towerCalcModal .board-sheet.is-exporting-png .board-signature .board-signature-image,
+.tower-calc-board-preview .board-sheet.is-exporting-png .board-signature .board-signature-image {
+  display: block;
+  width: 360px !important;
+  max-width: calc(100% - 32px) !important;
+  height: auto !important;
+}
+

@@ -1,9 +1,799 @@
 /* Final plan board bootstrap/glue extracted from final-plan-board.js */
-(function(){
+(function () {
   const e = window.PNS;
   if (!e) return;
-  const t = e.ModalsShift = e.ModalsShift || {}, { state: a } = e;
+  const t = (e.ModalsShift = e.ModalsShift || {}),
+    { state: a } = e;
   const core = window.__pnsFinalPlanCore || {};
-  const { r,n,o,i,s,l,c,d,u,p,h,f,m,_,g,b,w,S,v,C,T,k,$,M,I,L,B,E,x } = core;
-  function P(e,t){return"function"==typeof window.calcRenderOverflowReservePanelImpl?window.calcRenderOverflowReservePanelImpl(e,t):void 0}function A(){return"function"==typeof window.calcCollectShiftStatsImpl?window.calcCollectShiftStatsImpl():{shift1:{total:0,shooter:0,rider:0,fighter:0},shift2:{total:0,shooter:0,rider:0,fighter:0},both:{total:0,shooter:0,rider:0,fighter:0},unknown:{total:0,shooter:0,rider:0,fighter:0},total:0}}function N(e){return"function"==typeof window.calcUpdateShiftStatsUIImpl?window.calcUpdateShiftStatsUIImpl(e):void 0}function R(e){return"function"==typeof window.calcAutoDistributeHelpersForShiftImpl?window.calcAutoDistributeHelpersForShiftImpl(e):!1}function q(){return"function"==typeof window.calcAutoFitTowersStrictImpl?window.calcAutoFitTowersStrictImpl():!1}function F(){return"function"==typeof window.renderTowerCalcModalImpl?window.renderTowerCalcModalImpl():null}function D(e,t){return"function"==typeof window.calcSetInlineSelectedBaseIdImpl?window.calcSetInlineSelectedBaseIdImpl(e,t):String(t||"")}function O(t,a,r){return"function"==typeof window.calcGetInlineAssignedMarchImpl?window.calcGetInlineAssignedMarchImpl(t,a,r):"function"==typeof window.__pnsGetBoardAssignedMarch?window.__pnsGetBoardAssignedMarch(t,a,r):a?Math.max(0,Number(a.march||0)||0):0}function H(e,t,a){return"function"==typeof window.calcDistributeInlineTierMarchImpl?window.calcDistributeInlineTierMarchImpl(e,t,a):(function(){const r=Math.max(0,Math.floor(Number(a||0)||0)),n={};let o=r;const i=[];for(const a of e||[]){const e=String(a?.id||""),r=Math.max(0,Math.floor(Number(t?.[e]||0)||0));n[e]=0,e&&r>0&&i.push({pid:e,left:r})}for(;i.length&&o>0;){const e=Math.max(1,Math.floor(o/i.length));let t=0;const a=[];for(const r of i){const i=Math.min(r.left,e,o-t);if(i>0&&(n[r.pid]=Math.max(0,Number(n[r.pid]||0)+i),r.left-=i,t+=i),r.left>0&&a.push(r),t>=o)break}if(t<=0)break;o=Math.max(0,o-t),i.length=0;for(const e of a)i.push(e)}return{assignedById:n,used:Math.max(0,r-o),free:o}})()}function U(t,r){return"function"==typeof window.calcRecalculateTowerCompositionImpl?window.calcRecalculateTowerCompositionImpl(t,r):{ok:!1,reason:i("inline_tower_impl_missing","Inline tower module not loaded")}}function z(t,r){return"function"==typeof window.calcResolveInlineTowerStateImpl?window.calcResolveInlineTowerStateImpl(t,r):"function"==typeof window.__pnsResolveBoardTowerState?window.__pnsResolveBoardTowerState(t,r):{captain:null,helpers:[],rule:{maxHelpers:Number(t?.maxHelpers||29)||29,tierMinMarch:{T14:Number(t?.tierMinMarch?.T14||0)||0,T13:Number(t?.tierMinMarch?.T13||0)||0,T12:Number(t?.tierMinMarch?.T12||0)||0,T11:Number(t?.tierMinMarch?.T11||0)||0,T10:Number(t?.tierMinMarch?.T10||0)||0,T9:Number(t?.tierMinMarch?.T9||0)||0}},captainMarch:0,rallySize:0,helpersTotal:0,total:0,capacityTotal:0,free:0,baseLike:{id:String(t?.id||""),title:String(t?.title||t?.id||""),captainId:"",helperIds:[],role:t?.role||null,maxHelpers:Number(t?.maxHelpers||29)||29,tierMinMarch:{T14:Number(t?.tierMinMarch?.T14||0)||0,T13:Number(t?.tierMinMarch?.T13||0)||0,T12:Number(t?.tierMinMarch?.T12||0)||0,T11:Number(t?.tierMinMarch?.T11||0)||0,T10:Number(t?.tierMinMarch?.T10||0)||0,T9:Number(t?.tierMinMarch?.T9||0)||0}}}}function j(e){return"function"==typeof window.calcRenderInlineTowerSettingsImpl?window.calcRenderInlineTowerSettingsImpl(e):void 0}function V(){return"function"==typeof window.getBoardSupportedLocales?window.getBoardSupportedLocales():["uk","en","ru"]}function K(){return"function"==typeof window.getBoardDefaultLocales?window.getBoardDefaultLocales():["en","uk"]}function W(e){return"function"==typeof window.normalizeBoardLanguageLocales?window.normalizeBoardLanguageLocales(e):Array.isArray(e)?e:[e]}function G(){return"function"==typeof window.getBoardLanguageLocales?window.getBoardLanguageLocales():W(K())}function Y(e){return"function"==typeof window.setBoardLanguageLocales?window.setBoardLanguageLocales(e):G()}function J(){return"function"==typeof window.getBoardLanguageMode?window.getBoardLanguageMode():1===G().length&&"en"===G()[0]?"en":"en_local"}function X(e){return"function"==typeof window.setBoardLanguageMode?window.setBoardLanguageMode(e):Y("en"===String(e||"").toLowerCase()?["en"]:K())}function Q(e,t,a){return"function"==typeof window.getBoardLanguageText?window.getBoardLanguageText(e,t,a):String(t||"")}function Z(e){return"function"==typeof window.getBoardLanguageLabel?window.getBoardLanguageLabel(e):String(e||"")}function ee(e){return"function"==typeof window.mapBoardLanguageText?window.mapBoardLanguageText(e):""}function te(e,t){return"function"==typeof window.getBoardLanguageTextMulti?window.getBoardLanguageTextMulti(e,t):String(t||"")}function ae(e){return"function"==typeof window.boardLanguageSummary?window.boardLanguageSummary(e):"English"}function re(e){return"function"==typeof window.renderBoardLanguagePickerMarkup?window.renderBoardLanguagePickerMarkup(e):""}function ne(e){return"function"==typeof window.renderBoardLanguageDialogMarkup?window.renderBoardLanguageDialogMarkup(e):""}function oe(e){return"function"==typeof window.__pnsRenderStandaloneFinalBoard?window.__pnsRenderStandaloneFinalBoard(e):!1}function ie(e){return"function"==typeof window.__pnsRenderBoardSheet?window.__pnsRenderBoardSheet(e):""}function se(e){return"function"==typeof window.__pnsSetCalcPreviewShift?window.__pnsSetCalcPreviewShift(e):"shift1"===String(e||"").toLowerCase()?"shift1":"shift2"}function le(e){return"function"==typeof window.__pnsRenderLiveFinalBoard?window.__pnsRenderLiveFinalBoard(e):void 0}function ce(e,t,a,r){const n=new Map;if(!Array.isArray(e)||!e.length)return n;const o=r instanceof Map?r:new Map,i=(Array.isArray(t)?t.slice():[]).sort((e,t)=>g(t.tier)-g(e.tier)||Number(t.march||0)-Number(e.march||0)||String(e.name||"").localeCompare(String(t.name||""))),s=new Set;for(const e of o.values())for(const t of Array.isArray(e)?e:[]){const e=String(t?.id||"");e&&s.add(e)}const l=i.filter(e=>!s.has(String(e?.id||""))),c=e.map(e=>{const t=Array.isArray(o.get(Number(e.idx)))?o.get(Number(e.idx)):[],a=t.length;return{...e,_lockedPlayers:t,_lockedIds:new Set(t.map(e=>String(e?.id||"")).filter(Boolean)),_helpersWantedOrig:Math.max(0,Number(e.helpersWanted||0)||0),helpersWanted:Math.max(0,Math.max(0,Number(e.helpersWanted||0)||0)-a)}}),d=(e,t)=>{const r=Array.isArray(t)?t.slice():[],n=new Set(r.map(e=>String(e?.id||"")).filter(Boolean)),o=$(r,e.helperCapacity,{tierTargets:a.tierTargets});return{usedByTier:o.usedByTier,pickedIds:n,pickedPlayers:r,assignedById:o.assignedById||{},notFitPlayers:Array.isArray(o.notFitPlayers)?o.notFitPlayers:[],partialPlayers:Array.isArray(o.partialPlayers)?o.partialPlayers:[],helperSlotsRequested:Math.max(0,Number(e._helpersWantedOrig||e.helpersWanted||0)||0),helpersUsed:Math.max(0,Number(o.helpersUsed||0)),usedMarch:Math.max(0,Number(o.usedMarch||0)),capacity:Math.max(0,Number(e.helperCapacity||0)),capLeft:Math.max(0,Number(o.capLeft||0)),slotsLeft:Math.max(0,Math.max(0,Number(e._helpersWantedOrig||e.helpersWanted||0)||0)-Math.max(0,Number(o.helpersUsed||0))),recTierMinMarch:o.recTierMinMarch,recTierText:o.recTierText,lockedPicked:Math.max(0,Number((e._lockedPlayers||[]).length||0)),_lockedIdSet:e._lockedIds instanceof Set?new Set(e._lockedIds):new Set}},u=function(e,t){const a=Array.isArray(t)?t.map(()=>[]):[];if(!(Array.isArray(e)&&e.length&&Array.isArray(t)&&t.length))return a;const r=t.map(e=>Math.max(0,Number(e?.helpersWanted||0)||0)),n=t.map(e=>Math.max(0,Number(e?.helperCapacity||0)||0)),o=new Array(t.length).fill(0);let i=!0,s=0;for(;s<e.length&&i;){i=!1;const l=t.map((e,t)=>({idx:t,needSlots:Math.max(0,r[t]-o[t]),ratio:r[t]>0?o[t]/r[t]:1,cap:n[t]})).filter(e=>e.needSlots>0).sort((e,t)=>e.ratio-t.ratio||t.cap-e.cap||e.idx-t.idx);for(const t of l){if(s>=e.length)break;a[t.idx].push(e[s]),o[t.idx]+=1,s+=1}i=l.length>0}return a}(l,c);for(let e=0;e<c.length;e++){const t=c[e],a=[...Array.isArray(t._lockedPlayers)?t._lockedPlayers.slice():[],...Array.isArray(u[e])?u[e]:[]];n.set(Number(t.idx),d(t,a))}const p=(e,t)=>{const a=Math.max(1,Number(e?.helperSlotsRequested||0)||1),r=Math.max(1,Number(t?.helperSlotsRequested||0)||1);return Math.abs(Math.max(0,Number(e?.helpersUsed||0))/a-Math.max(0,Number(t?.helpersUsed||0))/r)},h=(e,t)=>({zeroPenalty:(0===Math.max(0,Number(e?.helpersUsed||0))?1:0)+(0===Math.max(0,Number(t?.helpersUsed||0))?1:0),slotsLeft:Math.max(0,Number(e?.slotsLeft||0))+Math.max(0,Number(t?.slotsLeft||0)),gap:p(e,t),usedMarch:Math.max(0,Number(e?.usedMarch||0))+Math.max(0,Number(t?.usedMarch||0)),capLeft:Math.max(0,Number(e?.capLeft||0))+Math.max(0,Number(t?.capLeft||0))}),f=(e,t)=>!t||(e.zeroPenalty!==t.zeroPenalty?e.zeroPenalty<t.zeroPenalty:e.slotsLeft!==t.slotsLeft?e.slotsLeft<t.slotsLeft:Math.abs(e.gap-t.gap)>.02?e.gap<t.gap:e.usedMarch!==t.usedMarch?e.usedMarch>t.usedMarch:e.capLeft!==t.capLeft&&e.capLeft<t.capLeft);if(c.length>1){const e=new Map(c.map(e=>[Number(e.idx),e])),t=c.map(e=>Number(e.idx)),a=(e,t)=>{const a=t&&t._lockedIdSet instanceof Set?t._lockedIdSet:new Set;return(Array.isArray(t?.pickedPlayers)?t.pickedPlayers.slice():[]).filter(e=>{const t=String(e?.id||"");return!(!t||a.has(t))}).sort((e,a)=>Math.max(0,Number(t?.assignedById?.[String(e?.id||"")]||0)||0)-Math.max(0,Number(t?.assignedById?.[String(a?.id||"")]||0)||0)||g(e?.tier)-g(a?.tier)||Number(e?.march||0)-Number(a?.march||0)||String(e?.name||"").localeCompare(String(a?.name||"")))},r=(t,r)=>{const o=e.get(Number(t)),i=e.get(Number(r)),s=n.get(Number(t)),l=n.get(Number(r));if(!o||!i||!s||!l||Math.max(0,Number(l.slotsLeft||0))<=0&&Math.max(0,Number(l.capLeft||0))<=0)return!1;const c=a(o,s).slice(0,8),u=h(s,l);for(const e of c){const a=String(e?.id||"");if(!a||l.pickedIds instanceof Set&&l.pickedIds.has(a))continue;const c=(s.pickedPlayers||[]).filter(e=>String(e?.id||"")!==a),p=[...l.pickedPlayers||[],e],m=d(o,c),y=d(i,p),_=h(m,y);if(f(_,u))return n.set(Number(t),m),n.set(Number(r),y),!0}return!1},o=(t,r)=>{const o=e.get(Number(t)),i=e.get(Number(r)),s=n.get(Number(t)),l=n.get(Number(r));if(!(o&&i&&s&&l))return!1;const c=a(o,s).slice(0,6),u=a(i,l).slice(0,6);if(!c.length||!u.length)return!1;const p=h(s,l);let m=null;for(const e of c){const t=String(e?.id||"");if(t)for(const a of u){const r=String(a?.id||"");if(!r||t===r)continue;const n=(s.pickedPlayers||[]).map(e=>String(e?.id||"")===t?a:e),c=(l.pickedPlayers||[]).map(t=>String(t?.id||"")===r?e:t),u=d(o,n),y=d(i,c),_=h(u,y);f(_,p)&&(!m||f(_,m.score))&&(m={aNext:u,bNext:y,score:_})}}return!!m&&(n.set(Number(t),m.aNext),n.set(Number(r),m.bNext),!0)};for(let e=0;e<4;e++){let e=!1;const a=t.map(e=>({idx:e,alloc:n.get(e)})).filter(e=>e.alloc).sort((e,t)=>(Number(e.alloc.helperSlotsRequested||0)>0?Number(e.alloc.helpersUsed||0)/Number(e.alloc.helperSlotsRequested||1):1)-(Number(t.alloc.helperSlotsRequested||0)>0?Number(t.alloc.helpersUsed||0)/Number(t.alloc.helperSlotsRequested||1):1)||Number(t.alloc.slotsLeft||0)-Number(e.alloc.slotsLeft||0)||Number(e.idx)-Number(t.idx));for(const o of a){const a=n.get(o.idx);if(!a)continue;const i=Math.max(0,Number(a.slotsLeft||0)),s=Math.max(0,Number(a.capLeft||0));if(i<=0&&s<=0)continue;const l=t.map(e=>({idx:e,alloc:n.get(e)})).filter(e=>e.idx!==o.idx&&e.alloc).sort((e,t)=>{const a=Number(e.alloc.helperSlotsRequested||0)>0?Number(e.alloc.helpersUsed||0)/Number(e.alloc.helperSlotsRequested||1):0;return(Number(t.alloc.helperSlotsRequested||0)>0?Number(t.alloc.helpersUsed||0)/Number(t.alloc.helperSlotsRequested||1):0)-a||Number(t.alloc.helpersUsed||0)-Number(e.alloc.helpersUsed||0)||Number(e.idx)-Number(t.idx)});for(const t of l)if(r(t.idx,o.idx)){e=!0;break}if(e)break}if(!e)for(let a=0;a<t.length&&!e;a++)for(let r=a+1;r<t.length&&!e;r++)o(t[a],t[r])&&(e=!0);if(!e)break}}return n}function de(t,n,o,s=new Set){return"function"==typeof window.computeTowerCalcShiftResultsImpl?window.computeTowerCalcShiftResultsImpl(t,n,o,s):{shiftKey:"shift2"===String(t||"").toLowerCase()?"shift2":"shift1",rows:Array.isArray(n)?n:[],selectedCaptains:[],captainIds:new Set,demandByTroop:{fighter:0,rider:0,shooter:0},mergedAvail:S(),mergedUsed:S(),totalDemand:0,totalSupplied:0,remaining:0,captainMarch:0,captainRally:0,nextBlocked:new Set,usedAcross:new Set,totalHelpersWanted:0,totalHelpersWantedRaw:0,totalHelpersPlaced:0,towerPlans:[],applyMode:["topup","empty","rebalance"].includes(String(o?.applyMode||"").toLowerCase())?String(o.applyMode).toLowerCase():"topup"}}function ue(e,t){return"function"==typeof window.renderTowerCalcShiftResultsImpl?window.renderTowerCalcShiftResultsImpl(e,t):void 0}function pe(){return"function"==typeof window.calcListTowerCalcBasesImpl?window.calcListTowerCalcBasesImpl():[]}function he(e){return"function"==typeof window.calcGetShiftTowerCardsImpl?window.calcGetShiftTowerCardsImpl(e):[]}function fe(e,t,a,r){return"function"==typeof window.calcFindShiftTowerCardImpl?window.calcFindShiftTowerCardImpl(e,t,a,r):null}function me(e={}){return"function"==typeof window.calcSyncCaptainsFromTowersIntoCalculatorImpl?window.calcSyncCaptainsFromTowersIntoCalculatorImpl(e):!1}function ye(){return!1}function _e(){return"function"==typeof window.applyTowerCalcToTowerSettingsImpl?window.applyTowerCalcToTowerSettingsImpl():!1}function ge(){return"function"==typeof window.applyTowerCalcAssignmentsToTowersImpl?window.applyTowerCalcAssignmentsToTowersImpl():!1}function be(){return"function"==typeof window.computeTowerCalcResultsImpl?window.computeTowerCalcResultsImpl():null}function we(){return"function"==typeof window.openTowerCalculatorModalImpl?window.openTowerCalculatorModalImpl():void 0}function Se(e={}){return"function"==typeof window.openTowerCalculatorPreviewImpl?window.openTowerCalculatorPreviewImpl(e):null}function ve(){return"function"==typeof window.closeTowerCalculatorModalImpl?window.closeTowerCalculatorModalImpl():void 0}a&&(e.$$,a._towerCalcBoardLangBound||(a._towerCalcBoardLangBound=!0,document.addEventListener("change",t=>{const a=t.target.closest("[data-calc-board-lang-option]");if(a){const t=a.closest("[data-board-lang-dialog-card]")||document;Y(Array.from(t.querySelectorAll("[data-board-lang-option], [data-calc-board-lang-option]")).filter(e=>e.checked).map(e=>String(e.value||"").toLowerCase()).filter(Boolean));try{le(document.getElementById("towerCalcModal"))}catch{}try{e.renderBoard?.()}catch{}try{e.syncBoardLanguageSelects?.()}catch{}return}const r=t.target.closest("[data-calc-board-lang-mode]");if(r){X(String(r.value||"en_local"));try{le(document.getElementById("towerCalcModal"))}catch{}try{e.renderBoard?.()}catch{}try{e.syncBoardLanguageSelects?.()}catch{}}})),a._towerCalcPlayerShiftBound||(a._towerCalcPlayerShiftBound=!0,document.addEventListener("click",t=>{const r=t.target.closest("[data-calc-set-player-shift]");if(!r)return;t.preventDefault();const n=String(r.getAttribute("data-calc-set-player-shift")||""),o=String(r.getAttribute("data-target-shift")||"both"),s="function"==typeof e?.movePlayerToShiftWithLimits?e.movePlayerToShiftWithLimits(n,o):{ok:!1};if(!s?.ok){const t="limit-shift1"===s?.reason?i("shift_limit_already_set","Для {shift} вже встановлено ліміт {limit}.").replace(/\{shift\}/g,l("shift1")).replace(/\{limit\}/g,String(s?.limits?.shift1||0)):"limit-shift2"===s?.reason?i("shift_limit_already_set","Для {shift} вже встановлено ліміт {limit}.").replace(/\{shift\}/g,l("shift2")).replace(/\{limit\}/g,String(s?.limits?.shift2||0)):i("change_shift_failed","Не вдалося змінити зміну гравця.");try{e.setImportStatus?.(t,"warn")}catch{}return}try{e.savePlayersSnapshot?.(a.players)}catch{}try{e.applyPlayerTableFilters?.()}catch{}try{e.updateShiftBreakdownUI?.()}catch{}try{N(document.getElementById("towerCalcModal"))}catch{}try{be()}catch{}})),Object.assign(e,{setBoardLanguageMode:X,getBoardLanguageLocales:G,setBoardLanguageLocales:Y,boardLanguageSummary:ae,renderBoardLanguagePickerMarkup:re,renderStandaloneFinalBoard:oe}),Object.assign(t,{openTowerCalculatorModal:we,computeTowerCalcResults:be,applyTowerCalcToTowerSettings:_e,applyTowerCalcAssignmentsToTowers:ge,calcSyncCaptainsFromTowersIntoCalculator:me,renderBoardLanguageDialogMarkup:ne}),window.openTowerCalculatorModal=we,window.closeTowerCalculatorModal=ve,window.renderTowerCalcModal=F,window.computeTowerCalcResults=be,window.calcOpenTowerPickerForBase=ye,window.calcAutoFitTowersStrict=q,window.calcUpdateShiftStatsUI=N,window.calcRenderInlineTowerSettings=j,window.calcRenderLiveFinalBoard=le,window.getBoardDefaultLocales=K,window.setBoardLanguageMode=X,window.getBoardLanguageLocales=G,window.setBoardLanguageLocales=Y,window.boardLanguageSummary=ae,window.renderBoardLanguagePickerMarkup=re,window.renderBoardLanguageDialogMarkup=ne,window.renderStandaloneFinalBoard=oe,window.calcRecalculateTowerComposition=U,window.applyTowerCalcToTowerSettings=_e,window.applyTowerCalcAssignmentsToTowers=ge,window.calcSetInlineSelectedBaseId=D,window.calcSetPreviewShift=se,window.calcSyncCaptainsFromTowersIntoCalculator=me)
-}());
+  const {
+    r,
+    n,
+    o,
+    i,
+    s,
+    l,
+    c,
+    d,
+    u,
+    p,
+    h,
+    f,
+    m,
+    _,
+    g,
+    b,
+    w,
+    S,
+    v,
+    C,
+    T,
+    k,
+    $,
+    M,
+    I,
+    L,
+    B,
+    E,
+    x,
+  } = core;
+  function P(e, t) {
+    return "function" == typeof window.calcRenderOverflowReservePanelImpl
+      ? window.calcRenderOverflowReservePanelImpl(e, t)
+      : void 0;
+  }
+  function A() {
+    return "function" == typeof window.calcCollectShiftStatsImpl
+      ? window.calcCollectShiftStatsImpl()
+      : {
+          shift1: { total: 0, shooter: 0, rider: 0, fighter: 0 },
+          shift2: { total: 0, shooter: 0, rider: 0, fighter: 0 },
+          both: { total: 0, shooter: 0, rider: 0, fighter: 0 },
+          unknown: { total: 0, shooter: 0, rider: 0, fighter: 0 },
+          total: 0,
+        };
+  }
+  function N(e) {
+    return "function" == typeof window.calcUpdateShiftStatsUIImpl
+      ? window.calcUpdateShiftStatsUIImpl(e)
+      : void 0;
+  }
+  function R(e) {
+    return "function" == typeof window.calcAutoDistributeHelpersForShiftImpl
+      ? window.calcAutoDistributeHelpersForShiftImpl(e)
+      : !1;
+  }
+  function q() {
+    return "function" == typeof window.calcAutoFitTowersStrictImpl
+      ? window.calcAutoFitTowersStrictImpl()
+      : !1;
+  }
+  function F() {
+    return "function" == typeof window.renderTowerCalcModalImpl
+      ? window.renderTowerCalcModalImpl()
+      : null;
+  }
+  function D(e, t) {
+    return "function" == typeof window.calcSetInlineSelectedBaseIdImpl
+      ? window.calcSetInlineSelectedBaseIdImpl(e, t)
+      : String(t || "");
+  }
+  function O(t, a, r) {
+    return "function" == typeof window.calcGetInlineAssignedMarchImpl
+      ? window.calcGetInlineAssignedMarchImpl(t, a, r)
+      : "function" == typeof window.__pnsGetBoardAssignedMarch
+        ? window.__pnsGetBoardAssignedMarch(t, a, r)
+        : a
+          ? Math.max(0, Number(a.march || 0) || 0)
+          : 0;
+  }
+  function H(e, t, a) {
+    return "function" == typeof window.calcDistributeInlineTierMarchImpl
+      ? window.calcDistributeInlineTierMarchImpl(e, t, a)
+      : (function () {
+          const r = Math.max(0, Math.floor(Number(a || 0) || 0)),
+            n = {};
+          let o = r;
+          const i = [];
+          for (const a of e || []) {
+            const e = String(a?.id || ""),
+              r = Math.max(0, Math.floor(Number(t?.[e] || 0) || 0));
+            ((n[e] = 0), e && r > 0 && i.push({ pid: e, left: r }));
+          }
+          for (; i.length && o > 0; ) {
+            const e = Math.max(1, Math.floor(o / i.length));
+            let t = 0;
+            const a = [];
+            for (const r of i) {
+              const i = Math.min(r.left, e, o - t);
+              if (
+                (i > 0 &&
+                  ((n[r.pid] = Math.max(0, Number(n[r.pid] || 0) + i)),
+                  (r.left -= i),
+                  (t += i)),
+                r.left > 0 && a.push(r),
+                t >= o)
+              )
+                break;
+            }
+            if (t <= 0) break;
+            ((o = Math.max(0, o - t)), (i.length = 0));
+            for (const e of a) i.push(e);
+          }
+          return { assignedById: n, used: Math.max(0, r - o), free: o };
+        })();
+  }
+  function U(t, r) {
+    return "function" == typeof window.calcRecalculateTowerCompositionImpl
+      ? window.calcRecalculateTowerCompositionImpl(t, r)
+      : {
+          ok: !1,
+          reason: i(
+            "inline_tower_impl_missing",
+            "Inline tower module not loaded",
+          ),
+        };
+  }
+  function z(t, r) {
+    return "function" == typeof window.calcResolveInlineTowerStateImpl
+      ? window.calcResolveInlineTowerStateImpl(t, r)
+      : "function" == typeof window.__pnsResolveBoardTowerState
+        ? window.__pnsResolveBoardTowerState(t, r)
+        : {
+            captain: null,
+            helpers: [],
+            rule: {
+              maxHelpers: Number(t?.maxHelpers || 29) || 29,
+              tierMinMarch: {
+                T14: Number(t?.tierMinMarch?.T14 || 0) || 0,
+                T13: Number(t?.tierMinMarch?.T13 || 0) || 0,
+                T12: Number(t?.tierMinMarch?.T12 || 0) || 0,
+                T11: Number(t?.tierMinMarch?.T11 || 0) || 0,
+                T10: Number(t?.tierMinMarch?.T10 || 0) || 0,
+                T9: Number(t?.tierMinMarch?.T9 || 0) || 0,
+              },
+            },
+            captainMarch: 0,
+            rallySize: 0,
+            helpersTotal: 0,
+            total: 0,
+            capacityTotal: 0,
+            free: 0,
+            baseLike: {
+              id: String(t?.id || ""),
+              title: String(t?.title || t?.id || ""),
+              captainId: "",
+              helperIds: [],
+              role: t?.role || null,
+              maxHelpers: Number(t?.maxHelpers || 29) || 29,
+              tierMinMarch: {
+                T14: Number(t?.tierMinMarch?.T14 || 0) || 0,
+                T13: Number(t?.tierMinMarch?.T13 || 0) || 0,
+                T12: Number(t?.tierMinMarch?.T12 || 0) || 0,
+                T11: Number(t?.tierMinMarch?.T11 || 0) || 0,
+                T10: Number(t?.tierMinMarch?.T10 || 0) || 0,
+                T9: Number(t?.tierMinMarch?.T9 || 0) || 0,
+              },
+            },
+          };
+  }
+  function j(e) {
+    return "function" == typeof window.calcRenderInlineTowerSettingsImpl
+      ? window.calcRenderInlineTowerSettingsImpl(e)
+      : void 0;
+  }
+  function V() {
+    return "function" == typeof window.getBoardSupportedLocales
+      ? window.getBoardSupportedLocales()
+      : ["uk", "en", "ru"];
+  }
+  function K() {
+    return "function" == typeof window.getBoardDefaultLocales
+      ? window.getBoardDefaultLocales()
+      : ["en", "uk"];
+  }
+  function W(e) {
+    return "function" == typeof window.normalizeBoardLanguageLocales
+      ? window.normalizeBoardLanguageLocales(e)
+      : Array.isArray(e)
+        ? e
+        : [e];
+  }
+  function G() {
+    return "function" == typeof window.getBoardLanguageLocales
+      ? window.getBoardLanguageLocales()
+      : W(K());
+  }
+  function Y(e) {
+    return "function" == typeof window.setBoardLanguageLocales
+      ? window.setBoardLanguageLocales(e)
+      : G();
+  }
+  function J() {
+    return "function" == typeof window.getBoardLanguageMode
+      ? window.getBoardLanguageMode()
+      : 1 === G().length && "en" === G()[0]
+        ? "en"
+        : "en_local";
+  }
+  function X(e) {
+    return "function" == typeof window.setBoardLanguageMode
+      ? window.setBoardLanguageMode(e)
+      : Y("en" === String(e || "").toLowerCase() ? ["en"] : K());
+  }
+  function Q(e, t, a) {
+    return "function" == typeof window.getBoardLanguageText
+      ? window.getBoardLanguageText(e, t, a)
+      : String(t || "");
+  }
+  function Z(e) {
+    return "function" == typeof window.getBoardLanguageLabel
+      ? window.getBoardLanguageLabel(e)
+      : String(e || "");
+  }
+  function ee(e) {
+    return "function" == typeof window.mapBoardLanguageText
+      ? window.mapBoardLanguageText(e)
+      : "";
+  }
+  function te(e, t) {
+    return "function" == typeof window.getBoardLanguageTextMulti
+      ? window.getBoardLanguageTextMulti(e, t)
+      : String(t || "");
+  }
+  function ae(e) {
+    return "function" == typeof window.boardLanguageSummary
+      ? window.boardLanguageSummary(e)
+      : "English";
+  }
+  function re(e) {
+    return "function" == typeof window.renderBoardLanguagePickerMarkup
+      ? window.renderBoardLanguagePickerMarkup(e)
+      : "";
+  }
+  function ne(e) {
+    return "function" == typeof window.renderBoardLanguageDialogMarkup
+      ? window.renderBoardLanguageDialogMarkup(e)
+      : "";
+  }
+  function oe(e) {
+    return "function" == typeof window.__pnsRenderStandaloneFinalBoard
+      ? window.__pnsRenderStandaloneFinalBoard(e)
+      : !1;
+  }
+  function ie(e) {
+    return "function" == typeof window.__pnsRenderBoardSheet
+      ? window.__pnsRenderBoardSheet(e)
+      : "";
+  }
+  function se(e) {
+    return "function" == typeof window.__pnsSetCalcPreviewShift
+      ? window.__pnsSetCalcPreviewShift(e)
+      : "shift1" === String(e || "").toLowerCase()
+        ? "shift1"
+        : "shift2";
+  }
+  function le(e) {
+    return "function" == typeof window.__pnsRenderLiveFinalBoard
+      ? window.__pnsRenderLiveFinalBoard(e)
+      : void 0;
+  }
+  function ce(e, t, a, r) {
+    const n = new Map();
+    if (!Array.isArray(e) || !e.length) return n;
+    const o = r instanceof Map ? r : new Map(),
+      i = (Array.isArray(t) ? t.slice() : []).sort(
+        (e, t) =>
+          g(t.tier) - g(e.tier) ||
+          Number(t.march || 0) - Number(e.march || 0) ||
+          String(e.name || "").localeCompare(String(t.name || "")),
+      ),
+      s = new Set();
+    for (const e of o.values())
+      for (const t of Array.isArray(e) ? e : []) {
+        const e = String(t?.id || "");
+        e && s.add(e);
+      }
+    const l = i.filter((e) => !s.has(String(e?.id || ""))),
+      c = e.map((e) => {
+        const t = Array.isArray(o.get(Number(e.idx)))
+            ? o.get(Number(e.idx))
+            : [],
+          a = t.length;
+        return {
+          ...e,
+          _lockedPlayers: t,
+          _lockedIds: new Set(
+            t.map((e) => String(e?.id || "")).filter(Boolean),
+          ),
+          _helpersWantedOrig: Math.max(0, Number(e.helpersWanted || 0) || 0),
+          helpersWanted: Math.max(
+            0,
+            Math.max(0, Number(e.helpersWanted || 0) || 0) - a,
+          ),
+        };
+      }),
+      d = (e, t) => {
+        const r = Array.isArray(t) ? t.slice() : [],
+          n = new Set(r.map((e) => String(e?.id || "")).filter(Boolean)),
+          o = $(r, e.helperCapacity, { tierTargets: a.tierTargets });
+        return {
+          usedByTier: o.usedByTier,
+          pickedIds: n,
+          pickedPlayers: r,
+          assignedById: o.assignedById || {},
+          notFitPlayers: Array.isArray(o.notFitPlayers) ? o.notFitPlayers : [],
+          partialPlayers: Array.isArray(o.partialPlayers)
+            ? o.partialPlayers
+            : [],
+          helperSlotsRequested: Math.max(
+            0,
+            Number(e._helpersWantedOrig || e.helpersWanted || 0) || 0,
+          ),
+          helpersUsed: Math.max(0, Number(o.helpersUsed || 0)),
+          usedMarch: Math.max(0, Number(o.usedMarch || 0)),
+          capacity: Math.max(0, Number(e.helperCapacity || 0)),
+          capLeft: Math.max(0, Number(o.capLeft || 0)),
+          slotsLeft: Math.max(
+            0,
+            Math.max(
+              0,
+              Number(e._helpersWantedOrig || e.helpersWanted || 0) || 0,
+            ) - Math.max(0, Number(o.helpersUsed || 0)),
+          ),
+          recTierMinMarch: o.recTierMinMarch,
+          recTierText: o.recTierText,
+          lockedPicked: Math.max(
+            0,
+            Number((e._lockedPlayers || []).length || 0),
+          ),
+          _lockedIdSet:
+            e._lockedIds instanceof Set ? new Set(e._lockedIds) : new Set(),
+        };
+      },
+      u = (function (e, t) {
+        const a = Array.isArray(t) ? t.map(() => []) : [];
+        if (!(Array.isArray(e) && e.length && Array.isArray(t) && t.length))
+          return a;
+        const r = t.map((e) => Math.max(0, Number(e?.helpersWanted || 0) || 0)),
+          n = t.map((e) => Math.max(0, Number(e?.helperCapacity || 0) || 0)),
+          o = new Array(t.length).fill(0);
+        let i = !0,
+          s = 0;
+        for (; s < e.length && i; ) {
+          i = !1;
+          const l = t
+            .map((e, t) => ({
+              idx: t,
+              needSlots: Math.max(0, r[t] - o[t]),
+              ratio: r[t] > 0 ? o[t] / r[t] : 1,
+              cap: n[t],
+            }))
+            .filter((e) => e.needSlots > 0)
+            .sort(
+              (e, t) => e.ratio - t.ratio || t.cap - e.cap || e.idx - t.idx,
+            );
+          for (const t of l) {
+            if (s >= e.length) break;
+            (a[t.idx].push(e[s]), (o[t.idx] += 1), (s += 1));
+          }
+          i = l.length > 0;
+        }
+        return a;
+      })(l, c);
+    for (let e = 0; e < c.length; e++) {
+      const t = c[e],
+        a = [
+          ...(Array.isArray(t._lockedPlayers) ? t._lockedPlayers.slice() : []),
+          ...(Array.isArray(u[e]) ? u[e] : []),
+        ];
+      n.set(Number(t.idx), d(t, a));
+    }
+    const p = (e, t) => {
+        const a = Math.max(1, Number(e?.helperSlotsRequested || 0) || 1),
+          r = Math.max(1, Number(t?.helperSlotsRequested || 0) || 1);
+        return Math.abs(
+          Math.max(0, Number(e?.helpersUsed || 0)) / a -
+            Math.max(0, Number(t?.helpersUsed || 0)) / r,
+        );
+      },
+      h = (e, t) => ({
+        zeroPenalty:
+          (0 === Math.max(0, Number(e?.helpersUsed || 0)) ? 1 : 0) +
+          (0 === Math.max(0, Number(t?.helpersUsed || 0)) ? 1 : 0),
+        slotsLeft:
+          Math.max(0, Number(e?.slotsLeft || 0)) +
+          Math.max(0, Number(t?.slotsLeft || 0)),
+        gap: p(e, t),
+        usedMarch:
+          Math.max(0, Number(e?.usedMarch || 0)) +
+          Math.max(0, Number(t?.usedMarch || 0)),
+        capLeft:
+          Math.max(0, Number(e?.capLeft || 0)) +
+          Math.max(0, Number(t?.capLeft || 0)),
+      }),
+      f = (e, t) =>
+        !t ||
+        (e.zeroPenalty !== t.zeroPenalty
+          ? e.zeroPenalty < t.zeroPenalty
+          : e.slotsLeft !== t.slotsLeft
+            ? e.slotsLeft < t.slotsLeft
+            : Math.abs(e.gap - t.gap) > 0.02
+              ? e.gap < t.gap
+              : e.usedMarch !== t.usedMarch
+                ? e.usedMarch > t.usedMarch
+                : e.capLeft !== t.capLeft && e.capLeft < t.capLeft);
+    if (c.length > 1) {
+      const e = new Map(c.map((e) => [Number(e.idx), e])),
+        t = c.map((e) => Number(e.idx)),
+        a = (e, t) => {
+          const a =
+            t && t._lockedIdSet instanceof Set ? t._lockedIdSet : new Set();
+          return (
+            Array.isArray(t?.pickedPlayers) ? t.pickedPlayers.slice() : []
+          )
+            .filter((e) => {
+              const t = String(e?.id || "");
+              return !(!t || a.has(t));
+            })
+            .sort(
+              (e, a) =>
+                Math.max(
+                  0,
+                  Number(t?.assignedById?.[String(e?.id || "")] || 0) || 0,
+                ) -
+                  Math.max(
+                    0,
+                    Number(t?.assignedById?.[String(a?.id || "")] || 0) || 0,
+                  ) ||
+                g(e?.tier) - g(a?.tier) ||
+                Number(e?.march || 0) - Number(a?.march || 0) ||
+                String(e?.name || "").localeCompare(String(a?.name || "")),
+            );
+        },
+        r = (t, r) => {
+          const o = e.get(Number(t)),
+            i = e.get(Number(r)),
+            s = n.get(Number(t)),
+            l = n.get(Number(r));
+          if (
+            !o ||
+            !i ||
+            !s ||
+            !l ||
+            (Math.max(0, Number(l.slotsLeft || 0)) <= 0 &&
+              Math.max(0, Number(l.capLeft || 0)) <= 0)
+          )
+            return !1;
+          const c = a(o, s).slice(0, 8),
+            u = h(s, l);
+          for (const e of c) {
+            const a = String(e?.id || "");
+            if (!a || (l.pickedIds instanceof Set && l.pickedIds.has(a)))
+              continue;
+            const c = (s.pickedPlayers || []).filter(
+                (e) => String(e?.id || "") !== a,
+              ),
+              p = [...(l.pickedPlayers || []), e],
+              m = d(o, c),
+              y = d(i, p),
+              _ = h(m, y);
+            if (f(_, u)) return (n.set(Number(t), m), n.set(Number(r), y), !0);
+          }
+          return !1;
+        },
+        o = (t, r) => {
+          const o = e.get(Number(t)),
+            i = e.get(Number(r)),
+            s = n.get(Number(t)),
+            l = n.get(Number(r));
+          if (!(o && i && s && l)) return !1;
+          const c = a(o, s).slice(0, 6),
+            u = a(i, l).slice(0, 6);
+          if (!c.length || !u.length) return !1;
+          const p = h(s, l);
+          let m = null;
+          for (const e of c) {
+            const t = String(e?.id || "");
+            if (t)
+              for (const a of u) {
+                const r = String(a?.id || "");
+                if (!r || t === r) continue;
+                const n = (s.pickedPlayers || []).map((e) =>
+                    String(e?.id || "") === t ? a : e,
+                  ),
+                  c = (l.pickedPlayers || []).map((t) =>
+                    String(t?.id || "") === r ? e : t,
+                  ),
+                  u = d(o, n),
+                  y = d(i, c),
+                  _ = h(u, y);
+                f(_, p) &&
+                  (!m || f(_, m.score)) &&
+                  (m = { aNext: u, bNext: y, score: _ });
+              }
+          }
+          return (
+            !!m && (n.set(Number(t), m.aNext), n.set(Number(r), m.bNext), !0)
+          );
+        };
+      for (let e = 0; e < 4; e++) {
+        let e = !1;
+        const a = t
+          .map((e) => ({ idx: e, alloc: n.get(e) }))
+          .filter((e) => e.alloc)
+          .sort(
+            (e, t) =>
+              (Number(e.alloc.helperSlotsRequested || 0) > 0
+                ? Number(e.alloc.helpersUsed || 0) /
+                  Number(e.alloc.helperSlotsRequested || 1)
+                : 1) -
+                (Number(t.alloc.helperSlotsRequested || 0) > 0
+                  ? Number(t.alloc.helpersUsed || 0) /
+                    Number(t.alloc.helperSlotsRequested || 1)
+                  : 1) ||
+              Number(t.alloc.slotsLeft || 0) - Number(e.alloc.slotsLeft || 0) ||
+              Number(e.idx) - Number(t.idx),
+          );
+        for (const o of a) {
+          const a = n.get(o.idx);
+          if (!a) continue;
+          const i = Math.max(0, Number(a.slotsLeft || 0)),
+            s = Math.max(0, Number(a.capLeft || 0));
+          if (i <= 0 && s <= 0) continue;
+          const l = t
+            .map((e) => ({ idx: e, alloc: n.get(e) }))
+            .filter((e) => e.idx !== o.idx && e.alloc)
+            .sort((e, t) => {
+              const a =
+                Number(e.alloc.helperSlotsRequested || 0) > 0
+                  ? Number(e.alloc.helpersUsed || 0) /
+                    Number(e.alloc.helperSlotsRequested || 1)
+                  : 0;
+              return (
+                (Number(t.alloc.helperSlotsRequested || 0) > 0
+                  ? Number(t.alloc.helpersUsed || 0) /
+                    Number(t.alloc.helperSlotsRequested || 1)
+                  : 0) - a ||
+                Number(t.alloc.helpersUsed || 0) -
+                  Number(e.alloc.helpersUsed || 0) ||
+                Number(e.idx) - Number(t.idx)
+              );
+            });
+          for (const t of l)
+            if (r(t.idx, o.idx)) {
+              e = !0;
+              break;
+            }
+          if (e) break;
+        }
+        if (!e)
+          for (let a = 0; a < t.length && !e; a++)
+            for (let r = a + 1; r < t.length && !e; r++)
+              o(t[a], t[r]) && (e = !0);
+        if (!e) break;
+      }
+    }
+    return n;
+  }
+  function de(t, n, o, s = new Set()) {
+    return "function" == typeof window.computeTowerCalcShiftResultsImpl
+      ? window.computeTowerCalcShiftResultsImpl(t, n, o, s)
+      : {
+          shiftKey:
+            "shift2" === String(t || "").toLowerCase() ? "shift2" : "shift1",
+          rows: Array.isArray(n) ? n : [],
+          selectedCaptains: [],
+          captainIds: new Set(),
+          demandByTroop: { fighter: 0, rider: 0, shooter: 0 },
+          mergedAvail: S(),
+          mergedUsed: S(),
+          totalDemand: 0,
+          totalSupplied: 0,
+          remaining: 0,
+          captainMarch: 0,
+          captainRally: 0,
+          nextBlocked: new Set(),
+          usedAcross: new Set(),
+          totalHelpersWanted: 0,
+          totalHelpersWantedRaw: 0,
+          totalHelpersPlaced: 0,
+          towerPlans: [],
+          applyMode: ["topup", "empty", "rebalance"].includes(
+            String(o?.applyMode || "").toLowerCase(),
+          )
+            ? String(o.applyMode).toLowerCase()
+            : "topup",
+        };
+  }
+  function ue(e, t) {
+    return "function" == typeof window.renderTowerCalcShiftResultsImpl
+      ? window.renderTowerCalcShiftResultsImpl(e, t)
+      : void 0;
+  }
+  function pe() {
+    return "function" == typeof window.calcListTowerCalcBasesImpl
+      ? window.calcListTowerCalcBasesImpl()
+      : [];
+  }
+  function he(e) {
+    return "function" == typeof window.calcGetShiftTowerCardsImpl
+      ? window.calcGetShiftTowerCardsImpl(e)
+      : [];
+  }
+  function fe(e, t, a, r) {
+    return "function" == typeof window.calcFindShiftTowerCardImpl
+      ? window.calcFindShiftTowerCardImpl(e, t, a, r)
+      : null;
+  }
+  function me(e = {}) {
+    return "function" ==
+      typeof window.calcSyncCaptainsFromTowersIntoCalculatorImpl
+      ? window.calcSyncCaptainsFromTowersIntoCalculatorImpl(e)
+      : !1;
+  }
+  function ye() {
+    return !1;
+  }
+  function _e() {
+    return "function" == typeof window.applyTowerCalcToTowerSettingsImpl
+      ? window.applyTowerCalcToTowerSettingsImpl()
+      : !1;
+  }
+  function ge() {
+    return "function" == typeof window.applyTowerCalcAssignmentsToTowersImpl
+      ? window.applyTowerCalcAssignmentsToTowersImpl()
+      : !1;
+  }
+  function be() {
+    return "function" == typeof window.computeTowerCalcResultsImpl
+      ? window.computeTowerCalcResultsImpl()
+      : null;
+  }
+  function we() {
+    return "function" == typeof window.openTowerCalculatorModalImpl
+      ? window.openTowerCalculatorModalImpl()
+      : void 0;
+  }
+  function Se(e = {}) {
+    return "function" == typeof window.openTowerCalculatorPreviewImpl
+      ? window.openTowerCalculatorPreviewImpl(e)
+      : null;
+  }
+  function ve() {
+    return "function" == typeof window.closeTowerCalculatorModalImpl
+      ? window.closeTowerCalculatorModalImpl()
+      : void 0;
+  }
+  a &&
+    (e.$$,
+    a._towerCalcBoardLangBound ||
+      ((a._towerCalcBoardLangBound = !0),
+      document.addEventListener("change", (t) => {
+        const a = t.target.closest("[data-calc-board-lang-option]");
+        if (a) {
+          const t = a.closest("[data-board-lang-dialog-card]") || document;
+          Y(
+            Array.from(
+              t.querySelectorAll(
+                "[data-board-lang-option], [data-calc-board-lang-option]",
+              ),
+            )
+              .filter((e) => e.checked)
+              .map((e) => String(e.value || "").toLowerCase())
+              .filter(Boolean),
+          );
+          try {
+            le(document.getElementById("towerCalcModal"));
+          } catch {}
+          try {
+            e.renderBoard?.();
+          } catch {}
+          try {
+            e.syncBoardLanguageSelects?.();
+          } catch {}
+          return;
+        }
+        const r = t.target.closest("[data-calc-board-lang-mode]");
+        if (r) {
+          X(String(r.value || "en_local"));
+          try {
+            le(document.getElementById("towerCalcModal"));
+          } catch {}
+          try {
+            e.renderBoard?.();
+          } catch {}
+          try {
+            e.syncBoardLanguageSelects?.();
+          } catch {}
+        }
+      })),
+    a._towerCalcPlayerShiftBound ||
+      ((a._towerCalcPlayerShiftBound = !0),
+      document.addEventListener("click", (t) => {
+        const r = t.target.closest("[data-calc-set-player-shift]");
+        if (!r) return;
+        t.preventDefault();
+        const n = String(r.getAttribute("data-calc-set-player-shift") || ""),
+          o = String(r.getAttribute("data-target-shift") || "both"),
+          s =
+            "function" == typeof e?.movePlayerToShiftWithLimits
+              ? e.movePlayerToShiftWithLimits(n, o)
+              : { ok: !1 };
+        if (!s?.ok) {
+          const t =
+            "limit-shift1" === s?.reason
+              ? i(
+                  "shift_limit_already_set",
+                  "Для {shift} вже встановлено ліміт {limit}.",
+                )
+                  .replace(/\{shift\}/g, l("shift1"))
+                  .replace(/\{limit\}/g, String(s?.limits?.shift1 || 0))
+              : "limit-shift2" === s?.reason
+                ? i(
+                    "shift_limit_already_set",
+                    "Для {shift} вже встановлено ліміт {limit}.",
+                  )
+                    .replace(/\{shift\}/g, l("shift2"))
+                    .replace(/\{limit\}/g, String(s?.limits?.shift2 || 0))
+                : i("change_shift_failed", "Не вдалося змінити зміну гравця.");
+          try {
+            e.setImportStatus?.(t, "warn");
+          } catch {}
+          return;
+        }
+        try {
+          e.savePlayersSnapshot?.(a.players);
+        } catch {}
+        try {
+          e.applyPlayerTableFilters?.();
+        } catch {}
+        try {
+          e.updateShiftBreakdownUI?.();
+        } catch {}
+        try {
+          N(document.getElementById("towerCalcModal"));
+        } catch {}
+        try {
+          be();
+        } catch {}
+      })),
+    Object.assign(e, {
+      setBoardLanguageMode: X,
+      getBoardLanguageLocales: G,
+      setBoardLanguageLocales: Y,
+      boardLanguageSummary: ae,
+      renderBoardLanguagePickerMarkup: re,
+      renderStandaloneFinalBoard: oe,
+    }),
+    Object.assign(t, {
+      openTowerCalculatorModal: we,
+      computeTowerCalcResults: be,
+      applyTowerCalcToTowerSettings: _e,
+      applyTowerCalcAssignmentsToTowers: ge,
+      calcSyncCaptainsFromTowersIntoCalculator: me,
+      renderBoardLanguageDialogMarkup: ne,
+    }),
+    (window.openTowerCalculatorModal = we),
+    (window.closeTowerCalculatorModal = ve),
+    (window.renderTowerCalcModal = F),
+    (window.computeTowerCalcResults = be),
+    (window.calcOpenTowerPickerForBase = ye),
+    (window.calcAutoFitTowersStrict = q),
+    (window.calcUpdateShiftStatsUI = N),
+    (window.calcRenderInlineTowerSettings = j),
+    (window.calcRenderLiveFinalBoard = le),
+    (window.getBoardDefaultLocales = K),
+    (window.setBoardLanguageMode = X),
+    (window.getBoardLanguageLocales = G),
+    (window.setBoardLanguageLocales = Y),
+    (window.boardLanguageSummary = ae),
+    (window.renderBoardLanguagePickerMarkup = re),
+    (window.renderBoardLanguageDialogMarkup = ne),
+    (window.renderStandaloneFinalBoard = oe),
+    (window.calcRecalculateTowerComposition = U),
+    (window.applyTowerCalcToTowerSettings = _e),
+    (window.applyTowerCalcAssignmentsToTowers = ge),
+    (window.calcSetInlineSelectedBaseId = D),
+    (window.calcSetPreviewShift = se),
+    (window.calcSyncCaptainsFromTowersIntoCalculator = me));
+})();

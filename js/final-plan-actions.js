@@ -189,12 +189,10 @@
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }
-
   function getPreferredPngScale() {
     const dpr = Number(window.devicePixelRatio || 1) || 1;
-    if (dpr >= 2.2) return 4;
-    if (dpr >= 1.5) return 3.5;
-    return 3;
+    if (dpr >= 1.5) return 5;
+    return 4;
   }
 
   async function renderSheetToPngBlob(sheet, options = {}) {
@@ -203,8 +201,8 @@
     }
 
     const exportScale = Math.max(
-      2,
-      Math.min(4, Number(options.scale || getPreferredPngScale()) || 3),
+      3,
+      Math.min(5, Number(options.scale || getPreferredPngScale()) || 4),
     );
 
     const cleanup = [];
@@ -285,6 +283,34 @@
     background: #f1bb3e;
     color: #1c1400;
   }
+
+  .png-export-sheet,
+  .png-export-sheet * {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+    box-sizing: border-box;
+  }
+
+  .png-export-sheet .board-title,
+  .png-export-sheet .board-col header h4,
+  .png-export-sheet .board-sub,
+  .png-export-sheet .board-cap,
+  .png-export-sheet .board-col li {
+    text-shadow: none !important;
+    filter: none !important;
+  }
+  .png-export-sheet .board-signature {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .png-export-sheet .board-signature .board-signature-image {
+    display: block;
+    width: 220px;
+    max-width: 100%;
+    height: auto;
+  }
 `;
       sandbox.appendChild(style);
       cleanup.push(() => style.remove());
@@ -292,6 +318,12 @@
       const exportSheet = sheet.cloneNode(true);
       exportSheet.classList.add("png-export-sheet");
       sandbox.appendChild(exportSheet);
+      try {
+        const exportSignatureImg = exportSheet.querySelector(".board-signature-image");
+        if (exportSignatureImg && typeof exportSignatureImg.decode === "function") {
+          await exportSignatureImg.decode().catch(() => {});
+        }
+      } catch {}
 
       await new Promise((resolve) =>
         requestAnimationFrame(() => requestAnimationFrame(resolve)),
