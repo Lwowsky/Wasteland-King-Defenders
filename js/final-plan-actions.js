@@ -289,7 +289,7 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: geometricPrecision;
     box-sizing: border-box;
-  }
+  }с
 
   .png-export-sheet .board-title,
   .png-export-sheet .board-col header h4,
