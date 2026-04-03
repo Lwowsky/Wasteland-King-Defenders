@@ -41,17 +41,19 @@
     const raw = String(value || '').trim().toLowerCase();
     if (!raw) return 'both';
     const text = raw.replace(/[–—−]/g, '-').replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
-    if (/^(both|all|any|both shifts?|all shifts?)$/.test(text)) return 'both';
-    if (/(both|all shifts?|обе|обидв|обидві|оба|две|дві|any shift|будь-як|будь яка|обидва)/.test(text)) return 'both';
-    if (/(^|\s)(1\s*[/,+;&-]\s*2|2\s*[/,+;&-]\s*1)(\s|$)/.test(text)) return 'both';
-    if (/^(1|s1|shift ?1|1st|first|перша|перший|перша зміна|зміна 1|змiна 1|смена 1|1 зміна|1 смена)$/.test(text)) return 'shift1';
-    if (/(^|\s)(shift|зміна|змiна|смена)\s*[-: ]*1(\s|$)/.test(text)) return 'shift1';
-    if (/(^|\s)1(st)?\s*(shift|зміна|змiна|смена)?(\s|$)/.test(text)) return 'shift1';
-    if (/(first|перш|перша|перший)/.test(text)) return 'shift1';
-    if (/^(2|s2|shift ?2|2nd|second|друга|другий|друга зміна|зміна 2|змiна 2|смена 2|2 зміна|2 смена)$/.test(text)) return 'shift2';
-    if (/(^|\s)(shift|зміна|змiна|смена)\s*[-: ]*2(\s|$)/.test(text)) return 'shift2';
-    if (/(^|\s)2(nd)?\s*(shift|зміна|змiна|смена)?(\s|$)/.test(text)) return 'shift2';
-    if (/(second|друг|втор)/.test(text)) return 'shift2';
+  if (/^(both|all|any|both shifts?|all shifts?)$/.test(text)) return 'both';
+  if (/(both|all shifts?|обе|обидв|обидві|оба|две|дві|any shift|будь-як|будь яка|обидва)/.test(text)) return 'both';
+  if (/(^|\s)(1\s*[/,+;&-]\s*2|2\s*[/,+;&-]\s*1)(\s|$)/.test(text)) return 'both';
+
+  if (/^(1|s1|shift ?1|1st|first|перша|перший|первая|первый|перша зміна|первая смена|зміна 1|змiна 1|смена 1|1 зміна|1 смена)$/.test(text)) return 'shift1';
+  if (/(^|\s)(shift|зміна|змiна|смена)\s*[-: ]*1(\s|$)/.test(text)) return 'shift1';
+  if (/(^|\s)1(st)?\s*(shift|зміна|змiна|смена)?(\s|$)/.test(text)) return 'shift1';
+  if (/(first|перш|перша|перший|перв|первая|первый)/.test(text)) return 'shift1';
+
+  if (/^(2|s2|shift ?2|2nd|second|друга|другий|вторая|второй|друга зміна|вторая смена|зміна 2|змiна 2|смена 2|2 зміна|2 смена)$/.test(text)) return 'shift2';
+  if (/(^|\s)(shift|зміна|змiна|смена)\s*[-: ]*2(\s|$)/.test(text)) return 'shift2';
+  if (/(^|\s)2(nd)?\s*(shift|зміна|змiна|смена)?(\s|$)/.test(text)) return 'shift2';
+  if (/(second|друг|втор|вторая|второй|втора)/.test(text)) return 'shift2';
     return (text === 'shift1' || text === 'shift2' || text === 'both') ? text : 'both';
   }
 
