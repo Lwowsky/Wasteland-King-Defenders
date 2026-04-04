@@ -37,25 +37,90 @@
     return /yes|да|так|ready/.test(text);
   }
 
-  function normalizeShiftValue(value){
-    const raw = String(value || '').trim().toLowerCase();
-    if (!raw) return 'both';
-    const text = raw.replace(/[–—−]/g, '-').replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
-  if (/^(both|all|any|both shifts?|all shifts?)$/.test(text)) return 'both';
-  if (/(both|all shifts?|обе|обидв|обидві|оба|две|дві|any shift|будь-як|будь яка|обидва)/.test(text)) return 'both';
+  function normalizeShiftValue(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return 'both';
+
+  // якщо в excel вже збережено порядок вибору:
+  // 1 = перша зміна, 2 = друга зміна, 3 = обидві
+  if (raw === '1') return 'shift1';
+  if (raw === '2') return 'shift2';
+  if (raw === '3') return 'both';
+
+  const text = raw
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/[–—−]/g, '-')
+    .replace(/[_.,;:()[\]{}|]+/g, ' ')
+    .replace(/\b\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}\b/g, ' ')
+    .replace(/\b(am|pm|utc|gmt|msk|мск|час|часа|часов|hours?|hrs?)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!text) return 'both';
+
+  if (text === '1') return 'shift1';
+  if (text === '2') return 'shift2';
+  if (text === '3') return 'both';
+
+  const bothExact = new Set([
+    'both', 'all', 'any', 'both shift', 'both shifts', 'all shift', 'all shifts', 'any shift', 'any shifts',
+    'обе', 'оба', 'обе смены', 'оба смены', 'две смены',
+    'обидві', 'обидва', 'обидві зміни', 'обидва зміни',
+    '両方', '両シフト', '全シフト', 'すべて', '全部'
+  ]);
+
+  const shift1Exact = new Set([
+    '1', 's1', 'shift 1', 'shift1', '1 shift', '1st', 'first', 'first shift',
+    'первая', 'первый', 'первая смена', 'смена 1', '1 смена',
+    'перша', 'перший', 'перша зміна', 'зміна 1', '1 зміна', 'змiна 1',
+    '第一シフト', '第1シフト', 'シフト1', '1シフト', '第一勤務', '第1勤務', '1勤務', '一勤', '1勤', '一直', '1直'
+  ]);
+
+  const shift2Exact = new Set([
+    '2', 's2', 'shift 2', 'shift2', '2 shift', '2nd', 'second', 'second shift',
+    'вторая', 'второй', 'вторая смена', 'смена 2', '2 смена',
+    'друга', 'другий', 'друга зміна', 'зміна 2', '2 зміна', 'змiна 2',
+    '第二シフト', '第2シフト', 'シフト2', '2シフト', '第二勤務', '第2勤務', '2勤務', '二勤', '2勤', '二直', '2直'
+  ]);
+
+  if (bothExact.has(text)) return 'both';
+  if (shift1Exact.has(text)) return 'shift1';
+  if (shift2Exact.has(text)) return 'shift2';
+
   if (/(^|\s)(1\s*[/,+;&-]\s*2|2\s*[/,+;&-]\s*1)(\s|$)/.test(text)) return 'both';
 
-  if (/^(1|s1|shift ?1|1st|first|перша|перший|первая|первый|перша зміна|первая смена|зміна 1|змiна 1|смена 1|1 зміна|1 смена)$/.test(text)) return 'shift1';
-  if (/(^|\s)(shift|зміна|змiна|смена)\s*[-: ]*1(\s|$)/.test(text)) return 'shift1';
-  if (/(^|\s)1(st)?\s*(shift|зміна|змiна|смена)?(\s|$)/.test(text)) return 'shift1';
-  if (/(first|перш|перша|перший|перв|первая|первый)/.test(text)) return 'shift1';
-
-  if (/^(2|s2|shift ?2|2nd|second|друга|другий|вторая|второй|друга зміна|вторая смена|зміна 2|змiна 2|смена 2|2 зміна|2 смена)$/.test(text)) return 'shift2';
-  if (/(^|\s)(shift|зміна|змiна|смена)\s*[-: ]*2(\s|$)/.test(text)) return 'shift2';
-  if (/(^|\s)2(nd)?\s*(shift|зміна|змiна|смена)?(\s|$)/.test(text)) return 'shift2';
-  if (/(second|друг|втор|вторая|второй|втора)/.test(text)) return 'shift2';
-    return (text === 'shift1' || text === 'shift2' || text === 'both') ? text : 'both';
+  if (/(^|\s)(shift|shifts|смена|смены|зміна|зміни|змiна|シフト|勤務|直)\s*[-: ]*1(\s|$)/.test(text)) {
+    return 'shift1';
   }
+
+  if (/(^|\s)(shift|shifts|смена|смены|зміна|зміни|змiна|シフト|勤務|直)\s*[-: ]*2(\s|$)/.test(text)) {
+    return 'shift2';
+  }
+
+  if (/(^|\s)1(st)?\s*(shift|shifts|смена|смены|зміна|зміни|змiна|シフト|勤務|直)?(\s|$)/.test(text)) {
+    return 'shift1';
+  }
+
+  if (/(^|\s)2(nd)?\s*(shift|shifts|смена|смены|зміна|зміни|змiна|シフト|勤務|直)?(\s|$)/.test(text)) {
+    return 'shift2';
+  }
+
+  if (/(first|1st|перв|перш|第一|第1|一勤|1勤|一直|1直)/.test(text)) {
+    return 'shift1';
+  }
+
+  if (/(second|2nd|втор|друг|第二|第2|二勤|2勤|二直|2直)/.test(text)) {
+    return 'shift2';
+  }
+
+  if (/(both|all shifts?|any shift|обе|оба|обидв|две|дві|両方|両シフト|全シフト|全部|すべて)/.test(text)) {
+    return 'both';
+  }
+
+  return 'both';
+}
 
   function normalizeShiftLabel(value){
     const normalized = normalizeShiftValue(value);
