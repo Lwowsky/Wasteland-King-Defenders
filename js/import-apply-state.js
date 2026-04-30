@@ -34,17 +34,10 @@
     re('pns_tower_calc_state');
     t.players = [];
     t.playerById = new Map();
-<<<<<<< HEAD
-    t.shiftPlans = { shift1: null, shift2: null };
-    t._shiftPlansLoadedFromLS = !0;
-    try {
-      localStorage.setItem('pns_layout_shift_plans_store_v1', JSON.stringify({ shift1: null, shift2: null }));
-=======
     t.shiftPlans = { shift1: null, shift2: null, shift3: null, shift4: null };
     t._shiftPlansLoadedFromLS = !0;
     try {
       localStorage.setItem('pns_layout_shift_plans_store_v1', JSON.stringify({ shift1: null, shift2: null, shift3: null, shift4: null }));
->>>>>>> 4f53fe0 (update)
     } catch {}
     t.activeShift = 'shift1';
     t.towerCalcLastResults = null;
@@ -103,12 +96,8 @@
       const name = pick('player_name');
       if (!name) continue;
       const shiftRaw = pick('shift_availability');
-<<<<<<< HEAD
-      const shift = e.normalizeShiftValue(shiftRaw);
-=======
       const shift = typeof e.applyImportShiftRule === 'function' ? e.applyImportShiftRule(shiftRaw) : e.normalizeShiftValue(shiftRaw);
       if (shift === 'ignore') continue;
->>>>>>> 4f53fe0 (update)
       const role = e.normalizeRole(pick('focus_troop'));
       const customFields = {};
       let fallbackNotes = '';
@@ -260,10 +249,7 @@
 
     W({ preserveImportData: !0 });
     t.players = players;
-<<<<<<< HEAD
-=======
     try { e.syncHomeShiftCountFromImportedPlayers?.(players); } catch {}
->>>>>>> 4f53fe0 (update)
     try { t.importData = t.importData || {}; t.importData.sourcePending = !1; } catch {}
     try { wiz._skipPlayerRestoreUntilApplied = !1; } catch {}
     t.playerById = new Map(players.map((player) => [player.id, player]));
@@ -276,15 +262,9 @@
     });
     try { e.clearTowersSnapshot?.(); } catch {}
     try { e.clearTowerMarchOverrides?.(); } catch {}
-<<<<<<< HEAD
-    try { t && 'object' == typeof t && (t.shiftPlans = { shift1: null, shift2: null }); } catch {}
-    try {
-      localStorage.setItem('pns_layout_shift_plans_store_v1', JSON.stringify({ shift1: null, shift2: null }));
-=======
     try { t && 'object' == typeof t && (t.shiftPlans = { shift1: null, shift2: null, shift3: null, shift4: null }); } catch {}
     try {
       localStorage.setItem('pns_layout_shift_plans_store_v1', JSON.stringify({ shift1: null, shift2: null, shift3: null, shift4: null }));
->>>>>>> 4f53fe0 (update)
     } catch {}
     re('pns_tower_calc_state');
     if ('function' == typeof e.renderPlayersTableFromState) e.renderPlayersTableFromState();
@@ -418,10 +398,7 @@
     const preservedCalcResults = cloneJSON(t.towerCalcLastResults || null, null);
     const activeShiftBeforeMerge = String(t.activeShift || 'shift1');
 
-<<<<<<< HEAD
-=======
     try { e.syncHomeShiftCountFromImportedPlayers?.(imported); } catch {}
->>>>>>> 4f53fe0 (update)
     const currentPlayers = Array.isArray(t.players) ? t.players : [];
     const pinnedIds = J();
     const matchedIds = new Set();

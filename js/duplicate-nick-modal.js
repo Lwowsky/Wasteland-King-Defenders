@@ -45,11 +45,7 @@
     if (!raw) return '';
     if (/^(shift\s*1|зміна\s*1|смена\s*1)$/i.test(raw)) return t('shift1', 'Зміна 1');
     if (/^(shift\s*2|зміна\s*2|смена\s*2)$/i.test(raw)) return t('shift2', 'Зміна 2');
-<<<<<<< HEAD
-    if (/^(both|обидві|обе|оба)$/i.test(raw)) return t('both', 'Обидві');
-=======
     if (/^(both|обидві|обе|оба)$/i.test(raw)) return t('both', 'Всі');
->>>>>>> 4f53fe0 (update)
     return raw;
   }
 
@@ -132,11 +128,7 @@
       const playerId = String(player?.id || '');
       const isSelected = playerId === keepId;
       const regInfo = PNS.getPlayerRegistrationInfo?.(player) || { formatted: t('duplicate_unknown_time', 'Невідомо') };
-<<<<<<< HEAD
-      const effectiveShift = normalizeShiftLabel(player?.registeredShiftLabel || player?.shiftLabel || player?.registeredShift || player?.shift || '') || t('both', 'Обидві');
-=======
       const effectiveShift = normalizeShiftLabel(player?.registeredShiftLabel || player?.shiftLabel || player?.registeredShift || player?.shift || '') || t('both', 'Всі');
->>>>>>> 4f53fe0 (update)
       const assigned = PNS.getPlayerPlacementLabel?.(player) || t('reserve', 'Резерв');
       return `
         <article class="duplicate-nick-record${isSelected ? ' is-selected' : ''}" data-duplicate-player-card="${esc(playerId)}">

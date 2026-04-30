@@ -91,8 +91,6 @@
     };
   }
 
-<<<<<<< HEAD
-=======
   function getHomeShiftCount() {
     try {
       const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null') || {};
@@ -142,7 +140,6 @@
     }
   }
 
->>>>>>> 4f53fe0 (update)
   function syncTopFilterUI() {
     const controls = getTopFilterControls();
     if (!controls.row) return;
@@ -168,19 +165,12 @@
     }
 
     if (controls.shift) {
-<<<<<<< HEAD
-=======
       syncShiftFilterOptions(controls.shift);
->>>>>>> 4f53fe0 (update)
       const current = state.topFilters?.shift || 'all';
       const option = Array.from(controls.shift.options).find((opt) => {
         const normalized = PNS.normalizeTopFilterShift(opt.value || opt.textContent);
         return current === 'all'
-<<<<<<< HEAD
-          ? /(усі|всі|all)/i.test(opt.textContent)
-=======
           ? String(opt.value || '').toLowerCase() === 'all' || /(усі|всі|all)/i.test(opt.textContent)
->>>>>>> 4f53fe0 (update)
           : normalized === current;
       });
       if (option) controls.shift.value = option.value;
@@ -250,8 +240,6 @@
     }
   }
 
-<<<<<<< HEAD
-=======
   function refreshTopShiftFilterOptionsAndApply() {
     const controls = getTopFilterControls();
     if (!controls.row) return;
@@ -264,21 +252,16 @@
     }
   }
 
->>>>>>> 4f53fe0 (update)
   Object.assign(PNS, {
     getTopFilterControls,
     syncTopFilterUI,
     bindTopFilterEvents,
-<<<<<<< HEAD
-  });
-=======
     syncTopShiftFilterOptions: refreshTopShiftFilterOptionsAndApply,
   });
 
   document.addEventListener('pns:region-shifts-changed', refreshTopShiftFilterOptionsAndApply);
   window.addEventListener('pns:region-shifts-changed', refreshTopShiftFilterOptionsAndApply);
   document.addEventListener('pns:i18n-changed', refreshTopShiftFilterOptionsAndApply);
->>>>>>> 4f53fe0 (update)
 })();
 
 

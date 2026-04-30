@@ -30,13 +30,6 @@
   }
 
   function shiftLabel(shift) {
-<<<<<<< HEAD
-    try {
-      return typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(shift) : String(shift || '');
-    } catch {
-      return String(shift || '');
-    }
-=======
     const key = String(shift || '').toLowerCase();
     const n = Number(key.replace(/\D/g, '')) || 0;
     try {
@@ -46,7 +39,6 @@
     if (key === 'both') return tr('both', 'Всі');
     if (n >= 1 && n <= 4) return n === 1 ? tr('shift1', 'Зміна 1') : n === 2 ? tr('shift2', 'Зміна 2') : n === 3 ? tr('shift3', 'Зміна 3') : tr('shift4', 'Зміна 4');
     return String(shift || '');
->>>>>>> 4f53fe0 (update)
   }
 
   function roleLabel(role, short = false) {
@@ -57,8 +49,6 @@
     }
   }
 
-<<<<<<< HEAD
-=======
   const REGION_SETTINGS_KEY = 'pns_import_region_shift_settings_v1';
   const ACTIVE_REGION_KEY = 'pns_tower_calc_active_region_v1';
   const REGION_KEYS = ['region1', 'region2', 'region3'];
@@ -314,7 +304,6 @@
     try { renderStandaloneFinalBoard(document.getElementById('board-modal')); } catch {}
   }
 
->>>>>>> 4f53fe0 (update)
   function getCalcState() {
     try {
       if (typeof window.getCalcState === 'function') return window.getCalcState();
@@ -347,8 +336,6 @@
     }
   }
 
-<<<<<<< HEAD
-=======
   function mapBoardLanguageTextEnglishFirst(mapper) {
     const locales = (() => {
       try {
@@ -375,7 +362,6 @@
     return values.join(' ✦ ');
   }
 
->>>>>>> 4f53fe0 (update)
   function getBoardLanguageTextMulti(key, fallback) {
     try {
       return typeof window.getBoardLanguageTextMulti === 'function'
@@ -415,10 +401,6 @@
 
   function getShiftBaseAssignments(shift) {
     (function ensureShiftPlans() {
-<<<<<<< HEAD
-      try { ModalsShift.saveCurrentShiftPlanSnapshot?.(); } catch {}
-      try { state.shiftPlans = state.shiftPlans || {}; } catch {}
-=======
       try { state.shiftPlans = state.shiftPlans || {}; } catch {}
       try {
         const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null') || {};
@@ -430,27 +412,15 @@
           if (!state.shiftPlans[key] && source[key]) state.shiftPlans[key] = source[key];
         });
       } catch {}
->>>>>>> 4f53fe0 (update)
       return state.shiftPlans;
     })();
     const slots = getBaseSlots();
     const planBases = state.shiftPlans?.[shift]?.bases || {};
     return slots.map((base, index) => {
-<<<<<<< HEAD
-      const liveBase = state.baseById?.get?.(base?.id || '');
-      const saved = planBases?.[base?.id] || {};
-      const isActiveShift = String(state.activeShift || '') === String(shift || '');
-      const captainId = String((saved.captainId ?? (isActiveShift ? liveBase?.captainId : null)) || '');
-      const helperIds = Array.isArray(saved.helperIds)
-        ? saved.helperIds
-        : (isActiveShift && Array.isArray(liveBase?.helperIds) ? liveBase.helperIds : []);
-      const role = saved.role || (isActiveShift ? liveBase?.role : null) || base?.role || null;
-=======
       const saved = planBases?.[base?.id] || {};
       const captainId = String(saved.captainId || '');
       const helperIds = Array.isArray(saved.helperIds) ? saved.helperIds : [];
       const role = saved.role || base?.role || null;
->>>>>>> 4f53fe0 (update)
       return {
         index,
         baseId: String(base?.id || ''),
@@ -640,12 +610,6 @@
 
     return PNS.renderHtmlTemplate('tpl-board-sheet', {
       title: escapeHtml((function renderSheetTitle(targetShift) {
-<<<<<<< HEAD
-        const normalized = String(targetShift || '').toLowerCase() === 'shift1' ? 'shift1' : 'shift2';
-        return mapBoardLanguageText(locale => {
-          const shiftText = getBoardLanguageText(normalized, normalized, locale);
-          const halfText = getBoardLanguageText(normalized === 'shift1' ? 'first_half' : 'second_half', '', locale);
-=======
         const normalized = normalizePreviewShift(targetShift);
         const region = getActiveRegion();
         const captureTitle = getCaptureTitle(region, normalized);
@@ -654,7 +618,6 @@
           const shiftText = getBoardLanguageText(normalized, shiftLabel(normalized), locale);
           const halfKey = normalized === 'shift1' ? 'first_half' : normalized === 'shift2' ? 'second_half' : '';
           const halfText = halfKey ? getBoardLanguageText(halfKey, '', locale) : '';
->>>>>>> 4f53fe0 (update)
           return halfText ? `${shiftText} • ${halfText}` : shiftText;
         });
       })(shift)),
@@ -664,32 +627,18 @@
 
   function setCalcPreviewShift(shift) {
     const calcState = getCalcState();
-<<<<<<< HEAD
-    calcState.previewShift = String(shift || '').toLowerCase() === 'shift1' ? 'shift1' : 'shift2';
-=======
     calcState.previewShift = clampPreviewShift(shift);
->>>>>>> 4f53fe0 (update)
     persistCalcState(calcState);
     return calcState.previewShift;
   }
 
   function renderLiveFinalBoard(modal) {
-<<<<<<< HEAD
-    const target = (modal || document.getElementById('towerCalcModal'))?.querySelector?.('#towerCalcGlobalOut');
-    if (!target) return;
-    const calcState = getCalcState();
-    const activeShift = window.PNS?.state?.activeShift;
-    const previewShift = String((calcState.previewShift === 'shift1' || calcState.previewShift === 'shift2') ? calcState.previewShift : ((activeShift === 'shift1' || activeShift === 'shift2') ? activeShift : 'shift1')).toLowerCase() === 'shift2'
-      ? 'shift2'
-      : 'shift1';
-=======
     const root = modal || document.getElementById('towerCalcModal');
     const target = root?.querySelector?.('#towerCalcGlobalOut');
     if (!target) return;
     const calcState = getCalcState();
     const activeShift = window.PNS?.state?.activeShift;
     const previewShift = clampPreviewShift(calcState.previewShift || activeShift || 'shift1');
->>>>>>> 4f53fe0 (update)
     if (calcState.previewShift !== previewShift) {
       calcState.previewShift = previewShift;
       persistCalcState(calcState);
@@ -699,22 +648,13 @@
       shift2_active: previewShift === 'shift2' ? 'active' : '',
       shift1_text: shiftLabel('shift1'),
       shift2_text: shiftLabel('shift2'),
-<<<<<<< HEAD
-=======
       shift_tabs_html: renderShiftTabs('calc', previewShift),
       region_picker_html: renderRegionPicker('calc'),
->>>>>>> 4f53fe0 (update)
       lang_picker_html: renderBoardLanguagePickerMarkup('calc'),
       export_png_text: tr('export_png', 'Завантажити PNG'),
       export_txt_text: tr('export_txt', 'TXT'),
       share_text: tr('final_plan_share', 'Поділитися'),
       status_text: tr('final_plan_status', 'Фінальний план'),
-<<<<<<< HEAD
-      shift_text: shiftLabel(previewShift),
-      sheet_html: renderBoardSheet(previewShift)
-    });
-    try { target.querySelector('.tower-calc-preview-toolbar')?.scrollTo?.({ left: 0, top: 0 }); } catch {}
-=======
       shift_text: getCaptureTitle(getActiveRegion(), previewShift) || shiftLabel(previewShift),
       sheet_html: renderBoardSheet(previewShift)
     });
@@ -746,7 +686,6 @@
       const shareBtn = target.querySelector('[data-calc-preview-share]');
       if (shareBtn) shareBtn.onclick = async function(ev) { try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); } catch {} try { return !!window.shareBoardPreview?.(); } catch { return false; } };
     } catch {}
->>>>>>> 4f53fe0 (update)
   }
 
   function renderStandaloneFinalBoard(modal) {
@@ -758,11 +697,7 @@
     if (!toolbar || !status || !sheet) return false;
 
     const calcState = getCalcState();
-<<<<<<< HEAD
-    const previewShift = String((calcState.previewShift === 'shift1' || calcState.previewShift === 'shift2') ? calcState.previewShift : (state.activeShift || 'shift1')).toLowerCase() === 'shift2' ? 'shift2' : 'shift1';
-=======
     const previewShift = clampPreviewShift(calcState.previewShift || state.activeShift || 'shift1');
->>>>>>> 4f53fe0 (update)
     calcState.previewShift = previewShift;
     persistCalcState(calcState);
 
@@ -771,11 +706,8 @@
       shift2_active: previewShift === 'shift2' ? 'active' : '',
       shift1_text: shiftLabel('shift1'),
       shift2_text: shiftLabel('shift2'),
-<<<<<<< HEAD
-=======
       shift_tabs_html: renderShiftTabs('board', previewShift),
       region_picker_html: renderRegionPicker('board'),
->>>>>>> 4f53fe0 (update)
       lang_picker_html: renderBoardLanguagePickerMarkup('board'),
       board_language_text: escapeHtml(tr('board_language', 'Мова плану')),
       export_png_text: escapeHtml(tr('export_png', 'Завантажити PNG')),
@@ -784,13 +716,9 @@
     });
     try { toolbar.classList.add('board-head-actions--single'); } catch {}
     try { toolbar.scrollLeft = 0; } catch {}
-<<<<<<< HEAD
-    status.textContent = `${tr('final_plan_status', 'Фінальний план')} · ${shiftLabel(previewShift)}`;
-=======
     try { wireFinalPlanRegionPicker(root); } catch {}
     status.textContent = '';
     try { status.style.display = 'none'; } catch {}
->>>>>>> 4f53fe0 (update)
     sheet.innerHTML = renderBoardSheet(previewShift);
     try { sheet.scrollTop = 0; sheet.scrollLeft = 0; } catch {}
 
@@ -809,8 +737,6 @@
           return false;
         };
       });
-<<<<<<< HEAD
-=======
       toolbar.querySelectorAll('[data-final-plan-region-choice]').forEach((button) => {
         button.onclick = function(ev) {
           try { ev.preventDefault(); ev.stopPropagation(); } catch {}
@@ -824,7 +750,6 @@
           return false;
         };
       });
->>>>>>> 4f53fe0 (update)
       const exportBtn = toolbar.querySelector('[data-preview-export-png], #exportPngBtn');
       if (exportBtn) {
         exportBtn.onclick = function(ev) {
@@ -886,11 +811,8 @@
     return true;
   }
 
-<<<<<<< HEAD
-=======
   try { wireFinalPlanRegionPicker(document); } catch {}
 
->>>>>>> 4f53fe0 (update)
   Object.assign(PNS, {
     getBaseSlots,
     getShiftBaseAssignments,

@@ -7,9 +7,6 @@
     const state = PNS.state;
     const shiftApi = PNS.ModalsShift || {};
     if (!state) return false;
-<<<<<<< HEAD
-    const targets = scope === 'all' ? ['shift1','shift2'] : [String(scope || state.activeShift || 'shift1')];
-=======
     const readEnabledClearTargets = () => {
       try {
         const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null');
@@ -23,7 +20,6 @@
     };
     const normalizedScope = String(scope || state.activeShift || 'shift1').toLowerCase();
     const targets = normalizedScope === 'all' ? readEnabledClearTargets() : [normalizedScope].filter(s => /^shift[1-4]$/.test(s));
->>>>>>> 4f53fe0 (update)
     const activeShift = String(state.activeShift || 'shift1');
     state.shiftPlans = state.shiftPlans || {};
 
@@ -67,11 +63,8 @@
       localStorage.setItem('pns_layout_shift_plans_store_v1', JSON.stringify({
         shift1: state.shiftPlans?.shift1 || null,
         shift2: state.shiftPlans?.shift2 || null,
-<<<<<<< HEAD
-=======
         shift3: state.shiftPlans?.shift3 || null,
         shift4: state.shiftPlans?.shift4 || null,
->>>>>>> 4f53fe0 (update)
       }));
     } catch {}
 
@@ -81,15 +74,9 @@
     try { window.computeTowerCalcResults?.(); } catch {}
     try { PNS.refreshShiftUi?.(); } catch {}
     try {
-<<<<<<< HEAD
-      const message = scope === 'all'
-        ? tr('clear_helpers_both_done', 'Очищено зміни 1 і 2. Капітани залишилися.')
-        : `${tr('clear_helpers_done_prefix', 'Очищено:')} ${scope === 'shift2' ? tr('shift2', 'Зміна 2') : tr('shift1', 'Зміна 1')}. ${tr('captains_stayed', 'Капітани залишилися.')}`;
-=======
       const message = normalizedScope === 'all'
         ? `${tr('clear_helpers_all_done', 'Очищено всі зміни')}. ${tr('captains_stayed', 'Капітани залишилися.')}`
         : `${tr('clear_helpers_done_prefix', 'Очищено:')} ${tr(normalizedScope, normalizedScope.replace('shift', 'Зміна '))}. ${tr('captains_stayed', 'Капітани залишилися.')}`;
->>>>>>> 4f53fe0 (update)
       PNS.setImportStatus?.(message, 'good');
     } catch {}
     return true;

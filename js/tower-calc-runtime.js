@@ -36,11 +36,7 @@
       node.querySelector("[data-calc-set-player-shift]") ||
       text.includes("Хто не вліз / резерв") ||
       text.includes("Не використано") ||
-<<<<<<< HEAD
-      text.includes("Both не чіпається")
-=======
       text.includes("All не чіпається")
->>>>>>> 4f53fe0 (update)
     );
   }
 
@@ -108,11 +104,7 @@
     if (!state) return false;
 
     const clearForShift = currentShift => {
-<<<<<<< HEAD
-      if (!["shift1", "shift2"].includes(String(currentShift || ""))) return;
-=======
       if (!/^shift[1-4]$/.test(String(currentShift || ""))) return;
->>>>>>> 4f53fe0 (update)
       try { modals.saveCurrentShiftPlanSnapshot?.(); } catch {}
       state.shiftPlans = state.shiftPlans || {};
       const plan = state.shiftPlans[currentShift] && typeof state.shiftPlans[currentShift] === "object"
@@ -161,23 +153,15 @@
           localStorage.setItem("pns_layout_shift_plans_store_v1", JSON.stringify({
             shift1: state.shiftPlans?.shift1 || null,
             shift2: state.shiftPlans?.shift2 || null,
-<<<<<<< HEAD
-=======
             shift3: state.shiftPlans?.shift3 || null,
             shift4: state.shiftPlans?.shift4 || null,
->>>>>>> 4f53fe0 (update)
           }));
         } catch {}
       }
     };
 
     if (shiftKey === "all") {
-<<<<<<< HEAD
-      clearForShift("shift1");
-      clearForShift("shift2");
-=======
       ["shift1","shift2","shift3","shift4"].forEach(clearForShift);
->>>>>>> 4f53fe0 (update)
     } else {
       clearForShift(shiftKey);
     }
@@ -188,13 +172,8 @@
     } catch {}
     try {
       const message = shiftKey === "all"
-<<<<<<< HEAD
-        ? tr("clear_helpers_both_done", "Очищено помічників у змінах 1 і 2. Капітани залишилися.")
-        : `${tr("clear_helpers_done_prefix", "Очищено помічників:")} ${shiftKey === "shift1" ? tr("shift1", "Зміна 1") : tr("shift2", "Зміна 2")}. ${tr("captains_stayed", "Капітани залишилися.")}`;
-=======
         ? tr("clear_helpers_all_done", "Очищено помічників у всіх змінах. Капітани залишилися.")
         : `${tr("clear_helpers_done_prefix", "Очищено помічників:")} ${tr(shiftKey, shiftKey.replace("shift", "Зміна "))}. ${tr("captains_stayed", "Капітани залишилися.")}`;
->>>>>>> 4f53fe0 (update)
       PNS.setImportStatus?.(message, "good");
     } catch {}
     return true;

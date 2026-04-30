@@ -20,13 +20,8 @@
     if (!(t.importData.headers || []).length) {
       k(
         r(
-<<<<<<< HEAD
-          'load_file_or_link_for_template',
-          'Спочатку завантаж файл або посилання, щоб застосувати відповідний шаблон.',
-=======
           'load_file_for_template',
           'Спочатку завантаж файл, щоб застосувати відповідний шаблон.',
->>>>>>> 4f53fe0 (update)
         ),
         'danger',
       );
@@ -73,13 +68,8 @@
         'Розмір ралі': String(e.rally || ''),
         'Готовий бути капітаном': e.captainReady ? 'Так' : 'Ні',
         'Яка зміна підходить':
-<<<<<<< HEAD
-          e.shift === 'shift1' ? 'Зміна 1' : e.shift === 'shift2' ? 'Зміна 2' : 'Обидві',
-        'Рівень лігва': e.lairLevel || '',
-=======
           e.shift === 'shift1' ? 'Зміна 1' : e.shift === 'shift2' ? 'Зміна 2' : 'Всі',
         'Захоплення': e.lairLevel || '',
->>>>>>> 4f53fe0 (update)
         'Тип резервних військ':
           e.secondaryRole && e.secondaryRole !== 'Unknown' ? e.secondaryRole : '',
         'Тір резервних військ': e.secondaryTier || '',

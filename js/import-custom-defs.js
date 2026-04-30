@@ -7,10 +7,7 @@
   const wiz = (e.ImportWizard = e.ImportWizard || {});
   const r = wiz.translate || ((e, t = "") => t || e);
   const d = "pns_layout_import_custom_defs_v3";
-<<<<<<< HEAD
-=======
   const hiddenKey = "pns_layout_import_custom_defs_hidden_v1";
->>>>>>> 4f53fe0 (update)
   const translatedBuiltinLabel = (key, fallback) => r(key, fallback);
   const u = [
       {
@@ -86,8 +83,6 @@
   function m() {
     return f(u);
   }
-<<<<<<< HEAD
-=======
   function readHiddenKeys() {
     try {
       const raw = localStorage.getItem(hiddenKey);
@@ -121,7 +116,6 @@
     hidden.delete(k);
     persistHiddenKeys(hidden);
   }
->>>>>>> 4f53fe0 (update)
   function y() {
     try {
       const e = localStorage.getItem(d),
@@ -133,11 +127,7 @@
             !String(e.key || "").trim() ||
             a.set(String(e.key), { ...(a.get(String(e.key)) || {}), ...e });
         }),
-<<<<<<< HEAD
-        f(Array.from(a.values()))
-=======
         f(Array.from(a.values()).filter((item) => !readHiddenKeys().has(String(item?.key || ""))))
->>>>>>> 4f53fe0 (update)
       );
     } catch {
       return m();
@@ -183,12 +173,9 @@
     persistCustomOptionalDefs: _,
     getCustomOptionalDefs: g,
     ensureCustomOptionalDefs: b,
-<<<<<<< HEAD
-=======
     readHiddenCustomOptionalDefs: readHiddenKeys,
     hideCustomOptionalDef,
     restoreCustomOptionalDef,
->>>>>>> 4f53fe0 (update)
   });
   e.getCustomOptionalDefs = g;
 })();

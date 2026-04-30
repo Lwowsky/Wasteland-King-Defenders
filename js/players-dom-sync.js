@@ -51,11 +51,7 @@
       const marchText = getField('march') || cells[4]?.textContent?.trim() || '';
       const rallyText = getField('rally') || getCol('rally_size') || '';
       const captainReadyText = getField('captainReady') || cells[6]?.textContent?.trim() || '';
-<<<<<<< HEAD
-      const shiftText = getField('shiftLabel') || cells[7]?.textContent?.trim() || row.dataset.shift || 'Обидві';
-=======
       const shiftText = getField('shiftLabel') || cells[7]?.textContent?.trim() || row.dataset.shift || 'Всі';
->>>>>>> 4f53fe0 (update)
 
       const player = {
         id: `p${index + 1}`,

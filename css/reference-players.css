@@ -587,11 +587,7 @@
 #playersDataTable th[data-field="tier"],#playersDataTable td[data-field="tier"]{width:50px;min-width:50px}
 #playersDataTable th[data-field="march"],#playersDataTable td[data-field="march"]{width:88px;min-width:88px}
 #playersDataTable th[data-field="rally"],#playersDataTable td[data-field="rally"]{width:106px;min-width:106px}
-<<<<<<< HEAD
-#playersDataTable th[data-field="captainReady"],#playersDataTable td[data-field="captainReady"]{width:76px;min-width:76px;text-align:center}
-=======
 #playersDataTable th[data-field="captainReady"],#playersDataTable td[data-field="captainReady"],#playersDataTable th[data-field="lair"],#playersDataTable td[data-field="lair"]{width:76px;min-width:76px;text-align:center}
->>>>>>> 4f53fe0 (update)
 #playersDataTable th[data-field="shiftLabel"],#playersDataTable td[data-field="shiftLabel"]{width:108px;min-width:108px}
 #playersDataTable th[data-field="actions"],#playersDataTable td[data-field="actions"]{width:204px;min-width:204px}
 
@@ -622,12 +618,8 @@
   border-color:rgba(124,161,255,.36);
 }
 
-<<<<<<< HEAD
-#playersDataTable td[data-field="captainReady"] .pill{
-=======
 #playersDataTable td[data-field="captainReady"] .pill,
 #playersDataTable td[data-field="lair"] .pill{
->>>>>>> 4f53fe0 (update)
   display:inline-flex;
   align-items:center;
   justify-content:center;
@@ -638,18 +630,6 @@
   font-size:14px;
   font-weight:800;
   line-height:1;
-<<<<<<< HEAD
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
-}
-#playersDataTable td[data-field="captainReady"] .pill.yes{
-  background:linear-gradient(180deg,rgba(22,100,95,.92),rgba(10,71,73,.98));
-  border:1px solid rgba(74,206,184,.34);
-  color:#eefefd;
-}
-#playersDataTable td[data-field="captainReady"] .pill.no{
-  background:linear-gradient(180deg,rgba(72,34,64,.92),rgba(51,23,46,.98));
-  border:1px solid rgba(188,102,147,.30);
-=======
   color:#f7fbff;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
 }
@@ -663,7 +643,6 @@
 #playersDataTable td[data-field="lair"] .pill.no{
   background:radial-gradient(circle at 50% 12%,rgba(255,255,255,.16),rgba(255,255,255,0) 56%),linear-gradient(180deg,rgba(83,49,74,.96) 0%,rgba(58,30,51,.98) 100%);
   border:1px solid rgba(197,108,148,.30);
->>>>>>> 4f53fe0 (update)
   color:#ffe9f4;
 }
 
@@ -700,11 +679,7 @@
 
 
 #playersDataTable td[data-field="actions"]{padding:6px 8px;}
-<<<<<<< HEAD
-#playersDataTable td[data-field="captainReady"] .pill, #playersDataTable td[data-field="captainReady"] .badge{min-height:38px;padding:0 14px;font-size:14px;border-radius:999px;}
-=======
 #playersDataTable td[data-field="captainReady"] .pill,#playersDataTable td[data-field="captainReady"] .badge,#playersDataTable td[data-field="lair"] .pill,#playersDataTable td[data-field="lair"] .badge{min-height:38px;padding:0 14px;font-size:14px;border-radius:999px;}
->>>>>>> 4f53fe0 (update)
 .player-placement-card{align-items:center;}
 .player-placement-item{min-height:74px;}
 .player-placement-grid{gap:8px;}
@@ -740,24 +715,10 @@
 #playersDataTable thead th:last-child{padding-right:14px}
 #playersDataTable td[data-field="role"],
 #playersDataTable td[data-field="shiftLabel"],
-<<<<<<< HEAD
-#playersDataTable td[data-field="captainReady"]{text-align:center}
-#playersDataTable td[data-field="role"] .tag,
-#playersDataTable td[data-field="role"] .badge{margin-inline:auto}
-#playersDataTable td[data-field="captainReady"] .pill.yes{
-  background:radial-gradient(circle at 50% 12%,rgba(255,255,255,.16),rgba(255,255,255,0) 56%),linear-gradient(180deg,rgba(31,111,101,.96) 0%,rgba(17,77,68,.98) 100%);
-  border:1px solid rgba(100,214,186,.34);
-}
-#playersDataTable td[data-field="captainReady"] .pill.no{
-  background:radial-gradient(circle at 50% 12%,rgba(255,255,255,.16),rgba(255,255,255,0) 56%),linear-gradient(180deg,rgba(83,49,74,.96) 0%,rgba(58,30,51,.98) 100%);
-  border:1px solid rgba(197,108,148,.30);
-}
-=======
 #playersDataTable td[data-field="captainReady"],
 #playersDataTable td[data-field="lair"]{text-align:center}
 #playersDataTable td[data-field="role"] .tag,
 #playersDataTable td[data-field="role"] .badge{margin-inline:auto}
->>>>>>> 4f53fe0 (update)
 #playersDataTable td[data-field="actions"] .player-placement-item.is-assigned{
   background:radial-gradient(circle at 50% 12%,rgba(255,255,255,.18),rgba(255,255,255,0) 56%),linear-gradient(180deg,rgba(22,74,54,.98) 0%,rgba(13,45,34,.98) 100%);
 }
@@ -845,8 +806,6 @@
   .players-panel .stat-chip {
     min-height: 168px;
   }
-<<<<<<< HEAD
-=======
 }/* Dynamic player shift cards: 1-4 shifts + All from region 1 settings */
 .players-panel .stats-grid--players{
   grid-template-columns:repeat(3,minmax(0,1fr));
@@ -977,5 +936,4 @@
 #playersDataTable thead th[data-col-key="lair_level"],
 #playersDataTable thead th.optional-col{
   overflow:visible!important;
->>>>>>> 4f53fe0 (update)
 }

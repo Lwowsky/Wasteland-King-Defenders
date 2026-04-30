@@ -60,10 +60,6 @@
       return a || t;
     }
   }
-<<<<<<< HEAD
-  function _(e, t) {
-    const a = String(e?.shift || "both").toLowerCase();
-=======
   function Nf(e) {
     const normalize = (value) => {
       try {
@@ -98,7 +94,6 @@
   }
   function _(e, t) {
     const a = Nf(e);
->>>>>>> 4f53fe0 (update)
     return "both" === a || a === String(t || "").toLowerCase();
   }
   function g(e) {
@@ -111,19 +106,6 @@
     return Math.max(0, Number(e?.march || 0) || 0);
   }
   function w(e) {
-<<<<<<< HEAD
-    return (function (e) {
-      const t = String(e || "");
-      let a = 0;
-      for (let e = 0; e < t.length; e++)
-        a = ((a << 5) - a + t.charCodeAt(e)) | 0;
-      return Math.abs(a);
-    })(String(e?.id || e?.name || "")) %
-      2 ==
-      0
-      ? "shift1"
-      : "shift2";
-=======
     const keys = (typeof xActiveShiftKeys === "function" ? xActiveShiftKeys() : ["shift1", "shift2"]).filter((key) => /^shift[1-4]$/.test(key));
     const active = keys.length ? keys : ["shift1", "shift2"];
     const hash = (function (value) {
@@ -134,7 +116,6 @@
       return Math.abs(out);
     })(String(e?.id || e?.name || ""));
     return active[hash % active.length] || "shift1";
->>>>>>> 4f53fe0 (update)
   }
   function S() {
     return Object.fromEntries(
@@ -408,13 +389,6 @@
   }
   function L(e) {
     const t = c(),
-<<<<<<< HEAD
-      a = I("shift1", e),
-      r = I("shift2", e);
-    (a.length && (t.shift1 = a),
-      r.length && (t.shift2 = r),
-      (t.noCrossShift = !1),
-=======
       s1 = I("shift1", e),
       s2 = I("shift2", e),
       s3 = I("shift3", e),
@@ -424,7 +398,6 @@
       s3.length && (t.shift3 = s3),
       s4.length && (t.shift4 = s4),
       (t.noCrossShift = !0),
->>>>>>> 4f53fe0 (update)
       (t.both50 = !!e?.querySelector("#towerCalcBoth50")?.checked),
       (t.ignoreBoth = !!e?.querySelector("#towerCalcIgnoreBoth")?.checked),
       (t.dontTouchBothVersion = 1),
@@ -435,61 +408,6 @@
           jf(t),
       )),
       (t.minHelpersPerTower = !0),
-<<<<<<< HEAD
-      (t.minHelpersCount = Kf(t.helperFillMode)),
-      (t.activeTab =
-        "shift2" ===
-        String(
-          e
-            ?.querySelector("[data-calc-tab].is-active")
-            ?.getAttribute("data-calc-tab") ||
-            t.activeTab ||
-            "shift1",
-        ).toLowerCase()
-          ? "shift2"
-          : "shift1"),
-      (t.mainTab = String(
-        e
-          ?.querySelector("[data-calc-main-tab].is-active")
-          ?.getAttribute("data-calc-main-tab") ||
-          t.mainTab ||
-          "setup",
-      ).toLowerCase()),
-      (t.uiMode = String(
-        e?.querySelector("#towerCalcModeUi")?.value || t.uiMode || "assisted",
-      ).toLowerCase()),
-      (t.uiApplyMode = String(
-        e?.querySelector("#towerCalcApplyModeUi")?.value ||
-          t.uiApplyMode ||
-          "topup",
-      ).toLowerCase()),
-      (t.tierSizeMode = e?.querySelector("#towerCalcTierAuto")?.checked
-        ? "auto"
-        : "manual"),
-      (t.tierSizeManual = (function (e) {
-        const t = {
-          T14: 3e5,
-          T13: 25e4,
-          T12: 2e5,
-          T11: 15e4,
-          T10: 1e5,
-          T9: 8e4,
-        };
-        return (
-          (e || document.getElementById("towerCalcModal"))
-            ?.querySelectorAll("[data-calc-tier-target]")
-            .forEach((e) => {
-              const a = String(e?.dataset?.calcTierTarget || "").toUpperCase();
-              a &&
-                (t[a] = Math.max(0, Number(e.value || t[a] || 0) || t[a] || 0));
-            }),
-          v(t)
-        );
-      })(e)));
-    try {
-      xPersistCalc(t);
-    } catch {}
-=======
       (t.minHelpersCount = Kf(t.helperFillMode)));
     const activeTab = String(
       e?.querySelector("[data-calc-tab].is-active")?.getAttribute("data-calc-tab") ||
@@ -518,7 +436,6 @@
       );
     })(e);
     try { xPersistCalc(t); } catch {}
->>>>>>> 4f53fe0 (update)
     return t;
   }
   function c() {
@@ -539,8 +456,6 @@
             troop: "fighter",
             helpers: 15,
           }))),
-<<<<<<< HEAD
-=======
       (e.shift3 = Array.isArray(e.shift3)
         ? e.shift3
         : Array.from({ length: 5 }, () => ({
@@ -555,22 +470,14 @@
             troop: "fighter",
             helpers: 15,
           }))),
->>>>>>> 4f53fe0 (update)
       (e.noCrossShift = "boolean" != typeof e.noCrossShift || e.noCrossShift),
       (e.both50 = "boolean" == typeof e.both50 && e.both50),
       (e.ignoreBoth = "boolean" != typeof e.ignoreBoth || e.ignoreBoth),
       (e = Zf(e)),
       (e.compactMode = "boolean" != typeof e.compactMode || e.compactMode),
-<<<<<<< HEAD
-      (e.activeTab =
-        "shift2" === String(e.activeTab || "shift1").toLowerCase()
-          ? "shift2"
-          : "shift1"),
-=======
       (e.activeTab = /^shift[1-4]$/.test(String(e.activeTab || "shift1").toLowerCase())
         ? String(e.activeTab || "shift1").toLowerCase()
         : "shift1"),
->>>>>>> 4f53fe0 (update)
       (e.mainTab = ["setup", "towers", "overflow", "preview"].includes(
         String(e.mainTab || "").toLowerCase(),
       )
@@ -603,17 +510,6 @@
         e.inlineTowerSelected && "object" == typeof e.inlineTowerSelected
           ? e.inlineTowerSelected
           : {}),
-<<<<<<< HEAD
-      (e.previewShift = ["shift1", "shift2"].includes(
-        String(e.previewShift || "").toLowerCase(),
-      )
-        ? String(e.previewShift).toLowerCase()
-        : ["shift1", "shift2"].includes(
-              String(a.activeShift || "").toLowerCase(),
-            )
-          ? String(a.activeShift).toLowerCase()
-          : "shift2"),
-=======
       (e.previewShift = ["shift1", "shift2", "shift3", "shift4"].includes(
         String(e.previewShift || "").toLowerCase(),
       )
@@ -623,7 +519,6 @@
             )
           ? String(a.activeShift).toLowerCase()
           : "shift1"),
->>>>>>> 4f53fe0 (update)
       (e.ignoreBoth = !!e.ignoreBoth),
       (e.dontTouchBothVersion = Math.max(
         1,
@@ -676,20 +571,9 @@
     return r.map((t, r) => {
       const o = a.baseById?.get?.(t?.id || ""),
         s = n?.[t?.id] || {},
-<<<<<<< HEAD
-        l = String(a.activeShift || "") === String(e || ""),
-        c = String((s.captainId ?? (l ? o?.captainId : null)) || ""),
-        d = Array.isArray(s.helperIds)
-          ? s.helperIds
-          : l && Array.isArray(o?.helperIds)
-            ? o.helperIds
-            : [],
-        u = s.role || (l ? o?.role : null) || t?.role || null;
-=======
         c = String(s.captainId || ""),
         d = Array.isArray(s.helperIds) ? s.helperIds : [],
         u = s.role || t?.role || null;
->>>>>>> 4f53fe0 (update)
       return {
         index: r,
         baseId: String(t?.id || ""),
@@ -701,8 +585,6 @@
       };
     });
   }
-<<<<<<< HEAD
-=======
 
   function xRowsForShift(calcState, shiftKey) {
     const existing = Array.isArray(calcState?.[shiftKey]) ? calcState[shiftKey].slice() : [];
@@ -731,7 +613,6 @@
     return rows;
   }
 
->>>>>>> 4f53fe0 (update)
   function ce(e, t, a, r) {
     const n = new Map();
     if (!Array.isArray(e) || !e.length) return n;
@@ -1177,13 +1058,6 @@
             "function" == typeof e?.isTowerMatchRegisteredShiftEnabled
               ? !!e.isTowerMatchRegisteredShiftEnabled()
               : !1 !== a.towerPickerMatchRegisteredShift;
-<<<<<<< HEAD
-        for (const e of a.players || []) {
-          if (!e || !e.id) continue;
-          const c = String(e.id);
-          if (n.has(c) || u[c]?.excluded || (h && !_(e, t))) continue;
-          const f = String(e.shift || e.shiftLabel || "").toLowerCase();
-=======
         const ignoreRegisteredShiftForRegion = typeof window.PNS?.shouldIgnoreRegisteredShiftForActiveRegion === "function"
               ? !!window.PNS.shouldIgnoreRegisteredShiftForActiveRegion()
               : false;
@@ -1193,7 +1067,6 @@
           if (n.has(c) || u[c]?.excluded || (h && !ignoreRegisteredShiftForRegion && !_(e, t))) continue;
           if (typeof window.PNS?.canAutoUsePlayerInActiveRegion === "function" && !window.PNS.canAutoUsePlayerInActiveRegion(e, t, { kind: "helper" })) continue;
           const f = Nf(e);
->>>>>>> 4f53fe0 (update)
           if (!0 !== a.towerPickerNoCrossShiftDupes && "both" === f) continue;
           const m = String((p && p[String(e.id || "")]) || "").toLowerCase();
           if (
@@ -1205,11 +1078,7 @@
           if (o && i && "both" === f) {
             const a = String(t || "").toLowerCase(),
               r = String((s && (s[String(e.id || "")] || s[e.id])) || "");
-<<<<<<< HEAD
-            if (("shift1" === r || "shift2" === r ? r : w(e)) !== a) continue;
-=======
             if ((/^shift[1-4]$/.test(r) ? r : w(e)) !== a) continue;
->>>>>>> 4f53fe0 (update)
           }
           const y = r(e.role) || "fighter";
           (l[y] || (l[y] = []), l[y].push(e));
@@ -1352,11 +1221,7 @@
     }
     const O = new Set();
     return (
-<<<<<<< HEAD
-      o.noCrossShift && x.forEach((e) => O.add(e)),
-=======
       o.noCrossShift && (x.forEach((e) => O.add(e)), u.forEach((e) => O.add(e))),
->>>>>>> 4f53fe0 (update)
       {
         shiftKey: t,
         rows: n,
@@ -1610,18 +1475,6 @@
         .join(""),
     });
   }
-<<<<<<< HEAD
-  function be() {
-    const e = document.getElementById("towerCalcModal");
-    if (!e) return null;
-    try {
-      xEnsureShiftPlans();
-    } catch {}
-    try {
-      me({ keepHelpers: !0, render: !1 });
-    } catch {}
-    const t = L(e),
-=======
 
   function xActiveShiftKeys() {
     try {
@@ -1743,7 +1596,6 @@
 
     const t = L(e),
       shiftKeys = xActiveShiftKeys(),
->>>>>>> 4f53fe0 (update)
       n = {
         noCrossShift: !!t.noCrossShift,
         both50: !!t.both50,
@@ -1757,118 +1609,6 @@
         tierTargets: C(t),
         applyMode: t.uiApplyMode || "topup",
       };
-<<<<<<< HEAD
-    if (n.noCrossShift && n.both50)
-      try {
-        const e = (function (e) {
-          const t = {},
-            n = new Set();
-          try {
-            for (const t of [...(e?.shift1 || []), ...(e?.shift2 || [])]) {
-              const e = String(t?.captainId || "");
-              e && n.add(e);
-            }
-          } catch {}
-          const o = ["fighter", "rider", "shooter"],
-            i = {
-              shift1: { fighter: 0, rider: 0, shooter: 0 },
-              shift2: { fighter: 0, rider: 0, shooter: 0 },
-            },
-            s = { shift1: 0, shift2: 0 },
-            l = { shift1: 0, shift2: 0 },
-            c =
-              e?.overflowReserve && "object" == typeof e.overflowReserve
-                ? e.overflowReserve
-                : {},
-            d = [];
-          for (const e of a.players || []) {
-            if (!e || !e.id || n.has(String(e.id))) continue;
-            const t = b(e);
-            if (t <= 0) continue;
-            const a = r(e.role);
-            if (!o.includes(a)) continue;
-            const c = String(e.shift || e.shiftLabel || "both").toLowerCase();
-            "shift1" !== c && "shift2" !== c
-              ? "both" === c && d.push(e)
-              : ((i[c][a] += 1), (s[c] += 1), (l[c] += t));
-          }
-          d.sort((e, t) => {
-            const a = r(e?.role),
-              n = r(t?.role),
-              o = Math.abs((i.shift1[a] || 0) - (i.shift2[a] || 0));
-            return (
-              Math.abs((i.shift1[n] || 0) - (i.shift2[n] || 0)) - o ||
-              g(t.tier) - g(e.tier) ||
-              Number(t.march || 0) - Number(e.march || 0) ||
-              String(e.name || "").localeCompare(String(t.name || ""))
-            );
-          });
-          for (const e of d) {
-            const a = String(e.id || ""),
-              n = r(e.role) || "fighter";
-            if (!a) continue;
-            const o = String((c && c[String(e.id)]) || "").toLowerCase();
-            if ("shift1" === o || "shift2" === o) {
-              ((t[a] = o), (i[o][n] += 1), (s[o] += 1), (l[o] += b(e)));
-              continue;
-            }
-            const d = Number(i.shift1[n] || 0),
-              u = Number(i.shift2[n] || 0);
-            let p;
-            ((p =
-              d < u
-                ? "shift1"
-                : u < d
-                  ? "shift2"
-                  : s.shift1 < s.shift2
-                    ? "shift1"
-                    : s.shift2 < s.shift1
-                      ? "shift2"
-                      : l.shift1 <= l.shift2
-                        ? "shift1"
-                        : "shift2"),
-              (t[a] = p),
-              (i[p][n] += 1),
-              (s[p] += 1),
-              (l[p] += b(e)));
-          }
-          return {
-            map: t,
-            counts: { shift1: s.shift1, shift2: s.shift2 },
-            march: { shift1: l.shift1, shift2: l.shift2 },
-            troopCounts: i,
-          };
-        })(t);
-        ((n.bothAllocMap = e?.map || {}),
-          (n.autoBothCounts = e?.counts || null),
-          (n.autoBothMarch = e?.march || null),
-          (n.autoBothTroopCounts = e?.troopCounts || null));
-      } catch {}
-    const o = de("shift1", t.shift1, n, new Set()),
-      s = de(
-        "shift2",
-        t.shift2,
-        n,
-        new Set(n.noCrossShift ? Array.from(o.nextBlocked) : []),
-      );
-    ((a.towerCalcLastResults = {
-      shift1: o,
-      shift2: s,
-      cfg: n,
-      at: Date.now(),
-    }),
-      ue(o, e.querySelector("#towerCalcOutShift1")),
-      ue(s, e.querySelector("#towerCalcOutShift2")));
-    const l = e.querySelector("#towerCalcMiniSummary");
-    l &&
-      (l.textContent = `${i("shift1", "Зміна 1")}: ${Number(o.totalHelpersWanted || 0)}→${Number(o.totalHelpersPlaced || 0)} · ${i("shift2", "Зміна 2")}: ${Number(s.totalHelpersWanted || 0)}→${Number(s.totalHelpersPlaced || 0)} · ${i("both", "Обидві")}: ${Number(A().both.total || 0)} · ${i("shortage", "Нестача")}: ${Number(Math.max(0, o.totalDemand + s.totalDemand - (o.totalSupplied + s.totalSupplied)) || 0).toLocaleString("en-US")}`);
-    try {
-      P(e, a.towerCalcLastResults);
-    } catch {}
-    try {
-      le(e);
-    } catch {}
-=======
 
     if (n.noCrossShift && n.both50) {
       try {
@@ -1919,7 +1659,6 @@
 
     try { P(e, a.towerCalcLastResults); } catch {}
     try { le(e); } catch {}
->>>>>>> 4f53fe0 (update)
     return a.towerCalcLastResults;
   }
   ((window.computeTowerCalcShiftResultsImpl = de),

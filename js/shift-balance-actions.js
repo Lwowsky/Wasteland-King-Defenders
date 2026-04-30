@@ -24,9 +24,6 @@
     if (!left) return true;
 
     const restoreBtn = shell.querySelector('#towerCalcRestoreImportShiftsBtn') || document.getElementById('towerCalcRestoreImportShiftsBtn');
-<<<<<<< HEAD
-    if (restoreBtn && restoreBtn.parentNode !== left) left.appendChild(restoreBtn);
-=======
     const applyBtn = shell.querySelector('#applyShiftAddBtn') || document.getElementById('applyShiftAddBtn');
     let row = shell.querySelector('#tcv14BtnRow') || shell.querySelector('.rs-limit-buttons');
     if (!row && applyBtn) {
@@ -42,7 +39,6 @@
     } else if (restoreBtn && restoreBtn.parentNode !== left) {
       left.appendChild(restoreBtn);
     }
->>>>>>> 4f53fe0 (update)
     try { e.syncTowerCalcShiftLimitUi?.(); } catch {}
     return true;
   }
@@ -84,11 +80,7 @@
       try { e.refreshShiftUi?.(); } catch {}
       try {
         const unknownText = restored.unknown ? tr('shifts_restored_unknown_suffix', ', Невідомо: {count}').replace(/\{count\}/g, String(restored.unknown)) : '';
-<<<<<<< HEAD
-        e.setImportStatus?.(tr('shifts_restored_status', 'Shifts відновлено з імпорту. Shift 1: {shift1}, Shift 2: {shift2}, Both: {both}{unknown}.').replace(/\{shift1\}/g, String(restored.shift1)).replace(/\{shift2\}/g, String(restored.shift2)).replace(/\{both\}/g, String(restored.both)).replace(/\{unknown\}/g, unknownText), restored.unknown ? 'warn' : 'good');
-=======
         e.setImportStatus?.(tr('shifts_restored_status', 'Shifts відновлено з імпорту. Shift 1: {shift1}, Shift 2: {shift2}, All: {both}{unknown}.').replace(/\{shift1\}/g, String(restored.shift1)).replace(/\{shift2\}/g, String(restored.shift2)).replace(/\{both\}/g, String(restored.both)).replace(/\{unknown\}/g, unknownText), restored.unknown ? 'warn' : 'good');
->>>>>>> 4f53fe0 (update)
       } catch {}
     });
 

@@ -50,11 +50,7 @@
   "captain": "Kapitän",
   "shift1": "Schicht 1",
   "shift2": "Schicht 2",
-<<<<<<< HEAD
-  "both": "Beide",
-=======
   "both": "Alle",
->>>>>>> 4f53fe0 (update)
   "all": "Alle",
   "first_half": "Erste Hälfte",
   "second_half": "Zweite Hälfte",
@@ -100,11 +96,7 @@
   "only_captains": "Nur Kapitäne",
   "respect_player_shift": "Spielerschicht berücksichtigen",
   "same_troop_only": "Nur gleicher Truppentyp",
-<<<<<<< HEAD
-  "use_both": "„Beide“ verwenden",
-=======
   "use_both": "„Alle“ verwenden",
->>>>>>> 4f53fe0 (update)
   "type_defined_by_captain": "Turmtyp wird durch den Kapitän bestimmt",
   "final_plan_share": "Teilen",
   "export_png": "PNG herunterladen",
@@ -154,10 +146,7 @@
   "captain_ready_import": "Kapitänsverfügbarkeit",
   "shift_availability_import": "Schichtverfügbarkeit",
   "secondary_role_import": "Reserve-Truppentyp",
-<<<<<<< HEAD
-=======
   "capture_other_region": "Eroberung einer anderen Region",
->>>>>>> 4f53fe0 (update)
   "secondary_tier_import": "Reserve-Truppentier",
   "troop_200k_import": "Reserve-Truppentyp (200k+)",
   "reserve_type_fighter_import": "Reserve-Truppentyp: Kämpfer",
@@ -182,11 +171,7 @@
   "turret_capacity": "Turmkapazität",
   "used_shortage": "Verwendet / fehlt",
   "troop_type": "Truppentyp",
-<<<<<<< HEAD
-  "lair_level": "Bauhafen-Stufe",
-=======
   "lair_level": "Eroberung",
->>>>>>> 4f53fe0 (update)
   "yes": "Ja",
   "no": "Nein",
   "manual_save_enter_name": "Manuelles Speichern: Spielernamen eingeben",
@@ -241,26 +226,16 @@
   "save_visible_columns": "Sichtbare Spalten speichern",
   "optional_columns_title": "3. Optionale Spalten",
   "optional_columns_note": "Bauhafen-Stufe, Reserve-Truppentyp und alle benutzerdefinierten Felder, die du behalten möchtest.",
-<<<<<<< HEAD
-  "visible_columns_title": "4. Welche Daten in der Tabelle angezeigt werden",
-  "visible_columns_note": "Wähle, welche zusätzlichen Spalten nach Klick auf „Alle Daten anzeigen“ in der Spielertabelle erscheinen sollen.",
-  "reset_data_title": "5. Daten zurücksetzen",
-=======
   "visible_columns_title": "5. Welche Daten in der Tabelle anzeigen",
   "visible_columns_note": "Wähle, welche zusätzlichen Spalten nach Klick auf „Alle Daten anzeigen“ in der Spielertabelle erscheinen sollen.",
   "reset_data_title": "6. Daten zurücksetzen",
->>>>>>> 4f53fe0 (update)
   "reset_data_note": "Vorsicht: Diese Aktionen löschen gespeicherte Einstellungen oder Tabellendaten.",
   "reset_storage": "LocalStorage vollständig leeren",
   "reset_column_data": "Spaltendaten zurücksetzen",
   "reset_table_data": "Tabellendaten zurücksetzen",
   "import_footer_note": "CSV/XLSX-Dateien und öffentliche Google-Sheets-CSV-Links werden unterstützt.",
   "board_subtitle": "Offiziersansicht: Endplan anzeigen, Screenshot machen oder schnell teilen.",
-<<<<<<< HEAD
-  "calc_modal_subtitle": "Hier baust du beide Schichten: weise Spieler Türmen zu, prüfe Reserveplätze und bereite den Endplan vor.",
-=======
   "calc_modal_subtitle": "Hier baust du alle Schichten: weise Spieler Türmen zu, prüfe Reserveplätze und bereite den Endplan vor.",
->>>>>>> 4f53fe0 (update)
   "board_language": "Plansprache",
   "board_language_picker_note": "Wähle, welche Sprachen im Endplan angezeigt werden sollen.",
   "always_on": "Immer aktiviert",
@@ -278,11 +253,7 @@
   "empty_only": "Nur leere",
   "rebalance_all": "Alles neu ausbalancieren",
   "advanced": "Erweitert",
-<<<<<<< HEAD
-  "auto_balance_both": "„Beide“-Spieler automatisch ausgleichen",
-=======
   "auto_balance_both": "„Alle“-Spieler automatisch ausgleichen",
->>>>>>> 4f53fe0 (update)
   "min_players_per_turret": "Minimale Spieler pro Turm",
   "quantity": "Anzahl",
   "auto_tier_limit": "Automatisches Tier-Limit",
@@ -362,11 +333,7 @@
   "board_copied_image": "PNG-Plan in Zwischenablage kopiert",
   "board_shared": "Plan geteilt",
   "both_ignored_in_shifts": "derzeit in Schicht 1 und 2 ignoriert",
-<<<<<<< HEAD
-  "both_not_counted": "Die Gruppe „Beide“ wird derzeit ignoriert",
-=======
   "both_not_counted": "Die Gruppe „Alle“ wird derzeit ignoriert",
->>>>>>> 4f53fe0 (update)
   "by_word": "nach",
   "capacity_by_troop": "Kapazität nach Truppentyp (von Kapitänen)",
   "captain_not_found": "Kapitän nicht gefunden",
@@ -422,11 +389,7 @@
   "place_captain_first": "Weise dem Turm zuerst einen Kapitän zu",
   "player_march_total": "Spielermarsch",
   "player_or_turret_not_found": "Spieler oder Turm nicht gefunden.",
-<<<<<<< HEAD
-  "player_status_subtitle_both": "Diese Ansicht zeigt alle Spieler aus der Gruppe „Beide“: wer bereits in Türmen ist, wer draußen ist und wer manuell in Reserve geschickt wurde.",
-=======
   "player_status_subtitle_both": "Diese Ansicht zeigt alle Spieler aus der Gruppe „Alle“: wer bereits in Türmen ist, wer draußen ist und wer manuell in Reserve geschickt wurde.",
->>>>>>> 4f53fe0 (update)
   "players_needed_placed": "Spieler (benötigt / platziert)",
   "players_word": "Spieler",
   "png_export_offline": "PNG-Export ist im Offline-Paket ohne lokale html2canvas-Bibliothek nicht verfügbar.",
@@ -440,11 +403,7 @@
   "remove_action": "Entfernen",
   "reserve_and_outside": "Reserve und Spieler außerhalb der Türme",
   "reserve_manual_hint": "Spieler, die manuell in die Reserve von Schicht 1/2 geschickt wurden",
-<<<<<<< HEAD
-  "reset_both_before_apply": "Aktuelle „Beide“-Verteilung vor dem Anwenden zurücksetzen",
-=======
   "reset_both_before_apply": "Aktuelle „Alle“-Verteilung vor dem Anwenden zurücksetzen",
->>>>>>> 4f53fe0 (update)
   "reset_limits_tiers": "Limits zurücksetzen (T14–T9 → 0)",
   "return_action": "Zurück",
   "role_tier": "Rolle / Tier",
@@ -481,11 +440,7 @@
   "without_limits": "ohne Limits",
   "board_title_shift2": "Schicht 2 / Zweite Hälfte",
   "board_title_shift1": "Schicht 1 / Erste Hälfte",
-<<<<<<< HEAD
-  "plan_without_both": "Schichten 1/2 ohne die Gruppe „Beide“ planen",
-=======
   "plan_without_both": "Schichten 1/2 ohne die Gruppe „Alle“ planen",
->>>>>>> 4f53fe0 (update)
   "cannot_be_assigned_to": "kann keinem Turm dieses Typs zugewiesen werden",
   "choose_file": "Datei wählen",
   "reset_localstorage_title": "LocalStorage vollständig zurücksetzen?",
@@ -535,11 +490,7 @@
   "shift_limits_note": "Schichtlimits: Schicht 1 — {shift1}, Schicht 2 — {shift2} (max. 100).",
   "shifts_updated_status": "Schichten aktualisiert: +{added1} zu Schicht 1, +{added2} zu Schicht 2. Jetzt {shift1}/{shift2}/{both}.{warn}",
   "shifts_updated_warn_suffix": " Nicht genug Platz innerhalb des Limits: S1 {shift1}, S2 {shift2}.",
-<<<<<<< HEAD
-  "shifts_restored_status": "Schichten aus Import wiederhergestellt. Schicht 1: {shift1}, Schicht 2: {shift2}, Beide: {both}{unknown}.",
-=======
   "shifts_restored_status": "Schichten aus Import wiederhergestellt. Schicht 1: {shift1}, Schicht 2: {shift2}, Alle: {both}{unknown}.",
->>>>>>> 4f53fe0 (update)
   "shifts_restored_unknown_suffix": ", Unbekannt: {count}",
   "shift_limits_updated_status": "Schichtlimits aktualisiert: Schicht 1 — {shift1}, Schicht 2 — {shift2}.",
   "reset_columns_title": "Spaltendaten zurücksetzen?",
@@ -682,11 +633,7 @@
       "turrets": {
         "eyebrow": "3. Türme",
         "title": "Beginne mit den Kapitänen und konfiguriere dann die Autofill-Regeln",
-<<<<<<< HEAD
-        "lead": "Hier bereitest du beide Schichten vor, weist Kapitäne zu, setzt Limits und startest Autofill. Die alte numerische Helfer-Einstellung ist weg: jetzt ist der Hauptschalter der Selektor „Turm-Füllmodus“.",
-=======
         "lead": "Hier bereitest du alle Schichten vor, weist Kapitäne zu, setzt Limits und startest Autofill. Die alte numerische Helfer-Einstellung ist weg: jetzt ist der Hauptschalter der Selektor „Turm-Füllmodus“.",
->>>>>>> 4f53fe0 (update)
         "sequenceTitle": "Empfohlene Reihenfolge",
         "sequence": [
           "Öffne zuerst „Turmeinstellungen“ und weise allen benötigten Türmen Kapitäne zu. Der Turmtyp wird durch den Kapitän bestimmt, daher ist Autofill unzuverlässig, solange die Kapitäne nicht gesetzt sind.",
@@ -734,11 +681,7 @@
         "lead": "Hier prüfst du das fertige Ergebnis für eine Schicht: wer wo steht, wie viel Marschleistung jeder Turm hat und was du anderen Offizieren zeigen oder mit ihnen teilen kannst.",
         "steps": [
           {
-<<<<<<< HEAD
-            "title": "Beide Schichten getrennt prüfen",
-=======
             "title": "Alle Schichten getrennt prüfen",
->>>>>>> 4f53fe0 (update)
             "purpose": "Damit du kein Ungleichgewicht zwischen Schicht 1 und Schicht 2 übersiehst",
             "copy": "Der Endplan zeigt jede Schicht getrennt an. Wechsle zwischen ihnen und stelle sicher, dass die Türme so geschlossen sind, wie du es geplant hast."
           },
@@ -810,11 +753,7 @@
   "notes": "Notizen",
   "clear_helpers": "Helfer leeren",
   "manual_shift_add_title": "Warum zusätzliche Slots benötigt werden",
-<<<<<<< HEAD
-  "manual_shift_add_help": "Nutze diese Felder, wenn Spieler mit der Schicht „Beide“ zusätzliche manuelle Slots in Schicht 1 oder Schicht 2 benötigen.",
-=======
   "manual_shift_add_help": "Nutze diese Felder, wenn Spieler mit der Schicht „Alle“ zusätzliche manuelle Slots in Schicht 1 oder Schicht 2 benötigen.",
->>>>>>> 4f53fe0 (update)
   "base_north": "Nordturm",
   "base_west": "Westturm",
   "base_east": "Ostturm",
@@ -900,9 +839,6 @@
   "duplicate_nicks_found": "Doppelte Nicknames gefunden",
   "duplicate_nicks_hint": "Diese Spieler sind in der Tabelle hervorgehoben. Innerhalb einer Schicht erlaubt die Seite nicht mehr, denselben Nickname zweimal zuzuweisen.",
   "duplicate_nick_in_shift_error": "Dieser Nickname wird in dieser Schicht bereits verwendet",
-<<<<<<< HEAD
-  "turrets_panel": "Türme"
-=======
   "turrets_panel": "Türme",
   "import_region_1": "Heimat",
   "import_region_2": "Region 1",
@@ -969,6 +905,5 @@
   "tier_visibility_title": "Zusätzliche Tiers",
   "tier_visibility_note": "Füge T1–T8 hinzu und aktiviere die Tiers, die in den Turm-Limits angezeigt werden sollen.",
   "tier_visibility_add": "Tier hinzufügen"
->>>>>>> 4f53fe0 (update)
   });
 })();

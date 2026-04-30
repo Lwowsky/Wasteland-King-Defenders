@@ -43,8 +43,6 @@
     catch { return []; }
   }
 
-<<<<<<< HEAD
-=======
   function q() {
     try {
       const settings = JSON.parse(localStorage.getItem("pns_import_region_shift_settings_v1") || "null") || {};
@@ -59,7 +57,6 @@
     }
   }
 
->>>>>>> 4f53fe0 (update)
   function f(shiftKey, plan, index, rows) {
     try { return typeof window.calcFindShiftTowerCardImpl === "function" ? window.calcFindShiftTowerCardImpl(shiftKey, plan, index, rows) : null; }
     catch { return null; }
@@ -85,11 +82,7 @@
     }
 
     let changed = 0;
-<<<<<<< HEAD
-    for (const shiftKey of ["shift1", "shift2"]) {
-=======
     for (const shiftKey of q()) {
->>>>>>> 4f53fe0 (update)
       const shiftResults = results[shiftKey];
       if (!shiftResults) continue;
       const rows = h(shiftKey);
@@ -122,11 +115,7 @@
     const activeShift = String(a.activeShift || "shift1");
     try {
       try { e.beginAssignmentBatch?.(); } catch {}
-<<<<<<< HEAD
-      for (const shiftKey of ["shift1", "shift2"]) {
-=======
       for (const shiftKey of q()) {
->>>>>>> 4f53fe0 (update)
         try { if (String(a.activeShift || "") !== shiftKey) t.applyShiftFilter?.(shiftKey); } catch {}
         try { e.applyBaseTowerRulesForActiveShift?.(); } catch {}
       }
@@ -154,22 +143,11 @@
     if (!modal) return false;
 
     const results = (() => {
-<<<<<<< HEAD
-      let current = a.towerCalcLastResults || null;
-      if ((current?.shift1?.towerPlans?.length || 0) + (current?.shift2?.towerPlans?.length || 0)) {
-        try { current = y() || current; } catch {}
-      } else {
-        try { g({ keepHelpers: true }); } catch {}
-        try { current = y(); } catch { current = null; }
-      }
-      if (!(Number(current?.shift1?.towerPlans?.length || 0) + Number(current?.shift2?.towerPlans?.length || 0))) {
-=======
       let current = null;
       try { current = y(); } catch { current = null; }
       const shifts = q();
       const hasAny = (value) => shifts.some(shiftKey => Number(value?.[shiftKey]?.towerPlans?.length || 0) > 0);
       if (!hasAny(current)) {
->>>>>>> 4f53fe0 (update)
         try {
           e.setImportStatus?.(
             i("calc_no_captains_in_turrets", "Калькулятор не знайшов капітанів у турелях. Спочатку постав капітанів у турелях або натисни «Підтягнути капітанів із турелей»."),
@@ -184,122 +162,6 @@
 
     try { w(); } catch {}
 
-<<<<<<< HEAD
-    const activeShift = String(a.activeShift || "shift1");
-    const state = c();
-    const applyMode = ["topup", "empty", "rebalance"].includes(String(state?.uiApplyMode || "").toLowerCase())
-      ? String(state.uiApplyMode).toLowerCase()
-      : "topup";
-
-    let helpersAssigned = 0;
-    let captainsAssigned = 0;
-    const warnings = [];
-
-    try { t.saveCurrentShiftPlanSnapshot?.(); } catch {}
-    const nativeAlert = window.alert;
-    let suppressed = 0;
-    try { window.alert = function(){ suppressed += 1; }; } catch {}
-
-    try {
-      for (const shiftKey of ["shift1", "shift2"]) {
-        const shiftResults = results?.[shiftKey];
-        if (!shiftResults) continue;
-        try { if (String(a.activeShift || "") !== shiftKey) t.applyShiftFilter?.(shiftKey); } catch {}
-        const rows = h(shiftKey);
-        const seen = new Set();
-
-        for (let idx = 0; idx < (shiftResults.towerPlans?.length || 0); idx++) {
-          const plan = shiftResults.towerPlans?.[idx];
-          if (!plan?.captain?.id) continue;
-          const tower = f(shiftKey, plan, idx, rows);
-          const baseId = String(tower?.baseId || "");
-          if (!baseId || seen.has(baseId)) continue;
-          seen.add(baseId);
-
-          if (m(baseId)) {
-            warnings.push(`${l(shiftKey)} ${tower?.title || baseId}: ${i("skipped_turret_locked", "турель заблокована (пропущено)")}`);
-            continue;
-          }
-
-          let liveBase = a.baseById?.get?.(baseId);
-          const existingHelpers = Array.isArray(liveBase?.helperIds) ? liveBase.helperIds.slice() : [];
-          const hasCaptain = !!String(liveBase?.captainId || "");
-          if (applyMode === "empty" && (hasCaptain || existingHelpers.length > 0)) {
-            warnings.push(`${l(shiftKey)} ${tower?.title || baseId}: ${i("skipped_not_empty", "не порожня (пропущено)")}`);
-            continue;
-          }
-
-          const rebalance = applyMode === "rebalance";
-          if (rebalance) {
-            try { e.clearBase?.(baseId, true); } catch {}
-          }
-          liveBase = a.baseById?.get?.(baseId);
-
-          const existingCaptainId = String(liveBase?.captainId || "");
-          if (!existingCaptainId || rebalance) {
-            if (String(existingCaptainId) !== String(plan.captain.id || "")) {
-              try {
-                e.assignPlayerToBase?.(plan.captain.id, baseId, "captain");
-                const assignment = a.playerById?.get?.(String(plan.captain.id || ""))?.assignment;
-                if (assignment && String(assignment.baseId || "") === baseId && String(assignment.kind || "") === "captain") {
-                  captainsAssigned += 1;
-                } else {
-                  warnings.push(`${l(shiftKey)} ${tower?.title || baseId}: ${i("captain_not_assigned", "капітан {name} (не призначено)").replace(/\{name\}/g, String(plan.captain?.name || plan.captain?.id || ""))}`);
-                }
-              } catch (err) {
-                warnings.push(`${l(shiftKey)} ${tower?.title || baseId}: ${i("captain", "Капітан").toLowerCase()} ${plan.captain?.name || plan.captain?.id} (${err?.message || i("assignment_error", "помилка призначення")})`);
-              }
-            }
-          } else if (String(existingCaptainId) !== String(plan.captain.id || "")) {
-            warnings.push(`${l(shiftKey)} ${tower?.title || baseId}: ${i("captain_kept_mode", "капітан залишився (режим {mode})").replace(/\{mode\}/g, String(applyMode || ""))}`);
-          }
-
-          liveBase = a.baseById?.get?.(baseId);
-          const assignedHelperIds = new Set((Array.isArray(liveBase?.helperIds) ? liveBase.helperIds : []).map(id => String(id || "")).filter(Boolean));
-          let helperQuota = Infinity;
-          if (applyMode === "topup") {
-            helperQuota = Math.max(0, Math.max(0, Number(plan.helpersWantedRaw ?? plan.helpersWanted ?? 0) || 0) - assignedHelperIds.size);
-          } else if (applyMode === "empty") {
-            helperQuota = Math.max(0, Number(plan.helpersWantedRaw ?? plan.helpersWanted ?? 0) || 0);
-          }
-
-          for (const player of plan.pickedPlayers || []) {
-            const playerId = String(player?.id || "");
-            if (!playerId || playerId === String(plan.captain?.id || "") || assignedHelperIds.has(playerId)) continue;
-            if (helperQuota <= 0) break;
-
-            try {
-              const assignedMarch = Math.max(0, Number(plan.assignedById?.[playerId] || 0) || 0);
-              const fullMarch = Math.max(0, Number(player?.march || 0) || 0);
-              if (assignedMarch > 0 && assignedMarch < fullMarch) e.setTowerMarchOverride?.(baseId, playerId, assignedMarch, shiftKey);
-              else if (assignedMarch >= fullMarch) e.clearTowerMarchOverride?.(baseId, playerId, shiftKey);
-            } catch {}
-
-            try {
-              e.assignPlayerToBase?.(playerId, baseId, "helper");
-              const assignment = a.playerById?.get?.(playerId)?.assignment;
-              if (assignment && String(assignment.baseId || "") === baseId && String(assignment.kind || "") === "helper") {
-                helpersAssigned += 1;
-                assignedHelperIds.add(playerId);
-                if (helperQuota !== Infinity) helperQuota = Math.max(0, helperQuota - 1);
-              } else {
-                warnings.push(`${l(shiftKey)} ${tower?.title || baseId}: ${i("helper_not_assigned_or_limit", "помічник {name} (не призначено / перевищено ліміт)").replace(/\{name\}/g, String(player?.name || playerId || ""))}`);
-              }
-            } catch (err) {
-              warnings.push(`${l(shiftKey)} ${tower?.title || baseId}: ${i("helper", "Помічник").toLowerCase()} ${player?.name || playerId} (${err?.message || i("assignment_error", "помилка призначення")})`);
-            }
-          }
-        }
-
-        try { t.saveCurrentShiftPlanSnapshot?.(); } catch {}
-      }
-    } finally {
-      try { e.endAssignmentBatch?.({ flush: true, detail: { type: "tower-calc-apply" } }); } catch {}
-      try { window.alert = nativeAlert; } catch {}
-    }
-
-    try { if (String(a.activeShift || "") !== activeShift) t.applyShiftFilter?.(activeShift); } catch {}
-=======
     const activeShift = /^shift[1-4]$/.test(String(a.activeShift || "").toLowerCase())
       ? String(a.activeShift).toLowerCase()
       : "shift1";
@@ -481,34 +343,10 @@
     } catch {}
 
     try { a.activeShift = activeShift; } catch {}
->>>>>>> 4f53fe0 (update)
     try { if (typeof e.renderAll === "function") e.renderAll(); } catch {}
     try { t.syncSettingsTowerPreview?.(); } catch {}
     try { e.saveTowersSnapshot?.(); } catch {}
     try { e.savePlayersSnapshot?.(a.players); } catch {}
-<<<<<<< HEAD
-
-    const status = modal.querySelector("#towerCalcPreviewStatus") || modal.querySelector("#towerCalcGlobalOut");
-    if (status) {
-      status.textContent = `✅ ${i("moved_to_turrets", "Перенесено у турелі")}: ${i("captains_word", "капітанів")} ${captainsAssigned}, ${i("players_word", "гравців")} ${helpersAssigned}.` + (suppressed ? ` (${i("popups_suppressed", "приглушено popup-вікон")}: ${suppressed})` : "");
-      const notFitSummary = [];
-      try {
-        for (const shiftKey of ["shift1", "shift2"]) {
-          for (const plan of results?.[shiftKey]?.towerPlans || []) {
-            const captainName = String(plan?.captain?.name || "—");
-            const notFitPlayers = Array.isArray(plan?.notFitPlayers) ? plan.notFitPlayers : [];
-            if (notFitPlayers.length) {
-              notFitSummary.push(`${shiftKey} / ${captainName}: ` + notFitPlayers.slice(0, 5).map(player => `${player.name || "—"} (${player.tier || ""})`).join(", ") + (notFitPlayers.length > 5 ? ` … +${notFitPlayers.length - 5}` : ""));
-            }
-          }
-        }
-      } catch {}
-      if (notFitSummary.length) status.textContent += ` · ${i("not_fit_plural", "Не влізли")}: ${notFitSummary.length}`;
-      if (warnings.length) status.textContent += ` · ${i("warnings", "Попередження")}: ${warnings.length}`;
-    }
-
-    b(modal);
-=======
     try { e.persistSessionStateSoon?.(10); } catch {}
 
     const status = modal.querySelector("#towerCalcPreviewStatus") || modal.querySelector("#towerCalcGlobalOut");
@@ -519,7 +357,6 @@
 
     try { b(modal); } catch {}
     try { window.__pnsRenderStandaloneFinalBoard?.(document.getElementById("board-modal")); } catch {}
->>>>>>> 4f53fe0 (update)
     return true;
   }
 

@@ -30,15 +30,9 @@
 
   function getBaseShift(base){
     const baseShift = String(base?.shift || "").toLowerCase();
-<<<<<<< HEAD
-    if (baseShift === "shift1" || baseShift === "shift2") return baseShift;
-    const activeShift = String(state.activeShift || "").toLowerCase();
-    return activeShift === "shift1" || activeShift === "shift2" ? activeShift : "shift1";
-=======
     if (/^shift[1-4]$/.test(baseShift)) return baseShift;
     const activeShift = String(state.activeShift || "").toLowerCase();
     return /^shift[1-4]$/.test(activeShift) ? activeShift : "shift1";
->>>>>>> 4f53fe0 (update)
   }
 
   function getTierMinMarch(base, tier){

@@ -4,9 +4,6 @@
   const t = (key, fallback = '') => (typeof window.PNS?.t === 'function' ? window.PNS.t(key, fallback) : fallback);
   const pager = { page: 1, pageSize: 10, sortField: '', sortDir: 'desc', _raf: 0 };
   const PNS = window.PNS = window.PNS || {};
-<<<<<<< HEAD
-  const SORTABLE_FIELDS = ['name', 'alliance', 'role', 'tier', 'march', 'rally', 'captainReady', 'shiftLabel', 'lair', 'actions'];
-=======
   const BASE_SORTABLE_FIELDS = new Set(['name', 'alliance', 'role', 'tier', 'march', 'rally', 'captainReady', 'shiftLabel', 'lair', 'actions']);
 
   function isSortableField(field, th = null) {
@@ -22,7 +19,6 @@
     }
   }
 
->>>>>>> 4f53fe0 (update)
 
   function getRows() {
     return $$('#playersDataTable tbody tr');
@@ -43,11 +39,6 @@
   }
 
   function ensureSortButtons() {
-<<<<<<< HEAD
-    $$('#playersDataTable thead th[data-field]').forEach((th) => {
-      const field = String(th.dataset.field || '').trim();
-      if (!SORTABLE_FIELDS.includes(field)) return;
-=======
     $$('#playersDataTable thead th[data-field], #playersDataTable thead th.optional-col, #playersDataTable thead th[data-col-key]').forEach((th) => {
       let field = String(th.dataset.field || '').trim();
       const colKey = String(th.dataset.colKey || '').trim();
@@ -56,25 +47,17 @@
       if (!field) return;
       th.dataset.field = field;
       if (!isSortableField(field, th)) return;
->>>>>>> 4f53fe0 (update)
       let button = th.querySelector('.sort-btn');
       if (!button) {
         button = document.createElement('button');
         button.type = 'button';
         button.className = 'sort-btn';
-<<<<<<< HEAD
-        button.dataset.sort = field;
-=======
->>>>>>> 4f53fe0 (update)
         button.textContent = '↓';
         th.appendChild(document.createTextNode(' '));
         th.appendChild(button);
       }
-<<<<<<< HEAD
-=======
       button.dataset.sort = field;
       button.textContent = button.textContent && button.textContent.trim() ? button.textContent : '↓';
->>>>>>> 4f53fe0 (update)
       button.setAttribute('aria-label', (th.textContent || '').replace(/\s+/g, ' ').trim());
     });
   }
@@ -157,9 +140,6 @@
       return match ? Number(match[1]) : 0;
     }
     if (field === 'march' || field === 'rally' || field === 'lair') {
-<<<<<<< HEAD
-      if (field === 'lair') return Number(player?.lairLevel || 0) || 0;
-=======
       if (field === 'lair') {
         try {
           if (typeof PNS.isCaptureRegionAutoEligible === 'function') return PNS.isCaptureRegionAutoEligible(player) ? 1 : 0;
@@ -167,7 +147,6 @@
         } catch {}
         return Number(player?.lairLevel || 0) || 0;
       }
->>>>>>> 4f53fe0 (update)
       return Number(player?.[field] || 0) || 0;
     }
     if (field === 'captainReady') return player?.captainReady ? 1 : 0;
@@ -178,8 +157,6 @@
       const base = PNS.state?.baseById?.get?.(assignment.baseId);
       return String(base?.title || '').toLocaleLowerCase();
     }
-<<<<<<< HEAD
-=======
     if (player?.customFields && Object.prototype.hasOwnProperty.call(player.customFields, field)) {
       const raw = player.customFields[field];
       const text = String(raw ?? '').trim();
@@ -187,7 +164,6 @@
       if (text && Number.isFinite(numeric) && /\d/.test(text)) return numeric;
       return text.toLocaleLowerCase();
     }
->>>>>>> 4f53fe0 (update)
     return String(player?.[field] || '').toLocaleLowerCase();
   }
 
@@ -215,8 +191,6 @@
     const row = document.createElement('tr');
     row.dataset.playerId = String(player.id || '');
     row.dataset.shift = String(player.shift || 'both');
-<<<<<<< HEAD
-=======
     const captureAllowed = typeof PNS.isCaptureRegionAutoEligible === 'function'
       ? !!PNS.isCaptureRegionAutoEligible(player)
       : !!(typeof PNS.normalizeYesNo === 'function' ? PNS.normalizeYesNo(player?.lairLevel) : String(player?.lairLevel || '').trim());
@@ -224,7 +198,6 @@
       pill_class: captureAllowed ? 'yes' : 'no',
       pill_text: captureAllowed ? t('yes', 'Так') : t('no', 'Ні')
     });
->>>>>>> 4f53fe0 (update)
     row.innerHTML = PNS.renderHtmlTemplate('tpl-player-row', {
       name: PNS.escapeHtml(player.name || ''),
       alliance: PNS.escapeHtml(player.alliance || ''),
@@ -235,11 +208,7 @@
       captain_html: player.captainReady ? 'Yes' : 'No',
       shift_html: PNS.escapeHtml(player.shiftLabel || ''),
       lair_col_class: 'optional-col is-hidden-col',
-<<<<<<< HEAD
-      lair_level: PNS.escapeHtml(String(player.lairLevel || '')),
-=======
       lair_level: captureHtml,
->>>>>>> 4f53fe0 (update)
       optional_cells_html: ''
     });
     return row;
@@ -299,11 +268,7 @@
     ensureSortButtons();
     $$('.sort-btn').forEach((button) => {
       const field = button.dataset.sort;
-<<<<<<< HEAD
-      if (!SORTABLE_FIELDS.includes(field)) return;
-=======
       if (!isSortableField(field, button.closest('th'))) return;
->>>>>>> 4f53fe0 (update)
       const isActive = pager.sortField === field;
       button.classList.toggle('is-active', isActive);
       button.textContent = isActive ? (pager.sortDir === 'desc' ? '↓' : '↑') : '↓';

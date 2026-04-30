@@ -21,13 +21,8 @@
     wiz.restorePreviousPlayersSession?.() ||
       wiz.setImportLoadedInfo?.(
         r(
-<<<<<<< HEAD
-          'file_not_loaded_yet',
-          'Файл ще не завантажено. Завантаж файл або встав публічне CSV-посилання.',
-=======
           'file_not_loaded_file_only',
           'Файл ще не завантажено. Завантаж CSV/XLSX файл.',
->>>>>>> 4f53fe0 (update)
         ),
       );
     wiz.scheduleLateSessionRestore?.();

@@ -57,13 +57,8 @@ function D() {
     if (!e.length)
       return void k(
         r(
-<<<<<<< HEAD
-          "upload_file_or_public_link_first",
-          "Спочатку завантаж CSV/XLSX файл або встав публічне CSV-посилання Google Sheets.",
-=======
           "upload_file_first",
           "Спочатку завантаж CSV/XLSX файл.",
->>>>>>> 4f53fe0 (update)
         ),
       );
     const a = i

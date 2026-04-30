@@ -27,11 +27,7 @@
           "shift_availability_import",
           "Доступність по змінах",
         ),
-<<<<<<< HEAD
-        lair_level: r("lair_level", "Рівень лігва"),
-=======
         lair_level: r("capture_other_region", "Захоплення інакшого регіону"),
->>>>>>> 4f53fe0 (update)
         secondary_role: r("secondary_role_import", "Тип резервних військ"),
         secondary_tier: r("secondary_tier_import", "Тір резервних військ"),
         troop_200k: r("troop_200k_import", "Тип резервних військ (200k+)"),

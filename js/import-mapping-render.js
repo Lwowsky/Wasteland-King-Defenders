@@ -286,16 +286,11 @@
             event.preventDefault();
             const key = String(field.key || "");
             if (!key) return;
-<<<<<<< HEAD
-            const updatedDefs = g().filter((item) => item.key !== key);
-            t.importData.customOptionalDefs = f(updatedDefs.length ? updatedDefs : m());
-=======
             if (typeof wiz.hideCustomOptionalDef === "function") {
               wiz.hideCustomOptionalDef(key);
             }
             const updatedDefs = g().filter((item) => item.key !== key);
             t.importData.customOptionalDefs = f(updatedDefs);
->>>>>>> 4f53fe0 (update)
             _(t.importData.customOptionalDefs);
             if (t.importData?.mapping && key in t.importData.mapping) {
               delete t.importData.mapping[key];
@@ -392,12 +387,9 @@
     try {
       C();
     } catch {}
-<<<<<<< HEAD
-=======
     try {
       e.renderImportShiftRecognition?.();
     } catch {}
->>>>>>> 4f53fe0 (update)
   }
 
   Object.assign(wiz, { renderImportUI: O });

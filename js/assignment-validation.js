@@ -45,8 +45,6 @@
     return true;
   }
 
-<<<<<<< HEAD
-=======
 
   function getRegisteredShift(player) {
     const raw = player?.registeredShiftRaw || player?.raw?.shift_availability || player?.registeredShift || player?.registeredShiftLabel || player?.shift || player?.shiftLabel || 'both';
@@ -57,7 +55,6 @@
     }
   }
 
->>>>>>> 4f53fe0 (update)
   function validateAssignCore(player, base, kind) {
     if (!player || !base) return t("player_or_turret_not_found", "Гравця або турель не знайдено.");
     if (!e.ROLE_KEYS?.includes?.(player.role)) {
@@ -68,13 +65,8 @@
     const allowCrossShiftReuse = !!policy.allowCrossShiftReuse;
     const ignoreShiftMismatch = !!policy.ignoreShiftMismatch;
 
-<<<<<<< HEAD
-    if (kind === "helper" && !ignoreShiftMismatch && !allowCrossShiftReuse && base.shift !== "both" && player.shift !== "both" && base.shift !== player.shift) {
-      return `${t("shift_mismatch", "Невідповідність зміни")}: ${shiftLabel(player.shiftLabel || player.shift)} vs ${String(base.title || "").split("/")[0].trim()}.`;
-=======
     if (kind === "helper" && !ignoreShiftMismatch && !allowCrossShiftReuse && base.shift !== "both" && getRegisteredShift(player) !== "both" && base.shift !== getRegisteredShift(player)) {
       return `${t("shift_mismatch", "Невідповідність зміни")}: ${shiftLabel(getRegisteredShift(player))} vs ${String(base.title || "").split("/")[0].trim()}.`;
->>>>>>> 4f53fe0 (update)
     }
 
     if (kind === "helper" && !base.captainId) {
@@ -90,11 +82,7 @@
     const noCrossShiftDupes = policy.noCrossShiftDupes ?? noCrossShiftDupesDefault();
     if (kind === "helper" && noCrossShiftDupes) {
       const activeShift = String(state.activeShift || "").toLowerCase();
-<<<<<<< HEAD
-      if (activeShift === "shift1" || activeShift === "shift2") {
-=======
       if (/^shift[1-4]$/.test(activeShift)) {
->>>>>>> 4f53fe0 (update)
         const blocker = policy.otherShiftBlocker || policy.otherShiftHit ||
           (typeof e.getOtherShiftBlocker === "function" ? e.getOtherShiftBlocker(player.id, activeShift, kind) : null) ||
           (typeof e.isPlayerUsedInOtherShift === "function" ? e.isPlayerUsedInOtherShift(player.id, activeShift) : null);

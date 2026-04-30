@@ -125,11 +125,7 @@
     getShiftPlansSnapshot();
     let changed = false;
 
-<<<<<<< HEAD
-    for (const shiftKey of ["shift1", "shift2"]) {
-=======
     for (const shiftKey of ["shift1", "shift2", "shift3", "shift4"]) {
->>>>>>> 4f53fe0 (update)
       const prevRows = Array.isArray(calc[shiftKey]) ? calc[shiftKey] : [];
       const towerRows = getShiftTowerCards(shiftKey);
       const nextRows = [];

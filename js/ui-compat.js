@@ -52,11 +52,6 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
     let fighters = 0;
     let riders = 0;
     let shooters = 0;
-<<<<<<< HEAD
-    let shift1 = 0;
-    let shift2 = 0;
-    let both = 0;
-=======
     const shiftCountsMap = { shift1: 0, shift2: 0, shift3: 0, shift4: 0, both: 0 };
     let detectedMaxShift = 0;
     let hasShiftData = false;
@@ -172,28 +167,10 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
         hasShiftData = true;
       }
     };
->>>>>>> 4f53fe0 (update)
 
     if (players.length) {
       total = players.length;
       players.forEach((player) => {
-<<<<<<< HEAD
-        const role = typeof PNS.normalizeRole === 'function'
-          ? PNS.normalizeRole(player.role)
-          : String(player.role || '');
-        const shift = typeof PNS.normalizeShiftValue === 'function'
-          ? PNS.normalizeShiftValue(player.shift || player.shiftLabel || 'both')
-          : String(player.shift || player.shiftLabel || 'both');
-
-        if (player.captainReady) captains += 1;
-        if (role === 'Shooter') shooters += 1;
-        else if (role === 'Fighter') fighters += 1;
-        else if (role === 'Rider') riders += 1;
-
-        if (shift === 'shift1') shift1 += 1;
-        else if (shift === 'shift2') shift2 += 1;
-        else both += 1;
-=======
         const importShift = player.registeredShiftRaw || player.raw?.shift_availability || player.registeredShift || player.registeredShiftLabel || player.shift || player.shiftLabel || 'both';
         const displayShift = player.manualShiftOverride ? (player.shift || player.shiftLabel || importShift) : importShift;
         addPlayer(
@@ -206,7 +183,6 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
           hasShiftData = true;
           detectedMaxShift = Math.max(detectedMaxShift, Number(importedNormalized.replace('shift', '')) || 0);
         }
->>>>>>> 4f53fe0 (update)
       });
     } else {
       const rows = $$('#playersDataTable tbody tr');
@@ -216,29 +192,12 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
         const roleText = (row.querySelector('td[data-field="role"]') || cells[2])?.textContent || '';
         const captainText = (row.querySelector('td[data-field="captainReady"]') || cells[6])?.textContent || '';
         const shiftText = (row.querySelector('td[data-field="shiftLabel"]') || cells[7])?.textContent || row.dataset.shift || 'both';
-<<<<<<< HEAD
-        const role = typeof PNS.normalizeRole === 'function' ? PNS.normalizeRole(roleText) : roleText;
-        const shift = typeof PNS.normalizeShiftValue === 'function' ? PNS.normalizeShiftValue(shiftText) : shiftText;
-
-        if (/yes|так|да/i.test(captainText)) captains += 1;
-        if (role === 'Shooter') shooters += 1;
-        else if (role === 'Fighter') fighters += 1;
-        else if (role === 'Rider') riders += 1;
-
-        if (shift === 'shift1') shift1 += 1;
-        else if (shift === 'shift2') shift2 += 1;
-        else both += 1;
-      });
-    }
-
-=======
         addPlayer(roleText, captainText, shiftText);
       });
     }
 
     if (hasShiftData) autoPickRegion1ShiftCount(detectedMaxShift);
 
->>>>>>> 4f53fe0 (update)
     const totalEl = document.querySelector('[data-stat-card="total"] strong');
     const captainsEl = document.querySelector('[data-stat-card="captains"] strong');
     if (totalEl) totalEl.textContent = String(total);
@@ -260,18 +219,6 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
     }
 
     const shiftCounts = document.getElementById('shiftCountsDisplay');
-<<<<<<< HEAD
-    if (shiftCounts && typeof PNS.renderHtmlTemplate === 'function') {
-      const shiftLabel = (value) => typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(value) : value;
-      shiftCounts.innerHTML = PNS.renderHtmlTemplate('tpl-stats-shift-chips', {
-        shift1_count: shift1,
-        shift1_label: shiftLabel('shift1'),
-        shift2_count: shift2,
-        shift2_label: shiftLabel('shift2'),
-        both_count: both,
-        both_label: shiftLabel('both'),
-      });
-=======
     if (shiftCounts) {
       const firstRegionShiftCount = getFirstRegionShiftCount();
       const activeShifts = Array.from({ length: firstRegionShiftCount }, (_, index) => `shift${index + 1}`);
@@ -286,7 +233,6 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
         return `<span class="stat-chip stat-chip--shift is-${key}"><b>${count}</b><small>${labelShift(key)}</small></span>`;
       }).join('');
       try { PNS.syncTopShiftFilterOptions?.(); } catch {}
->>>>>>> 4f53fe0 (update)
     }
   }
 
@@ -353,13 +299,10 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
   document.addEventListener('players-table-data-changed', scheduleStatsRender);
   document.addEventListener('pns:assignment-changed', scheduleStatsRender);
   document.addEventListener('pns:i18n-changed', scheduleStatsRender);
-<<<<<<< HEAD
-=======
   document.addEventListener('pns:region-shifts-changed', scheduleStatsRender);
   document.addEventListener('pns:import-region-settings-reset', scheduleStatsRender);
   window.addEventListener('pns:region-shifts-changed', scheduleStatsRender);
   window.addEventListener('pns:import-region-settings-reset', scheduleStatsRender);
->>>>>>> 4f53fe0 (update)
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initDomCompat, { once: true });

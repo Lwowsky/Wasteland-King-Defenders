@@ -14,8 +14,6 @@
   const A = wiz.sheetToRows;
   const x = wiz.parseCsvRows;
 
-<<<<<<< HEAD
-=======
   function normalizeShiftForImport(value) {
     try {
       if (typeof e.normalizeShiftValue === 'function') return String(e.normalizeShiftValue(value) || '').toLowerCase();
@@ -74,7 +72,6 @@
     return count;
   }
 
->>>>>>> 4f53fe0 (update)
   async function Y(ev) {
     const file = ev.target.files?.[0];
     if (!file) return;
@@ -102,13 +99,9 @@
       });
       if (!headers.length) throw new Error(r('headers_not_found', 'Не вдалося знайти заголовки колонок'));
       try { wiz._skipPlayerRestoreUntilApplied = !0; } catch {}
-<<<<<<< HEAD
-      V(headers, rows, file.name, 'file');
-=======
       try { syncRegionShiftDefaultsForNewImport(headers, rows); } catch {}
       V(headers, rows, file.name, 'file');
       try { syncRegionShiftDefaultsForNewImport(headers, rows); } catch {}
->>>>>>> 4f53fe0 (update)
       C?.();
       k(
         r(
@@ -161,13 +154,9 @@
       })(url);
       if (!headers.length) throw new Error(r('headers_not_found', 'Не вдалося знайти заголовки колонок'));
       try { wiz._skipPlayerRestoreUntilApplied = !0; } catch {}
-<<<<<<< HEAD
-      V(headers, rows, url, 'url');
-=======
       try { syncRegionShiftDefaultsForNewImport(headers, rows); } catch {}
       V(headers, rows, url, 'url');
       try { syncRegionShiftDefaultsForNewImport(headers, rows); } catch {}
->>>>>>> 4f53fe0 (update)
       k(
         r(
           'url_loaded_check_mapping',
