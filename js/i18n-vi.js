@@ -50,7 +50,11 @@
   "captain": "Đội trưởng",
   "shift1": "Ca 1",
   "shift2": "Ca 2",
+<<<<<<< HEAD
   "both": "Cả hai",
+=======
+  "both": "Tất cả",
+>>>>>>> 4f53fe0 (update)
   "all": "Tất cả",
   "first_half": "Nửa đầu",
   "second_half": "Nửa sau",
@@ -96,7 +100,11 @@
   "only_captains": "Chỉ đội trưởng",
   "respect_player_shift": "Tôn trọng ca của người chơi",
   "same_troop_only": "Chỉ cùng loại quân",
+<<<<<<< HEAD
   "use_both": "Dùng “Both”",
+=======
+  "use_both": "Dùng “Tất cả”",
+>>>>>>> 4f53fe0 (update)
   "type_defined_by_captain": "Loại tháp pháo được xác định bởi đội trưởng",
   "final_plan_share": "Chia sẻ",
   "export_png": "Tải PNG",
@@ -146,6 +154,10 @@
   "captain_ready_import": "Khả dụng của đội trưởng",
   "shift_availability_import": "Khả dụng theo ca",
   "secondary_role_import": "Loại quân dự phòng",
+<<<<<<< HEAD
+=======
+  "capture_other_region": "Chiếm khu vực khác",
+>>>>>>> 4f53fe0 (update)
   "secondary_tier_import": "Cấp quân dự phòng",
   "troop_200k_import": "Loại quân dự phòng (200k+)",
   "reserve_type_fighter_import": "Loại quân dự phòng: đấu sĩ",
@@ -170,7 +182,11 @@
   "turret_capacity": "Sức chứa tháp pháo",
   "used_shortage": "Đã dùng / thiếu",
   "troop_type": "Loại quân",
+<<<<<<< HEAD
   "lair_level": "Cấp hang ổ",
+=======
+  "lair_level": "Chiếm",
+>>>>>>> 4f53fe0 (update)
   "yes": "Có",
   "no": "Không",
   "manual_save_enter_name": "Lưu thủ công: nhập nickname người chơi",
@@ -225,9 +241,15 @@
   "save_visible_columns": "Lưu các cột đang hiển thị",
   "optional_columns_title": "3. Các cột tùy chọn",
   "optional_columns_note": "Cấp hang ổ, loại quân dự phòng và bất kỳ trường tùy chỉnh nào bạn muốn giữ lại.",
+<<<<<<< HEAD
   "visible_columns_title": "4. Dữ liệu nào sẽ hiển thị trong bảng",
   "visible_columns_note": "Chọn những cột bổ sung nào sẽ xuất hiện trong bảng người chơi sau khi nhấn “Hiển thị toàn bộ dữ liệu”.",
   "reset_data_title": "5. Đặt lại dữ liệu",
+=======
+  "visible_columns_title": "5. Dữ liệu hiển thị trong bảng",
+  "visible_columns_note": "Chọn những cột bổ sung nào sẽ xuất hiện trong bảng người chơi sau khi nhấn “Hiển thị toàn bộ dữ liệu”.",
+  "reset_data_title": "6. Đặt lại dữ liệu",
+>>>>>>> 4f53fe0 (update)
   "reset_data_note": "Cẩn thận: các thao tác này sẽ xóa cài đặt đã lưu hoặc dữ liệu bảng.",
   "reset_storage": "Xóa hoàn toàn LocalStorage",
   "reset_column_data": "Đặt lại dữ liệu cột",
@@ -252,7 +274,11 @@
   "empty_only": "Chỉ ô trống",
   "rebalance_all": "Cân bằng lại tất cả",
   "advanced": "Nâng cao",
+<<<<<<< HEAD
   "auto_balance_both": "Tự động cân bằng người chơi “Both”",
+=======
+  "auto_balance_both": "Tự động cân bằng người chơi “Tất cả”",
+>>>>>>> 4f53fe0 (update)
   "min_players_per_turret": "Số người tối thiểu mỗi tháp pháo",
   "quantity": "Số lượng",
   "auto_tier_limit": "Giới hạn cấp tự động",
@@ -332,7 +358,11 @@
   "board_copied_image": "Đã sao chép sơ đồ PNG vào bảng tạm",
   "board_shared": "Đã chia sẻ kế hoạch",
   "both_ignored_in_shifts": "hiện đang bị bỏ qua ở Ca 1 và Ca 2",
+<<<<<<< HEAD
   "both_not_counted": "Nhóm “Both” hiện đang bị bỏ qua",
+=======
+  "both_not_counted": "Nhóm “Tất cả” hiện đang bị bỏ qua",
+>>>>>>> 4f53fe0 (update)
   "by_word": "theo",
   "capacity_by_troop": "Sức chứa theo loại quân (từ đội trưởng)",
   "captain_not_found": "Không tìm thấy đội trưởng",
@@ -388,7 +418,11 @@
   "place_captain_first": "Trước tiên hãy chỉ định đội trưởng cho tháp pháo",
   "player_march_total": "Lực hành quân của người chơi",
   "player_or_turret_not_found": "Không tìm thấy người chơi hoặc tháp pháo.",
+<<<<<<< HEAD
   "player_status_subtitle_both": "Chế độ xem này hiển thị tất cả người chơi từ nhóm “Both”: ai đã ở trong tháp pháo, ai ở ngoài và ai đã được đưa thủ công vào dự bị.",
+=======
+  "player_status_subtitle_both": "Chế độ xem này hiển thị tất cả người chơi từ nhóm “Tất cả”: ai đã ở trong tháp pháo, ai ở ngoài và ai đã được đưa thủ công vào dự bị.",
+>>>>>>> 4f53fe0 (update)
   "players_needed_placed": "Người chơi (cần / đã phân)",
   "players_word": "người chơi",
   "png_export_offline": "Xuất PNG không khả dụng trong gói ngoại tuyến nếu không có thư viện html2canvas cục bộ.",
@@ -402,7 +436,11 @@
   "remove_action": "Xóa",
   "reserve_and_outside": "Dự bị và người chơi ngoài tháp pháo",
   "reserve_manual_hint": "Người chơi được đưa thủ công vào dự bị Ca 1/2",
+<<<<<<< HEAD
   "reset_both_before_apply": "Đặt lại phân phối “Both” hiện tại trước khi áp dụng",
+=======
+  "reset_both_before_apply": "Đặt lại phân phối “Tất cả” hiện tại trước khi áp dụng",
+>>>>>>> 4f53fe0 (update)
   "reset_limits_tiers": "Đặt lại giới hạn (T14–T9 → 0)",
   "return_action": "Trả lại",
   "role_tier": "Vai trò / Cấp",
@@ -439,7 +477,11 @@
   "without_limits": "không có giới hạn",
   "board_title_shift2": "Ca 2 / Nửa sau",
   "board_title_shift1": "Ca 1 / Nửa đầu",
+<<<<<<< HEAD
   "plan_without_both": "Lập kế hoạch cho Ca 1/2 không dùng nhóm “Both”",
+=======
+  "plan_without_both": "Lập kế hoạch cho Ca 1/2 không dùng nhóm “Tất cả”",
+>>>>>>> 4f53fe0 (update)
   "cannot_be_assigned_to": "không thể được phân vào tháp pháo loại",
   "choose_file": "Chọn tệp",
   "reset_localstorage_title": "Đặt lại hoàn toàn LocalStorage?",
@@ -489,7 +531,11 @@
   "shift_limits_note": "Giới hạn ca: Ca 1 — {shift1}, Ca 2 — {shift2} (tối đa 100).",
   "shifts_updated_status": "Đã cập nhật ca: +{added1} vào Ca 1, +{added2} vào Ca 2. Hiện là {shift1}/{shift2}/{both}.{warn}",
   "shifts_updated_warn_suffix": " Không đủ chỗ trong giới hạn: C1 {shift1}, C2 {shift2}.",
+<<<<<<< HEAD
   "shifts_restored_status": "Đã khôi phục ca từ dữ liệu nhập. Ca 1: {shift1}, Ca 2: {shift2}, Both: {both}{unknown}.",
+=======
+  "shifts_restored_status": "Đã khôi phục ca từ dữ liệu nhập. Ca 1: {shift1}, Ca 2: {shift2}, Tất cả: {both}{unknown}.",
+>>>>>>> 4f53fe0 (update)
   "shifts_restored_unknown_suffix": ", Không rõ: {count}",
   "shift_limits_updated_status": "Đã cập nhật giới hạn ca: Ca 1 — {shift1}, Ca 2 — {shift2}.",
   "reset_columns_title": "Đặt lại dữ liệu cột?",
@@ -540,7 +586,11 @@
   "notes": "Ghi chú",
   "clear_helpers": "Xóa trợ thủ",
   "manual_shift_add_title": "Vì sao cần thêm ô phụ",
+<<<<<<< HEAD
   "manual_shift_add_help": "Dùng các trường này khi người chơi có ca “Both” cần được thêm thủ công vào Ca 1 hoặc Ca 2.",
+=======
+  "manual_shift_add_help": "Dùng các trường này khi người chơi có ca “Tất cả” cần được thêm thủ công vào Ca 1 hoặc Ca 2.",
+>>>>>>> 4f53fe0 (update)
   "base_north": "North Turret",
   "base_west": "West Turret",
   "base_east": "East Turret",
@@ -837,6 +887,75 @@
         "noteText": "Nếu điều gì đó trông không đúng, hãy lùi lại một bước: từ kế hoạch cuối về tháp pháo, từ tháp pháo về bảng, từ bảng về nhập dữ liệu. Đó là cách nhanh nhất để tìm ra nguyên nhân."
       }
     }
+<<<<<<< HEAD
   }
+=======
+  },
+  "import_region_1": "Nhà",
+  "import_region_2": "Khu vực 1",
+  "import_region_3": "Khu vực 2",
+  "capture_region_1": "Chiếm khu vực 1",
+  "capture_region_2": "Chiếm khu vực 2",
+  "shift3": "Ca 3",
+  "shift4": "Ca 4",
+  "capture_region": "Chiếm khu vực",
+  "import_regions_kicker": "Khu vực",
+  "import_regions_title": "Chiếm khu vực",
+  "import_regions_desc": "Chọn khu vực và bật công tắc cần thiết cho 1, 2, 3 hoặc 4 ca.",
+  "import_region_always_on": "Luôn bật",
+  "import_region_enabled_text": "Đã bật",
+  "import_region_disabled_text": "Đã tắt",
+  "import_1_shift": "1 ca",
+  "import_2_shifts": "2 ca",
+  "import_3_shifts": "3 ca",
+  "import_4_shifts": "4 ca",
+  "add_player_menu": "Thêm người chơi",
+  "manual_player_manager_subtitle": "Thêm người chơi mới, tìm người chơi hiện có, chỉnh sửa hoặc xoá khỏi danh sách.",
+  "manual_player_new_title": "Người chơi mới",
+  "manual_player_persist_note": "Được lưu sau khi tải lại trang. Khi nhập Excel mới, người chơi thủ công sẽ bị xoá.",
+  "manual_player_new_button": "Mới",
+  "manual_player_extra_columns": "Cột bổ sung",
+  "manual_player_extra_columns_hint": "Thêm trường riêng cho người chơi này hoặc xoá các cột không cần.",
+  "manual_player_new_column_label": "Cột mới",
+  "manual_player_column_name_placeholder": "Tên cột",
+  "manual_player_add_column": "Thêm cột",
+  "manual_player_no_extra_columns": "Chưa có cột bổ sung.",
+  "manual_player_name_required": "Nhập biệt danh người chơi.",
+  "manual_player_delete_confirm": "Xoá người chơi?",
+  "manual_player_deleted": "Đã xoá người chơi.",
+  "manual_player_column_name_required": "Nhập tên cột.",
+  "manual_player_column_added": "Đã thêm cột.",
+  "manual_player_remove_column": "Xoá cột",
+  "manual_player_remove_column_confirm": "Xoá cột?",
+  "manual_player_column_removed": "Đã xoá cột.",
+  "manual_player_manual_badge": "Thủ công",
+  "manual_player_import_badge": "Nhập",
+  "manual_player_empty": "Không tìm thấy người chơi.",
+  "delete_player": "Xoá",
+  "saved": "Đã lưu",
+  "manual_player_search_placeholder": "Tìm theo biệt danh / liên minh",
+  "shift_recognition_title": "4. Nhận diện ca",
+  "shift_recognition_note": "Kiểm tra câu trả lời ca từ Excel và gộp ca nếu cần trước khi nhập.",
+  "shift_recognition_auto": "Tự nhận diện",
+  "shift_recognition_reset": "Đặt lại quy tắc",
+  "shift_recognition_merge_mode": "Gộp ca",
+  "shift_merge_separate": "Không gộp",
+  "shift_merge_pair_12_34": "1+2 và 3+4",
+  "shift_merge_all_to_1": "Tất cả vào ca 1",
+  "shift_merge_custom": "Gộp tuỳ chỉnh",
+  "shift_recognition_empty": "Chọn cột ca trong các cột bắt buộc, phần kiểm tra sẽ hiện ở đây.",
+  "shift_recognition_value": "Giá trị Excel",
+  "shift_recognition_detected": "Nhận diện là",
+  "shift_recognition_after_merge": "Sau khi gộp",
+  "shift_recognition_count": "Dòng",
+  "shift_recognition_summary_empty": "Chưa áp dụng quy tắc.",
+  "shift_recognition_save": "Lưu quy tắc",
+  "shift_recognition_ignore": "Bỏ qua",
+  "shift_recognition_summary": "Giá trị tìm thấy: {count}",
+  "shift_recognition_all": "Tất cả",
+  "tier_visibility_title": "Bậc bổ sung",
+  "tier_visibility_note": "Thêm T1–T8 và bật các bậc cần hiển thị trong giới hạn tháp pháo.",
+  "tier_visibility_add": "Thêm bậc"
+>>>>>>> 4f53fe0 (update)
   });
 })();

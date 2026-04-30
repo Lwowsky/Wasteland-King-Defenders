@@ -51,7 +51,11 @@
   "captain": "キャプテン",
   "shift1": "シフト 1",
   "shift2": "シフト 2",
+<<<<<<< HEAD
   "both": "両方",
+=======
+  "both": "すべて",
+>>>>>>> 4f53fe0 (update)
   "all": "すべて",
   "first_half": "前半",
   "second_half": "後半",
@@ -97,7 +101,11 @@
   "only_captains": "キャプテンのみ",
   "respect_player_shift": "プレイヤーのシフトを尊重",
   "same_troop_only": "同じ兵種のみ",
+<<<<<<< HEAD
   "use_both": "「両方」を使用",
+=======
+  "use_both": "「すべて」を使用",
+>>>>>>> 4f53fe0 (update)
   "type_defined_by_captain": "タレットのタイプはキャプテンで決まります",
   "final_plan_share": "共有",
   "export_png": "PNG をダウンロード",
@@ -147,6 +155,10 @@
   "captain_ready_import": "キャプテン可否",
   "shift_availability_import": "シフト可否",
   "secondary_role_import": "予備兵種",
+<<<<<<< HEAD
+=======
+  "capture_other_region": "別の地域を占領",
+>>>>>>> 4f53fe0 (update)
   "secondary_tier_import": "予備ティア",
   "troop_200k_import": "予備兵種 (200k+)",
   "reserve_type_fighter_import": "予備兵種: ファイター",
@@ -171,7 +183,11 @@
   "turret_capacity": "タレット容量",
   "used_shortage": "使用 / 不足",
   "troop_type": "兵種",
+<<<<<<< HEAD
   "lair_level": "巣窟レベル",
+=======
+  "lair_level": "占領",
+>>>>>>> 4f53fe0 (update)
   "yes": "はい",
   "no": "いいえ",
   "manual_save_enter_name": "手動保存: プレイヤーのニックネームを入力してください",
@@ -226,16 +242,26 @@
   "save_visible_columns": "表示列を保存",
   "optional_columns_title": "3. 任意列",
   "optional_columns_note": "巣窟レベル、予備兵種、その他保持したいカスタム項目。",
+<<<<<<< HEAD
   "visible_columns_title": "4. テーブルに表示するデータ",
   "visible_columns_note": "「すべてのデータを表示」をクリックした後、プレイヤーテーブルに表示する追加列を選びます。",
   "reset_data_title": "5. データをリセット",
+=======
+  "visible_columns_title": "5. テーブルに表示するデータ",
+  "visible_columns_note": "「すべてのデータを表示」をクリックした後、プレイヤーテーブルに表示する追加列を選びます。",
+  "reset_data_title": "6. データをリセット",
+>>>>>>> 4f53fe0 (update)
   "reset_data_note": "注意: これらの操作は保存済み設定またはテーブルデータを消去します。",
   "reset_storage": "LocalStorage を完全にクリア",
   "reset_column_data": "列データをリセット",
   "reset_table_data": "テーブルデータをリセット",
   "import_footer_note": "CSV/XLSX ファイルと公開 Google Sheets の CSV リンクをサポートしています。",
   "board_subtitle": "オフィサー表示: 最終プランを表示し、スクリーンショットを撮るか、すばやく共有できます。",
+<<<<<<< HEAD
   "calc_modal_subtitle": "ここで両方のシフトを作成します: プレイヤーをタレットに割り当て、予備枠を確認し、最終プランを準備します。",
+=======
+  "calc_modal_subtitle": "ここですべてのシフトを作成します: プレイヤーをタレットに割り当て、予備枠を確認し、最終プランを準備します。",
+>>>>>>> 4f53fe0 (update)
   "board_language": "ボード言語",
   "board_language_picker_note": "最終プランに表示する言語を選択します。",
   "always_on": "常に有効",
@@ -253,7 +279,11 @@
   "empty_only": "空のみ",
   "rebalance_all": "すべて再配分",
   "advanced": "詳細",
+<<<<<<< HEAD
   "auto_balance_both": "「両方」プレイヤーを自動再配分",
+=======
+  "auto_balance_both": "「すべて」プレイヤーを自動再配分",
+>>>>>>> 4f53fe0 (update)
   "min_players_per_turret": "タレットごとの最小プレイヤー数",
   "quantity": "数",
   "auto_tier_limit": "自動ティア制限",
@@ -333,7 +363,11 @@
   "board_copied_image": "PNG プランをクリップボードにコピーしました",
   "board_shared": "プランを共有しました",
   "both_ignored_in_shifts": "現在シフト 1 と 2 では無視されています",
+<<<<<<< HEAD
   "both_not_counted": "「両方」グループは現在カウントされていません",
+=======
+  "both_not_counted": "「すべて」グループは現在カウントされていません",
+>>>>>>> 4f53fe0 (update)
   "by_word": "作成者",
   "capacity_by_troop": "兵種別容量（キャプテン基準）",
   "captain_not_found": "キャプテンが見つかりません",
@@ -389,7 +423,11 @@
   "place_captain_first": "先にキャプテンをタレットに割り当ててください",
   "player_march_total": "プレイヤー行軍",
   "player_or_turret_not_found": "プレイヤーまたはタレットが見つかりません。",
+<<<<<<< HEAD
   "player_status_subtitle_both": "この表示では「両方」グループのすべてのプレイヤーを示します: すでにタレットにいるか、外にいるか、手動で予備に送られたか。",
+=======
+  "player_status_subtitle_both": "この表示では「すべて」グループのすべてのプレイヤーを示します: すでにタレットにいるか、外にいるか、手動で予備に送られたか。",
+>>>>>>> 4f53fe0 (update)
   "players_needed_placed": "プレイヤー（必要 / 配置済み）",
   "players_word": "プレイヤー",
   "png_export_offline": "オフラインパッケージでは、ローカル html2canvas ライブラリがないため PNG エクスポートは利用できません。",
@@ -403,7 +441,11 @@
   "remove_action": "削除",
   "reserve_and_outside": "予備とタレット外のプレイヤー",
   "reserve_manual_hint": "シフト 1 / 2 の予備に手動で送られたプレイヤー",
+<<<<<<< HEAD
   "reset_both_before_apply": "適用前に現在の「両方」配分をリセット",
+=======
+  "reset_both_before_apply": "適用前に現在の「すべて」配分をリセット",
+>>>>>>> 4f53fe0 (update)
   "reset_limits_tiers": "制限をリセット（T14–T9 → 0）",
   "return_action": "戻す",
   "role_tier": "役割 / ティア",
@@ -440,7 +482,11 @@
   "without_limits": "制限なし",
   "board_title_shift2": "シフト 2 / 後半",
   "board_title_shift1": "シフト 1 / 前半",
+<<<<<<< HEAD
   "plan_without_both": "「両方」グループなしでシフト 1 / 2 を計画",
+=======
+  "plan_without_both": "「すべて」グループなしでシフト 1 / 2 を計画",
+>>>>>>> 4f53fe0 (update)
   "cannot_be_assigned_to": "次のタイプのタレットには割り当てできません:",
   "choose_file": "ファイルを選択",
   "reset_localstorage_title": "LocalStorage を完全にリセットしますか？",
@@ -490,7 +536,11 @@
   "shift_limits_note": "シフト制限: シフト 1 — {shift1}, シフト 2 — {shift2}（最大 100）。",
   "shifts_updated_status": "シフトを更新しました: シフト 1 に +{added1}、シフト 2 に +{added2}。現在 {shift1}/{shift2}/{both}.{warn}",
   "shifts_updated_warn_suffix": " 制限内に十分な空きがありません: S1 {shift1}, S2 {shift2}。",
+<<<<<<< HEAD
   "shifts_restored_status": "インポートからシフトを復元しました。シフト 1: {shift1}, シフト 2: {shift2}, 両方: {both}{unknown}。",
+=======
+  "shifts_restored_status": "インポートからシフトを復元しました。シフト 1: {shift1}, シフト 2: {shift2}, すべて: {both}{unknown}。",
+>>>>>>> 4f53fe0 (update)
   "shifts_restored_unknown_suffix": ", 不明: {count}",
   "shift_limits_updated_status": "シフト制限を更新しました: シフト 1 — {shift1}, シフト 2 — {shift2}。",
   "reset_columns_title": "列データをリセットしますか？",
@@ -633,7 +683,11 @@
       "turrets": {
         "eyebrow": "3. タレット",
         "title": "まずキャプテンを配置し、その後に自動配置ルールを設定します",
+<<<<<<< HEAD
         "lead": "ここでは両方のシフトを準備し、キャプテンを割り当て、制限を設定し、自動配置を実行します。古い数値式のヘルパー設定はなくなり、現在の主なコントロールは「タレット充填モード」セレクターです。",
+=======
+        "lead": "ここではすべてのシフトを準備し、キャプテンを割り当て、制限を設定し、自動配置を実行します。古い数値式のヘルパー設定はなくなり、現在の主なコントロールは「タレット充填モード」セレクターです。",
+>>>>>>> 4f53fe0 (update)
         "sequenceTitle": "推奨手順",
         "sequence": [
           "まず「タレット設定」を開き、必要なすべてのタレットにキャプテンを割り当ててください。タレットタイプはキャプテンで決まるため、キャプテンがいない状態では自動配置は信頼できません。",
@@ -681,7 +735,11 @@
         "lead": "ここではシフトごとの完成結果を確認します: 誰がどこに配置されているか、各タレットの行軍パワーがどれくらいか、他のオフィサーに何を表示・共有できるかを確認します。",
         "steps": [
           {
+<<<<<<< HEAD
             "title": "両方のシフトを別々に確認する",
+=======
+            "title": "すべてのシフトを別々に確認する",
+>>>>>>> 4f53fe0 (update)
             "purpose": "シフト 1 とシフト 2 の偏りを見逃さないため",
             "copy": "最終プランは各シフトを別々に表示します。切り替えて、意図した通りにタレットが埋まっているか確認してください。"
           },
@@ -753,7 +811,11 @@
   "notes": "メモ",
   "clear_helpers": "ヘルパーをクリア",
   "manual_shift_add_title": "追加スロットが必要な理由",
+<<<<<<< HEAD
   "manual_shift_add_help": "「両方」シフトのプレイヤーに対して、シフト 1 またはシフト 2 に手動で追加スロットを与える必要がある場合に、これらの項目を使います。",
+=======
+  "manual_shift_add_help": "「すべて」シフトのプレイヤーに対して、シフト 1 またはシフト 2 に手動で追加スロットを与える必要がある場合に、これらの項目を使います。",
+>>>>>>> 4f53fe0 (update)
   "base_north": "北タレット",
   "base_west": "西タレット",
   "base_east": "東タレット",
@@ -839,6 +901,75 @@
   "duplicate_nicks_found": "重複ニックネームが見つかりました",
   "duplicate_nicks_hint": "これらのプレイヤーはテーブルで強調表示されます。1つのシフト内では、同じニックネームを 2 回割り当てることはできません。",
   "duplicate_nick_in_shift_error": "このニックネームはこのシフトですでに使われています",
+<<<<<<< HEAD
   "turrets_panel": "タレット"
+=======
+  "turrets_panel": "タレット",
+  "import_region_1": "ホーム",
+  "import_region_2": "地域 1",
+  "import_region_3": "地域 2",
+  "capture_region_1": "地域1の占領",
+  "capture_region_2": "地域2の占領",
+  "shift3": "シフト3",
+  "shift4": "シフト4",
+  "capture_region": "地域の占領",
+  "import_regions_kicker": "地域",
+  "import_regions_title": "地域占領",
+  "import_regions_desc": "地域を選び、1、2、3、または4シフト用の必要なスイッチをオンにしてください。",
+  "import_region_always_on": "常に有効",
+  "import_region_enabled_text": "有効",
+  "import_region_disabled_text": "無効",
+  "import_1_shift": "1シフト",
+  "import_2_shifts": "2シフト",
+  "import_3_shifts": "3シフト",
+  "import_4_shifts": "4シフト",
+  "add_player_menu": "プレイヤーを追加",
+  "manual_player_manager_subtitle": "新しいプレイヤーを追加し、既存プレイヤーを検索・編集・削除できます。",
+  "manual_player_new_title": "新しいプレイヤー",
+  "manual_player_persist_note": "ページ更新後も保存されます。新しい Excel をインポートすると手動プレイヤーは削除されます。",
+  "manual_player_new_button": "新規",
+  "manual_player_extra_columns": "追加列",
+  "manual_player_add_column": "列を追加",
+  "delete_player": "削除",
+  "manual_player_extra_columns_hint": "このプレイヤー用の項目を追加したり、不要な列を削除できます。",
+  "manual_player_new_column_label": "新しい列",
+  "manual_player_column_name_placeholder": "列名",
+  "manual_player_no_extra_columns": "追加列はまだありません。",
+  "manual_player_name_required": "プレイヤー名を入力してください。",
+  "manual_player_delete_confirm": "プレイヤーを削除しますか？",
+  "manual_player_deleted": "プレイヤーを削除しました。",
+  "manual_player_column_name_required": "列名を入力してください。",
+  "manual_player_column_added": "列を追加しました。",
+  "manual_player_remove_column": "列を削除",
+  "manual_player_remove_column_confirm": "列を削除しますか？",
+  "manual_player_column_removed": "列を削除しました。",
+  "manual_player_manual_badge": "手動",
+  "manual_player_import_badge": "インポート",
+  "manual_player_empty": "プレイヤーが見つかりません。",
+  "saved": "保存しました",
+  "manual_player_search_placeholder": "ニックネーム / 同盟で検索",
+  "shift_recognition_title": "4. シフト認識",
+  "shift_recognition_note": "Excel のシフト回答を確認し、必要ならインポート前に統合します。",
+  "shift_recognition_auto": "自動認識",
+  "shift_recognition_reset": "ルールをリセット",
+  "shift_recognition_merge_mode": "シフト統合",
+  "shift_merge_separate": "統合しない",
+  "shift_merge_pair_12_34": "1+2 と 3+4",
+  "shift_merge_all_to_1": "すべてシフト1へ",
+  "shift_merge_custom": "カスタム統合",
+  "shift_recognition_empty": "必須列でシフト列を選ぶと、ここに確認が表示されます。",
+  "shift_recognition_value": "Excel の値",
+  "shift_recognition_detected": "認識結果",
+  "shift_recognition_after_merge": "統合後",
+  "shift_recognition_count": "行数",
+  "shift_recognition_summary_empty": "まだルールは適用されていません。",
+  "shift_recognition_save": "ルールを保存",
+  "shift_recognition_ignore": "無視",
+  "shift_recognition_summary": "検出値: {count}",
+  "shift_recognition_all": "すべて",
+  "tier_visibility_title": "追加ティア",
+  "tier_visibility_note": "T1〜T8 を追加し、タレット上限に表示するティアを有効にします。",
+  "tier_visibility_add": "ティアを追加"
+>>>>>>> 4f53fe0 (update)
 };
 })();

@@ -1,0 +1,173 @@
+/* Manual player manager modal */
+.manual-player-modal{z-index:280000;}
+.manual-player-card{max-width:min(1160px,96vw);width:min(1160px,96vw);}
+.manual-player-layout{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:18px;padding:18px;}
+.manual-player-list-panel,.manual-player-form-panel{background:rgba(17,26,47,.84);border:1px solid rgba(120,145,210,.20);border-radius:22px;}
+.manual-player-search-label{display:grid;gap:8px;font-weight:900;color:#eaf0ff;}
+.manual-player-search-label input,.manual-player-form input,.manual-player-form select{width:100%;background:#0b1426;border:1px solid rgba(126,150,210,.24);border-radius:14px;color:#f4f7ff;padding:12px 14px;font:inherit;outline:none;}
+.manual-player-search-label input:focus,.manual-player-form input:focus,.manual-player-form select:focus{border-color:rgba(132,151,255,.72);box-shadow:0 0 0 3px rgba(103,116,255,.15);}
+.manual-player-list{display:grid;gap:8px;margin-top:14px;max-height:560px;overflow:auto;padding-right:4px;}
+.manual-player-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;text-align:left;border:1px solid rgba(126,150,210,.18);background:#0d172b;color:#eef3ff;border-radius:16px;padding:11px 12px;cursor:pointer;}
+.manual-player-row:hover,.manual-player-row.is-active{border-color:rgba(143,160,255,.65);background:#17223c;}
+.manual-player-row strong{display:block;line-height:1.15;}
+.manual-player-row small{display:block;color:#aeb9d2;margin-top:4px;}
+.manual-player-row .manual-player-origin{font-size:11px;border-radius:999px;padding:4px 8px;background:rgba(108,123,255,.17);color:#cbd5ff;font-weight:900;}
+.manual-player-form-top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:16px;}
+.manual-player-form-top h3{margin:0 0 4px;font-size:24px;}
+.manual-player-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;}
+.manual-player-form label{display:grid;gap:7px;color:#c6d0e8;font-weight:800;}
+.manual-player-extra-head{display:flex;align-items:end;justify-content:space-between;gap:14px;margin-top:18px;border-top:1px solid rgba(126,150,210,.16);padding-top:16px;}
+.manual-player-extra-head h4{margin:0;color:#f1f5ff;font-size:18px;}
+.manual-player-add-column{display:flex;gap:10px;min-width:min(440px,100%);}
+.manual-player-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px;}
+.manual-player-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:20px;}
+.manual-player-actions .btn{min-width:150px;}
+.btn-danger-soft{border-color:rgba(255,113,132,.35)!important;color:#ffd1d8!important;background:rgba(120,32,48,.22)!important;}
+.btn-danger-soft:hover{background:rgba(170,45,66,.32)!important;}
+#manualPlayerDeleteBtn[disabled]{opacity:.45;pointer-events:none;}
+@media (max-width:820px){.manual-player-layout{grid-template-columns:1fr;padding:14px}.manual-player-grid,.manual-player-extra-grid{grid-template-columns:1fr}.manual-player-add-column{width:100%;flex-direction:column}.manual-player-form-top,.manual-player-extra-head{display:grid}.manual-player-list{max-height:260px}}
+
+
+/* v71: cleaner extra-column area */
+.manual-player-extra-head{
+  display:grid!important;
+  grid-template-columns:minmax(240px,.9fr) minmax(420px,1.25fr)!important;
+  align-items:end!important;
+  gap:18px!important;
+}
+.manual-player-extra-title{
+  display:grid;
+  gap:6px;
+  min-width:0;
+}
+.manual-player-extra-title h4{
+  margin:0!important;
+}
+.manual-player-add-column{
+  width:100%;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  gap:10px!important;
+  align-items:end!important;
+  padding:14px!important;
+  border:1px solid rgba(126,150,210,.22)!important;
+  border-radius:18px!important;
+  background:rgba(9,18,36,.55)!important;
+}
+.manual-player-add-column-label{
+  grid-column:1/-1;
+  color:#c7d3ee;
+  font-weight:900;
+  font-size:13px;
+}
+.manual-player-add-column input{
+  min-width:0;
+}
+.manual-player-add-column .btn{
+  min-height:52px;
+  white-space:normal;
+  line-height:1.15;
+}
+.manual-player-extra-grid{
+  align-items:start;
+}
+.manual-player-extra-field{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 44px;
+  gap:8px;
+  align-items:end;
+  min-width:0;
+}
+.manual-player-extra-field label{
+  min-width:0;
+}
+.manual-player-remove-column{
+  width:44px;
+  height:52px;
+  border-radius:14px;
+  border:1px solid rgba(255,113,132,.35);
+  background:rgba(120,32,48,.22);
+  color:#ffd1d8;
+  font-size:22px;
+  font-weight:900;
+  cursor:pointer;
+}
+.manual-player-remove-column:hover{
+  background:rgba(170,45,66,.35);
+}
+@media (max-width:980px){
+  .manual-player-extra-head{
+    grid-template-columns:1fr!important;
+  }
+  .manual-player-add-column{
+    grid-template-columns:1fr!important;
+  }
+  .manual-player-add-column .btn{
+    width:100%;
+  }
+}
+
+
+/* v72: collapsible extra columns inside Add player modal */
+.manual-player-extra-block{
+  margin-top:18px;
+  border-top:1px solid rgba(126,150,210,.16);
+  padding-top:16px;
+}
+.manual-player-extra-toggle{
+  width:100%;
+  border:0;
+  background:transparent;
+  color:#f1f5ff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:0;
+  cursor:pointer;
+  text-align:left;
+}
+.manual-player-extra-toggle strong{
+  display:block;
+  font-size:22px;
+  line-height:1.1;
+}
+.manual-player-extra-toggle small{
+  display:block;
+  margin-top:6px;
+  color:#aebbd6;
+  line-height:1.25;
+}
+.manual-player-extra-caret{
+  width:38px;
+  height:38px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+  border-radius:999px;
+  border:1px solid rgba(126,150,210,.25);
+  background:rgba(18,29,54,.78);
+  color:#dfe6ff;
+  transition:transform .18s ease, background .18s ease;
+}
+.manual-player-form:not(.is-extra-collapsed) .manual-player-extra-caret{
+  transform:rotate(180deg);
+  background:rgba(90,103,220,.30);
+}
+.manual-player-extra-body{
+  margin-top:14px;
+}
+.manual-player-form.is-extra-collapsed .manual-player-extra-body{
+  display:none!important;
+}
+.manual-player-form.is-extra-collapsed .manual-player-actions{
+  margin-top:18px;
+}
+.manual-player-list-panel{
+  align-self:start;
+}
+.manual-player-list{
+  max-height:min(560px, calc(100vh - 300px))!important;
+  min-height:0!important;
+}

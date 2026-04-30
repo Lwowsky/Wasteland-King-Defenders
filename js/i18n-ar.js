@@ -30,7 +30,11 @@
   "search_placeholder": "ابحث حسب اللقب / التحالف",
   "role": "الدور",
   "tier": "الرتبة",
+<<<<<<< HEAD
   "shift": "الوردية",
+=======
+  "shift": "نوبة",
+>>>>>>> 4f53fe0 (update)
   "rows": "الصفوف",
   "status": "الحالة",
   "placement": "التوزيع",
@@ -50,7 +54,11 @@
   "captain": "كابتن",
   "shift1": "الوردية 1",
   "shift2": "الوردية 2",
+<<<<<<< HEAD
   "both": "كلتاهما",
+=======
+  "both": "الكل",
+>>>>>>> 4f53fe0 (update)
   "all": "الكل",
   "first_half": "النصف الأول",
   "second_half": "النصف الثاني",
@@ -96,7 +104,11 @@
   "only_captains": "الكباتن فقط",
   "respect_player_shift": "احترام وردية اللاعب",
   "same_troop_only": "نفس نوع القوات فقط",
+<<<<<<< HEAD
   "use_both": "استخدام «كلتاهما»",
+=======
+  "use_both": "استخدام «الكل»",
+>>>>>>> 4f53fe0 (update)
   "type_defined_by_captain": "يحدِّد الكابتن نوع البرج",
   "final_plan_share": "مشاركة",
   "export_png": "تنزيل PNG",
@@ -146,6 +158,10 @@
   "captain_ready_import": "توفر الكابتن",
   "shift_availability_import": "توفر الوردية",
   "secondary_role_import": "نوع قوات الاحتياط",
+<<<<<<< HEAD
+=======
+  "capture_other_region": "السيطرة على منطقة أخرى",
+>>>>>>> 4f53fe0 (update)
   "secondary_tier_import": "رتبة قوات الاحتياط",
   "troop_200k_import": "نوع قوات الاحتياط (200k+)",
   "reserve_type_fighter_import": "نوع قوات الاحتياط: مقاتل",
@@ -170,7 +186,11 @@
   "turret_capacity": "سعة البرج",
   "used_shortage": "المستخدم / النقص",
   "troop_type": "نوع القوات",
+<<<<<<< HEAD
   "lair_level": "مستوى الوكر",
+=======
+  "lair_level": "السيطرة",
+>>>>>>> 4f53fe0 (update)
   "yes": "نعم",
   "no": "لا",
   "manual_save_enter_name": "حفظ يدوي: أدخل لقب اللاعب",
@@ -225,9 +245,15 @@
   "save_visible_columns": "حفظ الأعمدة الظاهرة",
   "optional_columns_title": "3. الأعمدة الاختيارية",
   "optional_columns_note": "مستوى الوكر، نوع القوات الاحتياطي، وأي حقول مخصصة تريد الاحتفاظ بها.",
+<<<<<<< HEAD
   "visible_columns_title": "4. ما البيانات التي تريد إظهارها في الجدول",
   "visible_columns_note": "اختر الأعمدة الإضافية التي يجب أن تظهر في جدول اللاعبين بعد الضغط على «إظهار كل البيانات».",
   "reset_data_title": "5. إعادة ضبط البيانات",
+=======
+  "visible_columns_title": "5. البيانات التي تظهر في الجدول",
+  "visible_columns_note": "اختر الأعمدة الإضافية التي يجب أن تظهر في جدول اللاعبين بعد الضغط على «إظهار كل البيانات».",
+  "reset_data_title": "6. إعادة ضبط البيانات",
+>>>>>>> 4f53fe0 (update)
   "reset_data_note": "تنبيه: هذه الإجراءات تمسح الإعدادات المحفوظة أو بيانات الجدول.",
   "reset_storage": "مسح LocalStorage بالكامل",
   "reset_column_data": "إعادة ضبط بيانات الأعمدة",
@@ -252,7 +278,11 @@
   "empty_only": "الفارغة فقط",
   "rebalance_all": "إعادة توازن الكل",
   "advanced": "متقدم",
+<<<<<<< HEAD
   "auto_balance_both": "موازنة لاعبي «كلتاهما» تلقائيًا",
+=======
+  "auto_balance_both": "موازنة لاعبي «الكل» تلقائيًا",
+>>>>>>> 4f53fe0 (update)
   "min_players_per_turret": "الحد الأدنى للاعبين لكل برج",
   "quantity": "العدد",
   "auto_tier_limit": "حد الرتبة التلقائي",
@@ -332,7 +362,11 @@
   "board_copied_image": "تم نسخ خطة PNG إلى الحافظة",
   "board_shared": "تمت مشاركة الخطة",
   "both_ignored_in_shifts": "يتم تجاهلها حاليًا في الورديتين 1 و2",
+<<<<<<< HEAD
   "both_not_counted": "يتم تجاهل مجموعة «كلتاهما» حاليًا",
+=======
+  "both_not_counted": "يتم تجاهل مجموعة «الكل» حاليًا",
+>>>>>>> 4f53fe0 (update)
   "by_word": "بواسطة",
   "capacity_by_troop": "السعة حسب نوع القوات (من الكباتن)",
   "captain_not_found": "لم يتم العثور على الكابتن",
@@ -388,7 +422,11 @@
   "place_captain_first": "عيّن كابتنًا للبرج أولًا",
   "player_march_total": "مسيرة اللاعب",
   "player_or_turret_not_found": "لم يتم العثور على اللاعب أو البرج.",
+<<<<<<< HEAD
   "player_status_subtitle_both": "يعرض هذا العرض جميع لاعبي مجموعة «كلتاهما»: من هو بالفعل في الأبراج، ومن هو خارجها، ومن أُرسل يدويًا إلى الاحتياط.",
+=======
+  "player_status_subtitle_both": "يعرض هذا العرض جميع لاعبي مجموعة «الكل»: من هو بالفعل في الأبراج، ومن هو خارجها، ومن أُرسل يدويًا إلى الاحتياط.",
+>>>>>>> 4f53fe0 (update)
   "players_needed_placed": "اللاعبون (المطلوب / الموضوع)",
   "players_word": "اللاعبون",
   "png_export_offline": "تصدير PNG غير متاح في الحزمة دون اتصال بدون مكتبة html2canvas محلية.",
@@ -402,7 +440,11 @@
   "remove_action": "إزالة",
   "reserve_and_outside": "الاحتياط واللاعبون خارج الأبراج",
   "reserve_manual_hint": "اللاعبون الذين أُرسلوا يدويًا إلى احتياط الوردية 1/2",
+<<<<<<< HEAD
   "reset_both_before_apply": "أعد ضبط توزيع «كلتاهما» الحالي قبل التطبيق",
+=======
+  "reset_both_before_apply": "أعد ضبط توزيع «الكل» الحالي قبل التطبيق",
+>>>>>>> 4f53fe0 (update)
   "reset_limits_tiers": "إعادة ضبط الحدود (T14–T9 → 0)",
   "return_action": "إرجاع",
   "role_tier": "الدور / الرتبة",
@@ -439,7 +481,11 @@
   "without_limits": "بلا حدود",
   "board_title_shift2": "الوردية 2 / النصف الثاني",
   "board_title_shift1": "الوردية 1 / النصف الأول",
+<<<<<<< HEAD
   "plan_without_both": "تخطيط الورديتين 1/2 دون مجموعة «كلتاهما»",
+=======
+  "plan_without_both": "تخطيط الورديتين 1/2 دون مجموعة «الكل»",
+>>>>>>> 4f53fe0 (update)
   "cannot_be_assigned_to": "لا يمكن تعيينه إلى برج من نوع",
   "choose_file": "اختر ملفًا",
   "reset_localstorage_title": "هل تريد مسح LocalStorage بالكامل؟",
@@ -489,7 +535,11 @@
   "shift_limits_note": "حدود الورديات: الوردية 1 — {shift1}، الوردية 2 — {shift2} (الحد الأقصى 100).",
   "shifts_updated_status": "تم تحديث الورديات: +{added1} إلى الوردية 1، +{added2} إلى الوردية 2. الآن {shift1}/{shift2}/{both}.{warn}",
   "shifts_updated_warn_suffix": " لا توجد مساحة كافية ضمن الحد: الوردية 1 {shift1}، الوردية 2 {shift2}.",
+<<<<<<< HEAD
   "shifts_restored_status": "تمت استعادة الورديات من الاستيراد. الوردية 1: {shift1}، الوردية 2: {shift2}، كلتاهما: {both}{unknown}.",
+=======
+  "shifts_restored_status": "تمت استعادة الورديات من الاستيراد. الوردية 1: {shift1}، الوردية 2: {shift2}، الكل: {both}{unknown}.",
+>>>>>>> 4f53fe0 (update)
   "shifts_restored_unknown_suffix": "، غير معروف: {count}",
   "shift_limits_updated_status": "تم تحديث حدود الورديات: الوردية 1 — {shift1}، الوردية 2 — {shift2}.",
   "reset_columns_title": "هل تريد إعادة ضبط بيانات الأعمدة؟",
@@ -752,7 +802,11 @@
   "notes": "ملاحظات",
   "clear_helpers": "مسح المساعدين",
   "manual_shift_add_title": "لماذا نحتاج إلى خانات إضافية",
+<<<<<<< HEAD
   "manual_shift_add_help": "استخدم هذه الحقول عندما يحتاج لاعبو «كلتاهما» إلى خانات يدوية إضافية في الوردية 1 أو الوردية 2.",
+=======
+  "manual_shift_add_help": "استخدم هذه الحقول عندما يحتاج لاعبو «الكل» إلى خانات يدوية إضافية في الوردية 1 أو الوردية 2.",
+>>>>>>> 4f53fe0 (update)
   "base_north": "البرج الشمالي",
   "base_west": "البرج الغربي",
   "base_east": "البرج الشرقي",
@@ -838,6 +892,75 @@
   "duplicate_nicks_found": "تم العثور على ألقاب مكررة",
   "duplicate_nicks_hint": "هؤلاء اللاعبون مميزون في الجدول. ضمن الوردية الواحدة، لن يسمح الموقع بعد الآن بتعيين نفس اللقب مرتين.",
   "duplicate_nick_in_shift_error": "هذا اللقب مستخدم بالفعل في هذه الوردية",
+<<<<<<< HEAD
   "turrets_panel": "الأبراج"
+=======
+  "turrets_panel": "الأبراج",
+  "import_region_1": "الوطن",
+  "import_region_2": "المنطقة 1",
+  "import_region_3": "المنطقة 2",
+  "capture_region_1": "احتلال المنطقة 1",
+  "capture_region_2": "احتلال المنطقة 2",
+  "shift3": "النوبة 3",
+  "shift4": "النوبة 4",
+  "capture_region": "احتلال المنطقة",
+  "import_regions_kicker": "المناطق",
+  "import_regions_title": "احتلال المناطق",
+  "import_regions_desc": "اختر منطقة وفعّل المفتاح المطلوب لـ 1 أو 2 أو 3 أو 4 نوبات.",
+  "import_region_always_on": "مفعّل دائماً",
+  "import_region_enabled_text": "مفعّل",
+  "import_region_disabled_text": "معطّل",
+  "import_1_shift": "نوبة 1",
+  "import_2_shifts": "نوبتان",
+  "import_3_shifts": "3 نوبات",
+  "import_4_shifts": "4 نوبات",
+  "add_player_menu": "إضافة لاعب",
+  "manual_player_manager_subtitle": "أضف لاعباً جديداً، ابحث عن لاعب موجود، عدّله أو احذفه من القائمة.",
+  "manual_player_new_title": "لاعب جديد",
+  "manual_player_persist_note": "يبقى محفوظاً بعد تحديث الصفحة. عند استيراد Excel جديد يتم مسح اللاعبين اليدويين.",
+  "manual_player_new_button": "جديد",
+  "manual_player_extra_columns": "أعمدة إضافية",
+  "manual_player_add_column": "إضافة عمود",
+  "delete_player": "حذف",
+  "manual_player_extra_columns_hint": "أضف حقولاً مخصصة لهذا اللاعب أو احذف الأعمدة غير المطلوبة.",
+  "manual_player_new_column_label": "عمود جديد",
+  "manual_player_column_name_placeholder": "اسم العمود",
+  "manual_player_no_extra_columns": "لا توجد أعمدة إضافية بعد.",
+  "manual_player_name_required": "أدخل لقب اللاعب.",
+  "manual_player_delete_confirm": "حذف اللاعب؟",
+  "manual_player_deleted": "تم حذف اللاعب.",
+  "manual_player_column_name_required": "أدخل اسم العمود.",
+  "manual_player_column_added": "تمت إضافة العمود.",
+  "manual_player_remove_column": "حذف العمود",
+  "manual_player_remove_column_confirm": "حذف العمود؟",
+  "manual_player_column_removed": "تم حذف العمود.",
+  "manual_player_manual_badge": "يدوي",
+  "manual_player_import_badge": "استيراد",
+  "manual_player_empty": "لم يتم العثور على لاعبين.",
+  "saved": "تم الحفظ",
+  "manual_player_search_placeholder": "البحث بالاسم / التحالف",
+  "shift_recognition_title": "4. التعرف على النوبات",
+  "shift_recognition_note": "راجع إجابات الورديات من Excel وادمجها عند الحاجة قبل الاستيراد.",
+  "shift_recognition_auto": "اكتشاف تلقائي",
+  "shift_recognition_reset": "إعادة ضبط القواعد",
+  "shift_recognition_merge_mode": "دمج النوبات",
+  "shift_merge_separate": "عدم الدمج",
+  "shift_merge_pair_12_34": "1+2 و 3+4",
+  "shift_merge_all_to_1": "الكل في النوبة 1",
+  "shift_merge_custom": "دمج مخصص",
+  "shift_recognition_empty": "اختر عمود النوبة في الأعمدة المطلوبة، وستظهر المراجعة هنا.",
+  "shift_recognition_value": "قيمة Excel",
+  "shift_recognition_detected": "تم التعرف كـ",
+  "shift_recognition_after_merge": "بعد الدمج",
+  "shift_recognition_count": "الصفوف",
+  "shift_recognition_summary_empty": "لم يتم تطبيق أي قواعد بعد.",
+  "shift_recognition_save": "حفظ القواعد",
+  "shift_recognition_ignore": "تجاهل",
+  "shift_recognition_summary": "القيم الموجودة: {count}",
+  "shift_recognition_all": "الكل",
+  "tier_visibility_title": "مستويات إضافية",
+  "tier_visibility_note": "أضف T1–T8 وفعّل المستويات التي تريد إظهارها في حدود الأبراج.",
+  "tier_visibility_add": "إضافة مستوى"
+>>>>>>> 4f53fe0 (update)
 };
 })();

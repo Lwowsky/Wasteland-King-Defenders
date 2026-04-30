@@ -49,7 +49,11 @@
   "captain": "队长",
   "shift1": "班次 1",
   "shift2": "班次 2",
+<<<<<<< HEAD
   "both": "两者",
+=======
+  "both": "全部",
+>>>>>>> 4f53fe0 (update)
   "all": "全部",
   "first_half": "上半场",
   "second_half": "下半场",
@@ -95,7 +99,11 @@
   "only_captains": "仅队长",
   "respect_player_shift": "遵循玩家班次",
   "same_troop_only": "仅相同兵种",
+<<<<<<< HEAD
   "use_both": "使用“两者”",
+=======
+  "use_both": "使用“全部”",
+>>>>>>> 4f53fe0 (update)
   "type_defined_by_captain": "炮塔类型由队长决定",
   "final_plan_share": "分享",
   "export_png": "下载 PNG",
@@ -156,7 +164,11 @@
   "turret_capacity": "炮塔容量",
   "used_shortage": "已用 / 缺口",
   "troop_type": "兵种类型",
+<<<<<<< HEAD
   "lair_level": "巢穴等级",
+=======
+  "lair_level": "占领",
+>>>>>>> 4f53fe0 (update)
   "yes": "是",
   "no": "否",
   "lang_menu": "语言",
@@ -201,9 +213,15 @@
   "save_visible_columns": "保存可见列",
   "optional_columns_title": "可选列",
   "optional_columns_note": "这些字段可提高自动填充和最终方案的准确度。",
+<<<<<<< HEAD
   "visible_columns_title": "可见列",
   "visible_columns_note": "控制玩家表中显示哪些列。",
   "reset_data_title": "重置数据",
+=======
+  "visible_columns_title": "5. 表格中显示哪些数据",
+  "visible_columns_note": "控制玩家表中显示哪些列。",
+  "reset_data_title": "6. 重置数据",
+>>>>>>> 4f53fe0 (update)
   "reset_data_note": "你可以单独重置列设置或表格数据。",
   "reset_storage": "重置存储",
   "reset_column_data": "重置列数据",
@@ -228,7 +246,11 @@
   "empty_only": "仅空塔",
   "rebalance_all": "全部重平衡",
   "advanced": "高级",
+<<<<<<< HEAD
   "auto_balance_both": "自动平衡 Both",
+=======
+  "auto_balance_both": "自动平衡 全部",
+>>>>>>> 4f53fe0 (update)
   "min_players_per_turret": "每个炮塔最少玩家",
   "quantity": "数量",
   "auto_tier_limit": "自动等级限制",
@@ -323,7 +345,11 @@
   "recommended_min_tier": "建议最低等级",
   "remove_action": "移除",
   "reserve_and_outside": "预备队和塔外",
+<<<<<<< HEAD
   "reset_both_before_apply": "应用前先重置 Both",
+=======
+  "reset_both_before_apply": "应用前先重置 全部",
+>>>>>>> 4f53fe0 (update)
   "return_action": "返回",
   "role_tier": "兵种 / 等级",
   "selected_captains": "已选队长",
@@ -376,7 +402,11 @@
   "shift_limit_input2_title": "班次 2 额外槽位",
   "shift_limit_overflow_s1": "班次 1 的额外槽位超出可用人数",
   "shift_limit_overflow_s2": "班次 2 的额外槽位超出可用人数",
+<<<<<<< HEAD
   "shift_limits_note": "这些字段用于为 Both 玩家手动增加额外槽位。",
+=======
+  "shift_limits_note": "这些字段用于为 全部 玩家手动增加额外槽位。",
+>>>>>>> 4f53fe0 (update)
   "shifts_updated_status": "班次已更新",
   "reset_columns_title": "重置列设置？",
   "reset_columns_message": "将恢复默认列映射和可见列。",
@@ -408,7 +438,11 @@
   "notes": "备注",
   "clear_helpers": "清空辅助",
   "manual_shift_add_title": "为什么需要额外槽位",
+<<<<<<< HEAD
   "manual_shift_add_help": "当标记为“两者”的玩家需要手动额外加入班次 1 或班次 2 时，请使用这些字段。",
+=======
+  "manual_shift_add_help": "当标记为“全部”的玩家需要手动额外加入班次 1 或班次 2 时，请使用这些字段。",
+>>>>>>> 4f53fe0 (update)
   "base_north": "北炮塔",
   "base_west": "西炮塔",
   "base_east": "东炮塔",
@@ -503,6 +537,10 @@
     "captain_ready_import": "队长可用性",
     "shift_availability_import": "班次可用性",
     "secondary_role_import": "预备兵种类型",
+<<<<<<< HEAD
+=======
+  "capture_other_region": "占领其他区域",
+>>>>>>> 4f53fe0 (update)
     "secondary_tier_import": "预备兵种等级",
     "troop_200k_import": "预备兵种类型（200k+）",
     "reserve_type_fighter_import": "预备兵种类型：战士",
@@ -541,7 +579,11 @@
     "board_copied_image": "PNG 方案已复制到剪贴板",
     "board_shared": "方案已分享",
     "both_ignored_in_shifts": "当前在班次 1 和 2 中被忽略",
+<<<<<<< HEAD
     "both_not_counted": "“两者”组当前未计入",
+=======
+    "both_not_counted": "“全部”组当前未计入",
+>>>>>>> 4f53fe0 (update)
     "by_word": "按",
     "capacity_by_troop": "按兵种划分的容量（来自队长）",
     "captains_word": "队长",
@@ -570,7 +612,11 @@
     "now_in_turrets": "当前已分配到炮塔",
     "overflow_placeholder": "点击“计算”即可查看谁已在炮塔中、谁在预备队中，以及谁仍需分配。",
     "picked_players": "已选玩家",
+<<<<<<< HEAD
     "player_status_subtitle_both": "此视图显示“两者”组中的所有玩家：谁已在炮塔中、谁在塔外、以及谁被手动送入预备队。",
+=======
+    "player_status_subtitle_both": "此视图显示“全部”组中的所有玩家：谁已在炮塔中、谁在塔外、以及谁被手动送入预备队。",
+>>>>>>> 4f53fe0 (update)
     "players_needed_placed": "玩家（需要 / 已放置）",
     "png_export_offline": "离线包中未包含本地 html2canvas 库，因此无法导出 PNG。",
     "png_saved": "PNG 已保存",
@@ -587,7 +633,11 @@
     "turret_locked_not_applied": "炮塔已锁定——更改未应用",
     "turret_recalculated_free": "炮塔阵容已重新计算。剩余空间",
     "updated_player_march": "已更新 {name}：{march} 行军值",
+<<<<<<< HEAD
     "plan_without_both": "班次 1/2 方案不包含“两者”组",
+=======
+    "plan_without_both": "班次 1/2 方案不包含“全部”组",
+>>>>>>> 4f53fe0 (update)
     "restored_players_from_storage": "已从本地存储恢复 {count} 名玩家。",
     "import_ready_rows_cols": "准备导入 • {rows} 行 • {cols} 列",
     "imported_players_template_updated": "已导入 {count} 名玩家。模板已在浏览器存储中自动更新。",
@@ -609,7 +659,11 @@
     "roster_updated_keep_plan": "名单已更新，未重置最终方案。",
     "plan_preserved_hint": "方案已保留",
     "shifts_updated_warn_suffix": " 在限制范围内空间不足：S1 {shift1}，S2 {shift2}。",
+<<<<<<< HEAD
     "shifts_restored_status": "已从导入中恢复班次。班次 1：{shift1}，班次 2：{shift2}，“两者”：{both}{unknown}。",
+=======
+    "shifts_restored_status": "已从导入中恢复班次。班次 1：{shift1}，班次 2：{shift2}，“全部”：{both}{unknown}。",
+>>>>>>> 4f53fe0 (update)
     "shifts_restored_unknown_suffix": "，未知：{count}",
     "shift_limits_updated_status": "班次限制已更新：班次 1 — {shift1}，班次 2 — {shift2}。",
     "calc_no_captains_in_turrets": "计算器未能在炮塔中找到队长。请先将队长放入炮塔，或点击“从炮塔提取队长”。",
@@ -841,7 +895,76 @@
           "noteText": "如果有哪里看起来不对，就往回退一步：从最终方案回到炮塔，从炮塔回到表格，从表格回到导入。这是找到原因最快的方法。"
         }
       }
+<<<<<<< HEAD
     }
+=======
+    },
+  "import_region_1": "家园",
+  "import_region_2": "区域 1",
+  "import_region_3": "区域 2",
+  "capture_region_1": "占领区域 1",
+  "capture_region_2": "占领区域 2",
+  "shift3": "班次 3",
+  "shift4": "班次 4",
+  "capture_region": "占领区域",
+  "import_regions_kicker": "区域",
+  "import_regions_title": "区域占领",
+  "import_regions_desc": "选择区域，并为 1、2、3 或 4 个班次开启需要的开关。",
+  "import_region_always_on": "始终启用",
+  "import_region_enabled_text": "已启用",
+  "import_region_disabled_text": "已禁用",
+  "import_1_shift": "1 个班次",
+  "import_2_shifts": "2 个班次",
+  "import_3_shifts": "3 个班次",
+  "import_4_shifts": "4 个班次",
+  "add_player_menu": "添加玩家",
+  "manual_player_manager_subtitle": "添加新玩家，查找现有玩家，编辑或从名单中删除。",
+  "manual_player_new_title": "新玩家",
+  "manual_player_persist_note": "刷新页面后会保留。导入新的 Excel 时，手动玩家会被清除。",
+  "manual_player_new_button": "新建",
+  "manual_player_extra_columns": "额外列",
+  "manual_player_extra_columns_hint": "为此玩家添加自定义字段，或删除不需要的列。",
+  "manual_player_new_column_label": "新列",
+  "manual_player_column_name_placeholder": "列名",
+  "manual_player_add_column": "添加列",
+  "manual_player_no_extra_columns": "还没有额外列。",
+  "manual_player_name_required": "请输入玩家昵称。",
+  "manual_player_delete_confirm": "删除玩家？",
+  "manual_player_deleted": "玩家已删除。",
+  "manual_player_column_name_required": "请输入列名。",
+  "manual_player_column_added": "列已添加。",
+  "manual_player_remove_column": "删除列",
+  "manual_player_remove_column_confirm": "删除列？",
+  "manual_player_column_removed": "列已删除。",
+  "manual_player_manual_badge": "手动",
+  "manual_player_import_badge": "导入",
+  "manual_player_empty": "未找到玩家。",
+  "delete_player": "删除",
+  "saved": "已保存",
+  "manual_player_search_placeholder": "按昵称 / 联盟搜索",
+  "shift_recognition_title": "4. 班次识别",
+  "shift_recognition_note": "检查 Excel 中的班次答案，并在导入前按需合并。",
+  "shift_recognition_auto": "自动识别",
+  "shift_recognition_reset": "重置规则",
+  "shift_recognition_merge_mode": "合并班次",
+  "shift_merge_separate": "不合并",
+  "shift_merge_pair_12_34": "1+2 和 3+4",
+  "shift_merge_all_to_1": "全部到班次 1",
+  "shift_merge_custom": "自定义合并",
+  "shift_recognition_empty": "在必填列中选择班次列后，这里会显示检查结果。",
+  "shift_recognition_value": "Excel 值",
+  "shift_recognition_detected": "识别为",
+  "shift_recognition_after_merge": "合并后",
+  "shift_recognition_count": "行数",
+  "shift_recognition_summary_empty": "尚未应用规则。",
+  "shift_recognition_save": "保存规则",
+  "shift_recognition_ignore": "忽略",
+  "shift_recognition_summary": "找到的值：{count}",
+  "shift_recognition_all": "全部",
+  "tier_visibility_title": "额外等级",
+  "tier_visibility_note": "添加 T1–T8，并启用要在炮塔限制中显示的等级。",
+  "tier_visibility_add": "添加等级"
+>>>>>>> 4f53fe0 (update)
   });
 
 })();

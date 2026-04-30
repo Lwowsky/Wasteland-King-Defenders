@@ -91,6 +91,58 @@
     };
   }
 
+<<<<<<< HEAD
+=======
+  function getHomeShiftCount() {
+    try {
+      const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null') || {};
+      const shifts = settings?.regions?.region1?.shifts || {};
+      const selected = ['1', '2', '3', '4'].find((n) => !!shifts[n]) || '2';
+      return Math.max(1, Math.min(4, Number(selected) || 2));
+    } catch {
+      return 2;
+    }
+  }
+
+  function shiftOptionLabel(key) {
+    if (key === 'all') return typeof PNS.t === 'function' ? PNS.t('all', 'Усі') : 'Усі';
+    if (key === 'both') {
+      const label = typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel('both') : '';
+      return label && label !== 'both'
+        ? label
+        : (typeof PNS.t === 'function' ? PNS.t('both', 'Всі') : 'Всі');
+    }
+    const label = typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(key) : '';
+    if (label && label !== key) return label;
+    const n = Number(String(key || '').replace(/\D/g, '')) || 1;
+    return typeof PNS.t === 'function' ? PNS.t(`shift${n}`, `Зміна ${n}`) : `Зміна ${n}`;
+  }
+
+  function syncShiftFilterOptions(select) {
+    if (!select) return;
+    const count = getHomeShiftCount();
+    const allowed = ['all', ...Array.from({ length: count }, (_, index) => `shift${index + 1}`), 'both'];
+    const current = PNS.normalizeTopFilterShift?.(select.value || '') || 'all';
+    const stateCurrent = PNS.normalizeTopFilterShift?.(state.topFilters?.shift || 'all') || 'all';
+
+    select.innerHTML = '';
+    allowed.forEach((value) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = shiftOptionLabel(value);
+      option.dataset.i18n = value === 'all' ? 'all' : value;
+      select.appendChild(option);
+    });
+
+    const nextValue = allowed.includes(stateCurrent) ? stateCurrent : allowed.includes(current) ? current : 'all';
+    select.value = nextValue;
+    if (state.topFilters && state.topFilters.shift !== nextValue) {
+      state.topFilters.shift = nextValue;
+      try { PNS.saveTopFilters?.(); } catch {}
+    }
+  }
+
+>>>>>>> 4f53fe0 (update)
   function syncTopFilterUI() {
     const controls = getTopFilterControls();
     if (!controls.row) return;
@@ -116,11 +168,19 @@
     }
 
     if (controls.shift) {
+<<<<<<< HEAD
+=======
+      syncShiftFilterOptions(controls.shift);
+>>>>>>> 4f53fe0 (update)
       const current = state.topFilters?.shift || 'all';
       const option = Array.from(controls.shift.options).find((opt) => {
         const normalized = PNS.normalizeTopFilterShift(opt.value || opt.textContent);
         return current === 'all'
+<<<<<<< HEAD
           ? /(усі|всі|all)/i.test(opt.textContent)
+=======
+          ? String(opt.value || '').toLowerCase() === 'all' || /(усі|всі|all)/i.test(opt.textContent)
+>>>>>>> 4f53fe0 (update)
           : normalized === current;
       });
       if (option) controls.shift.value = option.value;
@@ -190,11 +250,35 @@
     }
   }
 
+<<<<<<< HEAD
+=======
+  function refreshTopShiftFilterOptionsAndApply() {
+    const controls = getTopFilterControls();
+    if (!controls.row) return;
+    const before = state.topFilters?.shift || 'all';
+    if (controls.shift) syncShiftFilterOptions(controls.shift);
+    syncTopFilterUI();
+    const after = state.topFilters?.shift || 'all';
+    if (before !== after && typeof PNS.applyPlayerTableFilters === 'function') {
+      PNS.applyPlayerTableFilters({ debounceMs: 0 });
+    }
+  }
+
+>>>>>>> 4f53fe0 (update)
   Object.assign(PNS, {
     getTopFilterControls,
     syncTopFilterUI,
     bindTopFilterEvents,
+<<<<<<< HEAD
   });
+=======
+    syncTopShiftFilterOptions: refreshTopShiftFilterOptionsAndApply,
+  });
+
+  document.addEventListener('pns:region-shifts-changed', refreshTopShiftFilterOptionsAndApply);
+  window.addEventListener('pns:region-shifts-changed', refreshTopShiftFilterOptionsAndApply);
+  document.addEventListener('pns:i18n-changed', refreshTopShiftFilterOptionsAndApply);
+>>>>>>> 4f53fe0 (update)
 })();
 
 

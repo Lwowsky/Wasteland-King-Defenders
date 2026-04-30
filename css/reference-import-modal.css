@@ -717,3 +717,199 @@
     justify-self: center;
   }
 }
+<<<<<<< HEAD
+=======
+
+
+/* Region tabs inside Settings / Import source card */
+#settings-modal .import-tools-row-single{
+  grid-template-columns:1fr;
+}
+#settings-modal .import-regions-card{
+  min-height:142px;
+}
+#settings-modal .import-region-tabs{
+  display:flex;
+  flex-wrap:nowrap;
+  gap:8px;
+  overflow-x:auto;
+  padding:2px 0 4px;
+}
+#settings-modal .import-region-tab{
+  flex:0 0 auto;
+  min-height:34px;
+  padding:8px 12px;
+  border-radius:999px;
+  border:1px solid rgba(130,145,220,.24);
+  background:rgba(15,25,47,.78);
+  color:rgba(226,234,255,.78);
+  font-weight:800;
+  font-size:12px;
+  cursor:pointer;
+}
+#settings-modal .import-region-tab.is-active{
+  color:#fff;
+  border-color:rgba(171,180,255,.48);
+  background:linear-gradient(180deg,rgba(93,113,205,.52),rgba(53,65,127,.52));
+  box-shadow:0 8px 20px rgba(48,62,150,.20), inset 0 1px 0 rgba(255,255,255,.10);
+}
+#settings-modal .import-region-panels{
+  min-height:88px;
+}
+#settings-modal .import-region-panel{
+  display:grid;
+  gap:10px;
+}
+#settings-modal .import-region-panel[hidden]{
+  display:none;
+}
+#settings-modal .import-region-panel.is-disabled .import-switch{
+  opacity:.55;
+}
+#settings-modal .import-region-panel-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+#settings-modal .import-region-title{
+  color:#eef3ff;
+  font-size:13px;
+  font-weight:900;
+}
+#settings-modal .import-region-lock{
+  display:inline-flex;
+  align-items:center;
+  min-height:30px;
+  padding:7px 10px;
+  border-radius:999px;
+  border:1px solid rgba(101,206,146,.24);
+  background:rgba(60,170,105,.12);
+  color:#bff3d0;
+  font-size:11px;
+  font-weight:900;
+  white-space:nowrap;
+}
+#settings-modal .import-region-enable{
+  min-height:30px;
+  padding:7px 12px;
+  border-radius:999px;
+  border-color:rgba(255,120,120,.44);
+  background:rgba(170,55,55,.18);
+  color:#ffd0d0;
+  white-space:nowrap;
+}
+#settings-modal .import-region-enable.is-active{
+  border-color:rgba(101,206,146,.42);
+  background:rgba(60,170,105,.18);
+  color:#bff3d0;
+}
+#settings-modal .import-shift-toggles{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+}
+#settings-modal .import-switch{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:36px;
+  padding:8px 10px;
+  border-radius:14px;
+  border:1px solid rgba(115,132,207,.16);
+  background:rgba(7,17,33,.54);
+  color:#dfe7ff;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+  user-select:none;
+}
+#settings-modal .import-switch input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+#settings-modal .import-switch-ui{
+  position:relative;
+  flex:0 0 auto;
+  width:34px;
+  height:20px;
+  border-radius:999px;
+  border:1px solid rgba(135,151,220,.26);
+  background:rgba(65,78,109,.70);
+  transition:background .18s ease,border-color .18s ease;
+}
+#settings-modal .import-switch-ui::after{
+  content:"";
+  position:absolute;
+  top:2px;
+  left:2px;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:#d7e2ff;
+  box-shadow:0 2px 8px rgba(0,0,0,.28);
+  transition:transform .18s ease;
+}
+#settings-modal .import-switch input:checked + .import-switch-ui{
+  border-color:rgba(176,185,255,.58);
+  background:linear-gradient(90deg,#6a88ff,#8d73ff);
+}
+#settings-modal .import-switch input:checked + .import-switch-ui::after{
+  transform:translateX(14px);
+  background:#fff;
+}
+#settings-modal .import-switch input:disabled ~ span{
+  cursor:not-allowed;
+}
+
+@media (max-width:720px){
+  #settings-modal .import-shift-toggles{
+    grid-template-columns:1fr;
+  }
+  #settings-modal .import-region-panel-head{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+}
+#settings-modal .import-region-enable-wrap{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+}
+#settings-modal .import-region-enable-toggle{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  cursor:pointer;
+}
+#settings-modal .import-region-enable-toggle input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+#settings-modal .import-region-enable-toggle input:checked + .import-switch-ui{
+  border-color:rgba(176,185,255,.58);
+  background:linear-gradient(90deg,#6a88ff,#8d73ff);
+}
+#settings-modal .import-region-enable-toggle input:checked + .import-switch-ui::after{
+  transform:translateX(14px);
+  background:#fff;
+}
+#settings-modal .import-region-enable-status{
+  font-size:12px;
+  font-weight:900;
+  white-space:nowrap;
+}
+#settings-modal .import-region-enable-status.is-enabled{
+  color:#bff3d0;
+}
+#settings-modal .import-region-enable-status.is-disabled{
+  color:#ffb4b4;
+}
+
+#settings-modal .import-region-tab.is-disabled{
+  pointer-events:auto;
+  cursor:pointer;
+}
+>>>>>>> 4f53fe0 (update)

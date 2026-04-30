@@ -52,13 +52,132 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
     let fighters = 0;
     let riders = 0;
     let shooters = 0;
+<<<<<<< HEAD
     let shift1 = 0;
     let shift2 = 0;
     let both = 0;
+=======
+    const shiftCountsMap = { shift1: 0, shift2: 0, shift3: 0, shift4: 0, both: 0 };
+    let detectedMaxShift = 0;
+    let hasShiftData = false;
+
+    const normalizeShiftLocal = (value) => {
+      const raw = String(value ?? '').trim();
+      if (!raw) return 'both';
+      try {
+        const normalized = typeof PNS.normalizeShiftValue === 'function' ? String(PNS.normalizeShiftValue(raw) || '').toLowerCase() : '';
+        if (/^shift[1-4]$/.test(normalized) || normalized === 'both') return normalized;
+      } catch {}
+      const lowerRaw = raw.toLowerCase();
+      if (/^shift[1-4]$/.test(lowerRaw)) return lowerRaw;
+      if (lowerRaw === 'both' || lowerRaw === 'all' || lowerRaw === 'any') return 'both';
+      if (/^[1-4]$/.test(lowerRaw)) return `shift${lowerRaw}`;
+
+      const text = raw
+        .normalize('NFKC')
+        .toLowerCase()
+        .replace(/ё/g, 'е')
+        .replace(/[–—−]/g, '-')
+        .replace(/\b\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}\b/g, ' ')
+        .replace(/\b\d+\s*(час|часа|часов|hours?|hrs?)\b/g, ' ')
+        .replace(/[_.,;:()[\]{}|]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!text) return 'both';
+      if (/(both|all the time|all shifts?|any shift|обе|оба|обидв|две смены|дві зміни|両方|全部|すべて)/.test(text)) return 'both';
+
+      if (/(^|\s)(shift|shifts|смена|смены|зміна|зміни|змiна)\s*[-: ]*1(\s|$)/.test(text) || /(first|1st|первая|первый|перша|перший|перв|перш)/.test(text)) return 'shift1';
+      if (/(^|\s)(shift|shifts|смена|смены|зміна|зміни|змiна)\s*[-: ]*2(\s|$)/.test(text) || /(second|2nd|вторая|второй|друга|другий|втор|друг)/.test(text)) return 'shift2';
+      if (/(^|\s)(shift|shifts|смена|смены|зміна|зміни|змін|змiна|zmiana|zmiany|schicht|schichten|ca)\s*[-: ]*3(\s|$)/.test(text) || /(^|\s)(3|three|third|3rd)\s*(shift|shifts|смена|смены|зміна|зміни|змін|змiна|zmiana|zmiany|schicht|schichten|ca)(\s|$)/.test(text) || /(third|3rd|третья|третий|третя|третій|треть|трет)/.test(text)) return 'shift3';
+      if (/(^|\s)(shift|shifts|смена|смены|зміна|зміни|змін|змiна|zmiana|zmiany|schicht|schichten|ca)\s*[-: ]*4(\s|$)/.test(text) || /(^|\s)(4|four|fourth|4th)\s*(shift|shifts|смена|смены|зміна|зміни|змін|змiна|zmiana|zmiany|schicht|schichten|ca)(\s|$)/.test(text) || /(fourth|4th|четвертая|четвертий|четверта|четвер)/.test(text)) return 'shift4';
+
+      return 'both';
+    };
+
+    const labelShift = (key) => {
+      if (key === 'both') {
+        const label = typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel('both') : '';
+        return label && label !== 'both'
+          ? label
+          : (typeof PNS.t === 'function' ? PNS.t('both', 'Всі') : 'Всі');
+      }
+      const n = Number(String(key).replace('shift', '')) || 1;
+      const fromI18n = typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(key) : '';
+      if (fromI18n && fromI18n !== key) return fromI18n;
+      return typeof PNS.t === 'function'
+        ? PNS.t(`shift${n}`, `Зміна ${n}`)
+        : `Зміна ${n}`;
+    };
+
+    const autoPickRegion1ShiftCount = (maxShift) => {
+      const nextCount = Math.max(1, Math.min(4, Number(maxShift) || 2));
+      try {
+        const settingsKey = 'pns_import_region_shift_settings_v1';
+        const settings = JSON.parse(localStorage.getItem(settingsKey) || 'null') || {};
+        settings.regions = settings.regions || {};
+        settings.regions.region1 = settings.regions.region1 || { enabled: true, shifts: {} };
+        settings.regions.region1.enabled = true;
+
+        const current = ['1', '2', '3', '4'].find((n) => !!settings.regions.region1.shifts?.[n]) || '2';
+
+        // Якщо користувач вручну вибрав кількість змін для Home/Дім,
+        // не перезаписуємо її автоматикою після renderStats.
+        if (localStorage.getItem('pns_import_region1_shift_manual_override_v1') === '1') {
+          return Math.max(1, Math.min(4, Number(current) || nextCount));
+        }
+
+        if (String(current) !== String(nextCount)) {
+          settings.regions.region1.shifts = { '1': false, '2': false, '3': false, '4': false };
+          settings.regions.region1.shifts[String(nextCount)] = true;
+          localStorage.setItem(settingsKey, JSON.stringify(settings));
+          if (PNS.importRegionShiftSettings) PNS.importRegionShiftSettings = settings;
+          try { window.dispatchEvent(new CustomEvent('pns:region-shifts-changed', { detail: { region: 'region1' } })); } catch {}
+          try { document.dispatchEvent(new CustomEvent('pns:region-shifts-changed', { detail: { region: 'region1' } })); } catch {}
+        }
+      } catch {}
+      return nextCount;
+    };
+
+    const getFirstRegionShiftCount = () => {
+      try {
+        const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null');
+        const shifts = settings?.regions?.region1?.shifts || {};
+        const selected = ['1', '2', '3', '4'].find((n) => !!shifts[n]) || '2';
+        return Math.max(1, Math.min(4, Number(selected) || 2));
+      } catch {
+        return 2;
+      }
+    };
+
+    const addPlayer = (roleValue, captainValue, shiftValue) => {
+      const role = typeof PNS.normalizeRole === 'function'
+        ? PNS.normalizeRole(roleValue)
+        : String(roleValue || '');
+
+      const shift = normalizeShiftLocal(shiftValue);
+
+      if (captainValue === true || /yes|так|да/i.test(String(captainValue || ''))) captains += 1;
+      if (role === 'Shooter') shooters += 1;
+      else if (role === 'Fighter') fighters += 1;
+      else if (role === 'Rider') riders += 1;
+
+      if (Object.prototype.hasOwnProperty.call(shiftCountsMap, shift)) shiftCountsMap[shift] += 1;
+      else shiftCountsMap.both += 1;
+
+      if (/^shift[1-4]$/.test(shift)) {
+        hasShiftData = true;
+        detectedMaxShift = Math.max(detectedMaxShift, Number(shift.replace('shift', '')) || 0);
+      } else if (shift === 'both') {
+        hasShiftData = true;
+      }
+    };
+>>>>>>> 4f53fe0 (update)
 
     if (players.length) {
       total = players.length;
       players.forEach((player) => {
+<<<<<<< HEAD
         const role = typeof PNS.normalizeRole === 'function'
           ? PNS.normalizeRole(player.role)
           : String(player.role || '');
@@ -74,6 +193,20 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
         if (shift === 'shift1') shift1 += 1;
         else if (shift === 'shift2') shift2 += 1;
         else both += 1;
+=======
+        const importShift = player.registeredShiftRaw || player.raw?.shift_availability || player.registeredShift || player.registeredShiftLabel || player.shift || player.shiftLabel || 'both';
+        const displayShift = player.manualShiftOverride ? (player.shift || player.shiftLabel || importShift) : importShift;
+        addPlayer(
+          player.role,
+          player.captainReady,
+          displayShift,
+        );
+        const importedNormalized = normalizeShiftLocal(importShift);
+        if (/^shift[1-4]$/.test(importedNormalized)) {
+          hasShiftData = true;
+          detectedMaxShift = Math.max(detectedMaxShift, Number(importedNormalized.replace('shift', '')) || 0);
+        }
+>>>>>>> 4f53fe0 (update)
       });
     } else {
       const rows = $$('#playersDataTable tbody tr');
@@ -83,6 +216,7 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
         const roleText = (row.querySelector('td[data-field="role"]') || cells[2])?.textContent || '';
         const captainText = (row.querySelector('td[data-field="captainReady"]') || cells[6])?.textContent || '';
         const shiftText = (row.querySelector('td[data-field="shiftLabel"]') || cells[7])?.textContent || row.dataset.shift || 'both';
+<<<<<<< HEAD
         const role = typeof PNS.normalizeRole === 'function' ? PNS.normalizeRole(roleText) : roleText;
         const shift = typeof PNS.normalizeShiftValue === 'function' ? PNS.normalizeShiftValue(shiftText) : shiftText;
 
@@ -97,6 +231,14 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
       });
     }
 
+=======
+        addPlayer(roleText, captainText, shiftText);
+      });
+    }
+
+    if (hasShiftData) autoPickRegion1ShiftCount(detectedMaxShift);
+
+>>>>>>> 4f53fe0 (update)
     const totalEl = document.querySelector('[data-stat-card="total"] strong');
     const captainsEl = document.querySelector('[data-stat-card="captains"] strong');
     if (totalEl) totalEl.textContent = String(total);
@@ -118,6 +260,7 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
     }
 
     const shiftCounts = document.getElementById('shiftCountsDisplay');
+<<<<<<< HEAD
     if (shiftCounts && typeof PNS.renderHtmlTemplate === 'function') {
       const shiftLabel = (value) => typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(value) : value;
       shiftCounts.innerHTML = PNS.renderHtmlTemplate('tpl-stats-shift-chips', {
@@ -128,6 +271,22 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
         both_count: both,
         both_label: shiftLabel('both'),
       });
+=======
+    if (shiftCounts) {
+      const firstRegionShiftCount = getFirstRegionShiftCount();
+      const activeShifts = Array.from({ length: firstRegionShiftCount }, (_, index) => `shift${index + 1}`);
+      const chips = [...activeShifts, 'both'];
+      const statsGrid = shiftCounts.closest('.stats-grid--players');
+      shiftCounts.classList.toggle('is-many-shifts', chips.length > 3);
+      shiftCounts.setAttribute('data-shift-count', String(chips.length));
+      shiftCounts.style.setProperty('--players-shift-columns', String(chips.length));
+      if (statsGrid) statsGrid.setAttribute('data-shift-card-count', String(chips.length));
+      shiftCounts.innerHTML = chips.map((key) => {
+        const count = key === 'both' ? shiftCountsMap.both : shiftCountsMap[key] || 0;
+        return `<span class="stat-chip stat-chip--shift is-${key}"><b>${count}</b><small>${labelShift(key)}</small></span>`;
+      }).join('');
+      try { PNS.syncTopShiftFilterOptions?.(); } catch {}
+>>>>>>> 4f53fe0 (update)
     }
   }
 
@@ -194,6 +353,13 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
   document.addEventListener('players-table-data-changed', scheduleStatsRender);
   document.addEventListener('pns:assignment-changed', scheduleStatsRender);
   document.addEventListener('pns:i18n-changed', scheduleStatsRender);
+<<<<<<< HEAD
+=======
+  document.addEventListener('pns:region-shifts-changed', scheduleStatsRender);
+  document.addEventListener('pns:import-region-settings-reset', scheduleStatsRender);
+  window.addEventListener('pns:region-shifts-changed', scheduleStatsRender);
+  window.addEventListener('pns:import-region-settings-reset', scheduleStatsRender);
+>>>>>>> 4f53fe0 (update)
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initDomCompat, { once: true });

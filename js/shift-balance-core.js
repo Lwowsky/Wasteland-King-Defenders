@@ -24,6 +24,12 @@
     const normalized = e.normalizeShiftValue(shiftValue);
     player.shift = normalized;
     player.shiftLabel = e.formatShiftLabelForCell(normalized);
+<<<<<<< HEAD
+=======
+    player.manualShiftOverride = true;
+    player.registeredShift = normalized;
+    player.registeredShiftLabel = player.shiftLabel;
+>>>>>>> 4f53fe0 (update)
     if (player.rowEl) {
       player.rowEl.dataset.shift = normalized;
       const cell = player.rowEl.querySelector('td[data-field="shiftLabel"]');

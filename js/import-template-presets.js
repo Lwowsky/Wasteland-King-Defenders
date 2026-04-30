@@ -28,8 +28,13 @@ function U(opts = {}) {
     if (!(t.importData.headers || []).length)
       return void k(
         r(
+<<<<<<< HEAD
           "import_source_missing_save",
           "Немає що зберігати: спочатку завантаж файл або посилання.",
+=======
+          "import_source_missing_file_save",
+          "Немає що зберігати: спочатку завантаж файл.",
+>>>>>>> 4f53fe0 (update)
         ),
         "danger",
       );

@@ -20,9 +20,23 @@
     const matchRegisteredShift = isMatchRegisteredShiftEnabled();
     const baseShift = getBaseShift(base);
     const freePlayers = (state.players || []).filter(player => !player.assignment && player.id !== captain.id);
+<<<<<<< HEAD
     const sameRole = isNoMixTroopsEnabled() ? freePlayers.filter(player => player.role === captain.role) : freePlayers.slice();
     const byActiveShift = matchRegisteredShift ? sameRole.filter(player => PNS.matchesShift(player.shift, baseShift)) : sameRole.slice();
     const byBaseShift = matchRegisteredShift ? byActiveShift.filter(player => base.shift === 'both' || player.shift === 'both' || player.shift === base.shift) : byActiveShift.slice();
+=======
+    const ignoreRegisteredShiftForRegion = typeof PNS.shouldIgnoreRegisteredShiftForActiveRegion === 'function'
+      ? !!PNS.shouldIgnoreRegisteredShiftForActiveRegion()
+      : false;
+    const sameRole = isNoMixTroopsEnabled() ? freePlayers.filter(player => player.role === captain.role) : freePlayers.slice();
+    const getRegisteredPlayerShift = (player) => {
+      const raw = player?.registeredShiftRaw || player?.raw?.shift_availability || player?.registeredShift || player?.registeredShiftLabel || player?.shift || player?.shiftLabel || 'both';
+      try { return String(typeof PNS.normalizeShiftValue === 'function' ? PNS.normalizeShiftValue(raw) : raw).toLowerCase(); }
+      catch { return String(raw || 'both').toLowerCase(); }
+    };
+    const byActiveShift = (matchRegisteredShift && !ignoreRegisteredShiftForRegion) ? sameRole.filter(player => PNS.matchesShift(getRegisteredPlayerShift(player), baseShift)) : sameRole.slice();
+    const byBaseShift = (matchRegisteredShift && !ignoreRegisteredShiftForRegion) ? byActiveShift.filter(player => base.shift === 'both' || getRegisteredPlayerShift(player) === 'both' || getRegisteredPlayerShift(player) === base.shift) : byActiveShift.slice();
+>>>>>>> 4f53fe0 (update)
     const passTierMin = byBaseShift.filter(player => isEligiblePlayer(0, player));
     const rallyRoom = getTowerRallyCapacity(captain)
       ? Math.max(0, getTowerRallyCapacity(captain) - num(captain.march) - getAssignedHelpersMarch(base))

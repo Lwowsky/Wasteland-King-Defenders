@@ -111,11 +111,19 @@
       },
       {
         key: "lair_level",
+<<<<<<< HEAD
         label: label('lair_level', 'lair_level', 'Рівень лігва'),
         required: !1,
         colKey: "lair_level",
         visibleDefault: !0,
         aliases: ["lair", "логово", "which lair level can you take"],
+=======
+        label: label('lair_level', 'capture_other_region', 'Захоплення інакшого регіону'),
+        required: !1,
+        colKey: "lair_level",
+        visibleDefault: !0,
+        aliases: ["lair", "логово", "which lair level can you take", "готовы ли вы принять участие в захвате другого региона", "захвате другого региона", "захоплення іншого регіону", "захоплення інакшого регіону", "готові взяти участь у захопленні іншого регіону", "capture another region", "capture other region", "ready to participate in capturing another region", "別の地域の捕獲", "参加する準備"],
+>>>>>>> 4f53fe0 (update)
       },
       {
         key: "secondary_role",

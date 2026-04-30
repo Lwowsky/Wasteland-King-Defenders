@@ -158,7 +158,11 @@
         tier: String(player.tier || ''),
         march: Number(player.march || 0) || 0,
         status: status.status || (shiftKey === 'both' && calcState.ignoreBoth
+<<<<<<< HEAD
           ? tr('both_not_counted', 'Група «Обидві» зараз не враховується')
+=======
+          ? tr('both_not_counted', 'Група «Всі» зараз не враховується')
+>>>>>>> 4f53fe0 (update)
           : tr('not_used', 'Не використано'))
       });
     }
@@ -182,7 +186,11 @@
           player_id: escapeHtml(player.playerId),
           shift1_label: tr('shift1', 'Зміна 1'),
           shift2_label: tr('shift2', 'Зміна 2'),
+<<<<<<< HEAD
           both_label: tr('both', 'Обидві'),
+=======
+          both_label: tr('both', 'Всі'),
+>>>>>>> 4f53fe0 (update)
           shift1_disabled: shift1Disabled,
           shift2_disabled: shift2Disabled
         });
@@ -212,7 +220,11 @@
       shift1_count: formatNumber(buckets.shift1.length),
       shift2_label: tr('shift2', 'Зміна 2'),
       shift2_count: formatNumber(buckets.shift2.length),
+<<<<<<< HEAD
       both_label: tr('both', 'Обидві'),
+=======
+      both_label: tr('both', 'Всі'),
+>>>>>>> 4f53fe0 (update)
       both_count: formatNumber(buckets.both.length),
       shift1_html: renderBucket(
         'shift1',
@@ -228,7 +240,11 @@
       ),
       both_html: renderBucket(
         'both',
+<<<<<<< HEAD
         tr('both', 'Обидві'),
+=======
+        tr('both', 'Всі'),
+>>>>>>> 4f53fe0 (update)
         buckets.both,
         `${tr('players_short', 'гравців')}: ${formatNumber(shiftCounts.both)}${calcState.ignoreBoth ? ` · ${tr('both_ignored_in_shifts', 'зараз не враховуються в змінах 1 і 2')}` : ''}`
       ),
@@ -265,7 +281,11 @@
     const lines = [
       `${tr('shift1', 'Зміна 1')}: ${stats.shift1.total}/${shiftLimits.shift1} (${tr('shooter_plural', 'Стрільці')}/${tr('fighter_plural', 'Бійці')}/${tr('rider_plural', 'Наїзники')} ${stats.shift1.shooter}/${stats.shift1.fighter}/${stats.shift1.rider})`,
       `${tr('shift2', 'Зміна 2')}: ${stats.shift2.total}/${shiftLimits.shift2} (${tr('shooter_plural', 'Стрільці')}/${tr('fighter_plural', 'Бійці')}/${tr('rider_plural', 'Наїзники')} ${stats.shift2.shooter}/${stats.shift2.fighter}/${stats.shift2.rider})`,
+<<<<<<< HEAD
       `${tr('both', 'Обидві')}: ${stats.both.total} (${tr('shooter_plural', 'Стрільці')}/${tr('fighter_plural', 'Бійці')}/${tr('rider_plural', 'Наїзники')} ${stats.both.shooter}/${stats.both.fighter}/${stats.both.rider})`
+=======
+      `${tr('both', 'Всі')}: ${stats.both.total} (${tr('shooter_plural', 'Стрільці')}/${tr('fighter_plural', 'Бійці')}/${tr('rider_plural', 'Наїзники')} ${stats.both.shooter}/${stats.both.fighter}/${stats.both.rider})`
+>>>>>>> 4f53fe0 (update)
     ];
 
     if (stats.shift1.total > shiftLimits.shift1) {

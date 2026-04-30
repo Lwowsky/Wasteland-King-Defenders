@@ -57,7 +57,12 @@
     state.helperFillMode = helperFillMode(modal, state);
     state.minHelpersPerTower = true;
     state.minHelpersCount = helperFillCount(state.helperFillMode);
+<<<<<<< HEAD
     state.activeTab = String(modal?.querySelector("[data-calc-tab].is-active")?.getAttribute("data-calc-tab") || state.activeTab || "shift1").toLowerCase() === "shift2" ? "shift2" : "shift1";
+=======
+    const activeShiftRaw = String(modal?.querySelector("[data-calc-tab].is-active")?.getAttribute("data-calc-tab") || state.activeTab || "shift1").toLowerCase();
+    state.activeTab = /^shift[1-4]$/.test(activeShiftRaw) ? activeShiftRaw : "shift1";
+>>>>>>> 4f53fe0 (update)
     state.mainTab = String(modal?.querySelector("[data-calc-main-tab].is-active")?.getAttribute("data-calc-main-tab") || state.mainTab || "setup").toLowerCase();
     state.uiMode = String(modal?.querySelector("#towerCalcModeUi")?.value || state.uiMode || "assisted").toLowerCase();
     state.uiApplyMode = String(modal?.querySelector("#towerCalcApplyModeUi")?.value || state.uiApplyMode || "topup").toLowerCase();
@@ -78,7 +83,11 @@
   }
 
   function l(shiftKey, state) {
+<<<<<<< HEAD
     const shift = String(shiftKey || "").toLowerCase() === "shift2" ? "shift2" : "shift1";
+=======
+    const shift = String(shiftKey || "").toLowerCase().match(/^shift[1-4]$/) ? String(shiftKey || "").toLowerCase() : "shift1";
+>>>>>>> 4f53fe0 (update)
     const captainIds = new Set(((state && state[shift]) || []).map(row => String(row?.captainId || "")).filter(Boolean));
     let total = 0;
     for (const player of Array.isArray(a.players) ? a.players : []) {
@@ -93,7 +102,11 @@
   function c(shiftKey) {
     const modal = document.getElementById("towerCalcModal");
     if (!modal) return false;
+<<<<<<< HEAD
     const shift = String(shiftKey || "").toLowerCase() === "shift2" ? "shift2" : "shift1";
+=======
+    const shift = String(shiftKey || "").toLowerCase().match(/^shift[1-4]$/) ? String(shiftKey || "").toLowerCase() : "shift1";
+>>>>>>> 4f53fe0 (update)
     const state = i(modal);
     try { window.calcUpdateShiftStatsUI?.(modal); } catch {}
     const rows = typeof window.calcGetShiftTowerCardsImpl === "function" ? window.calcGetShiftTowerCardsImpl(shift) : [];

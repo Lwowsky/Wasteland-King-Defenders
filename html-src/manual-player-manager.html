@@ -1,0 +1,67 @@
+
+<section aria-label="Добавити гравця" class="modal manual-player-modal" data-i18n-aria-label="add_player_menu" data-modal="manual-player-manager" id="manualPlayerManagerModal">
+  <a aria-label="Закрити" class="modal-backdrop" data-close-manual-player-manager="1" href="#top"></a>
+  <div aria-modal="true" class="modal-card manual-player-card" role="dialog">
+    <div class="modal-head manual-player-head">
+      <div>
+        <h2 data-i18n="add_player_menu">Добавити гравця</h2>
+        <p class="muted" data-i18n="manual_player_manager_subtitle">Додай нового гравця, знайди існуючого, відредагуй або видали його зі списку.</p>
+      </div>
+      <button aria-label="Закрити" class="btn btn-icon" data-close-manual-player-manager="1" type="button">✕</button>
+    </div>
+    <div class="manual-player-layout">
+      <aside class="manual-player-list-panel panel subpanel">
+        <label class="manual-player-search-label">
+          <span data-i18n="search">Пошук</span>
+          <input autocomplete="off" id="manualPlayerSearchInput" data-i18n-placeholder="manual_player_search_placeholder" placeholder="Пошук по ніку / альянсу" type="search" />
+        </label>
+        <div class="manual-player-list" id="manualPlayerList"></div>
+      </aside>
+      <section class="manual-player-form-panel panel subpanel">
+        <div class="manual-player-form-top">
+          <div>
+            <h3 id="manualPlayerFormTitle" data-i18n="manual_player_new_title">Новий гравець</h3>
+            <p class="muted small" data-i18n="manual_player_persist_note">Збережеться після оновлення сторінки. При новому імпорті Excel ручні гравці очищаються.</p>
+          </div>
+          <button class="btn btn-sm" id="manualPlayerNewBtn" type="button" data-i18n="manual_player_new_button">Новий</button>
+        </div>
+        <form id="manualPlayerForm" class="manual-player-form is-extra-collapsed" autocomplete="off">
+          <input id="manualPlayerId" type="hidden" />
+          <div class="manual-player-grid">
+            <label><span data-i18n="nickname">Нік</span><input id="manualPlayerName" required type="text" /></label>
+            <label><span data-i18n="alliance">Альянс</span><input id="manualPlayerAlliance" type="text" /></label>
+            <label><span data-i18n="march_size">Розмір маршу</span><input id="manualPlayerMarch" min="0" type="number" /></label>
+            <label><span data-i18n="rally_size">Розмір ралі</span><input id="manualPlayerRally" min="0" type="number" /></label>
+            <label><span data-i18n="troop_type">Тип військ</span><select id="manualPlayerRole"><option value="Fighter" data-i18n="fighter">Боєць</option><option value="Rider" data-i18n="rider">Наїзник</option><option value="Shooter" data-i18n="shooter">Стрілець</option></select></label>
+            <label><span data-i18n="tier">Тір військ</span><input id="manualPlayerTier" placeholder="T10" type="text" /></label>
+            <label><span data-i18n="shift">Яка зміна</span><select id="manualPlayerShift"><option value="shift1" data-i18n="shift1">Зміна 1</option><option value="shift2" data-i18n="shift2">Зміна 2</option><option value="shift3" data-i18n="shift3">Зміна 3</option><option value="shift4" data-i18n="shift4">Зміна 4</option><option value="both" data-i18n="both">Всі</option></select></label>
+            <label><span data-i18n="captain_ready_import">Готовий бути капітаном</span><select id="manualPlayerCaptain"><option value="yes" data-i18n="yes">Так</option><option value="no" data-i18n="no">Ні</option></select></label>
+            <label><span data-i18n="lair_level">Захоплення</span><select id="manualPlayerCapture"><option value="yes" data-i18n="yes">Так</option><option value="no" data-i18n="no">Ні</option></select></label>
+          </div>
+          <div class="manual-player-extra-block">
+            <button class="manual-player-extra-toggle" id="manualPlayerExtraToggle" type="button" aria-expanded="false">
+              <span>
+                <strong data-i18n="manual_player_extra_columns">Додаткові колонки</strong>
+                <small class="muted" data-i18n="manual_player_extra_columns_hint">Додай власні поля для цього гравця або видали зайві колонки.</small>
+              </span>
+              <span class="manual-player-extra-caret" aria-hidden="true">▾</span>
+            </button>
+            <div class="manual-player-extra-body" id="manualPlayerExtraBody">
+              <div class="manual-player-add-column">
+                <label class="manual-player-add-column-label" for="manualPlayerNewColumnName" data-i18n="manual_player_new_column_label">Нова колонка</label>
+                <input id="manualPlayerNewColumnName" data-i18n-placeholder="manual_player_column_name_placeholder" placeholder="Назва колонки" type="text" />
+                <button class="btn btn-sm" id="manualPlayerAddColumnBtn" type="button" data-i18n="manual_player_add_column">Додати колонку</button>
+              </div>
+              <div class="manual-player-extra-grid" id="manualPlayerExtraFields"></div>
+            </div>
+          </div>
+          <div class="manual-player-actions">
+            <button class="btn btn-primary" id="manualPlayerSaveBtn" type="submit" data-i18n="save">Зберегти</button>
+            <button class="btn btn-danger-soft" id="manualPlayerDeleteBtn" type="button" data-i18n="delete_player">Видалити</button>
+            <span class="muted small" id="manualPlayerStatus"></span>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+</section>

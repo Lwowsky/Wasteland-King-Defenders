@@ -213,10 +213,15 @@
 </template>
 <template id="tpl-board-modal-toolbar">
 <div class="board-head-actions board-head-actions--single tower-calc-preview-toolbar">
+<<<<<<< HEAD
 <div class="row gap board-shift-group">
 <button class="btn btn-sm board-shift-tab {{shift1_active}}" data-shift-tab="shift1" type="button">{{shift1_text}}</button>
 <button class="btn btn-sm board-shift-tab {{shift2_active}}" data-shift-tab="shift2" type="button">{{shift2_text}}</button>
 </div>
+=======
+<div class="row gap board-shift-group">{{shift_tabs_html}}</div>
+{{region_picker_html}}
+>>>>>>> 4f53fe0 (update)
 <div class="board-lang-picker-host board-lang-picker-wrap board-lang-picker-wrap-auto" data-board-lang-picker-host="">{{lang_picker_html}}</div>
 <button class="btn btn-sm" data-preview-export-png="1" type="button">{{export_png_text}}</button>
 <button class="btn btn-sm" data-preview-export-txt="1" type="button">{{export_txt_text}}</button>
@@ -226,10 +231,15 @@
 <template id="tpl-tower-calc-preview">
 <div class="tower-calc-board-preview">
 <div class="board-head-actions tower-calc-preview-toolbar">
+<<<<<<< HEAD
 <div class="row gap">
 <button class="btn btn-sm board-shift-tab {{shift1_active}}" data-calc-preview-shift="shift1" type="button">{{shift1_text}}</button>
 <button class="btn btn-sm board-shift-tab {{shift2_active}}" data-calc-preview-shift="shift2" type="button">{{shift2_text}}</button>
 </div>
+=======
+<div class="row gap board-shift-group">{{shift_tabs_html}}</div>
+{{region_picker_html}}
+>>>>>>> 4f53fe0 (update)
 <div class="board-lang-picker-host board-lang-picker-wrap board-lang-picker-wrap-auto" data-board-lang-picker-host="">{{lang_picker_html}}</div>
 <button class="btn btn-sm" data-calc-preview-export="1" type="button">{{export_png_text}}</button>
 <button class="btn btn-sm" data-calc-preview-export-txt="1" type="button">{{export_txt_text}}</button>
@@ -423,7 +433,11 @@
 <template id="tpl-tower-picker-detail">
 <div class="stack tower-picker-scope" data-calc-inline-scope="{{scope}}">
 <h3>{{title}}</h3>
+<<<<<<< HEAD
 <div class="picker-meta-row muted small"><span class="picker-meta-shift">{{shift_text}}: {{scope_label}}</span><label class="picker-only-captains"><input id="pickerOnlyCaptains" name="pickerOnlyCaptains" type="checkbox" {{only_captains_checked}}=""/> {{only_captains_text}}</label><label class="picker-only-captains"><input id="pickerMatchRegisteredShift" name="pickerMatchRegisteredShift" type="checkbox" {{match_shift_checked}}=""/> {{match_shift_text}}</label><label class="picker-only-captains"><input id="pickerNoMixTroops" name="pickerNoMixTroops" type="checkbox" {{no_mix_checked}}=""/> {{no_mix_text}}</label><label class="picker-only-captains"><input id="pickerNoCrossShiftDupes" name="pickerNoCrossShiftDupes" type="checkbox" {{use_both_checked}}=""/> {{use_both_text}}</label></div>
+=======
+<div class="picker-meta-row muted small"><span class="picker-meta-shift">{{shift_text}}: {{scope_label}}</span><label class="picker-only-captains"><input id="pickerOnlyCaptains" name="pickerOnlyCaptains" type="checkbox" {{only_captains_checked}} /> {{only_captains_text}}</label><label class="picker-only-captains"><input id="pickerMatchRegisteredShift" name="pickerMatchRegisteredShift" type="checkbox" {{match_shift_checked}} /> {{match_shift_text}}</label><label class="picker-only-captains"><input id="pickerNoMixTroops" name="pickerNoMixTroops" type="checkbox" {{no_mix_checked}} /> {{no_mix_text}}</label><label class="picker-only-captains"><input id="pickerNoCrossShiftDupes" name="pickerNoCrossShiftDupes" type="checkbox" {{use_both_checked}} /> {{use_both_text}}</label></div>
+>>>>>>> 4f53fe0 (update)
 <div class="picker-topline top-space"><select aria-label="{{captain_aria_label}}" class="input-like" id="towerPickerCaptainSelect" name="towerPickerCaptainSelect"><option value="">{{captain_placeholder_text}}</option>{{captain_options_html}}</select><div class="picker-actions"><button class="btn btn-sm" data-picker-set-captain="{{base_id}}" type="button">{{place_captain_text}}</button><button class="btn btn-sm" data-picker-autofill="{{base_id}}" type="button">{{auto_fill_text}}</button><button class="btn btn-sm" data-picker-clear-base="{{base_id}}" type="button">{{clear_turret_text}}</button></div></div>
 <div class="limit-grid limit-grid-compact top-space"><div><span>{{captain_march_text}}</span><strong>{{captain_march_value}}</strong></div><div><span>{{rally_size_text}}</span><strong>{{rally_size_value}}</strong></div><div><span>{{total_sum_text}}</span><strong>{{total_sum_value}}</strong></div><div><span>{{free_space_text}}</span><strong>{{free_space_value}}</strong></div></div>
 <details class="tower-collapsible top-space" id="towerPickerLimitsBlock"><summary>{{limits_by_tier_text}} ({{march_lower_text}})</summary><div class="inner stack"><div class="picker-limits-head"><label><span class="muted small">{{max_players_text}}</span><input id="pickerMaxHelpers" max="29" min="0" name="pickerMaxHelpers" type="number" value="{{max_helpers_value}}"/></label><button class="btn btn-sm" data-picker-save-rule="{{base_id}}" type="button">{{save_limits_text}}</button><button class="btn btn-sm" data-picker-recalc-rule="{{base_id}}" type="button">{{recalc_composition_text}}</button><button class="btn btn-sm" data-picker-reset-rule="{{base_id}}" type="button">{{reset_limits_text}}</button></div><div class="row gap wrap">{{tier_inputs_html}}</div><div class="muted small">{{flexible_tier_note_text}}</div></div></details>

@@ -51,7 +51,13 @@
   "captain": "Captain",
   "shift1": "Shift 1",
   "shift2": "Shift 2",
+<<<<<<< HEAD
   "both": "Both",
+=======
+  "shift3": "Shift 3",
+  "shift4": "Shift 4",
+  "both": "All",
+>>>>>>> 4f53fe0 (update)
   "all": "All",
   "first_half": "First half",
   "second_half": "Second half",
@@ -97,7 +103,11 @@
   "only_captains": "Captains only",
   "respect_player_shift": "Respect player shift",
   "same_troop_only": "Same troop type only",
+<<<<<<< HEAD
   "use_both": "Use “Both”",
+=======
+  "use_both": "Use “All”",
+>>>>>>> 4f53fe0 (update)
   "type_defined_by_captain": "Turret type is defined by the captain",
   "final_plan_share": "Share",
   "export_png": "Download PNG",
@@ -147,6 +157,10 @@
   "captain_ready_import": "Captain availability",
   "shift_availability_import": "Shift availability",
   "secondary_role_import": "Reserve troop type",
+<<<<<<< HEAD
+=======
+  "capture_other_region": "Capture another region",
+>>>>>>> 4f53fe0 (update)
   "secondary_tier_import": "Reserve troop tier",
   "troop_200k_import": "Reserve troop type (200k+)",
   "reserve_type_fighter_import": "Reserve troop type: fighter",
@@ -171,7 +185,11 @@
   "turret_capacity": "Turret capacity",
   "used_shortage": "Used / shortage",
   "troop_type": "Troop type",
+<<<<<<< HEAD
   "lair_level": "Lair level",
+=======
+  "lair_level": "Capture",
+>>>>>>> 4f53fe0 (update)
   "yes": "Yes",
   "no": "No",
   "manual_save_enter_name": "Manual save: enter player nickname",
@@ -226,16 +244,26 @@
   "save_visible_columns": "Save visible columns",
   "optional_columns_title": "3. Optional columns",
   "optional_columns_note": "Lair level, backup troop type, and any custom fields you want to keep.",
+<<<<<<< HEAD
   "visible_columns_title": "4. Which data to show in the table",
   "visible_columns_note": "Choose which extra columns should appear in the players table after clicking “Show all data”.",
   "reset_data_title": "5. Reset data",
+=======
+  "visible_columns_title": "5. Which data to show in the table",
+  "visible_columns_note": "Choose which extra columns should appear in the players table after clicking “Show all data”.",
+  "reset_data_title": "6. Reset data",
+>>>>>>> 4f53fe0 (update)
   "reset_data_note": "Careful: these actions clear saved settings or table data.",
   "reset_storage": "Clear LocalStorage completely",
   "reset_column_data": "Reset column data",
   "reset_table_data": "Reset table data",
   "import_footer_note": "CSV/XLSX files and public Google Sheets CSV links are supported.",
   "board_subtitle": "Officer view: show the final plan, take a screenshot, or share it quickly.",
+<<<<<<< HEAD
   "calc_modal_subtitle": "Build both shifts here: assign players to turrets, check reserve slots, and prepare the final plan.",
+=======
+  "calc_modal_subtitle": "Build all shifts here: assign players to turrets, check reserve slots, and prepare the final plan.",
+>>>>>>> 4f53fe0 (update)
   "board_language": "Board language",
   "board_language_picker_note": "Choose which languages to show in the final plan.",
   "always_on": "Always enabled",
@@ -253,7 +281,11 @@
   "empty_only": "Empty only",
   "rebalance_all": "Rebalance all",
   "advanced": "Advanced",
+<<<<<<< HEAD
   "auto_balance_both": "Auto-balance “Both” players",
+=======
+  "auto_balance_both": "Auto-balance “All” players",
+>>>>>>> 4f53fe0 (update)
   "min_players_per_turret": "Minimum players per turret",
   "quantity": "Count",
   "auto_tier_limit": "Auto tier limit",
@@ -333,7 +365,11 @@
   "board_copied_image": "PNG plan copied to clipboard",
   "board_shared": "Plan shared",
   "both_ignored_in_shifts": "currently ignored in shifts 1 and 2",
+<<<<<<< HEAD
   "both_not_counted": "The “Both” group is currently ignored",
+=======
+  "both_not_counted": "The “All” group is currently ignored",
+>>>>>>> 4f53fe0 (update)
   "by_word": "by",
   "capacity_by_troop": "Capacity by troop type (from captains)",
   "captain_not_found": "Captain not found",
@@ -389,7 +425,11 @@
   "place_captain_first": "Assign a captain to the turret first",
   "player_march_total": "Player march",
   "player_or_turret_not_found": "Player or turret not found.",
+<<<<<<< HEAD
   "player_status_subtitle_both": "This view shows all players from the “Both” group: who is already in turrets, who is outside, and who was manually sent to reserve.",
+=======
+  "player_status_subtitle_both": "This view shows all players from the “All” group: who is already in turrets, who is outside, and who was manually sent to reserve.",
+>>>>>>> 4f53fe0 (update)
   "players_needed_placed": "Players (needed / placed)",
   "players_word": "players",
   "png_export_offline": "PNG export is unavailable in the offline package without a local html2canvas library.",
@@ -403,7 +443,11 @@
   "remove_action": "Remove",
   "reserve_and_outside": "Reserve and players outside turrets",
   "reserve_manual_hint": "Players manually sent to shift 1/2 reserve",
+<<<<<<< HEAD
   "reset_both_before_apply": "Reset the current “Both” distribution before applying",
+=======
+  "reset_both_before_apply": "Reset the current “All” distribution before applying",
+>>>>>>> 4f53fe0 (update)
   "reset_limits_tiers": "Reset limits (T14–T9 → 0)",
   "return_action": "Return",
   "role_tier": "Role / Tier",
@@ -440,7 +484,11 @@
   "without_limits": "without limits",
   "board_title_shift2": "Shift 2 / Second half",
   "board_title_shift1": "Shift 1 / First half",
+<<<<<<< HEAD
   "plan_without_both": "Plan shifts 1/2 without the “Both” group",
+=======
+  "plan_without_both": "Plan shifts 1/2 without the “All” group",
+>>>>>>> 4f53fe0 (update)
   "cannot_be_assigned_to": "cannot be assigned to a turret of type",
   "choose_file": "Choose file",
   "reset_localstorage_title": "Reset LocalStorage completely?",
@@ -490,7 +538,11 @@
   "shift_limits_note": "Shift limits: Shift 1 — {shift1}, Shift 2 — {shift2} (max 100).",
   "shifts_updated_status": "Shifts updated: +{added1} to Shift 1, +{added2} to Shift 2. Now {shift1}/{shift2}/{both}.{warn}",
   "shifts_updated_warn_suffix": " Not enough room within the limit: S1 {shift1}, S2 {shift2}.",
+<<<<<<< HEAD
   "shifts_restored_status": "Shifts restored from import. Shift 1: {shift1}, Shift 2: {shift2}, Both: {both}{unknown}.",
+=======
+  "shifts_restored_status": "Shifts restored from import. Shift 1: {shift1}, Shift 2: {shift2}, All: {both}{unknown}.",
+>>>>>>> 4f53fe0 (update)
   "shifts_restored_unknown_suffix": ", Unknown: {count}",
   "shift_limits_updated_status": "Shift limits updated: Shift 1 — {shift1}, Shift 2 — {shift2}.",
   "reset_columns_title": "Reset column data?",
@@ -633,7 +685,11 @@
       "turrets": {
         "eyebrow": "3. Turrets",
         "title": "Start with captains, then configure autofill rules",
+<<<<<<< HEAD
         "lead": "This is where you prepare both shifts, assign captains, set limits and run autofill. The old numeric helper setting is gone: now the main control is the “Turret fill mode” selector.",
+=======
+        "lead": "This is where you prepare all shifts, assign captains, set limits and run autofill. The old numeric helper setting is gone: now the main control is the “Turret fill mode” selector.",
+>>>>>>> 4f53fe0 (update)
         "sequenceTitle": "Recommended order",
         "sequence": [
           "Open “Turret settings” first and assign captains to all required turrets. Turret type is defined by the captain, so autofill is unreliable until captains are in place.",
@@ -681,7 +737,11 @@
         "lead": "This is where you review the completed result for a shift: who is placed where, how much march power each turret has, and what you can show or share with other officers.",
         "steps": [
           {
+<<<<<<< HEAD
             "title": "Check both shifts separately",
+=======
+            "title": "Check all shifts separately",
+>>>>>>> 4f53fe0 (update)
             "purpose": "So you do not miss an imbalance between Shift 1 and Shift 2",
             "copy": "The final plan displays each shift separately. Switch between them and make sure the turrets are closed the way you intended."
           },
@@ -753,7 +813,11 @@
   "notes": "Notes",
   "clear_helpers": "Clear helpers",
   "manual_shift_add_title": "Why extra slots are needed",
+<<<<<<< HEAD
   "manual_shift_add_help": "Use these fields when players with the “Both” shift need extra manual slots added to shift 1 or shift 2.",
+=======
+  "manual_shift_add_help": "Use these fields when players with the “All” shift need extra manual slots added to shift 1 or shift 2.",
+>>>>>>> 4f53fe0 (update)
   "base_north": "North Turret",
   "base_west": "West Turret",
   "base_east": "East Turret",
@@ -839,6 +903,73 @@
   "duplicate_nicks_found": "Duplicate nicknames found",
   "duplicate_nicks_hint": "These players are highlighted in the table. Within one shift, the site will no longer allow assigning the same nickname twice.",
   "duplicate_nick_in_shift_error": "This nickname is already used in this shift",
+<<<<<<< HEAD
   "turrets_panel": "Turrets"
+=======
+  "turrets_panel": "Turrets",
+  "import_region_1": "Home",
+  "import_region_2": "Region 1",
+  "import_region_3": "Region 2",
+  "capture_region_1": "Capture region 1",
+  "capture_region_2": "Capture region 2",
+  "capture_region": "Capture region",
+  "import_regions_kicker": "Regions",
+  "import_regions_title": "Region capture",
+  "import_regions_desc": "Choose a region and turn on the needed toggle for 1, 2, 3, or 4 shifts.",
+  "import_region_always_on": "Always enabled",
+  "import_region_enabled_text": "Enabled",
+  "import_region_disabled_text": "Disabled",
+  "import_1_shift": "1 shift",
+  "import_2_shifts": "2 shifts",
+  "import_3_shifts": "3 shifts",
+  "import_4_shifts": "4 shifts",
+  "add_player_menu": "Add player",
+  "manual_player_manager_subtitle": "Add a new player, find an existing one, edit or delete them from the roster.",
+  "manual_player_new_title": "New player",
+  "manual_player_persist_note": "Saved after page refresh. Manual players are cleared on a new Excel import.",
+  "manual_player_new_button": "New",
+  "manual_player_extra_columns": "Extra columns",
+  "manual_player_add_column": "Add column",
+  "manual_player_no_extra_columns": "No extra columns yet.",
+  "manual_player_name_required": "Enter the player nickname.",
+  "manual_player_delete_confirm": "Delete player?",
+  "manual_player_deleted": "Player deleted.",
+  "manual_player_manual_badge": "Manual",
+  "manual_player_import_badge": "Import",
+  "manual_player_empty": "No players found.",
+  "manual_player_column_name_required": "Enter a column name.",
+  "manual_player_column_added": "Column added.",
+  "delete_player": "Delete",
+  "manual_player_extra_columns_hint": "Add custom fields for this player or remove columns you do not need.",
+  "manual_player_new_column_label": "New column",
+  "manual_player_column_name_placeholder": "Column name",
+  "manual_player_remove_column": "Remove column",
+  "manual_player_remove_column_confirm": "Remove column?",
+  "manual_player_column_removed": "Column removed.",
+  "saved": "Saved",
+  "manual_player_search_placeholder": "Search by nickname / alliance",
+  "shift_recognition_title": "4. Shift recognition",
+  "shift_recognition_note": "Review the Excel shift answers and merge them if needed before importing.",
+  "shift_recognition_auto": "Auto-detect",
+  "shift_recognition_reset": "Reset rules",
+  "shift_recognition_merge_mode": "Merge shifts",
+  "shift_merge_separate": "Do not merge",
+  "shift_merge_pair_12_34": "1+2 and 3+4",
+  "shift_merge_all_to_1": "All into Shift 1",
+  "shift_merge_custom": "Custom merge",
+  "shift_recognition_empty": "Map the shift column in Required columns, then the check will appear here.",
+  "shift_recognition_value": "Excel value",
+  "shift_recognition_detected": "Detected as",
+  "shift_recognition_after_merge": "After merge",
+  "shift_recognition_count": "Rows",
+  "shift_recognition_summary_empty": "No rules applied yet.",
+  "shift_recognition_save": "Save rules",
+  "shift_recognition_ignore": "Ignore",
+  "shift_recognition_summary": "Found values: {count}",
+  "shift_recognition_all": "All",
+  "tier_visibility_title": "Extra tiers",
+  "tier_visibility_note": "Add T1–T8 and enable the tiers you want to show in turret limits.",
+  "tier_visibility_add": "Add tier"
+>>>>>>> 4f53fe0 (update)
 };
 })();

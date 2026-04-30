@@ -30,11 +30,23 @@
   }
 
   function shiftLabel(shift) {
+<<<<<<< HEAD
     try {
       return typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(shift) : String(shift || '');
     } catch {
       return String(shift || '');
     }
+=======
+    const key = String(shift || '').toLowerCase();
+    const n = Number(key.replace(/\D/g, '')) || 0;
+    try {
+      const label = typeof PNS.shiftLabel === 'function' ? String(PNS.shiftLabel(key) || '') : '';
+      if (label && label !== key && !/^shift[1-4]$/i.test(label)) return label;
+    } catch {}
+    if (key === 'both') return tr('both', 'Всі');
+    if (n >= 1 && n <= 4) return n === 1 ? tr('shift1', 'Зміна 1') : n === 2 ? tr('shift2', 'Зміна 2') : n === 3 ? tr('shift3', 'Зміна 3') : tr('shift4', 'Зміна 4');
+    return String(shift || '');
+>>>>>>> 4f53fe0 (update)
   }
 
   function roleLabel(role, short = false) {
@@ -45,6 +57,264 @@
     }
   }
 
+<<<<<<< HEAD
+=======
+  const REGION_SETTINGS_KEY = 'pns_import_region_shift_settings_v1';
+  const ACTIVE_REGION_KEY = 'pns_tower_calc_active_region_v1';
+  const REGION_KEYS = ['region1', 'region2', 'region3'];
+  const SHIFT_KEYS = ['shift1', 'shift2', 'shift3', 'shift4'];
+  const LOCAL_ALL_TIME_LABELS = { en: 'All time', uk: 'На весь час', ru: 'На весь час', de: 'Gesamte Zeit', pl: 'Na cały czas', vi: 'Toàn thời gian', zh: '全程', ja: '全時間', ko: '전체 시간', ar: 'طوال الوقت' };
+  const LOCAL_REGION_CAPTURE_LABELS = {"en":{"import_region_1":"Home","import_region_2":"Region 1","import_region_3":"Region 2","capture_region":"Capture region","capture_region_1":"Capture region 1","capture_region_2":"Capture region 2","shift3":"Shift 3","shift4":"Shift 4"},"uk":{"import_region_1":"Дім","import_region_2":"Регіон 1","import_region_3":"Регіон 2","capture_region":"Захоплення регіону","capture_region_1":"Захоплення регіону 1","capture_region_2":"Захоплення регіону 2","shift3":"Зміна 3","shift4":"Зміна 4"},"ru":{"import_region_1":"Дом","import_region_2":"Регион 1","import_region_3":"Регион 2","capture_region":"Захват региона","capture_region_1":"Захват региона 1","capture_region_2":"Захват региона 2","shift3":"Смена 3","shift4":"Смена 4"},"de":{"import_region_1":"Heimat","import_region_2":"Region 1","import_region_3":"Region 2","capture_region":"Eroberung der Region","capture_region_1":"Eroberung Region 1","capture_region_2":"Eroberung Region 2","shift3":"Schicht 3","shift4":"Schicht 4"},"pl":{"import_region_1":"Dom","import_region_2":"Region 1","import_region_3":"Region 2","capture_region":"Przejęcie regionu","capture_region_1":"Przejęcie regionu 1","capture_region_2":"Przejęcie regionu 2","shift3":"Zmiana 3","shift4":"Zmiana 4"},"vi":{"import_region_1":"Nhà","import_region_2":"Khu vực 1","import_region_3":"Khu vực 2","capture_region":"Chiếm khu vực","capture_region_1":"Chiếm khu vực 1","capture_region_2":"Chiếm khu vực 2","shift3":"Ca 3","shift4":"Ca 4"},"zh":{"import_region_1":"家园","import_region_2":"区域 1","import_region_3":"区域 2","capture_region":"占领区域","capture_region_1":"占领区域 1","capture_region_2":"占领区域 2","shift3":"班次 3","shift4":"班次 4"},"ja":{"import_region_1":"ホーム","import_region_2":"地域 1","import_region_3":"地域 2","capture_region":"地域の占領","capture_region_1":"地域1の占領","capture_region_2":"地域2の占領","shift3":"シフト3","shift4":"シフト4"},"ko":{"import_region_1":"홈","import_region_2":"지역 1","import_region_3":"지역 2","capture_region":"지역 점령","capture_region_1":"지역 1 점령","capture_region_2":"지역 2 점령","shift3":"교대 3","shift4":"교대 4"},"ar":{"import_region_1":"الوطن","import_region_2":"المنطقة 1","import_region_3":"المنطقة 2","capture_region":"احتلال المنطقة","capture_region_1":"احتلال المنطقة 1","capture_region_2":"احتلال المنطقة 2","shift3":"النوبة 3","shift4":"النوبة 4"}};
+
+  function normalizeLocale(locale) {
+    const value = String(locale || '').trim().toLowerCase();
+    if (value === 'ua') return 'uk';
+    return value || 'uk';
+  }
+
+  function getCurrentLocale() {
+    try { return normalizeLocale(window.PNSI18N?.locale || window.PNS?.I18N?.locale || document.documentElement.dataset.locale || document.documentElement.lang || 'uk'); }
+    catch { return 'uk'; }
+  }
+
+  function localLabel(key, fallback = '', locale = getCurrentLocale()) {
+    const normalized = normalizeLocale(locale);
+    const dict = LOCAL_REGION_CAPTURE_LABELS[normalized] || LOCAL_REGION_CAPTURE_LABELS[normalized.split('-')[0]] || LOCAL_REGION_CAPTURE_LABELS.uk || {};
+    return String(dict[key] || fallback || key);
+  }
+
+
+  function readRegionSettings() {
+    const defaults = {
+      activeRegion: 'region1',
+      regions: {
+        region1: { enabled: true, shifts: { '1': false, '2': true, '3': false, '4': false } },
+        region2: { enabled: false, shifts: { '1': false, '2': true, '3': false, '4': false } },
+        region3: { enabled: false, shifts: { '1': false, '2': true, '3': false, '4': false } }
+      }
+    };
+    try {
+      const raw = JSON.parse(localStorage.getItem(REGION_SETTINGS_KEY) || 'null');
+      if (raw && typeof raw === 'object') {
+        if (REGION_KEYS.includes(raw.activeRegion)) defaults.activeRegion = raw.activeRegion;
+        REGION_KEYS.forEach(region => {
+          const src = raw.regions && raw.regions[region] ? raw.regions[region] : null;
+          if (!src) return;
+          defaults.regions[region].enabled = region === 'region1' ? true : !!src.enabled;
+          const selected = ['1','2','3','4'].find(n => src.shifts && src.shifts[n]) || '2';
+          ['1','2','3','4'].forEach(n => { defaults.regions[region].shifts[n] = n === selected; });
+        });
+      }
+    } catch {}
+    defaults.regions.region1.enabled = true;
+    return defaults;
+  }
+
+  function getEnabledRegions() {
+    try {
+      const fromPns = typeof PNS.getTowerCalcEnabledRegions === 'function' ? PNS.getTowerCalcEnabledRegions() : null;
+      if (Array.isArray(fromPns) && fromPns.length) return fromPns.filter(region => REGION_KEYS.includes(region));
+    } catch {}
+    const settings = readRegionSettings();
+    return REGION_KEYS.filter(region => region === 'region1' || !!settings.regions?.[region]?.enabled);
+  }
+
+  function getActiveRegion() {
+    try {
+      const fromPns = typeof PNS.getTowerCalcActiveRegion === 'function' ? PNS.getTowerCalcActiveRegion() : '';
+      if (REGION_KEYS.includes(fromPns)) return fromPns;
+    } catch {}
+    const settings = readRegionSettings();
+    const enabled = getEnabledRegions();
+    let region = '';
+    try { region = localStorage.getItem(ACTIVE_REGION_KEY) || ''; } catch {}
+    if (!REGION_KEYS.includes(region)) region = settings.activeRegion || 'region1';
+    if (!enabled.includes(region)) region = enabled[0] || 'region1';
+    return region;
+  }
+
+  function setActiveRegion(region) {
+    const enabled = getEnabledRegions();
+    const next = enabled.includes(region) ? region : (enabled[0] || 'region1');
+    try {
+      if (typeof PNS.setTowerCalcActiveRegion === 'function') return PNS.setTowerCalcActiveRegion(next);
+    } catch {}
+    try {
+      const settings = readRegionSettings();
+      settings.activeRegion = next;
+      localStorage.setItem(REGION_SETTINGS_KEY, JSON.stringify(settings));
+      localStorage.setItem(ACTIVE_REGION_KEY, next);
+    } catch {}
+    return next;
+  }
+
+  function getRegionLabel(region) {
+    const key = region === 'region2' ? 'import_region_2' : region === 'region3' ? 'import_region_3' : 'import_region_1';
+    const fallback = localLabel(key);
+    try {
+      const translated = tr(key, fallback);
+      return translated && translated !== key ? translated : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  function getEnabledCaptureRegions() {
+    return getEnabledRegions().filter(region => region === 'region2' || region === 'region3');
+  }
+
+  function getCaptureKey(region = getActiveRegion()) {
+    if (region !== 'region2' && region !== 'region3') return '';
+    const captures = getEnabledCaptureRegions();
+    if (captures.length <= 1) return 'capture_region';
+    return region === 'region2' ? 'capture_region_1' : 'capture_region_2';
+  }
+
+  function getCaptureFallback(region = getActiveRegion(), locale = 'uk') {
+    const key = getCaptureKey(region);
+    return key ? localLabel(key, '', locale) : '';
+  }
+
+  function getCaptureLabel(region = getActiveRegion()) {
+    const key = getCaptureKey(region);
+    if (!key) return '';
+    const fallback = getCaptureFallback(region);
+    try {
+      const translated = tr(key, fallback);
+      return translated && translated !== key ? translated : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  function getCaptureTitle(region = getActiveRegion(), shift = 'shift1') {
+    const key = getCaptureKey(region);
+    if (!key) return '';
+    const count = getRegionShiftCount(region);
+    const normalized = normalizePreviewShift(shift);
+    return mapBoardLanguageTextEnglishFirst(locale => {
+      const capture = getBoardLanguageText(key, getCaptureFallback(region, locale), locale);
+      if (count <= 1) {
+        const allTime = getBoardLanguageText('all_time', LOCAL_ALL_TIME_LABELS[locale] || LOCAL_ALL_TIME_LABELS.uk, locale);
+        return allTime ? `${capture} • ${allTime}` : capture;
+      }
+      const shiftText = getBoardLanguageText(normalized, shiftLabel(normalized), locale);
+      return `${capture} • ${shiftText}`;
+    });
+  }
+
+  function getPlanTitlePrefix(region = getActiveRegion(), shift = 'shift1') {
+    const title = getCaptureTitle(region, shift);
+    return title ? `${title} • ` : '';
+  }
+
+  function getRegionShiftCount(region = getActiveRegion()) {
+    try {
+      if (typeof PNS.getTowerCalcShiftCount === 'function') {
+        const count = Number(PNS.getTowerCalcShiftCount(undefined, region));
+        if (Number.isFinite(count)) return Math.max(1, Math.min(4, count));
+      }
+    } catch {}
+    const settings = readRegionSettings();
+    const shifts = settings.regions?.[region]?.shifts || {};
+    const selected = ['1','2','3','4'].find(n => shifts[n]) || '2';
+    return Math.max(1, Math.min(4, Number(selected) || 2));
+  }
+
+  function normalizePreviewShift(shift) {
+    const value = String(shift || '').toLowerCase();
+    return SHIFT_KEYS.includes(value) ? value : 'shift1';
+  }
+
+  function clampPreviewShift(shift, region = getActiveRegion()) {
+    const count = getRegionShiftCount(region);
+    let normalized = normalizePreviewShift(shift);
+    if ((Number(normalized.replace('shift', '')) || 1) > count) normalized = `shift${count}`;
+    return normalized;
+  }
+
+  function renderShiftTabs(kind, previewShift) {
+    const count = getRegionShiftCount(getActiveRegion());
+    if (count <= 1) return '';
+    const attr = kind === 'calc' ? 'data-calc-preview-shift' : 'data-shift-tab';
+    const active = clampPreviewShift(previewShift);
+    return Array.from({ length: count }, (_, index) => {
+      const shift = `shift${index + 1}`;
+      return `<button class="btn btn-sm board-shift-tab ${shift === active ? 'active' : ''}" ${attr}="${escapeHtml(shift)}" type="button">${escapeHtml(shiftLabel(shift))}</button>`;
+    }).join('');
+  }
+
+  function renderRegionPicker(kind) {
+    const regions = getEnabledRegions();
+    if (regions.length <= 1) return '';
+    const active = getActiveRegion();
+    const label = escapeHtml(getRegionLabel(active));
+    const items = regions.map(region => `<button class="board-region-option ${region === active ? 'active' : ''}" data-final-plan-region-choice="${escapeHtml(region)}" data-final-plan-kind="${escapeHtml(kind)}" type="button">${escapeHtml(getRegionLabel(region))}</button>`).join('');
+    return `<div class="board-region-picker" data-final-plan-region-picker="${escapeHtml(kind)}"><button class="btn btn-sm board-region-trigger" data-final-plan-region-trigger="${escapeHtml(kind)}" type="button" aria-haspopup="true" aria-expanded="false">${label} ▾</button><div class="board-region-menu" role="menu">${items}</div></div>`;
+  }
+
+
+  function closeFinalRegionMenus(root = document) {
+    try {
+      root.querySelectorAll('.board-region-picker.is-open').forEach((picker) => {
+        picker.classList.remove('is-open');
+        picker.querySelector('[data-final-plan-region-trigger]')?.setAttribute('aria-expanded', 'false');
+      });
+    } catch {}
+  }
+
+  function handleFinalRegionChange(nextRegion) {
+    const region = setActiveRegion(nextRegion);
+    const calc = getCalcState();
+    calc.previewShift = clampPreviewShift(calc.previewShift || state.activeShift || 'shift1', region);
+    persistCalcState(calc);
+    try { window.PNS?.loadTowerCalcRegionPlans?.(region); } catch {}
+    try { window.PNS?.renderRegionShiftUi?.(); } catch {}
+    refreshOpenFinalPlans();
+    return region;
+  }
+
+  function wireFinalPlanRegionPicker(root = document) {
+    if (!root || root.__finalPlanRegionPickerWired) return;
+    try { root.__finalPlanRegionPickerWired = true; } catch {}
+
+    root.addEventListener('click', (event) => {
+      const trigger = event.target.closest?.('[data-final-plan-region-trigger]');
+      if (trigger && root.contains(trigger)) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        const picker = trigger.closest('.board-region-picker');
+        const willOpen = !picker?.classList.contains('is-open');
+        closeFinalRegionMenus(root);
+        if (picker && willOpen) {
+          picker.classList.add('is-open');
+          trigger.setAttribute('aria-expanded', 'true');
+        }
+        return false;
+      }
+
+      const choice = event.target.closest?.('[data-final-plan-region-choice]');
+      if (choice && root.contains(choice)) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        const nextRegion = String(choice.getAttribute('data-final-plan-region-choice') || 'region1');
+        closeFinalRegionMenus(root);
+        handleFinalRegionChange(nextRegion);
+        return false;
+      }
+
+      if (!event.target.closest?.('.board-region-picker')) closeFinalRegionMenus(root);
+    }, true);
+  }
+
+  function refreshOpenFinalPlans() {
+    try { renderLiveFinalBoard(document.getElementById('towerCalcModal')); } catch {}
+    try { renderStandaloneFinalBoard(document.getElementById('board-modal')); } catch {}
+  }
+
+>>>>>>> 4f53fe0 (update)
   function getCalcState() {
     try {
       if (typeof window.getCalcState === 'function') return window.getCalcState();
@@ -77,6 +347,35 @@
     }
   }
 
+<<<<<<< HEAD
+=======
+  function mapBoardLanguageTextEnglishFirst(mapper) {
+    const locales = (() => {
+      try {
+        const list = typeof window.getBoardLanguageLocales === 'function' ? window.getBoardLanguageLocales() : ['en'];
+        const normalized = Array.isArray(list)
+          ? list.map(value => String(value || '').toLowerCase() === 'ua' ? 'uk' : String(value || '').toLowerCase()).filter(Boolean)
+          : ['en'];
+        return ['en', ...normalized.filter(locale => locale !== 'en')];
+      } catch {
+        return ['en'];
+      }
+    })();
+    const seen = new Set();
+    const values = [];
+    locales.forEach(locale => {
+      let value = '';
+      try { value = mapper(locale); } catch { value = ''; }
+      const text = String(value || '').trim();
+      const key = text.toLowerCase();
+      if (!text || seen.has(key)) return;
+      seen.add(key);
+      values.push(text);
+    });
+    return values.join(' ✦ ');
+  }
+
+>>>>>>> 4f53fe0 (update)
   function getBoardLanguageTextMulti(key, fallback) {
     try {
       return typeof window.getBoardLanguageTextMulti === 'function'
@@ -116,13 +415,28 @@
 
   function getShiftBaseAssignments(shift) {
     (function ensureShiftPlans() {
+<<<<<<< HEAD
       try { ModalsShift.saveCurrentShiftPlanSnapshot?.(); } catch {}
       try { state.shiftPlans = state.shiftPlans || {}; } catch {}
+=======
+      try { state.shiftPlans = state.shiftPlans || {}; } catch {}
+      try {
+        const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null') || {};
+        const activeRegion = localStorage.getItem('pns_tower_calc_active_region_v1') || settings.activeRegion || 'region1';
+        const regionStore = JSON.parse(localStorage.getItem('pns_layout_region_shift_plans_store_v1') || '{}') || {};
+        const flatStore = JSON.parse(localStorage.getItem('pns_layout_shift_plans_store_v1') || '{}') || {};
+        const source = regionStore?.[activeRegion] || flatStore || {};
+        ['shift1','shift2','shift3','shift4'].forEach(key => {
+          if (!state.shiftPlans[key] && source[key]) state.shiftPlans[key] = source[key];
+        });
+      } catch {}
+>>>>>>> 4f53fe0 (update)
       return state.shiftPlans;
     })();
     const slots = getBaseSlots();
     const planBases = state.shiftPlans?.[shift]?.bases || {};
     return slots.map((base, index) => {
+<<<<<<< HEAD
       const liveBase = state.baseById?.get?.(base?.id || '');
       const saved = planBases?.[base?.id] || {};
       const isActiveShift = String(state.activeShift || '') === String(shift || '');
@@ -131,6 +445,12 @@
         ? saved.helperIds
         : (isActiveShift && Array.isArray(liveBase?.helperIds) ? liveBase.helperIds : []);
       const role = saved.role || (isActiveShift ? liveBase?.role : null) || base?.role || null;
+=======
+      const saved = planBases?.[base?.id] || {};
+      const captainId = String(saved.captainId || '');
+      const helperIds = Array.isArray(saved.helperIds) ? saved.helperIds : [];
+      const role = saved.role || base?.role || null;
+>>>>>>> 4f53fe0 (update)
       return {
         index,
         baseId: String(base?.id || ''),
@@ -320,10 +640,21 @@
 
     return PNS.renderHtmlTemplate('tpl-board-sheet', {
       title: escapeHtml((function renderSheetTitle(targetShift) {
+<<<<<<< HEAD
         const normalized = String(targetShift || '').toLowerCase() === 'shift1' ? 'shift1' : 'shift2';
         return mapBoardLanguageText(locale => {
           const shiftText = getBoardLanguageText(normalized, normalized, locale);
           const halfText = getBoardLanguageText(normalized === 'shift1' ? 'first_half' : 'second_half', '', locale);
+=======
+        const normalized = normalizePreviewShift(targetShift);
+        const region = getActiveRegion();
+        const captureTitle = getCaptureTitle(region, normalized);
+        if (captureTitle) return captureTitle;
+        return mapBoardLanguageText(locale => {
+          const shiftText = getBoardLanguageText(normalized, shiftLabel(normalized), locale);
+          const halfKey = normalized === 'shift1' ? 'first_half' : normalized === 'shift2' ? 'second_half' : '';
+          const halfText = halfKey ? getBoardLanguageText(halfKey, '', locale) : '';
+>>>>>>> 4f53fe0 (update)
           return halfText ? `${shiftText} • ${halfText}` : shiftText;
         });
       })(shift)),
@@ -333,12 +664,17 @@
 
   function setCalcPreviewShift(shift) {
     const calcState = getCalcState();
+<<<<<<< HEAD
     calcState.previewShift = String(shift || '').toLowerCase() === 'shift1' ? 'shift1' : 'shift2';
+=======
+    calcState.previewShift = clampPreviewShift(shift);
+>>>>>>> 4f53fe0 (update)
     persistCalcState(calcState);
     return calcState.previewShift;
   }
 
   function renderLiveFinalBoard(modal) {
+<<<<<<< HEAD
     const target = (modal || document.getElementById('towerCalcModal'))?.querySelector?.('#towerCalcGlobalOut');
     if (!target) return;
     const calcState = getCalcState();
@@ -346,6 +682,14 @@
     const previewShift = String((calcState.previewShift === 'shift1' || calcState.previewShift === 'shift2') ? calcState.previewShift : ((activeShift === 'shift1' || activeShift === 'shift2') ? activeShift : 'shift1')).toLowerCase() === 'shift2'
       ? 'shift2'
       : 'shift1';
+=======
+    const root = modal || document.getElementById('towerCalcModal');
+    const target = root?.querySelector?.('#towerCalcGlobalOut');
+    if (!target) return;
+    const calcState = getCalcState();
+    const activeShift = window.PNS?.state?.activeShift;
+    const previewShift = clampPreviewShift(calcState.previewShift || activeShift || 'shift1');
+>>>>>>> 4f53fe0 (update)
     if (calcState.previewShift !== previewShift) {
       calcState.previewShift = previewShift;
       persistCalcState(calcState);
@@ -355,15 +699,54 @@
       shift2_active: previewShift === 'shift2' ? 'active' : '',
       shift1_text: shiftLabel('shift1'),
       shift2_text: shiftLabel('shift2'),
+<<<<<<< HEAD
+=======
+      shift_tabs_html: renderShiftTabs('calc', previewShift),
+      region_picker_html: renderRegionPicker('calc'),
+>>>>>>> 4f53fe0 (update)
       lang_picker_html: renderBoardLanguagePickerMarkup('calc'),
       export_png_text: tr('export_png', 'Завантажити PNG'),
       export_txt_text: tr('export_txt', 'TXT'),
       share_text: tr('final_plan_share', 'Поділитися'),
       status_text: tr('final_plan_status', 'Фінальний план'),
+<<<<<<< HEAD
       shift_text: shiftLabel(previewShift),
       sheet_html: renderBoardSheet(previewShift)
     });
     try { target.querySelector('.tower-calc-preview-toolbar')?.scrollTo?.({ left: 0, top: 0 }); } catch {}
+=======
+      shift_text: getCaptureTitle(getActiveRegion(), previewShift) || shiftLabel(previewShift),
+      sheet_html: renderBoardSheet(previewShift)
+    });
+    try { target.querySelector('.tower-calc-preview-toolbar')?.scrollTo?.({ left: 0, top: 0 }); } catch {}
+    try {
+      const previewStatus = target.querySelector('#towerCalcPreviewStatus');
+      if (previewStatus) {
+        previewStatus.textContent = '';
+        previewStatus.style.display = 'none';
+      }
+    } catch {}
+    try { window.PNS?.wireBoardLanguageButtons?.(target); } catch {}
+    try { wireFinalPlanRegionPicker(target); } catch {}
+    try {
+      target.querySelectorAll('[data-calc-preview-shift], [data-shift-tab]').forEach((button) => {
+        button.onclick = function(ev) {
+          try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); } catch {}
+          const nextShift = String(button.getAttribute('data-calc-preview-shift') || button.getAttribute('data-shift-tab') || 'shift1');
+          setCalcPreviewShift(nextShift);
+          renderLiveFinalBoard(root);
+          try { renderStandaloneFinalBoard(document.getElementById('board-modal')); } catch {}
+          return false;
+        };
+      });
+      const exportBtn = target.querySelector('[data-calc-preview-export]');
+      if (exportBtn) exportBtn.onclick = function(ev) { try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); } catch {} return !!window.exportBoardAsPNG?.({ sheet: target.querySelector('#towerCalcBoardPreviewSheet .board-sheet') || target.querySelector('#towerCalcBoardPreviewSheet'), shift: getCalcState()?.previewShift || previewShift, statusEl: target.querySelector('#towerCalcPreviewStatus') }); };
+      const txtBtn = target.querySelector('[data-calc-preview-export-txt]');
+      if (txtBtn) txtBtn.onclick = function(ev) { try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); } catch {} return !!window.exportBoardAsTXT?.(); };
+      const shareBtn = target.querySelector('[data-calc-preview-share]');
+      if (shareBtn) shareBtn.onclick = async function(ev) { try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); } catch {} try { return !!window.shareBoardPreview?.(); } catch { return false; } };
+    } catch {}
+>>>>>>> 4f53fe0 (update)
   }
 
   function renderStandaloneFinalBoard(modal) {
@@ -375,7 +758,11 @@
     if (!toolbar || !status || !sheet) return false;
 
     const calcState = getCalcState();
+<<<<<<< HEAD
     const previewShift = String((calcState.previewShift === 'shift1' || calcState.previewShift === 'shift2') ? calcState.previewShift : (state.activeShift || 'shift1')).toLowerCase() === 'shift2' ? 'shift2' : 'shift1';
+=======
+    const previewShift = clampPreviewShift(calcState.previewShift || state.activeShift || 'shift1');
+>>>>>>> 4f53fe0 (update)
     calcState.previewShift = previewShift;
     persistCalcState(calcState);
 
@@ -384,6 +771,11 @@
       shift2_active: previewShift === 'shift2' ? 'active' : '',
       shift1_text: shiftLabel('shift1'),
       shift2_text: shiftLabel('shift2'),
+<<<<<<< HEAD
+=======
+      shift_tabs_html: renderShiftTabs('board', previewShift),
+      region_picker_html: renderRegionPicker('board'),
+>>>>>>> 4f53fe0 (update)
       lang_picker_html: renderBoardLanguagePickerMarkup('board'),
       board_language_text: escapeHtml(tr('board_language', 'Мова плану')),
       export_png_text: escapeHtml(tr('export_png', 'Завантажити PNG')),
@@ -392,7 +784,13 @@
     });
     try { toolbar.classList.add('board-head-actions--single'); } catch {}
     try { toolbar.scrollLeft = 0; } catch {}
+<<<<<<< HEAD
     status.textContent = `${tr('final_plan_status', 'Фінальний план')} · ${shiftLabel(previewShift)}`;
+=======
+    try { wireFinalPlanRegionPicker(root); } catch {}
+    status.textContent = '';
+    try { status.style.display = 'none'; } catch {}
+>>>>>>> 4f53fe0 (update)
     sheet.innerHTML = renderBoardSheet(previewShift);
     try { sheet.scrollTop = 0; sheet.scrollLeft = 0; } catch {}
 
@@ -411,6 +809,22 @@
           return false;
         };
       });
+<<<<<<< HEAD
+=======
+      toolbar.querySelectorAll('[data-final-plan-region-choice]').forEach((button) => {
+        button.onclick = function(ev) {
+          try { ev.preventDefault(); ev.stopPropagation(); } catch {}
+          const nextRegion = String(button.getAttribute('data-final-plan-region-choice') || 'region1');
+          setActiveRegion(nextRegion);
+          const calc = getCalcState();
+          calc.previewShift = clampPreviewShift(calc.previewShift || previewShift, nextRegion);
+          persistCalcState(calc);
+          try { renderStandaloneFinalBoard(root); } catch {}
+          try { renderLiveFinalBoard(document.getElementById('towerCalcModal')); } catch {}
+          return false;
+        };
+      });
+>>>>>>> 4f53fe0 (update)
       const exportBtn = toolbar.querySelector('[data-preview-export-png], #exportPngBtn');
       if (exportBtn) {
         exportBtn.onclick = function(ev) {
@@ -472,6 +886,11 @@
     return true;
   }
 
+<<<<<<< HEAD
+=======
+  try { wireFinalPlanRegionPicker(document); } catch {}
+
+>>>>>>> 4f53fe0 (update)
   Object.assign(PNS, {
     getBaseSlots,
     getShiftBaseAssignments,

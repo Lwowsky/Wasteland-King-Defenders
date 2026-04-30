@@ -51,7 +51,11 @@
   "captain": "캡틴",
   "shift1": "교대 1",
   "shift2": "교대 2",
+<<<<<<< HEAD
   "both": "둘 다",
+=======
+  "both": "전체",
+>>>>>>> 4f53fe0 (update)
   "all": "전체",
   "first_half": "전반",
   "second_half": "후반",
@@ -97,7 +101,11 @@
   "only_captains": "캡틴만",
   "respect_player_shift": "플레이어 교대 반영",
   "same_troop_only": "같은 병종만",
+<<<<<<< HEAD
   "use_both": "“둘 다” 사용",
+=======
+  "use_both": "“전체” 사용",
+>>>>>>> 4f53fe0 (update)
   "type_defined_by_captain": "포탑 유형은 캡틴이 결정합니다",
   "final_plan_share": "공유",
   "export_png": "PNG 다운로드",
@@ -147,6 +155,10 @@
   "captain_ready_import": "캡틴 가능 여부",
   "shift_availability_import": "교대 가능 여부",
   "secondary_role_import": "예비 병종",
+<<<<<<< HEAD
+=======
+  "capture_other_region": "다른 지역 점령",
+>>>>>>> 4f53fe0 (update)
   "secondary_tier_import": "예비 티어",
   "troop_200k_import": "예비 병종 (200k+)",
   "reserve_type_fighter_import": "예비 병종: 전사",
@@ -171,7 +183,11 @@
   "turret_capacity": "포탑 수용량",
   "used_shortage": "사용 / 부족",
   "troop_type": "병종",
+<<<<<<< HEAD
   "lair_level": "둥지 레벨",
+=======
+  "lair_level": "점령",
+>>>>>>> 4f53fe0 (update)
   "yes": "예",
   "no": "아니요",
   "manual_save_enter_name": "수동 저장: 플레이어 닉네임을 입력하세요",
@@ -226,9 +242,15 @@
   "save_visible_columns": "표시 열 저장",
   "optional_columns_title": "3. 선택 열",
   "optional_columns_note": "둥지 레벨, 보조 병종, 그리고 유지하고 싶은 사용자 지정 필드.",
+<<<<<<< HEAD
   "visible_columns_title": "4. 표에 표시할 데이터",
   "visible_columns_note": "“모든 데이터 표시”를 눌렀을 때 플레이어 표에 나타날 추가 열을 선택하세요.",
   "reset_data_title": "5. 데이터 초기화",
+=======
+  "visible_columns_title": "5. 표에 표시할 데이터",
+  "visible_columns_note": "“모든 데이터 표시”를 눌렀을 때 플레이어 표에 나타날 추가 열을 선택하세요.",
+  "reset_data_title": "6. 데이터 초기화",
+>>>>>>> 4f53fe0 (update)
   "reset_data_note": "주의: 이 작업은 저장된 설정이나 표 데이터를 지웁니다.",
   "reset_storage": "LocalStorage 전체 초기화",
   "reset_column_data": "열 데이터 초기화",
@@ -253,7 +275,11 @@
   "empty_only": "빈 곳만",
   "rebalance_all": "전체 재배분",
   "advanced": "고급",
+<<<<<<< HEAD
   "auto_balance_both": "“둘 다” 플레이어 자동 균형",
+=======
+  "auto_balance_both": "“전체” 플레이어 자동 균형",
+>>>>>>> 4f53fe0 (update)
   "min_players_per_turret": "포탑당 최소 플레이어 수",
   "quantity": "수량",
   "auto_tier_limit": "자동 티어 제한",
@@ -333,7 +359,11 @@
   "board_copied_image": "PNG 배치도가 클립보드에 복사되었습니다",
   "board_shared": "배치 공유됨",
   "both_ignored_in_shifts": "현재 교대 1과 2에서 제외됨",
+<<<<<<< HEAD
   "both_not_counted": "“둘 다” 그룹은 현재 제외되어 있습니다",
+=======
+  "both_not_counted": "“전체” 그룹은 현재 제외되어 있습니다",
+>>>>>>> 4f53fe0 (update)
   "by_word": "기준",
   "capacity_by_troop": "병종별 수용량(캡틴 기준)",
   "captain_not_found": "캡틴을 찾지 못했습니다",
@@ -389,7 +419,11 @@
   "place_captain_first": "먼저 포탑에 캡틴을 배치하세요",
   "player_march_total": "플레이어 행군력",
   "player_or_turret_not_found": "플레이어 또는 포탑을 찾지 못했습니다.",
+<<<<<<< HEAD
   "player_status_subtitle_both": "이 보기에는 “둘 다” 그룹의 모든 플레이어가 표시됩니다: 이미 포탑에 있는 사람, 밖에 있는 사람, 수동으로 예비로 보낸 사람.",
+=======
+  "player_status_subtitle_both": "이 보기에는 “전체” 그룹의 모든 플레이어가 표시됩니다: 이미 포탑에 있는 사람, 밖에 있는 사람, 수동으로 예비로 보낸 사람.",
+>>>>>>> 4f53fe0 (update)
   "players_needed_placed": "플레이어 (필요 / 배치)",
   "players_word": "플레이어",
   "png_export_offline": "오프라인 패키지에서는 로컬 html2canvas 라이브러리가 없으면 PNG 내보내기를 사용할 수 없습니다.",
@@ -403,7 +437,11 @@
   "remove_action": "제거",
   "reserve_and_outside": "예비 및 포탑 밖 플레이어",
   "reserve_manual_hint": "교대 1/2 예비로 수동 이동된 플레이어",
+<<<<<<< HEAD
   "reset_both_before_apply": "적용 전에 현재 “둘 다” 배분을 초기화",
+=======
+  "reset_both_before_apply": "적용 전에 현재 “전체” 배분을 초기화",
+>>>>>>> 4f53fe0 (update)
   "reset_limits_tiers": "제한 초기화 (T14–T9 → 0)",
   "return_action": "되돌리기",
   "role_tier": "역할 / 티어",
@@ -440,7 +478,11 @@
   "without_limits": "제한 없음",
   "board_title_shift2": "교대 2 / 후반",
   "board_title_shift1": "교대 1 / 전반",
+<<<<<<< HEAD
   "plan_without_both": "“둘 다” 그룹 없이 교대 1/2 계획",
+=======
+  "plan_without_both": "“전체” 그룹 없이 교대 1/2 계획",
+>>>>>>> 4f53fe0 (update)
   "cannot_be_assigned_to": "다음 유형의 포탑에는 배정할 수 없습니다",
   "choose_file": "파일 선택",
   "reset_localstorage_title": "LocalStorage를 완전히 초기화할까요?",
@@ -490,7 +532,11 @@
   "shift_limits_note": "교대 제한: 교대 1 — {shift1}, 교대 2 — {shift2} (최대 100).",
   "shifts_updated_status": "교대 업데이트: 교대 1에 +{added1}, 교대 2에 +{added2}. 현재 {shift1}/{shift2}/{both}.{warn}",
   "shifts_updated_warn_suffix": "  제한 내 공간이 부족합니다: S1 {shift1}, S2 {shift2}.",
+<<<<<<< HEAD
   "shifts_restored_status": "가져오기에서 교대를 복원했습니다. 교대 1: {shift1}, 교대 2: {shift2}, 둘 다: {both}{unknown}.",
+=======
+  "shifts_restored_status": "가져오기에서 교대를 복원했습니다. 교대 1: {shift1}, 교대 2: {shift2}, 전체: {both}{unknown}.",
+>>>>>>> 4f53fe0 (update)
   "shifts_restored_unknown_suffix": ", 알 수 없음: {count}",
   "shift_limits_updated_status": "교대 제한 업데이트: 교대 1 — {shift1}, 교대 2 — {shift2}.",
   "reset_columns_title": "열 데이터를 초기화할까요?",
@@ -542,7 +588,11 @@
   "notes": "메모",
   "clear_helpers": "도우미 비우기",
   "manual_shift_add_title": "추가 슬롯이 필요한 이유",
+<<<<<<< HEAD
   "manual_shift_add_help": "“둘 다” 교대의 플레이어에게 교대 1 또는 교대 2에 추가 수동 슬롯을 넣어야 할 때 이 필드를 사용하세요.",
+=======
+  "manual_shift_add_help": "“전체” 교대의 플레이어에게 교대 1 또는 교대 2에 추가 수동 슬롯을 넣어야 할 때 이 필드를 사용하세요.",
+>>>>>>> 4f53fe0 (update)
   "base_north": "북쪽 포탑",
   "base_west": "서쪽 포탑",
   "base_east": "동쪽 포탑",
@@ -860,6 +910,75 @@
         "noteText": "무언가 이상해 보이면 한 단계 뒤로 가세요. 최종 배치에서 포탑으로, 포탑에서 표로, 표에서 가져오기로. 그것이 원인을 찾는 가장 빠른 방법입니다."
       }
     }
+<<<<<<< HEAD
   }
+=======
+  },
+  "import_region_1": "홈",
+  "import_region_2": "지역 1",
+  "import_region_3": "지역 2",
+  "capture_region_1": "지역 1 점령",
+  "capture_region_2": "지역 2 점령",
+  "shift3": "교대 3",
+  "shift4": "교대 4",
+  "capture_region": "지역 점령",
+  "import_regions_kicker": "지역",
+  "import_regions_title": "지역 점령",
+  "import_regions_desc": "지역을 선택하고 1, 2, 3 또는 4교대에 필요한 토글을 켜세요.",
+  "import_region_always_on": "항상 켜짐",
+  "import_region_enabled_text": "켜짐",
+  "import_region_disabled_text": "꺼짐",
+  "import_1_shift": "1교대",
+  "import_2_shifts": "2교대",
+  "import_3_shifts": "3교대",
+  "import_4_shifts": "4교대",
+  "add_player_menu": "플레이어 추가",
+  "manual_player_manager_subtitle": "새 플레이어를 추가하고, 기존 플레이어를 찾아 수정하거나 목록에서 삭제하세요.",
+  "manual_player_new_title": "새 플레이어",
+  "manual_player_persist_note": "페이지를 새로고침해도 저장됩니다. 새 Excel을 가져오면 수동 플레이어는 삭제됩니다.",
+  "manual_player_new_button": "새로 만들기",
+  "manual_player_extra_columns": "추가 열",
+  "manual_player_add_column": "열 추가",
+  "delete_player": "삭제",
+  "manual_player_extra_columns_hint": "이 플레이어의 사용자 지정 필드를 추가하거나 필요 없는 열을 삭제하세요.",
+  "manual_player_new_column_label": "새 열",
+  "manual_player_column_name_placeholder": "열 이름",
+  "manual_player_no_extra_columns": "아직 추가 열이 없습니다.",
+  "manual_player_name_required": "플레이어 닉네임을 입력하세요.",
+  "manual_player_delete_confirm": "플레이어를 삭제할까요?",
+  "manual_player_deleted": "플레이어가 삭제되었습니다.",
+  "manual_player_column_name_required": "열 이름을 입력하세요.",
+  "manual_player_column_added": "열이 추가되었습니다.",
+  "manual_player_remove_column": "열 삭제",
+  "manual_player_remove_column_confirm": "열을 삭제할까요?",
+  "manual_player_column_removed": "열이 삭제되었습니다.",
+  "manual_player_manual_badge": "수동",
+  "manual_player_import_badge": "가져오기",
+  "manual_player_empty": "플레이어를 찾을 수 없습니다.",
+  "saved": "저장됨",
+  "manual_player_search_placeholder": "닉네임 / 동맹으로 검색",
+  "shift_recognition_title": "4. 교대 인식",
+  "shift_recognition_note": "Excel의 교대 답변을 확인하고 필요하면 가져오기 전에 병합하세요.",
+  "shift_recognition_auto": "자동 인식",
+  "shift_recognition_reset": "규칙 초기화",
+  "shift_recognition_merge_mode": "교대 병합",
+  "shift_merge_separate": "병합 안 함",
+  "shift_merge_pair_12_34": "1+2 및 3+4",
+  "shift_merge_all_to_1": "모두 1교대로",
+  "shift_merge_custom": "사용자 지정 병합",
+  "shift_recognition_empty": "필수 열에서 교대 열을 선택하면 여기에 확인 내용이 표시됩니다.",
+  "shift_recognition_value": "Excel 값",
+  "shift_recognition_detected": "인식 결과",
+  "shift_recognition_after_merge": "병합 후",
+  "shift_recognition_count": "행",
+  "shift_recognition_summary_empty": "아직 적용된 규칙이 없습니다.",
+  "shift_recognition_save": "규칙 저장",
+  "shift_recognition_ignore": "무시",
+  "shift_recognition_summary": "찾은 값: {count}",
+  "shift_recognition_all": "전체",
+  "tier_visibility_title": "추가 티어",
+  "tier_visibility_note": "T1–T8을 추가하고 포탑 제한에 표시할 티어를 켜세요.",
+  "tier_visibility_add": "티어 추가"
+>>>>>>> 4f53fe0 (update)
 };
 })();

@@ -54,6 +54,12 @@
     const matchRegisteredShift = isMatchRegisteredShiftEnabled();
     const baseShift = getBaseShift(base);
     const hasValidateAssign = typeof PNS.validateAssign === "function";
+<<<<<<< HEAD
+=======
+    const ignoreRegisteredShiftForRegion = typeof PNS.shouldIgnoreRegisteredShiftForActiveRegion === 'function'
+      ? !!PNS.shouldIgnoreRegisteredShiftForActiveRegion()
+      : false;
+>>>>>>> 4f53fe0 (update)
 
     const normalizeDuplicateNick = typeof PNS.normalizeDuplicateNick === "function"
       ? PNS.normalizeDuplicateNick
@@ -84,6 +90,26 @@
       || String(left?.id || '').localeCompare(String(right?.id || ''))
     );
 
+<<<<<<< HEAD
+=======
+
+    const getRegisteredPlayerShift = (player) => {
+      const raw = player?.registeredShiftRaw
+        || player?.raw?.shift_availability
+        || player?.registeredShift
+        || player?.registeredShiftLabel
+        || player?.shift
+        || player?.shiftLabel
+        || 'both';
+      try {
+        const normalized = typeof PNS.normalizeShiftValue === 'function' ? PNS.normalizeShiftValue(raw) : raw;
+        return String(normalized || 'both').toLowerCase();
+      } catch {
+        return String(raw || 'both').toLowerCase();
+      }
+    };
+
+>>>>>>> 4f53fe0 (update)
     const resolveAssignedShift = (player, fallbackBase = null) => {
       const assignedBase = fallbackBase || state.baseById?.get?.(player?.assignment?.baseId);
       const resolved = String(
@@ -112,11 +138,26 @@
       .filter(player => !isNoMixTroopsEnabled() || player.role === captain.role)
       .filter(player => {
         const noCrossShiftDupes = state.towerPickerNoCrossShiftDupes === true;
+<<<<<<< HEAD
         const playerShift = String(player.shift || player.shiftLabel || "").trim().toLowerCase();
         return !noCrossShiftDupes || playerShift !== "both";
       })
       .filter(player => (!respectCrossShiftDupes && matchRegisteredShift) ? true : PNS.matchesShift(player.shift, baseShift))
       .filter(player => (!respectCrossShiftDupes && matchRegisteredShift) ? true : base.shift === 'both' || player.shift === 'both' || player.shift === base.shift)
+=======
+        const playerShift = getRegisteredPlayerShift(player);
+        return !noCrossShiftDupes || playerShift !== "both";
+      })
+      .filter(player => {
+        if (ignoreRegisteredShiftForRegion) return true;
+        return (!respectCrossShiftDupes && matchRegisteredShift) ? true : PNS.matchesShift(getRegisteredPlayerShift(player), baseShift);
+      })
+      .filter(player => {
+        if (ignoreRegisteredShiftForRegion) return true;
+        return (!respectCrossShiftDupes && matchRegisteredShift) ? true : base.shift === 'both' || getRegisteredPlayerShift(player) === 'both' || getRegisteredPlayerShift(player) === base.shift;
+      })
+      .filter(player => typeof PNS.canAutoUsePlayerInActiveRegion !== 'function' || PNS.canAutoUsePlayerInActiveRegion(player, baseShift, { kind: 'helper', baseId: base.id }))
+>>>>>>> 4f53fe0 (update)
       .filter(player => isEligiblePlayer(0, player))
       .sort(compareAutofillCandidates);
 

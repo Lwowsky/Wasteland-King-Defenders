@@ -23,6 +23,10 @@
   }
 
 function V(headersArg, rowsArg, sourceNameArg, sourceTypeArg) {
+<<<<<<< HEAD
+=======
+    try { e.ManualPlayerManager?.clearManualPlayersForNewImport?.(); } catch {}
+>>>>>>> 4f53fe0 (update)
     ((t.importData.headers = headersArg || []),
       (t.importData.rows = rowsArg || []),
       (t.importData.джерелоName = sourceNameArg || ""),
@@ -63,8 +67,13 @@ function K() {
     if (!(t.importData.headers || []).length)
       return void k(
         tr(
+<<<<<<< HEAD
           "load_file_or_link_then_detect",
           "Спочатку завантаж файл або посилання, потім визнач колонки.",
+=======
+          "load_file_then_detect",
+          "Спочатку завантаж файл, потім визнач колонки.",
+>>>>>>> 4f53fe0 (update)
         ),
         "danger",
       );

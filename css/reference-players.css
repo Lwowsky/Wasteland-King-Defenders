@@ -587,7 +587,11 @@
 #playersDataTable th[data-field="tier"],#playersDataTable td[data-field="tier"]{width:50px;min-width:50px}
 #playersDataTable th[data-field="march"],#playersDataTable td[data-field="march"]{width:88px;min-width:88px}
 #playersDataTable th[data-field="rally"],#playersDataTable td[data-field="rally"]{width:106px;min-width:106px}
+<<<<<<< HEAD
 #playersDataTable th[data-field="captainReady"],#playersDataTable td[data-field="captainReady"]{width:76px;min-width:76px;text-align:center}
+=======
+#playersDataTable th[data-field="captainReady"],#playersDataTable td[data-field="captainReady"],#playersDataTable th[data-field="lair"],#playersDataTable td[data-field="lair"]{width:76px;min-width:76px;text-align:center}
+>>>>>>> 4f53fe0 (update)
 #playersDataTable th[data-field="shiftLabel"],#playersDataTable td[data-field="shiftLabel"]{width:108px;min-width:108px}
 #playersDataTable th[data-field="actions"],#playersDataTable td[data-field="actions"]{width:204px;min-width:204px}
 
@@ -618,7 +622,12 @@
   border-color:rgba(124,161,255,.36);
 }
 
+<<<<<<< HEAD
 #playersDataTable td[data-field="captainReady"] .pill{
+=======
+#playersDataTable td[data-field="captainReady"] .pill,
+#playersDataTable td[data-field="lair"] .pill{
+>>>>>>> 4f53fe0 (update)
   display:inline-flex;
   align-items:center;
   justify-content:center;
@@ -629,6 +638,7 @@
   font-size:14px;
   font-weight:800;
   line-height:1;
+<<<<<<< HEAD
   box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
 }
 #playersDataTable td[data-field="captainReady"] .pill.yes{
@@ -639,6 +649,21 @@
 #playersDataTable td[data-field="captainReady"] .pill.no{
   background:linear-gradient(180deg,rgba(72,34,64,.92),rgba(51,23,46,.98));
   border:1px solid rgba(188,102,147,.30);
+=======
+  color:#f7fbff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+}
+#playersDataTable td[data-field="captainReady"] .pill.yes,
+#playersDataTable td[data-field="lair"] .pill.yes{
+  background:radial-gradient(circle at 50% 12%,rgba(255,255,255,.16),rgba(255,255,255,0) 56%),linear-gradient(180deg,rgba(31,111,101,.96) 0%,rgba(17,77,68,.98) 100%);
+  border:1px solid rgba(100,214,186,.34);
+  color:#eefefd;
+}
+#playersDataTable td[data-field="captainReady"] .pill.no,
+#playersDataTable td[data-field="lair"] .pill.no{
+  background:radial-gradient(circle at 50% 12%,rgba(255,255,255,.16),rgba(255,255,255,0) 56%),linear-gradient(180deg,rgba(83,49,74,.96) 0%,rgba(58,30,51,.98) 100%);
+  border:1px solid rgba(197,108,148,.30);
+>>>>>>> 4f53fe0 (update)
   color:#ffe9f4;
 }
 
@@ -675,7 +700,11 @@
 
 
 #playersDataTable td[data-field="actions"]{padding:6px 8px;}
+<<<<<<< HEAD
 #playersDataTable td[data-field="captainReady"] .pill, #playersDataTable td[data-field="captainReady"] .badge{min-height:38px;padding:0 14px;font-size:14px;border-radius:999px;}
+=======
+#playersDataTable td[data-field="captainReady"] .pill,#playersDataTable td[data-field="captainReady"] .badge,#playersDataTable td[data-field="lair"] .pill,#playersDataTable td[data-field="lair"] .badge{min-height:38px;padding:0 14px;font-size:14px;border-radius:999px;}
+>>>>>>> 4f53fe0 (update)
 .player-placement-card{align-items:center;}
 .player-placement-item{min-height:74px;}
 .player-placement-grid{gap:8px;}
@@ -711,6 +740,7 @@
 #playersDataTable thead th:last-child{padding-right:14px}
 #playersDataTable td[data-field="role"],
 #playersDataTable td[data-field="shiftLabel"],
+<<<<<<< HEAD
 #playersDataTable td[data-field="captainReady"]{text-align:center}
 #playersDataTable td[data-field="role"] .tag,
 #playersDataTable td[data-field="role"] .badge{margin-inline:auto}
@@ -722,6 +752,12 @@
   background:radial-gradient(circle at 50% 12%,rgba(255,255,255,.16),rgba(255,255,255,0) 56%),linear-gradient(180deg,rgba(83,49,74,.96) 0%,rgba(58,30,51,.98) 100%);
   border:1px solid rgba(197,108,148,.30);
 }
+=======
+#playersDataTable td[data-field="captainReady"],
+#playersDataTable td[data-field="lair"]{text-align:center}
+#playersDataTable td[data-field="role"] .tag,
+#playersDataTable td[data-field="role"] .badge{margin-inline:auto}
+>>>>>>> 4f53fe0 (update)
 #playersDataTable td[data-field="actions"] .player-placement-item.is-assigned{
   background:radial-gradient(circle at 50% 12%,rgba(255,255,255,.18),rgba(255,255,255,0) 56%),linear-gradient(180deg,rgba(22,74,54,.98) 0%,rgba(13,45,34,.98) 100%);
 }
@@ -809,4 +845,137 @@
   .players-panel .stat-chip {
     min-height: 168px;
   }
+<<<<<<< HEAD
+=======
+}/* Dynamic player shift cards: 1-4 shifts + All from region 1 settings */
+.players-panel .stats-grid--players{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:18px;
+}
+.players-panel .stats-grid--players[data-shift-card-count="2"],
+.players-panel .stats-grid--players[data-shift-card-count="3"],
+.players-panel .stats-grid--players[data-shift-card-count="4"],
+.players-panel .stats-grid--players[data-shift-card-count="5"]{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+
+.players-panel .stat-split--shifts{
+  grid-template-columns:repeat(var(--players-shift-columns,3),minmax(92px,124px))!important;
+  justify-content:center!important;
+  justify-items:stretch!important;
+  gap:8px!important;
+  align-items:stretch!important;
+  height:auto!important;
+}
+.players-panel .stat-split--shifts[data-shift-count="2"],
+.players-panel .stat-split--shifts[data-shift-count="3"]{
+  grid-template-columns:repeat(var(--players-shift-columns,3),minmax(112px,150px))!important;
+}
+.players-panel .stat-split--shifts[data-shift-count="4"]{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:6px!important;
+}
+.players-panel .stat-split--shifts[data-shift-count="5"]{
+  grid-template-columns:repeat(5,minmax(78px,104px))!important;
+}
+
+.players-panel .stat-split--shifts .stat-chip,
+.players-panel .stat-split--shifts.is-many-shifts .stat-chip{
+  min-height:104px!important;
+  height:104px!important;
+  padding:9px 6px!important;
+  border-radius:22px!important;
+  align-self:stretch!important;
+}
+.players-panel .stat-split--shifts .stat-chip b,
+.players-panel .stat-split--shifts.is-many-shifts .stat-chip b{
+  font-size:28px!important;
+}
+.players-panel .stat-split--shifts .stat-chip small,
+.players-panel .stat-split--shifts.is-many-shifts .stat-chip small{
+  font-size:12px!important;
+  line-height:1.1!important;
+}
+
+.players-panel .stat-chip.is-shift3{
+  background:radial-gradient(circle at 50% 12%,rgba(255,255,255,.20),rgba(255,255,255,0) 56%),linear-gradient(180deg,rgba(46,132,112,.96) 0%,rgba(28,91,84,.98) 100%);
+  border-color:rgba(92,220,185,.38);
+}
+.players-panel .stat-chip.is-shift4{
+  background:radial-gradient(circle at 50% 12%,rgba(255,255,255,.20),rgba(255,255,255,0) 56%),linear-gradient(180deg,rgba(142,91,62,.96) 0%,rgba(108,61,45,.98) 100%);
+  border-color:rgba(242,165,104,.38);
+}
+
+@media (min-width:981px) and (max-width:1320px){
+  .players-panel .stats-grid--players,
+  .players-panel .stats-grid--players[data-shift-card-count]{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+}
+@media (max-width:980px){
+  .players-panel .stats-grid--players,
+  .players-panel .stats-grid--players[data-shift-card-count]{
+    grid-template-columns:1fr!important;
+  }
+  .players-panel .stat-split--shifts,
+  .players-panel .stat-split--shifts[data-shift-count]{
+    grid-template-columns:repeat(var(--players-shift-columns,3),minmax(0,1fr))!important;
+  }
+}
+
+
+/* v51: widen only the shifts card area when 4 shifts + All are shown */
+.players-panel .stats-grid--players[data-shift-card-count="5"]{
+  grid-template-columns:minmax(220px,.92fr) minmax(240px,.86fr) minmax(520px,1.42fr)!important;
+}
+.players-panel .stats-grid--players[data-shift-card-count="5"] [data-stat-card="shifts"]{
+  min-width:0;
+}
+.players-panel .stat-split--shifts[data-shift-count="5"]{
+  grid-template-columns:repeat(5,minmax(72px,1fr))!important;
+  gap:6px!important;
+}
+.players-panel .stat-split--shifts[data-shift-count="5"] .stat-chip{
+  min-width:0;
+}
+@media (min-width:981px) and (max-width:1320px){
+  .players-panel .stats-grid--players[data-shift-card-count="5"]{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+}
+
+
+/* v52: 3 shifts + All must stay inside its card */
+.players-panel .stats-grid--players[data-shift-card-count="4"]{
+  grid-template-columns:minmax(220px,.92fr) minmax(240px,.86fr) minmax(460px,1.30fr)!important;
+}
+.players-panel .stats-grid--players[data-shift-card-count="4"] [data-stat-card="shifts"]{
+  min-width:0!important;
+  overflow:hidden!important;
+}
+.players-panel .stat-split--shifts[data-shift-count="4"] .stat-chip{
+  min-width:0!important;
+}
+@media (min-width:981px) and (max-width:1320px){
+  .players-panel .stats-grid--players[data-shift-card-count="4"]{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+}
+
+
+/* v70: visible sort buttons for capture/additional columns */
+#playersDataTable thead th.optional-col .sort-btn,
+#playersDataTable thead th[data-col-key] .sort-btn{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  vertical-align:middle!important;
+  flex:0 0 auto!important;
+  margin-left:8px!important;
+}
+#playersDataTable thead th[data-field="lair"],
+#playersDataTable thead th[data-col-key="lair_level"],
+#playersDataTable thead th.optional-col{
+  overflow:visible!important;
+>>>>>>> 4f53fe0 (update)
 }

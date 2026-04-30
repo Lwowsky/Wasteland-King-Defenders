@@ -50,7 +50,11 @@
   "captain": "Kapitan",
   "shift1": "Zmiana 1",
   "shift2": "Zmiana 2",
+<<<<<<< HEAD
   "both": "Obie",
+=======
+  "both": "Wszystkie",
+>>>>>>> 4f53fe0 (update)
   "all": "Wszystkie",
   "first_half": "Pierwsza połowa",
   "second_half": "Druga połowa",
@@ -96,7 +100,11 @@
   "only_captains": "Tylko kapitanowie",
   "respect_player_shift": "Uwzględniaj zmianę gracza",
   "same_troop_only": "Tylko ten sam typ wojsk",
+<<<<<<< HEAD
   "use_both": "Użyj „Obie”",
+=======
+  "use_both": "Użyj „Wszystkie”",
+>>>>>>> 4f53fe0 (update)
   "type_defined_by_captain": "Typ wieży określa kapitan",
   "final_plan_share": "Udostępnij",
   "export_png": "Pobierz PNG",
@@ -146,6 +154,10 @@
   "captain_ready_import": "Dostępność kapitana",
   "shift_availability_import": "Dostępność zmiany",
   "secondary_role_import": "Zapasowy typ wojsk",
+<<<<<<< HEAD
+=======
+  "capture_other_region": "Przejęcie innego regionu",
+>>>>>>> 4f53fe0 (update)
   "secondary_tier_import": "Zapasowy tier wojsk",
   "troop_200k_import": "Zapasowy typ wojsk (200k+)",
   "reserve_type_fighter_import": "Zapasowy typ wojsk: fighter",
@@ -170,7 +182,11 @@
   "turret_capacity": "Pojemność wieży",
   "used_shortage": "Zużyte / brak",
   "troop_type": "Typ wojsk",
+<<<<<<< HEAD
   "lair_level": "Poziom leża",
+=======
+  "lair_level": "Przejęcie",
+>>>>>>> 4f53fe0 (update)
   "yes": "Tak",
   "no": "Nie",
   "manual_save_enter_name": "Ręczny zapis: wpisz nick gracza",
@@ -225,16 +241,26 @@
   "save_visible_columns": "Zapisz widoczne kolumny",
   "optional_columns_title": "3. Kolumny opcjonalne",
   "optional_columns_note": "Poziom leża, zapasowy typ wojsk i wszelkie własne pola, które chcesz zachować.",
+<<<<<<< HEAD
   "visible_columns_title": "4. Jakie dane pokazać w tabeli",
   "visible_columns_note": "Wybierz, które dodatkowe kolumny mają się pojawiać w tabeli graczy po kliknięciu „Pokaż wszystkie dane”.",
   "reset_data_title": "5. Reset danych",
+=======
+  "visible_columns_title": "5. Jakie dane pokazywać w tabeli",
+  "visible_columns_note": "Wybierz, które dodatkowe kolumny mają się pojawiać w tabeli graczy po kliknięciu „Pokaż wszystkie dane”.",
+  "reset_data_title": "6. Reset danych",
+>>>>>>> 4f53fe0 (update)
   "reset_data_note": "Uwaga: te działania czyszczą zapisane ustawienia lub dane tabeli.",
   "reset_storage": "Wyczyść LocalStorage całkowicie",
   "reset_column_data": "Resetuj dane kolumn",
   "reset_table_data": "Resetuj dane tabeli",
   "import_footer_note": "Obsługiwane są pliki CSV/XLSX i publiczne linki CSV z Google Sheets.",
   "board_subtitle": "Widok oficera: pokaż plan końcowy, zrób zrzut ekranu lub szybko go udostępnij.",
+<<<<<<< HEAD
   "calc_modal_subtitle": "Tutaj budujesz obie zmiany: przypisujesz graczy do wież, sprawdzasz sloty rezerwy i przygotowujesz plan końcowy.",
+=======
+  "calc_modal_subtitle": "Tutaj budujesz wszystkie zmiany: przypisujesz graczy do wież, sprawdzasz sloty rezerwy i przygotowujesz plan końcowy.",
+>>>>>>> 4f53fe0 (update)
   "board_language": "Język planu",
   "board_language_picker_note": "Wybierz, które języki mają być pokazane w planie końcowym.",
   "always_on": "Zawsze włączone",
@@ -252,7 +278,11 @@
   "empty_only": "Tylko puste",
   "rebalance_all": "Przebalansuj wszystko",
   "advanced": "Zaawansowane",
+<<<<<<< HEAD
   "auto_balance_both": "Auto-bilans graczy „Obie”",
+=======
+  "auto_balance_both": "Auto-bilans graczy „Wszystkie”",
+>>>>>>> 4f53fe0 (update)
   "min_players_per_turret": "Minimalna liczba graczy na wieżę",
   "quantity": "Liczba",
   "auto_tier_limit": "Auto-limit tieru",
@@ -332,7 +362,11 @@
   "board_copied_image": "Plan PNG skopiowany do schowka",
   "board_shared": "Plan udostępniony",
   "both_ignored_in_shifts": "obecnie ignorowani w zmianach 1 i 2",
+<<<<<<< HEAD
   "both_not_counted": "Grupa „Obie” jest obecnie ignorowana",
+=======
+  "both_not_counted": "Grupa „Wszystkie” jest obecnie ignorowana",
+>>>>>>> 4f53fe0 (update)
   "by_word": "według",
   "capacity_by_troop": "Pojemność według typu wojsk (od kapitanów)",
   "captain_not_found": "Nie znaleziono kapitana",
@@ -388,7 +422,11 @@
   "place_captain_first": "Najpierw przypisz kapitana do wieży",
   "player_march_total": "Marsz gracza",
   "player_or_turret_not_found": "Nie znaleziono gracza lub wieży.",
+<<<<<<< HEAD
   "player_status_subtitle_both": "Ten widok pokazuje wszystkich graczy z grupy „Obie”: kto już jest w wieżach, kto jest poza nimi i kto został ręcznie wysłany do rezerwy.",
+=======
+  "player_status_subtitle_both": "Ten widok pokazuje wszystkich graczy z grupy „Wszystkie”: kto już jest w wieżach, kto jest poza nimi i kto został ręcznie wysłany do rezerwy.",
+>>>>>>> 4f53fe0 (update)
   "players_needed_placed": "Gracze (potrzeba / umieszczono)",
   "players_word": "gracze",
   "png_export_offline": "Eksport PNG jest niedostępny w pakiecie offline bez lokalnej biblioteki html2canvas.",
@@ -402,7 +440,11 @@
   "remove_action": "Usuń",
   "reserve_and_outside": "Rezerwa i gracze poza wieżami",
   "reserve_manual_hint": "Gracze ręcznie wysłani do rezerwy zmiany 1/2",
+<<<<<<< HEAD
   "reset_both_before_apply": "Zresetuj bieżący rozdział „Obie” przed zastosowaniem",
+=======
+  "reset_both_before_apply": "Zresetuj bieżący rozdział „Wszystkie” przed zastosowaniem",
+>>>>>>> 4f53fe0 (update)
   "reset_limits_tiers": "Resetuj limity (T14–T9 → 0)",
   "return_action": "Wróć",
   "role_tier": "Rola / Tier",
@@ -439,7 +481,11 @@
   "without_limits": "bez limitów",
   "board_title_shift2": "Zmiana 2 / Druga połowa",
   "board_title_shift1": "Zmiana 1 / Pierwsza połowa",
+<<<<<<< HEAD
   "plan_without_both": "Planuj zmiany 1/2 bez grupy „Obie”",
+=======
+  "plan_without_both": "Planuj zmiany 1/2 bez grupy „Wszystkie”",
+>>>>>>> 4f53fe0 (update)
   "cannot_be_assigned_to": "nie można przypisać do wieży typu",
   "choose_file": "Wybierz plik",
   "reset_localstorage_title": "Zresetować LocalStorage całkowicie?",
@@ -489,7 +535,11 @@
   "shift_limits_note": "Limity zmian: Zmiana 1 — {shift1}, Zmiana 2 — {shift2} (maks. 100).",
   "shifts_updated_status": "Zmiany zaktualizowane: +{added1} do Zmiany 1, +{added2} do Zmiany 2. Teraz {shift1}/{shift2}/{both}.{warn}",
   "shifts_updated_warn_suffix": " Za mało miejsca w limicie: Z1 {shift1}, Z2 {shift2}.",
+<<<<<<< HEAD
   "shifts_restored_status": "Zmiany przywrócone z importu. Zmiana 1: {shift1}, Zmiana 2: {shift2}, Obie: {both}{unknown}.",
+=======
+  "shifts_restored_status": "Zmiany przywrócone z importu. Zmiana 1: {shift1}, Zmiana 2: {shift2}, Wszystkie: {both}{unknown}.",
+>>>>>>> 4f53fe0 (update)
   "shifts_restored_unknown_suffix": ", Nieznane: {count}",
   "shift_limits_updated_status": "Limity zmian zaktualizowane: Zmiana 1 — {shift1}, Zmiana 2 — {shift2}.",
   "reset_columns_title": "Resetować dane kolumn?",
@@ -632,7 +682,11 @@
       "turrets": {
         "eyebrow": "3. Wieże",
         "title": "Zacznij od kapitanów, a potem skonfiguruj zasady auto-uzupełniania",
+<<<<<<< HEAD
         "lead": "Tutaj przygotowujesz obie zmiany, przypisujesz kapitanów, ustawiasz limity i uruchamiasz auto-uzupełnianie. Stare numeryczne ustawienie pomocników zniknęło: teraz główną kontrolą jest selektor „Tryb wypełnienia wieży”.",
+=======
+        "lead": "Tutaj przygotowujesz wszystkie zmiany, przypisujesz kapitanów, ustawiasz limity i uruchamiasz auto-uzupełnianie. Stare numeryczne ustawienie pomocników zniknęło: teraz główną kontrolą jest selektor „Tryb wypełnienia wieży”.",
+>>>>>>> 4f53fe0 (update)
         "sequenceTitle": "Zalecana kolejność",
         "sequence": [
           "Najpierw otwórz „Ustawienia wież” i przypisz kapitanów do wszystkich potrzebnych wież. Typ wieży określa kapitan, więc auto-uzupełnianie jest niewiarygodne, dopóki kapitanowie nie będą ustawieni.",
@@ -680,7 +734,11 @@
         "lead": "Tutaj przeglądasz gotowy wynik dla danej zmiany: kto gdzie stoi, jaką moc marszu ma każda wieża i co możesz pokazać lub udostępnić innym oficerom.",
         "steps": [
           {
+<<<<<<< HEAD
             "title": "Sprawdzaj obie zmiany osobno",
+=======
+            "title": "Sprawdzaj wszystkie zmiany osobno",
+>>>>>>> 4f53fe0 (update)
             "purpose": "Aby nie przeoczyć nierównowagi między Zmianą 1 i Zmianą 2",
             "copy": "Plan końcowy pokazuje każdą zmianę osobno. Przełączaj się między nimi i upewnij się, że wieże są zamknięte dokładnie tak, jak planowałeś."
           },
@@ -752,7 +810,11 @@
   "notes": "Notatki",
   "clear_helpers": "Wyczyść pomocników",
   "manual_shift_add_title": "Dlaczego potrzebne są dodatkowe sloty",
+<<<<<<< HEAD
   "manual_shift_add_help": "Używaj tych pól, gdy gracze ze zmianą „Obie” potrzebują dodatkowych ręcznych slotów dodanych do zmiany 1 lub 2.",
+=======
+  "manual_shift_add_help": "Używaj tych pól, gdy gracze ze zmianą „Wszystkie” potrzebują dodatkowych ręcznych slotów dodanych do zmiany 1 lub 2.",
+>>>>>>> 4f53fe0 (update)
   "base_north": "Północna wieża",
   "base_west": "Zachodnia wieża",
   "base_east": "Wschodnia wieża",
@@ -838,6 +900,75 @@
   "duplicate_nicks_found": "Znaleziono zduplikowane nicki",
   "duplicate_nicks_hint": "Ci gracze są podświetleni w tabeli. W obrębie jednej zmiany strona nie pozwoli już przypisać tego samego nicku dwa razy.",
   "duplicate_nick_in_shift_error": "Ten nick jest już używany w tej zmianie",
+<<<<<<< HEAD
   "turrets_panel": "Wieże"
+=======
+  "turrets_panel": "Wieże",
+  "import_region_1": "Dom",
+  "import_region_2": "Region 1",
+  "import_region_3": "Region 2",
+  "capture_region_1": "Przejęcie regionu 1",
+  "capture_region_2": "Przejęcie regionu 2",
+  "shift3": "Zmiana 3",
+  "shift4": "Zmiana 4",
+  "capture_region": "Przejęcie regionu",
+  "import_regions_kicker": "Regiony",
+  "import_regions_title": "Przejęcie regionów",
+  "import_regions_desc": "Wybierz region i włącz odpowiedni przełącznik dla 1, 2, 3 lub 4 zmian.",
+  "import_region_always_on": "Zawsze włączone",
+  "import_region_enabled_text": "Włączone",
+  "import_region_disabled_text": "Wyłączone",
+  "import_1_shift": "1 zmiana",
+  "import_2_shifts": "2 zmiany",
+  "import_3_shifts": "3 zmiany",
+  "import_4_shifts": "4 zmiany",
+  "add_player_menu": "Dodaj gracza",
+  "manual_player_manager_subtitle": "Dodaj nowego gracza, znajdź istniejącego, edytuj go albo usuń z listy.",
+  "manual_player_new_title": "Nowy gracz",
+  "manual_player_persist_note": "Zostanie zapisany po odświeżeniu strony. Przy nowym imporcie Excel gracze ręczni są czyszczeni.",
+  "manual_player_new_button": "Nowy",
+  "manual_player_extra_columns": "Dodatkowe kolumny",
+  "manual_player_extra_columns_hint": "Dodaj własne pola dla tego gracza albo usuń niepotrzebne kolumny.",
+  "manual_player_new_column_label": "Nowa kolumna",
+  "manual_player_column_name_placeholder": "Nazwa kolumny",
+  "manual_player_add_column": "Dodaj kolumnę",
+  "manual_player_no_extra_columns": "Nie ma jeszcze dodatkowych kolumn.",
+  "manual_player_name_required": "Wpisz nick gracza.",
+  "manual_player_delete_confirm": "Usunąć gracza?",
+  "manual_player_deleted": "Gracz usunięty.",
+  "manual_player_column_name_required": "Wpisz nazwę kolumny.",
+  "manual_player_column_added": "Kolumna dodana.",
+  "manual_player_remove_column": "Usuń kolumnę",
+  "manual_player_remove_column_confirm": "Usunąć kolumnę?",
+  "manual_player_column_removed": "Kolumna usunięta.",
+  "manual_player_manual_badge": "Ręczny",
+  "manual_player_import_badge": "Import",
+  "manual_player_empty": "Nie znaleziono graczy.",
+  "delete_player": "Usuń",
+  "saved": "Zapisano",
+  "manual_player_search_placeholder": "Szukaj po nicku / sojuszu",
+  "shift_recognition_title": "4. Rozpoznawanie zmian",
+  "shift_recognition_note": "Sprawdź odpowiedzi zmian z Excela i w razie potrzeby połącz je przed importem.",
+  "shift_recognition_auto": "Wykryj automatycznie",
+  "shift_recognition_reset": "Resetuj reguły",
+  "shift_recognition_merge_mode": "Łączenie zmian",
+  "shift_merge_separate": "Nie łącz",
+  "shift_merge_pair_12_34": "1+2 i 3+4",
+  "shift_merge_all_to_1": "Wszystko do zmiany 1",
+  "shift_merge_custom": "Własne łączenie",
+  "shift_recognition_empty": "Wybierz kolumnę zmiany w wymaganych kolumnach, a tutaj pojawi się kontrola.",
+  "shift_recognition_value": "Wartość z Excela",
+  "shift_recognition_detected": "Rozpoznano jako",
+  "shift_recognition_after_merge": "Po połączeniu",
+  "shift_recognition_count": "Wiersze",
+  "shift_recognition_summary_empty": "Reguły nie zostały jeszcze zastosowane.",
+  "shift_recognition_save": "Zapisz reguły",
+  "shift_recognition_ignore": "Ignoruj",
+  "shift_recognition_summary": "Znalezione wartości: {count}",
+  "shift_recognition_all": "Wszystkie",
+  "tier_visibility_title": "Dodatkowe tiery",
+  "tier_visibility_note": "Dodaj T1–T8 i włącz tiery, które mają być widoczne w limitach wież.",
+  "tier_visibility_add": "Dodaj tier"
+>>>>>>> 4f53fe0 (update)
   });
 })();

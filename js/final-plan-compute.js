@@ -60,8 +60,45 @@
       return a || t;
     }
   }
+<<<<<<< HEAD
   function _(e, t) {
     const a = String(e?.shift || "both").toLowerCase();
+=======
+  function Nf(e) {
+    const normalize = (value) => {
+      try {
+        if ("function" == typeof window.PNS?.normalizeShiftValue) {
+          const normalized = String(window.PNS.normalizeShiftValue(value) || "").toLowerCase();
+          if (/^shift[1-4]$/.test(normalized) || "both" === normalized) return normalized;
+        }
+      } catch {}
+      const text = String(value || "").toLowerCase();
+      return /^shift[1-4]$/.test(text) || "both" === text ? text : "";
+    };
+
+    const rawShift = normalize(
+      e?.registeredShiftRaw ||
+      e?.raw?.shift_availability ||
+      e?.registeredShift ||
+      e?.registeredShiftLabel ||
+      ""
+    );
+
+    const currentShift = normalize(e?.shift || e?.shiftLabel || "");
+
+    // Якщо гравця вручну перенесли з "Всі" в конкретну зміну,
+    // треба поважати ручну зміну, а не старе raw із Excel.
+    if ((e?.manualShiftOverride || rawShift === "both" || !rawShift) && /^shift[1-4]$/.test(currentShift)) {
+      return currentShift;
+    }
+
+    if (/^shift[1-4]$/.test(rawShift) || rawShift === "both") return rawShift;
+    if (/^shift[1-4]$/.test(currentShift) || currentShift === "both") return currentShift;
+    return "both";
+  }
+  function _(e, t) {
+    const a = Nf(e);
+>>>>>>> 4f53fe0 (update)
     return "both" === a || a === String(t || "").toLowerCase();
   }
   function g(e) {
@@ -74,6 +111,7 @@
     return Math.max(0, Number(e?.march || 0) || 0);
   }
   function w(e) {
+<<<<<<< HEAD
     return (function (e) {
       const t = String(e || "");
       let a = 0;
@@ -85,6 +123,18 @@
       0
       ? "shift1"
       : "shift2";
+=======
+    const keys = (typeof xActiveShiftKeys === "function" ? xActiveShiftKeys() : ["shift1", "shift2"]).filter((key) => /^shift[1-4]$/.test(key));
+    const active = keys.length ? keys : ["shift1", "shift2"];
+    const hash = (function (value) {
+      const text = String(value || "");
+      let out = 0;
+      for (let index = 0; index < text.length; index++)
+        out = ((out << 5) - out + text.charCodeAt(index)) | 0;
+      return Math.abs(out);
+    })(String(e?.id || e?.name || ""));
+    return active[hash % active.length] || "shift1";
+>>>>>>> 4f53fe0 (update)
   }
   function S() {
     return Object.fromEntries(
@@ -358,11 +408,23 @@
   }
   function L(e) {
     const t = c(),
+<<<<<<< HEAD
       a = I("shift1", e),
       r = I("shift2", e);
     (a.length && (t.shift1 = a),
       r.length && (t.shift2 = r),
       (t.noCrossShift = !1),
+=======
+      s1 = I("shift1", e),
+      s2 = I("shift2", e),
+      s3 = I("shift3", e),
+      s4 = I("shift4", e);
+    (s1.length && (t.shift1 = s1),
+      s2.length && (t.shift2 = s2),
+      s3.length && (t.shift3 = s3),
+      s4.length && (t.shift4 = s4),
+      (t.noCrossShift = !0),
+>>>>>>> 4f53fe0 (update)
       (t.both50 = !!e?.querySelector("#towerCalcBoth50")?.checked),
       (t.ignoreBoth = !!e?.querySelector("#towerCalcIgnoreBoth")?.checked),
       (t.dontTouchBothVersion = 1),
@@ -373,6 +435,7 @@
           jf(t),
       )),
       (t.minHelpersPerTower = !0),
+<<<<<<< HEAD
       (t.minHelpersCount = Kf(t.helperFillMode)),
       (t.activeTab =
         "shift2" ===
@@ -426,6 +489,36 @@
     try {
       xPersistCalc(t);
     } catch {}
+=======
+      (t.minHelpersCount = Kf(t.helperFillMode)));
+    const activeTab = String(
+      e?.querySelector("[data-calc-tab].is-active")?.getAttribute("data-calc-tab") ||
+      e?.querySelector("[data-calc-tab].active")?.getAttribute("data-calc-tab") ||
+      e?.querySelector("[data-calc-tab][aria-selected='true']")?.getAttribute("data-calc-tab") ||
+      t.activeTab ||
+      "shift1",
+    ).toLowerCase();
+    t.activeTab = /^shift[1-4]$/.test(activeTab) ? activeTab : "shift1";
+    t.mainTab = String(
+      e?.querySelector("[data-calc-main-tab].is-active")?.getAttribute("data-calc-main-tab") ||
+      t.mainTab ||
+      "setup",
+    ).toLowerCase();
+    t.uiMode = String(e?.querySelector("#towerCalcModeUi")?.value || t.uiMode || "assisted").toLowerCase();
+    t.uiApplyMode = String(e?.querySelector("#towerCalcApplyModeUi")?.value || t.uiApplyMode || "topup").toLowerCase();
+    t.tierSizeMode = e?.querySelector("#towerCalcTierAuto")?.checked ? "auto" : "manual";
+    t.tierSizeManual = (function (e) {
+      const t = { T14: 3e5, T13: 25e4, T12: 2e5, T11: 15e4, T10: 1e5, T9: 8e4, T8:0, T7:0, T6:0, T5:0, T4:0, T3:0, T2:0, T1:0 };
+      return (
+        (e || document.getElementById("towerCalcModal"))?.querySelectorAll("[data-calc-tier-target]").forEach((e) => {
+          const a = String(e?.dataset?.calcTierTarget || "").toUpperCase();
+          a && (t[a] = Math.max(0, Number(e.value || t[a] || 0) || t[a] || 0));
+        }),
+        v(t)
+      );
+    })(e);
+    try { xPersistCalc(t); } catch {}
+>>>>>>> 4f53fe0 (update)
     return t;
   }
   function c() {
@@ -446,15 +539,38 @@
             troop: "fighter",
             helpers: 15,
           }))),
+<<<<<<< HEAD
+=======
+      (e.shift3 = Array.isArray(e.shift3)
+        ? e.shift3
+        : Array.from({ length: 5 }, () => ({
+            captainId: "",
+            troop: "fighter",
+            helpers: 15,
+          }))),
+      (e.shift4 = Array.isArray(e.shift4)
+        ? e.shift4
+        : Array.from({ length: 5 }, () => ({
+            captainId: "",
+            troop: "fighter",
+            helpers: 15,
+          }))),
+>>>>>>> 4f53fe0 (update)
       (e.noCrossShift = "boolean" != typeof e.noCrossShift || e.noCrossShift),
       (e.both50 = "boolean" == typeof e.both50 && e.both50),
       (e.ignoreBoth = "boolean" != typeof e.ignoreBoth || e.ignoreBoth),
       (e = Zf(e)),
       (e.compactMode = "boolean" != typeof e.compactMode || e.compactMode),
+<<<<<<< HEAD
       (e.activeTab =
         "shift2" === String(e.activeTab || "shift1").toLowerCase()
           ? "shift2"
           : "shift1"),
+=======
+      (e.activeTab = /^shift[1-4]$/.test(String(e.activeTab || "shift1").toLowerCase())
+        ? String(e.activeTab || "shift1").toLowerCase()
+        : "shift1"),
+>>>>>>> 4f53fe0 (update)
       (e.mainTab = ["setup", "towers", "overflow", "preview"].includes(
         String(e.mainTab || "").toLowerCase(),
       )
@@ -487,6 +603,7 @@
         e.inlineTowerSelected && "object" == typeof e.inlineTowerSelected
           ? e.inlineTowerSelected
           : {}),
+<<<<<<< HEAD
       (e.previewShift = ["shift1", "shift2"].includes(
         String(e.previewShift || "").toLowerCase(),
       )
@@ -496,6 +613,17 @@
             )
           ? String(a.activeShift).toLowerCase()
           : "shift2"),
+=======
+      (e.previewShift = ["shift1", "shift2", "shift3", "shift4"].includes(
+        String(e.previewShift || "").toLowerCase(),
+      )
+        ? String(e.previewShift).toLowerCase()
+        : ["shift1", "shift2", "shift3", "shift4"].includes(
+              String(a.activeShift || "").toLowerCase(),
+            )
+          ? String(a.activeShift).toLowerCase()
+          : "shift1"),
+>>>>>>> 4f53fe0 (update)
       (e.ignoreBoth = !!e.ignoreBoth),
       (e.dontTouchBothVersion = Math.max(
         1,
@@ -548,6 +676,7 @@
     return r.map((t, r) => {
       const o = a.baseById?.get?.(t?.id || ""),
         s = n?.[t?.id] || {},
+<<<<<<< HEAD
         l = String(a.activeShift || "") === String(e || ""),
         c = String((s.captainId ?? (l ? o?.captainId : null)) || ""),
         d = Array.isArray(s.helperIds)
@@ -556,6 +685,11 @@
             ? o.helperIds
             : [],
         u = s.role || (l ? o?.role : null) || t?.role || null;
+=======
+        c = String(s.captainId || ""),
+        d = Array.isArray(s.helperIds) ? s.helperIds : [],
+        u = s.role || t?.role || null;
+>>>>>>> 4f53fe0 (update)
       return {
         index: r,
         baseId: String(t?.id || ""),
@@ -567,6 +701,37 @@
       };
     });
   }
+<<<<<<< HEAD
+=======
+
+  function xRowsForShift(calcState, shiftKey) {
+    const existing = Array.isArray(calcState?.[shiftKey]) ? calcState[shiftKey].slice() : [];
+    const slots = pe();
+    const planBases = (
+      a.shiftPlans?.[shiftKey] && typeof a.shiftPlans[shiftKey] === "object"
+        ? a.shiftPlans[shiftKey]
+        : null
+    )?.bases || {};
+    const rows = slots.map((base, index) => {
+      const baseId = String(base?.id || "");
+      const saved = planBases?.[baseId] || {};
+      const row = existing[index] || {};
+      const captainId = String(saved.captainId || row.captainId || "");
+      const captain = captainId ? a.playerById?.get?.(captainId) : null;
+      const troop = String(saved.role || row.troop || r(captain?.role) || "fighter").toLowerCase();
+      return {
+        captainId,
+        troop: ["fighter", "rider", "shooter"].includes(troop) ? troop : "fighter",
+        helpers: Math.max(0, Math.min(29, Number(row.helpers || 15) || 15)),
+      };
+    });
+    for (let i = slots.length; i < existing.length; i++) {
+      if (existing[i]?.captainId) rows.push(existing[i]);
+    }
+    return rows;
+  }
+
+>>>>>>> 4f53fe0 (update)
   function ce(e, t, a, r) {
     const n = new Map();
     if (!Array.isArray(e) || !e.length) return n;
@@ -1012,11 +1177,23 @@
             "function" == typeof e?.isTowerMatchRegisteredShiftEnabled
               ? !!e.isTowerMatchRegisteredShiftEnabled()
               : !1 !== a.towerPickerMatchRegisteredShift;
+<<<<<<< HEAD
         for (const e of a.players || []) {
           if (!e || !e.id) continue;
           const c = String(e.id);
           if (n.has(c) || u[c]?.excluded || (h && !_(e, t))) continue;
           const f = String(e.shift || e.shiftLabel || "").toLowerCase();
+=======
+        const ignoreRegisteredShiftForRegion = typeof window.PNS?.shouldIgnoreRegisteredShiftForActiveRegion === "function"
+              ? !!window.PNS.shouldIgnoreRegisteredShiftForActiveRegion()
+              : false;
+        for (const e of a.players || []) {
+          if (!e || !e.id) continue;
+          const c = String(e.id);
+          if (n.has(c) || u[c]?.excluded || (h && !ignoreRegisteredShiftForRegion && !_(e, t))) continue;
+          if (typeof window.PNS?.canAutoUsePlayerInActiveRegion === "function" && !window.PNS.canAutoUsePlayerInActiveRegion(e, t, { kind: "helper" })) continue;
+          const f = Nf(e);
+>>>>>>> 4f53fe0 (update)
           if (!0 !== a.towerPickerNoCrossShiftDupes && "both" === f) continue;
           const m = String((p && p[String(e.id || "")]) || "").toLowerCase();
           if (
@@ -1028,7 +1205,11 @@
           if (o && i && "both" === f) {
             const a = String(t || "").toLowerCase(),
               r = String((s && (s[String(e.id || "")] || s[e.id])) || "");
+<<<<<<< HEAD
             if (("shift1" === r || "shift2" === r ? r : w(e)) !== a) continue;
+=======
+            if ((/^shift[1-4]$/.test(r) ? r : w(e)) !== a) continue;
+>>>>>>> 4f53fe0 (update)
           }
           const y = r(e.role) || "fighter";
           (l[y] || (l[y] = []), l[y].push(e));
@@ -1171,7 +1352,11 @@
     }
     const O = new Set();
     return (
+<<<<<<< HEAD
       o.noCrossShift && x.forEach((e) => O.add(e)),
+=======
+      o.noCrossShift && (x.forEach((e) => O.add(e)), u.forEach((e) => O.add(e))),
+>>>>>>> 4f53fe0 (update)
       {
         shiftKey: t,
         rows: n,
@@ -1425,6 +1610,7 @@
         .join(""),
     });
   }
+<<<<<<< HEAD
   function be() {
     const e = document.getElementById("towerCalcModal");
     if (!e) return null;
@@ -1435,6 +1621,129 @@
       me({ keepHelpers: !0, render: !1 });
     } catch {}
     const t = L(e),
+=======
+
+  function xActiveShiftKeys() {
+    try {
+      const settings = JSON.parse(localStorage.getItem("pns_import_region_shift_settings_v1") || "null") || {};
+      const activeRegion = localStorage.getItem("pns_tower_calc_active_region_v1") || settings.activeRegion || "region1";
+      const region = settings?.regions?.[activeRegion] || settings?.regions?.region1 || {};
+      const shifts = region?.shifts || {};
+      const selected = ["1", "2", "3", "4"].find((n) => !!shifts[n]) || "2";
+      const count = Math.max(1, Math.min(4, Number(selected) || 2));
+      return Array.from({ length: count }, (_, index) => `shift${index + 1}`);
+    } catch {
+      return ["shift1", "shift2"];
+    }
+  }
+
+  function xSplitBothPlayersAcrossShifts(calcState, shiftKeys) {
+    const keys = Array.isArray(shiftKeys) && shiftKeys.length ? shiftKeys : ["shift1", "shift2"];
+    const out = {};
+    const counts = {};
+    const march = {};
+    const troopCounts = {};
+    keys.forEach((key) => {
+      counts[key] = 0;
+      march[key] = 0;
+      troopCounts[key] = { fighter: 0, rider: 0, shooter: 0 };
+    });
+
+    const captainIds = new Set();
+    try {
+      keys.forEach((key) => {
+        (Array.isArray(calcState?.[key]) ? calcState[key] : []).forEach((row) => {
+          const id = String(row?.captainId || "");
+          if (id) captainIds.add(id);
+        });
+      });
+    } catch {}
+
+    const reserve = calcState?.overflowReserve && typeof calcState.overflowReserve === "object"
+      ? calcState.overflowReserve
+      : {};
+
+    const players = [];
+    const ignoreRegisteredShiftForRegion = typeof window.PNS?.shouldIgnoreRegisteredShiftForActiveRegion === "function"
+      ? !!window.PNS.shouldIgnoreRegisteredShiftForActiveRegion()
+      : false;
+    const singleRegionShiftKey = ignoreRegisteredShiftForRegion && keys.length === 1 ? keys[0] : "";
+
+    for (const player of a.players || []) {
+      if (!player || !player.id || captainIds.has(String(player.id))) continue;
+      if (typeof window.PNS?.canAutoUsePlayerInActiveRegion === "function") {
+        const canUseSomewhere = keys.some((key) => window.PNS.canAutoUsePlayerInActiveRegion(player, key, { kind: "helper" }));
+        if (!canUseSomewhere) continue;
+      }
+      const playerMarch = b(player);
+      if (playerMarch <= 0) continue;
+      const role = r(player.role) || "fighter";
+      if (!["fighter", "rider", "shooter"].includes(role)) continue;
+      const playerShift = singleRegionShiftKey ? singleRegionShiftKey : Nf(player);
+      if (playerShift === "both") players.push(player);
+      else if (keys.includes(playerShift)) {
+        counts[playerShift] += 1;
+        march[playerShift] += playerMarch;
+        troopCounts[playerShift][role] = (troopCounts[playerShift][role] || 0) + 1;
+      } else if (singleRegionShiftKey) {
+        counts[singleRegionShiftKey] += 1;
+        march[singleRegionShiftKey] += playerMarch;
+        troopCounts[singleRegionShiftKey][role] = (troopCounts[singleRegionShiftKey][role] || 0) + 1;
+      }
+    }
+
+    players.sort((left, right) => {
+      const leftRole = r(left?.role) || "fighter";
+      const rightRole = r(right?.role) || "fighter";
+      const maxDiff = (role) => {
+        const values = keys.map((key) => Number(troopCounts[key]?.[role] || 0));
+        return Math.max(...values) - Math.min(...values);
+      };
+      return maxDiff(rightRole) - maxDiff(leftRole)
+        || g(right.tier) - g(left.tier)
+        || Number(right.march || 0) - Number(left.march || 0)
+        || String(left.name || "").localeCompare(String(right.name || ""));
+    });
+
+    for (const player of players) {
+      const id = String(player.id || "");
+      if (!id) continue;
+      const forced = String((reserve && reserve[id]) || "").toLowerCase();
+      const role = r(player.role) || "fighter";
+      const allowedKeys = typeof window.PNS?.canAutoUsePlayerInActiveRegion === "function"
+        ? keys.filter((key) => window.PNS.canAutoUsePlayerInActiveRegion(player, key, { kind: "helper" }))
+        : keys.slice();
+      if (!allowedKeys.length) continue;
+      let target = allowedKeys.includes(forced) ? forced : "";
+      if (!target) {
+        target = allowedKeys.slice().sort((left, right) =>
+          Number(troopCounts[left]?.[role] || 0) - Number(troopCounts[right]?.[role] || 0)
+          || Number(counts[left] || 0) - Number(counts[right] || 0)
+          || Number(march[left] || 0) - Number(march[right] || 0)
+          || keys.indexOf(left) - keys.indexOf(right)
+        )[0] || keys[0];
+      }
+      out[id] = target;
+      counts[target] += 1;
+      march[target] += b(player);
+      troopCounts[target][role] = (troopCounts[target][role] || 0) + 1;
+    }
+
+    return { map: out, counts, march, troopCounts };
+  }
+
+  function be() {
+    const e = document.getElementById("towerCalcModal");
+    if (!e) return null;
+
+    // Do not snapshot live towers here. If activeShift and live towers are out of sync,
+    // snapshotting here corrupts shift1 with shift4 (or another shift). Captain/autofill
+    // actions and tab switching already save the correct shift snapshot.
+    try { a.shiftPlans = a.shiftPlans || {}; } catch {}
+
+    const t = L(e),
+      shiftKeys = xActiveShiftKeys(),
+>>>>>>> 4f53fe0 (update)
       n = {
         noCrossShift: !!t.noCrossShift,
         both50: !!t.both50,
@@ -1448,6 +1757,7 @@
         tierTargets: C(t),
         applyMode: t.uiApplyMode || "topup",
       };
+<<<<<<< HEAD
     if (n.noCrossShift && n.both50)
       try {
         const e = (function (e) {
@@ -1558,6 +1868,58 @@
     try {
       le(e);
     } catch {}
+=======
+
+    if (n.noCrossShift && n.both50) {
+      try {
+        const split = xSplitBothPlayersAcrossShifts(t, shiftKeys);
+        n.bothAllocMap = split?.map || {};
+        n.autoBothCounts = split?.counts || null;
+        n.autoBothMarch = split?.march || null;
+        n.autoBothTroopCounts = split?.troopCounts || null;
+      } catch {}
+    }
+
+    const results = {};
+    const blocked = new Set();
+    for (const shiftKey of shiftKeys) {
+      const result = de(
+        shiftKey,
+        xRowsForShift(t, shiftKey),
+        n,
+        new Set(n.noCrossShift ? Array.from(blocked) : []),
+      );
+      results[shiftKey] = result;
+      if (n.noCrossShift) {
+        try { result?.nextBlocked?.forEach?.((id) => blocked.add(id)); } catch {}
+      }
+    }
+
+    a.towerCalcLastResults = {
+      ...results,
+      cfg: n,
+      at: Date.now(),
+    };
+
+    try { ue(results.shift1, e.querySelector("#towerCalcOutShift1")); } catch {}
+    try { ue(results.shift2, e.querySelector("#towerCalcOutShift2")); } catch {}
+
+    const l = e.querySelector("#towerCalcMiniSummary");
+    if (l) {
+      const parts = shiftKeys.map((shiftKey) => {
+        const result = results[shiftKey] || {};
+        return `${i(shiftKey, shiftKey)}: ${Number(result.totalHelpersWanted || 0)}→${Number(result.totalHelpersPlaced || 0)}`;
+      });
+      const demand = shiftKeys.reduce((sum, shiftKey) => sum + Number(results[shiftKey]?.totalDemand || 0), 0);
+      const supplied = shiftKeys.reduce((sum, shiftKey) => sum + Number(results[shiftKey]?.totalSupplied || 0), 0);
+      parts.push(`${i("both", "Всі")}: ${Number(A().both.total || 0)}`);
+      parts.push(`${i("shortage", "Нестача")}: ${Number(Math.max(0, demand - supplied) || 0).toLocaleString("en-US")}`);
+      l.textContent = parts.join(" · ");
+    }
+
+    try { P(e, a.towerCalcLastResults); } catch {}
+    try { le(e); } catch {}
+>>>>>>> 4f53fe0 (update)
     return a.towerCalcLastResults;
   }
   ((window.computeTowerCalcShiftResultsImpl = de),

@@ -41,11 +41,10 @@
   const raw = String(value ?? '').trim();
   if (!raw) return 'both';
 
-  // якщо в excel вже збережено порядок вибору:
-  // 1 = перша зміна, 2 = друга зміна, 3 = обидві
   if (raw === '1') return 'shift1';
   if (raw === '2') return 'shift2';
-  if (raw === '3') return 'both';
+  if (raw === '3') return 'shift3';
+  if (raw === '4') return 'shift4';
 
   const text = raw
     .normalize('NFKC')
@@ -53,7 +52,8 @@
     .replace(/ё/g, 'е')
     .replace(/[–—−]/g, '-')
     .replace(/[_.,;:()[\]{}|]+/g, ' ')
-    .replace(/\b\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}\b/g, ' ')
+.replace(/\b\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}\b/g, ' ')
+    .replace(/\b\d+\s*(час|часа|часов|hours?|hrs?)\b/g, ' ')
     .replace(/\b(am|pm|utc|gmt|msk|мск|час|часа|часов|hours?|hrs?)\b/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -62,7 +62,19 @@
 
   if (text === '1') return 'shift1';
   if (text === '2') return 'shift2';
-  if (text === '3') return 'both';
+  if (text === '3') return 'shift3';
+  if (text === '4') return 'shift4';
+
+  // v59-extra-shift-3-4-patterns: support number-before-word and more languages.
+  const shiftWord = '(shift|shifts|смена|смены|смен|зміна|зміни|змін|змiна|zmiana|zmiany|schicht|schichten|ca|班次|シフト|勤務|교대|النوبة|نوبة)';
+  if (new RegExp('(^|\\s)(1|one|first|1st)\\s*' + shiftWord + '(\\s|$)').test(text)) return 'shift1';
+  if (new RegExp('(^|\\s)(2|two|second|2nd)\\s*' + shiftWord + '(\\s|$)').test(text)) return 'shift2';
+  if (new RegExp('(^|\\s)(3|three|third|3rd)\\s*' + shiftWord + '(\\s|$)').test(text)) return 'shift3';
+  if (new RegExp('(^|\\s)(4|four|fourth|4th)\\s*' + shiftWord + '(\\s|$)').test(text)) return 'shift4';
+  if (/(^|\s)s\s*1(\s|$)/.test(text)) return 'shift1';
+  if (/(^|\s)s\s*2(\s|$)/.test(text)) return 'shift2';
+  if (/(^|\s)s\s*3(\s|$)/.test(text)) return 'shift3';
+  if (/(^|\s)s\s*4(\s|$)/.test(text)) return 'shift4';
 
   const bothExact = new Set([
     'both', 'all', 'any', 'both shift', 'both shifts', 'all shift', 'all shifts', 'any shift', 'any shifts',
@@ -85,9 +97,23 @@
     '第二シフト', '第2シフト', 'シフト2', '2シフト', '第二勤務', '第2勤務', '2勤務', '二勤', '2勤', '二直', '2直'
   ]);
 
+  const shift3Exact = new Set([
+    '3', 's3', 'shift 3', 'shift3', '3 shift', '3 shifts', '3rd', 'third', 'third shift',
+    'третья', 'третий', 'третья смена', 'смена 3', '3 смена',
+    'третя', 'третій', 'третя зміна', 'зміна 3', '3 зміна', '3 зміни', '3 змін', 'змiна 3'
+  ]);
+
+  const shift4Exact = new Set([
+    '4', 's4', 'shift 4', 'shift4', '4 shift', '4 shifts', '4th', 'fourth', 'fourth shift',
+    'четвертая', 'четвертий', 'четвертая смена', 'смена 4', '4 смена',
+    'четверта', 'четвертий', 'четверта зміна', 'зміна 4', '4 зміна', '4 зміни', '4 змін', 'змiна 4'
+  ]);
+
   if (bothExact.has(text)) return 'both';
   if (shift1Exact.has(text)) return 'shift1';
   if (shift2Exact.has(text)) return 'shift2';
+  if (typeof shift3Exact !== 'undefined' && shift3Exact.has(text)) return 'shift3';
+  if (typeof shift4Exact !== 'undefined' && shift4Exact.has(text)) return 'shift4';
 
   if (/(^|\s)(1\s*[/,+;&-]\s*2|2\s*[/,+;&-]\s*1)(\s|$)/.test(text)) return 'both';
 
@@ -97,6 +123,14 @@
 
   if (/(^|\s)(shift|shifts|смена|смены|зміна|зміни|змiна|シフト|勤務|直)\s*[-: ]*2(\s|$)/.test(text)) {
     return 'shift2';
+  }
+
+  if (/(^|\s)(shift|shifts|смена|смены|зміна|зміни|змiна|シフト|勤務|直)\s*[-: ]*3(\s|$)/.test(text)) {
+    return 'shift3';
+  }
+
+  if (/(^|\s)(shift|shifts|смена|смены|зміна|зміни|змiна|シフト|勤務|直)\s*[-: ]*4(\s|$)/.test(text)) {
+    return 'shift4';
   }
 
   if (/(^|\s)1(st)?\s*(shift|shifts|смена|смены|зміна|зміни|змiна|シフト|勤務|直)?(\s|$)/.test(text)) {
@@ -115,6 +149,14 @@
     return 'shift2';
   }
 
+  if (/(third|3rd|трет|треть|第3|3勤|三直|3直)/.test(text)) {
+    return 'shift3';
+  }
+
+  if (/(fourth|4th|четвер|第4|4勤|四直|4直)/.test(text)) {
+    return 'shift4';
+  }
+
   if (/(both|all shifts?|any shift|обе|оба|обидв|две|дві|両方|両シフト|全シフト|全部|すべて)/.test(text)) {
     return 'both';
   }
@@ -125,12 +167,12 @@
   function normalizeShiftLabel(value){
     const normalized = normalizeShiftValue(value);
     if (typeof e.shiftLabel === 'function') return e.shiftLabel(normalized);
-    return normalized === 'shift1' ? 'Зміна 1' : normalized === 'shift2' ? 'Зміна 2' : 'Обидві';
+    return normalized === 'shift1' ? 'Зміна 1' : normalized === 'shift2' ? 'Зміна 2' : normalized === 'shift3' ? 'Зміна 3' : normalized === 'shift4' ? 'Зміна 4' : 'Всі';
   }
 
   function formatShiftLabelForCell(value){
     if (typeof e.shiftLabel === 'function') return e.shiftLabel(value);
-    return value === 'shift1' ? 'Зміна 1' : value === 'shift2' ? 'Зміна 2' : 'Обидві';
+    return value === 'shift1' ? 'Зміна 1' : value === 'shift2' ? 'Зміна 2' : value === 'shift3' ? 'Зміна 3' : value === 'shift4' ? 'Зміна 4' : 'Всі';
   }
 
   function getRegisteredShiftForPlayer(player){

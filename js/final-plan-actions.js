@@ -33,17 +33,56 @@
     );
   }
 
+<<<<<<< HEAD
+=======
+  function getActiveFinalShiftCount() {
+    try {
+      if (typeof PNS.getTowerCalcShiftCount === "function") {
+        const count = Number(PNS.getTowerCalcShiftCount());
+        if (Number.isFinite(count)) return Math.max(1, Math.min(4, count));
+      }
+    } catch {}
+    try {
+      const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null');
+      const activeRegion = (typeof PNS.getTowerCalcActiveRegion === 'function' ? PNS.getTowerCalcActiveRegion() : '') || localStorage.getItem('pns_tower_calc_active_region_v1') || settings?.activeRegion || 'region1';
+      const shifts = settings?.regions?.[activeRegion]?.shifts || settings?.regions?.region1?.shifts || {};
+      const selected = ['1','2','3','4'].find(n => shifts[n]) || '2';
+      return Math.max(1, Math.min(4, Number(selected) || 2));
+    } catch {
+      return 2;
+    }
+  }
+
+  function normalizeFinalShift(shift) {
+    const value = String(shift || '').toLowerCase();
+    if (!/^shift[1-4]$/.test(value)) return 'shift1';
+    const count = getActiveFinalShiftCount();
+    return (Number(value.replace('shift', '')) || 1) > count ? `shift${count}` : value;
+  }
+
+  function activeFinalShifts() {
+    const count = getActiveFinalShiftCount();
+    return Array.from({ length: count }, (_, index) => `shift${index + 1}`);
+  }
+
+>>>>>>> 4f53fe0 (update)
   function getPreviewShift() {
     try {
       const state =
         typeof window.getCalcState === "function"
           ? window.getCalcState()
           : PNS.state?.towerCalc || {};
+<<<<<<< HEAD
       return String(state?.previewShift || "shift2").toLowerCase() === "shift1"
         ? "shift1"
         : "shift2";
     } catch {
       return "shift2";
+=======
+      return normalizeFinalShift(state?.previewShift || "shift1");
+    } catch {
+      return "shift1";
+>>>>>>> 4f53fe0 (update)
     }
   }
 
@@ -122,8 +161,12 @@
   }
 
   function buildBoardTxtForShift(shift) {
+<<<<<<< HEAD
     const normalizedShift =
       String(shift || "").toLowerCase() === "shift1" ? "shift1" : "shift2";
+=======
+    const normalizedShift = normalizeFinalShift(shift);
+>>>>>>> 4f53fe0 (update)
     const lines = [`=== ${shiftLabel(normalizedShift)} ===`, ""];
     getBoardSlots().forEach((base, index) => {
       const boardState = resolveBoardTowerState(base, normalizedShift);
@@ -172,10 +215,14 @@
   }
 
   function buildBoardTxtAllShifts() {
+<<<<<<< HEAD
     return [
       buildBoardTxtForShift("shift1"),
       buildBoardTxtForShift("shift2"),
     ].join("\n");
+=======
+    return activeFinalShifts().map(shift => buildBoardTxtForShift(shift)).join("\n");
+>>>>>>> 4f53fe0 (update)
   }
 
   function downloadTextFile(filename, text) {
@@ -445,15 +492,24 @@
         active?.getAttribute?.("data-calc-preview-shift") ||
         "shift1",
     );
+<<<<<<< HEAD
     return value.toLowerCase() === "shift2" ? "shift2" : "shift1";
+=======
+    const normalized = value.toLowerCase();
+    return /^shift[1-4]$/.test(normalized) ? normalized : "shift1";
+>>>>>>> 4f53fe0 (update)
   }
 
   window.exportBoardAsPNG = async function (options = {}) {
     const sheet = options.sheet || getBoardSheet();
+<<<<<<< HEAD
     const shift =
       String(options.shift || getBoardShift()).toLowerCase() === "shift2"
         ? "shift2"
         : "shift1";
+=======
+    const shift = normalizeFinalShift(options.shift || getBoardShift());
+>>>>>>> 4f53fe0 (update)
     const shiftText = shiftLabel(shift);
     const statusEl = options.statusEl || getBoardStatusEl();
     if (!sheet) {
@@ -491,10 +547,14 @@
 
   window.shareBoardAsImage = async function (options = {}) {
     const sheet = options.sheet || getBoardSheet();
+<<<<<<< HEAD
     const shift =
       String(options.shift || getBoardShift()).toLowerCase() === "shift2"
         ? "shift2"
         : "shift1";
+=======
+    const shift = normalizeFinalShift(options.shift || getBoardShift());
+>>>>>>> 4f53fe0 (update)
     const shiftText = shiftLabel(shift);
     const statusEl = options.statusEl || getBoardStatusEl();
     if (!sheet) {
@@ -550,7 +610,11 @@
         return false;
       }
       if (statusEl) statusEl.textContent = tr("preparing_txt", "Готуємо TXT…");
+<<<<<<< HEAD
       downloadTextFile("pns-final-plan-shift1-shift2.txt", text);
+=======
+      downloadTextFile(`pns-final-plan-${activeFinalShifts().join("-")}.txt`, text);
+>>>>>>> 4f53fe0 (update)
       if (statusEl) statusEl.textContent = tr("txt_saved", "TXT збережено.");
       return true;
     } catch (err) {

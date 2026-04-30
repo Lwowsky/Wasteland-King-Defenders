@@ -58,7 +58,22 @@
   }
 
   function normalizeShift(shift) {
+<<<<<<< HEAD
     return String(shift || '').toLowerCase() === 'shift2' ? 'shift2' : 'shift1';
+=======
+    const raw = String(shift || '').toLowerCase().trim();
+    if (/^shift[1-4]$/.test(raw)) return raw;
+    const digit = raw.match(/(?:^|\D)([1-4])(?:$|\D)/);
+    return digit ? `shift${digit[1]}` : 'shift1';
+  }
+
+  function resolveCurrentShift(root, calcState) {
+    const modal = root || document.getElementById('towerCalcModal');
+    const btnValue = String(modal?.querySelector?.('[data-calc-tab].is-active, [data-calc-tab][aria-pressed="true"], [data-calc-tab].active')?.getAttribute?.('data-calc-tab') || '').toLowerCase();
+    if (/^shift[1-4]$/.test(btnValue)) return btnValue;
+    const calcValue = normalizeShift(calcState?.activeTab || state.activeShift || 'shift1');
+    return calcValue;
+>>>>>>> 4f53fe0 (update)
   }
 
   function getBaseSlots() {
@@ -150,6 +165,7 @@
       helpers: [],
       rule: {
         maxHelpers: Number(base?.maxHelpers || 29) || 29,
+<<<<<<< HEAD
         tierMinMarch: {
           T14: Number(base?.tierMinMarch?.T14 || 0) || 0,
           T13: Number(base?.tierMinMarch?.T13 || 0) || 0,
@@ -158,6 +174,9 @@
           T10: Number(base?.tierMinMarch?.T10 || 0) || 0,
           T9: Number(base?.tierMinMarch?.T9 || 0) || 0
         }
+=======
+        tierMinMarch: Object.fromEntries(['T14','T13','T12','T11','T10','T9','T8','T7','T6','T5','T4','T3','T2','T1'].map(tier => [tier, Number(base?.tierMinMarch?.[tier] || 0) || 0]))
+>>>>>>> 4f53fe0 (update)
       },
       captainMarch: 0,
       rallySize: 0,
@@ -172,6 +191,7 @@
         helperIds: [],
         role: base?.role || null,
         maxHelpers: Number(base?.maxHelpers || 29) || 29,
+<<<<<<< HEAD
         tierMinMarch: {
           T14: Number(base?.tierMinMarch?.T14 || 0) || 0,
           T13: Number(base?.tierMinMarch?.T13 || 0) || 0,
@@ -180,6 +200,9 @@
           T10: Number(base?.tierMinMarch?.T10 || 0) || 0,
           T9: Number(base?.tierMinMarch?.T9 || 0) || 0
         }
+=======
+        tierMinMarch: Object.fromEntries(['T14','T13','T12','T11','T10','T9','T8','T7','T6','T5','T4','T3','T2','T1'].map(tier => [tier, Number(base?.tierMinMarch?.[tier] || 0) || 0]))
+>>>>>>> 4f53fe0 (update)
       }
     };
   }
@@ -192,7 +215,11 @@
     const towerState = resolveInlineTowerState(base, shiftKey);
     const helpers = Array.isArray(towerState.helpers) ? towerState.helpers.slice() : [];
     const helperRoom = Math.max(0, Math.floor(Number(towerState.rallySize || 0) || 0));
+<<<<<<< HEAD
     const tierOrderLowToHigh = ['T9', 'T10', 'T11', 'T12', 'T13', 'T14'];
+=======
+    const tierOrderLowToHigh = ['T1','T2','T3','T4','T5','T6','T7','T8','T9', 'T10', 'T11', 'T12', 'T13', 'T14'];
+>>>>>>> 4f53fe0 (update)
     const assignedById = {};
     const helpersByTier = {};
     const explicitTierIndices = [];
@@ -324,7 +351,13 @@
     if (!root) return;
 
     const calcState = getCalcState();
+<<<<<<< HEAD
     const shiftKey = normalizeShift(calcState.activeTab || 'shift1');
+=======
+    const shiftKey = resolveCurrentShift(root, calcState);
+    calcState.activeTab = shiftKey;
+    state.activeShift = shiftKey;
+>>>>>>> 4f53fe0 (update)
     const listNode = root.querySelector('#towerCalcInlineList');
     const detailNode = root.querySelector('#towerCalcInlineDetail');
     if (!listNode || !detailNode) return;
@@ -394,10 +427,17 @@
     const captainOptionsHtml = captainCandidates.map(player => renderDetail('tpl-tower-picker-captain-option', {
       player_id: escapeHtml(player.id),
       selected_attr: captain && String(captain.id) === String(player.id) ? 'selected' : '',
+<<<<<<< HEAD
       label: `${escapeHtml(String(player.name || ''))} · ${escapeHtml(roleLabel(String(player.role || ''), false))} · ${escapeHtml(shiftLabel(String(player.shiftLabel || player.shift || '')))} · ${formatNumber(player.march || 0)}${player.captainReady ? ` · ${tr('captain_tag_short', 'КАП')}` : ''}`
     })).join('');
 
     const tierInputsHtml = ['T14', 'T13', 'T12', 'T11', 'T10', 'T9'].map(tier => renderDetail('tpl-tower-picker-tier-input', {
+=======
+      label: `${escapeHtml(String(player.name || ''))} · ${escapeHtml(roleLabel(String(player.role || ''), false))} · ${escapeHtml(shiftLabel(String(player.registeredShiftRaw || player.raw?.shift_availability || player.registeredShift || player.registeredShiftLabel || player.shiftLabel || player.shift || '')))} · ${formatNumber(player.march || 0)}${player.captainReady ? ` · ${tr('captain_tag_short', 'КАП')}` : ''}`
+    })).join('');
+
+    const tierInputsHtml = (typeof PNS.getVisibleTierOrder === 'function' ? PNS.getVisibleTierOrder() : ['T14', 'T13', 'T12', 'T11', 'T10', 'T9']).map(tier => renderDetail('tpl-tower-picker-tier-input', {
+>>>>>>> 4f53fe0 (update)
       tier,
       value: Number(rule?.tierMinMarch?.[tier] || 0) || 0
     })).join('');
@@ -438,7 +478,11 @@
       no_mix_checked: state.towerPickerNoMixTroops !== false ? 'checked' : '',
       no_mix_text: escapeHtml(tr('same_troop_only', 'Лише той самий тип військ')),
       use_both_checked: state.towerPickerNoCrossShiftDupes === true ? 'checked' : '',
+<<<<<<< HEAD
       use_both_text: escapeHtml(tr('use_both', 'Використовувати «Обидві»')),
+=======
+      use_both_text: escapeHtml(tr('use_both', 'Використовувати «Всі»')),
+>>>>>>> 4f53fe0 (update)
       captain_aria_label: escapeHtml(tr('choose_captain', 'Вибрати капітана…')),
       captain_placeholder_text: escapeHtml(captain ? tr('change_captain', 'Змінити капітана…') : tr('choose_captain', 'Вибрати капітана…')),
       captain_options_html: captainOptionsHtml,

@@ -14,6 +14,67 @@
   const A = wiz.sheetToRows;
   const x = wiz.parseCsvRows;
 
+<<<<<<< HEAD
+=======
+  function normalizeShiftForImport(value) {
+    try {
+      if (typeof e.normalizeShiftValue === 'function') return String(e.normalizeShiftValue(value) || '').toLowerCase();
+    } catch {}
+    const text = String(value || '').toLowerCase();
+    if (/(^|\D)4(\D|$)|4th|fourth|четвер|зміна\s*4|смена\s*4/.test(text)) return 'shift4';
+    if (/(^|\D)3(\D|$)|3rd|third|трет|зміна\s*3|смена\s*3/.test(text)) return 'shift3';
+    if (/(^|\D)2(\D|$)|2nd|second|втор|друг|зміна\s*2|смена\s*2/.test(text)) return 'shift2';
+    if (/(^|\D)1(\D|$)|1st|first|перв|перш|зміна\s*1|смена\s*1/.test(text)) return 'shift1';
+    return 'both';
+  }
+
+  function findShiftHeader(headers) {
+    const normalized = (headers || []).map((header) => String(header || '').toLowerCase());
+    let idx = normalized.findIndex((header) => /time of participation|время участия|час участі|участ|participation/.test(header));
+    if (idx >= 0) return headers[idx];
+    idx = normalized.findIndex((header) => /shift|зміна|смена/.test(header));
+    return idx >= 0 ? headers[idx] : '';
+  }
+
+  function detectMaxShiftFromRows(headers, rows) {
+    const shiftHeader = findShiftHeader(headers);
+    let maxShift = 0;
+    if (!shiftHeader) return 2;
+    (rows || []).forEach((row) => {
+      const normalized = normalizeShiftForImport(row?.[shiftHeader]);
+      const n = Number(String(normalized).replace('shift', '')) || 0;
+      if (n >= 1 && n <= 4) maxShift = Math.max(maxShift, n);
+    });
+    return Math.max(1, Math.min(4, maxShift || 2));
+  }
+
+  function syncRegionShiftDefaultsForNewImport(headers, rows) {
+    const count = detectMaxShiftFromRows(headers, rows);
+    const shifts = { '1': false, '2': false, '3': false, '4': false };
+    shifts[String(count)] = true;
+    const defaults = {
+      activeRegion: 'region1',
+      regions: {
+        region1: { enabled: true, shifts },
+        region2: { enabled: false, shifts: { '1': false, '2': true, '3': false, '4': false } },
+        region3: { enabled: false, shifts: { '1': false, '2': true, '3': false, '4': false } },
+      },
+    };
+    try { localStorage.removeItem('pns_import_region1_shift_manual_override_v1'); } catch {}
+    try { localStorage.setItem('pns_tower_calc_active_region_v1', 'region1'); } catch {}
+    try { localStorage.setItem('pns_import_region_shift_settings_v1', JSON.stringify(defaults)); } catch {}
+    try { e.importRegionShiftSettings = defaults; } catch {}
+    try { e.setImportRegionShiftSettings?.(defaults); } catch {}
+    try {
+      window.dispatchEvent(new CustomEvent('pns:region-shifts-changed', { detail: { region: 'region1', resetForNewImport: true } }));
+    } catch {}
+    try {
+      document.dispatchEvent(new CustomEvent('pns:region-shifts-changed', { detail: { region: 'region1', resetForNewImport: true } }));
+    } catch {}
+    return count;
+  }
+
+>>>>>>> 4f53fe0 (update)
   async function Y(ev) {
     const file = ev.target.files?.[0];
     if (!file) return;
@@ -41,7 +102,13 @@
       });
       if (!headers.length) throw new Error(r('headers_not_found', 'Не вдалося знайти заголовки колонок'));
       try { wiz._skipPlayerRestoreUntilApplied = !0; } catch {}
+<<<<<<< HEAD
       V(headers, rows, file.name, 'file');
+=======
+      try { syncRegionShiftDefaultsForNewImport(headers, rows); } catch {}
+      V(headers, rows, file.name, 'file');
+      try { syncRegionShiftDefaultsForNewImport(headers, rows); } catch {}
+>>>>>>> 4f53fe0 (update)
       C?.();
       k(
         r(
@@ -94,7 +161,13 @@
       })(url);
       if (!headers.length) throw new Error(r('headers_not_found', 'Не вдалося знайти заголовки колонок'));
       try { wiz._skipPlayerRestoreUntilApplied = !0; } catch {}
+<<<<<<< HEAD
       V(headers, rows, url, 'url');
+=======
+      try { syncRegionShiftDefaultsForNewImport(headers, rows); } catch {}
+      V(headers, rows, url, 'url');
+      try { syncRegionShiftDefaultsForNewImport(headers, rows); } catch {}
+>>>>>>> 4f53fe0 (update)
       k(
         r(
           'url_loaded_check_mapping',

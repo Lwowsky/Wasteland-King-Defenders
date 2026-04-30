@@ -8,10 +8,31 @@
   function normShift(v, fallback='shift1'){
     const raw = String(v ?? '').trim();
     const s = raw.toLowerCase();
+<<<<<<< HEAD
     if(s === 'both' || s === 'обидві' || s === 'обе' || s === 'обидва') return 'both';
     if(s === 'shift2' || s === '2' || /shift\s*2/.test(s) || /зміна\s*2/.test(s) || /смена\s*2/.test(s) || /second/.test(s) || /друга/.test(s) || /вторая/.test(s)) return 'shift2';
     if(s === 'shift1' || s === '1' || /shift\s*1/.test(s) || /зміна\s*1/.test(s) || /смена\s*1/.test(s) || /first/.test(s) || /перша/.test(s) || /первая/.test(s)) return 'shift1';
     return fallback === 'shift2' ? 'shift2' : fallback === 'both' ? 'both' : 'shift1';
+=======
+    if(!s){
+      return /^shift[1-4]$/.test(String(fallback || '').toLowerCase()) || String(fallback || '').toLowerCase() === 'both'
+        ? String(fallback).toLowerCase()
+        : 'shift1';
+    }
+    try{
+      if(typeof window.PNS?.normalizeShiftValue === 'function'){
+        const normalized = String(window.PNS.normalizeShiftValue(raw) || '').toLowerCase();
+        if(/^shift[1-4]$/.test(normalized) || normalized === 'both') return normalized;
+      }
+    }catch{}
+    if(s === 'both' || s === 'all' || s === 'any' || s === 'обидві' || s === 'обе' || s === 'обидва') return 'both';
+    if(s === 'shift4' || s === '4' || /shift\s*4/.test(s) || /4\s*shift/.test(s) || /зміна\s*4/.test(s) || /4\s*зміни?/.test(s) || /смена\s*4/.test(s) || /4\s*смен/.test(s) || /fourth|4th/.test(s) || /четверта|четвертый|четвертая/.test(s)) return 'shift4';
+    if(s === 'shift3' || s === '3' || /shift\s*3/.test(s) || /3\s*shift/.test(s) || /зміна\s*3/.test(s) || /3\s*зміни?/.test(s) || /смена\s*3/.test(s) || /3\s*смен/.test(s) || /third|3rd/.test(s) || /третя|третий|третья/.test(s)) return 'shift3';
+    if(s === 'shift2' || s === '2' || /shift\s*2/.test(s) || /2\s*shift/.test(s) || /зміна\s*2/.test(s) || /2\s*зміни?/.test(s) || /смена\s*2/.test(s) || /2\s*смен/.test(s) || /second|2nd/.test(s) || /друга|вторая/.test(s)) return 'shift2';
+    if(s === 'shift1' || s === '1' || /shift\s*1/.test(s) || /1\s*shift/.test(s) || /зміна\s*1/.test(s) || /1\s*зміна/.test(s) || /смена\s*1/.test(s) || /1\s*смен/.test(s) || /first|1st/.test(s) || /перша|первая/.test(s)) return 'shift1';
+    const fb = String(fallback || '').toLowerCase();
+    return /^shift[1-4]$/.test(fb) || fb === 'both' ? fb : 'shift1';
+>>>>>>> 4f53fe0 (update)
   }
   function tierRank(P, tier){
     try{ if(typeof P.tierRank==='function') return Number(P.tierRank(tier))||0; }catch{}
@@ -51,7 +72,11 @@
         : (v => normShift(v, targetShift));
 
       function getPlayerShift(player){
+<<<<<<< HEAD
         const raw = player?.registeredShift ?? player?.registeredShiftRaw ?? player?.registeredShiftLabel ?? player?.shift ?? player?.shiftLabel ?? '';
+=======
+        const raw = player?.registeredShiftRaw ?? player?.raw?.shift_availability ?? player?.registeredShift ?? player?.registeredShiftLabel ?? player?.shift ?? player?.shiftLabel ?? '';
+>>>>>>> 4f53fe0 (update)
         const normalized = String(normalizeShiftValue(raw) || '').toLowerCase();
         if(normalized === 'both') return 'both';
         return normShift(normalized || raw || targetShift, targetShift);

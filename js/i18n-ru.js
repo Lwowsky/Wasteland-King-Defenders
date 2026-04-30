@@ -51,7 +51,13 @@
   "captain": "Капитан",
   "shift1": "Смена 1",
   "shift2": "Смена 2",
+<<<<<<< HEAD
   "both": "Обе",
+=======
+  "shift3": "Смена 3",
+  "shift4": "Смена 4",
+  "both": "Все",
+>>>>>>> 4f53fe0 (update)
   "all": "Все",
   "first_half": "Первая половина",
   "second_half": "Вторая половина",
@@ -97,7 +103,11 @@
   "only_captains": "Только капитаны",
   "respect_player_shift": "Учитывать смену игрока",
   "same_troop_only": "Только тот же тип войск",
+<<<<<<< HEAD
   "use_both": "Использовать «Обе»",
+=======
+  "use_both": "Использовать «Все»",
+>>>>>>> 4f53fe0 (update)
   "type_defined_by_captain": "Тип турели определяется капитаном",
   "final_plan_share": "Поделиться",
   "export_png": "Скачать PNG",
@@ -147,6 +157,10 @@
   "captain_ready_import": "Готовность быть капитаном",
   "shift_availability_import": "Доступность по сменам",
   "secondary_role_import": "Тип резервных войск",
+<<<<<<< HEAD
+=======
+  "capture_other_region": "Захват другого региона",
+>>>>>>> 4f53fe0 (update)
   "secondary_tier_import": "Тир резервных войск",
   "troop_200k_import": "Тип резервных войск (200k+)",
   "reserve_type_fighter_import": "Резервный тип войск: боец",
@@ -171,7 +185,11 @@
   "turret_capacity": "Вместимость турели",
   "used_shortage": "Использовано / нехватка",
   "troop_type": "Тип войск",
+<<<<<<< HEAD
   "lair_level": "Уровень логова",
+=======
+  "lair_level": "Захват",
+>>>>>>> 4f53fe0 (update)
   "yes": "Да",
   "no": "Нет",
   "manual_save_enter_name": "Ручное сохранение: введи ник игрока",
@@ -226,9 +244,15 @@
   "save_visible_columns": "Сохранить видимые колонки",
   "optional_columns_title": "3. Дополнительные колонки",
   "optional_columns_note": "Уровень логова, резервный тип войск и любые твои собственные дополнительные поля.",
+<<<<<<< HEAD
   "visible_columns_title": "4. Какие данные показывать в таблице",
   "visible_columns_note": "Выбери, какие дополнительные колонки показывать в таблице игроков после нажатия «Показать все данные».",
   "reset_data_title": "5. Сброс данных",
+=======
+  "visible_columns_title": "5. Какие данные показывать в таблице",
+  "visible_columns_note": "Выбери, какие дополнительные колонки показывать в таблице игроков после нажатия «Показать все данные».",
+  "reset_data_title": "6. Сброс данных",
+>>>>>>> 4f53fe0 (update)
   "reset_data_note": "Осторожно: эти действия очищают сохранённые настройки или данные таблиц.",
   "reset_storage": "Полностью очистить LocalStorage",
   "reset_column_data": "Сбросить данные колонок",
@@ -240,7 +264,11 @@
   "always_on": "Всегда включено",
   "english_only": "Только английский",
   "english_plus_local": "Английский ✦ локальный",
+<<<<<<< HEAD
   "calc_modal_subtitle": "Здесь ты собираешь обе смены: распределяешь игроков по турелям, проверяешь резерв и готовишь финальный план.",
+=======
+  "calc_modal_subtitle": "Здесь ты собираешь все смены: распределяешь игроков по турелям, проверяешь резерв и готовишь финальный план.",
+>>>>>>> 4f53fe0 (update)
   "calculate": "Посчитать",
   "prepare_limits_for_turrets": "Подготовить лимиты для турелей",
   "auto_fill_turrets": "Автоматически заполнить турели",
@@ -253,7 +281,11 @@
   "empty_only": "Только пустые",
   "rebalance_all": "Перераспределить всё",
   "advanced": "Дополнительно",
+<<<<<<< HEAD
   "auto_balance_both": "Автобаланс игроков «Обе»",
+=======
+  "auto_balance_both": "Автобаланс игроков «Все»",
+>>>>>>> 4f53fe0 (update)
   "min_players_per_turret": "Минимум игроков на турель",
   "quantity": "Количество",
   "auto_tier_limit": "Авто-лимит тира",
@@ -333,7 +365,11 @@
   "board_copied_image": "PNG план скопирован в буфер",
   "board_shared": "План опубликован",
   "both_ignored_in_shifts": "сейчас не учитываются в сменах 1 и 2",
+<<<<<<< HEAD
   "both_not_counted": "Группа «Обе» сейчас не учитывается",
+=======
+  "both_not_counted": "Группа «Все» сейчас не учитывается",
+>>>>>>> 4f53fe0 (update)
   "by_word": "на",
   "capacity_by_troop": "Вместимость по типу войск (от капитанов)",
   "captain_not_found": "Капитан не найден",
@@ -389,7 +425,11 @@
   "place_captain_first": "Сначала поставь капитана в турель",
   "player_march_total": "Марш игроков",
   "player_or_turret_not_found": "Игрок или турель не найдены.",
+<<<<<<< HEAD
   "player_status_subtitle_both": "Здесь видны все игроки из группы «Обе»: кто уже стоит в турелях, кто вне турелей и кто вручную отправлен в резерв.",
+=======
+  "player_status_subtitle_both": "Здесь видны все игроки из группы «Все»: кто уже стоит в турелях, кто вне турелей и кто вручную отправлен в резерв.",
+>>>>>>> 4f53fe0 (update)
   "players_needed_placed": "Игроки (нужно / поставлено)",
   "players_word": "игроков",
   "png_export_offline": "Экспорт PNG недоступен в offline-пакете без локальной библиотеки html2canvas.",
@@ -403,7 +443,11 @@
   "remove_action": "Убрать",
   "reserve_and_outside": "Резерв и игроки вне турелей",
   "reserve_manual_hint": "Игроки, которых вручную отправили в резерв смены 1/2",
+<<<<<<< HEAD
   "reset_both_before_apply": "Сбросить текущее распределение в «Обе» перед применением",
+=======
+  "reset_both_before_apply": "Сбросить текущее распределение в «Все» перед применением",
+>>>>>>> 4f53fe0 (update)
   "reset_limits_tiers": "Сбросить лимиты (T14–T9 → 0)",
   "return_action": "Вернуть",
   "role_tier": "Роль / Тир",
@@ -440,7 +484,11 @@
   "without_limits": "без ограничений",
   "board_title_shift2": "Смена 2 / Вторая половина",
   "board_title_shift1": "Смена 1 / Первая половина",
+<<<<<<< HEAD
   "plan_without_both": "Планировать смены 1/2 без группы «Обе»",
+=======
+  "plan_without_both": "Планировать смены 1/2 без группы «Все»",
+>>>>>>> 4f53fe0 (update)
   "cannot_be_assigned_to": "не может быть назначен в турель типа",
   "choose_file": "Выбрать файл",
   "reset_localstorage_title": "Полностью сбросить LocalStorage?",
@@ -490,7 +538,11 @@
   "shift_limits_note": "Лимиты смен: Смена 1 — {shift1}, Смена 2 — {shift2} (макс. 100).",
   "shifts_updated_status": "Обновлены shifts: +{added1} в Shift 1, +{added2} в Shift 2. Сейчас {shift1}/{shift2}/{both}.{warn}",
   "shifts_updated_warn_suffix": " Не хватило места по лимиту: S1 {shift1}, S2 {shift2}.",
+<<<<<<< HEAD
   "shifts_restored_status": "Shifts восстановлены из импорта. Shift 1: {shift1}, Shift 2: {shift2}, Both: {both}{unknown}.",
+=======
+  "shifts_restored_status": "Shifts восстановлены из импорта. Shift 1: {shift1}, Shift 2: {shift2}, All: {both}{unknown}.",
+>>>>>>> 4f53fe0 (update)
   "shifts_restored_unknown_suffix": ", Неизвестно: {count}",
   "shift_limits_updated_status": "Обновлены лимиты смен: Смена 1 — {shift1}, Смена 2 — {shift2}.",
   "reset_columns_title": "Сбросить данные колонок?",
@@ -633,7 +685,11 @@
       "turrets": {
         "eyebrow": "3. Турели",
         "title": "Начинай с капитанов, а правила автозаполнения настраивай уже после этого",
+<<<<<<< HEAD
         "lead": "Здесь ты готовишь обе смены, выставляешь капитанов, задаёшь лимиты и запускаешь автозаполнение. Старой числовой настройки больше нет: теперь основной переключатель — «Заполнение турели».",
+=======
+        "lead": "Здесь ты готовишь все смены, выставляешь капитанов, задаёшь лимиты и запускаешь автозаполнение. Старой числовой настройки больше нет: теперь основной переключатель — «Заполнение турели».",
+>>>>>>> 4f53fe0 (update)
         "sequenceTitle": "Рекомендуемый порядок",
         "sequence": [
           "Сначала открой «Настройки турелей» и поставь капитанов во все нужные турели. Тип турели определяется капитаном, поэтому без этого автозаполнение будет неточным.",
@@ -681,7 +737,11 @@
         "lead": "Здесь ты уже не настраиваешь логику, а проверяешь готовый результат по смене: кто где стоит, сколько марша набрано и что можно показать другим офицерам или отправить в чат.",
         "steps": [
           {
+<<<<<<< HEAD
             "title": "Проверь обе смены отдельно",
+=======
+            "title": "Проверь все смены отдельно",
+>>>>>>> 4f53fe0 (update)
             "purpose": "Чтобы не пропустить перекос между Shift 1 и Shift 2",
             "copy": "Финальный план показывает каждую смену отдельно. Переключись между ними и убедись, что турели закрыты так, как ты задумал."
           },
@@ -753,7 +813,11 @@
   "notes": "Заметки",
   "clear_helpers": "Очистить помощников",
   "manual_shift_add_title": "Для чего нужны дополнительные места",
+<<<<<<< HEAD
   "manual_shift_add_help": "Эти поля используются, если для смены «Обе» нужно вручную добавить места в смену 1 или 2.",
+=======
+  "manual_shift_add_help": "Эти поля используются, если для смены «Все» нужно вручную добавить места в смену 1 или 2.",
+>>>>>>> 4f53fe0 (update)
   "base_north": "Северная турель",
   "base_west": "Западная турель",
   "base_east": "Восточная турель",
@@ -839,6 +903,73 @@
   "duplicate_nicks_found": "Найдены повторяющиеся ники",
   "duplicate_nicks_hint": "Такие игроки подсвечены в таблице. В пределах одной смены сайт больше не даст назначить одинаковый ник дважды.",
   "duplicate_nick_in_shift_error": "Этот ник уже используется в этой смене",
+<<<<<<< HEAD
   "turrets_panel": "Турели"
+=======
+  "turrets_panel": "Турели",
+  "import_region_1": "Дом",
+  "import_region_2": "Регион 1",
+  "import_region_3": "Регион 2",
+  "capture_region_1": "Захват региона 1",
+  "capture_region_2": "Захват региона 2",
+  "capture_region": "Захват региона",
+  "import_regions_kicker": "Регионы",
+  "import_regions_title": "Захват регионов",
+  "import_regions_desc": "Выбери регион и включи нужный переключатель для 1, 2, 3 или 4 смен.",
+  "import_region_always_on": "Всегда включено",
+  "import_region_enabled_text": "Включено",
+  "import_region_disabled_text": "Выключено",
+  "import_1_shift": "1 смена",
+  "import_2_shifts": "2 смены",
+  "import_3_shifts": "3 смены",
+  "import_4_shifts": "4 смены",
+  "add_player_menu": "Добавить игрока",
+  "manual_player_manager_subtitle": "Добавь нового игрока, найди существующего, отредактируй или удали его из списка.",
+  "manual_player_new_title": "Новый игрок",
+  "manual_player_persist_note": "Сохраняется после обновления страницы. При новом импорте Excel ручные игроки очищаются.",
+  "manual_player_new_button": "Новый",
+  "manual_player_extra_columns": "Дополнительные колонки",
+  "manual_player_add_column": "Добавить колонку",
+  "manual_player_no_extra_columns": "Дополнительных колонок пока нет.",
+  "manual_player_name_required": "Введи ник игрока.",
+  "manual_player_delete_confirm": "Удалить игрока?",
+  "manual_player_deleted": "Игрок удалён.",
+  "manual_player_manual_badge": "Ручной",
+  "manual_player_import_badge": "Импорт",
+  "manual_player_empty": "Игроки не найдены.",
+  "manual_player_column_name_required": "Введи название колонки.",
+  "manual_player_column_added": "Колонка добавлена.",
+  "delete_player": "Удалить",
+  "manual_player_extra_columns_hint": "Добавь свои поля для этого игрока или удали лишние колонки.",
+  "manual_player_new_column_label": "Новая колонка",
+  "manual_player_column_name_placeholder": "Название колонки",
+  "manual_player_remove_column": "Удалить колонку",
+  "manual_player_remove_column_confirm": "Удалить колонку?",
+  "manual_player_column_removed": "Колонка удалена.",
+  "saved": "Сохранено",
+  "manual_player_search_placeholder": "Поиск по нику / альянсу",
+  "shift_recognition_title": "4. Распознавание смен",
+  "shift_recognition_note": "Проверь найденные ответы из Excel и при необходимости объедини смены перед импортом.",
+  "shift_recognition_auto": "Авто-распознать",
+  "shift_recognition_reset": "Сбросить правила",
+  "shift_recognition_merge_mode": "Объединение смен",
+  "shift_merge_separate": "Не объединять",
+  "shift_merge_pair_12_34": "1+2 и 3+4",
+  "shift_merge_all_to_1": "Все в 1 смену",
+  "shift_merge_custom": "Своё объединение",
+  "shift_recognition_empty": "Выбери колонку смены в обязательных колонках, и здесь появится проверка.",
+  "shift_recognition_value": "Значение из Excel",
+  "shift_recognition_detected": "Распознано как",
+  "shift_recognition_after_merge": "После объединения",
+  "shift_recognition_count": "Строк",
+  "shift_recognition_summary_empty": "Правила ещё не применены.",
+  "shift_recognition_save": "Сохранить правила",
+  "shift_recognition_ignore": "Игнорировать",
+  "shift_recognition_summary": "Найдено значений: {count}",
+  "shift_recognition_all": "Все",
+  "tier_visibility_title": "Дополнительные тиры",
+  "tier_visibility_note": "Добавь T1–T8 и включи тиры, которые нужно показывать в лимитах турелей.",
+  "tier_visibility_add": "Добавить тир"
+>>>>>>> 4f53fe0 (update)
 };
 })();

@@ -51,7 +51,13 @@
   "captain": "Капітан",
   "shift1": "Зміна 1",
   "shift2": "Зміна 2",
+<<<<<<< HEAD
   "both": "Обидві",
+=======
+  "shift3": "Зміна 3",
+  "shift4": "Зміна 4",
+  "both": "Всі",
+>>>>>>> 4f53fe0 (update)
   "all": "Усі",
   "first_half": "Перша половина",
   "second_half": "Друга половина",
@@ -97,7 +103,11 @@
   "only_captains": "Тільки капітани",
   "respect_player_shift": "Враховувати зміну гравця",
   "same_troop_only": "Лише той самий тип військ",
+<<<<<<< HEAD
   "use_both": "Використовувати «Обидві»",
+=======
+  "use_both": "Використовувати «Всі»",
+>>>>>>> 4f53fe0 (update)
   "type_defined_by_captain": "Тип турелі визначається капітаном",
   "final_plan_share": "Поділитися",
   "export_png": "Завантажити PNG",
@@ -172,7 +182,12 @@
   "used_shortage": "Використано / нестача",
   "rally_captain_helper_space": "Ралі · Марш капітана · Місць для помічників",
   "troop_type": "Тип військ",
+<<<<<<< HEAD
   "lair_level": "Рівень лігва",
+=======
+  "lair_level": "Захоплення",
+  "capture_other_region": "Захоплення інакшого регіону",
+>>>>>>> 4f53fe0 (update)
   "yes": "Так",
   "no": "Ні",
   "manual_save_enter_name": "Ручне збереження: введи нік гравця",
@@ -225,10 +240,17 @@
   "save_template": "Зберегти шаблон",
   "save_visible_columns": "Зберегти видимі колонки",
   "optional_columns_title": "3. Додаткові колонки",
+<<<<<<< HEAD
   "optional_columns_note": "Рівень лігва, резервний тип військ і будь-які твої власні додаткові поля.",
   "visible_columns_title": "4. Які дані показувати в таблиці",
   "visible_columns_note": "Обери, які додаткові колонки бачити в таблиці гравців після натискання «Показати всі дані».",
   "reset_data_title": "5. Скидання даних",
+=======
+  "optional_columns_note": "Захоплення інакшого регіону, резервний тип військ і будь-які твої власні додаткові поля.",
+  "visible_columns_title": "5. Які дані показувати в таблиці",
+  "visible_columns_note": "Обери, які додаткові колонки бачити в таблиці гравців після натискання «Показати всі дані».",
+  "reset_data_title": "6. Скидання даних",
+>>>>>>> 4f53fe0 (update)
   "reset_data_note": "Обережно: ці дії очищають збережені налаштування або дані таблиць.",
   "reset_storage": "Повністю очистити LocalStorage",
   "reset_column_data": "Скинути дані колонок",
@@ -253,7 +275,11 @@
   "empty_only": "Лише порожні",
   "rebalance_all": "Перерозподілити все",
   "advanced": "Додатково",
+<<<<<<< HEAD
   "auto_balance_both": "Автобаланс гравців «Обидві»",
+=======
+  "auto_balance_both": "Автобаланс гравців «Всі»",
+>>>>>>> 4f53fe0 (update)
   "min_players_per_turret": "Мінімум гравців на турель",
   "quantity": "Кількість",
   "auto_tier_limit": "Авто-ліміт тіру",
@@ -333,7 +359,11 @@
   "board_copied_image": "PNG план скопійовано в буфер",
   "board_shared": "План поширено",
   "both_ignored_in_shifts": "зараз не враховуються в змінах 1 і 2",
+<<<<<<< HEAD
   "both_not_counted": "Група «Обидві» зараз не враховується",
+=======
+  "both_not_counted": "Група «Всі» зараз не враховується",
+>>>>>>> 4f53fe0 (update)
   "by_word": "на",
   "capacity_by_troop": "Місткість за типом військ (від капітанів)",
   "captain_not_found": "Капітана не знайдено",
@@ -389,7 +419,11 @@
   "place_captain_first": "Спочатку постав капітана в турель",
   "player_march_total": "Марш гравців",
   "player_or_turret_not_found": "Гравця або турель не знайдено.",
+<<<<<<< HEAD
   "player_status_subtitle_both": "Тут видно всіх гравців із групи «Обидві»: хто вже стоїть у турелях, хто поза турелями, і хто вручну відправлений у резерв.",
+=======
+  "player_status_subtitle_both": "Тут видно всіх гравців із групи «Всі»: хто вже стоїть у турелях, хто поза турелями, і хто вручну відправлений у резерв.",
+>>>>>>> 4f53fe0 (update)
   "players_needed_placed": "Гравці (потрібно / поставлено)",
   "players_word": "гравців",
   "png_export_offline": "Експорт PNG недоступний в offline-пакеті без локальної бібліотеки html2canvas.",
@@ -398,12 +432,20 @@
   "preparing_png": "Готуємо PNG",
   "preparing_share": "Готуємо поширення",
   "press_enter_or_choose": "Натисни Enter або вибери зі списку",
+<<<<<<< HEAD
   "preview_single_shift_note": "Показується тільки одна зміна, щоб план був зручнішим для перегляду.",
+=======
+  "preview_single_shift_note": "",
+>>>>>>> 4f53fe0 (update)
   "recommended_min_tier": "Рекомендований мінімум за тіром",
   "remove_action": "Прибрати",
   "reserve_and_outside": "Резерв і гравці поза турелями",
   "reserve_manual_hint": "Гравці, яких вручну відправили в резерв зміни 1/2",
+<<<<<<< HEAD
   "reset_both_before_apply": "Скинути поточний розподіл в «Обидві» перед застосуванням",
+=======
+  "reset_both_before_apply": "Скинути поточний розподіл в «Всі» перед застосуванням",
+>>>>>>> 4f53fe0 (update)
   "reset_limits_tiers": "Скинути ліміти (T14–T9 → 0)",
   "return_action": "Повернути",
   "role_tier": "Роль / Тір",
@@ -440,7 +482,11 @@
   "without_limits": "без обмежень",
   "board_title_shift2": "Зміна 2 / Друга половина",
   "board_title_shift1": "Зміна 1 / Перша половина",
+<<<<<<< HEAD
   "plan_without_both": "Планувати зміни 1/2 без групи «Обидві»",
+=======
+  "plan_without_both": "Планувати зміни 1/2 без групи «Всі»",
+>>>>>>> 4f53fe0 (update)
   "clear_base": "Очистити турель",
   "captain_option_placeholder": "— капітан —",
   "players_placeholder": "Гравці",
@@ -520,7 +566,11 @@
   "shift_limits_note": "Ліміти змін: Зміна 1 — {shift1}, Зміна 2 — {shift2} (макс. 100).",
   "shifts_updated_status": "Оновлено shifts: +{added1} у Shift 1, +{added2} у Shift 2. Зараз {shift1}/{shift2}/{both}.{warn}",
   "shifts_updated_warn_suffix": " Не вистачило місця по ліміту: S1 {shift1}, S2 {shift2}.",
+<<<<<<< HEAD
   "shifts_restored_status": "Shifts відновлено з імпорту. Shift 1: {shift1}, Shift 2: {shift2}, Both: {both}{unknown}.",
+=======
+  "shifts_restored_status": "Shifts відновлено з імпорту. Shift 1: {shift1}, Shift 2: {shift2}, All: {both}{unknown}.",
+>>>>>>> 4f53fe0 (update)
   "shifts_restored_unknown_suffix": ", Невідомо: {count}",
   "shift_limits_updated_status": "Оновлено ліміти змін: Зміна 1 — {shift1}, Зміна 2 — {shift2}.",
   "reset_columns_title": "Скинути дані колонок?",
@@ -633,7 +683,11 @@
       "turrets": {
         "eyebrow": "3. Турелі",
         "title": "Починай з капітанів, а правила автозаповнення виставляй уже після цього",
+<<<<<<< HEAD
         "lead": "У цьому блоці ти готуєш обидві зміни, виставляєш капітанів, налаштовуєш ліміти й запускаєш автозаповнення. Нова логіка замість старого числа працює через режим «Заповнення турелі».",
+=======
+        "lead": "У цьому блоці ти готуєш всі зміни, виставляєш капітанів, налаштовуєш ліміти й запускаєш автозаповнення. Нова логіка замість старого числа працює через режим «Заповнення турелі».",
+>>>>>>> 4f53fe0 (update)
         "sequenceTitle": "Рекомендований порядок роботи",
         "sequence": [
           "Спочатку відкрий «Налаштування турелей» і постав капітанів у всі потрібні турелі. Тип турелі визначається капітаном, тому без цього автозаповнення буде неточним.",
@@ -681,7 +735,11 @@
         "lead": "Тут ти вже не налаштовуєш логіку, а перевіряєш готовий результат для зміни: хто де стоїть, скільки маршу набрано і що можна показувати іншим офіцерам або кидати в чат.",
         "steps": [
           {
+<<<<<<< HEAD
             "title": "Перевір обидві зміни окремо",
+=======
+            "title": "Перевір всі зміни окремо",
+>>>>>>> 4f53fe0 (update)
             "purpose": "Щоб не пропустити перекіс між Shift 1 і Shift 2",
             "copy": "Фінальний план показує розклад окремо по змінах. Перемкнися між ними і подивись, чи турелі закриті так, як ти планував."
           },
@@ -753,7 +811,11 @@
   "notes": "Нотатки",
   "clear_helpers": "Очистити помічників",
   "manual_shift_add_title": "Для чого потрібні додаткові місця",
+<<<<<<< HEAD
   "manual_shift_add_help": "Ці поля використовуються, якщо для зміни «Обидві» потрібно вручну додати місця до зміни 1 або 2.",
+=======
+  "manual_shift_add_help": "Ці поля використовуються, якщо для зміни «Всі» потрібно вручну додати місця до зміни 1 або 2.",
+>>>>>>> 4f53fe0 (update)
   "base_north": "Північна турель",
   "base_west": "Західна турель",
   "base_east": "Східна турель",
@@ -839,7 +901,67 @@
   "duplicate_nicks_found": "Знайдено повторювані ніки",
   "duplicate_nicks_hint": "Такі гравці підсвічені в таблиці. У межах однієї зміни сайт більше не дає призначити однаковий нік двічі.",
   "duplicate_nick_in_shift_error": "Цей нік уже використано в цій зміні",
+<<<<<<< HEAD
   "turrets_panel": "Турелі"
+=======
+  "import_region_1": "Дім",
+  "import_region_2": "Регіон 1",
+  "import_region_3": "Регіон 2",
+  "capture_region_1": "Захоплення регіону 1",
+  "capture_region_2": "Захоплення регіону 2",
+  "turrets_panel": "Турелі",
+  "capture_region": "Захоплення регіону",
+  "import_regions_kicker": "Регіони",
+  "import_regions_title": "Захоплення регіонів",
+  "import_regions_desc": "Вибери регіон і увімкни потрібний тумблер для 1, 2, 3 або 4 змін.",
+  "import_region_always_on": "Завжди включено",
+  "import_region_enabled_text": "Включено",
+  "import_region_disabled_text": "Виключено",
+  "import_1_shift": "1 зміна",
+  "import_2_shifts": "2 зміни",
+  "import_3_shifts": "3 зміни",
+  "import_4_shifts": "4 зміни",
+  "add_player_menu": "Добавити гравця",
+  "manual_player_manager_subtitle": "Додай нового гравця, знайди існуючого, відредагуй або видали його зі списку.",
+  "manual_player_new_title": "Новий гравець",
+  "manual_player_persist_note": "Збережеться після оновлення сторінки. При новому імпорті Excel ручні гравці очищаються.",
+  "manual_player_new_button": "Новий",
+  "manual_player_extra_columns": "Додаткові колонки",
+  "manual_player_add_column": "Додати колонку",
+  "manual_player_no_extra_columns": "Додаткових колонок ще немає.",
+  "manual_player_name_required": "Введи нік гравця.",
+  "manual_player_delete_confirm": "Видалити гравця?",
+  "manual_player_deleted": "Гравця видалено.",
+  "manual_player_manual_badge": "Ручний",
+  "manual_player_import_badge": "Імпорт",
+  "manual_player_empty": "Гравців не знайдено.",
+  "manual_player_column_name_required": "Введи назву колонки.",
+  "manual_player_column_added": "Колонку додано.",
+  "delete_player": "Видалити",
+  "manual_player_search_placeholder": "Пошук по ніку / альянсу",
+  "shift_recognition_title": "4. Розпізнавання змін",
+  "shift_recognition_note": "Перевір знайдені відповіді з Excel і за потреби об’єднай зміни перед імпортом.",
+  "shift_recognition_auto": "Авто-розпізнати",
+  "shift_recognition_reset": "Скинути правила",
+  "shift_recognition_merge_mode": "Об’єднання змін",
+  "shift_merge_separate": "Не об’єднувати",
+  "shift_merge_pair_12_34": "1+2 і 3+4",
+  "shift_merge_all_to_1": "Усі в 1 зміну",
+  "shift_merge_custom": "Власне об’єднання",
+  "shift_recognition_empty": "Вибери колонку зміни в обов’язкових колонках, і тут з’явиться перевірка.",
+  "shift_recognition_value": "Значення з Excel",
+  "shift_recognition_detected": "Розпізнано як",
+  "shift_recognition_after_merge": "Після об’єднання",
+  "shift_recognition_count": "Рядків",
+  "shift_recognition_summary_empty": "Правила ще не застосовані.",
+  "shift_recognition_save": "Зберегти правила",
+  "shift_recognition_ignore": "Ігнорувати",
+  "shift_recognition_summary": "Знайдено значень: {count}",
+  "shift_recognition_all": "Всі",
+  "tier_visibility_title": "Додаткові тіри",
+  "tier_visibility_note": "Додай T1–T8 і увімкни тіри, які треба показати в лімітах турелей.",
+  "tier_visibility_add": "Додати тір"
+>>>>>>> 4f53fe0 (update)
 };
   try { root.ua = JSON.parse(JSON.stringify(root.uk)); } catch (e) { root.ua = Object.assign({}, root.uk); }
   root.ua.lang_name = root.ua.lang_name || "Українська";

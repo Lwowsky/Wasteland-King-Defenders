@@ -7,6 +7,10 @@
   const wiz = (e.ImportWizard = e.ImportWizard || {});
   const r = wiz.translate || ((e, t = "") => t || e);
   const d = "pns_layout_import_custom_defs_v3";
+<<<<<<< HEAD
+=======
+  const hiddenKey = "pns_layout_import_custom_defs_hidden_v1";
+>>>>>>> 4f53fe0 (update)
   const translatedBuiltinLabel = (key, fallback) => r(key, fallback);
   const u = [
       {
@@ -82,6 +86,42 @@
   function m() {
     return f(u);
   }
+<<<<<<< HEAD
+=======
+  function readHiddenKeys() {
+    try {
+      const raw = localStorage.getItem(hiddenKey);
+      const list = raw ? JSON.parse(raw) : [];
+      return new Set((Array.isArray(list) ? list : []).map((item) => String(item || "")).filter(Boolean));
+    } catch {
+      return new Set();
+    }
+  }
+  function persistHiddenKeys(set) {
+    try {
+      localStorage.setItem(hiddenKey, JSON.stringify(Array.from(set || []).filter(Boolean)));
+    } catch {}
+  }
+  function hideCustomOptionalDef(key) {
+    const k = String(key || "").trim();
+    if (!k) return g();
+    const hidden = readHiddenKeys();
+    hidden.add(k);
+    persistHiddenKeys(hidden);
+    try {
+      t.importData = t.importData || { headers: [], rows: [], mapping: {}, loaded: !1 };
+      t.importData.customOptionalDefs = f((t.importData.customOptionalDefs || y()).filter((item) => item.key !== k));
+    } catch {}
+    return g();
+  }
+  function restoreCustomOptionalDef(key) {
+    const k = String(key || "").trim();
+    if (!k) return;
+    const hidden = readHiddenKeys();
+    hidden.delete(k);
+    persistHiddenKeys(hidden);
+  }
+>>>>>>> 4f53fe0 (update)
   function y() {
     try {
       const e = localStorage.getItem(d),
@@ -93,7 +133,11 @@
             !String(e.key || "").trim() ||
             a.set(String(e.key), { ...(a.get(String(e.key)) || {}), ...e });
         }),
+<<<<<<< HEAD
         f(Array.from(a.values()))
+=======
+        f(Array.from(a.values()).filter((item) => !readHiddenKeys().has(String(item?.key || ""))))
+>>>>>>> 4f53fe0 (update)
       );
     } catch {
       return m();
@@ -139,6 +183,12 @@
     persistCustomOptionalDefs: _,
     getCustomOptionalDefs: g,
     ensureCustomOptionalDefs: b,
+<<<<<<< HEAD
+=======
+    readHiddenCustomOptionalDefs: readHiddenKeys,
+    hideCustomOptionalDef,
+    restoreCustomOptionalDef,
+>>>>>>> 4f53fe0 (update)
   });
   e.getCustomOptionalDefs = g;
 })();

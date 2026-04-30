@@ -1,0 +1,125 @@
+/* Import shift recognition review */
+.import-shift-review-panel .shift-review-shell{
+  display:grid;
+  gap:16px;
+}
+.shift-review-toolbar{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  align-items:end;
+  flex-wrap:wrap;
+  padding:16px;
+  border:1px solid rgba(126,150,210,.18);
+  border-radius:20px;
+  background:rgba(12,23,44,.62);
+}
+.shift-review-control{
+  display:grid;
+  gap:8px;
+  min-width:260px;
+  color:#c8d5f2;
+  font-weight:900;
+}
+.shift-review-control select,
+.shift-review-custom select,
+.shift-review-row-select{
+  min-height:50px;
+  border:1px solid rgba(126,150,210,.28);
+  border-radius:16px;
+  background:#071223;
+  color:#f3f7ff;
+  padding:0 14px;
+  font-weight:800;
+}
+.shift-review-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.shift-review-custom{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(150px,1fr));
+  gap:12px;
+  padding:14px;
+  border-radius:18px;
+  border:1px solid rgba(126,150,210,.16);
+  background:rgba(19,31,56,.55);
+}
+.shift-review-custom label{
+  display:grid;
+  gap:7px;
+  color:#c8d5f2;
+  font-weight:900;
+}
+.shift-review-status{
+  min-height:24px;
+}
+.shift-review-table-wrap{
+  overflow:auto;
+  border:1px solid rgba(126,150,210,.18);
+  border-radius:20px;
+  background:rgba(8,17,34,.58);
+}
+.shift-review-table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  min-width:860px;
+}
+.shift-review-table th{
+  position:sticky;
+  top:0;
+  z-index:1;
+  text-align:left;
+  padding:14px 16px;
+  font-size:13px;
+  letter-spacing:.02em;
+  color:#dce6ff;
+  background:#101a33;
+  border-bottom:1px solid rgba(126,150,210,.18);
+  text-transform:uppercase;
+}
+.shift-review-table td{
+  padding:12px 16px;
+  border-bottom:1px solid rgba(126,150,210,.12);
+  color:#f3f7ff;
+  vertical-align:middle;
+}
+.shift-review-table tr:last-child td{
+  border-bottom:0;
+}
+.shift-review-value{
+  max-width:560px;
+  white-space:normal;
+  color:#c8d5f2;
+  line-height:1.35;
+}
+.shift-review-after{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:36px;
+  min-width:96px;
+  padding:0 12px;
+  border-radius:999px;
+  background:rgba(82,104,197,.22);
+  color:#eaf0ff;
+  border:1px solid rgba(126,150,210,.25);
+  font-weight:900;
+}
+.shift-review-after.is-ignore{
+  background:rgba(150,45,65,.22);
+  color:#ffd3dc;
+  border-color:rgba(255,112,135,.32);
+}
+@media (max-width:900px){
+  .shift-review-toolbar{align-items:stretch}
+  .shift-review-control{width:100%}
+  .shift-review-actions{width:100%}
+  .shift-review-actions .btn{flex:1 1 auto}
+  .shift-review-custom{grid-template-columns:1fr 1fr}
+}
+@media (max-width:560px){
+  .shift-review-custom{grid-template-columns:1fr}
+}

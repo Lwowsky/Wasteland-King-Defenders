@@ -1,0 +1,49 @@
+<section class="panel subpanel import-shift-recognition-panel" id="importShiftRecognitionPanel">
+  <div class="mapping-section-head shift-recognition-head">
+    <div>
+      <h3 data-i18n="shift_recognition_title">4. Розпізнавання змін</h3>
+      <p class="mapping-section-note" data-i18n="shift_recognition_note">Перевір знайдені відповіді з Excel і за потреби об’єднай зміни перед імпортом.</p>
+    </div>
+  </div>
+  <div class="shift-recognition-toolbar">
+    <div class="shift-recognition-toolbar-row">
+      <label class="shift-recognition-mode">
+        <span data-i18n="shift_recognition_merge_mode">Об’єднання змін</span>
+        <select id="shiftRecognitionMergeMode">
+          <option value="custom" data-i18n="shift_merge_custom">Власне об’єднання</option>
+          <option value="pair12_34" data-i18n="shift_merge_pair_12_34">1+2 і 3+4</option>
+          <option value="all_to_1" data-i18n="shift_merge_all_to_1">Усі в 1 зміну</option>
+        </select>
+      </label>
+      <div class="shift-recognition-actions">
+        <button class="btn btn-sm btn-ghost" id="shiftRecognitionAutoBtn" type="button" data-i18n="shift_recognition_auto">Авто-розпізнати</button>
+        <button class="btn btn-sm btn-ghost" id="shiftRecognitionResetBtn" type="button" data-i18n="shift_recognition_reset">Скинути правила</button>
+      </div>
+    </div>
+    <div class="shift-recognition-custom" id="shiftRecognitionCustomMap" hidden>
+      <label><span data-i18n="shift1">Зміна 1</span><select data-shift-merge-source="shift1"></select></label>
+      <label><span data-i18n="shift2">Зміна 2</span><select data-shift-merge-source="shift2"></select></label>
+      <label><span data-i18n="shift3">Зміна 3</span><select data-shift-merge-source="shift3"></select></label>
+      <label><span data-i18n="shift4">Зміна 4</span><select data-shift-merge-source="shift4"></select></label>
+      <label><span data-i18n="shift_recognition_all">Всі</span><select data-shift-merge-source="both"></select></label>
+    </div>
+  </div>
+  <div class="shift-recognition-empty" id="shiftRecognitionEmpty" data-i18n="shift_recognition_empty">Вибери колонку зміни в обов’язкових колонках, і тут з’явиться перевірка.</div>
+  <div class="shift-recognition-table-wrap" id="shiftRecognitionTableWrap" hidden>
+    <table class="shift-recognition-table">
+      <thead>
+        <tr>
+          <th data-i18n="shift_recognition_value">Значення з Excel</th>
+          <th data-i18n="shift_recognition_detected">Розпізнано як</th>
+          <th data-i18n="shift_recognition_after_merge">Після об’єднання</th>
+          <th data-i18n="shift_recognition_count">Рядків</th>
+        </tr>
+      </thead>
+      <tbody id="shiftRecognitionRows"></tbody>
+    </table>
+  </div>
+  <div class="shift-recognition-footer">
+    <span class="muted small" id="shiftRecognitionSummary" data-i18n="shift_recognition_summary_empty">Правила ще не застосовані.</span>
+    <button class="btn btn-sm btn-primary" id="shiftRecognitionSaveBtn" type="button" data-i18n="shift_recognition_save">Зберегти правила</button>
+  </div>
+</section>
