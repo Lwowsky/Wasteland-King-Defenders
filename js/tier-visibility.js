@@ -107,6 +107,7 @@
     const select = document.getElementById('tierVisibilityAddSelect');
     const addBtn = document.getElementById('tierVisibilityAddBtn');
     if(!listHost || !select){ apply(); return; }
+    listHost.classList.add('tier-visibility-compact-ready');
 
     const list = read();
     const used = new Set(list.map(item => item.tier));
