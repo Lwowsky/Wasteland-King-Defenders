@@ -53,7 +53,7 @@
   "shift2": "Shift 2",
   "shift3": "Shift 3",
   "shift4": "Shift 4",
-  "both": "All",
+  "both": "Both",
   "all": "All",
   "first_half": "First half",
   "second_half": "Second half",
@@ -99,7 +99,7 @@
   "only_captains": "Captains only",
   "respect_player_shift": "Respect player shift",
   "same_troop_only": "Same troop type only",
-  "use_both": "Use “All”",
+  "use_both": "Use “Both”",
   "type_defined_by_captain": "Turret type is defined by the captain",
   "final_plan_share": "Share",
   "export_png": "Download PNG",
@@ -905,6 +905,11 @@
   "shift_recognition_all": "All",
   "tier_visibility_title": "Extra tiers",
   "tier_visibility_note": "Add T1–T8 and enable the tiers you want to show in turret limits.",
-  "tier_visibility_add": "Add tier"
+  "tier_visibility_add": "Add tier",
+  "both_dynamic_two": "Both",
+  "both_dynamic_many": "All",
+  "use_all": "Use “All”",
+  "use_both_dynamic_two": "Use “Both”",
+  "use_both_dynamic_many": "Use “All”"
 };
 })();

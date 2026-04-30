@@ -248,6 +248,7 @@
     }
 
     W({ preserveImportData: !0 });
+    try { e.autoEnableTiersFromPlayers?.(players, { mode:'import' }); } catch {}
     t.players = players;
     try { e.syncHomeShiftCountFromImportedPlayers?.(players); } catch {}
     try { t.importData = t.importData || {}; t.importData.sourcePending = !1; } catch {}
@@ -473,6 +474,7 @@
       }
     });
 
+    try { e.autoEnableTiersFromPlayers?.(merged, { mode:'import' }); } catch {}
     t.players = merged;
     t.playerById = new Map(merged.map((player) => [player.id, player]));
     try { t.importData = t.importData || {}; t.importData.sourcePending = !1; } catch {}

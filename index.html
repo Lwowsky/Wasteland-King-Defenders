@@ -26,6 +26,14 @@
   <link href="css/import-shift-recognition.css" rel="stylesheet" />
   <link href="css/tier-visibility.css" rel="stylesheet" />
   <link href="favicon.ico" rel="icon" type="image/x-icon" />
+<script>
+(function(){
+  try {
+    var mode = localStorage.getItem('pns_dynamic_both_label_mode_v1') || '';
+    if (mode) document.documentElement.dataset.bothLabelMode = mode;
+  } catch {}
+})();
+</script>
 </head>
 <body class="notranslate">
 <a id="top"></a>
@@ -1324,6 +1332,7 @@
 <script defer="" src="js/support-modal.js"></script>
 <script defer="" src="js/planner-shift-rules.js"></script>
 <script defer="" src="js/shift-normalizers.js"></script>
+<script defer="" src="js/dynamic-both-label.js"></script>
 <script defer="" src="js/region-capture-eligibility.js"></script>
 <script defer="" src="js/players-dom-sync.js"></script>
 <script defer="" src="js/shift-balance-core.js"></script>
@@ -1349,6 +1358,7 @@
 <script defer="" src="js/import-mapping-state.js"></script>
 <script defer="" src="js/import-mapping-render.js"></script>
 <script defer="" src="js/import-shift-recognition.js"></script>
+<script defer="" src="js/tier-defaults.js"></script>
 <script defer="" src="js/tier-visibility.js"></script>
 <script defer="" src="js/import-template-presets.js"></script>
 <script defer="" src="js/import-source-state.js"></script>

@@ -51,7 +51,7 @@
   "captain": "キャプテン",
   "shift1": "シフト 1",
   "shift2": "シフト 2",
-  "both": "すべて",
+  "both": "両方",
   "all": "すべて",
   "first_half": "前半",
   "second_half": "後半",
@@ -97,7 +97,7 @@
   "only_captains": "キャプテンのみ",
   "respect_player_shift": "プレイヤーのシフトを尊重",
   "same_troop_only": "同じ兵種のみ",
-  "use_both": "「すべて」を使用",
+  "use_both": "「両方」を使う",
   "type_defined_by_captain": "タレットのタイプはキャプテンで決まります",
   "final_plan_share": "共有",
   "export_png": "PNG をダウンロード",
@@ -905,6 +905,11 @@
   "shift_recognition_all": "すべて",
   "tier_visibility_title": "追加ティア",
   "tier_visibility_note": "T1〜T8 を追加し、タレット上限に表示するティアを有効にします。",
-  "tier_visibility_add": "ティアを追加"
+  "tier_visibility_add": "ティアを追加",
+  "both_dynamic_two": "両方",
+  "both_dynamic_many": "すべて",
+  "use_all": "「すべて」を使う",
+  "use_both_dynamic_two": "「両方」を使う",
+  "use_both_dynamic_many": "「すべて」を使う"
 };
 })();

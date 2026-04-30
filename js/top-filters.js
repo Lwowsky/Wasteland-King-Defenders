@@ -105,10 +105,9 @@
   function shiftOptionLabel(key) {
     if (key === 'all') return typeof PNS.t === 'function' ? PNS.t('all', 'Усі') : 'Усі';
     if (key === 'both') {
-      const label = typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel('both') : '';
-      return label && label !== 'both'
-        ? label
-        : (typeof PNS.t === 'function' ? PNS.t('both', 'Всі') : 'Всі');
+      return typeof PNS.getBothDisplayLabel === 'function'
+        ? PNS.getBothDisplayLabel()
+        : (typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel('both') : (typeof PNS.t === 'function' ? PNS.t('both', 'Обидві') : 'Обидві'));
     }
     const label = typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(key) : '';
     if (label && label !== key) return label;

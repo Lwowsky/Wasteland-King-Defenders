@@ -116,6 +116,7 @@
       else state.players.push(player);
     }
     state.playerById = new Map(state.players.map(p => [String(p.id || ''), p]));
+    try { PNS.autoEnableTiersFromPlayers?.(list, { mode:'append' }); } catch {}
   }
 
   function saveManualFromState(){
@@ -342,6 +343,7 @@
       state.players.push(player);
     }
     state.playerById = new Map(state.players.map(p => [String(p.id || ''), p]));
+    try { PNS.enableTierVisibilityForTier?.(player.tier); } catch {}
     activeId = player.id;
     persistAll();
     renderList();

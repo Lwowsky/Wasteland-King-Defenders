@@ -50,7 +50,7 @@
   "captain": "Đội trưởng",
   "shift1": "Ca 1",
   "shift2": "Ca 2",
-  "both": "Tất cả",
+  "both": "Cả hai",
   "all": "Tất cả",
   "first_half": "Nửa đầu",
   "second_half": "Nửa sau",
@@ -96,7 +96,7 @@
   "only_captains": "Chỉ đội trưởng",
   "respect_player_shift": "Tôn trọng ca của người chơi",
   "same_troop_only": "Chỉ cùng loại quân",
-  "use_both": "Dùng “Tất cả”",
+  "use_both": "Dùng “Cả hai”",
   "type_defined_by_captain": "Loại tháp pháo được xác định bởi đội trưởng",
   "final_plan_share": "Chia sẻ",
   "export_png": "Tải PNG",
@@ -903,6 +903,11 @@
   "shift_recognition_all": "Tất cả",
   "tier_visibility_title": "Bậc bổ sung",
   "tier_visibility_note": "Thêm T1–T8 và bật các bậc cần hiển thị trong giới hạn tháp pháo.",
-  "tier_visibility_add": "Thêm bậc"
+  "tier_visibility_add": "Thêm bậc",
+  "both_dynamic_two": "Cả hai",
+  "both_dynamic_many": "Tất cả",
+  "use_all": "Dùng “Tất cả”",
+  "use_both_dynamic_two": "Dùng “Cả hai”",
+  "use_both_dynamic_many": "Dùng “Tất cả”"
   });
 })();

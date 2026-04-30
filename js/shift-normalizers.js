@@ -167,12 +167,12 @@
   function normalizeShiftLabel(value){
     const normalized = normalizeShiftValue(value);
     if (typeof e.shiftLabel === 'function') return e.shiftLabel(normalized);
-    return normalized === 'shift1' ? 'Зміна 1' : normalized === 'shift2' ? 'Зміна 2' : normalized === 'shift3' ? 'Зміна 3' : normalized === 'shift4' ? 'Зміна 4' : 'Всі';
+    return normalized === 'shift1' ? 'Зміна 1' : normalized === 'shift2' ? 'Зміна 2' : normalized === 'shift3' ? 'Зміна 3' : normalized === 'shift4' ? 'Зміна 4' : (typeof e.getBothDisplayLabel === 'function' ? e.getBothDisplayLabel() : 'Обидві');
   }
 
   function formatShiftLabelForCell(value){
     if (typeof e.shiftLabel === 'function') return e.shiftLabel(value);
-    return value === 'shift1' ? 'Зміна 1' : value === 'shift2' ? 'Зміна 2' : value === 'shift3' ? 'Зміна 3' : value === 'shift4' ? 'Зміна 4' : 'Всі';
+    return value === 'shift1' ? 'Зміна 1' : value === 'shift2' ? 'Зміна 2' : value === 'shift3' ? 'Зміна 3' : value === 'shift4' ? 'Зміна 4' : (typeof e.getBothDisplayLabel === 'function' ? e.getBothDisplayLabel() : 'Обидві');
   }
 
   function getRegisteredShiftForPlayer(player){

@@ -49,7 +49,7 @@
   "captain": "队长",
   "shift1": "班次 1",
   "shift2": "班次 2",
-  "both": "全部",
+  "both": "两者",
   "all": "全部",
   "first_half": "上半场",
   "second_half": "下半场",
@@ -95,7 +95,7 @@
   "only_captains": "仅队长",
   "respect_player_shift": "遵循玩家班次",
   "same_troop_only": "仅相同兵种",
-  "use_both": "使用“全部”",
+  "use_both": "使用“两者”",
   "type_defined_by_captain": "炮塔类型由队长决定",
   "final_plan_share": "分享",
   "export_png": "下载 PNG",
@@ -907,7 +907,12 @@
   "shift_recognition_all": "全部",
   "tier_visibility_title": "额外等级",
   "tier_visibility_note": "添加 T1–T8，并启用要在炮塔限制中显示的等级。",
-  "tier_visibility_add": "添加等级"
+  "tier_visibility_add": "添加等级",
+  "both_dynamic_two": "两者",
+  "both_dynamic_many": "全部",
+  "use_all": "使用“全部”",
+  "use_both_dynamic_two": "使用“两者”",
+  "use_both_dynamic_many": "使用“全部”"
   });
 
 })();

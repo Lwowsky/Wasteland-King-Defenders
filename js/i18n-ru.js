@@ -53,7 +53,7 @@
   "shift2": "Смена 2",
   "shift3": "Смена 3",
   "shift4": "Смена 4",
-  "both": "Все",
+  "both": "Обе",
   "all": "Все",
   "first_half": "Первая половина",
   "second_half": "Вторая половина",
@@ -99,7 +99,7 @@
   "only_captains": "Только капитаны",
   "respect_player_shift": "Учитывать смену игрока",
   "same_troop_only": "Только тот же тип войск",
-  "use_both": "Использовать «Все»",
+  "use_both": "Использовать «Обе»",
   "type_defined_by_captain": "Тип турели определяется капитаном",
   "final_plan_share": "Поделиться",
   "export_png": "Скачать PNG",
@@ -905,6 +905,11 @@
   "shift_recognition_all": "Все",
   "tier_visibility_title": "Дополнительные тиры",
   "tier_visibility_note": "Добавь T1–T8 и включи тиры, которые нужно показывать в лимитах турелей.",
-  "tier_visibility_add": "Добавить тир"
+  "tier_visibility_add": "Добавить тир",
+  "both_dynamic_two": "Обе",
+  "both_dynamic_many": "Все",
+  "use_all": "Использовать «Все»",
+  "use_both_dynamic_two": "Использовать «Обе»",
+  "use_both_dynamic_many": "Использовать «Все»"
 };
 })();

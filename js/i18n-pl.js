@@ -50,7 +50,7 @@
   "captain": "Kapitan",
   "shift1": "Zmiana 1",
   "shift2": "Zmiana 2",
-  "both": "Wszystkie",
+  "both": "Obie",
   "all": "Wszystkie",
   "first_half": "Pierwsza połowa",
   "second_half": "Druga połowa",
@@ -96,7 +96,7 @@
   "only_captains": "Tylko kapitanowie",
   "respect_player_shift": "Uwzględniaj zmianę gracza",
   "same_troop_only": "Tylko ten sam typ wojsk",
-  "use_both": "Użyj „Wszystkie”",
+  "use_both": "Użyj „Obie”",
   "type_defined_by_captain": "Typ wieży określa kapitan",
   "final_plan_share": "Udostępnij",
   "export_png": "Pobierz PNG",
@@ -904,6 +904,11 @@
   "shift_recognition_all": "Wszystkie",
   "tier_visibility_title": "Dodatkowe tiery",
   "tier_visibility_note": "Dodaj T1–T8 i włącz tiery, które mają być widoczne w limitach wież.",
-  "tier_visibility_add": "Dodaj tier"
+  "tier_visibility_add": "Dodaj tier",
+  "both_dynamic_two": "Obie",
+  "both_dynamic_many": "Wszystkie",
+  "use_all": "Użyj „Wszystkie”",
+  "use_both_dynamic_two": "Użyj „Obie”",
+  "use_both_dynamic_many": "Użyj „Wszystkie”"
   });
 })();

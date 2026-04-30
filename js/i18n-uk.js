@@ -53,7 +53,7 @@
   "shift2": "Зміна 2",
   "shift3": "Зміна 3",
   "shift4": "Зміна 4",
-  "both": "Всі",
+  "both": "Обидві",
   "all": "Усі",
   "first_half": "Перша половина",
   "second_half": "Друга половина",
@@ -99,7 +99,7 @@
   "only_captains": "Тільки капітани",
   "respect_player_shift": "Враховувати зміну гравця",
   "same_troop_only": "Лише той самий тип військ",
-  "use_both": "Використовувати «Всі»",
+  "use_both": "Використовувати «Обидві»",
   "type_defined_by_captain": "Тип турелі визначається капітаном",
   "final_plan_share": "Поділитися",
   "export_png": "Завантажити PNG",
@@ -898,7 +898,12 @@
   "shift_recognition_all": "Всі",
   "tier_visibility_title": "Додаткові тіри",
   "tier_visibility_note": "Додай T1–T8 і увімкни тіри, які треба показати в лімітах турелей.",
-  "tier_visibility_add": "Додати тір"
+  "tier_visibility_add": "Додати тір",
+  "both_dynamic_two": "Обидві",
+  "both_dynamic_many": "Всі",
+  "use_all": "Використовувати «Всі»",
+  "use_both_dynamic_two": "Використовувати «Обидві»",
+  "use_both_dynamic_many": "Використовувати «Всі»"
 };
   try { root.ua = JSON.parse(JSON.stringify(root.uk)); } catch (e) { root.ua = Object.assign({}, root.uk); }
   root.ua.lang_name = root.ua.lang_name || "Українська";

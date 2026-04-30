@@ -50,7 +50,7 @@
   "captain": "كابتن",
   "shift1": "الوردية 1",
   "shift2": "الوردية 2",
-  "both": "الكل",
+  "both": "كلاهما",
   "all": "الكل",
   "first_half": "النصف الأول",
   "second_half": "النصف الثاني",
@@ -96,7 +96,7 @@
   "only_captains": "الكباتن فقط",
   "respect_player_shift": "احترام وردية اللاعب",
   "same_troop_only": "نفس نوع القوات فقط",
-  "use_both": "استخدام «الكل»",
+  "use_both": "استخدم «كلاهما»",
   "type_defined_by_captain": "يحدِّد الكابتن نوع البرج",
   "final_plan_share": "مشاركة",
   "export_png": "تنزيل PNG",
@@ -904,6 +904,11 @@
   "shift_recognition_all": "الكل",
   "tier_visibility_title": "مستويات إضافية",
   "tier_visibility_note": "أضف T1–T8 وفعّل المستويات التي تريد إظهارها في حدود الأبراج.",
-  "tier_visibility_add": "إضافة مستوى"
+  "tier_visibility_add": "إضافة مستوى",
+  "both_dynamic_two": "كلاهما",
+  "both_dynamic_many": "الكل",
+  "use_all": "استخدم «الكل»",
+  "use_both_dynamic_two": "استخدم «كلاهما»",
+  "use_both_dynamic_many": "استخدم «الكل»"
 };
 })();

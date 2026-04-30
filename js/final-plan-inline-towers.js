@@ -208,7 +208,8 @@
       const normalizedTier = tierOrderLowToHigh.includes(tier) ? tier : 'T9';
       const fullMarch = Math.max(0, Math.floor(Number(helper?.march || 0) || 0));
       const currentAssigned = Math.max(0, Math.floor(Number(getInlineAssignedMarch(towerState.baseLike, helper, shiftKey) || 0) || 0));
-      const tierLimit = Math.max(0, Number(towerState?.rule?.tierMinMarch?.[normalizedTier] || 0) || 0);
+      const rawTierLimit = Math.max(0, Number(towerState?.rule?.tierMinMarch?.[normalizedTier] || 0) || 0);
+      const tierLimit = rawTierLimit > 0 ? rawTierLimit : (typeof PNS.getDefaultTierMinMarch === 'function' ? PNS.getDefaultTierMinMarch(normalizedTier) : 0);
       if (tierLimit > 0) explicitTierIndices.push(tierOrderLowToHigh.indexOf(normalizedTier));
       assignedById[playerId] = tierLimit > 0 ? Math.min(fullMarch, tierLimit) : currentAssigned;
       helpersByTier[normalizedTier].push(helper);

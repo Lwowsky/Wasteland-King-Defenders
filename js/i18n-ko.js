@@ -51,7 +51,7 @@
   "captain": "캡틴",
   "shift1": "교대 1",
   "shift2": "교대 2",
-  "both": "전체",
+  "both": "둘 다",
   "all": "전체",
   "first_half": "전반",
   "second_half": "후반",
@@ -97,7 +97,7 @@
   "only_captains": "캡틴만",
   "respect_player_shift": "플레이어 교대 반영",
   "same_troop_only": "같은 병종만",
-  "use_both": "“전체” 사용",
+  "use_both": "“둘 다” 사용",
   "type_defined_by_captain": "포탑 유형은 캡틴이 결정합니다",
   "final_plan_share": "공유",
   "export_png": "PNG 다운로드",
@@ -926,6 +926,11 @@
   "shift_recognition_all": "전체",
   "tier_visibility_title": "추가 티어",
   "tier_visibility_note": "T1–T8을 추가하고 포탑 제한에 표시할 티어를 켜세요.",
-  "tier_visibility_add": "티어 추가"
+  "tier_visibility_add": "티어 추가",
+  "both_dynamic_two": "둘 다",
+  "both_dynamic_many": "전체",
+  "use_all": "“전체” 사용",
+  "use_both_dynamic_two": "“둘 다” 사용",
+  "use_both_dynamic_many": "“전체” 사용"
 };
 })();

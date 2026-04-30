@@ -37,7 +37,9 @@
 
   function getTierMinMarch(base, tier){
     const normalizedTier = String(tier || "").toUpperCase();
-    return PNS.clampInt(base?.tierMinMarch?.[normalizedTier], 0);
+    const raw = PNS.clampInt(base?.tierMinMarch?.[normalizedTier], 0);
+    if (raw > 0) return raw;
+    return typeof PNS.getDefaultTierMinMarch === "function" ? PNS.getDefaultTierMinMarch(normalizedTier) : raw;
   }
 
   function getTowerEffectiveMarch(base, player){

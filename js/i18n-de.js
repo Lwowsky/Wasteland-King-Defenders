@@ -50,7 +50,7 @@
   "captain": "Kapitän",
   "shift1": "Schicht 1",
   "shift2": "Schicht 2",
-  "both": "Alle",
+  "both": "Beide",
   "all": "Alle",
   "first_half": "Erste Hälfte",
   "second_half": "Zweite Hälfte",
@@ -96,7 +96,7 @@
   "only_captains": "Nur Kapitäne",
   "respect_player_shift": "Spielerschicht berücksichtigen",
   "same_troop_only": "Nur gleicher Truppentyp",
-  "use_both": "„Alle“ verwenden",
+  "use_both": "„Beide” verwenden",
   "type_defined_by_captain": "Turmtyp wird durch den Kapitän bestimmt",
   "final_plan_share": "Teilen",
   "export_png": "PNG herunterladen",
@@ -904,6 +904,11 @@
   "shift_recognition_all": "Alle",
   "tier_visibility_title": "Zusätzliche Tiers",
   "tier_visibility_note": "Füge T1–T8 hinzu und aktiviere die Tiers, die in den Turm-Limits angezeigt werden sollen.",
-  "tier_visibility_add": "Tier hinzufügen"
+  "tier_visibility_add": "Tier hinzufügen",
+  "both_dynamic_two": "Beide",
+  "both_dynamic_many": "Alle",
+  "use_all": "„Alle” verwenden",
+  "use_both_dynamic_two": "„Beide” verwenden",
+  "use_both_dynamic_many": "„Alle” verwenden"
   });
 })();

@@ -117,18 +117,22 @@
     })(String(e?.id || e?.name || ""));
     return active[hash % active.length] || "shift1";
   }
+  function tierOrderHighToLow() {
+    return Array.isArray(window.PNS?.TIER_ORDER_HIGH_TO_LOW)
+      ? window.PNS.TIER_ORDER_HIGH_TO_LOW.slice()
+      : ["T14", "T13", "T12", "T11", "T10", "T9", "T8", "T7", "T6", "T5", "T4", "T3", "T2", "T1"];
+  }
+  function defaultTierTargets() {
+    if ("function" == typeof window.PNS?.makeDefaultTierMinMarchMap) return window.PNS.makeDefaultTierMinMarchMap(true);
+    return { T14: 3e5, T13: 25e4, T12: 2e5, T11: 15e4, T10: 1e5, T9: 8e4, T8: 6e4, T7: 5e4, T6: 4e4, T5: 3e4, T4: 2e4, T3: 15e3, T2: 1e4, T1: 5e3 };
+  }
   function S() {
-    return Object.fromEntries(
-      ["T14", "T13", "T12", "T11", "T10", "T9"].map((e) => [
-        e,
-        { count: 0, march: 0 },
-      ]),
-    );
+    return Object.fromEntries(tierOrderHighToLow().map((e) => [e, { count: 0, march: 0 }]));
   }
   function v(e) {
-    const t = { T14: 3e5, T13: 25e4, T12: 2e5, T11: 15e4, T10: 1e5, T9: 8e4 },
+    const t = defaultTierTargets(),
       a = {};
-    for (const r of ["T14", "T13", "T12", "T11", "T10", "T9"]) {
+    for (const r of tierOrderHighToLow()) {
       const n = Math.max(0, Number(e?.[r] ?? t[r]) || t[r] || 0);
       a[r] = Math.round(n);
     }
@@ -137,7 +141,7 @@
   function C(e) {
     return e && "manual" === String(e.tierSizeMode || "").toLowerCase()
       ? v(e.tierSizeManual)
-      : { T14: 3e5, T13: 25e4, T12: 2e5, T11: 15e4, T10: 1e5, T9: 8e4 };
+      : defaultTierTargets();
   }
   function Hf(t) {
     return "function" == typeof window.calcNormalizeHelperFillMode
@@ -184,7 +188,7 @@
   }
   function $(e, t, a = {}) {
     const n = S(),
-      o = { T14: 0, T13: 0, T12: 0, T11: 0, T10: 0, T9: 0 },
+      o = Object.fromEntries(tierOrderHighToLow().map((tier) => [tier, 0])),
       i = [],
       s = Array.isArray(e) ? e : [];
     let l = Math.max(0, Number(t || 0) || 0);
@@ -266,7 +270,7 @@
     }
     let h = 0,
       f = 0;
-    const m = ["T14", "T13", "T12", "T11", "T10", "T9"],
+    const m = tierOrderHighToLow(),
       y = {},
       _ = [],
       w = [];
@@ -426,7 +430,7 @@
     t.uiApplyMode = String(e?.querySelector("#towerCalcApplyModeUi")?.value || t.uiApplyMode || "topup").toLowerCase();
     t.tierSizeMode = e?.querySelector("#towerCalcTierAuto")?.checked ? "auto" : "manual";
     t.tierSizeManual = (function (e) {
-      const t = { T14: 3e5, T13: 25e4, T12: 2e5, T11: 15e4, T10: 1e5, T9: 8e4, T8:0, T7:0, T6:0, T5:0, T4:0, T3:0, T2:0, T1:0 };
+      const t = defaultTierTargets();
       return (
         (e || document.getElementById("towerCalcModal"))?.querySelectorAll("[data-calc-tier-target]").forEach((e) => {
           const a = String(e?.dataset?.calcTierTarget || "").toUpperCase();
@@ -1171,14 +1175,7 @@
               : "",
           )
           .filter(Boolean),
-        i = r.recTierMinMarch || {
-          T14: 0,
-          T13: 0,
-          T12: 0,
-          T11: 0,
-          T10: 0,
-          T9: 0,
-        },
+        i = r.recTierMinMarch || Object.fromEntries(tierOrderHighToLow().map((tier) => [tier, 0])),
         s = Array.isArray(r.recTierText) ? r.recTierText.slice() : [];
       E.push({
         idx: e,

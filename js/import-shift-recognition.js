@@ -32,7 +32,7 @@
     if(key === 'shift2') return tr('shift2','Зміна 2');
     if(key === 'shift3') return tr('shift3','Зміна 3');
     if(key === 'shift4') return tr('shift4','Зміна 4');
-    if(key === 'both') return tr('shift_recognition_all','Всі');
+    if(key === 'both') return (typeof PNS.getBothDisplayLabel === 'function' ? PNS.getBothDisplayLabel() : tr('both','Обидві'));
     if(key === 'ignore') return tr('shift_recognition_ignore','Ігнорувати');
     return key || tr('unknown','Невідомо');
   }
