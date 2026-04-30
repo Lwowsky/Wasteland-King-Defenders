@@ -97,6 +97,10 @@
         || player?.shiftLabel
         || 'both';
       try {
+        if (raw && typeof PNS.applyImportShiftRule === 'function') {
+          const mapped = String(PNS.applyImportShiftRule(raw) || '').toLowerCase();
+          if (/^shift[1-4]$/.test(mapped) || mapped === 'both') return mapped;
+        }
         const normalized = typeof PNS.normalizeShiftValue === 'function' ? PNS.normalizeShiftValue(raw) : raw;
         return String(normalized || 'both').toLowerCase();
       } catch {

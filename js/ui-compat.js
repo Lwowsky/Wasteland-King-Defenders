@@ -171,7 +171,14 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
     if (players.length) {
       total = players.length;
       players.forEach((player) => {
-        const importShift = player.registeredShiftRaw || player.raw?.shift_availability || player.registeredShift || player.registeredShiftLabel || player.shift || player.shiftLabel || 'both';
+        const rawImportShift = player.registeredShiftRaw || player.raw?.shift_availability || '';
+        const recognizedShift = (() => {
+          try {
+            if (rawImportShift && typeof PNS.applyImportShiftRule === 'function') return PNS.applyImportShiftRule(rawImportShift);
+          } catch {}
+          return player.registeredShift || player.shift || player.registeredShiftLabel || player.shiftLabel || rawImportShift || 'both';
+        })();
+        const importShift = recognizedShift || 'both';
         const displayShift = player.manualShiftOverride ? (player.shift || player.shiftLabel || importShift) : importShift;
         addPlayer(
           player.role,

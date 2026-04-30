@@ -46,6 +46,18 @@
   if (raw === '3') return 'shift3';
   if (raw === '4') return 'shift4';
 
+  try {
+    if (!e.__normalizingImportShiftRule && typeof e.applyImportShiftRule === 'function') {
+      e.__normalizingImportShiftRule = true;
+      const mapped = String(e.applyImportShiftRule(raw) || '').toLowerCase();
+      e.__normalizingImportShiftRule = false;
+      if (/^shift[1-4]$/.test(mapped) || mapped === 'both') return mapped;
+      if (mapped === 'ignore') return 'both';
+    }
+  } catch {
+    try { e.__normalizingImportShiftRule = false; } catch {}
+  }
+
   const text = raw
     .normalize('NFKC')
     .toLowerCase()
@@ -206,6 +218,12 @@
     })(player);
 
     if (fromImport) {
+      try {
+        if (typeof e.applyImportShiftRule === 'function') {
+          const mapped = String(e.applyImportShiftRule(fromImport) || '').toLowerCase();
+          if (/^shift[1-4]$/.test(mapped) || mapped === 'both') return mapped;
+        }
+      } catch {}
       const normalized = normalizeShiftValue(fromImport);
       const text = String(fromImport || '').trim().toLowerCase();
       if (/(both|all|1\s*[,/;+&-]\s*2|2\s*[,/;+&-]\s*1|две|обе|обидв|оба|any shift|будь-як|shift\s*1|shift\s*2|зміна\s*1|зміна\s*2|змiна\s*1|змiна\s*2|смена\s*1|смена\s*2|1st\s*shift|2nd\s*shift|first|second|перш|перша|перв|друг|втор)/i.test(text) || normalized !== 'both') {

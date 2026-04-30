@@ -24,7 +24,16 @@
     return 'both';
   };
   const label = (shift) => typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(shift) : (shift === 'both' ? 'Всі' : `Зміна ${String(shift).replace('shift','')}`);
-  const getPlayerRegisteredShift = (player) => normalize(player?.registeredShiftRaw || player?.raw?.shift_availability || player?.registeredShift || player?.registeredShiftLabel || player?.shift || player?.shiftLabel || 'both');
+  const getPlayerRegisteredShift = (player) => {
+    const raw = player?.registeredShiftRaw || player?.raw?.shift_availability || player?.registeredShift || player?.registeredShiftLabel || player?.shift || player?.shiftLabel || 'both';
+    try {
+      if (raw && typeof PNS.applyImportShiftRule === 'function') {
+        const mapped = String(PNS.applyImportShiftRule(raw) || '').toLowerCase();
+        if (/^shift[1-4]$/.test(mapped) || mapped === 'both') return mapped;
+      }
+    } catch {}
+    return normalize(raw);
+  };
   const getUseInShift = (playerId, shift) => {
     const s = normalize(shift);
     if (!/^shift[1-4]$/.test(s)) return null;

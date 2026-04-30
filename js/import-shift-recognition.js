@@ -123,12 +123,14 @@
     const rules = readRules();
     document.querySelectorAll('[data-shift-recognition-value]').forEach(sel => { rules[String(sel.dataset.shiftRecognitionValue||'')] = sel.value || 'both'; });
     writeRules(rules); writeMerge(readUiMerge()); render();
+    try{ applyShiftRulesToCurrentPlayers(); }catch{}
     try{ wiz.saveImportTemplate?.({ silent:true }); }catch{}
   }
   function resetRules(){
     localStorage.removeItem(RULES_KEY);
     writeMerge(defaultMerge());
     render();
+    try{ applyShiftRulesToCurrentPlayers(); }catch{}
   }
   function autoRules(){
     const rules = {};
@@ -137,6 +139,7 @@
     // Auto-recognize must also normalize the merge sector back to a safe identity map.
     writeMerge(defaultMerge());
     render();
+    try{ applyShiftRulesToCurrentPlayers(); }catch{}
   }
   function applyImportShiftRule(raw){
     const key = normalizeRaw(raw);
@@ -155,6 +158,49 @@
       localStorage.setItem('pns_import_region_shift_settings_v1', JSON.stringify(raw));
       try { window.PNS?.setImportRegionShiftSettings?.(raw); } catch {}
     }catch{}
+  }
+  function rawShiftForPlayer(player){
+    if(!player) return '';
+    const mappedField = state.importData?.mapping?.shift_availability;
+    return String(
+      player.registeredShiftRaw
+      || (mappedField && player.raw ? player.raw[mappedField] : '')
+      || player.raw?.shift_availability
+      || player.registeredShift
+      || player.shift
+      || ''
+    ).trim();
+  }
+  function applyShiftRulesToCurrentPlayers(){
+    const players = Array.isArray(state.players) ? state.players : [];
+    if(!players.length) return { changed:0 };
+    let changed = 0;
+    players.forEach(player => {
+      if(!player || player.manualShiftOverride) return;
+      const raw = rawShiftForPlayer(player);
+      if(!raw) return;
+      const shift = applyImportShiftRule(raw);
+      if(shift === 'ignore') return;
+      if(!/^shift[1-4]$/.test(shift) && shift !== 'both') return;
+      if(player.shift !== shift || player.registeredShift !== shift){
+        changed += 1;
+        player.shift = shift;
+        player.registeredShift = shift;
+        player.registeredShiftLabel = PNS.formatShiftLabelForCell ? PNS.formatShiftLabelForCell(shift) : labelOf(shift);
+        player.shiftLabel = PNS.formatShiftLabelForCell ? PNS.formatShiftLabelForCell(shift) : labelOf(shift);
+      }
+    });
+    if(changed){
+      try { PNS.savePlayersSnapshot?.(players); } catch {}
+      try { PNS.applyPlayerTableFilters?.(); } catch {}
+      try { PNS.updateShiftBreakdownUI?.(); } catch {}
+      try { PNS.renderAll?.(); } catch {}
+      try { PNS.syncTopShiftFilterOptions?.(); } catch {}
+      try { window.computeTowerCalcResults?.(); } catch {}
+      try { document.dispatchEvent(new CustomEvent('pns:import-shift-rules-applied', { detail:{ changed } })); } catch {}
+      try { window.dispatchEvent(new CustomEvent('pns:import-shift-rules-applied', { detail:{ changed } })); } catch {}
+    }
+    return { changed };
   }
   function handleMergeControlChange(event){
     if(!(event.target?.id === 'shiftRecognitionMergeMode' || event.target?.matches?.('[data-shift-merge-source]'))) return false;
@@ -175,7 +221,7 @@
     if(event.target?.closest?.('#shiftRecognitionResetBtn')) { event.preventDefault(); resetRules(); }
     if(event.target?.closest?.('#shiftRecognitionAutoBtn')) { event.preventDefault(); autoRules(); }
   }, true);
-  Object.assign(PNS, { renderImportShiftRecognition: render, applyImportShiftRule, mergeImportShift: mergeShift, syncHomeShiftCountFromImportedPlayers: syncHomeShiftCountFromPlayers });
+  Object.assign(PNS, { renderImportShiftRecognition: render, applyImportShiftRule, mergeImportShift: mergeShift, syncHomeShiftCountFromImportedPlayers: syncHomeShiftCountFromPlayers, applyImportShiftRulesToCurrentPlayers: applyShiftRulesToCurrentPlayers });
   Object.assign(wiz, { renderShiftRecognition: render });
-  document.addEventListener('DOMContentLoaded', () => setTimeout(render, 60));
+  document.addEventListener('DOMContentLoaded', () => setTimeout(() => { render(); try{ applyShiftRulesToCurrentPlayers(); }catch{} }, 60));
 })();

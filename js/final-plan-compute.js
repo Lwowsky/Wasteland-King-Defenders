@@ -72,13 +72,21 @@
       return /^shift[1-4]$/.test(text) || "both" === text ? text : "";
     };
 
-    const rawShift = normalize(
+    const rawValue =
       e?.registeredShiftRaw ||
       e?.raw?.shift_availability ||
       e?.registeredShift ||
       e?.registeredShiftLabel ||
-      ""
-    );
+      "";
+    const rawShift = (() => {
+      try {
+        if (rawValue && typeof window.PNS?.applyImportShiftRule === "function") {
+          const mapped = String(window.PNS.applyImportShiftRule(rawValue) || "").toLowerCase();
+          if (/^shift[1-4]$/.test(mapped) || mapped === "both") return mapped;
+        }
+      } catch {}
+      return normalize(rawValue);
+    })();
 
     const currentShift = normalize(e?.shift || e?.shiftLabel || "");
 

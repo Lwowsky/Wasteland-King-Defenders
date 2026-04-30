@@ -1415,6 +1415,7 @@
       || normalize(player?.shiftLabel)
       || normalize(player?.registeredShift)
       || normalize(player?.registeredShiftLabel)
+      || (() => { try { const raw = player?.registeredShiftRaw || player?.raw?.shift_availability || ''; const mapped = raw && PNS.applyImportShiftRule?.(raw); return normalize(mapped); } catch { return ''; } })()
       || normalize(player?.registeredShiftRaw)
       || normalize(player?.raw?.shift_availability)
       || 'both';
