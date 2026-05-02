@@ -866,7 +866,7 @@
   "manual_player_new_button": "新規",
   "manual_player_extra_columns": "追加列",
   "manual_player_add_column": "列を追加",
-  "delete_player": "削除",
+  "delete_player": "プレイヤーを削除",
   "manual_player_extra_columns_hint": "このプレイヤー用の項目を追加したり、不要な列を削除できます。",
   "manual_player_new_column_label": "新しい列",
   "manual_player_column_name_placeholder": "列名",
@@ -910,6 +910,7 @@
   "both_dynamic_many": "すべて",
   "use_all": "「すべて」を使う",
   "use_both_dynamic_two": "「両方」を使う",
-  "use_both_dynamic_many": "「すべて」を使う"
+  "use_both_dynamic_many": "「すべて」を使う",
+  "delete_player_confirm": "表からプレイヤーを削除しますか？"
 };
 })();

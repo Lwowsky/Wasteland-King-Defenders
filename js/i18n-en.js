@@ -875,7 +875,7 @@
   "manual_player_empty": "No players found.",
   "manual_player_column_name_required": "Enter a column name.",
   "manual_player_column_added": "Column added.",
-  "delete_player": "Delete",
+  "delete_player": "Delete player",
   "manual_player_extra_columns_hint": "Add custom fields for this player or remove columns you do not need.",
   "manual_player_new_column_label": "New column",
   "manual_player_column_name_placeholder": "Column name",
@@ -910,6 +910,7 @@
   "both_dynamic_many": "All",
   "use_all": "Use “All”",
   "use_both_dynamic_two": "Use “Both”",
-  "use_both_dynamic_many": "Use “All”"
+  "use_both_dynamic_many": "Use “All”",
+  "delete_player_confirm": "Delete player from the table?"
 };
 })();

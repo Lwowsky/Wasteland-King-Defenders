@@ -377,6 +377,8 @@
     padding: 0 5px;
   }
 
+  .players-panel [data-stat-card="roles"] .stat-split,
+  .players-panel [data-stat-card="shifts"] .stat-split,
   .players-panel .stat-split--roles,
   .players-panel .stat-split--shifts {
     grid-template-columns: 1fr;

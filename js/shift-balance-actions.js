@@ -58,6 +58,15 @@
       try { e.savePlayersSnapshot?.(t.players); } catch {}
       try { e.applyPlayerTableFilters?.(); } catch {}
       try { e.refreshShiftUi?.(); } catch {}
+      try { window.computeTowerCalcResults?.(); } catch {}
+      try { e.towerCalcScheduleRefresh?.(40, true); } catch {}
+      try { e.patchTowerCalcRuntimeUi?.(); } catch {}
+      try { e.towerCalcRenderTopSummary?.(document.getElementById('towerCalcModal') || document); } catch {}
+      try { window.computeTowerCalcResults?.(); } catch {}
+      try { e.towerCalcScheduleRefresh?.(40, true); } catch {}
+      try { e.patchTowerCalcRuntimeUi?.(); } catch {}
+      try { e.towerCalcRenderTopSummary?.(document.getElementById('towerCalcModal') || document); } catch {}
+      try { document.dispatchEvent(new CustomEvent('pns:manual-shift-add-applied', { detail: result })); } catch {}
       try {
         const warn = result.remaining?.shift1 || result.remaining?.shift2;
         const warnText = warn ? tr('shifts_updated_warn_suffix', ' Не вистачило місця по ліміту: S1 {shift1}, S2 {shift2}.').replace(/\{shift1\}/g, String(result.remaining.shift1 || 0)).replace(/\{shift2\}/g, String(result.remaining.shift2 || 0)) : '';

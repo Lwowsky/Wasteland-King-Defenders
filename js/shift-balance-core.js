@@ -167,8 +167,12 @@
     const list = Array.isArray(players) ? players : (Array.isArray(t.players) ? t.players : []);
     if (!list.length) return { shift1: 0, shift2: 0, both: 0, unknown: 0, total: 0 };
     list.forEach(player => {
+      const wasManual = !!player.manualShiftOverride;
+      player.manualShiftOverride = false;
       const shift = e.getRegisteredShiftForPlayer(player);
       setPlayerShift(player, (shift === 'shift1' || shift === 'shift2' || shift === 'both') ? shift : 'both');
+      player.manualShiftOverride = false;
+      if (wasManual && player.rowEl) player.rowEl.dataset.shift = player.shift;
     });
     return getRegisteredShiftCounts(list);
   }

@@ -887,7 +887,7 @@
   "manual_player_new_button": "새로 만들기",
   "manual_player_extra_columns": "추가 열",
   "manual_player_add_column": "열 추가",
-  "delete_player": "삭제",
+  "delete_player": "플레이어 삭제",
   "manual_player_extra_columns_hint": "이 플레이어의 사용자 지정 필드를 추가하거나 필요 없는 열을 삭제하세요.",
   "manual_player_new_column_label": "새 열",
   "manual_player_column_name_placeholder": "열 이름",
@@ -931,6 +931,7 @@
   "both_dynamic_many": "전체",
   "use_all": "“전체” 사용",
   "use_both_dynamic_two": "“둘 다” 사용",
-  "use_both_dynamic_many": "“전체” 사용"
+  "use_both_dynamic_many": "“전체” 사용",
+  "delete_player_confirm": "표에서 플레이어를 삭제할까요?"
 };
 })();

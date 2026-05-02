@@ -34,6 +34,7 @@
   } catch {}
 })();
 </script>
+<link rel="stylesheet" href="css/v95-player-ui-fixes.css"/>
 </head>
 <body class="notranslate">
 <a id="top"></a>
@@ -106,6 +107,7 @@
       </section>
     </div>
   </div>
+<datalist id="manualPlayerAllianceList"></datalist><datalist id="manualPlayerTierList"></datalist>
 </section>
 
 <main class="layout container">
@@ -798,6 +800,7 @@
 <div class="row gap wrap">
 <button class="btn btn-primary" id="tpeSaveBtn" type="button">{{save_label}}</button>
 <button class="btn" id="tpeRemoveBtn" type="button">{{remove_from_turret_label}}</button>
+<button class="btn btn-danger" id="tpeDeletePlayerBtn" type="button" data-i18n="delete_player">Delete player</button>
 </div>
 </section>
 </div>
@@ -1314,6 +1317,7 @@
 <script defer="" src="js/modal-registry.js"></script>
 <script defer="" src="js/base-name-normalizers.js"></script>
 <script defer="" src="js/tower-eligibility.js"></script>
+<script defer="" src="js/player-edit-delete-shift-fix.js"></script>
 <script defer="" src="js/tower-rules-defaults.js"></script>
 <script defer="" src="js/final-plan-core-state.js"></script>
 <script defer="" src="js/final-plan-bootstrap.js"></script>
@@ -1327,6 +1331,7 @@
 <script defer="" src="js/final-plan-language.js"></script>
 <script defer="" src="js/final-plan-preview.js"></script>
 <script defer="" src="js/final-plan-actions.js"></script>
+<script defer="" src="js/final-plan-share-compat.js"></script>
 <script defer="" src="js/modals-shell.js"></script>
 <script defer="" src="js/contact-modal.js"></script>
 <script defer="" src="js/support-modal.js"></script>
@@ -1374,6 +1379,7 @@
 <script defer="" src="js/ui-compat.js"></script>
 <script defer="" src="js/players-table.js"></script>
 <script defer="" src="js/manual-player-manager.js"></script>
+<script defer="" src="js/player-edit-manual-ui-v95.js"></script>
 <script defer="" src="js/tower-calc-summary.js"></script>
 <script defer="" src="js/tower-calc-layout.js"></script>
 <script defer="" src="js/region-shift-clean.js"></script>
@@ -1393,6 +1399,7 @@
 <script crossorigin="anonymous" defer="" src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script async="" src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
+<script defer="" src="js/v101-table-scroll-fix.js"></script>
 </body>
 
 </html>

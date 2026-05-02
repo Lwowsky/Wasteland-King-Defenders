@@ -25,6 +25,12 @@
       : false;
     const sameRole = isNoMixTroopsEnabled() ? freePlayers.filter(player => player.role === captain.role) : freePlayers.slice();
     const getRegisteredPlayerShift = (player) => {
+      try {
+        if (typeof PNS.getRegisteredShiftForPlayer === 'function') {
+          const registered = String(PNS.getRegisteredShiftForPlayer(player) || '').toLowerCase();
+          if (/^shift[1-4]$/.test(registered) || registered === 'both') return registered;
+        }
+      } catch {}
       const raw = player?.registeredShiftRaw || player?.raw?.shift_availability || player?.registeredShift || player?.registeredShiftLabel || player?.shift || player?.shiftLabel || 'both';
       try { return String(typeof PNS.normalizeShiftValue === 'function' ? PNS.normalizeShiftValue(raw) : raw).toLowerCase(); }
       catch { return String(raw || 'both').toLowerCase(); }

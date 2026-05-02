@@ -875,7 +875,7 @@
   "manual_player_empty": "Игроки не найдены.",
   "manual_player_column_name_required": "Введи название колонки.",
   "manual_player_column_added": "Колонка добавлена.",
-  "delete_player": "Удалить",
+  "delete_player": "Удалить игрока",
   "manual_player_extra_columns_hint": "Добавь свои поля для этого игрока или удали лишние колонки.",
   "manual_player_new_column_label": "Новая колонка",
   "manual_player_column_name_placeholder": "Название колонки",
@@ -910,6 +910,7 @@
   "both_dynamic_many": "Все",
   "use_all": "Использовать «Все»",
   "use_both_dynamic_two": "Использовать «Обе»",
-  "use_both_dynamic_many": "Использовать «Все»"
+  "use_both_dynamic_many": "Использовать «Все»",
+  "delete_player_confirm": "Удалить игрока из таблицы?"
 };
 })();

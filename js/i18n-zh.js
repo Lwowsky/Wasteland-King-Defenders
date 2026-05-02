@@ -883,7 +883,7 @@
   "manual_player_manual_badge": "手动",
   "manual_player_import_badge": "导入",
   "manual_player_empty": "未找到玩家。",
-  "delete_player": "删除",
+  "delete_player": "删除玩家",
   "saved": "已保存",
   "manual_player_search_placeholder": "按昵称 / 联盟搜索",
   "shift_recognition_title": "4. 班次识别",
@@ -912,7 +912,8 @@
   "both_dynamic_many": "全部",
   "use_all": "使用“全部”",
   "use_both_dynamic_two": "使用“两者”",
-  "use_both_dynamic_many": "使用“全部”"
+  "use_both_dynamic_many": "使用“全部”",
+  "delete_player_confirm": "从表格中删除玩家吗？"
   });
 
 })();

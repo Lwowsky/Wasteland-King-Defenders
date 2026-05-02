@@ -880,7 +880,7 @@
   "manual_player_manual_badge": "Ręczny",
   "manual_player_import_badge": "Import",
   "manual_player_empty": "Nie znaleziono graczy.",
-  "delete_player": "Usuń",
+  "delete_player": "Usuń gracza",
   "saved": "Zapisano",
   "manual_player_search_placeholder": "Szukaj po nicku / sojuszu",
   "shift_recognition_title": "4. Rozpoznawanie zmian",
@@ -909,6 +909,7 @@
   "both_dynamic_many": "Wszystkie",
   "use_all": "Użyj „Wszystkie”",
   "use_both_dynamic_two": "Użyj „Obie”",
-  "use_both_dynamic_many": "Użyj „Wszystkie”"
+  "use_both_dynamic_many": "Użyj „Wszystkie”",
+  "delete_player_confirm": "Usunąć gracza z tabeli?"
   });
 })();

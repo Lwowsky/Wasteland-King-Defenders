@@ -583,7 +583,7 @@
 }
 #playersDataTable th[data-field="name"],#playersDataTable td[data-field="name"]{width:126px;min-width:126px}
 #playersDataTable th[data-field="alliance"],#playersDataTable td[data-field="alliance"]{width:82px;min-width:82px}
-#playersDataTable th[data-field="role"],#playersDataTable td[data-field="role"]{width:98px;min-width:98px}
+#playersDataTable th[data-field="role"],#playersDataTable td[data-field="role"]{width:116px;min-width:116px}
 #playersDataTable th[data-field="tier"],#playersDataTable td[data-field="tier"]{width:50px;min-width:50px}
 #playersDataTable th[data-field="march"],#playersDataTable td[data-field="march"]{width:88px;min-width:88px}
 #playersDataTable th[data-field="rally"],#playersDataTable td[data-field="rally"]{width:106px;min-width:106px}
@@ -783,30 +783,29 @@
   }
 }
 
-
-/* ChatGPT patch: keep role/shift chips centered and in one row on tablet widths */
-.players-panel .stat-chip {
-  display: grid;
-  place-items: center;
-  place-content: center;
-  text-align: center;
+.players-panel .stat-chip{
+  display:grid;
+  place-items:center;
+  place-content:center;
+  text-align:center;
+  min-width:0;
 }
 .players-panel .stat-chip b,
-.players-panel .stat-chip small {
-  text-align: center;
+.players-panel .stat-chip small{
+  text-align:center;
+}
+.players-panel [data-stat-card="summary"],
+.players-panel [data-stat-card="roles"],
+.players-panel [data-stat-card="shifts"],
+.players-panel .stat-split--roles,
+.players-panel .stat-split--shifts{
+  min-width:0;
+}
+.players-panel [data-stat-card="roles"],
+.players-panel [data-stat-card="shifts"]{
+  overflow:hidden;
 }
 
-@media (min-width:768px) and (max-width:980px) {
-  .players-panel .stat-split--roles,
-  .players-panel .stat-split--shifts {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .players-panel .stat-chip {
-    min-height: 168px;
-  }
-}/* Dynamic player shift cards: 1-4 shifts + All from region 1 settings */
 .players-panel .stats-grid--players{
   grid-template-columns:repeat(3,minmax(0,1fr));
   gap:18px;
@@ -815,45 +814,38 @@
 .players-panel .stats-grid--players[data-shift-card-count="3"],
 .players-panel .stats-grid--players[data-shift-card-count="4"],
 .players-panel .stats-grid--players[data-shift-card-count="5"]{
-  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-template-columns:repeat(3,minmax(0,1fr));
 }
 
 .players-panel .stat-split--shifts{
-  grid-template-columns:repeat(var(--players-shift-columns,3),minmax(92px,124px))!important;
-  justify-content:center!important;
-  justify-items:stretch!important;
-  gap:8px!important;
-  align-items:stretch!important;
-  height:auto!important;
-}
-.players-panel .stat-split--shifts[data-shift-count="2"],
-.players-panel .stat-split--shifts[data-shift-count="3"]{
-  grid-template-columns:repeat(var(--players-shift-columns,3),minmax(112px,150px))!important;
+  grid-template-columns:repeat(var(--players-shift-columns,3),minmax(0,1fr));
+  justify-content:stretch;
+  justify-items:stretch;
+  gap:8px;
+  align-items:stretch;
+  height:auto;
 }
 .players-panel .stat-split--shifts[data-shift-count="4"]{
-  grid-template-columns:repeat(4,minmax(0,1fr))!important;
-  gap:6px!important;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px;
 }
 .players-panel .stat-split--shifts[data-shift-count="5"]{
-  grid-template-columns:repeat(5,minmax(78px,104px))!important;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:6px;
 }
-
-.players-panel .stat-split--shifts .stat-chip,
 .players-panel .stat-split--shifts.is-many-shifts .stat-chip{
-  min-height:104px!important;
-  height:104px!important;
-  padding:9px 6px!important;
-  border-radius:22px!important;
-  align-self:stretch!important;
+  min-height:104px;
+  height:104px;
+  padding:9px 6px;
+  border-radius:22px;
+  align-self:stretch;
 }
-.players-panel .stat-split--shifts .stat-chip b,
 .players-panel .stat-split--shifts.is-many-shifts .stat-chip b{
-  font-size:28px!important;
+  font-size:28px;
 }
-.players-panel .stat-split--shifts .stat-chip small,
 .players-panel .stat-split--shifts.is-many-shifts .stat-chip small{
-  font-size:12px!important;
-  line-height:1.1!important;
+  font-size:12px;
+  line-height:1.1;
 }
 
 .players-panel .stat-chip.is-shift3{
@@ -865,62 +857,84 @@
   border-color:rgba(242,165,104,.38);
 }
 
+@media (min-width:768px) and (max-width:980px){
+  .players-panel .stat-split--roles,
+  .players-panel .stat-split--shifts{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:12px;
+  }
+  .players-panel .stat-chip{
+    min-height:168px;
+  }
+}
+
+@media (min-width:481px) and (max-width:767px){
+  .players-panel .stat-split--roles,
+  .players-panel .stat-split--shifts{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:12px;
+  }
+}
+
+@media (max-width:430px){
+  .players-panel .stat-split--roles,
+  .players-panel .stat-split--shifts{
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+}
+
 @media (min-width:981px) and (max-width:1320px){
   .players-panel .stats-grid--players,
   .players-panel .stats-grid--players[data-shift-card-count]{
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-template-columns:minmax(0,.92fr) minmax(0,1fr) minmax(0,1fr);
+    gap:14px;
+  }
+  .players-panel .stat-split--roles,
+  .players-panel .stat-split--shifts{
+    gap:8px;
+  }
+  .players-panel .stat-chip{
+    padding:14px 8px;
   }
 }
+
 @media (max-width:980px){
   .players-panel .stats-grid--players,
   .players-panel .stats-grid--players[data-shift-card-count]{
-    grid-template-columns:1fr!important;
-  }
-  .players-panel .stat-split--shifts,
-  .players-panel .stat-split--shifts[data-shift-count]{
-    grid-template-columns:repeat(var(--players-shift-columns,3),minmax(0,1fr))!important;
+    grid-template-columns:1fr;
   }
 }
 
-
-/* v51: widen only the shifts card area when 4 shifts + All are shown */
 .players-panel .stats-grid--players[data-shift-card-count="5"]{
-  grid-template-columns:minmax(220px,.92fr) minmax(240px,.86fr) minmax(520px,1.42fr)!important;
+  grid-template-columns:minmax(220px,.92fr) minmax(240px,.86fr) minmax(520px,1.42fr);
 }
 .players-panel .stats-grid--players[data-shift-card-count="5"] [data-stat-card="shifts"]{
   min-width:0;
-}
-.players-panel .stat-split--shifts[data-shift-count="5"]{
-  grid-template-columns:repeat(5,minmax(72px,1fr))!important;
-  gap:6px!important;
 }
 .players-panel .stat-split--shifts[data-shift-count="5"] .stat-chip{
   min-width:0;
 }
 @media (min-width:981px) and (max-width:1320px){
   .players-panel .stats-grid--players[data-shift-card-count="5"]{
-    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-columns:repeat(3,minmax(0,1fr));
   }
 }
 
-
-/* v52: 3 shifts + All must stay inside its card */
 .players-panel .stats-grid--players[data-shift-card-count="4"]{
-  grid-template-columns:minmax(220px,.92fr) minmax(240px,.86fr) minmax(460px,1.30fr)!important;
+  grid-template-columns:minmax(220px,.92fr) minmax(240px,.86fr) minmax(460px,1.30fr);
 }
 .players-panel .stats-grid--players[data-shift-card-count="4"] [data-stat-card="shifts"]{
-  min-width:0!important;
-  overflow:hidden!important;
+  min-width:0;
 }
 .players-panel .stat-split--shifts[data-shift-count="4"] .stat-chip{
-  min-width:0!important;
+  min-width:0;
 }
 @media (min-width:981px) and (max-width:1320px){
   .players-panel .stats-grid--players[data-shift-card-count="4"]{
-    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-columns:repeat(3,minmax(0,1fr));
   }
 }
-
 
 /* v70: visible sort buttons for capture/additional columns */
 #playersDataTable thead th.optional-col .sort-btn,

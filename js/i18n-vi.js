@@ -879,7 +879,7 @@
   "manual_player_manual_badge": "Thủ công",
   "manual_player_import_badge": "Nhập",
   "manual_player_empty": "Không tìm thấy người chơi.",
-  "delete_player": "Xoá",
+  "delete_player": "Xóa người chơi",
   "saved": "Đã lưu",
   "manual_player_search_placeholder": "Tìm theo biệt danh / liên minh",
   "shift_recognition_title": "4. Nhận diện ca",
@@ -908,6 +908,7 @@
   "both_dynamic_many": "Tất cả",
   "use_all": "Dùng “Tất cả”",
   "use_both_dynamic_two": "Dùng “Cả hai”",
-  "use_both_dynamic_many": "Dùng “Tất cả”"
+  "use_both_dynamic_many": "Dùng “Tất cả”",
+  "delete_player_confirm": "Xóa người chơi khỏi bảng?"
   });
 })();

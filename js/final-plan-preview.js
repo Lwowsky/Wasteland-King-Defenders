@@ -684,7 +684,20 @@
       const txtBtn = target.querySelector('[data-calc-preview-export-txt]');
       if (txtBtn) txtBtn.onclick = function(ev) { try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); } catch {} return !!window.exportBoardAsTXT?.(); };
       const shareBtn = target.querySelector('[data-calc-preview-share]');
-      if (shareBtn) shareBtn.onclick = async function(ev) { try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); } catch {} try { return !!window.shareBoardPreview?.(); } catch { return false; } };
+      if (shareBtn) shareBtn.onclick = async function(ev) {
+        try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); } catch {}
+        try {
+          if (typeof window.calcSharePreviewBoard === 'function') return !!(await window.calcSharePreviewBoard());
+          return !!(await window.shareBoardAsImage?.({
+            sheet: target.querySelector('#towerCalcBoardPreviewSheet .board-sheet') || target.querySelector('#towerCalcBoardPreviewSheet'),
+            shift: getCalcState()?.previewShift || previewShift,
+            statusEl: target.querySelector('#towerCalcPreviewStatus')
+          }));
+        } catch (err) {
+          try { console.error(err); } catch {}
+          return false;
+        }
+      };
     } catch {}
   }
 
@@ -823,6 +836,18 @@
     renderLiveFinalBoard,
     renderStandaloneFinalBoard
   });
+
+  if (typeof window.shareBoardPreview !== 'function') {
+    window.shareBoardPreview = async function() {
+      if (typeof window.calcSharePreviewBoard === 'function') return await window.calcSharePreviewBoard();
+      const root = document.getElementById('towerCalcModal') || document;
+      return await (window.shareBoardAsImage?.({
+        sheet: root.querySelector('#towerCalcBoardPreviewSheet .board-sheet') || root.querySelector('#towerCalcBoardPreviewSheet'),
+        shift: getCalcState()?.previewShift || state.activeShift || 'shift1',
+        statusEl: root.querySelector('#towerCalcPreviewStatus')
+      }) || false);
+    };
+  }
 
   Object.assign(window, {
     __pnsGetBaseSlots: getBaseSlots,

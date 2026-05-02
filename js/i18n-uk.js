@@ -875,7 +875,7 @@
   "manual_player_empty": "Гравців не знайдено.",
   "manual_player_column_name_required": "Введи назву колонки.",
   "manual_player_column_added": "Колонку додано.",
-  "delete_player": "Видалити",
+  "delete_player": "Видалити гравця",
   "manual_player_search_placeholder": "Пошук по ніку / альянсу",
   "shift_recognition_title": "4. Розпізнавання змін",
   "shift_recognition_note": "Перевір знайдені відповіді з Excel і за потреби об’єднай зміни перед імпортом.",
@@ -903,7 +903,8 @@
   "both_dynamic_many": "Всі",
   "use_all": "Використовувати «Всі»",
   "use_both_dynamic_two": "Використовувати «Обидві»",
-  "use_both_dynamic_many": "Використовувати «Всі»"
+  "use_both_dynamic_many": "Використовувати «Всі»",
+  "delete_player_confirm": "Видалити гравця з таблиці?"
 };
   try { root.ua = JSON.parse(JSON.stringify(root.uk)); } catch (e) { root.ua = Object.assign({}, root.uk); }
   root.ua.lang_name = root.ua.lang_name || "Українська";

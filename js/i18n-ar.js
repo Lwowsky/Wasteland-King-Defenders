@@ -865,7 +865,7 @@
   "manual_player_new_button": "جديد",
   "manual_player_extra_columns": "أعمدة إضافية",
   "manual_player_add_column": "إضافة عمود",
-  "delete_player": "حذف",
+  "delete_player": "حذف اللاعب",
   "manual_player_extra_columns_hint": "أضف حقولاً مخصصة لهذا اللاعب أو احذف الأعمدة غير المطلوبة.",
   "manual_player_new_column_label": "عمود جديد",
   "manual_player_column_name_placeholder": "اسم العمود",
@@ -909,6 +909,7 @@
   "both_dynamic_many": "الكل",
   "use_all": "استخدم «الكل»",
   "use_both_dynamic_two": "استخدم «كلاهما»",
-  "use_both_dynamic_many": "استخدم «الكل»"
+  "use_both_dynamic_many": "استخدم «الكل»",
+  "delete_player_confirm": "هل تريد حذف اللاعب من الجدول؟"
 };
 })();

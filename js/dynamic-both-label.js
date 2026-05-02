@@ -122,16 +122,11 @@
         el.textContent = useLabel;
       });
 
-      document.querySelectorAll('td[data-field="shiftLabel"], [data-shift-label-cell]').forEach((el) => {
-        const row = el.closest('[data-shift], tr[data-shift]');
-        if (String(row?.dataset?.shift || '').toLowerCase() === 'both') el.textContent = label;
-      });
-
       document.querySelectorAll('option[value="both"]').forEach((option) => {
         option.textContent = label;
       });
 
-      document.querySelectorAll('[data-shift-pill="both"], [data-shift-card="both"]').forEach((el) => {
+      document.querySelectorAll('[data-shift-card="both"]').forEach((el) => {
         el.textContent = label;
       });
     } catch {}

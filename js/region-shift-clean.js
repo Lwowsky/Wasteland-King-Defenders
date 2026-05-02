@@ -1176,9 +1176,14 @@
     const stats = { total:0, fighter:0, rider:0, shooter:0, inTowers:0, reserve:0 };
     const players = Array.isArray(state.players) ? state.players : [];
     players.forEach(player => {
-      const raw = player?.manualShiftOverride
-        ? (player?.shift || player?.shiftLabel || player?.registeredShiftRaw || player?.registeredShift || player?.registeredShiftLabel || player?.raw?.shift_availability || 'both')
-        : (player?.registeredShiftRaw || player?.raw?.shift_availability || player?.registeredShift || player?.registeredShiftLabel || player?.shift || player?.shiftLabel || 'both');
+      const raw = (() => {
+        try {
+          if (typeof PNS.getRegisteredShiftForPlayer === 'function') return PNS.getRegisteredShiftForPlayer(player);
+        } catch {}
+        return player?.manualShiftOverride
+          ? (player?.shift || player?.shiftLabel || player?.registeredShiftRaw || player?.registeredShift || player?.registeredShiftLabel || player?.raw?.shift_availability || 'both')
+          : (player?.registeredShiftRaw || player?.raw?.shift_availability || player?.registeredShift || player?.registeredShiftLabel || player?.shift || player?.shiftLabel || 'both');
+      })();
       if (normalizeShift(raw) !== shift) return;
       stats.total += 1;
       const role = normalizeRole(player?.role);

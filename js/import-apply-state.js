@@ -250,6 +250,7 @@
     W({ preserveImportData: !0 });
     try { e.autoEnableTiersFromPlayers?.(players, { mode:'import' }); } catch {}
     t.players = players;
+    try { e.applyDeletedPlayersFilter?.(); } catch {}
     try { e.syncHomeShiftCountFromImportedPlayers?.(players); } catch {}
     try { t.importData = t.importData || {}; t.importData.sourcePending = !1; } catch {}
     try { wiz._skipPlayerRestoreUntilApplied = !1; } catch {}
@@ -274,7 +275,7 @@
     if ('function' == typeof e.applyShiftFilter) e.applyShiftFilter(t.activeShift);
     if ('function' == typeof e.savePlayersSnapshot) e.savePlayersSnapshot(t.players);
     try { U?.(); } catch {}
-    try { e.saveTowersSnapshot?.(); } catch {}
+    try { e.saveTowerCalcRegionShiftPlans?.(undefined, { skipSnapshot: true }); } catch {}
     try { e.persistSessionStateSoon?.(20); } catch {}
     try { U?.(); } catch {}
     wiz.setImportStatus?.(
@@ -290,9 +291,9 @@
 
   function clonePlanState(value) {
     try {
-      return JSON.parse(JSON.stringify(value || { shift1: null, shift2: null }));
+      return JSON.parse(JSON.stringify(value || { shift1: null, shift2: null, shift3: null, shift4: null }));
     } catch {
-      return { shift1: null, shift2: null };
+      return { shift1: null, shift2: null, shift3: null, shift4: null };
     }
   }
 
@@ -309,6 +310,8 @@
       localStorage.setItem('pns_layout_shift_plans_store_v1', JSON.stringify({
         shift1: Object.prototype.hasOwnProperty.call(plans || {}, 'shift1') ? plans.shift1 ?? null : null,
         shift2: Object.prototype.hasOwnProperty.call(plans || {}, 'shift2') ? plans.shift2 ?? null : null,
+        shift3: Object.prototype.hasOwnProperty.call(plans || {}, 'shift3') ? plans.shift3 ?? null : null,
+        shift4: Object.prototype.hasOwnProperty.call(plans || {}, 'shift4') ? plans.shift4 ?? null : null,
       }));
     } catch {}
   }
@@ -476,12 +479,14 @@
 
     try { e.autoEnableTiersFromPlayers?.(merged, { mode:'import' }); } catch {}
     t.players = merged;
+    try { e.applyDeletedPlayersFilter?.(); } catch {}
     t.playerById = new Map(merged.map((player) => [player.id, player]));
     try { t.importData = t.importData || {}; t.importData.sourcePending = !1; } catch {}
     try { wiz._skipPlayerRestoreUntilApplied = !1; } catch {}
 
     try { t.shiftPlans = clonePlanState(preservedShiftPlans); } catch {}
     try { writeStoredShiftPlans(t.shiftPlans || preservedShiftPlans); } catch {}
+    try { e.saveTowerCalcRegionShiftPlans?.(undefined, { skipSnapshot: true }); } catch {}
     try { t.towerCalc = cloneJSON(preservedRuntimeCalc, {}); } catch {}
     try { t.towerCalcLastResults = cloneJSON(preservedCalcResults, null); } catch {}
     try { writeJsonKey('pns_tower_calc_state', preservedCalcState || {}); } catch {}

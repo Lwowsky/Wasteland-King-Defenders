@@ -188,6 +188,11 @@
   }
 
   function getRegisteredShiftForPlayer(player){
+    if (player?.manualShiftOverride) {
+      const manual = normalizeShiftValue(player?.shift || player?.shiftLabel || player?.registeredShift || player?.registeredShiftLabel || '');
+      if (/^shift[1-4]$/.test(manual) || manual === 'both') return manual;
+    }
+
     const fromImport = (function(playerObj){
       if (!playerObj || typeof playerObj !== 'object') return '';
       const registeredRaw = String(playerObj.registeredShiftRaw || '').trim();

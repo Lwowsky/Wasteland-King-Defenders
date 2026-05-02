@@ -880,7 +880,7 @@
   "manual_player_manual_badge": "Manuell",
   "manual_player_import_badge": "Import",
   "manual_player_empty": "Keine Spieler gefunden.",
-  "delete_player": "Löschen",
+  "delete_player": "Spieler löschen",
   "saved": "Gespeichert",
   "manual_player_search_placeholder": "Nach Name / Allianz suchen",
   "shift_recognition_title": "4. Schichterkennung",
@@ -909,6 +909,7 @@
   "both_dynamic_many": "Alle",
   "use_all": "„Alle” verwenden",
   "use_both_dynamic_two": "„Beide” verwenden",
-  "use_both_dynamic_many": "„Alle” verwenden"
+  "use_both_dynamic_many": "„Alle” verwenden",
+  "delete_player_confirm": "Spieler aus der Tabelle löschen?"
   });
 })();

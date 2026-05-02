@@ -189,6 +189,7 @@
 
     try { window.PNSI18N?.apply?.(document.getElementById('tierVisibilityPanel')); } catch {}
     apply();
+    try { document.dispatchEvent(new CustomEvent('pns:tier-visibility-changed')); } catch {}
   }
 
   function addTier(){

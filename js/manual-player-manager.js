@@ -3,6 +3,7 @@
   const PNS = window.PNS = window.PNS || {};
   const state = PNS.state = PNS.state || {};
   const KEY = 'pns_manual_players_v1';
+  const DELETED_KEY = 'pns_deleted_player_ids_v1';
   const tr = (key, fallback='') => typeof PNS.t === 'function' ? PNS.t(key, fallback) : fallback;
   const $ = (sel, root=document) => root.querySelector(sel);
   const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
@@ -23,6 +24,43 @@
 
   function writeManual(list){
     try { localStorage.setItem(KEY, JSON.stringify(Array.isArray(list) ? list : [])); } catch {}
+  }
+
+  function readDeletedIds(){
+    const list = safeParse(localStorage.getItem(DELETED_KEY) || '[]', []);
+    return new Set((Array.isArray(list) ? list : []).map(id => String(id || '')).filter(Boolean));
+  }
+
+  function writeDeletedIds(ids){
+    try { localStorage.setItem(DELETED_KEY, JSON.stringify(Array.from(ids || []).map(id => String(id || '')).filter(Boolean))); } catch {}
+  }
+
+  function markDeleted(id){
+    const clean = String(id || '').trim();
+    if (!clean) return;
+    const ids = readDeletedIds();
+    ids.add(clean);
+    writeDeletedIds(ids);
+  }
+
+  function clearDeletedIds(){
+    try { localStorage.removeItem(DELETED_KEY); } catch {}
+  }
+
+  function isDeleted(id){
+    const clean = String(id || '').trim();
+    return !!clean && readDeletedIds().has(clean);
+  }
+
+  function applyDeletedFilter(){
+    ensureArrays();
+    const ids = readDeletedIds();
+    if (!ids.size) return 0;
+    const before = state.players.length;
+    ids.forEach(removeFromAssignments);
+    state.players = state.players.filter(player => !ids.has(String(player?.id || '')));
+    state.playerById = new Map(state.players.map(player => [String(player.id || ''), player]));
+    return Math.max(0, before - state.players.length);
   }
 
   function nextId(){
@@ -100,6 +138,7 @@
       rowEl: null,
       actionCellEl: null,
       assignment: player?.assignment || null,
+      manualShiftOverride: !!player?.manualShiftOverride,
       manualAdded: player?.manualAdded !== false
     };
     return out;
@@ -107,14 +146,19 @@
 
   function mergeManualIntoState(){
     ensureArrays();
-    const list = readManual().map(normalizePlayer);
-    if (!list.length) return;
+    applyDeletedFilter();
+    const list = readManual().map(normalizePlayer).filter(player => !isDeleted(player.id));
+    if (!list.length) {
+      state.playerById = new Map(state.players.map(p => [String(p.id || ''), p]));
+      return;
+    }
     const byId = new Map(state.players.map((p, idx) => [String(p?.id || ''), idx]));
     for (const player of list) {
       const idx = byId.get(String(player.id));
       if (idx >= 0) state.players[idx] = { ...state.players[idx], ...player, assignment: state.players[idx].assignment || player.assignment || null };
       else state.players.push(player);
     }
+    applyDeletedFilter();
     state.playerById = new Map(state.players.map(p => [String(p.id || ''), p]));
     try { PNS.autoEnableTiersFromPlayers?.(list, { mode:'append' }); } catch {}
   }
@@ -125,6 +169,7 @@
   }
 
   function persistAll(){
+    applyDeletedFilter();
     saveManualFromState();
     try { PNS.savePlayersSnapshot?.(state.players); } catch {}
     try { PNS.renderPlayersTableFromState?.(); } catch {}
@@ -132,6 +177,7 @@
     try { PNS.renderAll?.(); } catch {}
     try { PNS.persistSessionStateSoon?.(20); } catch {}
     try { document.dispatchEvent(new CustomEvent('players-table-data-changed')); } catch {}
+    try { document.dispatchEvent(new CustomEvent('pns:players-deleted-filter-applied')); } catch {}
   }
 
   function removeFromAssignments(playerId){
@@ -351,12 +397,15 @@
     setStatus(tr('saved','Збережено'));
   }
 
-  function deleteCurrent(){
+  function deleteCurrent(ev){
+    ev?.preventDefault?.();
+    ev?.stopPropagation?.();
     const id = String($('#manualPlayerId')?.value || activeId || '');
-    if (!id) return;
+    if (!id) return setStatus(tr('manual_player_select_to_delete','Спочатку вибери гравця.'), true);
     const player = (state.players || []).find(p => String(p?.id || '') === id);
     const name = player?.name || '';
     if (!confirm(tr('manual_player_delete_confirm','Видалити гравця?') + (name ? ` ${name}` : ''))) return;
+    markDeleted(id);
     removeFromAssignments(id);
     state.players = (state.players || []).filter(p => String(p?.id || '') !== id);
     state.playerById = new Map(state.players.map(p => [String(p.id || ''), p]));
@@ -391,6 +440,7 @@
 
   function clearManualPlayersForNewImport(){
     writeManual([]);
+    clearDeletedIds();
     try {
       if (Array.isArray(state.players)) {
         const removed = new Set(state.players.filter(p => p?.manualAdded).map(p => String(p.id || '')));
@@ -439,6 +489,7 @@
 
   function init(){
     mergeManualIntoState();
+    applyDeletedFilter();
     bind();
     try { PNS.renderPlayersTableFromState?.(); } catch {}
   }
@@ -448,10 +499,16 @@
     close: closeModal,
     readManualPlayers: readManual,
     saveManualPlayers: writeManual,
+    readDeletedPlayerIds: () => Array.from(readDeletedIds()),
+    clearDeletedPlayerIds: clearDeletedIds,
+    isDeletedPlayer: isDeleted,
+    applyDeletedPlayersFilter: applyDeletedFilter,
     mergeManualIntoState,
     clearManualPlayersForNewImport,
     persistManualPlayers: saveManualFromState,
   };
+  PNS.isDeletedPlayer = isDeleted;
+  PNS.applyDeletedPlayersFilter = applyDeletedFilter;
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
