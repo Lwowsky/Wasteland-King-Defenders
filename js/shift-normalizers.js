@@ -46,6 +46,7 @@
   if (raw === '3') return 'shift3';
   if (raw === '4') return 'shift4';
 
+
   try {
     if (!e.__normalizingImportShiftRule && typeof e.applyImportShiftRule === 'function') {
       e.__normalizingImportShiftRule = true;

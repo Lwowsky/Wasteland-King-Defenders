@@ -26,6 +26,17 @@
     merge.custom = { ...defaultMerge().custom, ...(merge.custom && typeof merge.custom === 'object' ? merge.custom : {}) };
     writeJson(MERGE_KEY, merge);
   }
+
+  function getActiveConfiguredShiftCount(){
+    try {
+      const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null') || {};
+      const region = localStorage.getItem('pns_tower_calc_active_region_v1') || settings.activeRegion || 'region1';
+      const shifts = settings?.regions?.[region]?.shifts || settings?.regions?.region1?.shifts || {};
+      const selected = ['4','3','2','1'].find(n => !!shifts[n]) || '2';
+      return Math.max(1, Math.min(4, Number(selected) || 2));
+    } catch { return 2; }
+  }
+  function keepDistinctShift34(){ return getActiveConfiguredShiftCount() >= 3; }
   function labelOf(shift){
     const key = String(shift||'');
     if(key === 'shift1') return tr('shift1','Зміна 1');
@@ -62,6 +73,8 @@
     const mode = String(merge.mode || 'custom');
     if(mode === 'custom') {
       const target = merge.custom?.[s];
+      // Custom merge is an explicit user choice. If Shift 3/4 are mapped to Shift 2,
+      // the imported players must really be assigned to Shift 2.
       return /^shift[1-4]$/.test(target) || target === 'both' || target === 'ignore' ? target : s;
     }
     // Presets keep "All" universal. To send All into a specific shift, use Custom merge.
@@ -136,8 +149,7 @@
     const rules = {};
     getUniqueShiftValues().forEach(item => rules[item.value] = autoDetect(item.value));
     writeRules(rules);
-    // Auto-recognize must also normalize the merge sector back to a safe identity map.
-    writeMerge(defaultMerge());
+    // Auto-detect only updates recognition. It must not erase the user's custom merge.
     render();
     try{ applyShiftRulesToCurrentPlayers(); }catch{}
   }
@@ -150,11 +162,18 @@
   function syncHomeShiftCountFromPlayers(players){
     try{
       const list = Array.isArray(players) ? players : [];
-      const max = list.reduce((m,p)=>{ const s=String(p?.shift||p?.registeredShift||''); const n=Number((s.match(/shift([1-4])/)||[])[1]||0); return Math.max(m,n); }, 1);
-      const count = Math.max(1, Math.min(4, max || 1));
+      const maxFromPlayers = list.reduce((m,p)=>{ const s=String(p?.shift||p?.registeredShift||''); const n=Number((s.match(/shift([1-4])/)||[])[1]||0); return Math.max(m,n); }, 1);
       const raw = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || '{}') || {};
-      raw.regions = raw.regions || {}; raw.regions.region1 = raw.regions.region1 || { enabled:true, shifts:{} };
-      raw.regions.region1.enabled = true; raw.regions.region1.shifts = { '1':count===1, '2':count===2, '3':count===3, '4':count===4 };
+      const region = localStorage.getItem('pns_tower_calc_active_region_v1') || raw.activeRegion || 'region1';
+      const currentShifts = raw?.regions?.[region]?.shifts || raw?.regions?.region1?.shifts || {};
+      const currentCount = Math.max(1, Math.min(4, Number(['4','3','2','1'].find(n => !!currentShifts[n]) || 0) || 0));
+      // Do not collapse a user-selected 3/4-shift setup just because Shift 3/4 are empty
+      // or intentionally merged into Shift 2.
+      const count = Math.max(currentCount || 1, Math.max(1, Math.min(4, maxFromPlayers || 1)));
+      raw.activeRegion = raw.activeRegion || region;
+      raw.regions = raw.regions || {}; raw.regions[region] = raw.regions[region] || { enabled:true, shifts:{} };
+      raw.regions[region].enabled = true; raw.regions[region].shifts = { '1':count===1, '2':count===2, '3':count===3, '4':count===4 };
+      if (region !== 'region1') raw.regions.region1 = raw.regions.region1 || { enabled:true, shifts:{ '1':false, '2':true, '3':false, '4':false } };
       localStorage.setItem('pns_import_region_shift_settings_v1', JSON.stringify(raw));
       try { window.PNS?.setImportRegionShiftSettings?.(raw); } catch {}
     }catch{}
@@ -206,6 +225,7 @@
     if(!(event.target?.id === 'shiftRecognitionMergeMode' || event.target?.matches?.('[data-shift-merge-source]'))) return false;
     writeMerge(readUiMerge());
     render();
+    try{ applyShiftRulesToCurrentPlayers(); }catch{}
     return true;
   }
   document.addEventListener('change', event => {

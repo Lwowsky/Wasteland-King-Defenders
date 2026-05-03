@@ -67,7 +67,7 @@
         : activeRegion();
       const regionSettings = settings?.regions?.[targetRegion] || settings?.regions?.region1 || {};
       const shifts = regionSettings?.shifts || {};
-      const selected = ['1', '2', '3', '4'].find((key) => !!shifts[key]) || '2';
+      const selected = ['4', '3', '2', '1'].find((key) => !!shifts[key]) || '2';
       return Math.max(1, Math.min(4, Number(selected) || 2));
     } catch {
       return 2;

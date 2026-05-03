@@ -95,7 +95,7 @@
     try {
       const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null') || {};
       const shifts = settings?.regions?.region1?.shifts || {};
-      const selected = ['1', '2', '3', '4'].find((n) => !!shifts[n]) || '2';
+      const selected = ['4', '3', '2', '1'].find((n) => !!shifts[n]) || '2';
       return Math.max(1, Math.min(4, Number(selected) || 2));
     } catch {
       return 2;

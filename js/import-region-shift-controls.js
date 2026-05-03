@@ -48,7 +48,7 @@
       REGIONS.forEach((region) => {
         const source = raw.regions && raw.regions[region] ? raw.regions[region] : {};
         state.regions[region].enabled = region === 'region1' ? true : !!source.enabled;
-        const selectedShift = SHIFT_COUNTS.find((count) => !!(source.shifts && source.shifts[count])) || '2';
+        const selectedShift = ['4','3','2','1'].find((count) => !!(source.shifts && source.shifts[count])) || '2';
         SHIFT_COUNTS.forEach((count) => {
           state.regions[region].shifts[count] = count === selectedShift;
         });
@@ -110,7 +110,7 @@
     const nextCount = String(count);
     if (!REGIONS.includes(region) || !SHIFT_COUNTS.includes(nextCount)) return;
     const state = loadState();
-    const selectedShift = checked ? nextCount : (SHIFT_COUNTS.find((item) => state.regions[region].shifts[item]) || '2');
+    const selectedShift = checked ? nextCount : (['4','3','2','1'].find((item) => state.regions[region].shifts[item]) || '2');
     SHIFT_COUNTS.forEach((item) => {
       state.regions[region].shifts[item] = item === selectedShift;
     });

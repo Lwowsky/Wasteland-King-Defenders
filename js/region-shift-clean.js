@@ -55,7 +55,7 @@
           const src = raw.regions && raw.regions[region] ? raw.regions[region] : null;
           if (!src) return;
           out.regions[region].enabled = region === 'region1' ? true : !!src.enabled;
-          const selected = ['1', '2', '3', '4'].find(n => src.shifts && src.shifts[n]) || '2';
+          const selected = ['4', '3', '2', '1'].find(n => src.shifts && src.shifts[n]) || '2';
           ['1', '2', '3', '4'].forEach(n => { out.regions[region].shifts[n] = n === selected; });
         });
       }
@@ -67,6 +67,8 @@
   function saveSettings(settings){
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {}
     PNS.importRegionShiftSettings = settings;
+    try { document.dispatchEvent(new CustomEvent('pns:region-shifts-changed')); } catch {}
+    try { PNS.refreshDynamicBothLabels?.(document); } catch {}
   }
 
   function enabledRegions(settings = readSettings()){
@@ -101,7 +103,7 @@
 
   function shiftCount(settings = readSettings(), region = activeRegion(settings)){
     const shifts = settings.regions?.[region]?.shifts || {};
-    const selected = ['1', '2', '3', '4'].find(n => shifts[n]) || '2';
+    const selected = ['4', '3', '2', '1'].find(n => shifts[n]) || '2';
     return Math.max(1, Math.min(4, Number(selected) || 2));
   }
 
@@ -802,6 +804,7 @@
     const left = document.createElement('div');
     left.className = 'rs-toolbar-left';
     left.setAttribute('data-rs-clear-shift-count', String(shiftCount()));
+    left.setAttribute('data-rs-toolbar-locale', String(window.PNSI18N?.locale || document.documentElement.dataset.locale || ''));
 
     left.appendChild(button(t('rebalance', 'Застосувати перерозподіл'), () => {
       setApplyMode('rebalance');
@@ -905,7 +908,7 @@
 
     const clearCount = shiftCount();
     for (let i = 1; i <= clearCount; i += 1) {
-      addItem(`${t('clear_shift', 'Очистити зміну')} ${i}`, () => clearShiftScope(`shift${i}`));
+      addItem(t(`clear_shift_${i}`, `${t('clear_shift', 'Очистити зміну')} ${i}`), () => clearShiftScope(`shift${i}`));
     }
     addItem(t('clear_all_shifts', 'Очистити всі зміни'), () => clearShiftScope('all'));
     if (document.querySelector('#towerCalcModal #towerCalcRestoreImportShiftsBtn')) addItem(t('restore_from_import', 'Відновити з імпорту'), () => clickHidden('#towerCalcRestoreImportShiftsBtn'));
@@ -956,10 +959,11 @@
 
     let left = head.querySelector(':scope > .rs-toolbar-left');
     const toolbarShiftCount = String(shiftCount());
+    const toolbarLocale = String(window.PNSI18N?.locale || document.documentElement.dataset.locale || '');
     if (!left) {
       left = renderToolbar();
       head.insertBefore(left, head.firstChild || null);
-    } else if (left.getAttribute('data-rs-clear-shift-count') !== toolbarShiftCount) {
+    } else if (left.getAttribute('data-rs-clear-shift-count') !== toolbarShiftCount || left.getAttribute('data-rs-toolbar-locale') !== toolbarLocale) {
       const nextLeft = renderToolbar();
       left.replaceWith(nextLeft);
       left = nextLeft;

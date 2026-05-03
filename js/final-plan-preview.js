@@ -36,7 +36,7 @@
       const label = typeof PNS.shiftLabel === 'function' ? String(PNS.shiftLabel(key) || '') : '';
       if (label && label !== key && !/^shift[1-4]$/i.test(label)) return label;
     } catch {}
-    if (key === 'both') return tr('both', 'Всі');
+    if (key === 'both') return typeof PNS.getBothDisplayLabel === 'function' ? PNS.getBothDisplayLabel() : tr('both', 'Всі');
     if (n >= 1 && n <= 4) return n === 1 ? tr('shift1', 'Зміна 1') : n === 2 ? tr('shift2', 'Зміна 2') : n === 3 ? tr('shift3', 'Зміна 3') : tr('shift4', 'Зміна 4');
     return String(shift || '');
   }
@@ -126,7 +126,7 @@
           const src = raw.regions && raw.regions[region] ? raw.regions[region] : null;
           if (!src) return;
           defaults.regions[region].enabled = region === 'region1' ? true : !!src.enabled;
-          const selected = ['1','2','3','4'].find(n => src.shifts && src.shifts[n]) || '2';
+          const selected = ['4','3','2','1'].find(n => src.shifts && src.shifts[n]) || '2';
           ['1','2','3','4'].forEach(n => { defaults.regions[region].shifts[n] = n === selected; });
         });
       }
@@ -242,7 +242,7 @@
     } catch {}
     const settings = readRegionSettings();
     const shifts = settings.regions?.[region]?.shifts || {};
-    const selected = ['1','2','3','4'].find(n => shifts[n]) || '2';
+    const selected = ['4','3','2','1'].find(n => shifts[n]) || '2';
     return Math.max(1, Math.min(4, Number(selected) || 2));
   }
 
@@ -434,28 +434,37 @@
     return bases.slice(0, 5).map(baseId => state.baseById?.get?.(baseId) || { id: baseId, title: baseId });
   }
 
+  function readStoredShiftPlan(shift) {
+    const key = normalizePreviewShift(shift);
+    try { state.shiftPlans = state.shiftPlans && typeof state.shiftPlans === 'object' ? state.shiftPlans : {}; } catch {}
+    let activeRegion = 'region1';
+    try {
+      const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null') || {};
+      activeRegion = localStorage.getItem('pns_tower_calc_active_region_v1') || settings.activeRegion || 'region1';
+      const regionStore = JSON.parse(localStorage.getItem('pns_layout_region_shift_plans_store_v1') || '{}') || {};
+      const flatStore = JSON.parse(localStorage.getItem('pns_layout_shift_plans_store_v1') || '{}') || {};
+      const source = regionStore?.[activeRegion]?.[key] || flatStore?.[key] || state.shiftPlans?.[key] || null;
+      if (source) {
+        const cloned = JSON.parse(JSON.stringify(source));
+        state.shiftPlans[key] = cloned;
+        return cloned;
+      }
+    } catch {}
+    return state.shiftPlans?.[key] || null;
+  }
+
   function getShiftBaseAssignments(shift) {
-    (function ensureShiftPlans() {
-      try { state.shiftPlans = state.shiftPlans || {}; } catch {}
-      try {
-        const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null') || {};
-        const activeRegion = localStorage.getItem('pns_tower_calc_active_region_v1') || settings.activeRegion || 'region1';
-        const regionStore = JSON.parse(localStorage.getItem('pns_layout_region_shift_plans_store_v1') || '{}') || {};
-        const flatStore = JSON.parse(localStorage.getItem('pns_layout_shift_plans_store_v1') || '{}') || {};
-        const source = regionStore?.[activeRegion] || flatStore || {};
-        ['shift1','shift2','shift3','shift4'].forEach(key => {
-          if (source[key]) state.shiftPlans[key] = JSON.parse(JSON.stringify(source[key]));
-        });
-      } catch {}
-      return state.shiftPlans;
-    })();
+    const normalizedShift = normalizePreviewShift(shift);
     const slots = getBaseSlots();
-    const planBases = state.shiftPlans?.[shift]?.bases || {};
+    const plan = readStoredShiftPlan(normalizedShift);
+    const planBases = plan?.bases || {};
+    const useLive = !plan && String(state.activeShift || '').toLowerCase() === normalizedShift;
     return slots.map((base, index) => {
+      const live = useLive ? (state.baseById?.get?.(String(base?.id || '')) || base) : null;
       const saved = planBases?.[base?.id] || {};
-      const captainId = String(saved.captainId || '');
-      const helperIds = Array.isArray(saved.helperIds) ? saved.helperIds : [];
-      const role = saved.role || base?.role || null;
+      const captainId = String(saved.captainId || live?.captainId || '');
+      const helperIds = Array.isArray(saved.helperIds) ? saved.helperIds : (Array.isArray(live?.helperIds) ? live.helperIds : []);
+      const role = saved.role || live?.role || base?.role || null;
       return {
         index,
         baseId: String(base?.id || ''),

@@ -79,7 +79,7 @@
   }
 
   function useBothWord(){
-    const info = effectiveShiftInfo();
+    const info = homeShiftInfo();
     const mode = info.count <= 2 ? 'both' : 'all';
     if (info.explicit) writeStoredMode(mode);
     return mode === 'both';

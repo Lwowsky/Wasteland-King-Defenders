@@ -24,7 +24,7 @@
       const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null') || {};
       const region = localStorage.getItem('pns_tower_calc_active_region_v1') || settings.activeRegion || 'region1';
       const data = settings?.regions?.[region] || settings?.regions?.region1 || {};
-      const selected = ['1','2','3','4'].find(n => !!data?.shifts?.[n]);
+      const selected = ['4','3','2','1'].find(n => !!data?.shifts?.[n]);
       const count = Math.max(1, Math.min(4, Number(selected) || 2));
       return Array.from({ length: count }, (_, i) => `shift${i + 1}`);
     } catch {

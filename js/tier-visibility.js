@@ -165,10 +165,12 @@
     ensureCalcInputs();
     ensureInlineTowerInputs();
     const visible = enabledSet();
+    const playerTiers = tiersFromPlayers(PNS.state?.players || []);
     document.querySelectorAll('[data-v4-tier], [data-calc-tier-target], [data-picker-tier]').forEach(input => {
       const tier = normalizeTier(input.dataset.v4Tier || input.dataset.calcTierTarget || input.dataset.pickerTier || '');
       if(!tier) return;
       const label = input.closest('label') || input;
+      const isCalcTarget = !!input.dataset.calcTierTarget;
       const isVisible = visible.has(tier);
       label.dataset.tierVisibilityTier = tier;
       label.dataset.extraTierHidden = isVisible ? '0' : '1';
@@ -254,5 +256,10 @@
   });
 
   document.addEventListener('DOMContentLoaded', () => setTimeout(render, 80));
+  document.addEventListener('pns:dom:refreshed', () => setTimeout(apply, 50));
+  document.addEventListener('pns:tower-calc-rendered', () => setTimeout(apply, 50));
+  document.addEventListener('click', event => {
+    if(event.target?.closest?.('[data-calc-main-tab], [data-calc-tab]')) setTimeout(apply, 80);
+  }, true);
   setTimeout(render, 200);
 })();

@@ -972,11 +972,7 @@
 <h3>{{player_status_title}}</h3>
 <div class="muted small">{{subtitle_text}}</div>
 </div>
-<div class="tcv5-tabs" role="tablist">
-<button class="btn btn-sm {{shift1_tab_class}}" data-ov5-tab="shift1" type="button">{{shift1_text}}</button>
-<button class="btn btn-sm {{shift2_tab_class}}" data-ov5-tab="shift2" type="button">{{shift2_text}}</button>
-<button class="btn btn-sm {{both_tab_class}}" data-ov5-tab="both" type="button">{{both_text}}</button>
-</div>
+<div class="tcv5-tabs" role="tablist">{{status_tabs_html}}</div>
 </div>
 <div class="tcv5-overflow-summary">{{summary_cards_html}}</div>
 <section class="tcv5-panel is-active" data-ov5-panel="{{panel_shift}}">
@@ -992,8 +988,7 @@
 <button class="btn btn-xs {{filter_reserve_class}}" data-ov5-filter="reserve" type="button">{{filter_reserve_text}}</button>
 </div>
 <div class="tcv17-overflow-actions">
-<button class="btn btn-xs" data-ov5-reset-shift="shift1" type="button">{{reset_shift1_text}}</button>
-<button class="btn btn-xs" data-ov5-reset-shift="shift2" type="button">{{reset_shift2_text}}</button>
+{{reset_buttons_html}}
 <button class="btn btn-xs" data-ov5-restore-import="1" type="button">{{restore_import_text}}</button>
 </div>
 </div>

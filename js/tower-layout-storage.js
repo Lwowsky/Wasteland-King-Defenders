@@ -34,7 +34,7 @@
 
   function overrideKey(baseId, playerId, shift) {
     const activeShift = String(shift || state?.activeShift || 'shift1').toLowerCase();
-    const normalizedShift = activeShift === 'all' ? 'shift1' : (activeShift === 'shift2' ? 'shift2' : 'shift1');
+    const normalizedShift = /^shift[1-4]$/.test(activeShift) ? activeShift : 'shift1';
     return `${String(baseId || '')}::${normalizedShift}::${String(playerId || '')}`;
   }
 
@@ -195,7 +195,10 @@
     try {
       const parsed = JSON.parse(localStorage.getItem('pns_layout_shift_plans_store_v1') || '{}');
       hasShiftPlans = !!(parsed && typeof parsed === 'object' && !Array.isArray(parsed) && (
-        Object.prototype.hasOwnProperty.call(parsed, 'shift1') || Object.prototype.hasOwnProperty.call(parsed, 'shift2')
+        Object.prototype.hasOwnProperty.call(parsed, 'shift1') ||
+        Object.prototype.hasOwnProperty.call(parsed, 'shift2') ||
+        Object.prototype.hasOwnProperty.call(parsed, 'shift3') ||
+        Object.prototype.hasOwnProperty.call(parsed, 'shift4')
       ));
     } catch {}
 

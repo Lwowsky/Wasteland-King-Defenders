@@ -68,7 +68,7 @@
   function setOverflowReserve(playerId, shift) {
     const state = getCalcState();
     const normalizedPlayerId = String(playerId || '');
-    const normalizedShift = ['shift1', 'shift2'].includes(String(shift || '').toLowerCase())
+    const normalizedShift = /^shift[1-4]$/.test(String(shift || '').toLowerCase())
       ? String(shift).toLowerCase()
       : '';
     if (!normalizedPlayerId) return;
@@ -83,6 +83,8 @@
     const stats = {
       shift1: { total: 0, shooter: 0, rider: 0, fighter: 0 },
       shift2: { total: 0, shooter: 0, rider: 0, fighter: 0 },
+      shift3: { total: 0, shooter: 0, rider: 0, fighter: 0 },
+      shift4: { total: 0, shooter: 0, rider: 0, fighter: 0 },
       both: { total: 0, shooter: 0, rider: 0, fighter: 0 },
       unknown: { total: 0, shooter: 0, rider: 0, fighter: 0 },
       total: 0
@@ -158,9 +160,13 @@
       const playerId = String(player.id || '');
       if (assignedIds.has(playerId) || player.assignment?.baseId) continue;
 
+      // Use the same effective shift that the top Shift cards use. After Custom merge,
+      // Shift 3/4 can intentionally be assigned into Shift 2, so Player Status must not
+      // re-read the original imported value and put those players back into Shift 3/4.
+      const rawShift = (player.shift || player.shiftLabel || player.registeredShift || player.registeredShiftLabel || player.registeredShiftRaw || player.raw?.shift_availability || 'both');
       const shiftKey = String((typeof PNS.normalizeShiftValue === 'function'
-        ? PNS.normalizeShiftValue(player.shift || player.shiftLabel || 'both')
-        : player.shift || player.shiftLabel || 'both') || 'both').toLowerCase();
+        ? PNS.normalizeShiftValue(rawShift)
+        : rawShift) || 'both').toLowerCase();
       if (!buckets[shiftKey] || (usedIds.has(playerId) && !playerStatuses.has(playerId))) continue;
 
       const status = playerStatuses.get(playerId) || {};

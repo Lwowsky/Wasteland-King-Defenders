@@ -78,6 +78,17 @@
     return tr('both', 'Всі');
   }
 
+
+  function getActiveConfiguredShiftCount(){
+    try {
+      const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null') || {};
+      const region = localStorage.getItem('pns_tower_calc_active_region_v1') || settings.activeRegion || 'region1';
+      const shifts = settings?.regions?.[region]?.shifts || settings?.regions?.region1?.shifts || {};
+      const selected = ['4','3','2','1'].find(n => !!shifts[n]) || '2';
+      return Math.max(1, Math.min(4, Number(selected) || 2));
+    } catch { return 2; }
+  }
+  function keepDistinctShift34(){ return getActiveConfiguredShiftCount() >= 3; }
   function applyMerge(shift, config = readConfig()){
     const source = String(shift || '').toLowerCase();
     if (source === 'ignore') return 'ignore';

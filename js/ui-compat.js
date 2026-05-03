@@ -114,12 +114,19 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
         settings.regions.region1 = settings.regions.region1 || { enabled: true, shifts: {} };
         settings.regions.region1.enabled = true;
 
-        const current = ['1', '2', '3', '4'].find((n) => !!settings.regions.region1.shifts?.[n]) || '2';
+        const current = ['4', '3', '2', '1'].find((n) => !!settings.regions.region1.shifts?.[n]) || '2';
 
         // Якщо користувач вручну вибрав кількість змін для Home/Дім,
         // не перезаписуємо її автоматикою після renderStats.
         if (localStorage.getItem('pns_import_region1_shift_manual_override_v1') === '1') {
           return Math.max(1, Math.min(4, Number(current) || nextCount));
+        }
+
+        const currentCount = Math.max(1, Math.min(4, Number(current) || 2));
+        // Do not collapse a user-selected 3/4-shift setup when those later shifts are empty.
+        // Auto-detection may still increase the count when imported data contains higher shifts.
+        if (nextCount < currentCount) {
+          return currentCount;
         }
 
         if (String(current) !== String(nextCount)) {
@@ -138,7 +145,7 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
       try {
         const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null');
         const shifts = settings?.regions?.region1?.shifts || {};
-        const selected = ['1', '2', '3', '4'].find((n) => !!shifts[n]) || '2';
+        const selected = ['4', '3', '2', '1'].find((n) => !!shifts[n]) || '2';
         return Math.max(1, Math.min(4, Number(selected) || 2));
       } catch {
         return 2;

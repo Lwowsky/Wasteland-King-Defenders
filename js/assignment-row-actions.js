@@ -6,11 +6,20 @@
   const { state } = e;
   const t = (key, fallback="") => typeof e.assignmentText === "function" ? e.assignmentText(key, fallback) : fallback;
 
+  function getActiveShiftKeys() {
+    let count = 2;
+    try {
+      if (typeof e.getTowerCalcShiftCount === "function") count = Number(e.getTowerCalcShiftCount()) || 2;
+    } catch {}
+    count = Math.max(1, Math.min(4, count));
+    return Array.from({ length: count }, (_, index) => `shift${index + 1}`);
+  }
+
   function getPlacementForShift(player, shift) {
     const shiftKey = String(shift || "").toLowerCase();
     const shiftLabel = typeof e.assignmentShiftLabel === "function"
       ? e.assignmentShiftLabel(shiftKey)
-      : (shiftKey === "shift1" ? t("shift1", "Зміна 1") : t("shift2", "Зміна 2"));
+      : (/^shift[1-4]$/.test(shiftKey) ? t(shiftKey, `Зміна ${shiftKey.replace("shift", "")}`) : t("both", "Всі"));
 
     const assignment = (() => {
       const planRoot = state.shiftPlans?.[shiftKey] || null;
@@ -47,7 +56,7 @@
 
   function renderPlacementCard(player) {
     const activeShift = String(state.activeShift || "").toLowerCase();
-    const itemsHtml = ["shift1", "shift2"].map(shift => {
+    const itemsHtml = getActiveShiftKeys().map(shift => {
       const item = getPlacementForShift(player, shift);
       return e.renderHtmlTemplate("tpl-player-placement-item", {
         item_class: e.escapeHtml([
