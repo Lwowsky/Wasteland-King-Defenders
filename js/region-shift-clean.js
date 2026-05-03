@@ -350,24 +350,24 @@
     style.id = 'region-shift-clean-style';
     style.textContent = `
       #towerCalcModal #towerCalcTabs{
-        display:flex!important;
-        align-items:center!important;
-        gap:8px!important;
-        flex-wrap:nowrap!important;
-        overflow:visible!important;
+        display:flex;
+        align-items:center;
+        gap:8px;
+        flex-wrap:nowrap;
+        overflow:visible;
       }
       #towerCalcModal #towerCalcTabs .rs-shift-tabs,
       #towerCalcModal #towerCalcTabs .rs-region-tabs{
-        display:inline-flex!important;
-        align-items:center!important;
-        gap:8px!important;
-        flex-wrap:nowrap!important;
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        flex-wrap:nowrap;
       }
       #towerCalcModal #towerCalcTabs .rs-region-tabs{
-        margin-left:auto!important;
-        justify-content:flex-end!important;
+        margin-left:auto;
+        justify-content:flex-end;
       }
-      #towerCalcModal #towerCalcTabs .rs-region-tabs[hidden]{display:none!important;}
+      #towerCalcModal #towerCalcTabs .rs-region-tabs[hidden]{display:none;}
 
 
       #towerCalcModal .tcv-pro-head,
@@ -375,45 +375,45 @@
       #towerCalcModal .v9-advanced-head,
       #towerCalcModal .v10-advanced-head,
       #towerCalcModal .v11-advanced-head{
-        display:none!important;
+        display:none;
       }
 
       #towerCalcModal .rs-advanced-head{
-        display:flex!important;
-        align-items:center!important;
-        justify-content:space-between!important;
-        gap:12px!important;
-        width:100%!important;
-        margin:0 0 12px!important;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        width:100%;
+        margin:0 0 12px;
       }
       #towerCalcModal .rs-toolbar-left,
       #towerCalcModal .rs-region-right{
-        display:inline-flex!important;
-        align-items:center!important;
-        gap:8px!important;
-        flex-wrap:nowrap!important;
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        flex-wrap:nowrap;
       }
-      #towerCalcModal .rs-toolbar-left{flex:1 1 auto!important; min-width:0!important; overflow-x:auto!important; overflow-y:visible!important; -webkit-overflow-scrolling:touch!important; overscroll-behavior-x:contain!important; touch-action:pan-x!important; scrollbar-width:thin!important; padding-bottom:4px!important;}
-      #towerCalcModal .rs-region-right{flex:0 0 auto!important; justify-content:flex-end!important;}
+      #towerCalcModal .rs-toolbar-left{flex:1 1 auto; min-width:0; overflow-x:auto; overflow-y:visible; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; touch-action:pan-x; scrollbar-width:thin; padding-bottom:4px;}
+      #towerCalcModal .rs-region-right{flex:0 0 auto; justify-content:flex-end;}
       @media (max-width:520px){
-        #towerCalcModal .rs-advanced-head{display:block!important; overflow:visible!important;}
-        #towerCalcModal .rs-toolbar-left{display:flex!important; align-items:center!important; flex-wrap:nowrap!important; width:100%!important; max-width:100%!important; min-width:0!important; overflow-x:auto!important; overflow-y:hidden!important; gap:8px!important; -webkit-overflow-scrolling:touch!important; overscroll-behavior-x:contain!important; touch-action:pan-x!important; scrollbar-width:thin!important; padding-bottom:6px!important;}
+        #towerCalcModal .rs-advanced-head{display:block; overflow:visible;}
+        #towerCalcModal .rs-toolbar-left{display:flex; align-items:center; flex-wrap:nowrap; width:100%; max-width:100%; min-width:0; overflow-x:auto; overflow-y:hidden; gap:8px; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; touch-action:pan-x; scrollbar-width:thin; padding-bottom:6px;}
         #towerCalcModal .rs-toolbar-left .btn,
-        #towerCalcModal .rs-toolbar-left .rs-clear-wrap{flex:0 0 auto!important; width:auto!important; min-width:max-content!important; white-space:nowrap!important;}
-        #towerCalcModal .rs-toolbar-left .btn{line-height:1.15!important; padding-left:12px!important; padding-right:12px!important;}
+        #towerCalcModal .rs-toolbar-left .rs-clear-wrap{flex:0 0 auto; width:auto; min-width:max-content; white-space:nowrap;}
+        #towerCalcModal .rs-toolbar-left .btn{line-height:1.15; padding-left:12px; padding-right:12px;}
       }
-      #towerCalcModal .rs-region-right[hidden]{display:none!important;}
+      #towerCalcModal .rs-region-right[hidden]{display:none;}
 
       #towerCalcModal #towerCalcTabs .btn,
       #towerCalcModal .rs-toolbar-left .btn,
       #towerCalcModal .rs-region-right .btn{
-        white-space:nowrap!important;
-        width:auto!important;
-        min-width:max-content!important;
-        transform:none!important;
-        translate:none!important;
-        animation:none!important;
-        transition:background-color .15s ease,border-color .15s ease,color .15s ease,opacity .15s ease!important;
+        white-space:nowrap;
+        width:auto;
+        min-width:max-content;
+        transform:none;
+        translate:none;
+        animation:none;
+        transition:background-color .15s ease,border-color .15s ease,color .15s ease,opacity .15s ease;
       }
       #towerCalcModal #towerCalcTabs .btn:hover,
       #towerCalcModal #towerCalcTabs .btn:focus,
@@ -424,55 +424,65 @@
       #towerCalcModal .rs-region-right .btn:hover,
       #towerCalcModal .rs-region-right .btn:focus,
       #towerCalcModal .rs-region-right .btn:active{
-        transform:none!important;
-        translate:none!important;
-        animation:none!important;
+        transform:none;
+        translate:none;
+        animation:none;
       }
 
       #towerCalcModal .rs-clear-wrap{
-        position:relative!important;
-        overflow:visible!important;
-        z-index:50!important;
+        flex:0 0 auto;
+        width:auto;
+        min-width:max-content;
+        overflow:visible;
       }
-      #towerCalcModal .rs-clear-menu,
+      #towerCalcModal .rs-clear-btn{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+      }
       .rs-clear-menu{
-        position:absolute!important;
-        right:0!important;
-        top:calc(100% + 8px)!important;
-        min-width:240px!important;
-        max-height:320px!important;
-        overflow:auto!important;
-        background:#101a33!important;
-        border:1px solid #ffffff1a!important;
-        border-radius:14px!important;
-        padding:8px!important;
-        z-index:260500!important;
-        display:none!important;
-        box-shadow:0 12px 40px rgba(0,0,0,.35)!important;
+        position:fixed;
+        min-width:240px;
+        max-width:min(360px,calc(100vw - 16px));
+        max-height:min(320px,calc(100vh - 16px));
+        overflow:auto;
+        padding:8px;
+        border:1px solid rgba(126,150,210,.32);
+        border-radius:16px;
+        background:linear-gradient(180deg,#111b34 0%,#0b1428 100%);
+        box-shadow:0 18px 50px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.05);
+        z-index:2147483000;
+        display:none;
       }
-      #towerCalcModal .rs-clear-menu.open,
-      .rs-clear-menu.open{display:block!important;}
-      #towerCalcModal .rs-clear-item,
+      .rs-clear-menu.open{display:grid;gap:4px;}
       .rs-clear-item{
-        width:100%!important;
-        display:block!important;
-        text-align:left!important;
-        background:transparent!important;
-        border:0!important;
-        color:inherit!important;
-        padding:10px 12px!important;
-        border-radius:10px!important;
-        cursor:pointer!important;
+        width:100%;
+        min-height:40px;
+        display:flex;
+        align-items:center;
+        justify-content:flex-start;
+        padding:9px 12px;
+        border:0;
+        border-radius:11px;
+        background:transparent;
+        color:#f4f7ff;
+        font:inherit;
+        font-weight:850;
+        text-align:left;
+        white-space:nowrap;
+        cursor:pointer;
       }
-      #towerCalcModal .rs-clear-item:hover,
-      .rs-clear-item:hover{background:rgba(255,255,255,.06)!important;}
+      .rs-clear-item:hover,.rs-clear-item:focus{
+        background:linear-gradient(135deg,rgba(83,118,255,.32),rgba(125,92,255,.24));
+        outline:none;
+      }
 
 
       #towerCalcModal #tcv35-row,
       #towerCalcModal .tower-calc-toolbar-main,
       #towerCalcModal .tower-calc-toolbar .tower-calc-controls-muted,
       #towerCalcModal .tower-calc-toolbar .tower-calc-controls.muted.small{
-        display:none!important;
+        display:none;
       }
 
 
@@ -481,23 +491,23 @@
       #towerCalcModal #towerCalcShiftBalance #tcv14AddRow ~ #tcv14BtnRow,
       #towerCalcModal #towerCalcShiftBalance #tcv14AddRow + #tcv14BtnRow,
       #towerCalcModal #towerCalcShiftBalance #tcv14AddRow + .rs-limit-buttons{
-        margin-top:12px!important;
+        margin-top:12px;
       }
 
       #towerCalcModal #towerCalcShiftBalance #tcv14BtnRow,
       #towerCalcModal #towerCalcShiftBalance .tcv14-btn-row{
-        display:grid!important;
-        grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
-        gap:12px!important;
-        align-items:center!important;
-        width:100%!important;
+        display:grid;
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+        gap:12px;
+        align-items:center;
+        width:100%;
       }
       #towerCalcModal #towerCalcShiftBalance #tcv14BtnRow > .btn,
       #towerCalcModal #towerCalcShiftBalance .tcv14-btn-row > .btn{
-        width:100%!important;
-        min-width:0!important;
-        white-space:nowrap!important;
-        box-sizing:border-box!important;
+        width:100%;
+        min-width:0;
+        white-space:nowrap;
+        box-sizing:border-box;
       }
 
       #towerCalcModal #towerCalcShiftBalance .tcv5-actions,
@@ -505,108 +515,108 @@
       #towerCalcModal #towerCalcShiftBalance .actions,
       #towerCalcModal #towerCalcShiftBalance .form-actions,
       #towerCalcModal #towerCalcShiftBalance .button-row{
-        display:grid!important;
-        grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
-        gap:12px!important;
-        align-items:center!important;
-        width:100%!important;
+        display:grid;
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+        gap:12px;
+        align-items:center;
+        width:100%;
       }
       #towerCalcModal #towerCalcShiftBalance #applyShiftAddBtn,
       #towerCalcModal #towerCalcShiftBalance #towerCalcRestoreImportShiftsBtn{
-        width:100%!important;
-        min-width:0!important;
-        white-space:nowrap!important;
-        box-sizing:border-box!important;
+        width:100%;
+        min-width:0;
+        white-space:nowrap;
+        box-sizing:border-box;
       }
       #towerCalcModal #towerCalcShiftBalance .rs-limit-buttons{
-        display:grid!important;
-        grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
-        gap:12px!important;
-        width:100%!important;
+        display:grid;
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+        gap:12px;
+        width:100%;
       }
       #towerCalcModal #towerCalcShiftBalance .rs-limit-buttons > .btn{
-        width:100%!important;
-        min-width:0!important;
-        white-space:nowrap!important;
+        width:100%;
+        min-width:0;
+        white-space:nowrap;
       }
 
 
       #towerCalcModal .board-sheet .board-signature,
       #board-modal .board-sheet .board-signature{
-        display:flex!important;
-        justify-content:center!important;
-        align-items:center!important;
-        margin-top:18px!important;
-        width:100%!important;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        margin-top:18px;
+        width:100%;
       }
       #towerCalcModal .board-signature-image,
       #board-modal .board-signature-image{
-        display:block!important;
-        width:220px!important;
-        max-width:46vw!important;
-        height:auto!important;
+        display:block;
+        width:220px;
+        max-width:46vw;
+        height:auto;
       }
 
       #towerCalcModal .picker-meta-row{
-        display:flex!important;
-        align-items:center!important;
-        gap:12px!important;
-        flex-wrap:wrap!important;
-        min-height:28px!important;
-        margin-top:2px!important;
+        display:flex;
+        align-items:center;
+        gap:12px;
+        flex-wrap:wrap;
+        min-height:28px;
+        margin-top:2px;
       }
       #towerCalcModal .picker-only-captains{
-        display:inline-flex!important;
-        align-items:center!important;
-        gap:8px!important;
-        white-space:nowrap!important;
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        white-space:nowrap;
       }
       #towerCalcModal .picker-only-captains input{
-        width:auto!important;
-        height:auto!important;
-        flex:0 0 auto!important;
+        width:auto;
+        height:auto;
+        flex:0 0 auto;
       }
 
       #towerCalcModal .rs-carousel{
-        display:flex!important;
-        align-items:center!important;
-        gap:8px!important;
-        width:100%!important;
+        display:flex;
+        align-items:center;
+        gap:8px;
+        width:100%;
       }
-      #towerCalcModal .rs-carousel-track{flex:1 1 auto!important; min-width:0!important; overflow:hidden!important;}
+      #towerCalcModal .rs-carousel-track{flex:1 1 auto; min-width:0; overflow:hidden;}
       #towerCalcModal .rs-carousel-track > .tcv7-grid{
-        display:flex!important;
-        gap:12px!important;
-        flex-wrap:nowrap!important;
-        overflow-x:auto!important;
-        overflow-y:hidden!important;
-        scrollbar-width:none!important;
-        -ms-overflow-style:none!important;
-        scroll-behavior:smooth!important;
+        display:flex;
+        gap:12px;
+        flex-wrap:nowrap;
+        overflow-x:auto;
+        overflow-y:hidden;
+        scrollbar-width:none;
+        -ms-overflow-style:none;
+        scroll-behavior:smooth;
       }
-      #towerCalcModal .rs-carousel-track > .tcv7-grid::-webkit-scrollbar{display:none!important;}
+      #towerCalcModal .rs-carousel-track > .tcv7-grid::-webkit-scrollbar{display:none;}
       #towerCalcModal .rs-carousel-track > .tcv7-grid > .tcv7-card{
-        flex:0 0 calc((100% - 24px) / 3)!important;
-        width:calc((100% - 24px) / 3)!important;
-        min-width:0!important;
-        max-width:calc((100% - 24px) / 3)!important;
+        flex:0 0 calc((100% - 24px) / 3);
+        width:calc((100% - 24px) / 3);
+        min-width:0;
+        max-width:calc((100% - 24px) / 3);
       }
       @media (max-width:700px){
         #towerCalcModal .rs-carousel-track > .tcv7-grid > .tcv7-card{
-          flex-basis:100%!important;
-          width:100%!important;
-          max-width:100%!important;
+          flex-basis:100%;
+          width:100%;
+          max-width:100%;
         }
       }
       #towerCalcModal .rs-carousel-btn{
-        flex:0 0 34px!important;
-        width:34px!important;
-        min-width:34px!important;
-        height:34px!important;
-        padding:0!important;
-        display:inline-flex!important;
-        align-items:center!important;
-        justify-content:center!important;
+        flex:0 0 34px;
+        width:34px;
+        min-width:34px;
+        height:34px;
+        padding:0;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
       }
 
       #towerCalcModal #towerCalcShiftBalance .tcv18-manual-region-tabs,
@@ -617,7 +627,7 @@
       #towerCalcModal #towerCalcShiftBalance [data-v10-region-tab],
       #towerCalcModal #towerCalcShiftBalance [data-v11-region-tab],
       #towerCalcModal #towerCalcShiftBalance [data-rs-region-tab]{
-        display:none!important;
+        display:none;
       }
 
       @media(max-width:900px){
@@ -627,11 +637,11 @@
       #towerCalcModal .v9-advanced-head,
       #towerCalcModal .v10-advanced-head,
       #towerCalcModal .v11-advanced-head{
-        display:none!important;
+        display:none;
       }
 
-      #towerCalcModal .rs-advanced-head{align-items:flex-start!important; flex-direction:column!important;}
-        #towerCalcModal .rs-region-right{width:100%!important; justify-content:flex-end!important;}
+      #towerCalcModal .rs-advanced-head{align-items:flex-start; flex-direction:column;}
+        #towerCalcModal .rs-region-right{width:100%; justify-content:flex-end;}
       }
     `;
     document.head.appendChild(style);
@@ -784,62 +794,7 @@
     return false;
   }
 
-  function closeClearMenu(menu){
-    if (!menu) return;
-    menu.classList.remove('open');
-    menu.removeAttribute('style');
-    const wrap = menu.__rsClearWrap || document.querySelector('#towerCalcModal .rs-clear-wrap');
-    if (wrap && menu.parentElement !== wrap) wrap.appendChild(menu);
-  }
 
-  function closeClearMenus(exceptMenu){
-    document.querySelectorAll('.rs-clear-menu.open').forEach(menu => {
-      if (exceptMenu && menu === exceptMenu) return;
-      closeClearMenu(menu);
-    });
-  }
-
-  function toggleClearMenu(trigger){
-    const wrap = trigger?.closest?.('.rs-clear-wrap');
-    const menu = wrap?.querySelector?.('.rs-clear-menu') || document.querySelector('.rs-clear-menu.open');
-    if (!wrap || !menu) return false;
-    const wasOpen = menu.classList.contains('open');
-    closeClearMenus(menu);
-    if (wasOpen) {
-      closeClearMenu(menu);
-      return true;
-    }
-
-    menu.__rsClearWrap = wrap;
-    if (menu.parentElement !== document.body) document.body.appendChild(menu);
-    menu.classList.add('open');
-
-    const rect = trigger.getBoundingClientRect();
-    Object.assign(menu.style, {
-      display: 'block',
-      position: 'fixed',
-      right: 'auto',
-      minWidth: '240px',
-      maxWidth: 'min(320px, calc(100vw - 16px))',
-      maxHeight: 'min(320px, calc(100dvh - 24px))',
-      overflow: 'auto',
-      padding: '8px',
-      borderRadius: '14px',
-      border: '1px solid rgba(255,255,255,.14)',
-      background: '#101a33',
-      color: '#eef3ff',
-      boxShadow: '0 12px 40px rgba(0,0,0,.35)',
-      zIndex: '260500'
-    });
-    const menuWidth = menu.offsetWidth || 240;
-    const leftPos = Math.max(8, Math.min(window.innerWidth - menuWidth - 8, rect.right - menuWidth));
-    const below = rect.bottom + 8;
-    const menuHeight = Math.min(menu.scrollHeight || 220, Math.max(120, window.innerHeight - 24));
-    const topPos = below + menuHeight > window.innerHeight - 8 ? Math.max(8, rect.top - menuHeight - 8) : below;
-    menu.style.left = `${leftPos}px`;
-    menu.style.top = `${topPos}px`;
-    return true;
-  }
 
   function renderToolbar(){
     const left = document.createElement('div');
@@ -858,11 +813,71 @@
       clickHidden('#towerCalcQuickApplyBtn') || clickHidden('#towerCalcAutoFitBtn') || clickHidden('#towerCalcApplyAndAssignBtn');
     }));
 
+    document.querySelectorAll('.rs-clear-menu[data-rs-floating-clear="1"]').forEach(node => {
+      try { node.remove(); } catch {}
+    });
+
     const wrap = document.createElement('div');
     wrap.className = 'rs-clear-wrap';
+
     const menu = document.createElement('div');
     menu.className = 'rs-clear-menu';
+    menu.dataset.rsFloatingClear = '1';
     menu.setAttribute('role', 'menu');
+
+    let removeFloatingListeners = null;
+    const closeMenu = () => {
+      menu.classList.remove('open');
+      if (typeof removeFloatingListeners === 'function') {
+        removeFloatingListeners();
+        removeFloatingListeners = null;
+      }
+    };
+    const positionMenu = anchor => {
+      const rect = anchor.getBoundingClientRect();
+      menu.style.visibility = 'hidden';
+      menu.classList.add('open');
+      const gap = 8;
+      const minWidth = Math.max(240, Math.ceil(rect.width));
+      menu.style.minWidth = `${minWidth}px`;
+      const menuRect = menu.getBoundingClientRect();
+      const maxLeft = window.innerWidth - menuRect.width - gap;
+      const leftPos = Math.max(gap, Math.min(maxLeft, rect.left));
+      let topPos = rect.bottom + gap;
+      if (topPos + menuRect.height > window.innerHeight - gap) {
+        topPos = rect.top - menuRect.height - gap;
+      }
+      if (topPos < gap) topPos = gap;
+      menu.style.left = `${Math.round(leftPos)}px`;
+      menu.style.top = `${Math.round(topPos)}px`;
+      menu.style.visibility = '';
+    };
+    const openMenu = anchor => {
+      if (!menu.isConnected) document.body.appendChild(menu);
+      positionMenu(anchor);
+      if (typeof removeFloatingListeners === 'function') removeFloatingListeners();
+      const outside = event => {
+        const target = event.target;
+        if (target === anchor || anchor.contains(target) || menu.contains(target)) return;
+        closeMenu();
+      };
+      const escape = event => {
+        if (event.key === 'Escape') closeMenu();
+      };
+      const closeOnViewportChange = () => closeMenu();
+      setTimeout(() => {
+        document.addEventListener('pointerdown', outside, true);
+        document.addEventListener('keydown', escape, true);
+        window.addEventListener('resize', closeOnViewportChange, { passive:true });
+        window.addEventListener('scroll', closeOnViewportChange, { passive:true, capture:true });
+        removeFloatingListeners = () => {
+          document.removeEventListener('pointerdown', outside, true);
+          document.removeEventListener('keydown', escape, true);
+          window.removeEventListener('resize', closeOnViewportChange, { passive:true });
+          window.removeEventListener('scroll', closeOnViewportChange, { passive:true, capture:true });
+        };
+      }, 0);
+    };
 
     const addItem = (label, action) => {
       const item = document.createElement('button');
@@ -873,19 +888,18 @@
       item.addEventListener('click', e => {
         e.preventDefault();
         e.stopPropagation();
-        closeClearMenu(menu);
+        closeMenu();
         if (typeof action === 'function') action();
       });
       menu.appendChild(item);
     };
 
-    const clear = document.createElement('button');
-    clear.type = 'button';
-    clear.className = 'btn btn-sm';
-    clear.setAttribute('data-rs-clear-trigger', '1');
-    clear.setAttribute('aria-haspopup', 'true');
-    clear.setAttribute('aria-expanded', 'false');
-    clear.textContent = `${t('clear', 'Очистити')} ▾`;
+    const clear = button(`${t('clear', 'Очистити')} ▾`, e => {
+      const anchor = e.currentTarget;
+      if (menu.classList.contains('open')) closeMenu();
+      else openMenu(anchor);
+    });
+    clear.classList.add('rs-clear-btn');
 
     const clearCount = shiftCount();
     for (let i = 1; i <= clearCount; i += 1) {
@@ -895,7 +909,6 @@
     if (document.querySelector('#towerCalcModal #towerCalcRestoreImportShiftsBtn')) addItem(t('restore_from_import', 'Відновити з імпорту'), () => clickHidden('#towerCalcRestoreImportShiftsBtn'));
 
     wrap.appendChild(clear);
-    wrap.appendChild(menu);
     left.appendChild(wrap);
     return left;
   }
@@ -1366,7 +1379,7 @@
       .filter(card => card.style.display !== 'none').length;
     const isWrapped = !!grid.closest('.rs-carousel');
 
-    const needsCarousel = visibleCards > 2;
+    const needsCarousel = shiftCount() > 2 && visibleCards > 3;
     if (needsCarousel && !isWrapped) wrapCarousel(grid);
     if (!needsCarousel && isWrapped) unwrapCarousel(grid);
 
@@ -1723,31 +1736,6 @@
     renderAll();
   }, true);
 
-  function handleClearTriggerEvent(event){
-    const trigger = event.target?.closest?.('#towerCalcModal [data-rs-clear-trigger]');
-    if (!trigger) return false;
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation?.();
-    if (event.type === 'click' && trigger.__rsClearPointerHandled) {
-      trigger.__rsClearPointerHandled = false;
-      return true;
-    }
-    if (event.type === 'pointerdown') trigger.__rsClearPointerHandled = true;
-    const opened = toggleClearMenu(trigger);
-    trigger.setAttribute('aria-expanded', opened && document.querySelector('.rs-clear-menu.open') ? 'true' : 'false');
-    return true;
-  }
-
-  document.addEventListener('pointerdown', handleClearTriggerEvent, true);
-
-  document.addEventListener('click', event => {
-    if (handleClearTriggerEvent(event)) return;
-    document.querySelectorAll('.rs-clear-menu.open').forEach(menu => {
-      if (menu.contains(event.target) || event.target.closest?.('#towerCalcModal .rs-clear-wrap')) return;
-      closeClearMenu(menu);
-    });
-  }, true);
 
   document.addEventListener('click', event => {
     if (event.target.closest('#openTowerCalcBtn, #openTowerCalcBtnMobile, [data-modal="towerCalc"], [data-calc-main-tab], .tab-btn')) {

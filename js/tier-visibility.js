@@ -163,8 +163,10 @@
       const tier = normalizeTier(input.dataset.v4Tier || input.dataset.calcTierTarget || '');
       if(!tier) return;
       const label = input.closest('label') || input;
+      const isVisible = visible.has(tier);
       label.dataset.tierVisibilityTier = tier;
-      label.dataset.extraTierHidden = visible.has(tier) ? '0' : '1';
+      label.dataset.extraTierHidden = isVisible ? '0' : '1';
+      label.hidden = !isVisible;
     });
   }
 

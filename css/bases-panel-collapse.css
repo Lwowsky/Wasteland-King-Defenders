@@ -94,13 +94,13 @@
 }
 
 .bases-panel .bases-panel-content[hidden] {
-  display: none !important;
+  display: none ;
 }
 
 .bases-panel[data-hide-settings="1"] .bases-grid > [data-settings-card],
 .bases-panel[data-hide-settings="1"] .bases-grid > #basesSettingsCard,
 .bases-panel[data-hide-turrets="1"] .bases-grid > .base-card:not([data-settings-card]) {
-  display: none !important;
+  display: none ;
 }
 
 @media (max-width: 900px) {

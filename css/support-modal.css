@@ -23,7 +23,7 @@
   min-width:0;
 }
 .support-modal-panel[hidden]{
-  display:none !important;
+  display:none ;
 }
 .support-modal-sheet{
   border:1px solid var(--line);

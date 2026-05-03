@@ -1377,9 +1377,9 @@
 #towerCalcModal .board-sheet.is-exporting-png .board-signature .board-signature-image,
 .tower-calc-board-preview .board-sheet.is-exporting-png .board-signature .board-signature-image {
   display: block;
-  width: 360px !important;
-  max-width: calc(100% - 32px) !important;
-  height: auto !important;
+  width: 360px ;
+  max-width: calc(100% - 32px) ;
+  height: auto ;
 }
 
 
@@ -1387,115 +1387,115 @@
 /* Region selector and 1-4 shift tabs for all final plan previews */
 #board-modal .board-head-actions .board-shift-group,
 .tower-calc-board-preview .board-head-actions .board-shift-group{
-  display:inline-flex!important;
-  align-items:center!important;
-  gap:8px!important;
-  flex-wrap:nowrap!important;
-  min-width:0!important;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:nowrap;
+  min-width:0;
 }
 #board-modal .board-region-picker,
 .tower-calc-board-preview .board-region-picker{
-  position:relative!important;
-  display:inline-flex!important;
-  align-items:center!important;
-  flex:0 0 auto!important;
-  z-index:30!important;
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  flex:0 0 auto;
+  z-index:30;
 }
 #board-modal .board-region-trigger,
 .tower-calc-board-preview .board-region-trigger{
-  white-space:nowrap!important;
+  white-space:nowrap;
 }
 #board-modal .board-region-menu,
 .tower-calc-board-preview .board-region-menu{
-  position:absolute!important;
-  left:0!important;
-  right:auto!important;
-  top:calc(100% + 8px)!important;
-  min-width:180px!important;
-  max-width:min(240px, calc(100vw - 24px))!important;
-  padding:8px!important;
-  border-radius:14px!important;
-  border:1px solid rgba(255,255,255,.14)!important;
-  background:#101a33!important;
-  box-shadow:0 14px 40px rgba(0,0,0,.42)!important;
-  display:none!important;
-  overflow:visible!important;
-  z-index:260500!important;
+  position:absolute;
+  left:0;
+  right:auto;
+  top:calc(100% + 8px);
+  min-width:180px;
+  max-width:min(240px, calc(100vw - 24px));
+  padding:8px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  background:#101a33;
+  box-shadow:0 14px 40px rgba(0,0,0,.42);
+  display:none;
+  overflow:visible;
+  z-index:260500;
 }
 #board-modal .board-region-picker.is-open .board-region-menu,
 .tower-calc-board-preview .board-region-picker.is-open .board-region-menu{
-  display:grid!important;
-  gap:6px!important;
+  display:grid;
+  gap:6px;
 }
 #board-modal .board-region-option,
 .tower-calc-board-preview .board-region-option{
-  width:100%!important;
-  border:0!important;
-  border-radius:10px!important;
-  background:transparent!important;
-  color:inherit!important;
-  text-align:left!important;
-  padding:10px 12px!important;
-  cursor:pointer!important;
-  font-weight:700!important;
+  width:100%;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:inherit;
+  text-align:left;
+  padding:10px 12px;
+  cursor:pointer;
+  font-weight:700;
 }
 #board-modal .board-region-option:hover,
 #board-modal .board-region-option.active,
 .tower-calc-board-preview .board-region-option:hover,
 .tower-calc-board-preview .board-region-option.active{
-  background:rgba(255,255,255,.08)!important;
+  background:rgba(255,255,255,.08);
 }
 @media (max-width: 980px){
   .tower-calc-board-preview .board-head-actions .board-shift-group{
-    overflow-x:auto!important;
-    scrollbar-width:thin!important;
+    overflow-x:auto;
+    scrollbar-width:thin;
   }
   #board-modal .board-head-actions .board-shift-group{
-    overflow:visible!important;
+    overflow:visible;
   }
 }
 
 /* Stable region dropdown in all final plan toolbars */
 #board-modal .board-head-actions,
 .tower-calc-board-preview .board-head-actions{
-  overflow-x:visible!important;
-  overflow-y:visible!important;
-  justify-content:flex-start!important;
+  overflow-x:visible;
+  overflow-y:visible;
+  justify-content:flex-start;
 }
 @media (max-width: 980px){
   #board-modal .board-head-actions,
   .tower-calc-board-preview .board-head-actions{
-    display:grid!important;
-    grid-auto-flow:column!important;
-    grid-auto-columns:max-content!important;
-    justify-content:start!important;
-    align-items:center!important;
-    gap:8px!important;
-    width:100%!important;
-    max-width:100%!important;
-    min-width:0!important;
-    overflow-x:auto!important;
-    overflow-y:hidden!important;
-    -webkit-overflow-scrolling:touch!important;
-    overscroll-behavior-x:contain!important;
-    touch-action:pan-x!important;
-    scrollbar-width:thin!important;
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:max-content;
+    justify-content:start;
+    align-items:center;
+    gap:8px;
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain;
+    touch-action:pan-x;
+    scrollbar-width:thin;
   }
   #board-modal .board-head-actions > *,
   .tower-calc-board-preview .board-head-actions > *{
-    min-width:max-content!important;
+    min-width:max-content;
   }
 }
 #board-modal .board-region-picker,
 .tower-calc-board-preview .board-region-picker{
-  pointer-events:auto!important;
-  overflow:visible!important;
+  pointer-events:auto;
+  overflow:visible;
 }
 #board-modal .board-region-trigger,
 .tower-calc-board-preview .board-region-trigger,
 #board-modal .board-region-option,
 .tower-calc-board-preview .board-region-option{
-  pointer-events:auto!important;
+  pointer-events:auto;
 }
 
 

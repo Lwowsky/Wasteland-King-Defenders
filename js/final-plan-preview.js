@@ -88,6 +88,7 @@
     let startX = 0;
     let startLeft = 0;
     toolbar.addEventListener('pointerdown', (event) => {
+      if (event.target?.closest?.('button,a,select,input,textarea,label,summary,[role="button"]')) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       dragging = true;
       startX = event.clientX;
