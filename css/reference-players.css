@@ -178,7 +178,7 @@
   z-index:2;
   background:#0d1737;
   color:#eef3ff;
-  font-size:12px;
+  font-size:11.5px;
   font-weight:900;
   text-transform:uppercase;
   letter-spacing:0;
@@ -191,12 +191,22 @@
 #playersDataTable th[data-field="tier"],#playersDataTable td[data-field="tier"]{width:82px;min-width:82px}
 #playersDataTable th[data-field="march"],#playersDataTable td[data-field="march"]{width:118px;min-width:118px}
 #playersDataTable th[data-field="rally"],#playersDataTable td[data-field="rally"]{width:132px;min-width:132px}
-#playersDataTable th[data-field="captainReady"],#playersDataTable td[data-field="captainReady"]{width:110px;min-width:110px}
-#playersDataTable th[data-field="shiftLabel"],#playersDataTable td[data-field="shiftLabel"]{width:140px;min-width:140px}
+#playersDataTable th[data-field="captainReady"],#playersDataTable td[data-field="captainReady"],#playersDataTable th[data-field="lair"],#playersDataTable td[data-field="lair"]{width:130px;min-width:130px}
+#playersDataTable th[data-field="shiftLabel"],#playersDataTable td[data-field="shiftLabel"]{width:156px;min-width:156px}
 #playersDataTable th[data-field="actions"],#playersDataTable td[data-field="actions"]{width:290px;min-width:290px}
 #playersDataTable th .sort-btn{
-  width:28px;height:28px;min-width:28px;margin-left:8px;border-radius:10px;
-  border:1px solid rgba(124,145,255,.28);background:#31448d;color:#f3f6ff;font-size:15px;font-weight:700;
+  width:24px;height:24px;min-height:24px;min-width:24px;margin-left:5px;border-radius:9px;
+  border:1px solid rgba(124,145,255,.28);background:#31448d;color:#f3f6ff;font-size:13px;font-weight:700;
+padding:0;
+}
+#playersDataTable th .th-label{
+  display:inline-block;
+  max-width:none;
+  min-width:0;
+  overflow:visible;
+  text-overflow:clip;
+  white-space:nowrap;
+  vertical-align:middle;
 }
 #playersDataTable td[data-field="actions"]{white-space:normal;overflow:visible}
 .player-placement-card{
@@ -282,9 +292,20 @@
   font-size:14px;
   white-space:nowrap;
 }
-#playersDataTable tbody td:not([data-field="actions"]) {
+#playersDataTable tbody td[data-field="name"],
+#playersDataTable tbody td[data-field="alliance"],
+#playersDataTable tbody td.optional-col:not([data-field="lair"]):not([data-field="actions"]) {
   overflow:hidden;
   text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#playersDataTable tbody td[data-field="role"],
+#playersDataTable tbody td[data-field="tier"],
+#playersDataTable tbody td[data-field="captainReady"],
+#playersDataTable tbody td[data-field="shiftLabel"],
+#playersDataTable tbody td[data-field="lair"] {
+  overflow:visible;
+  text-overflow:clip;
   white-space:nowrap;
 }
 #playersDataTable th[data-field="name"],#playersDataTable td[data-field="name"]{width:14%}
@@ -293,17 +314,18 @@
 #playersDataTable th[data-field="tier"],#playersDataTable td[data-field="tier"]{width:6%}
 #playersDataTable th[data-field="march"],#playersDataTable td[data-field="march"]{width:9%}
 #playersDataTable th[data-field="rally"],#playersDataTable td[data-field="rally"]{width:11%}
-#playersDataTable th[data-field="captainReady"],#playersDataTable td[data-field="captainReady"]{width:7%}
-#playersDataTable th[data-field="shiftLabel"],#playersDataTable td[data-field="shiftLabel"]{width:9%}
-#playersDataTable th[data-field="lair"],#playersDataTable td[data-field="lair"]{width:6%}
+#playersDataTable th[data-field="captainReady"],#playersDataTable td[data-field="captainReady"]{width:118px;min-width:118px}
+#playersDataTable th[data-field="shiftLabel"],#playersDataTable td[data-field="shiftLabel"]{width:150px;min-width:150px}
+#playersDataTable th[data-field="lair"],#playersDataTable td[data-field="lair"]{width:118px;min-width:118px}
 #playersDataTable th[data-field="actions"],#playersDataTable td[data-field="actions"]{width:20%;min-width:0}
 #playersDataTable th .sort-btn{
-  width:32px;
-  height:32px;
-  min-width:32px;
-  margin-left:8px;
-  border-radius:11px;
+  width:24px;
+  height:24px;min-height:24px;
+  min-width:24px;
+  margin-left:4px;
+  border-radius:10px;
   font-size:13px;
+padding:0;
 }
 .player-placement-card{gap:8px}
 .player-placement-grid{gap:8px}
@@ -383,12 +405,13 @@
   overflow:visible;
 }
 #playersDataTable th .sort-btn{
-  width:30px;
-  height:30px;
-  min-width:30px;
-  margin-left:6px;
+  width:26px;
+  height:26px;min-height:26px;
+  min-width:26px;
+  margin-left:4px;
   border-radius:10px;
   font-size:16px;
+padding:0;
 }
 #playersDataTable th[data-field="name"],#playersDataTable td[data-field="name"]{width:150px;min-width:150px}
 #playersDataTable th[data-field="alliance"],#playersDataTable td[data-field="alliance"]{width:100px;min-width:100px}
@@ -461,16 +484,17 @@
 }
 #playersDataTable thead th{
   font-size:15px;
-  padding-top:16px;
-  padding-bottom:16px;
+  padding-top:14px;
+  padding-bottom:14px;
 }
 #playersDataTable th .sort-btn{
-  width:28px;
-  height:28px;
-  min-width:28px;
-  margin-left:5px;
+  width:24px;
+  height:24px;min-height:24px;
+  min-width:24px;
+  margin-left:4px;
   border-radius:10px;
   font-size:15px;
+padding:0;
 }
 #playersDataTable th[data-field="name"],#playersDataTable td[data-field="name"]{width:150px;min-width:150px}
 #playersDataTable th[data-field="alliance"],#playersDataTable td[data-field="alliance"]{width:95px;min-width:95px}
@@ -560,7 +584,7 @@
   background:#0d1737;
 }
 #playersDataTable{
-  min-width:1180px;
+  min-width:1500px;
 }
 #playersDataTable th,
 #playersDataTable td{
@@ -568,28 +592,29 @@
   font-size:12px;
 }
 #playersDataTable thead th{
-  font-size:11.5px;
+  font-size:12px;
   padding-top:10px;
   padding-bottom:10px;
   letter-spacing:.01em;
 }
 #playersDataTable th .sort-btn{
-  width:22px;
-  height:22px;
-  min-width:22px;
-  margin-left:4px;
+  width:20px;
+  height:20px;min-height:20px;
+  min-width:20px;
+  margin-left:3px;
   border-radius:8px;
   font-size:12px;
+padding:0;
 }
-#playersDataTable th[data-field="name"],#playersDataTable td[data-field="name"]{width:126px;min-width:126px}
-#playersDataTable th[data-field="alliance"],#playersDataTable td[data-field="alliance"]{width:82px;min-width:82px}
-#playersDataTable th[data-field="role"],#playersDataTable td[data-field="role"]{width:116px;min-width:116px}
-#playersDataTable th[data-field="tier"],#playersDataTable td[data-field="tier"]{width:50px;min-width:50px}
-#playersDataTable th[data-field="march"],#playersDataTable td[data-field="march"]{width:88px;min-width:88px}
-#playersDataTable th[data-field="rally"],#playersDataTable td[data-field="rally"]{width:106px;min-width:106px}
-#playersDataTable th[data-field="captainReady"],#playersDataTable td[data-field="captainReady"],#playersDataTable th[data-field="lair"],#playersDataTable td[data-field="lair"]{width:76px;min-width:76px;text-align:center}
-#playersDataTable th[data-field="shiftLabel"],#playersDataTable td[data-field="shiftLabel"]{width:108px;min-width:108px}
-#playersDataTable th[data-field="actions"],#playersDataTable td[data-field="actions"]{width:204px;min-width:204px}
+#playersDataTable th[data-field="name"],#playersDataTable td[data-field="name"]{width:170px;min-width:170px}
+#playersDataTable th[data-field="alliance"],#playersDataTable td[data-field="alliance"]{width:100px;min-width:100px}
+#playersDataTable th[data-field="role"],#playersDataTable td[data-field="role"]{width:150px;min-width:150px}
+#playersDataTable th[data-field="tier"],#playersDataTable td[data-field="tier"]{width:76px;min-width:76px}
+#playersDataTable th[data-field="march"],#playersDataTable td[data-field="march"]{width:110px;min-width:110px}
+#playersDataTable th[data-field="rally"],#playersDataTable td[data-field="rally"]{width:130px;min-width:130px}
+#playersDataTable th[data-field="captainReady"],#playersDataTable td[data-field="captainReady"],#playersDataTable th[data-field="lair"],#playersDataTable td[data-field="lair"]{width:126px;min-width:126px;text-align:center}
+#playersDataTable th[data-field="shiftLabel"],#playersDataTable td[data-field="shiftLabel"]{width:120px;min-width:120px}
+#playersDataTable th[data-field="actions"],#playersDataTable td[data-field="actions"]{width:270px;min-width:270px}
 
 #playersDataTable td[data-field="role"] .tag,
 #playersDataTable td[data-field="role"] .badge{
@@ -683,7 +708,6 @@
 .player-placement-card{align-items:center;}
 .player-placement-item{min-height:74px;}
 .player-placement-grid{gap:8px;}
-#playersDataTable tbody td{overflow:hidden;text-overflow:ellipsis;}
 #playersDataTable th{white-space:nowrap;}
 
 
@@ -945,6 +969,8 @@
   vertical-align:middle!important;
   flex:0 0 auto!important;
   margin-left:8px!important;
+  min-height:22px!important;
+  padding:0!important;
 }
 #playersDataTable thead th[data-field="lair"],
 #playersDataTable thead th[data-col-key="lair_level"],

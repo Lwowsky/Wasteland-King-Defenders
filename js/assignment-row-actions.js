@@ -13,10 +13,15 @@
       : (shiftKey === "shift1" ? t("shift1", "Зміна 1") : t("shift2", "Зміна 2"));
 
     const assignment = (() => {
+      const planRoot = state.shiftPlans?.[shiftKey] || null;
+      const planPlayers = planRoot && typeof planRoot === "object" && planRoot.players && typeof planRoot.players === "object" ? planRoot.players : null;
+      if (planPlayers) {
+        const plan = planPlayers[player?.id] || null;
+        return plan && plan.baseId ? { ...plan } : null;
+      }
       const current = String(state.activeShift || "").toLowerCase();
-      if (current === shiftKey) return player?.assignment ? { ...player.assignment } : null;
-      const plan = (state.shiftPlans?.[shiftKey] || null)?.players?.[player?.id] || null;
-      return plan ? { ...plan } : null;
+      if (current === shiftKey && player?.assignment?.baseId) return { ...player.assignment };
+      return null;
     })();
 
     if (!assignment?.baseId) {
@@ -30,11 +35,12 @@
     }
 
     const base = state.baseById?.get?.(assignment.baseId) || null;
+    const rawTitle = String(base?.title || t("turret", "Турель")).split("/")[0].trim() || t("turret", "Турель");
     return {
       shift: shiftKey,
       shiftLabel,
       assigned: true,
-      title: String(base?.title || t("turret", "Турель")).split("/")[0].trim() || t("turret", "Турель"),
+      title: typeof e.towerLabel === "function" ? e.towerLabel(rawTitle) : rawTitle,
       detail: assignment.kind === "captain" ? t("captain", "Капітан") : t("helper", "Помічник")
     };
   }

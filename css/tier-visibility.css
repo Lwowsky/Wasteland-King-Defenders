@@ -94,7 +94,20 @@
   .tier-visibility-list{grid-template-columns:repeat(3, minmax(112px, 1fr))!important;}
 }
 @media(max-width:520px){
-  .tier-visibility-add{display:grid;grid-template-columns:1fr;}
+  .tier-visibility-add{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    gap:8px;
+  }
+  .tier-visibility-add select{
+    min-width:0;
+    width:100%;
+  }
+  .tier-visibility-add .btn{
+    min-height:52px;
+    white-space:nowrap;
+  }
   .tier-visibility-list{grid-template-columns:repeat(2, minmax(112px, 1fr))!important;}
 }
 @media(max-width:360px){

@@ -55,9 +55,14 @@
 
   function assignmentForShift(player, shift){
     if (!player || !shift) return null;
+    const planRoot = PNS.state?.shiftPlans?.[shift] || null;
+    const planPlayers = planRoot && typeof planRoot === 'object' && planRoot.players && typeof planRoot.players === 'object' ? planRoot.players : null;
+    if (planPlayers) {
+      const plan = planPlayers[player.id] || null;
+      return plan && plan.baseId ? { ...plan } : null;
+    }
     if (String(PNS.state?.activeShift || '').toLowerCase() === shift && player.assignment?.baseId) return { ...player.assignment };
-    const plan = PNS.state?.shiftPlans?.[shift]?.players?.[player.id] || null;
-    return plan && plan.baseId ? { ...plan } : null;
+    return null;
   }
 
   function assignedShift(player){
@@ -257,7 +262,8 @@
     const assignment = assignmentForShift(player, shift);
     if (!assignment?.baseId) return { assigned:false, title:tr('reserve','Резерв'), detail:tr('not_assigned','Не призначено') };
     const base = PNS.state?.baseById?.get?.(assignment.baseId) || null;
-    const title = String(base?.title || tr('turret','Турель')).split('/')[0].trim() || tr('turret','Турель');
+    const rawTitle = String(base?.title || tr('turret','Турель')).split('/')[0].trim() || tr('turret','Турель');
+    const title = typeof PNS.towerLabel === 'function' ? PNS.towerLabel(rawTitle) : rawTitle;
     const detail = assignment.kind === 'captain' ? tr('captain','Капітан') : tr('helper','Помічник');
     return { assigned:true, title, detail };
   }

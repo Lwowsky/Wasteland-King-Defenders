@@ -22,6 +22,91 @@
     }
   }
 
+  function isAppleMobileTxt() {
+    try {
+      const ua = String(navigator.userAgent || "");
+      const platform = String(navigator.platform || "");
+      return /iPhone|iPad|iPod/i.test(ua) || (platform === "MacIntel" && Number(navigator.maxTouchPoints || 0) > 1);
+    } catch {
+      return false;
+    }
+  }
+
+  function txtSeparator() {
+    return isAppleMobileTxt() ? " | " : " ✦ ";
+  }
+
+  function txtSafe(value) {
+    const text = String(value || "");
+    return isAppleMobileTxt() ? text.replace(/\s*\u2726\s*/g, " | ") : text;
+  }
+
+  function txtJoin(parts) {
+    return parts.map(part => txtSafe(part)).join(txtSeparator());
+  }
+
+  function boardText(key, fallback = "", locale = "") {
+    try {
+      if (typeof window.getBoardLanguageText === "function" && locale) {
+        return String(window.getBoardLanguageText(key, fallback, locale) || fallback || key);
+      }
+    } catch {}
+    return tr(key, fallback || key);
+  }
+
+  function boardTextMulti(key, fallback = "") {
+    try {
+      if (typeof window.getBoardLanguageTextMulti === "function") {
+        return txtSafe(window.getBoardLanguageTextMulti(key, fallback) || fallback || key);
+      }
+    } catch {}
+    return txtSafe(tr(key, fallback || key));
+  }
+
+  function mapBoardText(mapper) {
+    try {
+      if (typeof window.mapBoardLanguageText === "function") {
+        const text = txtSafe(window.mapBoardLanguageText(mapper) || "").trim();
+        if (text) return text;
+      }
+    } catch {}
+    try {
+      const locale = String(window.PNS?.I18N?.locale || document.documentElement.dataset.locale || "uk").toLowerCase();
+      return txtSafe(mapper(locale) || "").trim();
+    } catch {
+      return "";
+    }
+  }
+
+  function getTxtShiftTitle(shift) {
+    const normalized = normalizeFinalShift(shift);
+    return boardTextMulti(normalized, shiftLabel(normalized));
+  }
+
+  function normalizeRoleKey(role) {
+    let normalized = "";
+    try {
+      normalized = typeof PNS.normalizeRole === "function"
+        ? String(PNS.normalizeRole(role) || "")
+        : String(role || "");
+    } catch {
+      normalized = String(role || "");
+    }
+    normalized = normalized.trim().toLowerCase();
+    if (/fighter|бій|боец|воин|ファイター|战士|전투/.test(normalized)) return "fighter_plural";
+    if (/rider|наїз|наезд|ライダー|骑兵|라이더/.test(normalized)) return "rider_plural";
+    if (/shooter|стрі|стре|射手|シューター|슈터/.test(normalized)) return "shooter_plural";
+    return "";
+  }
+
+  function getTxtTroopType(captain) {
+    const key = normalizeRoleKey(captain?.role || "");
+    if (!key) {
+      return boardTextMulti("type_defined_by_captain", tr("type_defined_by_captain", "Тип турелі визначається капітаном"));
+    }
+    return mapBoardText(locale => boardText(key, String(captain?.role || ""), locale)) || String(captain?.role || "");
+  }
+
   function formatNum(value) {
     return Number(value || 0).toLocaleString("en-US");
   }
@@ -130,28 +215,35 @@
       [/남쪽\s*포탑|南タレット|南炮塔|tháp\s*pháo\s*nam|thap\s*phao\s*nam|півден|south|юж|süd|sud|połud|البرج\s*الجنوبي/, "south_turret", "South Turret"],
     ];
     const found = titleMap.find(([rx]) => rx.test(lower));
-    if (!found) return raw;
+    if (!found) return txtSafe(raw);
     const [, key, fallback] = found;
     try {
       if (typeof window.getBoardLanguageTextMulti === "function") {
-        return String(window.getBoardLanguageTextMulti(key, fallback) || raw);
+        return txtSafe(window.getBoardLanguageTextMulti(key, fallback) || raw);
       }
     } catch {}
-    return raw;
+    return txtSafe(raw);
   }
 
   function normalizePlayerLine(player, march) {
-    return [
+    return txtJoin([
       String(player?.name || "").trim(),
       String(player?.alliance || "—").trim() || "—",
       String(player?.tier || "—").trim() || "—",
       formatNum(march),
-    ].join(" ✦ ");
+    ]);
   }
 
   function buildBoardTxtForShift(shift) {
     const normalizedShift = normalizeFinalShift(shift);
-    const lines = [`=== ${shiftLabel(normalizedShift)} ===`, ""];
+    const shiftTitle = getTxtShiftTitle(normalizedShift);
+    const lines = [
+      "════════════════════════════════",
+      `◆ ${shiftTitle}`,
+      "════════════════════════════════",
+      "",
+    ];
+
     getBoardSlots().forEach((base, index) => {
       const boardState = resolveBoardTowerState(base, normalizedShift);
       const title = getTranslatedBaseTitle(base, index);
@@ -168,31 +260,36 @@
                 ),
             )
         : [];
-
-      lines.push(`[${title}]`);
-      if (captain) {
-        lines.push(
-          normalizePlayerLine(
+      const captainLine = captain
+        ? `${normalizePlayerLine(
             captain,
             Number(boardState?.captainMarch || captain?.march || 0) || 0,
-          ),
-        );
-      }
+          )}`
+        : "—";
+
+      lines.push("┌───────────────────────────────");
+      lines.push(`│ Turret: ${title}`);
+      lines.push(`│ Troop type: ${getTxtTroopType(captain)}`);
+      lines.push("├─ Captain ─────────────────────");
+      lines.push(`│ ${captainLine}`);
+      lines.push("├─ Players ─────────────────────");
+
       helpers.forEach((helper) => {
         lines.push(
-          normalizePlayerLine(
+          `│ ${normalizePlayerLine(
             helper,
             getAssignedMarch(
               boardState?.baseLike || base,
               helper,
               normalizedShift,
             ),
-          ),
+          )}`,
         );
       });
-      if (!captain && !helpers.length) {
-        lines.push(tr("no_assigned_players", "Немає призначених гравців"));
+      if (!helpers.length) {
+        lines.push(`│ No helpers assigned`);
       }
+      lines.push("└───────────────────────────────");
       lines.push("");
     });
     return lines.join("\n").trim() + "\n";

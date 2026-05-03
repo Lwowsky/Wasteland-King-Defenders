@@ -37,6 +37,19 @@
     const value = Number(raw);
     return Number.isFinite(value) && value > 0 ? value : 10;
   }
+  function normalizeHeaderLabel(th, button) {
+    if (!th || !button) return null;
+    let label = th.querySelector('.th-label');
+    if (!label) {
+      label = document.createElement('span');
+      label.className = 'th-label';
+      const nodes = Array.from(th.childNodes).filter((node) => node !== button && !(node.nodeType === Node.TEXT_NODE && !String(node.textContent || '').trim()));
+      nodes.forEach((node) => label.appendChild(node));
+      th.insertBefore(label, button);
+    }
+    return label;
+  }
+
 
   function ensureSortButtons() {
     $$('#playersDataTable thead th[data-field], #playersDataTable thead th.optional-col, #playersDataTable thead th[data-col-key]').forEach((th) => {
@@ -58,7 +71,8 @@
       }
       button.dataset.sort = field;
       button.textContent = button.textContent && button.textContent.trim() ? button.textContent : '↓';
-      button.setAttribute('aria-label', (th.textContent || '').replace(/\s+/g, ' ').trim());
+      const label = normalizeHeaderLabel(th, button);
+      button.setAttribute('aria-label', (label?.textContent || th.textContent || '').replace(/\s+/g, ' ').trim());
     });
   }
 

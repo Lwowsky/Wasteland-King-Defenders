@@ -648,12 +648,21 @@
     min-width: max-content;
   }
   #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-controls-inline,
-  #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-toolbar-main,
   #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-controls,
   #towerCalcModal [data-calc-main-panel="setup"] #tcv7AdvancedTopLayout,
   #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-shift-controls {
     min-width: 0;
     max-width: 100%;
+  }
+  #towerCalcModal [data-calc-main-panel="setup"] .tower-calc-toolbar-main {
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding-bottom: 4px;
   }
   #towerCalcModal [data-calc-main-panel="overflow"] .tcv5-overflow-summary {
     grid-template-columns: 1fr;

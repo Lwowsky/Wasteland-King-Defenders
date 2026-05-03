@@ -826,23 +826,31 @@
     padding-right: 2px;
   }
   #board-modal .board-head-actions.board-head-actions--single {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
     gap: 8px;
-    overflow: visible;
-    padding: 10px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px 0 12px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
   }
   #board-modal .board-head-actions.board-head-actions--single .board-shift-tabs,
   #board-modal
     .board-head-actions.board-head-actions--single
     .board-lang-picker-wrap {
-    grid-column: 1 / -1;
+    flex: 0 0 auto;
+    min-width: max-content;
   }
   #board-modal
     .board-head-actions.board-head-actions--single
     .board-shift-tabs {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
     gap: 8px;
   }
   #board-modal .board-head-actions.board-head-actions--single .board-shift-tab,
@@ -850,11 +858,11 @@
     .board-head-actions.board-head-actions--single
     .board-lang-trigger,
   #board-modal .board-head-actions.board-head-actions--single > .btn {
-    width: 100%;
-    min-width: 0;
+    flex: 0 0 auto;
+    min-width: max-content;
     justify-content: center;
     text-align: center;
-    white-space: normal;
+    white-space: nowrap;
     min-height: 46px;
     padding: 10px 12px;
   }
@@ -1211,12 +1219,17 @@
     align-items: center;
     flex-wrap: nowrap;
     gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     overflow-x: auto;
     overflow-y: hidden;
     padding: 10px 0 12px;
     border: 0;
     background: transparent;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
   }
 
   #board-modal .board-head-actions.board-head-actions--single > *,
