@@ -117,7 +117,9 @@
   }
 
   function shiftLabel(shift){
-    const n = Number(String(shift || '').replace(/\D/g, '')) || 1;
+    const key = String(shift || '').toLowerCase();
+    if (key === 'both') return typeof PNS.getBothDisplayLabel === 'function' ? PNS.getBothDisplayLabel() : t('both', 'Всі');
+    const n = Number(key.replace(/\D/g, '')) || 1;
     if (n === 1) return t('shift1', 'Зміна 1');
     if (n === 2) return t('shift2', 'Зміна 2');
     if (n === 3) return t('shift3', 'Зміна 3');

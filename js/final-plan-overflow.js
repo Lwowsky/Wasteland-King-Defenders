@@ -51,6 +51,20 @@
     return Number(value || 0).toLocaleString('en-US');
   }
 
+  function activeShiftKeys(){
+    let count = 2;
+    try {
+      if (typeof PNS.getTowerCalcShiftCount === 'function') count = Number(PNS.getTowerCalcShiftCount()) || 2;
+    } catch {}
+    count = Math.max(1, Math.min(4, count));
+    return Array.from({ length: count }, (_, index) => `shift${index + 1}`);
+  }
+
+  function shiftTitle(key){
+    if (key === 'both') return typeof PNS.getBothDisplayLabel === 'function' ? PNS.getBothDisplayLabel() : tr('both', 'Всі');
+    return typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(key) : tr(key, key.replace('shift', 'Зміна '));
+  }
+
   function setOverflowReserve(playerId, shift) {
     const state = getCalcState();
     const normalizedPlayerId = String(playerId || '');
@@ -109,7 +123,7 @@
     const assignedIds = new Set();
     const playerStatuses = new Map();
 
-    for (const shiftKey of ['shift1', 'shift2']) {
+    for (const shiftKey of activeShiftKeys()) {
       const plans = Array.isArray(finalResults?.[shiftKey]?.towerPlans) ? finalResults[shiftKey].towerPlans : [];
       plans.forEach(plan => {
         const captainId = String(plan?.captain?.id || '');
@@ -138,7 +152,7 @@
       });
     }
 
-    const buckets = { shift1: [], shift2: [], both: [] };
+    const buckets = Object.fromEntries([...activeShiftKeys(), 'both'].map(key => [key, []]));
     for (const player of Array.isArray(state.players) ? state.players : []) {
       if (!player || !player.id) continue;
       const playerId = String(player.id || '');
@@ -170,22 +184,11 @@
 
     const renderBucket = (shiftKey, title, rows, meta) => {
       const rowsHtml = rows.map(player => {
-        const shift1Disabled = shiftKey !== 'shift1' && shiftCounts.shift1 >= shiftLimits.shift1 ? ' disabled' : '';
-        const shift2Disabled = shiftKey !== 'shift2' && shiftCounts.shift2 >= shiftLimits.shift2 ? ' disabled' : '';
-        return window.PNS.renderHtmlTemplate('tpl-tower-calc-reserve-player-row', {
-          name: escapeHtml(player.name),
-          alliance: escapeHtml(player.alliance || '—'),
-          role: escapeHtml(player.role || '—'),
-          tier: escapeHtml(player.tier || ''),
-          march: formatNumber(player.march),
-          status: escapeHtml(player.status || ''),
-          player_id: escapeHtml(player.playerId),
-          shift1_label: tr('shift1', 'Зміна 1'),
-          shift2_label: tr('shift2', 'Зміна 2'),
-          both_label: tr('both', 'Всі'),
-          shift1_disabled: shift1Disabled,
-          shift2_disabled: shift2Disabled
-        });
+        const actionHtml = [...activeShiftKeys(), 'both'].map(target => {
+          const disabled = target !== shiftKey && target !== 'both' && (shiftCounts[target] || 0) >= (shiftLimits[target] || shiftLimits.shift2 || 90) ? ' disabled' : '';
+          return `<button class="btn btn-xs" data-calc-set-player-shift="${escapeHtml(player.playerId)}" data-target-shift="${escapeHtml(target)}" type="button"${disabled}>→ ${escapeHtml(shiftTitle(target))}</button>`;
+        }).join('');
+        return `<tr><td>${escapeHtml(player.name)}</td><td>${escapeHtml(player.alliance || '—')}</td><td>${escapeHtml(player.role || '—')}</td><td>${escapeHtml(player.tier || '')}</td><td>${formatNumber(player.march)}</td><td>${escapeHtml(player.status || '')}</td><td>${actionHtml}</td></tr>`;
       }).join('');
 
       return window.PNS.renderHtmlTemplate('tpl-tower-calc-reserve-panel', {
@@ -206,34 +209,16 @@
       });
     };
 
-    mount.innerHTML = window.PNS.renderHtmlTemplate('tpl-tower-calc-reserve-summary', {
-      title: tr('reserve_and_outside', 'Резерв і гравці поза турелями'),
-      shift1_label: tr('shift1', 'Зміна 1'),
-      shift1_count: formatNumber(buckets.shift1.length),
-      shift2_label: tr('shift2', 'Зміна 2'),
-      shift2_count: formatNumber(buckets.shift2.length),
-      both_label: tr('both', 'Всі'),
-      both_count: formatNumber(buckets.both.length),
-      shift1_html: renderBucket(
-        'shift1',
-        tr('shift1', 'Зміна 1'),
-        buckets.shift1,
-        `${tr('players_short', 'гравців')}: ${formatNumber(shiftCounts.shift1)} / ${formatNumber(shiftLimits.shift1)}${shiftCounts.shift1 > shiftLimits.shift1 ? ` · ${tr('over_limit', 'понад ліміт')}: ${formatNumber(shiftCounts.shift1 - shiftLimits.shift1)}` : ''}`
-      ),
-      shift2_html: renderBucket(
-        'shift2',
-        tr('shift2', 'Зміна 2'),
-        buckets.shift2,
-        `${tr('players_short', 'гравців')}: ${formatNumber(shiftCounts.shift2)} / ${formatNumber(shiftLimits.shift2)}${shiftCounts.shift2 > shiftLimits.shift2 ? ` · ${tr('over_limit', 'понад ліміт')}: ${formatNumber(shiftCounts.shift2 - shiftLimits.shift2)}` : ''}`
-      ),
-      both_html: renderBucket(
-        'both',
-        tr('both', 'Всі'),
-        buckets.both,
-        `${tr('players_short', 'гравців')}: ${formatNumber(shiftCounts.both)}${calcState.ignoreBoth ? ` · ${tr('both_ignored_in_shifts', 'зараз не враховуються в змінах 1 і 2')}` : ''}`
-      ),
-      hint_text: tr('shift_move_hint', 'Кнопки нижче одразу переводять гравця в потрібну зміну та запускають перерахунок.')
-    });
+    const activeKeys = activeShiftKeys();
+    const summaryParts = activeKeys.map(key => `${shiftTitle(key)}: ${formatNumber(buckets[key]?.length || 0)}`);
+    summaryParts.push(`${shiftTitle('both')}: ${formatNumber(buckets.both?.length || 0)}`);
+    const panelsHtml = activeKeys.map(key => renderBucket(
+      key,
+      shiftTitle(key),
+      buckets[key] || [],
+      `${tr('players_short', 'гравців')}: ${formatNumber(shiftCounts[key] || 0)} / ${formatNumber(shiftLimits[key] || shiftLimits.shift2 || 90)}${(shiftCounts[key] || 0) > (shiftLimits[key] || shiftLimits.shift2 || 90) ? ` · ${tr('over_limit', 'понад ліміт')}: ${formatNumber((shiftCounts[key] || 0) - (shiftLimits[key] || shiftLimits.shift2 || 90))}` : ''}`
+    )).join('');
+    mount.innerHTML = `<div class="muted small"><strong>${escapeHtml(tr('reserve_and_outside', 'Резерв і гравці поза турелями'))}</strong> · ${escapeHtml(summaryParts.join(' · '))}</div>${panelsHtml}${renderBucket('both', shiftTitle('both'), buckets.both || [], `${tr('players_short', 'гравців')}: ${formatNumber(shiftCounts.both || 0)}${calcState.ignoreBoth ? ` · ${tr('both_ignored_in_shifts', 'зараз не враховуються в змінах 1 і 2')}` : ''}`)}<div class="muted small top-space">${escapeHtml(tr('shift_move_hint', 'Кнопки нижче одразу переводять гравця в потрібну зміну та запускають перерахунок.'))}</div>`;
   }
 
   function updateShiftStatsUI(modal) {

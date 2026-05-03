@@ -80,7 +80,13 @@
 
   function getTxtShiftTitle(shift) {
     const normalized = normalizeFinalShift(shift);
-    return boardTextMulti(normalized, shiftLabel(normalized));
+    const count = getActiveFinalShiftCount();
+    return mapBoardText(locale => {
+      const shiftText = boardText(normalized, shiftLabel(normalized), locale);
+      const halfKey = count <= 2 && normalized === 'shift1' ? 'first_half' : count <= 2 && normalized === 'shift2' ? 'second_half' : '';
+      const halfText = halfKey ? boardText(halfKey, '', locale) : '';
+      return halfText ? `${shiftText} • ${halfText}` : shiftText;
+    }) || boardTextMulti(normalized, shiftLabel(normalized));
   }
 
   function normalizeRoleKey(role) {

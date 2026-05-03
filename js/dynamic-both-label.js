@@ -43,8 +43,9 @@
   function homeShiftInfo(){
     try {
       const settings = readJson('pns_import_region_shift_settings_v1', null);
-      const shifts = settings?.regions?.region1?.shifts || null;
-      const selected = shifts ? ['1','2','3','4'].find((n) => !!shifts[n]) : '';
+      const activeRegion = (typeof PNS.getTowerCalcActiveRegion === 'function' ? PNS.getTowerCalcActiveRegion() : '') || localStorage.getItem('pns_tower_calc_active_region_v1') || settings?.activeRegion || 'region1';
+      const shifts = settings?.regions?.[activeRegion]?.shifts || settings?.regions?.region1?.shifts || null;
+      const selected = shifts ? ['4','3','2','1'].find((n) => !!shifts[n]) : '';
       if (selected) return { count: Math.max(1, Math.min(4, Number(selected) || 2)), explicit:true };
     } catch {}
     return { count: readStoredMode() === 'all' ? 4 : 2, explicit:false };

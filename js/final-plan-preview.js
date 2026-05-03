@@ -444,7 +444,7 @@
         const flatStore = JSON.parse(localStorage.getItem('pns_layout_shift_plans_store_v1') || '{}') || {};
         const source = regionStore?.[activeRegion] || flatStore || {};
         ['shift1','shift2','shift3','shift4'].forEach(key => {
-          if (!state.shiftPlans[key] && source[key]) state.shiftPlans[key] = source[key];
+          if (source[key]) state.shiftPlans[key] = JSON.parse(JSON.stringify(source[key]));
         });
       } catch {}
       return state.shiftPlans;
@@ -651,7 +651,8 @@
         if (captureTitle) return captureTitle;
         return mapBoardLanguageText(locale => {
           const shiftText = getBoardLanguageText(normalized, shiftLabel(normalized), locale);
-          const halfKey = normalized === 'shift1' ? 'first_half' : normalized === 'shift2' ? 'second_half' : '';
+          const showHalf = getRegionShiftCount(region) <= 2;
+          const halfKey = showHalf && normalized === 'shift1' ? 'first_half' : showHalf && normalized === 'shift2' ? 'second_half' : '';
           const halfText = halfKey ? getBoardLanguageText(halfKey, '', locale) : '';
           return halfText ? `${shiftText} • ${halfText}` : shiftText;
         });

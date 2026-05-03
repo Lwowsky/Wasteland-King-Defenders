@@ -92,7 +92,7 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
 
     const labelShift = (key) => {
       if (key === 'both') {
-        const label = typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel('both') : '';
+        const label = typeof PNS.getBothDisplayLabel === 'function' ? PNS.getBothDisplayLabel() : (typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel('both') : '');
         return label && label !== 'both'
           ? label
           : (typeof PNS.t === 'function' ? PNS.t('both', 'Всі') : 'Всі');
@@ -227,8 +227,8 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
 
     const shiftCounts = document.getElementById('shiftCountsDisplay');
     if (shiftCounts) {
-      const firstRegionShiftCount = getFirstRegionShiftCount();
-      const activeShifts = Array.from({ length: firstRegionShiftCount }, (_, index) => `shift${index + 1}`);
+      const firstRegionShiftCount = (typeof PNS.getTowerCalcShiftCount === 'function' ? PNS.getTowerCalcShiftCount() : getFirstRegionShiftCount());
+      const activeShifts = Array.from({ length: Math.max(1, Math.min(4, Number(firstRegionShiftCount) || 2)) }, (_, index) => `shift${index + 1}`);
       const chips = [...activeShifts, 'both'];
       const statsGrid = shiftCounts.closest('.stats-grid--players');
       shiftCounts.classList.toggle('is-many-shifts', chips.length > 3);

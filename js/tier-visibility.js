@@ -48,7 +48,13 @@
   function read(){
     try {
       const raw = localStorage.getItem(KEY) || localStorage.getItem('pns_visible_extra_tiers_v1');
-      return normalizeList(raw ? JSON.parse(raw) : DEFAULT);
+      const list = normalizeList(raw ? JSON.parse(raw) : DEFAULT);
+      const optional = ['T8', ...ADDABLE_TIERS];
+      const enabledOptional = optional.filter(tier => list.some(item => item.tier === tier && item.enabled !== false));
+      if (enabledOptional.length >= 5) {
+        return list.map(item => optional.includes(item.tier) ? { ...item, enabled:false } : item);
+      }
+      return list;
     } catch {
       return normalizeList(DEFAULT);
     }
@@ -147,7 +153,7 @@
       });
     });
 
-    document.querySelectorAll('[data-v4-tier], [data-calc-tier-target]').forEach(input => {
+    document.querySelectorAll('[data-v4-tier], [data-calc-tier-target], [data-picker-tier]').forEach(input => {
       const label = input.closest('label');
       if(label && !label.dataset.tierVisibilityTier){
         label.dataset.tierVisibilityTier = String(input.dataset.v4Tier || input.dataset.calcTierTarget || '').toUpperCase();
@@ -159,14 +165,15 @@
     ensureCalcInputs();
     ensureInlineTowerInputs();
     const visible = enabledSet();
-    document.querySelectorAll('[data-v4-tier], [data-calc-tier-target]').forEach(input => {
-      const tier = normalizeTier(input.dataset.v4Tier || input.dataset.calcTierTarget || '');
+    document.querySelectorAll('[data-v4-tier], [data-calc-tier-target], [data-picker-tier]').forEach(input => {
+      const tier = normalizeTier(input.dataset.v4Tier || input.dataset.calcTierTarget || input.dataset.pickerTier || '');
       if(!tier) return;
       const label = input.closest('label') || input;
       const isVisible = visible.has(tier);
       label.dataset.tierVisibilityTier = tier;
       label.dataset.extraTierHidden = isVisible ? '0' : '1';
       label.hidden = !isVisible;
+      label.style.display = isVisible ? '' : 'none';
     });
   }
 
