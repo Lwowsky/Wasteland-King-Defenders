@@ -540,216 +540,203 @@
   "export_txt": "TXT",
   "inline_tower_impl_missing": "Moduł inline tower nie został załadowany",
   "guide_copy": {
-    "section_label": "Informacje i instrukcja",
-    "section_hint_open": "Kliknij, aby otworzyć szybki przewodnik po stronie",
-    "section_hint_close": "Kliknij, aby zwinąć szybki przewodnik po stronie",
-    "intro": "Pracuj w tej kolejności: najpierw import, potem sprawdzenie tabeli graczy, wyczyszczenie duplikatów nicków, przejście do wież, a plan końcowy otwieraj dopiero na końcu.",
-    "tab_import": "Import",
-    "tab_players": "Gracze i duplikaty",
-    "tab_turrets": "Wieże",
-    "tab_final_plan": "Plan końcowy",
-    "tab_about": "Jak to działa",
-    "open_label": "Otwórz przewodnik",
-    "close_label": "Zamknij przewodnik",
-    "panels": {
-      "import": {
-        "eyebrow": "1. Import",
-        "title": "Zacznij od czystego importu rosteru i poprawnego mapowania kolumn",
-        "lead": "Wszystko inne zależy od jakości importu. Jeśli tutaj kolumny są źle zmapowane, tabela graczy, sprawdzanie duplikatów i auto-uzupełnianie wież staną się niewiarygodne.",
-        "steps": [
-          {
-            "title": "Prześlij plik lub wklej URL",
-            "purpose": "Aby strona otrzymała aktualny roster",
-            "copy": "Możesz użyć CSV, XLSX lub publicznego linku do arkusza. Po wczytaniu strona odczytuje surowe dane i przygotowuje je do mapowania kolumn."
-          },
-          {
-            "title": "Sprawdź wymagane pola",
-            "purpose": "Aby rozdział działał bez zniekształceń",
-            "copy": "Zawsze sprawdzaj nick, sojusz, rolę, tier, marsz i dostępność zmian. Te pola bezpośrednio wpływają na auto-uzupełnianie, wykrywanie duplikatów i plan końcowy."
-          },
-          {
-            "title": "Używaj dodatkowych kolumn tylko wtedy, gdy wnoszą wartość",
-            "purpose": "Aby tabela pozostała czytelna",
-            "copy": "Dodatkowe pola są przydatne w pracy oficera, ale stały widok lepiej utrzymać skupiony na danych, które pomagają szybko podejmować decyzje."
-          },
-          {
-            "title": "Wybierz właściwy przycisk zastosowania",
-            "purpose": "Aby nie skasować już wykonanej pracy",
-            "copy": "Użyj „Zastosuj import” przy świeżym wczytaniu. Użyj „Aktualizuj roster + zachowaj plan”, gdy roster się zmienił, ale chcesz zachować bieżącą pracę na wieżach i plan końcowy."
-          }
-        ],
-        "side": [
-          {
-            "title": "Szybka kontrola po imporcie",
-            "text": "Od razu otwórz tabelę graczy i upewnij się, że marsze, role, zmiany i sojusze zostały poprawnie odczytane."
-          },
-          {
-            "title": "Kiedy zapisać szablon kolumn",
-            "text": "Jeśli twoje arkusze powtarzają tę samą strukturę, zapisz szablon. Następny import będzie szybszy i bezpieczniejszy."
-          }
-        ],
-        "noteTitle": "Główna zasada",
-        "noteText": "Nie przechodź do planowania wież, dopóki import nie wygląda czysto. Jeden błąd mapowania rozprzestrzenia się na każdy kolejny etap."
-      },
-      "players": {
-        "eyebrow": "2. Gracze i duplikaty",
-        "title": "Tabela graczy to miejsce, w którym sprawdzasz roster przed pracą z wieżami",
-        "lead": "Tutaj przeglądasz cały roster, szukasz kluczowych graczy, sprawdzasz statusy i — co ważne — usuwasz zduplikowane nicki przed uruchomieniem auto-uzupełniania.",
-        "steps": [
-          {
-            "title": "Przejrzyj tabelę po imporcie",
-            "purpose": "Aby szybko wychwycić oczywiste problemy",
-            "copy": "Szukaj pustych marszów, podejrzanych tierów, błędnych ról i złych danych zmian. Tutaj poprawisz to dużo łatwiej niż później w planowaniu wież."
-          },
-          {
-            "title": "Użyj wyszukiwania po nicku lub sojuszu",
-            "purpose": "Aby szybko znaleźć kapitanów i kluczowych graczy",
-            "copy": "Wyszukiwanie pomaga potwierdzić jednego konkretnego gracza, znaleźć cały sojusz albo sprawdzić, czy ktoś naprawdę znajduje się w rosterze po aktualizacji."
-          },
-          {
-            "title": "Obserwuj baner duplikatów",
-            "purpose": "Aby jeden nick nie został przypisany dwa razy w tej samej zmianie",
-            "copy": "Gdy strona wykryje identyczne nicki, pod tabelą pojawi się baner duplikatów, a odpowiednie wiersze zostaną podświetlone."
-          },
-          {
-            "title": "Jak używać okna duplikatów",
-            "purpose": "Aby szybko zachować właściwy wpis",
-            "copy": "Kliknij podświetlony nick lub znacznik duplikatu, otwórz okno, wybierz rekord, który ma pozostać, a następnie naciśnij „Zachowaj tylko wybrany”. Jeśli chcesz usunąć tylko jeden konkretny wiersz, użyj „Usuń ten rekord” lub „Usuń wybrany rekord”."
-          }
-        ],
-        "side": [
-          {
-            "title": "Kiedy czyścić duplikaty",
-            "text": "Zawsze przed auto-uzupełnianiem wież. W przeciwnym razie strona co prawda poprawnie zablokuje powtarzające się przypisanie w tej samej zmianie, ale wynik będzie trudniejszy do zrozumienia."
-          },
-          {
-            "title": "Który duplikat zachować",
-            "text": "Zwykle zachowuj wiersz z poprawnym marszem, tierem, zmianą i aktualnym statusem. Jeśli jeden wpis jest już przypisany, a drugi jest nieaktualny, zachowaj ten prawdziwy aktywny."
-          }
-        ],
-        "noteTitle": "Praktyczna wskazówka",
-        "noteText": "Najpierw czysta tabela, potem wieże. To najszybsza droga do stabilnego auto-uzupełniania bez zamieszania."
-      },
-      "turrets": {
-        "eyebrow": "3. Wieże",
-        "title": "Zacznij od kapitanów, a potem skonfiguruj zasady auto-uzupełniania",
-        "lead": "Tutaj przygotowujesz wszystkie zmiany, przypisujesz kapitanów, ustawiasz limity i uruchamiasz auto-uzupełnianie. Stare numeryczne ustawienie pomocników zniknęło: teraz główną kontrolą jest selektor „Tryb wypełnienia wieży”.",
-        "sequenceTitle": "Zalecana kolejność",
-        "sequence": [
-          "Najpierw otwórz „Ustawienia wież” i przypisz kapitanów do wszystkich potrzebnych wież. Typ wieży określa kapitan, więc auto-uzupełnianie jest niewiarygodne, dopóki kapitanowie nie będą ustawieni.",
-          "Wróć do „Ustawień” i skonfiguruj zasady rozdziału dla bieżącej zmiany.",
-          "W „Trybie wypełnienia wieży” wybierz zachowanie: „Minimum” oznacza mniej, ale silniejszych graczy, „Średnio” jest zbalansowane, „Maksimum” próbuje umieścić jak najwięcej graczy.",
-          "Pole wyboru „Auto-limit tieru” kontroluje, czy podczas wyboru pomocników mają być używane zalecane limity marszu na gracza według tieru.",
-          "Następnie używaj przycisków po kolei: „Oblicz” → „Przygotuj limity dla wież” lub bezpośrednio „Auto-uzupełnij wieże”.",
-          "Po auto-uzupełnieniu przejrzyj „Status graczy” i dopiero potem przejdź do „Planu końcowego”."
-        ],
-        "blocks": [
-          {
-            "title": "Jak rozumieć „Tryb wypełnienia wieży”",
-            "items": [
-              "Minimum — strona stara się zamknąć wieżę mniejszą liczbą graczy i mocniejszymi marszami.",
-              "Średnio — zbalansowany tryb domyślny dla większości normalnych planów.",
-              "Maksimum — strona stara się zmieścić w wieży jak najwięcej oddzielnych graczy, na ile pozwalają limity.",
-              "Maksymalna liczba pomocników to 29, co oznacza 30 osób razem z kapitanem."
-            ]
-          },
-          {
-            "title": "Kiedy wyłączyć auto-limit tieru",
-            "items": [
-              "Gdy chcesz ręcznie zdefiniować własne limity marszu T14–T9.",
-              "Gdy budujesz specjalną niestandardową wieżę pod konkretną bitwę.",
-              "Gdy oficer już wie, że automatyczny rozkład tierów wymaga ręcznej korekty dla tej zmiany."
-            ]
-          }
-        ],
-        "side": [
-          {
-            "title": "Co zwykle psuje auto-uzupełnianie",
-            "text": "Brak kapitanów, nieusunięte duplikaty nicków, błędne zmiany lub nierealistyczne oczekiwania wobec marszu. To sprawdzaj najpierw, jeśli wynik wygląda dziwnie."
-          },
-          {
-            "title": "Kiedy używać „Maksimum”",
-            "text": "Używaj go wtedy, gdy chcesz umieścić w wieżach więcej oddzielnych osób. Jeśli chcesz mniej osób z mocniejszymi marszami, wybierz „Minimum” lub „Średnio”."
-          }
-        ],
-        "noteTitle": "Pamiętaj",
-        "noteText": "„Tryb wypełnienia wieży” określa styl obsadzania, a nie tylko surową liczbę. Najpierw wybierz tryb, potem sprawdź limity tierów i dopiero wtedy uruchom auto-uzupełnianie."
-      },
-      "final-plan": {
-        "eyebrow": "4. Plan końcowy",
-        "title": "Plan końcowy to oficerski widok gotowego ustawienia",
-        "lead": "Tutaj przeglądasz gotowy wynik dla danej zmiany: kto gdzie stoi, jaką moc marszu ma każda wieża i co możesz pokazać lub udostępnić innym oficerom.",
-        "steps": [
-          {
-            "title": "Sprawdzaj wszystkie zmiany osobno",
-            "purpose": "Aby nie przeoczyć nierównowagi między Zmianą 1 i Zmianą 2",
-            "copy": "Plan końcowy pokazuje każdą zmianę osobno. Przełączaj się między nimi i upewnij się, że wieże są zamknięte dokładnie tak, jak planowałeś."
-          },
-          {
-            "title": "Przejrzyj skład każdej wieży",
-            "purpose": "Aby szybko wychwycić słabe miejsca",
-            "copy": "Widzisz kapitana, listę pomocników i łączną moc marszu. Jeśli któraś wieża wygląda słabo lub niepełnie, wróć do planowania wież i przelicz ją ponownie."
-          },
-          {
-            "title": "Używaj eksportu i udostępniania",
-            "purpose": "Aby szybko pokazać wynik",
-            "copy": "Po sprawdzeniu układu możesz wyeksportować PNG, TXT albo po prostu udostępnić plan. To jest przyjazny oficerom tryb prezentacji, a nie miejsce, od którego zaczynasz konfigurację."
-          }
-        ],
-        "side": [
-          {
-            "title": "Kiedy wrócić",
-            "text": "Jeśli plan końcowy pokazuje słabą wieżę, zbyt wielu rezerwowych lub zły skład, wróć do wież albo do tabeli graczy — zależnie od przyczyny."
-          },
-          {
-            "title": "Kiedy plan jest gotowy",
-            "text": "Gdy duplikaty są już wyczyszczone, wieże odpowiadają wybranemu trybowi wypełnienia, a podgląd nie budzi już żadnych pytań."
-          }
-        ],
-        "noteTitle": "Cel tego bloku",
-        "noteText": "Plan końcowy jest prezentacją ukończonej pracy. Służy do sprawdzania, eksportu i udostępniania wyniku — nie do zaczynania procesu od zera."
-      },
-      "about": {
-        "eyebrow": "5. Jak to działa",
-        "title": "Logika strony w jednym zdaniu: czysty roster → czyste duplikaty → poprawne wieże → gotowy plan końcowy",
-        "lead": "Strona jest celowo zbudowana jako sekwencja. Im mniej chaosu dopuścisz na początku, tym stabilniejsze będzie auto-uzupełnianie i tym mniej ręcznych poprawek będzie potrzebnych później.",
-        "steps": [
-          {
-            "title": "Import tworzy surowy zestaw danych",
-            "purpose": "Bez niego nie ma na czym budować",
-            "copy": "Strona odczytuje tabelę, konwertuje ją do wewnętrznego formatu i pokazuje wynik w tabeli graczy."
-          },
-          {
-            "title": "Tabela i narzędzia duplikatów czyszczą dane wejściowe",
-            "purpose": "Aby planowanie wież działało na wiarygodnych danych",
-            "copy": "Na tym etapie usuwasz powtarzające się wpisy, poprawiasz drobne błędy i potwierdzasz, że roster jest naprawdę gotowy do przypisywania."
-          },
-          {
-            "title": "Wieże budują plan bitwy",
-            "purpose": "To główna logika operacyjna",
-            "copy": "Kapitanowie definiują typ wieży, „Tryb wypełnienia wieży” określa styl obsadzania, a limity tierów pomagają rozłożyć lub skupić moc marszu tak, jak chcesz."
-          },
-          {
-            "title": "Plan końcowy pokazuje wynik",
-            "purpose": "Aby można go było szybko sprawdzić i udostępnić",
-            "copy": "Gdy praca jest gotowa, plan końcowy zamienia ją w czytelny widok oficerski odpowiedni do zrzutów ekranu, eksportu tekstu lub udostępnienia na czacie."
-          }
-        ],
-        "side": [
-          {
-            "title": "Najszybsza droga z mniejszą liczbą błędów",
-            "text": "Nie pomijaj etapów. Jeśli plan końcowy wygląda źle, przyczyna zwykle leży w duplikatach albo ustawieniu wież — a nie w samym oknie planu końcowego."
-          },
-          {
-            "title": "O czym pamiętać",
-            "text": "Strona nie zastępuje oficera; ona go przyspiesza. Najlepszy wynik osiąga się wtedy, gdy używasz automatyzacji, ale nadal sprawdzasz logikę na każdym etapie."
-          }
-        ],
-        "noteTitle": "Końcowa wskazówka",
-        "noteText": "Jeśli coś wygląda źle, cofnij się o jeden krok: z planu końcowego do wież, z wież do tabeli, z tabeli do importu. To najszybszy sposób na znalezienie przyczyny."
-      }
+  "section_label": "Informacje i instrukcja",
+  "section_hint_open": "Otwórz krótki przewodnik",
+  "section_hint_close": "Zwiń krótki przewodnik",
+  "intro": "Kolejność: import listy, regiony i 1–4 zmiany, sprawdzenie graczy, kapitanowie, wypełnianie wieżyczek, rezerwa i plan końcowy.",
+  "tab_import": "Import",
+  "tab_players": "Gracze",
+  "tab_turrets": "Wieżyczki",
+  "tab_final_plan": "Plan końcowy",
+  "tab_about": "Przegląd",
+  "open_label": "Otwórz krótki przewodnik",
+  "close_label": "Zwiń krótki przewodnik",
+  "panels": {
+    "import": {
+      "eyebrow": "1. Import",
+      "title": "Zaimportuj listę i ustaw regiony/zmiany",
+      "lead": "Czyste dane są podstawą planowania.",
+      "steps": [
+        {
+          "title": "Lista",
+          "purpose": "CSV / XLSX / TXT",
+          "copy": "Sprawdź nick, sojusz, typ wojsk, tier, marsz, rajd, kapitana i zmiany."
+        },
+        {
+          "title": "Regiony",
+          "purpose": "Dom / Region 1 / Region 2",
+          "copy": "Włącz regiony i wybierz 1, 2, 3 lub 4 zmiany."
+        },
+        {
+          "title": "Ręcznie",
+          "purpose": "Dodaj gracza",
+          "copy": "Dodaj brakującego gracza lub popraw dane bez pełnego importu."
+        }
+      ],
+      "side": [
+        {
+          "title": "Do czego służy planer",
+          "text": "Zamienia listę graczy w przydział do wieżyczek i gotowy plan."
+        },
+        {
+          "title": "Wskazówka",
+          "text": "Usuń duplikaty przed wypełnianiem wieżyczek."
+        }
+      ],
+      "noteTitle": "Ważne",
+      "noteText": "Ustawienia regionów i zmian wpływają na cały plan."
+    },
+    "players": {
+      "eyebrow": "2. Gracze",
+      "title": "Sprawdź i edytuj listę",
+      "lead": "Popraw dane przed planowaniem.",
+      "steps": [
+        {
+          "title": "Lista",
+          "purpose": "CSV / XLSX / TXT",
+          "copy": "Sprawdź nick, sojusz, typ wojsk, tier, marsz, rajd, kapitana i zmiany."
+        },
+        {
+          "title": "Regiony",
+          "purpose": "Dom / Region 1 / Region 2",
+          "copy": "Włącz regiony i wybierz 1, 2, 3 lub 4 zmiany."
+        },
+        {
+          "title": "Ręcznie",
+          "purpose": "Dodaj gracza",
+          "copy": "Dodaj brakującego gracza lub popraw dane bez pełnego importu."
+        }
+      ],
+      "side": [
+        {
+          "title": "Gracz ręczny",
+          "text": "Add, edit or remove one player manually."
+        },
+        {
+          "title": "4 zmiany",
+          "text": "Up to four shifts are supported when enabled."
+        }
+      ],
+      "noteTitle": "Check",
+      "noteText": "Wrong tier, march or shift makes autofill less accurate."
+    },
+    "turrets": {
+      "eyebrow": "3. Wieżyczki",
+      "title": "Zbuduj plan wieżyczek",
+      "lead": "Najpierw kapitanowie, potem pomocnicy według typu wojsk i pojemności.",
+      "sequenceTitle": "Kroki",
+      "sequence": [
+        "Wybierz region i zmianę.",
+        "Ustaw kapitanów.",
+        "Zastosuj redystrybucję.",
+        "Dopełnij wieżyczki.",
+        "Wyczyść jedną zmianę albo wszystkie włączone zmiany."
+      ],
+      "blocks": [
+        {
+          "title": "Kapitanowie",
+          "items": [
+            "Typ wieżyczki zależy od kapitana.",
+            "Marsz kapitana liczony jest osobno."
+          ]
+        },
+        {
+          "title": "Pomocnicy",
+          "items": [
+            "Helpers are selected by role, tier, shift and march.",
+            "Rezerwa pokazuje graczy, którzy się nie zmieścili."
+          ]
+        },
+        {
+          "title": "4 zmiany",
+          "items": [
+            "Gdy włączone są 3 lub 4 zmiany, podsumowanie używa karuzeli."
+          ]
+        }
+      ],
+      "side": [
+        {
+          "title": "Wyczyść",
+          "text": "Czyszczenie pomocników zostawia kapitanów, jeśli nie wybierzesz pełnego resetu."
+        },
+        {
+          "title": "Limity",
+          "text": "Limity tierów kontrolują marsz według tieru."
+        }
+      ],
+      "noteTitle": "Kolejność",
+      "noteText": "Sprawdź każdą zmianę przed eksportem."
+    },
+    "final-plan": {
+      "eyebrow": "4. Plan końcowy",
+      "title": "Eksport dla oficerów",
+      "lead": "Użyj, gdy plan jest gotowy.",
+      "steps": [
+        {
+          "title": "Lista",
+          "purpose": "CSV / XLSX / TXT",
+          "copy": "Sprawdź nick, sojusz, typ wojsk, tier, marsz, rajd, kapitana i zmiany."
+        },
+        {
+          "title": "Regiony",
+          "purpose": "Dom / Region 1 / Region 2",
+          "copy": "Włącz regiony i wybierz 1, 2, 3 lub 4 zmiany."
+        },
+        {
+          "title": "Ręcznie",
+          "purpose": "Dodaj gracza",
+          "copy": "Dodaj brakującego gracza lub popraw dane bez pełnego importu."
+        }
+      ],
+      "side": [
+        {
+          "title": "TXT",
+          "text": "TXT używa wybranych języków planu i oddziela kapitana od graczy."
+        },
+        {
+          "title": "iPhone",
+          "text": "Na iPhone/iPad można użyć | zamiast ✦, jeśli trzeba."
+        }
+      ],
+      "noteTitle": "Przed wysłaniem",
+      "noteText": "Check captains, empty turrets and reserve."
+    },
+    "about": {
+      "eyebrow": "Przegląd",
+      "title": "Do czego służy planer",
+      "lead": "Zamienia listę graczy w przydział do wieżyczek i gotowy plan.",
+      "steps": [
+        {
+          "title": "Lista",
+          "purpose": "CSV / XLSX / TXT",
+          "copy": "Sprawdź nick, sojusz, typ wojsk, tier, marsz, rajd, kapitana i zmiany."
+        },
+        {
+          "title": "Regiony",
+          "purpose": "Dom / Region 1 / Region 2",
+          "copy": "Włącz regiony i wybierz 1, 2, 3 lub 4 zmiany."
+        },
+        {
+          "title": "Ręcznie",
+          "purpose": "Dodaj gracza",
+          "copy": "Dodaj brakującego gracza lub popraw dane bez pełnego importu."
+        }
+      ],
+      "side": [
+        {
+          "title": "Cel",
+          "text": "Mniej ręcznego sortowania i mniej podwójnych przydziałów."
+        },
+        {
+          "title": "Najlepszy wynik",
+          "text": "Utrzymuj dane źródłowe w porządku."
+        }
+      ],
+      "noteTitle": "Uwaga",
+      "noteText": "Planowanie zostaje lokalnie, dopóki go nie wyeksportujesz albo nie udostępnisz."
     }
-  },
+  }
+},
   "notes": "Notatki",
   "clear_helpers": "Wyczyść pomocników",
   "manual_shift_add_title": "Dlaczego potrzebne są dodatkowe sloty",

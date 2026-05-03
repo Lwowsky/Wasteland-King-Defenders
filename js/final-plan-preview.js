@@ -73,6 +73,40 @@
     return String(dict[key] || fallback || key);
   }
 
+  function wireHorizontalToolbar(toolbar) {
+    if (!toolbar) return;
+    if (window.matchMedia && !window.matchMedia('(max-width: 980px)').matches) return;
+    if (toolbar.dataset.horizontalToolbarReady === 'true') return;
+    toolbar.dataset.horizontalToolbarReady = 'true';
+    toolbar.addEventListener('wheel', (event) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      if (toolbar.scrollWidth <= toolbar.clientWidth) return;
+      event.preventDefault();
+      toolbar.scrollLeft += event.deltaY;
+    }, { passive: false });
+    let dragging = false;
+    let startX = 0;
+    let startLeft = 0;
+    toolbar.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      dragging = true;
+      startX = event.clientX;
+      startLeft = toolbar.scrollLeft;
+      try { toolbar.setPointerCapture(event.pointerId); } catch {}
+    });
+    toolbar.addEventListener('pointermove', (event) => {
+      if (!dragging) return;
+      toolbar.scrollLeft = startLeft - (event.clientX - startX);
+    });
+    const stop = (event) => {
+      if (!dragging) return;
+      dragging = false;
+      try { toolbar.releasePointerCapture(event.pointerId); } catch {}
+    };
+    toolbar.addEventListener('pointerup', stop);
+    toolbar.addEventListener('pointercancel', stop);
+  }
+
 
   function readRegionSettings() {
     const defaults = {
@@ -727,8 +761,10 @@
       export_txt_text: escapeHtml(tr('export_txt', 'TXT')),
       share_text: escapeHtml(tr('final_plan_share', 'Поділитися'))
     });
-    try { toolbar.classList.add('board-head-actions--single'); } catch {}
+    try { toolbar.classList.remove('board-head-actions--single'); } catch {}
     try { toolbar.scrollLeft = 0; } catch {}
+    try { requestAnimationFrame(() => { toolbar.scrollLeft = 0; }); } catch {}
+    try { wireHorizontalToolbar(toolbar); } catch {}
     try { wireFinalPlanRegionPicker(root); } catch {}
     status.textContent = '';
     try { status.style.display = 'none'; } catch {}

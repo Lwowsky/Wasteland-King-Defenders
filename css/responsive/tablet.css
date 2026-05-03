@@ -369,7 +369,7 @@
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: visible;
     padding: 0 4px 12px;
   }
   #board-modal .board-head-actions.board-head-actions--single {
@@ -380,6 +380,10 @@
     overflow-y: hidden;
     padding-bottom: 8px;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    width: 100%;
+    max-width: 100%;
   }
   #board-modal .board-head-actions.board-head-actions--single > * {
     flex: 0 0 auto;
@@ -474,7 +478,7 @@
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: visible;
     padding: 0 4px 12px;
   }
   #board-modal .board-head-actions.tower-calc-preview-toolbar,
@@ -487,6 +491,10 @@
     overflow-y: hidden;
     padding-bottom: 8px;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    width: 100%;
+    max-width: 100%;
   }
   #board-modal .board-head-actions.tower-calc-preview-toolbar > *,
   #board-modal .tower-calc-preview-toolbar > * {

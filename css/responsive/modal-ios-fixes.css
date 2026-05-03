@@ -44,14 +44,17 @@
   }
 
   #towerPlayerEditModal .tpe-modal-card {
-    display: flex;
-    flex-direction: column;
+    display: block;
+    flex-direction: initial;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   #towerPlayerEditModal .tpe-modal-grid,
   #towerPlayerEditModal .placement-editor-grid,
   #towerPlayerEditModal .row.gap.wrap {
     grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
   }
 
   .pns-alert-overlay,

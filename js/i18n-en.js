@@ -543,216 +543,203 @@
   "export_txt": "TXT",
   "inline_tower_impl_missing": "Inline tower module not loaded",
   "guide_copy": {
-    "section_label": "Info & Guide",
-    "section_hint_open": "Click to open the quick site guide",
-    "section_hint_close": "Click to collapse the quick site guide",
-    "intro": "Work in this order: import first, then verify the players table, clean duplicate nicknames, move to turrets, and open the final plan only at the end.",
-    "tab_import": "Import",
-    "tab_players": "Players & duplicates",
-    "tab_turrets": "Turrets",
-    "tab_final_plan": "Final plan",
-    "tab_about": "How it works",
-    "open_label": "Open guide",
-    "close_label": "Close guide",
-    "panels": {
-      "import": {
-        "eyebrow": "1. Import",
-        "title": "Start with a clean roster import and correct column mapping",
-        "lead": "Everything else depends on import quality. If the columns are mapped incorrectly here, the players table, duplicate checks and turret autofill will all become unreliable.",
-        "steps": [
-          {
-            "title": "Upload a file or paste a URL",
-            "purpose": "So the site gets the current roster",
-            "copy": "You can use CSV, XLSX or a public spreadsheet link. After loading, the site reads the raw data and prepares it for column mapping."
-          },
-          {
-            "title": "Verify the required fields",
-            "purpose": "So distribution works without distortion",
-            "copy": "Always check nickname, alliance, role, tier, march and shift availability. These fields directly affect autofill, duplicate detection and the final plan."
-          },
-          {
-            "title": "Use additional columns only when they add value",
-            "purpose": "So the table stays readable",
-            "copy": "Extra fields are useful for officer work, but it is better to keep the permanent view focused on data that helps decision making quickly."
-          },
-          {
-            "title": "Choose the correct apply button",
-            "purpose": "So you do not wipe work that already exists",
-            "copy": "Use “Apply import” for a fresh load. Use “Update roster + preserve plan” when the roster changed but you want to keep the current turret work and final plan."
-          }
-        ],
-        "side": [
-          {
-            "title": "Quick check after import",
-            "text": "Open the players table right away and make sure marches, roles, shifts and alliances were parsed correctly."
-          },
-          {
-            "title": "When to save a column template",
-            "text": "If your spreadsheets repeat the same structure, save the template. The next import will be faster and safer."
-          }
-        ],
-        "noteTitle": "Main rule",
-        "noteText": "Do not move to turret planning until the import looks clean. One bad mapping error spreads into every later step."
-      },
-      "players": {
-        "eyebrow": "2. Players & duplicates",
-        "title": "The players table is where you verify the roster before turret work",
-        "lead": "Here you review the whole roster, search for key players, check statuses and, importantly, remove duplicate nicknames before you start autofill.",
-        "steps": [
-          {
-            "title": "Review the table after import",
-            "purpose": "To catch obvious issues fast",
-            "copy": "Look for empty marches, suspicious tiers, wrong roles and bad shift data. It is much easier to fix them here than later inside turret planning."
-          },
-          {
-            "title": "Use search by nickname or alliance",
-            "purpose": "To find captains and key players quickly",
-            "copy": "Search helps you confirm one specific player, find a whole alliance or verify that someone is actually present after an update."
-          },
-          {
-            "title": "Watch the duplicate banner",
-            "purpose": "So one nickname is not assigned twice inside one shift",
-            "copy": "When the site detects identical nicknames, a duplicate banner appears under the table and the matching rows are highlighted."
-          },
-          {
-            "title": "How to use the duplicate modal",
-            "purpose": "To keep the correct record quickly",
-            "copy": "Click the highlighted nickname or duplicate badge, open the modal, select the record that should stay, then press “Keep only selected”. If you only want to remove one specific row, use “Delete this record” or “Delete selected record”."
-          }
-        ],
-        "side": [
-          {
-            "title": "When to clean duplicates",
-            "text": "Always before turret autofill. Otherwise the site will correctly block repeated assignment inside the same shift, but the result will be harder to understand."
-          },
-          {
-            "title": "Which duplicate to keep",
-            "text": "Usually keep the row with the correct march, tier, shift and current status. If one entry is already assigned and the other is outdated, keep the real active one."
-          }
-        ],
-        "noteTitle": "Practical tip",
-        "noteText": "Clean table first, turrets second. That is the fastest path to stable autofill without confusion."
-      },
-      "turrets": {
-        "eyebrow": "3. Turrets",
-        "title": "Start with captains, then configure autofill rules",
-        "lead": "This is where you prepare all shifts, assign captains, set limits and run autofill. The old numeric helper setting is gone: now the main control is the “Turret fill mode” selector.",
-        "sequenceTitle": "Recommended order",
-        "sequence": [
-          "Open “Turret settings” first and assign captains to all required turrets. Turret type is defined by the captain, so autofill is unreliable until captains are in place.",
-          "Return to “Settings” and configure distribution rules for the current shift.",
-          "In “Turret fill mode”, choose a behavior: “Minimum” means fewer but stronger players, “Medium” is balanced, “Maximum” tries to place as many players as possible.",
-          "The “Auto tier limit” checkbox controls whether the recommended per-player march limits by tier are used during helper selection.",
-          "Then use the buttons in order: “Calculate” → “Prepare limits for turrets” or directly “Auto-fill turrets”.",
-          "After autofill, review “Player status”, and only then move to “Final plan”."
-        ],
-        "blocks": [
-          {
-            "title": "How to read “Turret fill mode”",
-            "items": [
-              "Minimum — the site tries to cover the turret with fewer players and stronger marches.",
-              "Medium — a balanced default mode for most normal plans.",
-              "Maximum — the site tries to fit as many separate players into the turret as limits allow.",
-              "Maximum helpers is 29, which means 30 total with the captain included."
-            ]
-          },
-          {
-            "title": "When to disable auto tier limit",
-            "items": [
-              "When you want to define your own T14–T9 march limits manually.",
-              "When you are building a special non-standard turret for a specific battle.",
-              "When an officer already knows that the automatic tier spread needs manual correction for this shift."
-            ]
-          }
-        ],
-        "side": [
-          {
-            "title": "What usually breaks autofill",
-            "text": "Missing captains, uncleared duplicate nicknames, wrong shifts or unrealistic march expectations. Check these first whenever the result looks strange."
-          },
-          {
-            "title": "When to use “Maximum”",
-            "text": "Use it when your goal is to place more separate people into turrets. If you want fewer people with stronger marches, use “Minimum” or “Medium”."
-          }
-        ],
-        "noteTitle": "Remember",
-        "noteText": "“Turret fill mode” defines the seating style, not just a raw number. Pick the mode first, review tier limits second, and only then run autofill."
-      },
-      "final-plan": {
-        "eyebrow": "4. Final plan",
-        "title": "The final plan is the officer view of the finished setup",
-        "lead": "This is where you review the completed result for a shift: who is placed where, how much march power each turret has, and what you can show or share with other officers.",
-        "steps": [
-          {
-            "title": "Check all shifts separately",
-            "purpose": "So you do not miss an imbalance between Shift 1 and Shift 2",
-            "copy": "The final plan displays each shift separately. Switch between them and make sure the turrets are closed the way you intended."
-          },
-          {
-            "title": "Review each turret composition",
-            "purpose": "To catch weak spots quickly",
-            "copy": "You can see the captain, helper list and total march power. If one turret looks weak or incomplete, go back to turret planning and recalculate it."
-          },
-          {
-            "title": "Use export and sharing",
-            "purpose": "To show the result fast",
-            "copy": "After checking the layout, you can export PNG, TXT or simply share the plan. This is the officer-friendly presentation mode, not the place where you begin setup."
-          }
-        ],
-        "side": [
-          {
-            "title": "When to go back",
-            "text": "If the final plan shows a weak turret, too many reserves or a wrong composition, go back to turrets or the players table depending on the cause."
-          },
-          {
-            "title": "When the plan is ready",
-            "text": "When duplicates are already cleaned, turrets match the chosen fill mode, and the preview no longer raises questions for you."
-          }
-        ],
-        "noteTitle": "Purpose of this block",
-        "noteText": "The final plan is the showcase of finished work. It is for checking, exporting and sharing the result — not for starting the process from zero."
-      },
-      "about": {
-        "eyebrow": "5. How it works",
-        "title": "Site logic in one line: clean roster → clean duplicates → correct turrets → ready final plan",
-        "lead": "The site is intentionally built as a sequence. The less chaos you allow early, the more stable autofill becomes and the fewer manual fixes you need later.",
-        "steps": [
-          {
-            "title": "Import creates the raw dataset",
-            "purpose": "Without it there is nothing to build on",
-            "copy": "The site reads the table, converts it into an internal format and shows the result in the players table."
-          },
-          {
-            "title": "The table and duplicate tools clean the input",
-            "purpose": "So turret planning works on reliable data",
-            "copy": "At this stage you remove repeated entries, fix small issues and confirm that the roster is actually ready for assignment."
-          },
-          {
-            "title": "Turrets build the battle plan",
-            "purpose": "This is the main operational logic",
-            "copy": "Captains define turret type, “Turret fill mode” defines the seating style, and tier limits help spread or focus march power the way you want."
-          },
-          {
-            "title": "Final plan shows the result",
-            "purpose": "So it can be checked and shared quickly",
-            "copy": "Once the work is done, the final plan turns it into a clean officer view suitable for screenshots, text export or chat sharing."
-          }
-        ],
-        "side": [
-          {
-            "title": "Fastest path with fewer errors",
-            "text": "Do not skip steps. If the final plan looks wrong, the reason is usually in duplicates or turret setup — not in the final plan window itself."
-          },
-          {
-            "title": "What to keep in mind",
-            "text": "The site does not replace the officer; it speeds the officer up. The best result comes from using automation but still reviewing the logic at each stage."
-          }
-        ],
-        "noteTitle": "Final tip",
-        "noteText": "If something looks wrong, go one step back: from final plan to turrets, from turrets to the table, from the table to import. That is the fastest way to find the cause."
-      }
+  "section_label": "Information and instructions",
+  "section_hint_open": "Open the quick guide",
+  "section_hint_close": "Close the quick guide",
+  "intro": "Flow: import the roster, configure regions and 1–4 shifts, check players, place captains, fill turrets, review reserve, then export the final plan.",
+  "tab_import": "Import",
+  "tab_players": "Players",
+  "tab_turrets": "Turrets",
+  "tab_final_plan": "Final plan",
+  "tab_about": "Overview",
+  "open_label": "Open the quick guide",
+  "close_label": "Close the quick guide",
+  "panels": {
+    "import": {
+      "eyebrow": "1. Import",
+      "title": "Import roster and set regions/shifts",
+      "lead": "Start with clean data so every turret and final plan is correct.",
+      "steps": [
+        {
+          "title": "Load roster",
+          "purpose": "CSV / XLSX / TXT",
+          "copy": "Import the file and check nickname, alliance, troop type, tier, march, rally, captain readiness and shift availability."
+        },
+        {
+          "title": "Region capture",
+          "purpose": "Home / Region 1 / Region 2",
+          "copy": "Enable only the regions that participate. For each region choose how many shifts are active: 1, 2, 3 or 4."
+        },
+        {
+          "title": "Column mapping",
+          "purpose": "Required and optional fields",
+          "copy": "Map the required columns first. Optional columns can include capture eligibility, backup troop type and your own custom fields."
+        }
+      ],
+      "side": [
+        {
+          "title": "Tip",
+          "text": "If the same player appears twice, clean duplicates before filling turrets."
+        },
+        {
+          "title": "Regions",
+          "text": "Home is always available. Extra regions can be switched on only when needed."
+        }
+      ],
+      "noteTitle": "Important",
+      "noteText": "Region and shift settings affect roster recognition, turret planning and final export."
+    },
+    "players": {
+      "eyebrow": "2. Players",
+      "title": "Check and edit the roster",
+      "lead": "Use this area to fix data before planning.",
+      "steps": [
+        {
+          "title": "Filters",
+          "purpose": "Search and checks",
+          "copy": "Filter by role, shift, status or tier. Use “show all data” only when you need the extra columns."
+        },
+        {
+          "title": "Manual player",
+          "purpose": "Add or edit one player",
+          "copy": "You can add a player manually, edit march/tier/shift/captain readiness, or remove a manual player."
+        },
+        {
+          "title": "Placement",
+          "purpose": "Shift cards",
+          "copy": "The placement column shows where the player is used in each shift and whether the player is reserve."
+        }
+      ],
+      "side": [
+        {
+          "title": "Manual data",
+          "text": "Manual players stay after refresh, but can be cleared by a new Excel import if needed."
+        },
+        {
+          "title": "Shift support",
+          "text": "The interface supports up to four shifts when enabled in region settings."
+        }
+      ],
+      "noteTitle": "Check before applying",
+      "noteText": "Wrong march, tier or shift data will make turret distribution less accurate."
+    },
+    "turrets": {
+      "eyebrow": "3. Turrets",
+      "title": "Build the turret plan",
+      "lead": "Select captains first, then fill helpers by troop type and capacity.",
+      "sequenceTitle": "Steps",
+      "sequence": [
+        "Choose the active region and shift.",
+        "Place captains into the correct turrets.",
+        "Use Apply rebalance to rebuild the plan.",
+        "Use Top up turrets to fill remaining places.",
+        "Use Clear to clean one shift or all enabled shifts."
+      ],
+      "blocks": [
+        {
+          "title": "Captains",
+          "items": [
+            "The turret type follows the captain.",
+            "Captain march is counted separately."
+          ]
+        },
+        {
+          "title": "Helpers",
+          "items": [
+            "Helpers are selected by role, tier, shift and available march.",
+            "Reserve shows players that did not fit into turrets."
+          ]
+        },
+        {
+          "title": "Four shifts",
+          "items": [
+            "If 3 or 4 shifts are enabled, the summary uses a carousel so the cards stay readable."
+          ]
+        }
+      ],
+      "side": [
+        {
+          "title": "Clear menu",
+          "text": "The clear menu keeps captains unless you choose a full reset action."
+        },
+        {
+          "title": "Limits",
+          "text": "Tier limits control how much march each tier can send into a turret."
+        }
+      ],
+      "noteTitle": "Safe workflow",
+      "noteText": "Save or review each shift before switching regions or exporting."
+    },
+    "final-plan": {
+      "eyebrow": "4. Final plan",
+      "title": "Export a clean officer view",
+      "lead": "Use this when the layout is ready.",
+      "steps": [
+        {
+          "title": "Preview",
+          "purpose": "Visual plan",
+          "copy": "Switch shift, region and plan language before taking screenshots or exporting PNG."
+        },
+        {
+          "title": "TXT export",
+          "purpose": "Readable text plan",
+          "copy": "TXT uses the selected plan languages for shifts, turret names and troop types. Captains are separated from helpers."
+        },
+        {
+          "title": "Sharing",
+          "purpose": "Officers and alliance chat",
+          "copy": "Use PNG for screenshots and TXT when the in-game chat is easier to read."
+        }
+      ],
+      "side": [
+        {
+          "title": "iPhone separator",
+          "text": "On iPhone/iPad the TXT uses | when needed; other devices can keep ✦."
+        },
+        {
+          "title": "Plan languages",
+          "text": "Select several languages when officers need multilingual turret names and troop types."
+        }
+      ],
+      "noteTitle": "Before sending",
+      "noteText": "Check captains, empty turrets and reserve players before sharing the plan."
+    },
+    "about": {
+      "eyebrow": "Overview",
+      "title": "What this planner does",
+      "lead": "The site helps officers turn a roster into turret assignments and a final shareable plan.",
+      "steps": [
+        {
+          "title": "Recommended order",
+          "purpose": "Fast workflow",
+          "copy": "Import → regions/shifts → players → captains → turrets → reserve → final plan."
+        },
+        {
+          "title": "What is new",
+          "purpose": "Regions and four shifts",
+          "copy": "You can plan Home/Region 1/Region 2 and enable 1–4 shifts for each region."
+        },
+        {
+          "title": "Manual edits",
+          "purpose": "Small corrections",
+          "copy": "Use manual player editing for missing players or quick corrections without reimporting everything."
+        }
+      ],
+      "side": [
+        {
+          "title": "Goal",
+          "text": "Less manual sorting and fewer duplicate assignments."
+        },
+        {
+          "title": "Best result",
+          "text": "Keep source data clean and review the final plan before export."
+        }
+      ],
+      "noteTitle": "Note",
+      "noteText": "All planning is local in your browser unless you export or share the result."
     }
-  },
+  }
+},
   "notes": "Notes",
   "clear_helpers": "Clear helpers",
   "manual_shift_add_title": "Why extra slots are needed",

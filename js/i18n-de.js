@@ -540,216 +540,203 @@
   "export_txt": "TXT",
   "inline_tower_impl_missing": "Inline-Turm-Modul nicht geladen",
   "guide_copy": {
-    "section_label": "Info & Anleitung",
-    "section_hint_open": "Klicke, um die Kurzanleitung der Seite zu öffnen",
-    "section_hint_close": "Klicke, um die Kurzanleitung der Seite einzuklappen",
-    "intro": "Arbeite in dieser Reihenfolge: zuerst importieren, dann die Spielertabelle prüfen, doppelte Nicknames bereinigen, zu den Türmen wechseln und den Endplan erst ganz am Ende öffnen.",
-    "tab_import": "Import",
-    "tab_players": "Spieler & Duplikate",
-    "tab_turrets": "Türme",
-    "tab_final_plan": "Endplan",
-    "tab_about": "So funktioniert es",
-    "open_label": "Anleitung öffnen",
-    "close_label": "Anleitung schließen",
-    "panels": {
-      "import": {
-        "eyebrow": "1. Import",
-        "title": "Starte mit einem sauberen Kader-Import und korrekter Spaltenzuordnung",
-        "lead": "Alles Weitere hängt von der Qualität des Imports ab. Wenn die Spalten hier falsch zugeordnet sind, werden Spielertabelle, Duplikatprüfung und Turm-Autofill unzuverlässig.",
-        "steps": [
-          {
-            "title": "Datei hochladen oder URL einfügen",
-            "purpose": "Damit die Seite den aktuellen Kader erhält",
-            "copy": "Du kannst CSV, XLSX oder einen öffentlichen Tabellenlink verwenden. Nach dem Laden liest die Seite die Rohdaten ein und bereitet sie für die Spaltenzuordnung vor."
-          },
-          {
-            "title": "Pflichtfelder prüfen",
-            "purpose": "Damit die Verteilung ohne Verzerrung funktioniert",
-            "copy": "Prüfe immer Nickname, Allianz, Rolle, Tier, Marsch und Schichtverfügbarkeit. Diese Felder beeinflussen direkt Autofill, Duplikaterkennung und den Endplan."
-          },
-          {
-            "title": "Zusätzliche Spalten nur verwenden, wenn sie echten Nutzen bringen",
-            "purpose": "Damit die Tabelle lesbar bleibt",
-            "copy": "Zusätzliche Felder sind für Offiziere nützlich, aber die permanente Ansicht sollte besser auf Daten fokussiert bleiben, die schnelle Entscheidungen unterstützen."
-          },
-          {
-            "title": "Die richtige Anwenden-Schaltfläche wählen",
-            "purpose": "Damit du bestehende Arbeit nicht löschst",
-            "copy": "Nutze „Import anwenden“ für einen frischen Ladevorgang. Nutze „Kader aktualisieren + Plan behalten“, wenn sich der Kader geändert hat, du aber die aktuelle Turmarbeit und den Endplan behalten willst."
-          }
-        ],
-        "side": [
-          {
-            "title": "Schnellprüfung nach dem Import",
-            "text": "Öffne sofort die Spielertabelle und stelle sicher, dass Marschwerte, Rollen, Schichten und Allianzen korrekt erkannt wurden."
-          },
-          {
-            "title": "Wann eine Spaltenvorlage gespeichert werden sollte",
-            "text": "Wenn deine Tabellen immer dieselbe Struktur haben, speichere die Vorlage. Der nächste Import wird schneller und sicherer."
-          }
-        ],
-        "noteTitle": "Hauptregel",
-        "noteText": "Wechsle erst zur Turmplanung, wenn der Import sauber aussieht. Ein einziger Fehler in der Zuordnung zieht sich durch alle folgenden Schritte."
-      },
-      "players": {
-        "eyebrow": "2. Spieler & Duplikate",
-        "title": "In der Spielertabelle prüfst du den Kader vor der Turmarbeit",
-        "lead": "Hier prüfst du den gesamten Kader, suchst nach wichtigen Spielern, kontrollierst Statuswerte und — besonders wichtig — entfernst doppelte Nicknames, bevor du Autofill startest.",
-        "steps": [
-          {
-            "title": "Tabelle nach dem Import prüfen",
-            "purpose": "Um offensichtliche Probleme schnell zu erkennen",
-            "copy": "Achte auf leere Marschwerte, verdächtige Tiers, falsche Rollen und fehlerhafte Schichtdaten. Hier lassen sich Probleme viel leichter beheben als später in der Turmplanung."
-          },
-          {
-            "title": "Suche nach Nickname oder Allianz verwenden",
-            "purpose": "Um Kapitäne und wichtige Spieler schnell zu finden",
-            "copy": "Die Suche hilft dir, einen bestimmten Spieler zu prüfen, eine ganze Allianz zu finden oder zu bestätigen, dass jemand nach einem Update wirklich vorhanden ist."
-          },
-          {
-            "title": "Duplikat-Banner beobachten",
-            "purpose": "Damit ein Nickname nicht zweimal in derselben Schicht zugewiesen wird",
-            "copy": "Wenn die Seite identische Nicknames erkennt, erscheint unter der Tabelle ein Duplikat-Banner und die passenden Zeilen werden hervorgehoben."
-          },
-          {
-            "title": "So benutzt du das Duplikat-Fenster",
-            "purpose": "Um schnell den richtigen Eintrag zu behalten",
-            "copy": "Klicke auf den hervorgehobenen Nickname oder das Duplikat-Abzeichen, öffne das Fenster, wähle den Datensatz, der bleiben soll, und drücke dann „Nur ausgewählten behalten“. Wenn du nur eine bestimmte Zeile entfernen möchtest, nutze „Diesen Datensatz löschen“ oder „Ausgewählten Datensatz löschen“."
-          }
-        ],
-        "side": [
-          {
-            "title": "Wann Duplikate bereinigt werden sollten",
-            "text": "Immer vor dem Turm-Autofill. Sonst blockiert die Seite zwar korrekt doppelte Zuweisungen in derselben Schicht, aber das Ergebnis wird schwerer verständlich."
-          },
-          {
-            "title": "Welches Duplikat behalten werden sollte",
-            "text": "Behalte in der Regel die Zeile mit dem korrekten Marsch, Tier, der richtigen Schicht und dem aktuellen Status. Wenn ein Eintrag bereits zugewiesen ist und der andere veraltet ist, behalte den tatsächlich aktiven."
-          }
-        ],
-        "noteTitle": "Praktischer Tipp",
-        "noteText": "Erst die Tabelle bereinigen, dann die Türme. Das ist der schnellste Weg zu stabilem Autofill ohne Verwirrung."
-      },
-      "turrets": {
-        "eyebrow": "3. Türme",
-        "title": "Beginne mit den Kapitänen und konfiguriere dann die Autofill-Regeln",
-        "lead": "Hier bereitest du alle Schichten vor, weist Kapitäne zu, setzt Limits und startest Autofill. Die alte numerische Helfer-Einstellung ist weg: jetzt ist der Hauptschalter der Selektor „Turm-Füllmodus“.",
-        "sequenceTitle": "Empfohlene Reihenfolge",
-        "sequence": [
-          "Öffne zuerst „Turmeinstellungen“ und weise allen benötigten Türmen Kapitäne zu. Der Turmtyp wird durch den Kapitän bestimmt, daher ist Autofill unzuverlässig, solange die Kapitäne nicht gesetzt sind.",
-          "Kehre zu „Einstellungen“ zurück und konfiguriere die Verteilungsregeln für die aktuelle Schicht.",
-          "Wähle im „Turm-Füllmodus“ ein Verhalten: „Minimum“ bedeutet weniger, aber stärkere Spieler, „Mittel“ ist ausgewogen, „Maximum“ versucht, möglichst viele Spieler zu platzieren.",
-          "Die Option „Automatisches Tier-Limit“ steuert, ob die empfohlenen Marschlimits pro Spieler und Tier bei der Helferauswahl verwendet werden.",
-          "Nutze dann die Buttons in dieser Reihenfolge: „Berechnen“ → „Limits für Türme vorbereiten“ oder direkt „Türme automatisch füllen“.",
-          "Prüfe nach dem Autofill den „Spielerstatus“ und wechsle erst danach zum „Endplan“."
-        ],
-        "blocks": [
-          {
-            "title": "So liest du den „Turm-Füllmodus“",
-            "items": [
-              "Minimum — die Seite versucht, den Turm mit weniger Spielern und stärkeren Märschen zu decken.",
-              "Mittel — ein ausgewogener Standardmodus für die meisten normalen Pläne.",
-              "Maximum — die Seite versucht, so viele einzelne Spieler wie möglich in den Turm zu setzen, soweit die Limits es erlauben.",
-              "Die maximale Anzahl an Helfern beträgt 29, also 30 insgesamt mit Kapitän."
-            ]
-          },
-          {
-            "title": "Wann das automatische Tier-Limit deaktiviert werden sollte",
-            "items": [
-              "Wenn du eigene T14–T9-Marschlimits manuell festlegen möchtest.",
-              "Wenn du für einen bestimmten Kampf einen speziellen, nicht standardmäßigen Turm baust.",
-              "Wenn ein Offizier bereits weiß, dass die automatische Tier-Verteilung in dieser Schicht manuell korrigiert werden muss."
-            ]
-          }
-        ],
-        "side": [
-          {
-            "title": "Was Autofill meistens kaputt macht",
-            "text": "Fehlende Kapitäne, nicht bereinigte doppelte Nicknames, falsche Schichten oder unrealistische Erwartungen an den Marsch. Prüfe diese Punkte zuerst, wenn das Ergebnis seltsam aussieht."
-          },
-          {
-            "title": "Wann „Maximum“ verwendet werden sollte",
-            "text": "Nutze es, wenn dein Ziel ist, mehr einzelne Personen in die Türme zu setzen. Wenn du weniger Personen mit stärkeren Märschen willst, nutze „Minimum“ oder „Mittel“."
-          }
-        ],
-        "noteTitle": "Merke dir",
-        "noteText": "Der „Turm-Füllmodus“ definiert den Besetzungsstil, nicht nur eine rohe Zahl. Wähle zuerst den Modus, prüfe danach die Tier-Limits und starte erst dann das Autofill."
-      },
-      "final-plan": {
-        "eyebrow": "4. Endplan",
-        "title": "Der Endplan ist die Offiziersansicht der fertigen Aufstellung",
-        "lead": "Hier prüfst du das fertige Ergebnis für eine Schicht: wer wo steht, wie viel Marschleistung jeder Turm hat und was du anderen Offizieren zeigen oder mit ihnen teilen kannst.",
-        "steps": [
-          {
-            "title": "Alle Schichten getrennt prüfen",
-            "purpose": "Damit du kein Ungleichgewicht zwischen Schicht 1 und Schicht 2 übersiehst",
-            "copy": "Der Endplan zeigt jede Schicht getrennt an. Wechsle zwischen ihnen und stelle sicher, dass die Türme so geschlossen sind, wie du es geplant hast."
-          },
-          {
-            "title": "Zusammensetzung jedes Turms prüfen",
-            "purpose": "Um Schwachstellen schnell zu erkennen",
-            "copy": "Du siehst den Kapitän, die Helferliste und die gesamte Marschstärke. Wenn ein Turm schwach oder unvollständig aussieht, gehe zurück zur Turmplanung und berechne ihn neu."
-          },
-          {
-            "title": "Export und Teilen verwenden",
-            "purpose": "Um das Ergebnis schnell zu zeigen",
-            "copy": "Nach der Prüfung des Layouts kannst du PNG, TXT exportieren oder den Plan einfach teilen. Das ist der präsentationsfreundliche Offiziersmodus und nicht der Ort, an dem du die Einrichtung beginnst."
-          }
-        ],
-        "side": [
-          {
-            "title": "Wann du zurückgehen solltest",
-            "text": "Wenn der Endplan einen schwachen Turm, zu viele Reserven oder eine falsche Zusammensetzung zeigt, gehe je nach Ursache zu den Türmen oder zur Spielertabelle zurück."
-          },
-          {
-            "title": "Wann der Plan fertig ist",
-            "text": "Wenn Duplikate bereits bereinigt sind, die Türme dem gewählten Füllmodus entsprechen und die Vorschau für dich keine offenen Fragen mehr hinterlässt."
-          }
-        ],
-        "noteTitle": "Zweck dieses Blocks",
-        "noteText": "Der Endplan ist die Präsentation der fertiggestellten Arbeit. Er dient dazu, das Ergebnis zu prüfen, zu exportieren und zu teilen — nicht, um den Prozess bei null zu starten."
-      },
-      "about": {
-        "eyebrow": "5. So funktioniert es",
-        "title": "Die Logik der Seite in einer Zeile: sauberer Kader → saubere Duplikate → korrekte Türme → fertiger Endplan",
-        "lead": "Die Seite ist bewusst als Abfolge aufgebaut. Je weniger Chaos du früh zulässt, desto stabiler wird das Autofill und desto weniger manuelle Korrekturen brauchst du später.",
-        "steps": [
-          {
-            "title": "Der Import erzeugt den Rohdatensatz",
-            "purpose": "Ohne ihn gibt es keine Grundlage",
-            "copy": "Die Seite liest die Tabelle, konvertiert sie in ein internes Format und zeigt das Ergebnis in der Spielertabelle an."
-          },
-          {
-            "title": "Tabelle und Duplikat-Tools bereinigen die Eingabe",
-            "purpose": "Damit die Turmplanung auf verlässlichen Daten arbeitet",
-            "copy": "In diesem Schritt entfernst du doppelte Einträge, korrigierst kleine Fehler und bestätigst, dass der Kader wirklich für die Zuweisung bereit ist."
-          },
-          {
-            "title": "Türme bauen den Kampfplan",
-            "purpose": "Das ist die operative Kernlogik",
-            "copy": "Kapitäne definieren den Turmtyp, der „Turm-Füllmodus“ den Besetzungsstil, und Tier-Limits helfen dabei, Marschstärke so zu verteilen oder zu konzentrieren, wie du es möchtest."
-          },
-          {
-            "title": "Der Endplan zeigt das Ergebnis",
-            "purpose": "Damit es schnell geprüft und geteilt werden kann",
-            "copy": "Wenn die Arbeit erledigt ist, verwandelt der Endplan sie in eine saubere Offiziersansicht, die für Screenshots, Textexport oder Chat-Sharing geeignet ist."
-          }
-        ],
-        "side": [
-          {
-            "title": "Schnellster Weg mit weniger Fehlern",
-            "text": "Überspringe keine Schritte. Wenn der Endplan falsch aussieht, liegt der Grund meist bei Duplikaten oder der Turmkonfiguration — nicht im Endplan-Fenster selbst."
-          },
-          {
-            "title": "Woran du denken solltest",
-            "text": "Die Seite ersetzt den Offizier nicht; sie macht ihn schneller. Das beste Ergebnis entsteht, wenn du Automatisierung nutzt, aber die Logik in jeder Phase trotzdem überprüfst."
-          }
-        ],
-        "noteTitle": "Letzter Tipp",
-        "noteText": "Wenn etwas falsch aussieht, gehe einen Schritt zurück: vom Endplan zu den Türmen, von den Türmen zur Tabelle, von der Tabelle zum Import. Das ist der schnellste Weg, die Ursache zu finden."
-      }
+  "section_label": "Info und Anleitung",
+  "section_hint_open": "Kurzanleitung öffnen",
+  "section_hint_close": "Kurzanleitung schließen",
+  "intro": "Ablauf: Liste importieren, Regionen und 1–4 Schichten einstellen, Spieler prüfen, Kapitäne setzen, Türme füllen, Reserve prüfen und finalen Plan exportieren.",
+  "tab_import": "Import",
+  "tab_players": "Spieler",
+  "tab_turrets": "Türme",
+  "tab_final_plan": "Finaler Plan",
+  "tab_about": "Übersicht",
+  "open_label": "Kurzanleitung öffnen",
+  "close_label": "Kurzanleitung schließen",
+  "panels": {
+    "import": {
+      "eyebrow": "1. Import",
+      "title": "Liste importieren und Regionen/Schichten einstellen",
+      "lead": "Saubere Daten sind die Basis für die Planung.",
+      "steps": [
+        {
+          "title": "Liste laden",
+          "purpose": "CSV / XLSX / TXT",
+          "copy": "Prüfe Name, Allianz, Truppentyp, Tier, Marsch, Rallye, Kapitänsbereitschaft und Schichten."
+        },
+        {
+          "title": "Regionseroberung",
+          "purpose": "Heimat / Region 1 / Region 2",
+          "copy": "Aktiviere nur die benötigten Regionen. Pro Region wählst du 1, 2, 3 oder 4 aktive Schichten."
+        },
+        {
+          "title": "Spalten",
+          "purpose": "Pflicht- und Zusatzfelder",
+          "copy": "Ordne zuerst Pflichtspalten zu. Optional: Regionseroberung, Ersatz-Truppentyp und eigene Felder."
+        }
+      ],
+      "side": [
+        {
+          "title": "Tipp",
+          "text": "Entferne Duplikate vor dem Füllen der Türme."
+        },
+        {
+          "title": "Regionen",
+          "text": "Heimat ist immer aktiv; weitere Regionen nur bei Bedarf einschalten."
+        }
+      ],
+      "noteTitle": "Wichtig",
+      "noteText": "Regionen und Schichten beeinflussen Erkennung, Turmplanung und Export."
+    },
+    "players": {
+      "eyebrow": "2. Spieler",
+      "title": "Liste prüfen und bearbeiten",
+      "lead": "Korrigiere Daten vor der Planung.",
+      "steps": [
+        {
+          "title": "Filter",
+          "purpose": "Suche und Prüfung",
+          "copy": "Filtere nach Rolle, Schicht, Status oder Tier. „Alle Daten anzeigen“ nur für Zusatzspalten nutzen."
+        },
+        {
+          "title": "Manueller Spieler",
+          "purpose": "Einen Spieler hinzufügen oder ändern",
+          "copy": "Spieler manuell hinzufügen, Marsch/Tier/Schicht/Kapitänsstatus ändern oder entfernen."
+        },
+        {
+          "title": "Platzierung",
+          "purpose": "Schichtkarten",
+          "copy": "Zeigt, wo ein Spieler pro Schicht steht oder ob er Reserve ist."
+        }
+      ],
+      "side": [
+        {
+          "title": "Manuelle Daten",
+          "text": "Manuelle Spieler bleiben nach dem Neuladen erhalten."
+        },
+        {
+          "title": "Schichten",
+          "text": "Bis zu vier Schichten werden unterstützt, wenn sie in Regionen aktiv sind."
+        }
+      ],
+      "noteTitle": "Prüfung",
+      "noteText": "Falscher Marsch, Tier oder Schicht verschlechtert die Verteilung."
+    },
+    "turrets": {
+      "eyebrow": "3. Türme",
+      "title": "Turmplan erstellen",
+      "lead": "Erst Kapitäne, dann Helfer nach Truppentyp und Kapazität.",
+      "sequenceTitle": "Schritte",
+      "sequence": [
+        "Region und Schicht wählen.",
+        "Kapitäne in die richtigen Türme setzen.",
+        "„Neu verteilen“ baut den Plan neu.",
+        "„Türme auffüllen“ füllt freie Plätze.",
+        "„Leeren“ leert eine Schicht oder alle aktiven Schichten."
+      ],
+      "blocks": [
+        {
+          "title": "Kapitäne",
+          "items": [
+            "Der Truppentyp folgt dem Kapitän.",
+            "Kapitänsmarsch wird separat gezählt."
+          ]
+        },
+        {
+          "title": "Helfer",
+          "items": [
+            "Helfer werden nach Rolle, Tier, Schicht und Marsch gewählt.",
+            "Reserve zeigt Spieler, die nicht passen."
+          ]
+        },
+        {
+          "title": "4 Schichten",
+          "items": [
+            "Bei 3 oder 4 Schichten nutzt die Übersicht ein Karussell."
+          ]
+        }
+      ],
+      "side": [
+        {
+          "title": "Leeren",
+          "text": "Helfer leeren behält Kapitäne, außer du wählst einen vollständigen Reset."
+        },
+        {
+          "title": "Limits",
+          "text": "Tier-Limits steuern den nutzbaren Marsch pro Tier."
+        }
+      ],
+      "noteTitle": "Sicher arbeiten",
+      "noteText": "Prüfe jede Schicht vor Regionswechsel oder Export."
+    },
+    "final-plan": {
+      "eyebrow": "4. Finaler Plan",
+      "title": "Export für Offiziere",
+      "lead": "Nutzen, wenn der Plan fertig ist.",
+      "steps": [
+        {
+          "title": "Vorschau",
+          "purpose": "Visueller Plan",
+          "copy": "Schicht, Region und Plansprachen vor Screenshot oder PNG wählen."
+        },
+        {
+          "title": "TXT",
+          "purpose": "Lesbarer Text",
+          "copy": "TXT nutzt die gewählten Plansprachen für Schichten, Türme und Truppentypen. Kapitän steht getrennt von Helfern."
+        },
+        {
+          "title": "Teilen",
+          "purpose": "Offiziere und Chat",
+          "copy": "PNG für Screenshots, TXT für Spielchat."
+        }
+      ],
+      "side": [
+        {
+          "title": "iPhone",
+          "text": "Auf iPhone/iPad nutzt TXT bei Bedarf |; andere Geräte behalten ✦."
+        },
+        {
+          "title": "Sprachen",
+          "text": "Mehrere Sprachen für Turm- und Truppennamen wählen."
+        }
+      ],
+      "noteTitle": "Vor dem Senden",
+      "noteText": "Kapitäne, leere Türme und Reserve prüfen."
+    },
+    "about": {
+      "eyebrow": "Übersicht",
+      "title": "Was der Planer macht",
+      "lead": "Er macht aus einer Spielerliste Turmzuweisungen und einen teilbaren Plan.",
+      "steps": [
+        {
+          "title": "Ablauf",
+          "purpose": "Schneller Prozess",
+          "copy": "Import → Regionen/Schichten → Spieler → Kapitäne → Türme → Reserve → finaler Plan."
+        },
+        {
+          "title": "Neu",
+          "purpose": "Regionen und 4 Schichten",
+          "copy": "Heimat/Region 1/Region 2 und 1–4 Schichten pro Region planen."
+        },
+        {
+          "title": "Manuelle Korrektur",
+          "purpose": "Kleine Änderungen",
+          "copy": "Fehlende Spieler manuell hinzufügen, ohne alles neu zu importieren."
+        }
+      ],
+      "side": [
+        {
+          "title": "Ziel",
+          "text": "Weniger manuelles Sortieren und weniger doppelte Zuweisungen."
+        },
+        {
+          "title": "Bestes Ergebnis",
+          "text": "Quelldaten sauber halten."
+        }
+      ],
+      "noteTitle": "Hinweis",
+      "noteText": "Alles bleibt lokal im Browser, bis du exportierst oder teilst."
     }
-  },
+  }
+},
   "notes": "Notizen",
   "clear_helpers": "Helfer leeren",
   "manual_shift_add_title": "Warum zusätzliche Slots benötigt werden",

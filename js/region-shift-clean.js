@@ -393,8 +393,15 @@
         gap:8px!important;
         flex-wrap:nowrap!important;
       }
-      #towerCalcModal .rs-toolbar-left{flex:1 1 auto!important; min-width:0!important;}
+      #towerCalcModal .rs-toolbar-left{flex:1 1 auto!important; min-width:0!important; overflow-x:auto!important; overflow-y:visible!important; -webkit-overflow-scrolling:touch!important; overscroll-behavior-x:contain!important; touch-action:pan-x!important; scrollbar-width:thin!important; padding-bottom:4px!important;}
       #towerCalcModal .rs-region-right{flex:0 0 auto!important; justify-content:flex-end!important;}
+      @media (max-width:520px){
+        #towerCalcModal .rs-advanced-head{display:block!important; overflow:visible!important;}
+        #towerCalcModal .rs-toolbar-left{display:flex!important; align-items:center!important; flex-wrap:nowrap!important; width:100%!important; max-width:100%!important; min-width:0!important; overflow-x:auto!important; overflow-y:hidden!important; gap:8px!important; -webkit-overflow-scrolling:touch!important; overscroll-behavior-x:contain!important; touch-action:pan-x!important; scrollbar-width:thin!important; padding-bottom:6px!important;}
+        #towerCalcModal .rs-toolbar-left .btn,
+        #towerCalcModal .rs-toolbar-left .rs-clear-wrap{flex:0 0 auto!important; width:auto!important; min-width:max-content!important; white-space:nowrap!important;}
+        #towerCalcModal .rs-toolbar-left .btn{line-height:1.15!important; padding-left:12px!important; padding-right:12px!important;}
+      }
       #towerCalcModal .rs-region-right[hidden]{display:none!important;}
 
       #towerCalcModal #towerCalcTabs .btn,
@@ -402,7 +409,7 @@
       #towerCalcModal .rs-region-right .btn{
         white-space:nowrap!important;
         width:auto!important;
-        min-width:0!important;
+        min-width:max-content!important;
         transform:none!important;
         translate:none!important;
         animation:none!important;
@@ -427,7 +434,8 @@
         overflow:visible!important;
         z-index:50!important;
       }
-      #towerCalcModal .rs-clear-menu{
+      #towerCalcModal .rs-clear-menu,
+      .rs-clear-menu{
         position:absolute!important;
         right:0!important;
         top:calc(100% + 8px)!important;
@@ -442,8 +450,10 @@
         display:none!important;
         box-shadow:0 12px 40px rgba(0,0,0,.35)!important;
       }
-      #towerCalcModal .rs-clear-menu.open{display:block!important;}
-      #towerCalcModal .rs-clear-item{
+      #towerCalcModal .rs-clear-menu.open,
+      .rs-clear-menu.open{display:block!important;}
+      #towerCalcModal .rs-clear-item,
+      .rs-clear-item{
         width:100%!important;
         display:block!important;
         text-align:left!important;
@@ -454,7 +464,8 @@
         border-radius:10px!important;
         cursor:pointer!important;
       }
-      #towerCalcModal .rs-clear-item:hover{background:rgba(255,255,255,.06)!important;}
+      #towerCalcModal .rs-clear-item:hover,
+      .rs-clear-item:hover{background:rgba(255,255,255,.06)!important;}
 
 
       #towerCalcModal #tcv35-row,
@@ -575,8 +586,17 @@
       }
       #towerCalcModal .rs-carousel-track > .tcv7-grid::-webkit-scrollbar{display:none!important;}
       #towerCalcModal .rs-carousel-track > .tcv7-grid > .tcv7-card{
-        flex:0 0 calc((100% - 36px) / 4)!important;
+        flex:0 0 calc((100% - 24px) / 3)!important;
+        width:calc((100% - 24px) / 3)!important;
         min-width:0!important;
+        max-width:calc((100% - 24px) / 3)!important;
+      }
+      @media (max-width:700px){
+        #towerCalcModal .rs-carousel-track > .tcv7-grid > .tcv7-card{
+          flex-basis:100%!important;
+          width:100%!important;
+          max-width:100%!important;
+        }
       }
       #towerCalcModal .rs-carousel-btn{
         flex:0 0 34px!important;
@@ -764,6 +784,63 @@
     return false;
   }
 
+  function closeClearMenu(menu){
+    if (!menu) return;
+    menu.classList.remove('open');
+    menu.removeAttribute('style');
+    const wrap = menu.__rsClearWrap || document.querySelector('#towerCalcModal .rs-clear-wrap');
+    if (wrap && menu.parentElement !== wrap) wrap.appendChild(menu);
+  }
+
+  function closeClearMenus(exceptMenu){
+    document.querySelectorAll('.rs-clear-menu.open').forEach(menu => {
+      if (exceptMenu && menu === exceptMenu) return;
+      closeClearMenu(menu);
+    });
+  }
+
+  function toggleClearMenu(trigger){
+    const wrap = trigger?.closest?.('.rs-clear-wrap');
+    const menu = wrap?.querySelector?.('.rs-clear-menu') || document.querySelector('.rs-clear-menu.open');
+    if (!wrap || !menu) return false;
+    const wasOpen = menu.classList.contains('open');
+    closeClearMenus(menu);
+    if (wasOpen) {
+      closeClearMenu(menu);
+      return true;
+    }
+
+    menu.__rsClearWrap = wrap;
+    if (menu.parentElement !== document.body) document.body.appendChild(menu);
+    menu.classList.add('open');
+
+    const rect = trigger.getBoundingClientRect();
+    Object.assign(menu.style, {
+      display: 'block',
+      position: 'fixed',
+      right: 'auto',
+      minWidth: '240px',
+      maxWidth: 'min(320px, calc(100vw - 16px))',
+      maxHeight: 'min(320px, calc(100dvh - 24px))',
+      overflow: 'auto',
+      padding: '8px',
+      borderRadius: '14px',
+      border: '1px solid rgba(255,255,255,.14)',
+      background: '#101a33',
+      color: '#eef3ff',
+      boxShadow: '0 12px 40px rgba(0,0,0,.35)',
+      zIndex: '260500'
+    });
+    const menuWidth = menu.offsetWidth || 240;
+    const leftPos = Math.max(8, Math.min(window.innerWidth - menuWidth - 8, rect.right - menuWidth));
+    const below = rect.bottom + 8;
+    const menuHeight = Math.min(menu.scrollHeight || 220, Math.max(120, window.innerHeight - 24));
+    const topPos = below + menuHeight > window.innerHeight - 8 ? Math.max(8, rect.top - menuHeight - 8) : below;
+    menu.style.left = `${leftPos}px`;
+    menu.style.top = `${topPos}px`;
+    return true;
+  }
+
   function renderToolbar(){
     const left = document.createElement('div');
     left.className = 'rs-toolbar-left';
@@ -785,22 +862,31 @@
     wrap.className = 'rs-clear-wrap';
     const menu = document.createElement('div');
     menu.className = 'rs-clear-menu';
+    menu.setAttribute('role', 'menu');
 
     const addItem = (label, action) => {
       const item = document.createElement('button');
       item.type = 'button';
       item.className = 'rs-clear-item';
+      item.setAttribute('role', 'menuitem');
       item.textContent = label;
       item.addEventListener('click', e => {
         e.preventDefault();
         e.stopPropagation();
-        menu.classList.remove('open');
+        closeClearMenu(menu);
         if (typeof action === 'function') action();
       });
       menu.appendChild(item);
     };
 
-    const clear = button(`${t('clear', 'Очистити')} ▾`, () => menu.classList.toggle('open'));
+    const clear = document.createElement('button');
+    clear.type = 'button';
+    clear.className = 'btn btn-sm';
+    clear.setAttribute('data-rs-clear-trigger', '1');
+    clear.setAttribute('aria-haspopup', 'true');
+    clear.setAttribute('aria-expanded', 'false');
+    clear.textContent = `${t('clear', 'Очистити')} ▾`;
+
     const clearCount = shiftCount();
     for (let i = 1; i <= clearCount; i += 1) {
       addItem(`${t('clear_shift', 'Очистити зміну')} ${i}`, () => clearShiftScope(`shift${i}`));
@@ -1261,7 +1347,7 @@
     track.appendChild(grid);
     shell.appendChild(next);
 
-    const scroll = dir => grid.scrollBy({ left: dir * Math.max(260, Math.round(grid.clientWidth * 0.75)), behavior: 'smooth' });
+    const scroll = dir => grid.scrollBy({ left: dir * Math.max(220, Math.round(grid.clientWidth)), behavior: 'smooth' });
     prev.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); scroll(-1); });
     next.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); scroll(1); });
   }
@@ -1280,8 +1366,9 @@
       .filter(card => card.style.display !== 'none').length;
     const isWrapped = !!grid.closest('.rs-carousel');
 
-    if (visibleCards > 4 && !isWrapped) wrapCarousel(grid);
-    if (visibleCards <= 4 && isWrapped) unwrapCarousel(grid);
+    const needsCarousel = visibleCards > 2;
+    if (needsCarousel && !isWrapped) wrapCarousel(grid);
+    if (!needsCarousel && isWrapped) unwrapCarousel(grid);
 
     return true;
   }
@@ -1514,9 +1601,9 @@
       renderAdvancedHeader();
       renderManualLimits();
       ensurePickerControls();
+      setCurrentShift(currentShift());
       renderSummary();
       removeLimitRegionUI();
-      setCurrentShift(currentShift());
       try { ensureBoardSignature(document.getElementById('towerCalcModal') || document); } catch {}
       try { ensureBoardSignature(document.getElementById('board-modal') || document); } catch {}
     } finally {
@@ -1636,10 +1723,29 @@
     renderAll();
   }, true);
 
+  function handleClearTriggerEvent(event){
+    const trigger = event.target?.closest?.('#towerCalcModal [data-rs-clear-trigger]');
+    if (!trigger) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation?.();
+    if (event.type === 'click' && trigger.__rsClearPointerHandled) {
+      trigger.__rsClearPointerHandled = false;
+      return true;
+    }
+    if (event.type === 'pointerdown') trigger.__rsClearPointerHandled = true;
+    const opened = toggleClearMenu(trigger);
+    trigger.setAttribute('aria-expanded', opened && document.querySelector('.rs-clear-menu.open') ? 'true' : 'false');
+    return true;
+  }
+
+  document.addEventListener('pointerdown', handleClearTriggerEvent, true);
+
   document.addEventListener('click', event => {
-    if (!event.target.closest('#towerCalcModal')) return;
-    document.querySelectorAll('#towerCalcModal .rs-clear-menu.open').forEach(menu => {
-      if (!menu.parentElement?.contains(event.target)) menu.classList.remove('open');
+    if (handleClearTriggerEvent(event)) return;
+    document.querySelectorAll('.rs-clear-menu.open').forEach(menu => {
+      if (menu.contains(event.target) || event.target.closest?.('#towerCalcModal .rs-clear-wrap')) return;
+      closeClearMenu(menu);
     });
   }, true);
 

@@ -629,216 +629,203 @@
   "duplicate_nick_in_shift_error": "Nickname này đã được dùng trong ca này",
   "turrets_panel": "Tháp pháo",
   "guide_copy": {
-    "section_label": "Thông tin & Hướng dẫn",
-    "section_hint_open": "Nhấn để mở hướng dẫn nhanh của trang",
-    "section_hint_close": "Nhấn để thu gọn hướng dẫn nhanh của trang",
-    "intro": "Hãy làm theo thứ tự này: nhập dữ liệu trước, sau đó kiểm tra bảng người chơi, dọn nickname trùng, chuyển sang tháp pháo và chỉ mở kế hoạch cuối ở bước cuối cùng.",
-    "tab_import": "Nhập dữ liệu",
-    "tab_players": "Người chơi & trùng lặp",
-    "tab_turrets": "Tháp pháo",
-    "tab_final_plan": "Kế hoạch cuối",
-    "tab_about": "Cách hoạt động",
-    "open_label": "Mở hướng dẫn",
-    "close_label": "Đóng hướng dẫn",
-    "panels": {
-      "import": {
-        "eyebrow": "1. Nhập dữ liệu",
-        "title": "Bắt đầu với một lần nhập danh sách sạch và ánh xạ cột chính xác",
-        "lead": "Mọi thứ còn lại đều phụ thuộc vào chất lượng của bước nhập. Nếu các cột bị ánh xạ sai ở đây, bảng người chơi, kiểm tra trùng lặp và tự động điền tháp pháo đều sẽ trở nên thiếu tin cậy.",
-        "steps": [
-          {
-            "title": "Tải tệp lên hoặc dán URL",
-            "purpose": "Để trang nhận được danh sách hiện tại",
-            "copy": "Bạn có thể dùng CSV, XLSX hoặc liên kết bảng tính công khai. Sau khi tải xong, trang sẽ đọc dữ liệu thô và chuẩn bị cho bước ánh xạ cột."
-          },
-          {
-            "title": "Kiểm tra các trường bắt buộc",
-            "purpose": "Để việc phân bổ hoạt động không bị méo dữ liệu",
-            "copy": "Luôn kiểm tra nickname, liên minh, vai trò, cấp, lực hành quân và khả dụng theo ca. Những trường này ảnh hưởng trực tiếp đến tự động điền, phát hiện trùng lặp và kế hoạch cuối."
-          },
-          {
-            "title": "Chỉ dùng các cột bổ sung khi chúng thật sự có ích",
-            "purpose": "Để bảng vẫn dễ đọc",
-            "copy": "Các trường bổ sung hữu ích cho công việc của sĩ quan, nhưng tốt hơn là giữ chế độ xem cố định tập trung vào dữ liệu giúp ra quyết định nhanh."
-          },
-          {
-            "title": "Chọn đúng nút áp dụng",
-            "purpose": "Để bạn không xóa mất phần việc đã làm",
-            "copy": "Dùng “Áp dụng nhập dữ liệu” cho lần nạp mới. Dùng “Cập nhật danh sách + giữ kế hoạch” khi danh sách thay đổi nhưng bạn muốn giữ phần việc hiện tại ở tháp pháo và kế hoạch cuối."
-          }
-        ],
-        "side": [
-          {
-            "title": "Kiểm tra nhanh sau khi nhập",
-            "text": "Hãy mở bảng người chơi ngay và bảo đảm rằng lực hành quân, vai trò, ca và liên minh đã được phân tích đúng."
-          },
-          {
-            "title": "Khi nào nên lưu mẫu cột",
-            "text": "Nếu các bảng tính của bạn thường lặp lại cùng một cấu trúc, hãy lưu mẫu. Lần nhập tiếp theo sẽ nhanh hơn và an toàn hơn."
-          }
-        ],
-        "noteTitle": "Quy tắc chính",
-        "noteText": "Đừng chuyển sang lập kế hoạch tháp pháo cho đến khi phần nhập dữ liệu trông sạch. Một lỗi ánh xạ sai sẽ lan sang mọi bước sau đó."
-      },
-      "players": {
-        "eyebrow": "2. Người chơi & trùng lặp",
-        "title": "Bảng người chơi là nơi bạn kiểm tra danh sách trước khi làm việc với tháp pháo",
-        "lead": "Ở đây bạn xem lại toàn bộ danh sách, tìm người chơi quan trọng, kiểm tra trạng thái và, quan trọng nhất, xóa nickname trùng trước khi bắt đầu tự động điền.",
-        "steps": [
-          {
-            "title": "Xem lại bảng sau khi nhập",
-            "purpose": "Để bắt các vấn đề rõ ràng thật nhanh",
-            "copy": "Hãy tìm lực hành quân bị trống, cấp đáng ngờ, vai trò sai và dữ liệu ca không chính xác. Sửa chúng ở đây dễ hơn nhiều so với khi đã vào phần lập kế hoạch tháp pháo."
-          },
-          {
-            "title": "Dùng tìm kiếm theo nickname hoặc liên minh",
-            "purpose": "Để tìm đội trưởng và người chơi quan trọng nhanh hơn",
-            "copy": "Tìm kiếm giúp bạn xác nhận một người chơi cụ thể, tìm cả liên minh hoặc kiểm tra xem ai đó thật sự có mặt sau khi cập nhật hay chưa."
-          },
-          {
-            "title": "Theo dõi banner trùng lặp",
-            "purpose": "Để một nickname không bị phân hai lần trong cùng một ca",
-            "copy": "Khi trang phát hiện nickname giống hệt nhau, một banner trùng lặp sẽ xuất hiện dưới bảng và các dòng tương ứng sẽ được đánh dấu nổi bật."
-          },
-          {
-            "title": "Cách dùng cửa sổ trùng lặp",
-            "purpose": "Để giữ đúng bản ghi thật nhanh",
-            "copy": "Nhấn vào nickname được tô sáng hoặc huy hiệu trùng lặp, mở cửa sổ, chọn bản ghi cần giữ lại rồi nhấn “Chỉ giữ mục đã chọn”. Nếu bạn chỉ muốn xóa một dòng cụ thể, dùng “Xóa bản ghi này” hoặc “Xóa bản ghi đã chọn”."
-          }
-        ],
-        "side": [
-          {
-            "title": "Khi nào nên dọn bản trùng",
-            "text": "Luôn làm trước khi tự động điền tháp pháo. Nếu không, trang sẽ chặn đúng việc phân trùng trong cùng một ca, nhưng kết quả sẽ khó hiểu hơn."
-          },
-          {
-            "title": "Nên giữ bản trùng nào",
-            "text": "Thường hãy giữ dòng có lực hành quân, cấp, ca và trạng thái hiện tại đúng. Nếu một mục đã được phân còn mục kia đã lỗi thời, hãy giữ mục thật sự còn hoạt động."
-          }
-        ],
-        "noteTitle": "Mẹo thực tế",
-        "noteText": "Làm sạch bảng trước, tháp pháo sau. Đó là con đường nhanh nhất để tự động điền ổn định và không gây nhầm lẫn."
-      },
-      "turrets": {
-        "eyebrow": "3. Tháp pháo",
-        "title": "Bắt đầu với đội trưởng, sau đó cấu hình quy tắc tự động điền",
-        "lead": "Đây là nơi bạn chuẩn bị cả hai ca, chỉ định đội trưởng, đặt giới hạn và chạy tự động điền. Thiết lập số lượng trợ thủ kiểu cũ đã bị loại bỏ: giờ điều khiển chính là bộ chọn “Chế độ lấp đầy tháp pháo”.",
-        "sequenceTitle": "Thứ tự khuyến nghị",
-        "sequence": [
-          "Trước tiên hãy mở “Cài đặt tháp pháo” và chỉ định đội trưởng cho tất cả các tháp pháo cần thiết. Loại tháp pháo được xác định bởi đội trưởng, vì vậy tự động điền sẽ không đáng tin cậy cho đến khi đội trưởng vào đúng chỗ.",
-          "Quay lại “Cài đặt” và cấu hình các quy tắc phân bổ cho ca hiện tại.",
-          "Trong “Chế độ lấp đầy tháp pháo”, hãy chọn hành vi: “Tối thiểu” nghĩa là ít người hơn nhưng mạnh hơn, “Trung bình” là cân bằng, còn “Tối đa” cố gắng xếp được nhiều người nhất có thể.",
-          "Ô chọn “Giới hạn cấp tự động” điều khiển việc có dùng các giới hạn lực hành quân đề xuất theo cấp cho từng người chơi trong lúc chọn trợ thủ hay không.",
-          "Sau đó dùng các nút theo thứ tự: “Tính toán” → “Chuẩn bị giới hạn cho tháp pháo” hoặc trực tiếp “Tự động điền tháp pháo”.",
-          "Sau khi tự động điền xong, hãy xem lại “Trạng thái người chơi”, rồi mới chuyển sang “Kế hoạch cuối”."
-        ],
-        "blocks": [
-          {
-            "title": "Cách hiểu “Chế độ lấp đầy tháp pháo”",
-            "items": [
-              "Tối thiểu — trang cố gắng lấp tháp pháo bằng ít người hơn nhưng với lực hành quân mạnh hơn.",
-              "Trung bình — chế độ mặc định cân bằng cho hầu hết các kế hoạch thông thường.",
-              "Tối đa — trang cố gắng xếp được càng nhiều người chơi riêng lẻ vào tháp pháo trong giới hạn cho phép càng tốt.",
-              "Số trợ thủ tối đa là 29, nghĩa là tổng cộng 30 người nếu tính cả đội trưởng."
-            ]
-          },
-          {
-            "title": "Khi nào nên tắt giới hạn cấp tự động",
-            "items": [
-              "Khi bạn muốn tự xác định thủ công giới hạn lực hành quân T14–T9.",
-              "Khi bạn đang xây dựng một tháp pháo đặc biệt, không theo tiêu chuẩn, cho một trận chiến cụ thể.",
-              "Khi sĩ quan đã biết rằng việc phân bổ cấp tự động cần được chỉnh tay cho ca này."
-            ]
-          }
-        ],
-        "side": [
-          {
-            "title": "Điều gì thường làm hỏng tự động điền",
-            "text": "Thiếu đội trưởng, nickname trùng chưa được dọn, sai ca hoặc kỳ vọng lực hành quân không thực tế. Hãy kiểm tra những điều này đầu tiên mỗi khi kết quả trông kỳ lạ."
-          },
-          {
-            "title": "Khi nào nên dùng “Tối đa”",
-            "text": "Hãy dùng khi mục tiêu của bạn là xếp được nhiều người riêng lẻ hơn vào các tháp pháo. Nếu bạn muốn ít người hơn nhưng lực mạnh hơn, hãy dùng “Tối thiểu” hoặc “Trung bình”."
-          }
-        ],
-        "noteTitle": "Hãy nhớ",
-        "noteText": "“Chế độ lấp đầy tháp pháo” xác định phong cách xếp chỗ, không chỉ là một con số thô. Hãy chọn chế độ trước, xem lại giới hạn cấp sau và chỉ khi đó mới chạy tự động điền."
-      },
-      "final-plan": {
-        "eyebrow": "4. Kế hoạch cuối",
-        "title": "Kế hoạch cuối là góc nhìn của sĩ quan về cấu hình đã hoàn tất",
-        "lead": "Đây là nơi bạn xem lại kết quả hoàn chỉnh cho một ca: ai được đặt ở đâu, mỗi tháp pháo có bao nhiêu lực hành quân và bạn có thể cho hoặc chia sẻ điều gì với các sĩ quan khác.",
-        "steps": [
-          {
-            "title": "Kiểm tra từng ca riêng biệt",
-            "purpose": "Để không bỏ lỡ sự mất cân bằng giữa Ca 1 và Ca 2",
-            "copy": "Kế hoạch cuối hiển thị từng ca riêng. Hãy chuyển giữa chúng và bảo đảm rằng các tháp pháo đã được chốt đúng như bạn dự định."
-          },
-          {
-            "title": "Xem lại đội hình của từng tháp pháo",
-            "purpose": "Để phát hiện điểm yếu thật nhanh",
-            "copy": "Bạn có thể thấy đội trưởng, danh sách trợ thủ và tổng lực hành quân. Nếu một tháp pháo trông yếu hoặc chưa đầy đủ, hãy quay lại phần lập kế hoạch tháp pháo và tính lại nó."
-          },
-          {
-            "title": "Dùng xuất và chia sẻ",
-            "purpose": "Để cho người khác xem kết quả thật nhanh",
-            "copy": "Sau khi kiểm tra bố cục, bạn có thể xuất PNG, TXT hoặc đơn giản là chia sẻ kế hoạch. Đây là chế độ trình bày thân thiện cho sĩ quan, không phải nơi bạn bắt đầu cấu hình."
-          }
-        ],
-        "side": [
-          {
-            "title": "Khi nào nên quay lại",
-            "text": "Nếu kế hoạch cuối cho thấy một tháp pháo yếu, quá nhiều người dự bị hoặc đội hình sai, hãy quay lại tháp pháo hoặc bảng người chơi tùy theo nguyên nhân."
-          },
-          {
-            "title": "Khi nào kế hoạch đã sẵn sàng",
-            "text": "Khi các bản trùng lặp đã được dọn, các tháp pháo khớp với chế độ lấp đầy đã chọn và bản xem trước không còn khiến bạn thắc mắc nữa."
-          }
-        ],
-        "noteTitle": "Mục đích của khối này",
-        "noteText": "Kế hoạch cuối là phần trưng bày của công việc đã hoàn tất. Nó dùng để kiểm tra, xuất và chia sẻ kết quả — không phải để bắt đầu quy trình từ con số không."
-      },
-      "about": {
-        "eyebrow": "5. Cách hoạt động",
-        "title": "Logic của trang trong một dòng: danh sách sạch → dọn trùng lặp → tháp pháo đúng → kế hoạch cuối sẵn sàng",
-        "lead": "Trang được xây dựng có chủ ý theo từng bước. Bạn càng để ít hỗn loạn ở giai đoạn đầu, tự động điền càng ổn định và bạn càng cần ít chỉnh sửa thủ công về sau.",
-        "steps": [
-          {
-            "title": "Nhập dữ liệu tạo ra bộ dữ liệu thô",
-            "purpose": "Không có bước này thì không có gì để xây dựng",
-            "copy": "Trang đọc bảng, chuyển nó thành định dạng nội bộ và hiển thị kết quả trong bảng người chơi."
-          },
-          {
-            "title": "Bảng và công cụ trùng lặp làm sạch đầu vào",
-            "purpose": "Để phần lập kế hoạch tháp pháo hoạt động trên dữ liệu đáng tin cậy",
-            "copy": "Ở giai đoạn này bạn xóa các mục lặp lại, sửa lỗi nhỏ và xác nhận rằng danh sách đã thật sự sẵn sàng để phân bổ."
-          },
-          {
-            "title": "Tháp pháo xây dựng kế hoạch chiến đấu",
-            "purpose": "Đây là logic vận hành chính",
-            "copy": "Đội trưởng xác định loại tháp pháo, “Chế độ lấp đầy tháp pháo” xác định kiểu sắp xếp chỗ, còn giới hạn cấp giúp phân tán hoặc tập trung lực hành quân theo cách bạn muốn."
-          },
-          {
-            "title": "Kế hoạch cuối hiển thị kết quả",
-            "purpose": "Để có thể kiểm tra và chia sẻ nhanh",
-            "copy": "Khi công việc đã xong, kế hoạch cuối biến nó thành một chế độ xem sạch, phù hợp cho sĩ quan để chụp màn hình, xuất văn bản hoặc chia sẻ trong chat."
-          }
-        ],
-        "side": [
-          {
-            "title": "Con đường nhanh nhất với ít lỗi hơn",
-            "text": "Đừng bỏ qua các bước. Nếu kế hoạch cuối trông sai, nguyên nhân thường nằm ở bản trùng hoặc thiết lập tháp pháo — chứ không phải ở chính cửa sổ kế hoạch cuối."
-          },
-          {
-            "title": "Điều cần ghi nhớ",
-            "text": "Trang không thay thế sĩ quan; nó giúp sĩ quan làm nhanh hơn. Kết quả tốt nhất đến từ việc dùng tự động hóa nhưng vẫn xem lại logic ở từng giai đoạn."
-          }
-        ],
-        "noteTitle": "Mẹo cuối cùng",
-        "noteText": "Nếu điều gì đó trông không đúng, hãy lùi lại một bước: từ kế hoạch cuối về tháp pháo, từ tháp pháo về bảng, từ bảng về nhập dữ liệu. Đó là cách nhanh nhất để tìm ra nguyên nhân."
-      }
+  "section_label": "Thông tin & Hướng dẫn",
+  "section_hint_open": "Mở hướng dẫn nhanh",
+  "section_hint_close": "Thu gọn hướng dẫn nhanh",
+  "intro": "Quy trình: nhập danh sách, đặt khu vực và 1–4 ca, kiểm tra người chơi, đặt đội trưởng, lấp tháp pháo, xem dự bị rồi xuất kế hoạch cuối.",
+  "tab_import": "Nhập",
+  "tab_players": "Người chơi",
+  "tab_turrets": "Tháp pháo",
+  "tab_final_plan": "Kế hoạch cuối",
+  "tab_about": "Tổng quan",
+  "open_label": "Mở hướng dẫn nhanh",
+  "close_label": "Thu gọn hướng dẫn nhanh",
+  "panels": {
+    "import": {
+      "eyebrow": "1. Nhập",
+      "title": "Nhập danh sách và đặt khu vực/ca",
+      "lead": "Dữ liệu sạch giúp kế hoạch chính xác.",
+      "steps": [
+        {
+          "title": "Danh sách",
+          "purpose": "CSV / XLSX / TXT",
+          "copy": "Kiểm tra tên, liên minh, loại quân, tier, hành quân, rally, đội trưởng và ca."
+        },
+        {
+          "title": "Khu vực",
+          "purpose": "Nhà / Khu vực 1 / Khu vực 2",
+          "copy": "Bật khu vực và chọn 1, 2, 3 hoặc 4 ca."
+        },
+        {
+          "title": "Thủ công",
+          "purpose": "Thêm người chơi",
+          "copy": "Thêm người chơi thiếu hoặc sửa dữ liệu mà không cần nhập lại."
+        }
+      ],
+      "side": [
+        {
+          "title": "Công cụ này làm gì",
+          "text": "Biến danh sách người chơi thành phân bổ tháp pháo và kế hoạch chia sẻ."
+        },
+        {
+          "title": "Mẹo",
+          "text": "Hãy xử lý người chơi trùng trước khi lấp tháp pháo."
+        }
+      ],
+      "noteTitle": "Quan trọng",
+      "noteText": "Thiết lập khu vực và ca ảnh hưởng đến toàn bộ kế hoạch."
+    },
+    "players": {
+      "eyebrow": "2. Người chơi",
+      "title": "Kiểm tra và chỉnh danh sách",
+      "lead": "Sửa dữ liệu trước khi lập kế hoạch.",
+      "steps": [
+        {
+          "title": "Danh sách",
+          "purpose": "CSV / XLSX / TXT",
+          "copy": "Kiểm tra tên, liên minh, loại quân, tier, hành quân, rally, đội trưởng và ca."
+        },
+        {
+          "title": "Khu vực",
+          "purpose": "Nhà / Khu vực 1 / Khu vực 2",
+          "copy": "Bật khu vực và chọn 1, 2, 3 hoặc 4 ca."
+        },
+        {
+          "title": "Thủ công",
+          "purpose": "Thêm người chơi",
+          "copy": "Thêm người chơi thiếu hoặc sửa dữ liệu mà không cần nhập lại."
+        }
+      ],
+      "side": [
+        {
+          "title": "Người chơi thủ công",
+          "text": "Add, edit or remove one player manually."
+        },
+        {
+          "title": "4 ca",
+          "text": "Up to four shifts are supported when enabled."
+        }
+      ],
+      "noteTitle": "Check",
+      "noteText": "Wrong tier, march or shift makes autofill less accurate."
+    },
+    "turrets": {
+      "eyebrow": "3. Tháp pháo",
+      "title": "Tạo kế hoạch tháp pháo",
+      "lead": "Đặt đội trưởng trước, rồi thêm trợ thủ theo loại quân và sức chứa.",
+      "sequenceTitle": "Các bước",
+      "sequence": [
+        "Chọn khu vực và ca.",
+        "Đặt đội trưởng.",
+        "Áp dụng phân bổ lại.",
+        "Bổ sung tháp pháo.",
+        "Xóa một ca hoặc tất cả ca đang bật."
+      ],
+      "blocks": [
+        {
+          "title": "Đội trưởng",
+          "items": [
+            "Loại tháp pháo theo đội trưởng.",
+            "Hành quân của đội trưởng được tính riêng."
+          ]
+        },
+        {
+          "title": "Trợ thủ",
+          "items": [
+            "Helpers are selected by role, tier, shift and march.",
+            "Dự bị hiển thị người chơi không vừa."
+          ]
+        },
+        {
+          "title": "4 ca",
+          "items": [
+            "Khi bật 3 hoặc 4 ca, phần tóm tắt dùng dạng băng chuyền."
+          ]
+        }
+      ],
+      "side": [
+        {
+          "title": "Xóa",
+          "text": "Xóa trợ thủ sẽ giữ đội trưởng, trừ khi chọn đặt lại hoàn toàn."
+        },
+        {
+          "title": "Giới hạn",
+          "text": "Giới hạn tier điều khiển hành quân theo tier."
+        }
+      ],
+      "noteTitle": "Quy trình",
+      "noteText": "Kiểm tra từng ca trước khi xuất."
+    },
+    "final-plan": {
+      "eyebrow": "4. Kế hoạch cuối",
+      "title": "Xuất cho sĩ quan",
+      "lead": "Dùng khi kế hoạch đã sẵn sàng.",
+      "steps": [
+        {
+          "title": "Danh sách",
+          "purpose": "CSV / XLSX / TXT",
+          "copy": "Kiểm tra tên, liên minh, loại quân, tier, hành quân, rally, đội trưởng và ca."
+        },
+        {
+          "title": "Khu vực",
+          "purpose": "Nhà / Khu vực 1 / Khu vực 2",
+          "copy": "Bật khu vực và chọn 1, 2, 3 hoặc 4 ca."
+        },
+        {
+          "title": "Thủ công",
+          "purpose": "Thêm người chơi",
+          "copy": "Thêm người chơi thiếu hoặc sửa dữ liệu mà không cần nhập lại."
+        }
+      ],
+      "side": [
+        {
+          "title": "TXT",
+          "text": "TXT dùng các ngôn ngữ kế hoạch đã chọn và tách đội trưởng khỏi người chơi."
+        },
+        {
+          "title": "iPhone",
+          "text": "iPhone/iPad có thể dùng | thay cho ✦ khi cần."
+        }
+      ],
+      "noteTitle": "Trước khi gửi",
+      "noteText": "Check captains, empty turrets and reserve."
+    },
+    "about": {
+      "eyebrow": "Tổng quan",
+      "title": "Công cụ này làm gì",
+      "lead": "Biến danh sách người chơi thành phân bổ tháp pháo và kế hoạch chia sẻ.",
+      "steps": [
+        {
+          "title": "Danh sách",
+          "purpose": "CSV / XLSX / TXT",
+          "copy": "Kiểm tra tên, liên minh, loại quân, tier, hành quân, rally, đội trưởng và ca."
+        },
+        {
+          "title": "Khu vực",
+          "purpose": "Nhà / Khu vực 1 / Khu vực 2",
+          "copy": "Bật khu vực và chọn 1, 2, 3 hoặc 4 ca."
+        },
+        {
+          "title": "Thủ công",
+          "purpose": "Thêm người chơi",
+          "copy": "Thêm người chơi thiếu hoặc sửa dữ liệu mà không cần nhập lại."
+        }
+      ],
+      "side": [
+        {
+          "title": "Mục tiêu",
+          "text": "Ít phải sắp xếp thủ công và ít phân công trùng hơn."
+        },
+        {
+          "title": "Kết quả tốt nhất",
+          "text": "Giữ dữ liệu nguồn sạch."
+        }
+      ],
+      "noteTitle": "Ghi chú",
+      "noteText": "Kế hoạch được lưu cục bộ cho đến khi bạn xuất hoặc chia sẻ."
     }
-  },
+  }
+},
   "import_region_1": "Nhà",
   "import_region_2": "Khu vực 1",
   "import_region_3": "Khu vực 2",
