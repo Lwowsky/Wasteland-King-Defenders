@@ -10,11 +10,20 @@
   if (!PNS || !modals) return;
 
   function hasOpenOverlay(){
-    if (document.querySelector('.modal.is-open')) return true;
+    const modals = Array.from(document.querySelectorAll('.modal.is-open'));
+    for (const modal of modals) {
+      if (modal.getAttribute('aria-hidden') === 'true') continue;
+      try {
+        const style = getComputedStyle(modal);
+        if (style.display !== 'none' && style.visibility !== 'hidden') return true;
+      } catch {
+        return true;
+      }
+    }
     const hash = String(location.hash || '');
     if (hash && hash.length > 1) {
       const el = document.getElementById(hash.slice(1));
-      if (el?.classList?.contains('modal')) {
+      if (el?.classList?.contains('modal') && el.classList.contains('is-open')) {
         try { if (getComputedStyle(el).display !== 'none') return true; } catch {}
       }
     }
@@ -138,7 +147,12 @@
     }, { passive: false, capture: true });
   });
 
-  document.addEventListener('DOMContentLoaded', syncBodyModalLock);
+  const observer = new MutationObserver(() => setTimeout(syncBodyModalLock, 0));
+  document.addEventListener('DOMContentLoaded', () => {
+    try { observer.observe(document.body, { subtree:true, attributes:true, attributeFilter:['class','aria-hidden'] }); } catch {}
+    syncBodyModalLock();
+  });
+  window.addEventListener('pageshow', () => setTimeout(syncBodyModalLock, 0));
 })();
 
 ;(function(){

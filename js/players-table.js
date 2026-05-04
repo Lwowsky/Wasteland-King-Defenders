@@ -148,6 +148,16 @@
     return 0;
   }
 
+  function renderAllianceBadge(value) {
+    if (typeof PNS.renderAllianceBadge === 'function') return PNS.renderAllianceBadge(value);
+    return PNS.escapeHtml?.(value || '') || String(value || '');
+  }
+
+  function renderTierBadge(value) {
+    if (typeof PNS.renderTierBadge === 'function') return PNS.renderTierBadge(value);
+    return PNS.escapeHtml?.(PNS.normalizeTierText?.(value) || value || '') || String(PNS.normalizeTierText?.(value) || value || '');
+  }
+
   function getSortValue(player, field) {
     if (field === 'tier') {
       const match = String(player?.tier || '').match(/T?(\d+)/i);
@@ -214,9 +224,9 @@
     });
     row.innerHTML = PNS.renderHtmlTemplate('tpl-player-row', {
       name: PNS.escapeHtml(player.name || ''),
-      alliance: PNS.escapeHtml(player.alliance || ''),
+      alliance: renderAllianceBadge(player.alliance || ''),
       role_html: PNS.escapeHtml(player.role || ''),
-      tier: PNS.escapeHtml(PNS.normalizeTierText?.(player.tier) || player.tier || ''),
+      tier: renderTierBadge(PNS.normalizeTierText?.(player.tier) || player.tier || ''),
       march: PNS.formatNum(PNS.parseNumber?.(player.march) || 0),
       rally: PNS.formatNum(PNS.parseNumber?.(player.rally) || 0),
       captain_html: player.captainReady ? 'Yes' : 'No',

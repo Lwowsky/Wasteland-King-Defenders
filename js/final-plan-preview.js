@@ -49,12 +49,39 @@
     }
   }
 
+  function localizedTowerTitle(base, index = 0, locale) {
+    const raw = String(base?.title || base?.id || `${tr('turret', 'Турель')} ${Number(index || 0) + 1}`).split('/')[0].trim();
+    const slot = String(base?.slot || '').toLowerCase();
+    const id = String(base?.id || '').toLowerCase();
+    const probe = `${slot} ${id} ${raw}`.toLowerCase();
+    const pairs = [
+      [/\bhub\b|tech|техно|центр|central|base-hub/, 'hub'],
+      [/\bnorth\b|північ|север|base-north/, 'north_turret'],
+      [/\bwest\b|захід|запад|base-west/, 'west_turret'],
+      [/\beast\b|схід|вост|base-east/, 'east_turret'],
+      [/\bsouth\b|півден|юж|base-south/, 'south_turret']
+    ];
+    for (const [pattern, key] of pairs) {
+      if (pattern.test(probe)) {
+        try { return String(getBoardLanguageText(key, tr(key, raw), locale) || raw); } catch {}
+        return String(tr(key, raw) || raw);
+      }
+    }
+    try {
+      const translated = typeof PNS.towerLabel === 'function' ? String(PNS.towerLabel(raw) || '') : '';
+      if (translated && translated !== raw) return translated;
+    } catch {}
+    return raw;
+  }
+
   const REGION_SETTINGS_KEY = 'pns_import_region_shift_settings_v1';
   const ACTIVE_REGION_KEY = 'pns_tower_calc_active_region_v1';
   const REGION_KEYS = ['region1', 'region2', 'region3'];
   const SHIFT_KEYS = ['shift1', 'shift2', 'shift3', 'shift4'];
   const LOCAL_ALL_TIME_LABELS = { en: 'All time', uk: 'На весь час', ru: 'На весь час', de: 'Gesamte Zeit', pl: 'Na cały czas', vi: 'Toàn thời gian', zh: '全程', ja: '全時間', ko: '전체 시간', ar: 'طوال الوقت' };
-  const LOCAL_REGION_CAPTURE_LABELS = {"en":{"import_region_1":"Home","import_region_2":"Region 1","import_region_3":"Region 2","capture_region":"Capture region","capture_region_1":"Capture region 1","capture_region_2":"Capture region 2","shift3":"Shift 3","shift4":"Shift 4"},"uk":{"import_region_1":"Дім","import_region_2":"Регіон 1","import_region_3":"Регіон 2","capture_region":"Захоплення регіону","capture_region_1":"Захоплення регіону 1","capture_region_2":"Захоплення регіону 2","shift3":"Зміна 3","shift4":"Зміна 4"},"ru":{"import_region_1":"Дом","import_region_2":"Регион 1","import_region_3":"Регион 2","capture_region":"Захват региона","capture_region_1":"Захват региона 1","capture_region_2":"Захват региона 2","shift3":"Смена 3","shift4":"Смена 4"},"de":{"import_region_1":"Heimat","import_region_2":"Region 1","import_region_3":"Region 2","capture_region":"Eroberung der Region","capture_region_1":"Eroberung Region 1","capture_region_2":"Eroberung Region 2","shift3":"Schicht 3","shift4":"Schicht 4"},"pl":{"import_region_1":"Dom","import_region_2":"Region 1","import_region_3":"Region 2","capture_region":"Przejęcie regionu","capture_region_1":"Przejęcie regionu 1","capture_region_2":"Przejęcie regionu 2","shift3":"Zmiana 3","shift4":"Zmiana 4"},"vi":{"import_region_1":"Nhà","import_region_2":"Khu vực 1","import_region_3":"Khu vực 2","capture_region":"Chiếm khu vực","capture_region_1":"Chiếm khu vực 1","capture_region_2":"Chiếm khu vực 2","shift3":"Ca 3","shift4":"Ca 4"},"zh":{"import_region_1":"家园","import_region_2":"区域 1","import_region_3":"区域 2","capture_region":"占领区域","capture_region_1":"占领区域 1","capture_region_2":"占领区域 2","shift3":"班次 3","shift4":"班次 4"},"ja":{"import_region_1":"ホーム","import_region_2":"地域 1","import_region_3":"地域 2","capture_region":"地域の占領","capture_region_1":"地域1の占領","capture_region_2":"地域2の占領","shift3":"シフト3","shift4":"シフト4"},"ko":{"import_region_1":"홈","import_region_2":"지역 1","import_region_3":"지역 2","capture_region":"지역 점령","capture_region_1":"지역 1 점령","capture_region_2":"지역 2 점령","shift3":"교대 3","shift4":"교대 4"},"ar":{"import_region_1":"الوطن","import_region_2":"المنطقة 1","import_region_3":"المنطقة 2","capture_region":"احتلال المنطقة","capture_region_1":"احتلال المنطقة 1","capture_region_2":"احتلال المنطقة 2","shift3":"النوبة 3","shift4":"النوبة 4"}};
+  const REGION_FALLBACKS = { import_region_1: 'Дім', import_region_2: 'Регіон 1', import_region_3: 'Регіон 2', capture_region: 'Захоплення регіону', capture_region_1: 'Захоплення регіону 1', capture_region_2: 'Захоплення регіону 2', capture_region_short: 'Захоплення', shift3: 'Зміна 3', shift4: 'Зміна 4' };
+  const SINGLE_CAPTURE_REGION_LABELS = { en: 'Capture', uk: 'Захоплення', ru: 'Захват', de: 'Eroberung', pl: 'Przejęcie', vi: 'Chiếm', zh: '占领', ja: '占領', ko: '점령', ar: 'احتلال' };
+
 
   function normalizeLocale(locale) {
     const value = String(locale || '').trim().toLowerCase();
@@ -69,8 +96,9 @@
 
   function localLabel(key, fallback = '', locale = getCurrentLocale()) {
     const normalized = normalizeLocale(locale);
-    const dict = LOCAL_REGION_CAPTURE_LABELS[normalized] || LOCAL_REGION_CAPTURE_LABELS[normalized.split('-')[0]] || LOCAL_REGION_CAPTURE_LABELS.uk || {};
-    return String(dict[key] || fallback || key);
+    const base = normalized.split('-')[0];
+    const dicts = window.PNSI18N_DICTS || window.PNSI18N?.dict || {};
+    return String(dicts[normalized]?.[key] || dicts[base]?.[key] || REGION_FALLBACKS[key] || fallback || key);
   }
 
   function wireHorizontalToolbar(toolbar) {
@@ -173,8 +201,40 @@
     return next;
   }
 
+  function singleCaptureRegionLabel() {
+    const locale = getCurrentLocale();
+    const base = locale.split('-')[0];
+    const fallback = SINGLE_CAPTURE_REGION_LABELS[locale] || SINGLE_CAPTURE_REGION_LABELS[base] || SINGLE_CAPTURE_REGION_LABELS.uk || 'Захоплення';
+    try {
+      const translated = tr('capture_region_short', fallback);
+      return translated && translated !== 'capture_region_short' ? translated : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  function getRegionLabelKey(region) {
+    if (region === 'region1') return 'import_region_1';
+    const captureRegions = getEnabledCaptureRegions();
+    if (captureRegions.length === 1 && captureRegions[0] === region) return 'capture_region_short';
+    return region === 'region3' ? 'import_region_3' : 'import_region_2';
+  }
+
   function getRegionLabel(region) {
-    const key = region === 'region2' ? 'import_region_2' : region === 'region3' ? 'import_region_3' : 'import_region_1';
+    if (region === 'region1') {
+      const key = 'import_region_1';
+      const fallback = localLabel(key);
+      try {
+        const translated = tr(key, fallback);
+        return translated && translated !== key ? translated : fallback;
+      } catch {
+        return fallback;
+      }
+    }
+    const captureRegions = getEnabledCaptureRegions();
+    const useSingleCaptureName = captureRegions.length === 1 && captureRegions[0] === region;
+    if (useSingleCaptureName) return singleCaptureRegionLabel();
+    const key = region === 'region3' ? 'import_region_3' : 'import_region_2';
     const fallback = localLabel(key);
     try {
       const translated = tr(key, fallback);
@@ -274,8 +334,12 @@
     if (regions.length <= 1) return '';
     const active = getActiveRegion();
     const label = escapeHtml(getRegionLabel(active));
-    const items = regions.map(region => `<button class="board-region-option ${region === active ? 'active' : ''}" data-final-plan-region-choice="${escapeHtml(region)}" data-final-plan-kind="${escapeHtml(kind)}" type="button">${escapeHtml(getRegionLabel(region))}</button>`).join('');
-    return `<div class="board-region-picker" data-final-plan-region-picker="${escapeHtml(kind)}"><button class="btn btn-sm board-region-trigger" data-final-plan-region-trigger="${escapeHtml(kind)}" type="button" aria-haspopup="true" aria-expanded="false">${label} ▾</button><div class="board-region-menu" role="menu">${items}</div></div>`;
+    const activeKey = escapeHtml(getRegionLabelKey(active));
+    const items = regions.map(region => {
+      const key = escapeHtml(getRegionLabelKey(region));
+      return `<button class="board-region-option ${region === active ? 'active' : ''}" data-final-plan-region-choice="${escapeHtml(region)}" data-final-plan-kind="${escapeHtml(kind)}" data-i18n="${key}" type="button">${escapeHtml(getRegionLabel(region))}</button>`;
+    }).join('');
+    return `<div class="board-region-picker" data-final-plan-region-picker="${escapeHtml(kind)}"><button class="btn btn-sm board-region-trigger" data-final-plan-region-trigger="${escapeHtml(kind)}" data-i18n="${activeKey}" type="button" aria-haspopup="true" aria-expanded="false">${label} ▾</button><div class="board-region-menu" role="menu">${items}</div></div>`;
   }
 
 
@@ -468,7 +532,7 @@
       return {
         index,
         baseId: String(base?.id || ''),
-        title: String(base?.title || base?.id || `${tr('turret', 'Турель')} ${index + 1}`),
+        title: localizedTowerTitle(base, index),
         captainId,
         helperIds: helperIds.slice ? helperIds.slice() : [],
         helperCount: Array.isArray(helperIds) ? helperIds.length : 0,
@@ -872,6 +936,13 @@
   }
 
   try { wireFinalPlanRegionPicker(document); } catch {}
+
+  function refreshFinalPlanLanguage(){
+    try { refreshOpenFinalPlans(); } catch {}
+    setTimeout(() => { try { refreshOpenFinalPlans(); } catch {} }, 80);
+  }
+  document.addEventListener('pns:i18n-changed', refreshFinalPlanLanguage);
+  document.addEventListener('pns:i18n-applied', refreshFinalPlanLanguage);
 
   Object.assign(PNS, {
     getBaseSlots,

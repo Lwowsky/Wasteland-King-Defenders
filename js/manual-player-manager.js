@@ -16,6 +16,9 @@
   const escapeHtml = (value) => typeof PNS.escapeHtml === 'function' ? PNS.escapeHtml(value) : String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   let activeId = '';
+  let activePanel = 'players';
+  let activeMobilePane = 'list';
+  const metricSort = { march: 'desc', rally: 'desc' };
 
   function readManual(){
     const list = safeParse(localStorage.getItem(KEY) || '[]', []);
@@ -202,16 +205,57 @@
 
   function modal(){ return $('#manualPlayerManagerModal'); }
 
+
+  function isSmallManualViewport(){
+    try { return window.matchMedia('(max-width: 820px)').matches; }
+    catch { return window.innerWidth <= 820; }
+  }
+
+  function setMobilePane(pane){
+    activeMobilePane = String(pane || '') === 'form' ? 'form' : 'list';
+    const el = modal();
+    if (!el) return;
+    el.classList.toggle('is-mobile-pane-list', activeMobilePane === 'list');
+    el.classList.toggle('is-mobile-pane-form', activeMobilePane === 'form');
+    $$('.manual-mobile-pane-btn', el).forEach(btn => {
+      btn.classList.toggle('is-active', String(btn.dataset.manualMobilePane || '') === activeMobilePane);
+    });
+  }
+
+  function syncMobilePane(){
+    const el = modal();
+    if (!el) return;
+    if (!isSmallManualViewport()) {
+      el.classList.remove('is-mobile-pane-list', 'is-mobile-pane-form');
+      $$('.manual-mobile-pane-btn', el).forEach(btn => {
+        btn.classList.toggle('is-active', String(btn.dataset.manualMobilePane || '') === activeMobilePane);
+      });
+      return;
+    }
+    setMobilePane(activeMobilePane || 'list');
+  }
+
   function openModal(){
     mergeManualIntoState();
     const el = modal();
     if (!el) return;
     el.classList.add('is-open');
     document.documentElement.style.overflow = 'hidden';
+    try { window.PNS?.syncBodyModalLock?.(); } catch {}
     closeDrawer();
     renderExtraFields();
     renderList();
+    renderAllianceTools();
+    renderMetricTools('march');
+    renderMetricTools('rally');
+    setManualPanel(activePanel);
     if (!activeId) resetForm(); else fillForm(activeId);
+    if (isSmallManualViewport()) {
+      const shouldShowForm = activePanel !== 'players' || !!activeId;
+      setMobilePane(shouldShowForm ? 'form' : 'list');
+    } else {
+      syncMobilePane();
+    }
   }
 
   function closeModal(){
@@ -219,6 +263,7 @@
     if (!el) return;
     el.classList.remove('is-open');
     if (!document.querySelector('.modal.is-open')) document.documentElement.style.overflow = '';
+    setTimeout(() => { try { window.PNS?.syncBodyModalLock?.(); } catch {} }, 0);
   }
 
   function closeDrawer(){
@@ -228,6 +273,193 @@
     if (burger) { burger.classList.remove('is-open'); burger.setAttribute('aria-expanded','false'); }
   }
 
+
+
+  function getAllianceGroups(){
+    ensureArrays();
+    const map = new Map();
+    (state.players || []).forEach(player => {
+      const key = String(player?.alliance || '').trim();
+      if (!map.has(key)) map.set(key, { alliance:key, count:0, invalid:false, players:[] });
+      const group = map.get(key);
+      group.count += 1;
+      group.players.push(player);
+    });
+    const groups = Array.from(map.values());
+    groups.forEach(group => { group.invalid = !group.alliance || Array.from(group.alliance).length !== 3; });
+    groups.sort((a,b) => Number(b.invalid) - Number(a.invalid) || String(a.alliance || '').localeCompare(String(b.alliance || ''), undefined, { numeric:true, sensitivity:'variant' }));
+    return groups;
+  }
+
+  function renderAllianceTools(){
+    const host = $('#manualAllianceEditorList');
+    if (!host) return;
+    const groups = getAllianceGroups();
+    host.innerHTML = groups.map(group => {
+      const display = group.alliance || '—';
+      const encoded = encodeURIComponent(group.alliance);
+      const statusClass = group.invalid ? 'is-invalid' : 'is-ok';
+      const statusText = group.invalid ? tr('manual_alliance_invalid_tag','Потрібно 3 символи') : tr('manual_alliance_ok_tag','OK');
+      const badge = typeof PNS.renderAllianceBadge === 'function' ? PNS.renderAllianceBadge(group.alliance) : escapeHtml(display);
+      return `<div class="manual-alliance-row ${statusClass}" data-manual-alliance-row="${escapeHtml(encoded)}">
+        <div class="manual-alliance-current">
+          ${badge}
+          <span class="manual-alliance-meta"><small><span class="manual-alliance-count">${escapeHtml(tr('players','Гравці'))}: ${group.count}</span><span class="manual-alliance-status">· ${escapeHtml(statusText)}</span></small></span>
+        </div>
+        <input class="manual-alliance-new" data-manual-alliance-new="${escapeHtml(encoded)}" maxlength="12" value="${escapeHtml(group.alliance)}" aria-label="${escapeHtml(tr('manual_alliance_new_value','Нова назва альянсу'))}" />
+        <button class="btn btn-sm manual-alliance-apply" data-manual-alliance-apply="${escapeHtml(encoded)}" type="button">${escapeHtml(tr('manual_alliance_apply','Замінити'))}</button>
+      </div>`;
+    }).join('') || `<div class="muted small">${escapeHtml(tr('manual_alliance_empty','Альянсів не знайдено.'))}</div>`;
+  }
+
+  function applyAllianceRename(encodedOld){
+    let oldValue = '';
+    try { oldValue = decodeURIComponent(String(encodedOld || '')); } catch { oldValue = String(encodedOld || ''); }
+    const input = document.querySelector(`[data-manual-alliance-new="${CSS.escape(String(encodedOld || ''))}"]`);
+    const newValue = String(input?.value || '').trim();
+    if (newValue === oldValue) return setStatus(tr('manual_alliance_same','Назва альянсу не змінилась.'), true);
+    if (!newValue) return setStatus(tr('manual_alliance_empty_new','Введи нову назву альянсу.'), true);
+    const len = Array.from(newValue).length;
+    if (len !== 3 && !confirm(tr('manual_alliance_len_confirm','У грі альянс має 3 символи. Все одно зберегти цю назву?'))) return;
+    ensureArrays();
+    let changed = 0;
+    (state.players || []).forEach(player => {
+      if (String(player?.alliance || '').trim() === oldValue) {
+        player.alliance = newValue;
+        changed += 1;
+      }
+    });
+    if (!changed) return setStatus(tr('manual_alliance_none_changed','Не знайдено гравців з таким альянсом.'), true);
+    state.playerById = new Map((state.players || []).map(p => [String(p.id || ''), p]));
+    persistAll();
+    renderList();
+    renderAllianceTools();
+    renderMetricTools('march');
+    renderMetricTools('rally');
+    if (activeId) fillForm(activeId);
+    setStatus(tr('manual_alliance_renamed','Альянс оновлено для гравців: ') + changed);
+  }
+
+
+  function getMetricPlayers(metric){
+    ensureArrays();
+    const field = metric === 'rally' ? 'rally' : 'march';
+    const dir = metricSort[field] === 'asc' ? 'asc' : 'desc';
+    return (state.players || []).slice().sort((a,b) => {
+      const av = parseNumber(a?.[field]);
+      const bv = parseNumber(b?.[field]);
+      const diff = av - bv;
+      if (diff) return dir === 'asc' ? diff : -diff;
+      return String(a?.name || '').localeCompare(String(b?.name || ''), undefined, { numeric:true, sensitivity:'base' });
+    });
+  }
+
+  function renderMetricTools(metric){
+    const field = metric === 'rally' ? 'rally' : 'march';
+    const host = field === 'rally' ? $('#manualRallyEditorList') : $('#manualMarchEditorList');
+    const sortBtn = field === 'rally' ? $('#manualRallySortBtn') : $('#manualMarchSortBtn');
+    if (!host) return;
+    const label = field === 'rally' ? tr('rally_size','Розмір ралі') : tr('march_size','Розмір маршу');
+    if (sortBtn) sortBtn.textContent = metricSort[field] === 'asc' ? tr('manual_sort_small_to_big','Від меншого до більшого') : tr('manual_sort_big_to_small','Від більшого до меншого');
+    const players = getMetricPlayers(field);
+    host.innerHTML = players.map(player => {
+      const id = String(player?.id || '');
+      const value = parseNumber(player?.[field]);
+      const otherValue = parseNumber(player?.[field === 'rally' ? 'march' : 'rally']);
+      const role = typeof PNS.roleLabel === 'function' ? PNS.roleLabel(player?.role || 'Fighter', true) : String(player?.role || '—');
+      const tier = String(player?.tier || '—');
+      const ally = String(player?.alliance || '—');
+      return `<div class="manual-metric-row" data-manual-metric-row="${escapeHtml(id)}">
+        <div class="manual-metric-player">
+          <strong>${escapeHtml(player?.name || '—')}</strong>
+          <small>${escapeHtml(ally)} · ${escapeHtml(role)} · ${escapeHtml(tier)} · ${escapeHtml(player?.shiftLabel || '')}</small>
+        </div>
+        <div class="manual-metric-current"><span>${escapeHtml(label)}</span><strong>${escapeHtml(PNS.formatNum ? PNS.formatNum(value) : String(value))}</strong></div>
+        <input class="manual-metric-input" data-manual-metric-input="${escapeHtml(field)}" data-player-id="${escapeHtml(id)}" inputmode="numeric" min="0" type="number" value="${escapeHtml(value || '')}" aria-label="${escapeHtml(label)}" />
+        <button class="btn btn-sm manual-metric-save" data-manual-metric-save="${escapeHtml(field)}" data-player-id="${escapeHtml(id)}" type="button">${escapeHtml(tr('save','Зберегти'))}</button>
+        <div class="manual-metric-other"><span>${escapeHtml(field === 'rally' ? tr('march_size','Марш') : tr('rally_size','Ралі'))}</span><strong>${escapeHtml(PNS.formatNum ? PNS.formatNum(otherValue) : String(otherValue))}</strong></div>
+      </div>`;
+    }).join('') || `<div class="muted small">${escapeHtml(tr('manual_metric_empty','Гравців не знайдено.'))}</div>`;
+  }
+
+  function toggleMetricSort(metric){
+    const field = metric === 'rally' ? 'rally' : 'march';
+    metricSort[field] = metricSort[field] === 'asc' ? 'desc' : 'asc';
+    renderMetricTools(field);
+  }
+
+  function saveMetricValue(field, playerId){
+    const cleanField = field === 'rally' ? 'rally' : 'march';
+    const id = String(playerId || '');
+    const input = document.querySelector(`[data-manual-metric-input="${CSS.escape(cleanField)}"][data-player-id="${CSS.escape(id)}"]`);
+    const value = parseNumber(input?.value || 0);
+    ensureArrays();
+    const player = (state.players || []).find(p => String(p?.id || '') === id);
+    if (!player) return setStatus(tr('manual_metric_player_not_found','Гравця не знайдено.'), true);
+    player[cleanField] = value;
+    state.playerById = new Map((state.players || []).map(p => [String(p.id || ''), p]));
+    persistAll();
+    renderList();
+    renderMetricTools('march');
+    renderMetricTools('rally');
+    if (activeId === id) fillForm(id);
+    const label = cleanField === 'rally' ? tr('rally_size','Розмір ралі') : tr('march_size','Розмір маршу');
+    setStatus(`${label}: ${PNS.formatNum ? PNS.formatNum(value) : value} · ${tr('saved','Збережено')}`);
+  }
+
+  function syncPanelHeader(){
+    const titleEl = $('#manualPlayerFormTitle');
+    const subtitleEl = $('#manualPlayerFormSubtitle');
+    if (!titleEl || !subtitleEl) return;
+    if (activePanel === 'alliances') {
+      titleEl.setAttribute('data-i18n', 'manual_panel_alliances_title');
+      subtitleEl.setAttribute('data-i18n', 'manual_panel_alliances_hint');
+      titleEl.textContent = tr('manual_panel_alliances_title', 'Альянси');
+      subtitleEl.textContent = tr('manual_panel_alliances_hint', 'Виправляй назви альянсів для всіх гравців одразу.');
+      return;
+    }
+    if (activePanel === 'march') {
+      titleEl.setAttribute('data-i18n', 'manual_panel_march_title');
+      subtitleEl.setAttribute('data-i18n', 'manual_panel_march_hint');
+      titleEl.textContent = tr('manual_panel_march_title', 'Розмір маршу');
+      subtitleEl.textContent = tr('manual_panel_march_hint', 'Відсортуй гравців за маршем і виправ неправильні значення.');
+      return;
+    }
+    if (activePanel === 'rally') {
+      titleEl.setAttribute('data-i18n', 'manual_panel_rally_title');
+      subtitleEl.setAttribute('data-i18n', 'manual_panel_rally_hint');
+      titleEl.textContent = tr('manual_panel_rally_title', 'Розмір ралі');
+      subtitleEl.textContent = tr('manual_panel_rally_hint', 'Відсортуй гравців за ралі і виправ неправильні значення.');
+      return;
+    }
+    subtitleEl.setAttribute('data-i18n', 'manual_player_persist_note');
+    subtitleEl.textContent = tr('manual_player_persist_note', 'Збережеться після оновлення сторінки. При новому імпорті Excel ручні гравці очищаються.');
+    if (!activeId) {
+      titleEl.setAttribute('data-i18n', 'manual_player_new_title');
+      titleEl.textContent = tr('manual_player_new_title', 'Новий гравець');
+    } else {
+      titleEl.removeAttribute('data-i18n');
+      const player = (Array.isArray(state.players) ? state.players : []).find(p => String(p?.id || '') === String(activeId));
+      titleEl.textContent = String(player?.name || tr('edit','Редагувати'));
+    }
+  }
+
+  function setManualPanel(panel){
+    const allowed = new Set(['players','alliances','march','rally']);
+    activePanel = allowed.has(String(panel || '')) ? String(panel) : 'players';
+    const modalEl = modal();
+    modalEl?.classList.toggle('is-alliance-panel', activePanel === 'alliances');
+    modalEl?.classList.toggle('is-march-panel', activePanel === 'march');
+    modalEl?.classList.toggle('is-rally-panel', activePanel === 'rally');
+    $$('.manual-player-tab').forEach(btn => btn.classList.toggle('is-active', String(btn.dataset.manualPlayerTab || '') === activePanel));
+    const newBtn = $('#manualPlayerNewBtn');
+    if (newBtn) newBtn.hidden = activePanel !== 'players';
+    syncPanelHeader();
+    if (activePanel === 'alliances') renderAllianceTools();
+    if (activePanel === 'march') renderMetricTools('march');
+    if (activePanel === 'rally') renderMetricTools('rally');
+    if (isSmallManualViewport() && activePanel !== 'players') setMobilePane('form');
+  }
   function resetForm(){
     activeId = '';
     const form = $('#manualPlayerForm');
@@ -238,7 +470,7 @@
     $('#manualPlayerShift').value = 'shift1';
     $('#manualPlayerCaptain').value = 'no';
     $('#manualPlayerCapture').value = 'no';
-    $('#manualPlayerFormTitle').textContent = tr('manual_player_new_title','Новий гравець');
+    syncPanelHeader();
     $('#manualPlayerDeleteBtn').disabled = true;
     renderExtraFields({});
     setStatus('');
@@ -261,7 +493,7 @@
     $('#manualPlayerCaptain').value = player.captainReady ? 'yes' : 'no';
     const capture = typeof PNS.isCaptureRegionAutoEligible === 'function' ? PNS.isCaptureRegionAutoEligible(player) : !!String(player.lairLevel || '').trim();
     $('#manualPlayerCapture').value = capture ? 'yes' : 'no';
-    $('#manualPlayerFormTitle').textContent = String(player.name || tr('edit','Редагувати'));
+    const titleEl = $('#manualPlayerFormTitle'); if (titleEl) { titleEl.removeAttribute('data-i18n'); titleEl.textContent = String(player.name || tr('edit','Редагувати')); } syncPanelHeader();
     $('#manualPlayerDeleteBtn').disabled = false;
     renderExtraFields(player.customFields || {});
     setExtraCollapsed(true);
@@ -393,6 +625,9 @@
     activeId = player.id;
     persistAll();
     renderList();
+    renderAllianceTools();
+    renderMetricTools('march');
+    renderMetricTools('rally');
     fillForm(activeId);
     setStatus(tr('saved','Збережено'));
   }
@@ -412,6 +647,9 @@
     activeId = '';
     persistAll();
     renderList();
+    renderAllianceTools();
+    renderMetricTools('march');
+    renderMetricTools('rally');
     resetForm();
     setStatus(tr('manual_player_deleted','Гравця видалено.'));
   }
@@ -464,12 +702,34 @@
         removeCustomDef(removeColumnBtn.dataset.manualRemoveColumn || '');
         return;
       }
+      const mobilePaneBtn = ev.target.closest('[data-manual-mobile-pane]');
+      if (mobilePaneBtn && mobilePaneBtn.closest('#manualPlayerManagerModal')) { ev.preventDefault(); setMobilePane(mobilePaneBtn.dataset.manualMobilePane || 'list'); return; }
+      const tab = ev.target.closest('[data-manual-player-tab]');
+      if (tab && tab.closest('#manualPlayerManagerModal')) { ev.preventDefault(); setManualPanel(tab.dataset.manualPlayerTab || 'players'); setMobilePane('form'); return; }
+      const applyAlliance = ev.target.closest('[data-manual-alliance-apply]');
+      if (applyAlliance && applyAlliance.closest('#manualPlayerManagerModal')) { ev.preventDefault(); applyAllianceRename(applyAlliance.dataset.manualAllianceApply || ''); return; }
+      const metricSortBtn = ev.target.closest('[data-manual-metric-sort]');
+      if (metricSortBtn && metricSortBtn.closest('#manualPlayerManagerModal')) { ev.preventDefault(); toggleMetricSort(metricSortBtn.dataset.manualMetricSort || 'march'); return; }
+      const metricSaveBtn = ev.target.closest('[data-manual-metric-save]');
+      if (metricSaveBtn && metricSaveBtn.closest('#manualPlayerManagerModal')) { ev.preventDefault(); saveMetricValue(metricSaveBtn.dataset.manualMetricSave || 'march', metricSaveBtn.dataset.playerId || ''); return; }
       const row = ev.target.closest('.manual-player-row[data-player-id]');
-      if (row) { ev.preventDefault(); fillForm(row.dataset.playerId); }
+      if (row && row.closest('#manualPlayerManagerModal')) { ev.preventDefault(); setManualPanel('players'); fillForm(row.dataset.playerId); setMobilePane('form'); }
     });
-    $('#manualPlayerNewBtn')?.addEventListener('click', resetForm);
+    $('#manualPlayerNewBtn')?.addEventListener('click', () => { resetForm(); setManualPanel('players'); setMobilePane('form'); });
+    window.addEventListener('resize', syncMobilePane, { passive:true });
     $('#manualPlayerExtraToggle')?.addEventListener('click', toggleExtraColumns);
     $('#manualPlayerSearchInput')?.addEventListener('input', renderList);
+    document.addEventListener('pns:i18n-changed', () => {
+      syncPanelHeader();
+      renderList();
+      renderAllianceTools();
+      renderMetricTools('march');
+      renderMetricTools('rally');
+      renderExtraFields();
+    });
+    document.addEventListener('pns:i18n-applied', () => {
+      syncPanelHeader();
+    });
     $('#manualPlayerForm')?.addEventListener('submit', saveCurrent);
     $('#manualPlayerDeleteBtn')?.addEventListener('click', deleteCurrent);
     $('#manualPlayerAddColumnBtn')?.addEventListener('click', () => {
@@ -484,6 +744,14 @@
     });
     document.addEventListener('keydown', ev => {
       if (ev.key === 'Escape' && modal()?.classList.contains('is-open')) closeModal();
+    });
+    document.addEventListener('pns:i18n-changed', () => {
+      if (!modal()?.classList.contains('is-open')) return;
+      renderList();
+      renderAllianceTools();
+      renderMetricTools('march');
+      renderMetricTools('rally');
+      setManualPanel(activePanel);
     });
   }
 

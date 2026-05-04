@@ -25,6 +25,41 @@
           </div>
           <button class="btn btn-sm" id="manualPlayerNewBtn" type="button" data-i18n="manual_player_new_button">Новий</button>
         </div>
+        <div class="manual-player-tabs" role="tablist" aria-label="Manual player tools">
+          <button class="manual-player-tab is-active" data-manual-player-tab="players" type="button" data-i18n="players">Гравці</button>
+          <button class="manual-player-tab" data-manual-player-tab="alliances" type="button" data-i18n="manual_tab_alliances">Альянси</button>
+          <button class="manual-player-tab" data-manual-player-tab="march" type="button" data-i18n="march_size">Марш</button>
+          <button class="manual-player-tab" data-manual-player-tab="rally" type="button" data-i18n="rally_size">Ралі</button>
+        </div>
+        <div class="manual-alliance-panel" id="manualAlliancePanel">
+          <div class="manual-alliance-head">
+            <div>
+              <h3 data-i18n="manual_alliance_fix_title">Виправити альянси</h3>
+              <p class="muted small" data-i18n="manual_alliance_fix_hint">Вибери неправильний тег і заміни його для всіх гравців одразу.</p>
+            </div>
+          </div>
+          <div class="manual-alliance-list" id="manualAllianceEditorList"></div>
+        </div>
+        <div class="manual-metric-panel" id="manualMarchPanel" data-manual-metric-panel="march">
+          <div class="manual-metric-head">
+            <div>
+              <h3 data-i18n="march_size">Розмір маршу</h3>
+              <p class="muted small" data-i18n="manual_metric_march_hint">Відсортуй гравців за маршем і виправ неправильні значення.</p>
+            </div>
+            <button class="btn btn-sm" id="manualMarchSortBtn" data-manual-metric-sort="march" type="button" data-i18n="manual_sort_big_to_small">Від більшого до меншого</button>
+          </div>
+          <div class="manual-metric-list" id="manualMarchEditorList"></div>
+        </div>
+        <div class="manual-metric-panel" id="manualRallyPanel" data-manual-metric-panel="rally">
+          <div class="manual-metric-head">
+            <div>
+              <h3 data-i18n="rally_size">Розмір ралі</h3>
+              <p class="muted small" data-i18n="manual_metric_rally_hint">Відсортуй гравців за ралі і виправ неправильні значення.</p>
+            </div>
+            <button class="btn btn-sm" id="manualRallySortBtn" data-manual-metric-sort="rally" type="button" data-i18n="manual_sort_big_to_small">Від більшого до меншого</button>
+          </div>
+          <div class="manual-metric-list" id="manualRallyEditorList"></div>
+        </div>
         <form id="manualPlayerForm" class="manual-player-form is-extra-collapsed" autocomplete="off">
           <input id="manualPlayerId" type="hidden" />
           <div class="manual-player-grid">

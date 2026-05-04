@@ -35,6 +35,28 @@
     }
   }
 
+  function localizedTowerTitle(base, index = 0) {
+    const raw = String(base?.title || base?.id || `${tr('turret', 'Турель')} ${Number(index || 0) + 1}`).split('/')[0].trim();
+    const slot = String(base?.slot || '').toLowerCase();
+    const id = String(base?.id || '').toLowerCase();
+    const probe = `${slot} ${id} ${raw}`.toLowerCase();
+    const pairs = [
+      [/\bhub\b|tech|техно|центр|central|base-hub/, 'hub'],
+      [/\bnorth\b|північ|север|base-north/, 'north_turret'],
+      [/\bwest\b|захід|запад|base-west/, 'west_turret'],
+      [/\beast\b|схід|вост|base-east/, 'east_turret'],
+      [/\bsouth\b|півден|юж|base-south/, 'south_turret']
+    ];
+    for (const [pattern, key] of pairs) {
+      if (pattern.test(probe)) return String(tr(key, raw) || raw);
+    }
+    try {
+      const translated = typeof PNS.towerLabel === 'function' ? String(PNS.towerLabel(raw) || '') : '';
+      if (translated && translated !== raw) return translated;
+    } catch {}
+    return raw;
+  }
+
   function shiftLabel(shift) {
     try {
       return typeof PNS.shiftLabel === 'function' ? PNS.shiftLabel(shift) : String(shift || '');
@@ -347,7 +369,7 @@
       const towerState = resolveInlineTowerState(base, shiftKey);
       const hasCaptain = !!towerState.captain;
       const playersCount = (hasCaptain ? 1 : 0) + Number(towerState.helpers.length || 0);
-      const title = escapeHtml(String(base.title || base.id || `${tr('turret', 'Турель')} ${index + 1}`).split('/')[0].trim());
+      const title = escapeHtml(localizedTowerTitle(base, index));
       return PNS.renderHtmlTemplate('tpl-tower-picker-item', {
         active_class: String(base.id) === selectedBaseId ? 'active' : '',
         ready_class: hasCaptain ? 'is-ready tower-done' : 'is-not-ready',
@@ -369,7 +391,7 @@
       maxHelpers: Number(selectedBase.maxHelpers || 0) || 0,
       tierMinMarch: { ...(selectedBase.tierMinMarch || {}) }
     };
-    const title = escapeHtml(String(selectedBase.title || selectedBase.id || '').split('/')[0].trim());
+    const title = escapeHtml(localizedTowerTitle(selectedBase, bases.indexOf(selectedBase))); 
 
     let captainCandidates = [];
     try {

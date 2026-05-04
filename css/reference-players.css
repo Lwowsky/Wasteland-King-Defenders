@@ -977,3 +977,308 @@ padding:0;
 #playersDataTable thead th.optional-col{
   overflow:visible;
 }
+
+/* Alliance badges in players table: case-sensitive generated colors by 3-symbol tag */
+#playersDataTable td[data-field="alliance"]{
+  text-align:center;
+  overflow:visible;
+}
+#playersDataTable .alliance-badge{
+  --ally-bg:rgba(96,128,255,.22);
+  --ally-border:rgba(150,170,255,.58);
+  --ally-glow:rgba(96,128,255,.22);
+  --ally-accent:#aebcff;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  max-width:88px;
+  min-width:64px;
+  min-height:32px;
+  padding:0 10px;
+  border-radius:999px;
+  border:1px solid var(--ally-border);
+  background:radial-gradient(circle at 50% 10%,rgba(255,255,255,.15),rgba(255,255,255,0) 58%),var(--ally-bg);
+  color:#f7fbff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 16px var(--ally-glow),0 0 28px var(--ally-glow);
+  font-size:12px;
+  font-weight:950;
+  line-height:1;
+  letter-spacing:.04em;
+  vertical-align:middle;
+}
+#playersDataTable .alliance-badge-dot{
+  width:7px;
+  height:7px;
+  flex:0 0 7px;
+  border-radius:999px;
+  background:var(--ally-accent);
+  box-shadow:0 0 10px var(--ally-accent);
+}
+#playersDataTable .alliance-badge-text{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#playersDataTable .alliance-badge--empty{
+  --ally-bg:rgba(100,116,139,.20);
+  --ally-border:rgba(148,163,184,.38);
+  --ally-glow:rgba(100,116,139,.12);
+  color:#cbd5e1;
+}
+#playersDataTable .alliance-badge--invalid{
+  --ally-bg:rgba(245,158,11,.18);
+  --ally-border:rgba(245,158,11,.58);
+  --ally-glow:rgba(245,158,11,.20);
+  --ally-accent:#fbbf24;
+  color:#fff7ed;
+  border-style:dashed;
+}
+#playersDataTable .alliance-badge-mark{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:14px;
+  height:14px;
+  flex:0 0 14px;
+  border-radius:999px;
+  background:rgba(245,158,11,.24);
+  color:#fbbf24;
+  font-size:10px;
+  font-weight:950;
+}
+
+
+/* Neon tier badges in players table */
+#playersDataTable td[data-field="tier"]{
+  text-align:center;
+  overflow:visible;
+}
+#playersDataTable .tier-badge{
+  --tier-bg:rgba(96,128,255,.18);
+  --tier-border:rgba(150,170,255,.78);
+  --tier-glow:rgba(96,128,255,.24);
+  --tier-accent:#cbd5ff;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-width:76px;
+  min-height:34px;
+  padding:0 12px;
+  border-radius:999px;
+  border:1px solid var(--tier-border);
+  background:radial-gradient(circle at 50% 8%,rgba(255,255,255,.16),rgba(255,255,255,0) 56%),linear-gradient(180deg,var(--tier-bg),rgba(8,17,38,.96));
+  color:#f9fbff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 0 14px var(--tier-glow),0 0 28px var(--tier-glow);
+  font-size:12px;
+  font-weight:950;
+  line-height:1;
+  letter-spacing:.04em;
+  vertical-align:middle;
+}
+#playersDataTable .tier-badge-dot{
+  width:8px;
+  height:8px;
+  flex:0 0 8px;
+  border-radius:999px;
+  background:var(--tier-accent);
+  box-shadow:0 0 10px var(--tier-accent),0 0 18px var(--tier-accent);
+}
+#playersDataTable .tier-badge-text{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#playersDataTable .tier-badge--unknown{
+  --tier-bg:rgba(148,163,184,.16);
+  --tier-border:rgba(203,213,225,.44);
+  --tier-glow:rgba(148,163,184,.14);
+  --tier-accent:#e2e8f0;
+  color:#e5edf7;
+}
+
+/* v115: player table scrolls up to 1200px, desktop fit mode starts from 1201px */
+@media (max-width:1200px){
+  .players-panel .table-wrap,
+  .players-panel .table-wrap .v101-players-scroll,
+  .players-panel .table-wrap .players-table-wrap{
+    overflow-x:auto !important;
+    max-width:100%;
+  }
+  .players-panel .table-wrap #playersDataTable{
+    width:max-content !important;
+    min-width:1500px !important;
+    max-width:none !important;
+    table-layout:auto !important;
+  }
+  .players-panel .table-wrap #playersDataTable th,
+  .players-panel .table-wrap #playersDataTable td{
+    white-space:nowrap !important;
+  }
+}
+@media (min-width:1201px){
+  .players-panel .table-wrap:not(.is-show-all-columns),
+  .players-panel .table-wrap:not(.is-show-all-columns) .v101-players-scroll,
+  .players-panel .table-wrap:not(.is-show-all-columns) .players-table-wrap{
+    overflow-x:hidden !important;
+  }
+  .players-panel .table-wrap.is-show-all-columns,
+  .players-panel .table-wrap.is-show-all-columns .v101-players-scroll,
+  .players-panel .table-wrap.is-show-all-columns .players-table-wrap{
+    overflow-x:auto !important;
+  }
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    table-layout:fixed !important;
+  }
+  .players-panel .table-wrap.is-show-all-columns #playersDataTable{
+    width:max-content !important;
+    min-width:1500px !important;
+    max-width:none !important;
+    table-layout:auto !important;
+  }
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable th,
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td{
+    padding-left:8px !important;
+    padding-right:8px !important;
+  }
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable th[data-field="name"],
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="name"]{width:13% !important;min-width:0 !important;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable th[data-field="alliance"],
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="alliance"]{width:8% !important;min-width:0 !important;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable th[data-field="role"],
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="role"]{width:10% !important;min-width:0 !important;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable th[data-field="tier"],
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="tier"]{width:7% !important;min-width:0 !important;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable th[data-field="march"],
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="march"]{width:9% !important;min-width:0 !important;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable th[data-field="rally"],
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="rally"]{width:10% !important;min-width:0 !important;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable th[data-field="captainReady"],
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="captainReady"]{width:9% !important;min-width:0 !important;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable th[data-field="shiftLabel"],
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="shiftLabel"]{width:10% !important;min-width:0 !important;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable th[data-field="actions"],
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="actions"]{width:24% !important;min-width:0 !important;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable th,
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td,
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable .th-label,
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable .alliance-badge-text,
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable .tier-badge-text{
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable .alliance-badge{min-width:58px;max-width:100%;padding-left:8px;padding-right:8px;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable .tier-badge{min-width:62px;max-width:100%;padding-left:9px;padding-right:9px;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="role"] .tag,
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="role"] .badge{min-width:0;max-width:100%;padding-left:10px;padding-right:10px;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="captainReady"] .pill,
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="shiftLabel"] .shift-badge{min-width:0;max-width:100%;padding-left:10px;padding-right:10px;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable .player-placement-grid{gap:4px;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable .player-placement-item{min-height:54px;padding:5px 5px;border-radius:12px;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable .player-placement-item strong{font-size:12px;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable .player-placement-item small{font-size:10px;}
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable .btn-placement-edit{flex-basis:26px;width:26px;min-width:26px;min-height:54px;}
+}
+
+/* Keep table header sort arrows visible while clipping long header labels */
+#playersDataTable thead th{
+  overflow:hidden !important;
+  white-space:nowrap !important;
+}
+#playersDataTable thead th .th-label{
+  display:inline-block !important;
+  max-width:calc(100% - 34px) !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  vertical-align:middle !important;
+}
+@media (max-width:1200px){
+  #playersDataTable thead th{
+    overflow:visible !important;
+  }
+  #playersDataTable thead th .th-label{
+    max-width:none !important;
+    overflow:visible !important;
+    text-overflow:clip !important;
+  }
+}
+#playersDataTable thead th .sort-btn{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  width:24px !important;
+  min-width:24px !important;
+  height:24px !important;
+  min-height:24px !important;
+  margin-left:6px !important;
+  padding:0 !important;
+  vertical-align:middle !important;
+  flex:0 0 auto !important;
+}
+.players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable thead th .th-label{
+  max-width:calc(100% - 30px) !important;
+}
+.players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable thead th .sort-btn{
+  width:22px !important;
+  min-width:22px !important;
+  height:22px !important;
+  min-height:22px !important;
+  margin-left:4px !important;
+}
+
+/* Equal width for troop-type badges in the players table */
+#playersDataTable td[data-field="role"] .tag,
+#playersDataTable td[data-field="role"] .badge{
+  width:128px !important;
+  max-width:128px !important;
+  justify-content:center !important;
+  text-align:center !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+.players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="role"] .tag,
+.players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable td[data-field="role"] .badge{
+  width:100% !important;
+  max-width:128px !important;
+  min-width:0 !important;
+}
+#playersDataTable td[data-field="role"] .tag *,
+#playersDataTable td[data-field="role"] .badge *{
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+
+
+/* v116: on small screens always allow horizontal scroll for the players table */
+@media (max-width: 768px){
+  .players-panel .table-wrap,
+  .players-panel .table-wrap:not(.is-show-all-columns),
+  .players-panel .table-wrap .v101-players-scroll,
+  .players-panel .table-wrap:not(.is-show-all-columns) .v101-players-scroll,
+  .players-panel .table-wrap .players-table-wrap,
+  .players-panel .table-wrap:not(.is-show-all-columns) .players-table-wrap{
+    overflow-x:auto !important;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .players-panel .table-wrap #playersDataTable,
+  .players-panel .table-wrap:not(.is-show-all-columns) #playersDataTable{
+    width:max-content !important;
+    min-width:1500px !important;
+    max-width:none !important;
+    table-layout:auto !important;
+  }
+}

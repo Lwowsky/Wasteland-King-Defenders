@@ -10,7 +10,10 @@
   const REGIONS = ['region1', 'region2', 'region3'];
   const SHIFTS = ['shift1', 'shift2', 'shift3', 'shift4'];
 
-  const LOCAL_REGION_LABELS = {"en":{"import_region_1":"Home","import_region_2":"Region 1","import_region_3":"Region 2","capture_region":"Capture region","capture_region_1":"Capture region 1","capture_region_2":"Capture region 2","shift3":"Shift 3","shift4":"Shift 4"},"uk":{"import_region_1":"Дім","import_region_2":"Регіон 1","import_region_3":"Регіон 2","capture_region":"Захоплення регіону","capture_region_1":"Захоплення регіону 1","capture_region_2":"Захоплення регіону 2","shift3":"Зміна 3","shift4":"Зміна 4"},"ru":{"import_region_1":"Дом","import_region_2":"Регион 1","import_region_3":"Регион 2","capture_region":"Захват региона","capture_region_1":"Захват региона 1","capture_region_2":"Захват региона 2","shift3":"Смена 3","shift4":"Смена 4"},"de":{"import_region_1":"Heimat","import_region_2":"Region 1","import_region_3":"Region 2","capture_region":"Eroberung der Region","capture_region_1":"Eroberung Region 1","capture_region_2":"Eroberung Region 2","shift3":"Schicht 3","shift4":"Schicht 4"},"pl":{"import_region_1":"Dom","import_region_2":"Region 1","import_region_3":"Region 2","capture_region":"Przejęcie regionu","capture_region_1":"Przejęcie regionu 1","capture_region_2":"Przejęcie regionu 2","shift3":"Zmiana 3","shift4":"Zmiana 4"},"vi":{"import_region_1":"Nhà","import_region_2":"Khu vực 1","import_region_3":"Khu vực 2","capture_region":"Chiếm khu vực","capture_region_1":"Chiếm khu vực 1","capture_region_2":"Chiếm khu vực 2","shift3":"Ca 3","shift4":"Ca 4"},"zh":{"import_region_1":"家园","import_region_2":"区域 1","import_region_3":"区域 2","capture_region":"占领区域","capture_region_1":"占领区域 1","capture_region_2":"占领区域 2","shift3":"班次 3","shift4":"班次 4"},"ja":{"import_region_1":"ホーム","import_region_2":"地域 1","import_region_3":"地域 2","capture_region":"地域の占領","capture_region_1":"地域1の占領","capture_region_2":"地域2の占領","shift3":"シフト3","shift4":"シフト4"},"ko":{"import_region_1":"홈","import_region_2":"지역 1","import_region_3":"지역 2","capture_region":"지역 점령","capture_region_1":"지역 1 점령","capture_region_2":"지역 2 점령","shift3":"교대 3","shift4":"교대 4"},"ar":{"import_region_1":"الوطن","import_region_2":"المنطقة 1","import_region_3":"المنطقة 2","capture_region":"احتلال المنطقة","capture_region_1":"احتلال المنطقة 1","capture_region_2":"احتلال المنطقة 2","shift3":"النوبة 3","shift4":"النوبة 4"}};
+  const REGION_FALLBACKS = { import_region_1: 'Дім', import_region_2: 'Регіон 1', import_region_3: 'Регіон 2', capture_region: 'Захоплення регіону', capture_region_1: 'Захоплення регіону 1', capture_region_2: 'Захоплення регіону 2', capture_region_short: 'Захоплення', shift3: 'Зміна 3', shift4: 'Зміна 4' };
+  const SINGLE_CAPTURE_REGION_LABELS = { en: 'Capture', uk: 'Захоплення', ru: 'Захват', de: 'Eroberung', pl: 'Przejęcie', vi: 'Chiếm', zh: '占领', ja: '占領', ko: '점령', ar: 'احتلال' };
+
+
 
   function normalizeLocale(locale) {
     const value = String(locale || '').trim().toLowerCase();
@@ -19,14 +22,19 @@
   }
 
   function getCurrentLocale() {
-    try { return normalizeLocale(window.PNSI18N?.locale || PNS.I18N?.locale || document.documentElement.dataset.locale || document.documentElement.lang || 'uk'); }
-    catch { return 'uk'; }
+    try {
+      const stored = localStorage.getItem('pns_lang') || '';
+      return normalizeLocale(document.documentElement.dataset.locale || document.documentElement.lang || stored || window.PNSI18N?.locale || PNS.I18N?.locale || 'uk');
+    } catch {
+      return normalizeLocale(document.documentElement.dataset.locale || document.documentElement.lang || window.PNSI18N?.locale || 'uk');
+    }
   }
 
   function localLabel(key, fallback = '', locale = getCurrentLocale()) {
     const normalized = normalizeLocale(locale);
-    const dict = LOCAL_REGION_LABELS[normalized] || LOCAL_REGION_LABELS[normalized.split('-')[0]] || LOCAL_REGION_LABELS.uk || {};
-    return String(dict[key] || fallback || key);
+    const base = normalized.split('-')[0];
+    const dicts = window.PNSI18N_DICTS || window.PNSI18N?.dict || {};
+    return String(dicts[normalized]?.[key] || dicts[base]?.[key] || REGION_FALLBACKS[key] || fallback || key);
   }
 
 
@@ -107,15 +115,106 @@
     return Math.max(1, Math.min(4, Number(selected) || 2));
   }
 
-  function regionLabel(region){
-    const key = region === 'region2' ? 'import_region_2' : region === 'region3' ? 'import_region_3' : 'import_region_1';
-    const fallback = localLabel(key);
-    try {
-      const translated = t(key, fallback);
-      return translated && translated !== key ? translated : fallback;
-    } catch {
-      return fallback;
+  function singleCaptureRegionLabel(){
+    const locale = getCurrentLocale();
+    const base = locale.split('-')[0];
+    return SINGLE_CAPTURE_REGION_LABELS[locale] || SINGLE_CAPTURE_REGION_LABELS[base] || SINGLE_CAPTURE_REGION_LABELS.uk || 'Захоплення';
+  }
+
+  function translateKeyNow(key, fallback = ''){
+    const locale = getCurrentLocale();
+    const base = locale.split('-')[0];
+    const dicts = window.PNSI18N_DICTS || window.PNSI18N?.dict || {};
+    const value = dicts[locale]?.[key] || dicts[base]?.[key];
+    if (value) return String(value);
+    try { const translated = PNS.t?.(key, fallback); if (translated && translated !== key) return String(translated); } catch {}
+    return String(fallback || key);
+  }
+
+  function regionLabelKey(region, settings = readSettings()){
+    if (region === 'region1') return 'import_region_1';
+    const captureRegions = enabledRegions(settings).filter(item => item !== 'region1');
+    if (captureRegions.length === 1 && captureRegions[0] === region) return 'capture_region_short';
+    return region === 'region3' ? 'import_region_3' : 'import_region_2';
+  }
+
+  function regionLabel(region, settings = readSettings()){
+    const key = regionLabelKey(region, settings);
+    const fallback = key === 'capture_region_short' ? singleCaptureRegionLabel() : localLabel(key);
+    return translateKeyNow(key, fallback);
+  }
+
+  function markRegionButton(button, region, settings = readSettings()){
+    if (!button || !REGIONS.includes(region)) return;
+    const key = regionLabelKey(region, settings);
+    button.setAttribute('data-rs-region-label-key', key);
+    button.setAttribute('data-i18n', key);
+  }
+
+
+  function regionLabelKindFromText(text){
+    const value = String(text || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (!value) return '';
+    const test = candidate => String(candidate || '').replace(/\s+/g, ' ').trim().toLowerCase() === value;
+    const dicts = Object.assign({}, window.PNSI18N_DICTS || {}, window.PNSI18N?.dict || {});
+    for (const labels of Object.values(dicts)) {
+      if (test(labels?.import_region_1)) return 'region1';
+      if (test(labels?.import_region_2) || test(labels?.capture_region_1)) return 'region2';
+      if (test(labels?.import_region_3) || test(labels?.capture_region_2)) return 'region3';
+      if (test(labels?.capture_region) || test(labels?.capture_region_short)) return 'capture';
     }
+    for (const label of Object.values(SINGLE_CAPTURE_REGION_LABELS || {})) if (test(label)) return 'capture';
+    return '';
+  }
+
+  function syncLooseRegionButtons(root){
+    const modal = root?.id === 'towerCalcModal' ? root : document.getElementById('towerCalcModal');
+    if (!modal) return;
+    const settings = readSettings();
+    const enabled = enabledRegions(settings);
+    const active = activeRegion(settings);
+    const captureRegions = enabled.filter(region => region !== 'region1');
+    const labelFor = region => regionLabel(region, settings);
+    const apply = (button, region) => {
+      if (!button || !REGIONS.includes(region)) return;
+      markRegionButton(button, region, settings);
+      const label = labelFor(region);
+      if (button.textContent !== label) button.textContent = label;
+      button.setAttribute('aria-label', label);
+      if (button.hasAttribute('title')) button.setAttribute('title', label);
+      const isActive = region === active;
+      if (button.hasAttribute('data-rs-region-tab') || button.closest('.rs-region-tabs,.rs-region-right,.tower-calc-region-tabs,.tcv18-manual-region-tabs,.v8-region-right,.v9-region-right,.v10-region-right,.v11-region-right')) {
+        button.classList.toggle('is-active', isActive);
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      }
+    };
+
+    modal.querySelectorAll('[data-rs-region-tab]').forEach(button => {
+      apply(button, String(button.getAttribute('data-rs-region-tab') || ''));
+    });
+
+    modal.querySelectorAll('[data-final-plan-region-choice]').forEach(button => {
+      apply(button, String(button.getAttribute('data-final-plan-region-choice') || ''));
+    });
+
+    modal.querySelectorAll('[data-final-plan-region-trigger]').forEach(button => {
+      apply(button, active);
+      if (!button.textContent.includes('▾')) button.textContent = `${labelFor(active)} ▾`;
+    });
+
+    modal.querySelectorAll('button').forEach(button => {
+      if (button.hasAttribute('data-rs-region-tab') || button.hasAttribute('data-final-plan-region-choice') || button.hasAttribute('data-final-plan-region-trigger')) return;
+      const kind = regionLabelKindFromText(button.textContent);
+      if (!kind) return;
+      let region = kind;
+      if (kind === 'capture') {
+        if (captureRegions.length !== 1) return;
+        region = captureRegions[0];
+      }
+      if (!enabled.includes(region)) return;
+      apply(button, region);
+    });
   }
 
   function shiftLabel(shift){
@@ -127,6 +226,37 @@
     if (n === 3) return t('shift3', 'Зміна 3');
     if (n === 4) return t('shift4', 'Зміна 4');
     return `${t('shift', 'Зміна')} ${n}`;
+  }
+
+  function limitLabel(n){
+    if (n === 1) return t('shift1_limit', 'Ліміт зміни 1');
+    if (n === 2) return t('shift2_limit', 'Ліміт зміни 2');
+    return `${shiftLabel(`shift${n}`)} ${t('limit', 'ліміт')}`;
+  }
+
+  function addLabel(n){
+    if (n === 1) return t('add_to_shift1', 'Додати в зміну 1');
+    if (n === 2) return t('add_to_shift2', 'Додати в зміну 2');
+    return `${t('add_to_shift', 'Додати в')} ${shiftLabel(`shift${n}`).toLowerCase()}`;
+  }
+
+  function syncShiftBalanceLanguage(){
+    const panel = document.querySelector('#towerCalcModal #towerCalcShiftBalance');
+    if (!panel) return;
+    const manual = panel.querySelector('#tcv5LimitEditRow .tcv5-limit-toggle span');
+    if (manual) { manual.setAttribute('data-i18n', 'manual_limit_edit'); manual.textContent = t('manual_limit_edit', 'Редагувати ліміти вручну'); }
+    panel.querySelectorAll('[data-rs-kind="limit"][data-rs-shift] > span').forEach(span => {
+      const n = Number(span.parentElement?.getAttribute('data-rs-shift') || '0');
+      if (n === 1) span.setAttribute('data-i18n', 'shift1_limit');
+      else if (n === 2) span.setAttribute('data-i18n', 'shift2_limit');
+      span.textContent = limitLabel(n);
+    });
+    panel.querySelectorAll('[data-rs-kind="add"][data-rs-shift] > span').forEach(span => {
+      const n = Number(span.parentElement?.getAttribute('data-rs-shift') || '0');
+      if (n === 1) span.setAttribute('data-i18n', 'add_to_shift1');
+      else if (n === 2) span.setAttribute('data-i18n', 'add_to_shift2');
+      span.textContent = addLabel(n);
+    });
   }
 
   function currentShift(){
@@ -728,13 +858,17 @@
         btn.type = 'button';
         btn.className = 'btn btn-sm';
         btn.setAttribute('data-rs-region-tab', r);
-        btn.textContent = regionLabel(r);
+        markRegionButton(btn, r, settings);
+        btn.textContent = regionLabel(r, settings);
         regionWrap.appendChild(btn);
       });
     }
     regionWrap.hidden = regions.length <= 1;
     regionWrap.querySelectorAll('[data-rs-region-tab]').forEach(btn => {
-      const active = btn.getAttribute('data-rs-region-tab') === region;
+      const btnRegion = btn.getAttribute('data-rs-region-tab') || '';
+      markRegionButton(btn, btnRegion, settings);
+      btn.textContent = regionLabel(btnRegion, settings);
+      const active = btnRegion === region;
       btn.classList.toggle('is-active', active);
       btn.classList.toggle('active', active);
       btn.setAttribute('aria-selected', active ? 'true' : 'false');
@@ -932,7 +1066,8 @@
       btn.className = 'btn btn-sm' + (r === region ? ' is-active active' : '');
       btn.setAttribute('data-rs-region-tab', r);
       btn.setAttribute('aria-selected', r === region ? 'true' : 'false');
-      btn.textContent = regionLabel(r);
+      markRegionButton(btn, r, settings);
+      btn.textContent = regionLabel(r, settings);
       right.appendChild(btn);
     });
     return right;
@@ -984,7 +1119,10 @@
         right.hidden = fresh.hidden;
         const activeRegionValue = activeRegion();
         right.querySelectorAll('[data-rs-region-tab]').forEach(btn => {
-          const active = btn.getAttribute('data-rs-region-tab') === activeRegionValue;
+          const btnRegion = btn.getAttribute('data-rs-region-tab') || '';
+          markRegionButton(btn, btnRegion, settings);
+          btn.textContent = regionLabel(btnRegion, settings);
+          const active = btnRegion === activeRegionValue;
           btn.classList.toggle('is-active', active);
           btn.classList.toggle('active', active);
           btn.setAttribute('aria-selected', active ? 'true' : 'false');
@@ -1054,10 +1192,7 @@
       a4: readValue(addRow, 'add', 4, '0')
     };
 
-    const labelText = (type, n) => {
-      if (type === 'limit') return n === 1 ? t('shift1_limit', 'Ліміт зміни 1') : n === 2 ? t('shift2_limit', 'Ліміт зміни 2') : `Ліміт зміни ${n}`;
-      return n === 1 ? t('add_to_shift1', 'Додати в зміну 1') : n === 2 ? t('add_to_shift2', 'Додати в зміну 2') : `Додати в зміну ${n}`;
-    };
+    const labelText = (type, n) => type === 'limit' ? limitLabel(n) : addLabel(n);
 
     const makeField = (type, n, value, disabled) => {
       const label = document.createElement('label');
@@ -1065,6 +1200,8 @@
       label.setAttribute('data-rs-kind', type);
       label.setAttribute('data-rs-shift', String(n));
       const span = document.createElement('span');
+      if (type === 'limit' && n <= 2) span.setAttribute('data-i18n', `shift${n}_limit`);
+      if (type === 'add' && n <= 2) span.setAttribute('data-i18n', `add_to_shift${n}`);
       span.textContent = labelText(type, n);
       const input = document.createElement('input');
       input.type = 'number';
@@ -1605,6 +1742,12 @@
     });
   }
 
+  function scheduleRegionLanguageSync(){
+    const run = () => { try { renderTowerTabs(); renderAdvancedHeader(); syncLooseRegionButtons(document.getElementById('towerCalcModal') || document); } catch {} };
+    run();
+    try { requestAnimationFrame(run); } catch {}
+  }
+
   let running = false;
   function renderAll(){
     const modal = document.getElementById('towerCalcModal');
@@ -1618,11 +1761,14 @@
       removeOldRegionUI();
       renderTowerTabs();
       renderAdvancedHeader();
+      syncLooseRegionButtons(modal);
       renderManualLimits();
+      syncShiftBalanceLanguage();
       ensurePickerControls();
       setCurrentShift(currentShift());
       renderSummary();
       removeLimitRegionUI();
+      syncLooseRegionButtons(modal);
       try { ensureBoardSignature(document.getElementById('towerCalcModal') || document); } catch {}
       try { ensureBoardSignature(document.getElementById('board-modal') || document); } catch {}
     } finally {
@@ -1791,7 +1937,22 @@
   }, true);
 
   document.addEventListener('pns:dom:refreshed', () => { renderAll(); });
-  document.addEventListener('pns:i18n-changed', () => { renderAll(); });
+  function refreshLanguageNow(){
+    const modal = document.getElementById('towerCalcModal');
+    rerenderAfterNative();
+    try { window.PNSI18N?.apply?.(modal || document); } catch {}
+    syncShiftBalanceLanguage();
+    syncLooseRegionButtons(modal || document);
+    [30, 80, 160, 320].forEach(ms => setTimeout(() => {
+      try { rerenderAfterNative(); } catch {}
+      try { renderAll(); } catch {}
+      try { syncShiftBalanceLanguage(); } catch {}
+      try { syncLooseRegionButtons(document.getElementById('towerCalcModal') || document); } catch {}
+    }, ms));
+  }
+  document.addEventListener('pns:i18n-changed', refreshLanguageNow);
+  document.addEventListener('pns:i18n-applied', () => { renderAll(); syncShiftBalanceLanguage(); syncLooseRegionButtons(document.getElementById('towerCalcModal') || document); });
+  document.addEventListener('click', event => { if (event.target.closest('.lang-item,[data-lang]')) scheduleRegionLanguageSync(); }, true);
   window.addEventListener('resize', () => setTimeout(renderAll, 80));
 
   if (document.readyState === 'loading') {
