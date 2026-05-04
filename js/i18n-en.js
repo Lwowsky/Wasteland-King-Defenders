@@ -552,7 +552,7 @@
   "section_label": "Information and instructions",
   "section_hint_open": "Open the quick guide",
   "section_hint_close": "Close the quick guide",
-  "intro": "Flow: import the roster, configure regions and 1–4 shifts, check players, place captains, fill turrets, review reserve, then export the final plan.",
+  "intro": "Flow: import the roster, configure regions and shifts, use Player editor to fix players/alliances/march/rally, place captains, fill turrets, review reserve, then export the final plan.",
   "tab_import": "Import",
   "tab_players": "Players",
   "tab_turrets": "Turrets",
@@ -596,39 +596,39 @@
       "noteText": "Region and shift settings affect roster recognition, turret planning and final export."
     },
     "players": {
-      "eyebrow": "2. Players",
-      "title": "Check and edit the roster",
-      "lead": "Use this area to fix data before planning.",
+      "eyebrow": "2. Player editor",
+      "title": "Clean player data before planning",
+      "lead": "Use one window to add or edit players, fix alliances, and correct march or rally values.",
       "steps": [
-        {
-          "title": "Filters",
-          "purpose": "Search and checks",
-          "copy": "Filter by role, shift, status or tier. Use “show all data” only when you need the extra columns."
-        },
-        {
-          "title": "Manual player",
-          "purpose": "Add or edit one player",
-          "copy": "You can add a player manually, edit march/tier/shift/captain readiness, or remove a manual player."
-        },
-        {
-          "title": "Placement",
-          "purpose": "Shift cards",
-          "copy": "The placement column shows where the player is used in each shift and whether the player is reserve."
-        }
+            {
+                  "title": "Filters",
+                  "purpose": "Search and checks",
+                  "copy": "In the player table, filter by role, shift, status or tier. Use “Show all data” when you need extra columns."
+            },
+            {
+                  "title": "Player editor",
+                  "purpose": "Players / Alliances / March / Rally",
+                  "copy": "Open Player editor to add or edit a player, rename a wrong alliance tag for all players at once, and sort or correct march and rally values."
+            },
+            {
+                  "title": "Placement",
+                  "purpose": "Shift cards",
+                  "copy": "The placement column shows where the player is used in each shift and whether the player is in reserve."
+            }
       ],
       "side": [
-        {
-          "title": "Manual data",
-          "text": "Manual players stay after refresh, but can be cleared by a new Excel import if needed."
-        },
-        {
-          "title": "Shift support",
-          "text": "The interface supports up to four shifts when enabled in region settings."
-        }
+            {
+                  "title": "Manual changes",
+                  "text": "Manual changes stay after refresh. Manual players can be cleared when you import a new Excel roster."
+            },
+            {
+                  "title": "Alliances and numbers",
+                  "text": "If an alliance tag, march size or rally size is wrong, correct it in Player editor before turret planning."
+            }
       ],
       "noteTitle": "Check before applying",
-      "noteText": "Wrong march, tier or shift data will make turret distribution less accurate."
-    },
+      "noteText": "Wrong alliance, march, rally, tier or shift data will make turret distribution less accurate."
+},
     "turrets": {
       "eyebrow": "3. Turrets",
       "title": "Build the turret plan",

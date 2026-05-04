@@ -549,7 +549,7 @@
   "section_label": "Info und Anleitung",
   "section_hint_open": "Kurzanleitung öffnen",
   "section_hint_close": "Kurzanleitung schließen",
-  "intro": "Ablauf: Liste importieren, Regionen und 1–4 Schichten einstellen, Spieler prüfen, Kapitäne setzen, Türme füllen, Reserve prüfen und finalen Plan exportieren.",
+  "intro": "Ablauf: Liste importieren, Regionen und Schichten einstellen, Spieler-Editor für Spieler/Allianzen/Marsch/Rallye nutzen, Kapitäne setzen, Türme füllen, Reserve prüfen und den Endplan exportieren.",
   "tab_import": "Import",
   "tab_players": "Spieler",
   "tab_turrets": "Türme",
@@ -593,39 +593,39 @@
       "noteText": "Regionen und Schichten beeinflussen Erkennung, Turmplanung und Export."
     },
     "players": {
-      "eyebrow": "2. Spieler",
-      "title": "Liste prüfen und bearbeiten",
-      "lead": "Korrigiere Daten vor der Planung.",
+      "eyebrow": "2. Spieler-Editor",
+      "title": "Spielerdaten vor der Planung bereinigen",
+      "lead": "In einem Fenster kannst du Spieler hinzufügen oder ändern, Allianzen korrigieren sowie Marsch- und Rallye-Werte anpassen.",
       "steps": [
-        {
-          "title": "Filter",
-          "purpose": "Suche und Prüfung",
-          "copy": "Filtere nach Rolle, Schicht, Status oder Tier. „Alle Daten anzeigen“ nur für Zusatzspalten nutzen."
-        },
-        {
-          "title": "Manueller Spieler",
-          "purpose": "Einen Spieler hinzufügen oder ändern",
-          "copy": "Spieler manuell hinzufügen, Marsch/Tier/Schicht/Kapitänsstatus ändern oder entfernen."
-        },
-        {
-          "title": "Platzierung",
-          "purpose": "Schichtkarten",
-          "copy": "Zeigt, wo ein Spieler pro Schicht steht oder ob er Reserve ist."
-        }
+            {
+                  "title": "Filter",
+                  "purpose": "Suche und Prüfung",
+                  "copy": "Filtere in der Spielertabelle nach Rolle, Schicht, Status oder Tier. „Alle Daten anzeigen“ nutzt du für zusätzliche Spalten."
+            },
+            {
+                  "title": "Spieler-Editor",
+                  "purpose": "Spieler / Allianzen / Marsch / Rallye",
+                  "copy": "Öffne den Spieler-Editor, um Spieler hinzuzufügen oder zu ändern, falsche Allianz-Tags für alle Spieler auf einmal umzubenennen und Marsch- oder Rallye-Werte zu sortieren und zu korrigieren."
+            },
+            {
+                  "title": "Platzierung",
+                  "purpose": "Schichtkarten",
+                  "copy": "Die Platzierungsspalte zeigt, wo ein Spieler in jeder Schicht steht oder ob er Reserve ist."
+            }
       ],
       "side": [
-        {
-          "title": "Manuelle Daten",
-          "text": "Manuelle Spieler bleiben nach dem Neuladen erhalten."
-        },
-        {
-          "title": "Schichten",
-          "text": "Bis zu vier Schichten werden unterstützt, wenn sie in Regionen aktiv sind."
-        }
+            {
+                  "title": "Manuelle Änderungen",
+                  "text": "Manuelle Änderungen bleiben nach dem Aktualisieren erhalten. Manuelle Spieler können bei einem neuen Excel-Import gelöscht werden."
+            },
+            {
+                  "title": "Allianzen und Zahlen",
+                  "text": "Wenn Allianz-Tag, Marsch oder Rallye falsch sind, korrigiere sie im Spieler-Editor vor der Turmplanung."
+            }
       ],
-      "noteTitle": "Prüfung",
-      "noteText": "Falscher Marsch, Tier oder Schicht verschlechtert die Verteilung."
-    },
+      "noteTitle": "Vor dem Anwenden prüfen",
+      "noteText": "Fehler bei Allianz, Marsch, Rallye, Tier oder Schicht machen die automatische Verteilung ungenauer."
+},
     "turrets": {
       "eyebrow": "3. Türme",
       "title": "Turmplan erstellen",

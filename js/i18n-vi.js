@@ -638,7 +638,7 @@
   "section_label": "Thông tin & Hướng dẫn",
   "section_hint_open": "Mở hướng dẫn nhanh",
   "section_hint_close": "Thu gọn hướng dẫn nhanh",
-  "intro": "Quy trình: nhập danh sách, đặt khu vực và 1–4 ca, kiểm tra người chơi, đặt đội trưởng, lấp tháp pháo, xem dự bị rồi xuất kế hoạch cuối.",
+  "intro": "Quy trình: nhập danh sách, cấu hình khu vực và ca, dùng Trình chỉnh sửa người chơi để sửa người chơi/liên minh/hành quân/rally, đặt đội trưởng, lấp tháp, kiểm tra dự bị rồi xuất kế hoạch cuối.",
   "tab_import": "Nhập",
   "tab_players": "Người chơi",
   "tab_turrets": "Tháp pháo",
@@ -682,39 +682,39 @@
       "noteText": "Thiết lập khu vực và ca ảnh hưởng đến toàn bộ kế hoạch."
     },
     "players": {
-      "eyebrow": "2. Người chơi",
-      "title": "Kiểm tra và chỉnh danh sách",
-      "lead": "Sửa dữ liệu trước khi lập kế hoạch.",
+      "eyebrow": "2. Trình chỉnh sửa người chơi",
+      "title": "Sửa dữ liệu người chơi trước khi lập kế hoạch",
+      "lead": "Trong một cửa sổ, bạn có thể thêm hoặc sửa người chơi, sửa liên minh, quy mô hành quân và rally.",
       "steps": [
-        {
-          "title": "Danh sách",
-          "purpose": "CSV / XLSX / TXT",
-          "copy": "Kiểm tra tên, liên minh, loại quân, tier, hành quân, rally, đội trưởng và ca."
-        },
-        {
-          "title": "Khu vực",
-          "purpose": "Nhà / Khu vực 1 / Khu vực 2",
-          "copy": "Bật khu vực và chọn 1, 2, 3 hoặc 4 ca."
-        },
-        {
-          "title": "Thủ công",
-          "purpose": "Thêm người chơi",
-          "copy": "Thêm người chơi thiếu hoặc sửa dữ liệu mà không cần nhập lại."
-        }
+            {
+                  "title": "Bộ lọc",
+                  "purpose": "Tìm kiếm và kiểm tra",
+                  "copy": "Trong bảng người chơi, lọc theo loại quân, ca, trạng thái hoặc cấp. Chỉ dùng “Hiển thị tất cả dữ liệu” khi cần cột bổ sung."
+            },
+            {
+                  "title": "Trình chỉnh sửa người chơi",
+                  "purpose": "Người chơi / Liên minh / Hành quân / Rally",
+                  "copy": "Mở Trình chỉnh sửa người chơi để thêm hoặc sửa người chơi, đổi tag liên minh sai cho tất cả người chơi cùng lúc, và sắp xếp hoặc sửa quy mô hành quân/rally."
+            },
+            {
+                  "title": "Vị trí",
+                  "purpose": "Thẻ ca",
+                  "copy": "Cột vị trí cho biết người chơi đang ở đâu trong từng ca hoặc có đang ở dự bị không."
+            }
       ],
       "side": [
-        {
-          "title": "Người chơi thủ công",
-          "text": "Add, edit or remove one player manually."
-        },
-        {
-          "title": "4 ca",
-          "text": "Up to four shifts are supported when enabled."
-        }
+            {
+                  "title": "Sửa thủ công",
+                  "text": "Thay đổi thủ công vẫn còn sau khi làm mới trang. Người chơi thủ công có thể bị xóa khi nhập Excel mới."
+            },
+            {
+                  "title": "Liên minh và số liệu",
+                  "text": "Nếu tag liên minh, hành quân hoặc rally bị sai, hãy sửa trong Trình chỉnh sửa người chơi trước khi lập kế hoạch tháp."
+            }
       ],
-      "noteTitle": "Check",
-      "noteText": "Wrong tier, march or shift makes autofill less accurate."
-    },
+      "noteTitle": "Kiểm tra trước khi áp dụng",
+      "noteText": "Sai liên minh, hành quân, rally, cấp hoặc ca sẽ làm phân bổ tự động kém chính xác."
+},
     "turrets": {
       "eyebrow": "3. Tháp pháo",
       "title": "Tạo kế hoạch tháp pháo",

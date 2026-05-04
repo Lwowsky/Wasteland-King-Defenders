@@ -549,7 +549,7 @@
   "section_label": "Informacje i instrukcja",
   "section_hint_open": "Otwórz krótki przewodnik",
   "section_hint_close": "Zwiń krótki przewodnik",
-  "intro": "Kolejność: import listy, regiony i 1–4 zmiany, sprawdzenie graczy, kapitanowie, wypełnianie wieżyczek, rezerwa i plan końcowy.",
+  "intro": "Kolejność: import listy, regiony i zmiany, Edytor graczy do poprawy graczy/sojuszy/marszu/rajdu, kapitanowie, wieże, rezerwa i plan końcowy.",
   "tab_import": "Import",
   "tab_players": "Gracze",
   "tab_turrets": "Wieżyczki",
@@ -593,39 +593,39 @@
       "noteText": "Ustawienia regionów i zmian wpływają na cały plan."
     },
     "players": {
-      "eyebrow": "2. Gracze",
-      "title": "Sprawdź i edytuj listę",
-      "lead": "Popraw dane przed planowaniem.",
+      "eyebrow": "2. Edytor graczy",
+      "title": "Popraw dane graczy przed planowaniem",
+      "lead": "W jednym oknie dodasz lub zmienisz gracza, poprawisz sojusze, marsz i rajd.",
       "steps": [
-        {
-          "title": "Lista",
-          "purpose": "CSV / XLSX / TXT",
-          "copy": "Sprawdź nick, sojusz, typ wojsk, tier, marsz, rajd, kapitana i zmiany."
-        },
-        {
-          "title": "Regiony",
-          "purpose": "Dom / Region 1 / Region 2",
-          "copy": "Włącz regiony i wybierz 1, 2, 3 lub 4 zmiany."
-        },
-        {
-          "title": "Ręcznie",
-          "purpose": "Dodaj gracza",
-          "copy": "Dodaj brakującego gracza lub popraw dane bez pełnego importu."
-        }
+            {
+                  "title": "Filtry",
+                  "purpose": "Wyszukiwanie i kontrola",
+                  "copy": "W tabeli graczy filtruj według roli, zmiany, statusu lub tieru. „Pokaż wszystkie dane” używaj dla dodatkowych kolumn."
+            },
+            {
+                  "title": "Edytor graczy",
+                  "purpose": "Gracze / Sojusze / Marsz / Rajd",
+                  "copy": "Otwórz Edytor graczy, aby dodać lub zmienić gracza, zmienić błędny tag sojuszu dla wszystkich graczy naraz oraz posortować i poprawić rozmiar marszu lub rajdu."
+            },
+            {
+                  "title": "Rozmieszczenie",
+                  "purpose": "Karty zmian",
+                  "copy": "Kolumna rozmieszczenia pokazuje, gdzie gracz stoi w każdej zmianie albo czy jest w rezerwie."
+            }
       ],
       "side": [
-        {
-          "title": "Gracz ręczny",
-          "text": "Add, edit or remove one player manually."
-        },
-        {
-          "title": "4 zmiany",
-          "text": "Up to four shifts are supported when enabled."
-        }
+            {
+                  "title": "Ręczne poprawki",
+                  "text": "Ręczne zmiany zostają po odświeżeniu strony. Ręczni gracze mogą zostać wyczyszczeni przy nowym imporcie Excela."
+            },
+            {
+                  "title": "Sojusze i liczby",
+                  "text": "Jeśli tag sojuszu, marsz lub rajd są wpisane błędnie, popraw je w Edytorze graczy przed planowaniem wież."
+            }
       ],
-      "noteTitle": "Check",
-      "noteText": "Wrong tier, march or shift makes autofill less accurate."
-    },
+      "noteTitle": "Sprawdź przed zastosowaniem",
+      "noteText": "Błędy w sojuszu, marszu, rajdzie, tierze lub zmianie pogarszają automatyczny podział."
+},
     "turrets": {
       "eyebrow": "3. Wieżyczki",
       "title": "Zbuduj plan wieżyczek",
