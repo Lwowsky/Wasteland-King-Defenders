@@ -6,6 +6,6 @@ node_modules/
 .dev.vars
 .env
 *.log
-README*
-package-lock.json
-package.json
+headers.txt
+response.txt
+payload.json

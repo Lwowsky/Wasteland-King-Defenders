@@ -55,6 +55,7 @@ async function handleContact(request, env) {
     return json({ ok: false, error: 'bad_json' }, 400);
   }
 
+  // Honeypot. If a bot fills this hidden field, pretend success and do not send anything.
   if (clean(body.website, 100)) {
     return json({ ok: true });
   }
@@ -65,14 +66,12 @@ async function handleContact(request, env) {
   const alliance = clean(body.alliance, 40);
   const email = clean(body.email, 160);
   const message = clean(body.message, MAX_MESSAGE_LENGTH);
-  const page = clean(body.page, 300);
   const language = clean(body.language, 40);
 
   if (!message) {
     return json({ ok: false, error: 'message_required' }, 400);
   }
 
-  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
   const country = request.cf?.country || 'unknown';
 
   const telegramText = [
@@ -84,8 +83,7 @@ async function handleContact(request, env) {
     `🌍 Регіон: ${region || 'Не вказано'}`,
     `📧 Email/контакт: ${normalizeTelegramContact(email)}`,
     `🌐 Мова сайту: ${language || 'Не вказано'}`,
-    `📍 Країна/IP: ${country} / ${ip}`,
-    page ? `🔗 Сторінка: ${page}` : '',
+    `📍 Країна: ${country}`,
     '',
     '💬 Повідомлення:',
     message,
