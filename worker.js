@@ -41,8 +41,9 @@ async function handleContact(request, env) {
     return json({ ok: false, error: 'method_not_allowed' }, 405);
   }
 
-  const token = env.TELEGRAM_BOT_TOKEN;
-  const chatId = env.TELEGRAM_CHAT_ID;
+  const token = clean(env.TELEGRAM_BOT_TOKEN, 300);
+  const chatId = clean(env.TELEGRAM_CHAT_ID, 120);
+
   if (!token || !chatId) {
     return json({ ok: false, error: 'telegram_not_configured' }, 500);
   }
@@ -54,7 +55,6 @@ async function handleContact(request, env) {
     return json({ ok: false, error: 'bad_json' }, 400);
   }
 
-  // Honeypot. If a bot fills this hidden field, pretend success and do not send anything.
   if (clean(body.website, 100)) {
     return json({ ok: true });
   }
@@ -102,7 +102,9 @@ async function handleContact(request, env) {
   });
 
   let telegramData = null;
-  try { telegramData = await telegramResponse.json(); } catch {}
+  try {
+    telegramData = await telegramResponse.json();
+  } catch {}
 
   if (!telegramResponse.ok || telegramData?.ok !== true) {
     return json({
