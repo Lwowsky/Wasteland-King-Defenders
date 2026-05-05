@@ -234,7 +234,7 @@ document.addEventListener("pns:i18n-applied",()=>{try{window.PNS?.syncBoardLangu
 
     const shiftCounts = document.getElementById('shiftCountsDisplay');
     if (shiftCounts) {
-      const firstRegionShiftCount = (typeof PNS.getTowerCalcShiftCount === 'function' ? PNS.getTowerCalcShiftCount() : getFirstRegionShiftCount());
+      const firstRegionShiftCount = getFirstRegionShiftCount();
       const activeShifts = Array.from({ length: Math.max(1, Math.min(4, Number(firstRegionShiftCount) || 2)) }, (_, index) => `shift${index + 1}`);
       const chips = [...activeShifts, 'both'];
       const statsGrid = shiftCounts.closest('.stats-grid--players');

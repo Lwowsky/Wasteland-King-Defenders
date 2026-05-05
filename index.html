@@ -223,7 +223,7 @@
     <div class="footer-orb footer-orb-right" aria-hidden="true"></div>
 
     <div class="footer-actions" aria-label="Footer actions">
-      <button class="footer-action footer-action-contact is-disabled" id="openContactModalBtn" type="button" aria-label="Написати нам" aria-disabled="true" disabled data-contact-disabled="1" data-i18n-aria-label="footer_contact_title" data-i18n-title="footer_contact_title" title="Написати нам">
+      <button class="footer-action footer-action-contact" id="openContactModalBtn" type="button" aria-label="Написати нам" data-i18n-aria-label="footer_contact_title" data-i18n-title="footer_contact_title" title="Написати нам">
         <span class="footer-action-icon" aria-hidden="true">
           <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="5" y="7" width="22" height="18" rx="5" stroke="currentColor" stroke-width="2.2"/>
@@ -546,11 +546,12 @@
       <section class="panel subpanel stack">
         <div class="contact-modal-kicker" data-i18n="contact_modal_kicker">Зв'язок</div>
         <h3 data-i18n="contact_intro_title">Напиши нам у зручному форматі</h3>
-        <p class="muted" data-i18n="contact_intro_text">Залиш своє ім'я, нік, регіон, альянс і коротко опиши питання або пропозицію. Форму підготовано під твій стиль сайту, підключення пошти можна додати пізніше.</p>
-        <div class="contact-modal-note" data-i18n="contact_form_note">Після натискання кнопки форма поки не надсилає лист автоматично — вона лише збирає дані в зручному вигляді для майбутнього підключення пошти.</div>
+        <p class="muted" data-i18n="contact_intro_text">Залиш своє ім'я, нік, регіон, альянс і коротко опиши питання або пропозицію. Форму підготовано під твій стиль сайту, повідомлення прийде нам у Telegram.</p>
+        <div class="contact-modal-note" data-i18n="contact_form_note">Після натискання кнопки повідомлення буде надіслано нам у Telegram.</div>
       </section>
 
       <form class="panel subpanel stack contact-modal-form" id="contactModalForm" novalidate>
+        <input autocomplete="off" class="contact-honeypot" id="contactWebsiteInput" name="website" tabindex="-1" type="text" aria-hidden="true" />
         <div class="contact-form-grid">
           <label>
             <span data-i18n="contact_name">Ім'я</span>
@@ -586,7 +587,7 @@
         <div aria-live="polite" class="contact-modal-status" id="contactModalStatus"></div>
 
         <div class="row gap wrap">
-          <button class="btn btn-primary" data-i18n="contact_submit" type="submit">Підготувати повідомлення</button>
+          <button class="btn btn-primary" data-i18n="contact_submit" type="submit">Надіслати</button>
           <button class="btn" data-contact-modal-close data-i18n="cancel" type="button">Скасувати</button>
         </div>
       </form>
@@ -1167,7 +1168,7 @@
 <template id="tpl-tower-picker-detail">
 <div class="stack tower-picker-scope" data-calc-inline-scope="{{scope}}">
 <h3>{{title}}</h3>
-<div class="picker-meta-row muted small"><span class="picker-meta-shift">{{shift_text}}: {{scope_label}}</span><label class="picker-only-captains"><input id="pickerOnlyCaptains" name="pickerOnlyCaptains" type="checkbox" {{only_captains_checked}} /> {{only_captains_text}}</label><label class="picker-only-captains"><input id="pickerMatchRegisteredShift" name="pickerMatchRegisteredShift" type="checkbox" {{match_shift_checked}} /> {{match_shift_text}}</label><label class="picker-only-captains"><input id="pickerNoMixTroops" name="pickerNoMixTroops" type="checkbox" {{no_mix_checked}} /> {{no_mix_text}}</label><label class="picker-only-captains"><input id="pickerNoCrossShiftDupes" name="pickerNoCrossShiftDupes" type="checkbox" {{use_both_checked}} /> {{use_both_text}}</label></div>
+<div class="picker-meta-row muted small"><label class="picker-only-captains"><input id="pickerOnlyCaptains" name="pickerOnlyCaptains" type="checkbox" {{only_captains_checked}} /> {{only_captains_text}}</label><label class="picker-only-captains"><input id="pickerMatchRegisteredShift" name="pickerMatchRegisteredShift" type="checkbox" {{match_shift_checked}} /> {{match_shift_text}}</label><label class="picker-only-captains"><input id="pickerNoMixTroops" name="pickerNoMixTroops" type="checkbox" {{no_mix_checked}} /> {{no_mix_text}}</label><label class="picker-only-captains"><input id="pickerNoCrossShiftDupes" name="pickerNoCrossShiftDupes" type="checkbox" {{use_both_checked}} /> {{use_both_text}}</label>{{unused_capture_home_html}}</div>
 <div class="picker-topline top-space"><select aria-label="{{captain_aria_label}}" class="input-like" id="towerPickerCaptainSelect" name="towerPickerCaptainSelect"><option value="">{{captain_placeholder_text}}</option>{{captain_options_html}}</select><div class="picker-actions"><button class="btn btn-sm" data-picker-set-captain="{{base_id}}" type="button">{{place_captain_text}}</button><button class="btn btn-sm" data-picker-autofill="{{base_id}}" type="button">{{auto_fill_text}}</button><button class="btn btn-sm" data-picker-clear-base="{{base_id}}" type="button">{{clear_turret_text}}</button></div></div>
 <div class="limit-grid limit-grid-compact top-space"><div><span>{{captain_march_text}}</span><strong>{{captain_march_value}}</strong></div><div><span>{{rally_size_text}}</span><strong>{{rally_size_value}}</strong></div><div><span>{{total_sum_text}}</span><strong>{{total_sum_value}}</strong></div><div><span>{{free_space_text}}</span><strong>{{free_space_value}}</strong></div></div>
 <details class="tower-collapsible top-space" id="towerPickerLimitsBlock"><summary>{{limits_by_tier_text}} ({{march_lower_text}})</summary><div class="inner stack"><div class="picker-limits-head"><label><span class="muted small">{{max_players_text}}</span><input id="pickerMaxHelpers" max="29" min="0" name="pickerMaxHelpers" type="number" value="{{max_helpers_value}}"/></label><button class="btn btn-sm" data-picker-save-rule="{{base_id}}" type="button">{{save_limits_text}}</button><button class="btn btn-sm" data-picker-recalc-rule="{{base_id}}" type="button">{{recalc_composition_text}}</button><button class="btn btn-sm" data-picker-reset-rule="{{base_id}}" type="button">{{reset_limits_text}}</button></div><div class="row gap wrap">{{tier_inputs_html}}</div><div class="muted small">{{flexible_tier_note_text}}</div></div></details>

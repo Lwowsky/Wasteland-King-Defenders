@@ -100,12 +100,13 @@
     const settings = readSettings();
     const enabled = enabledRegions(settings);
     const next = enabled.includes(region) ? region : (enabled[0] || 'region1');
+    // Store the active region before dispatching settings-change events.
+    // Some renderers read ACTIVE_REGION_KEY immediately when the event fires.
+    try { localStorage.setItem(ACTIVE_REGION_KEY, next); } catch {}
     settings.activeRegion = next;
     saveSettings(settings);
-    try { localStorage.setItem(ACTIVE_REGION_KEY, next); } catch {}
-    if (next !== previous) {
-      try { loadRegionShiftPlans(next); } catch {}
-    }
+    try { PNS.importRegionShiftSettings = settings; } catch {}
+    try { loadRegionShiftPlans(next); } catch {}
     return next;
   }
 
@@ -562,6 +563,14 @@
         translate:none;
         animation:none;
       }
+      #towerCalcModal .rs-region-right .btn.is-active,
+      #towerCalcModal .rs-region-right .btn.active,
+      #towerCalcModal .rs-region-right .btn[aria-selected="true"]{
+        color:#fff;
+        background:linear-gradient(135deg,rgba(88,119,255,.40),rgba(128,92,255,.34));
+        border-color:rgba(160,176,255,.60);
+        box-shadow:0 0 18px rgba(99,102,241,.20), inset 0 1px 0 rgba(255,255,255,.08);
+      }
 
       #towerCalcModal .rs-clear-wrap{
         flex:0 0 auto;
@@ -695,7 +704,7 @@
         display:flex;
         align-items:center;
         gap:12px;
-        flex-wrap:wrap;
+        flex-wrap:nowrap;
         min-height:28px;
         margin-top:2px;
       }
@@ -710,6 +719,7 @@
         height:auto;
         flex:0 0 auto;
       }
+
 
       #towerCalcModal .rs-carousel{
         display:flex;
@@ -1243,6 +1253,7 @@
       ['pickerMatchRegisteredShift', 'towerPickerMatchRegisteredShift', 'pns_picker_match_registered_shift'],
       ['pickerNoMixTroops', 'towerPickerNoMixTroops', 'pns_picker_no_mix_troops'],
       ['pickerNoCrossShiftDupes', 'towerPickerNoCrossShiftDupes', 'pns_picker_no_cross_shift_dupes'],
+      ['pickerUseUnusedCaptureHome', 'towerPickerUseUnusedCaptureHome', 'pns_home_use_unused_capture_v1'],
     ];
     map.forEach(([id, prop, key]) => {
       const input = scope?.querySelector?.(`#${id}`) || document.getElementById(id);
@@ -1269,6 +1280,7 @@
       ['pickerMatchRegisteredShift', 'towerPickerMatchRegisteredShift', 'pns_picker_match_registered_shift', true],
       ['pickerNoMixTroops', 'towerPickerNoMixTroops', 'pns_picker_no_mix_troops', true],
       ['pickerNoCrossShiftDupes', 'towerPickerNoCrossShiftDupes', 'pns_picker_no_cross_shift_dupes', false],
+      ['pickerUseUnusedCaptureHome', 'towerPickerUseUnusedCaptureHome', 'pns_home_use_unused_capture_v1', false],
     ];
     map.forEach(([id, prop, key, fallback]) => {
       const value = read(key, typeof state[prop] === 'boolean' ? state[prop] : fallback);
@@ -1329,19 +1341,21 @@
       }
 
       row.innerHTML = '';
-      const text = document.createElement('span');
-      text.className = 'picker-meta-shift';
-      text.textContent = `${t('shift', 'Зміна')}: ${shiftLabel(shift)}`;
-      row.appendChild(text);
 
       [
         ['pickerOnlyCaptains', t('only_captains', 'Тільки капітани'), 'pns_picker_only_captains', true],
         ['pickerMatchRegisteredShift', t('respect_player_shift', 'Враховувати зміну гравця'), 'pns_picker_match_registered_shift', true],
         ['pickerNoMixTroops', t('same_troop_only', 'Лише той самий тип військ'), 'pns_picker_no_mix_troops', true],
-        ['pickerNoCrossShiftDupes', t('use_both', 'Використовувати «Всі»'), 'pns_picker_no_cross_shift_dupes', false]
+        ['pickerNoCrossShiftDupes', t('use_both', 'Використовувати «Всі»'), 'pns_picker_no_cross_shift_dupes', false],
+        ['pickerUseUnusedCaptureHome', t('use_unused_capture_home', 'Вільних із захоплення'), 'pns_home_use_unused_capture_v1', false]
       ].forEach(([id, labelText, storageKey, fallback]) => {
+        if (id === 'pickerUseUnusedCaptureHome') {
+          let show = false;
+          try { show = activeRegion() === 'region1' && !!PNS.isAnyCaptureRegionEnabled?.(); } catch {}
+          if (!show) return;
+        }
         const label = document.createElement('label');
-        label.className = 'picker-only-captains';
+        label.className = id === 'pickerUseUnusedCaptureHome' ? 'picker-only-captains picker-unused-capture-home' : 'picker-only-captains';
         const input = document.createElement('input');
         input.type = 'checkbox';
         input.id = id;
@@ -1787,13 +1801,13 @@
 
 
   document.addEventListener('input', event => {
-    const pickerToggle = event.target.closest('#towerCalcModal #pickerOnlyCaptains, #towerCalcModal #pickerMatchRegisteredShift, #towerCalcModal #pickerNoMixTroops, #towerCalcModal #pickerNoCrossShiftDupes');
+    const pickerToggle = event.target.closest('#towerCalcModal #pickerOnlyCaptains, #towerCalcModal #pickerMatchRegisteredShift, #towerCalcModal #pickerNoMixTroops, #towerCalcModal #pickerNoCrossShiftDupes, #towerCalcModal #pickerUseUnusedCaptureHome');
     if (!pickerToggle) return;
     syncPickerToggles(pickerToggle.closest('.tower-picker-scope,.tower-picker-detail') || document.getElementById('towerCalcModal'));
   }, true);
 
   document.addEventListener('change', event => {
-    const pickerToggle = event.target.closest('#towerCalcModal #pickerOnlyCaptains, #towerCalcModal #pickerMatchRegisteredShift, #towerCalcModal #pickerNoMixTroops, #towerCalcModal #pickerNoCrossShiftDupes');
+    const pickerToggle = event.target.closest('#towerCalcModal #pickerOnlyCaptains, #towerCalcModal #pickerMatchRegisteredShift, #towerCalcModal #pickerNoMixTroops, #towerCalcModal #pickerNoCrossShiftDupes, #towerCalcModal #pickerUseUnusedCaptureHome');
     if (!pickerToggle) return;
     syncPickerToggles(pickerToggle.closest('.tower-picker-scope,.tower-picker-detail') || document.getElementById('towerCalcModal'));
     // Do not redraw the whole picker on checkbox change; that made the checkbox jump back.
@@ -1819,7 +1833,7 @@
 
 
   document.addEventListener('change', event => {
-    const toggle = event.target.closest('#towerCalcModal [data-rs-picker-toggle], #towerCalcModal #pickerOnlyCaptains, #towerCalcModal #pickerMatchRegisteredShift, #towerCalcModal #pickerNoMixTroops, #towerCalcModal #pickerNoCrossShiftDupes');
+    const toggle = event.target.closest('#towerCalcModal [data-rs-picker-toggle], #towerCalcModal #pickerOnlyCaptains, #towerCalcModal #pickerMatchRegisteredShift, #towerCalcModal #pickerNoMixTroops, #towerCalcModal #pickerNoCrossShiftDupes, #towerCalcModal #pickerUseUnusedCaptureHome');
     if (!toggle) return;
     const scope = toggle.closest('.tower-picker-scope,.tower-picker-detail') || document.getElementById('towerCalcModal');
     syncPickerToggles(scope);
@@ -1884,8 +1898,34 @@
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation?.();
-    setActiveRegion(region);
+    const nextRegion = setActiveRegion(region);
+    const modal = document.getElementById('towerCalcModal');
+    modal?.querySelectorAll?.('[data-rs-region-tab]').forEach(btn => {
+      const isActive = String(btn.getAttribute('data-rs-region-tab') || '') === nextRegion;
+      btn.classList.toggle('is-active', isActive);
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+    try { renderTowerTabs(); } catch {}
+    try { renderAdvancedHeader(); } catch {}
+    try { syncLooseRegionButtons(modal || document); } catch {}
+    try { window.calcRenderInlineTowerSettings?.(modal); } catch {}
+    try { window.calcRenderLiveFinalBoard?.(modal); } catch {}
+    try { window.calcUpdateShiftStatsUI?.(modal); } catch {}
+    try { computeTowerCalcResults?.(); } catch {}
+    try { ensurePickerControls(); } catch {}
     renderAll();
+    try { rerenderAfterNative(); } catch {}
+    [40, 120, 260, 500].forEach(ms => setTimeout(() => {
+      try { renderTowerTabs(); } catch {}
+      try { renderAdvancedHeader(); } catch {}
+      try { syncLooseRegionButtons(document.getElementById('towerCalcModal') || document); } catch {}
+      try { window.calcRenderInlineTowerSettings?.(document.getElementById('towerCalcModal')); } catch {}
+      try { window.calcRenderLiveFinalBoard?.(document.getElementById('towerCalcModal')); } catch {}
+      try { window.calcUpdateShiftStatsUI?.(document.getElementById('towerCalcModal')); } catch {}
+      try { renderAll(); } catch {}
+    }, ms));
   }, true);
 
 

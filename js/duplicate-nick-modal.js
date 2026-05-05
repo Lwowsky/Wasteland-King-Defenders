@@ -96,7 +96,7 @@
 
   function renderEmpty() {
     const shift = String(modal.dataset.duplicateShift || '');
-    if (shiftBadge) shiftBadge.textContent = normalizeShiftLabel(PNS.duplicateShiftLabel?.(shift) || shift || t('duplicate_records', 'Дублікати'));
+    if (shiftBadge) shiftBadge.textContent = PNS.getDuplicateNickBucketLabel?.(modal.dataset.duplicateNick || '', shift) || normalizeShiftLabel(PNS.duplicateShiftLabel?.(shift) || shift || t('duplicate_records', 'Дублікати'));
     if (meta) meta.textContent = t('duplicate_resolved', 'Дублікати вже прибрано');
     if (subtitle) subtitle.textContent = t('duplicate_modal_subtitle', 'Подивись усі однакові реєстрації, залиш одного гравця й прибери зайві дублікати.');
     if (hint) hint.textContent = t('duplicate_modal_empty', 'Для цього ніку в поточній зміні вже залишився тільки один запис.');
@@ -119,7 +119,7 @@
       ? currentKeep
       : String(players[0]?.id || '');
 
-    if (shiftBadge) shiftBadge.textContent = normalizeShiftLabel(PNS.duplicateShiftLabel?.(shift) || shift || t('duplicate_records', 'Дублікати'));
+    if (shiftBadge) shiftBadge.textContent = PNS.getDuplicateNickBucketLabel?.(modal.dataset.duplicateNick || '', shift) || normalizeShiftLabel(PNS.duplicateShiftLabel?.(shift) || shift || t('duplicate_records', 'Дублікати'));
     if (meta) meta.textContent = `${players[0]?.name || ''} · ${players.length}×`;
     if (subtitle) subtitle.textContent = t('duplicate_modal_subtitle', 'Подивись усі однакові реєстрації, залиш одного гравця й прибери зайві дублікати.');
     if (hint) hint.textContent = t('duplicate_modal_hint', 'Вибери один запис, який треба залишити. Решту можна видалити одним кліком.');
