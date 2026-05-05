@@ -27,12 +27,46 @@
     return shift === 'both' ? ['shift1', 'shift2'] : (shift ? [shift] : []);
   }
 
+  function isBothOnlyBucket(bucket = []) {
+    return Array.isArray(bucket) && bucket.length > 0 && bucket.every(player => {
+      const shift = normalizeShift(player?.shift || player?.shiftLabel || player?.registeredShift || 'both');
+      return shift === 'both';
+    });
+  }
+
+  function duplicateShiftLabelForBucket(shift, bucket = []) {
+    return isBothOnlyBucket(bucket) ? duplicateShiftLabel('both') : duplicateShiftLabel(shift);
+  }
+
+  function realRegisteredShift(player) {
+    return normalizeShift(player?.shift || player?.shiftLabel || player?.registeredShift || 'both');
+  }
+
+  function describeDuplicateBucket(bucket = []) {
+    const players = Array.isArray(bucket) ? bucket : [];
+    if (!players.length) return t('duplicate_records', 'Дублікати');
+    const seen = new Set();
+    players.forEach(player => {
+      const shift = realRegisteredShift(player);
+      if (shift === 'shift1' || shift === 'shift2' || shift === 'both') seen.add(shift);
+    });
+    const ordered = ['shift1', 'shift2', 'both'].filter(shift => seen.has(shift));
+    if (!ordered.length) return t('duplicate_records', 'Дублікати');
+    if (ordered.length === 1) return duplicateShiftLabel(ordered[0]);
+    return ordered.map(duplicateShiftLabel).join(' + ');
+  }
+
   function buildDuplicateIndex(players = state.players || []) {
     const shifts = { shift1: new Map(), shift2: new Map() };
     const duplicates = { shift1: new Map(), shift2: new Map() };
+    const all = new Map();
+    const allDuplicates = new Map();
     (Array.isArray(players) ? players : []).forEach(player => {
       const key = normalizeNick(player?.name || '');
       if (!key) return;
+      const allBucket = all.get(key) || [];
+      allBucket.push(player);
+      all.set(key, allBucket);
       effectiveShifts(player).forEach(shift => {
         if (!shifts[shift]) return;
         const bucket = shifts[shift].get(key) || [];
@@ -45,7 +79,10 @@
         if ((bucket?.length || 0) > 1) duplicates[shift].set(key, bucket.slice());
       });
     });
-    return { shifts, duplicates };
+    all.forEach((bucket, key) => {
+      if ((bucket?.length || 0) > 1) allDuplicates.set(key, bucket.slice());
+    });
+    return { shifts, duplicates, all, allDuplicates };
   }
 
   function getDuplicateNickBucket(nameOrKey, shift = '') {
@@ -54,18 +91,20 @@
     if (!key) return [];
     const index = buildDuplicateIndex();
     if (shiftKey === 'shift1' || shiftKey === 'shift2') {
-      return (index.duplicates[shiftKey]?.get(key) || []).slice();
+      return (index.duplicates[shiftKey]?.get(key) || index.allDuplicates?.get(key) || []).slice();
     }
-    return Array.from(new Map(
-      DUPLICATE_SHIFT_KEYS.flatMap(item => (index.duplicates[item]?.get(key) || []).map(player => [String(player?.id || ''), player]))
-    ).values());
+    return (index.allDuplicates?.get(key) || []).slice();
+  }
+
+  function getDuplicateNickBucketLabel(nameOrKey, shift = '') {
+    return describeDuplicateBucket(getDuplicateNickBucket(nameOrKey, shift));
   }
 
   function getPlayerDuplicateShifts(player, duplicateIndex = null) {
     const key = normalizeNick(player?.name || '');
     if (!key) return [];
     const index = duplicateIndex || buildDuplicateIndex();
-    return DUPLICATE_SHIFT_KEYS.filter(shift => (index.duplicates[shift]?.get(key)?.length || 0) > 1);
+    return (index.allDuplicates?.get(key)?.length || 0) > 1 ? ['all'] : [];
   }
 
   function resolveAssignmentShift(base, player) {
@@ -114,7 +153,11 @@
       ? t('shift1', 'Зміна 1')
       : shift === 'shift2'
         ? t('shift2', 'Зміна 2')
-        : String(shift || '');
+        : shift === 'both'
+          ? t('both', 'Обидві')
+          : (shift === 'all' || shift === 'global')
+            ? t('duplicate_records', 'Дублікати')
+            : String(shift || '');
   }
 
   function getRegistrationValue(player) {
@@ -276,18 +319,16 @@
       badge.dataset.duplicateNick = nickKey;
       badge.dataset.duplicateShift = dupShifts[0] || '';
       nameCell.appendChild(badge);
-      const label = dupShifts.map(duplicateShiftLabel).join(' / ');
+      const label = getDuplicateNickBucketLabel(nickKey, 'all');
       row.title = `${t('duplicate_nick_title', 'Нік повторюється')}: ${label}`;
     });
 
     const banner = ensureDuplicateBanner();
     if (!banner) return;
     const dupEntries = [];
-    DUPLICATE_SHIFT_KEYS.forEach(shift => {
-      index.duplicates[shift].forEach((bucket, key) => {
-        if (!bucket?.length) return;
-        dupEntries.push({ shift, key, name: String(bucket[0]?.name || ''), count: bucket.length });
-      });
+    index.allDuplicates?.forEach((bucket, key) => {
+      if (!bucket?.length) return;
+      dupEntries.push({ shift: 'all', key, name: String(bucket[0]?.name || ''), count: bucket.length, displayLabel: describeDuplicateBucket(bucket) });
     });
 
     if (!dupEntries.length) {
@@ -310,7 +351,7 @@
       .slice(0, 24)
       .map(item => `
         <button type="button" class="players-duplicate-chip" data-duplicate-open="1" data-duplicate-nick="${escapeHtml(item.key)}" data-duplicate-shift="${escapeHtml(item.shift)}">
-          ${escapeHtml(item.name)} · ${escapeHtml(duplicateShiftLabel(item.shift))} · ${item.count}×
+          ${escapeHtml(item.name)} · ${escapeHtml(item.displayLabel || duplicateShiftLabel(item.shift))} · ${item.count}×
         </button>
       `)
       .join('');
@@ -326,6 +367,7 @@
   PNS.normalizeDuplicateNick = normalizeNick;
   PNS.getDuplicateNicknameIndex = buildDuplicateIndex;
   PNS.getDuplicateNickBucket = getDuplicateNickBucket;
+  PNS.getDuplicateNickBucketLabel = getDuplicateNickBucketLabel;
   PNS.getPlayerDuplicateShifts = getPlayerDuplicateShifts;
   PNS.getAssignedDuplicateHit = getAssignedDuplicateHit;
   PNS.getPlayerRegistrationInfo = getPlayerRegistrationInfo;
@@ -359,6 +401,23 @@
 
   function applyDuplicateUi() {
     return applyDuplicateUiCore();
+  }
+
+  let duplicateUiObserver = null;
+  function installDuplicateUiObserver() {
+    if (duplicateUiObserver) return;
+    const table = document.getElementById('playersDataTable');
+    const target = table?.querySelector?.('tbody') || table;
+    if (!target || typeof MutationObserver !== 'function') return;
+    duplicateUiObserver = new MutationObserver(() => scheduleApplyDuplicateUi(30));
+    try { duplicateUiObserver.observe(target, { childList: true, subtree: true }); } catch { duplicateUiObserver = null; }
+  }
+
+  function scheduleDuplicateUiWarmup() {
+    installDuplicateUiObserver();
+    [0, 80, 250, 700, 1500].forEach(delay => {
+      try { window.setTimeout(() => scheduleApplyDuplicateUi(0), delay); } catch {}
+    });
   }
 
   PNS.applyDuplicateNicknameUi = applyDuplicateUi;
@@ -405,7 +464,11 @@
   }
 
   document.addEventListener('players-table-rendered', () => scheduleApplyDuplicateUi(20));
+  document.addEventListener('players-table-data-changed', () => scheduleDuplicateUiWarmup());
+  document.addEventListener('pns:players-deleted-filter-applied', () => scheduleDuplicateUiWarmup());
   document.addEventListener('pns:assignment-changed', () => scheduleApplyDuplicateUi(40));
   document.addEventListener('pns:i18n-changed', () => scheduleApplyDuplicateUi(20));
-  document.addEventListener('DOMContentLoaded', () => scheduleApplyDuplicateUi(0));
+  document.addEventListener('DOMContentLoaded', () => scheduleDuplicateUiWarmup());
+  window.addEventListener('load', () => scheduleDuplicateUiWarmup(), { once: true });
+  scheduleDuplicateUiWarmup();
 })();

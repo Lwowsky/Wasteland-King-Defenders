@@ -144,22 +144,66 @@
     return ids;
   }
 
+  function collectRegionPlanIds(region, shiftKey = ''){
+    const target = String(region || '').toLowerCase();
+    if (!target) return new Set();
+    const store = readJson(REGION_PLANS_KEY, {}) || {};
+    const shift = normalizeShift(shiftKey, '');
+    if (shift) return collectPlanPlayerIds(store?.[target]?.[shift] || null);
+    const ids = new Set();
+    ['shift1','shift2','shift3','shift4'].forEach(item => {
+      collectPlanPlayerIds(store?.[target]?.[item] || null).forEach(id => ids.add(id));
+    });
+    return ids;
+  }
+
+  function usedInRegion(playerId, region, shiftKey = ''){
+    const id = String(playerId || '');
+    if (!id) return false;
+    return collectRegionPlanIds(region, shiftKey).has(id);
+  }
+
+  function usedInAnyCaptureRegion(playerId){
+    const id = String(playerId || '');
+    if (!id) return false;
+    return Array.from(CAPTURE_REGIONS).some(region => usedInRegion(id, region));
+  }
+
+  function usedInOtherRegion(playerId, region = activeRegion()){
+    const id = String(playerId || '');
+    const target = String(region || activeRegion()).toLowerCase();
+    if (!id || !REGIONS_SAFE.includes(target)) return false;
+    return REGIONS_SAFE.filter(other => other !== target).some(other => usedInRegion(id, other));
+  }
+
   function usedInOtherCaptureRegion(playerId, shiftKey, region = activeRegion()){
     const id = String(playerId || '');
     const shift = normalizeShift(shiftKey);
     if (!id || !shift || !isCaptureRegion(region)) return false;
-    const store = readJson(REGION_PLANS_KEY, {}) || {};
     const otherRegions = Array.from(CAPTURE_REGIONS).filter(other => other !== region);
-    return otherRegions.some(other => collectPlanPlayerIds(store?.[other]?.[shift] || null).has(id));
+    return otherRegions.some(other => usedInRegion(id, other, shift));
+  }
+
+  const REGIONS_SAFE = ['region1','region2','region3'];
+  const HOME_USE_UNUSED_CAPTURE_KEY = 'pns_home_use_unused_capture_v1';
+
+  function homeCanUseUnusedCapturePlayers(){
+    try { return localStorage.getItem(HOME_USE_UNUSED_CAPTURE_KEY) === '1'; } catch { return false; }
   }
 
   function canAutoUsePlayerInRegion(player, region, shiftKey){
     const targetRegion = String(region || activeRegion()).toLowerCase();
     const captureEnabled = isAnyCaptureRegionEnabled();
+    const isCapturePlayer = playerAllowsCapture(player);
     if (!isCaptureRegion(targetRegion)) {
-      return !(captureEnabled && playerAllowsCapture(player));
+      if (!captureEnabled || !isCapturePlayer) return true;
+      // Default: reserve capture-eligible players for Capture. Optional override lets Home use only those
+      // capture players that are not already used in any capture-region plan.
+      return homeCanUseUnusedCapturePlayers() && !usedInAnyCaptureRegion(player?.id);
     }
-    if (!playerAllowsCapture(player)) return false;
+    if (!isCapturePlayer) return false;
+    // Capture regions may not auto-take a player already placed in Home or another capture region.
+    if (usedInOtherRegion(player?.id, targetRegion)) return false;
     const shift = normalizeShift(shiftKey);
     if (shift && usedInOtherCaptureRegion(player?.id, shift, targetRegion)) return false;
     return true;
@@ -178,6 +222,9 @@
     shouldIgnoreRegisteredShiftForRegion,
     shouldIgnoreRegisteredShiftForActiveRegion: () => shouldIgnoreRegisteredShiftForRegion(activeRegion()),
     isPlayerUsedInOtherCaptureRegion: usedInOtherCaptureRegion,
+    isPlayerUsedInOtherRegion: usedInOtherRegion,
+    isPlayerUsedInAnyCaptureRegion: usedInAnyCaptureRegion,
+    canHomeUseUnusedCapturePlayers: homeCanUseUnusedCapturePlayers,
     getCaptureRegionRawValue: captureRawValue,
   });
 })();

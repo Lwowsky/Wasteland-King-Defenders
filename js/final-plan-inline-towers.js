@@ -27,6 +27,27 @@
     }
   }
 
+  function getActiveRegionForInline(){
+    try {
+      const settings = JSON.parse(localStorage.getItem('pns_import_region_shift_settings_v1') || 'null') || {};
+      const region = localStorage.getItem('pns_tower_calc_active_region_v1') || settings.activeRegion || 'region1';
+      return ['region1','region2','region3'].includes(region) ? region : 'region1';
+    } catch {
+      return 'region1';
+    }
+  }
+
+  function shouldShowUnusedCaptureHome(){
+    try { return getActiveRegionForInline() === 'region1' && !!PNS.isAnyCaptureRegionEnabled?.(); } catch { return false; }
+  }
+
+  function renderUnusedCaptureHomeToggle(){
+    if (!shouldShowUnusedCaptureHome()) return '';
+    let checked = false;
+    try { checked = localStorage.getItem('pns_home_use_unused_capture_v1') === '1'; } catch {}
+    return `<label class="picker-only-captains picker-unused-capture-home"><input id="pickerUseUnusedCaptureHome" name="pickerUseUnusedCaptureHome" type="checkbox" data-rs-picker-toggle="pns_home_use_unused_capture_v1" ${checked ? 'checked' : ''} /> ${escapeHtml(tr('use_unused_capture_home', 'Вільних із захоплення'))}</label>`;
+  }
+
   function roleLabel(role, short = false) {
     try {
       return typeof PNS.roleLabel === 'function' ? PNS.roleLabel(role, short) : String(role || '');
@@ -461,6 +482,7 @@
       no_mix_text: escapeHtml(tr('same_troop_only', 'Лише той самий тип військ')),
       use_both_checked: state.towerPickerNoCrossShiftDupes === true ? 'checked' : '',
       use_both_text: escapeHtml(tr('use_both', 'Використовувати «Всі»')),
+      unused_capture_home_html: renderUnusedCaptureHomeToggle(),
       captain_aria_label: escapeHtml(tr('choose_captain', 'Вибрати капітана…')),
       captain_placeholder_text: escapeHtml(captain ? tr('change_captain', 'Змінити капітана…') : tr('choose_captain', 'Вибрати капітана…')),
       captain_options_html: captainOptionsHtml,

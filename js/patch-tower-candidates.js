@@ -79,6 +79,9 @@
           const playerShift = getPlayerShift(player);
           if(playerShift !== 'both' && playerShift !== targetShift) return false;
         }
+        try{
+          if (typeof PNS.canAutoUsePlayerInActiveRegion === 'function' && !PNS.canAutoUsePlayerInActiveRegion(player, targetShift, { kind:'captain', baseId:base?.id || baseId })) return false;
+        }catch{}
         if(validate){
           try{
             const err = validate(player, base, 'captain');

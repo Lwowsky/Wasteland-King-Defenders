@@ -78,3 +78,14 @@
     grid-template-columns:1fr;
   }
 }
+.contact-honeypot{
+  position:absolute !important;
+  left:-9999px !important;
+  width:1px !important;
+  height:1px !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+.contact-modal-status[data-status-kind="success"]{color:#86efac;}
+.contact-modal-status[data-status-kind="error"]{color:#fecaca;}
+.contact-modal-status[data-status-kind="pending"]{color:#bfdbfe;}
