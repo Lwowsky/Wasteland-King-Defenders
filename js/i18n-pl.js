@@ -772,7 +772,7 @@
   "contact_message": "Wiadomość",
   "contact_placeholder_name": "Twoje imię",
   "contact_placeholder_nickname": "Twój nick w grze",
-  "contact_placeholder_region": "Na przykład: EU / UA / 694",
+  "contact_placeholder_region": "Na przykład: 987",
   "contact_placeholder_alliance": "Tag sojuszu",
   "contact_placeholder_email": "name@example.com",
   "contact_placeholder_message": "Napisz, co chcesz poprawić lub o co chcesz zapytać",

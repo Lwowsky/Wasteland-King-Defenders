@@ -773,7 +773,7 @@
   "contact_message": "メッセージ",
   "contact_placeholder_name": "あなたの名前",
   "contact_placeholder_nickname": "ゲーム内ニックネーム",
-  "contact_placeholder_region": "例: EU / UA / 694",
+  "contact_placeholder_region": "例: 987",
   "contact_placeholder_alliance": "同盟タグ",
   "contact_placeholder_email": "name@example.com",
   "contact_placeholder_message": "改善したいことや質問したいことを書いてください",

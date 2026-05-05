@@ -440,7 +440,7 @@
   "contact_message": "留言",
   "contact_placeholder_name": "你的姓名",
   "contact_placeholder_nickname": "你的游戏昵称",
-  "contact_placeholder_region": "例如：EU / UA / 694",
+  "contact_placeholder_region": "例如：987",
   "contact_placeholder_alliance": "联盟标签",
   "contact_placeholder_email": "name@example.com",
   "contact_placeholder_message": "写下你想改进或想咨询的内容",

@@ -775,7 +775,7 @@
   "contact_message": "Повідомлення",
   "contact_placeholder_name": "Твоє ім'я",
   "contact_placeholder_nickname": "Нік у грі",
-  "contact_placeholder_region": "Наприклад: EU / UA / 694",
+  "contact_placeholder_region": "Наприклад: 987",
   "contact_placeholder_alliance": "Тег альянсу",
   "contact_placeholder_email": "name@example.com",
   "contact_placeholder_message": "Напиши, що хочеш покращити або про що хочеш запитати",

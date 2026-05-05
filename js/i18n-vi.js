@@ -573,7 +573,7 @@
   "contact_message": "Tin nhắn",
   "contact_placeholder_name": "Tên của bạn",
   "contact_placeholder_nickname": "Nickname trong game của bạn",
-  "contact_placeholder_region": "Ví dụ: EU / UA / 694",
+  "contact_placeholder_region": "Ví dụ: 987",
   "contact_placeholder_alliance": "Tag liên minh",
   "contact_placeholder_email": "name@example.com",
   "contact_placeholder_message": "Hãy viết điều bạn muốn cải thiện hoặc muốn hỏi",

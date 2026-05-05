@@ -575,7 +575,7 @@
   "contact_message": "메시지",
   "contact_placeholder_name": "이름을 입력하세요",
   "contact_placeholder_nickname": "게임 내 닉네임",
-  "contact_placeholder_region": "예: EU / UA / 694",
+  "contact_placeholder_region": "예: 987",
   "contact_placeholder_alliance": "연맹 태그",
   "contact_placeholder_email": "name@example.com",
   "contact_placeholder_message": "개선하고 싶은 점이나 문의 내용을 적어 주세요",

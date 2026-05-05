@@ -772,7 +772,7 @@
   "contact_message": "Nachricht",
   "contact_placeholder_name": "Dein Name",
   "contact_placeholder_nickname": "Dein Ingame-Nickname",
-  "contact_placeholder_region": "Zum Beispiel: EU / UA / 694",
+  "contact_placeholder_region": "Zum Beispiel: 987",
   "contact_placeholder_alliance": "Allianz-Tag",
   "contact_placeholder_email": "name@example.com",
   "contact_placeholder_message": "Schreibe, was du verbessern möchtest oder worüber du fragen willst",

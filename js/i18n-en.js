@@ -775,7 +775,7 @@
   "contact_message": "Message",
   "contact_placeholder_name": "Your name",
   "contact_placeholder_nickname": "Your in-game nickname",
-  "contact_placeholder_region": "For example: EU / UA / 694",
+  "contact_placeholder_region": "For example: 987",
   "contact_placeholder_alliance": "Alliance tag",
   "contact_placeholder_email": "name@example.com",
   "contact_placeholder_message": "Write what you want to improve or ask about",

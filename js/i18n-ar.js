@@ -772,7 +772,7 @@
   "contact_message": "الرسالة",
   "contact_placeholder_name": "اسمك",
   "contact_placeholder_nickname": "لقبك داخل اللعبة",
-  "contact_placeholder_region": "على سبيل المثال: EU / UA / 694",
+  "contact_placeholder_region": "على سبيل المثال: 987",
   "contact_placeholder_alliance": "وسم التحالف",
   "contact_placeholder_email": "name@example.com",
   "contact_placeholder_message": "اكتب ما تريد تحسينه أو السؤال عنه",
