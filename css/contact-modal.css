@@ -43,6 +43,11 @@
 .contact-form-full{
   grid-column:1 / -1;
 }
+#contactModal input,
+#contactModal textarea{
+  box-sizing:border-box;
+  max-width:100%;
+}
 #contactModal textarea{
   width:100%;
   min-height:160px;
@@ -72,7 +77,119 @@
   }
 }
 @media (max-width: 640px){
+  #contactModal{
+    overflow:hidden;
+  }
+  #contactModal .modal-backdrop{
+    background:#040810d9;
+  }
+  #contactModal .contact-modal-card{
+    width:calc(100vw - 14px);
+    max-width:calc(100vw - 14px);
+    height:calc(100dvh - 14px);
+    max-height:calc(100dvh - 14px);
+    margin:7px auto;
+    border-radius:18px;
+    overflow:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  @supports not (height: 100dvh){
+    #contactModal .contact-modal-card{
+      height:calc(100vh - 14px);
+      max-height:calc(100vh - 14px);
+    }
+  }
+  #contactModal .modal-head{
+    padding:10px 12px;
+    align-items:center;
+  }
+  #contactModal .modal-head h2{
+    font-size:22px;
+    line-height:1.1;
+  }
+  #contactModal .modal-head p{
+    font-size:14px;
+    line-height:1.3;
+  }
+  #contactModal .modal-head .btn-icon{
+    width:44px;
+    height:44px;
+    flex:0 0 44px;
+  }
+  #contactModal .contact-modal-grid{
+    display:block;
+    padding:10px 12px 14px;
+  }
+  #contactModal .contact-modal-grid > .panel,
+  #contactModal .contact-modal-form{
+    padding:12px;
+    border-radius:16px;
+    min-width:0;
+  }
+  #contactModal .contact-modal-grid > .panel:first-child{
+    margin-bottom:10px;
+  }
+  #contactModal .contact-modal-kicker{
+    display:none;
+  }
+  #contactModal .contact-modal-grid > .panel:first-child h3{
+    display:none;
+  }
+  #contactModal .contact-modal-grid > .panel:first-child p{
+    margin:0;
+    font-size:14px;
+    line-height:1.45;
+  }
+  #contactModal .contact-modal-note{
+    margin-top:8px;
+    padding:9px 10px;
+    font-size:12px;
+    line-height:1.35;
+  }
   .contact-form-grid{
     grid-template-columns:1fr;
+    gap:8px;
+  }
+  #contactModal label span{
+    font-size:13px;
+    line-height:1.2;
+  }
+  #contactModal input,
+  #contactModal textarea{
+    width:100%;
+    min-width:0;
+    font-size:16px;
+  }
+  #contactModal input{
+    min-height:46px;
+    padding:10px 12px;
+  }
+  #contactModal textarea{
+    min-height:118px;
+    max-height:34dvh;
+    padding:10px 12px;
+  }
+  #contactModal .contact-modal-status{
+    padding:9px 10px;
+    font-size:13px;
+  }
+  #contactModal .row.gap.wrap{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  #contactModal .row.gap.wrap .btn{
+    width:100%;
+    min-height:46px;
+    justify-content:center;
+  }
+}
+@media (max-width: 380px){
+  #contactModal .contact-modal-grid > .panel:first-child p{
+    display:none;
+  }
+  #contactModal textarea{
+    min-height:100px;
   }
 }
