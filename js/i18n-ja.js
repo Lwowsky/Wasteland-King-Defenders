@@ -194,8 +194,6 @@
   "sort_by_tier": "ティアで並び替え",
   "sort_by_rally": "ラリー規模で並び替え",
   "march_size": "行軍規模",
-  "bases_title": "タレット設定と情報",
-  "bases_subtitle": "タップしてタレットとテックハブの設定を開きます。",
   "settings_moved_notice": "主要な設定はすべて最初の列にまとめられています。",
   "hide_others": "他を隠す",
   "right_turret": "右側のタレット",

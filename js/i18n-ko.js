@@ -194,8 +194,6 @@
   "sort_by_tier": "티어순 정렬",
   "sort_by_rally": "랠리 규모순 정렬",
   "march_size": "행군 규모",
-  "bases_title": "포탑 설정 및 정보",
-  "bases_subtitle": "탭하여 포탑과 기술 허브 설정을 엽니다.",
   "settings_moved_notice": "모든 주요 설정은 첫 번째 열에 모여 있습니다.",
   "hide_others": "나머지 숨기기",
   "right_turret": "오른쪽 포탑",

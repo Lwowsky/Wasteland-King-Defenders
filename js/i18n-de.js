@@ -193,8 +193,6 @@
   "sort_by_tier": "Nach Tier sortieren",
   "sort_by_rally": "Nach Rally-Größe sortieren",
   "march_size": "Marschgröße",
-  "bases_title": "Turmeinstellungen und Info",
-  "bases_subtitle": "Tippe, um Turm- und Tech-Hub-Einstellungen zu öffnen.",
   "settings_moved_notice": "Alle Haupteinstellungen sind in der ersten Spalte gruppiert.",
   "hide_others": "Andere ausblenden",
   "right_turret": "Turm rechts",

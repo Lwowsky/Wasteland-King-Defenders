@@ -773,6 +773,25 @@ body.modal-open {
   font-size: 12px;
   color: #ffffffd1;
 }
+.tpe-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.tpe-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.tpe-field > span {
+  font-size: 12px;
+  color: #ffffffd1;
+}
+.tpe-field > .tpe-input-light,
+.tpe-field > .tpe-select-light {
+  width: 100%;
+  min-width: 0;
+}
 html.i18n-pending body {
   opacity: 0;
 }

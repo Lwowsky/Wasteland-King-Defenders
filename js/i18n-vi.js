@@ -193,8 +193,6 @@
   "sort_by_tier": "Sắp theo cấp",
   "sort_by_rally": "Sắp theo kích thước rally",
   "march_size": "Kích thước hành quân",
-  "bases_title": "Cài đặt và thông tin tháp pháo",
-  "bases_subtitle": "Chạm để mở cài đặt tháp pháo và trung tâm kỹ thuật.",
   "settings_moved_notice": "Tất cả cài đặt chính được nhóm trong cột đầu tiên.",
   "hide_others": "Ẩn các mục khác",
   "right_turret": "Tháp pháo bên phải",

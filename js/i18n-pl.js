@@ -193,8 +193,6 @@
   "sort_by_tier": "Sortuj według tieru",
   "sort_by_rally": "Sortuj według rozmiaru rajdu",
   "march_size": "Rozmiar marszu",
-  "bases_title": "Ustawienia i informacje o wieżach",
-  "bases_subtitle": "Kliknij, aby otworzyć ustawienia wieży i centrum technicznego.",
   "settings_moved_notice": "Wszystkie główne ustawienia są zgrupowane w pierwszej kolumnie.",
   "hide_others": "Ukryj pozostałe",
   "right_turret": "Wieża po prawej",

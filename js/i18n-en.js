@@ -196,8 +196,6 @@
   "sort_by_tier": "Sort by tier",
   "sort_by_rally": "Sort by rally size",
   "march_size": "March size",
-  "bases_title": "Turret settings and info",
-  "bases_subtitle": "Tap to open turret and tech hub settings.",
   "settings_moved_notice": "All main settings are grouped in the first column.",
   "hide_others": "Hide others",
   "right_turret": "Turret on the right",

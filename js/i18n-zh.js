@@ -168,8 +168,6 @@
   "sort_by_tier": "按等级排序",
   "sort_by_rally": "按集结排序",
   "march_size": "行军规模",
-  "bases_title": "炮塔",
-  "bases_subtitle": "点击打开炮塔和技术中心设置。",
   "settings_moved_notice": "设置已移至单独面板。",
   "hide_others": "隐藏其他",
   "right_turret": "右侧炮塔",

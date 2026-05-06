@@ -71,16 +71,36 @@
 </div>
 <div class="muted small" id="tpePlacementHint"></div>
 </div>
+<div class="tpe-fields-grid">
+<label class="tpe-field">
+<span data-i18n="nickname">{{nickname_placeholder}}</span>
 <input aria-label="{{nickname_placeholder}}" class="tpe-input-light" id="tpeName" name="tpeName" placeholder="{{nickname_placeholder}}"/>
+</label>
+<label class="tpe-field">
+<span data-i18n="ally">{{ally_placeholder}}</span>
 <input aria-label="{{ally_placeholder}}" class="tpe-input-light" id="tpeAlly" name="tpeAlly" placeholder="{{ally_placeholder}}"/>
+</label>
+<label class="tpe-field">
+<span data-i18n="tier">{{tier_label}}</span>
+<input aria-label="T14" class="tpe-input-light" id="tpeTier" name="tpeTier" placeholder="T14"/>
+</label>
+<label class="tpe-field">
+<span data-i18n="troop_type">{{troop_type_label}}</span>
 <select aria-label="tpeRole" class="tpe-select-light" id="tpeRole" name="tpeRole">
 <option value="Shooter">{{shooter_label}}</option>
 <option value="Fighter">{{fighter_label}}</option>
 <option value="Rider">{{rider_label}}</option>
 </select>
-<input aria-label="T14" class="tpe-input-light" id="tpeTier" name="tpeTier" placeholder="T14"/>
+</label>
+<label class="tpe-field">
+<span data-i18n="march">{{march_label}}</span>
 <input aria-label="{{march_placeholder}}" class="tpe-input-light" id="tpeMarch" min="0" name="tpeMarch" placeholder="{{march_placeholder}}" type="number"/>
+</label>
+<label class="tpe-field">
+<span data-i18n="rally_size">{{rally_label}}</span>
 <input aria-label="{{rally_placeholder}}" class="tpe-input-light" id="tpeRally" min="0" name="tpeRally" placeholder="{{rally_placeholder}}" type="number"/>
+</label>
+</div>
 <div class="muted small" id="tpeCapHint"></div>
 <div class="row gap wrap">
 <button class="btn btn-primary" id="tpeSaveBtn" type="button">{{save_label}}</button>

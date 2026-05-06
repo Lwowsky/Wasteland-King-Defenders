@@ -52,6 +52,7 @@
 
   #towerPlayerEditModal .tpe-modal-grid,
   #towerPlayerEditModal .placement-editor-grid,
+  #towerPlayerEditModal .tpe-fields-grid,
   #towerPlayerEditModal .row.gap.wrap {
     grid-template-columns: minmax(0, 1fr);
     overflow: visible;
