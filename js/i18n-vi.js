@@ -645,6 +645,7 @@
   "tab_players": "Người chơi",
   "tab_turrets": "Tháp pháo",
   "tab_final_plan": "Kế hoạch cuối",
+  "tab_media": "Media",
   "tab_about": "Tổng quan",
   "open_label": "Mở hướng dẫn nhanh",
   "close_label": "Thu gọn hướng dẫn nhanh",
@@ -831,6 +832,32 @@
       ],
       "noteTitle": "Ghi chú",
       "noteText": "Kế hoạch được lưu cục bộ cho đến khi bạn xuất hoặc chia sẻ."
+    } ,
+    "media": {
+      "eyebrow": "Video",
+      "title": "Video hướng dẫn",
+      "lead": "Ba video ngắn: từ lần mở đầu tiên đến kế hoạch cuối cùng. Video đầu tiên đã được thêm, các video còn lại có thể thay sau.",
+      "comingSoon": "Sắp có",
+      "videos": [
+        {
+          "embed": "https://www.youtube.com/embed/YRzMlLhmqGw",
+          "kicker": "Bắt đầu tại đây",
+          "title": "1. Bắt đầu nhanh + nhập dữ liệu",
+          "copy": "Hiển thị luồng chính: mở trang, nhập danh sách và chuẩn bị dữ liệu."
+        },
+        {
+          "badge": "Sắp có",
+          "kicker": "Sẽ thêm sau",
+          "title": "2. Trình sửa người chơi",
+          "copy": "Cách sửa người chơi, liên minh, hành quân, rally, tier, ca và bản trùng."
+        },
+        {
+          "badge": "Sắp có",
+          "kicker": "Sẽ thêm sau",
+          "title": "3. Tháp pháo + kế hoạch cuối",
+          "copy": "Cách đặt đội trưởng, điền tháp pháo, kiểm tra dự bị và xuất PNG/TXT."
+        }
+      ]
     }
   }
 },

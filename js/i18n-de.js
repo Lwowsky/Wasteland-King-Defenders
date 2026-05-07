@@ -553,6 +553,7 @@
   "tab_players": "Spieler",
   "tab_turrets": "Türme",
   "tab_final_plan": "Finaler Plan",
+  "tab_media": "Medien",
   "tab_about": "Übersicht",
   "open_label": "Kurzanleitung öffnen",
   "close_label": "Kurzanleitung schließen",
@@ -739,6 +740,32 @@
       ],
       "noteTitle": "Hinweis",
       "noteText": "Alles bleibt lokal im Browser, bis du exportierst oder teilst."
+    } ,
+    "media": {
+      "eyebrow": "Video",
+      "title": "Videoanleitungen",
+      "lead": "Drei kurze Videos: vom ersten Start bis zum fertigen Plan. Das erste Video ist bereits hinzugefügt, die anderen können später ersetzt werden.",
+      "comingSoon": "Demnächst",
+      "videos": [
+        {
+          "embed": "https://www.youtube.com/embed/YRzMlLhmqGw",
+          "kicker": "Hier starten",
+          "title": "1. Schnellstart + Import",
+          "copy": "Zeigt den Ablauf: Seite öffnen, Liste importieren und Daten vorbereiten."
+        },
+        {
+          "badge": "Demnächst",
+          "kicker": "Kommt später",
+          "title": "2. Spieler-Editor",
+          "copy": "Spieler, Allianzen, Marsch, Rallye, Tier, Schicht und Duplikate korrigieren."
+        },
+        {
+          "badge": "Demnächst",
+          "kicker": "Kommt später",
+          "title": "3. Türme + Endplan",
+          "copy": "Kapitäne setzen, Türme füllen, Reserve prüfen und PNG/TXT exportieren."
+        }
+      ]
     }
   }
 },

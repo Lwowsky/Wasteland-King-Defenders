@@ -48,6 +48,22 @@ function m8(player,rowIndex){
   player.captainReady=!!player.captainReady;
   return player;
 }
+
+function renderOptionalCellValue(key,value){
+  const raw=String(value??'').trim();
+  if(!raw)return '';
+  const normalizedTier=(typeof e.normalizeTierText==='function'?e.normalizeTierText(raw):raw.toUpperCase());
+  if(/^T(?:[1-9]|1[0-4])$/i.test(String(normalizedTier||''))){
+    return typeof e.renderTierBadge==='function'?e.renderTierBadge(normalizedTier):e.escapeHtml(normalizedTier);
+  }
+  const roleKey=(typeof e.normalizeRole==='function'?e.normalizeRole(raw):String(raw||'')).toLowerCase();
+  if(['fighter','rider','shooter'].includes(roleKey)){
+    const roleClass=roleKey;
+    const roleText=typeof e.roleLabel==='function'?e.roleLabel(roleKey,true):raw;
+    return e.renderHtmlTemplate('tpl-player-role-tag',{role_class:roleClass,role_text:e.escapeHtml(roleText)});
+  }
+  return e.escapeHtml(raw);
+}
 function m9(player){
   const customDefs="function"==typeof e.getCustomOptionalDefs?e.getCustomOptionalDefs():[];
   const row=document.createElement("tr");
@@ -60,7 +76,7 @@ function m9(player){
       cell_class:s(key),
       col_key:e.escapeHtml(key),
       field:e.escapeHtml(key),
-      value:e.escapeHtml(String(value||""))
+      value:renderOptionalCellValue(key,value)
     });
   }).join("");
   const roleHtml=(function(role){

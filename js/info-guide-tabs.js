@@ -165,10 +165,44 @@
       </div>`;
   }
 
-  function renderPanel(name, panel) {
+  function renderMedia(panel, root) {
+    const videos = panel.videos || [];
+    const activeIndex = Math.max(0, Math.min(videos.length - 1, Number(root?.dataset.mediaTab || 0) || 0));
+    const activeVideo = videos[activeIndex] || videos[0] || {};
+    const tabs = videos.map((video, index) => {
+      const active = index === activeIndex;
+      return `<button class="igt-media-tab ${active ? 'is-active' : ''}" type="button" data-igt-media-tab="${index}" aria-selected="${active}">
+        <span>${escapeHtml(video.shortTitle || video.title || '')}</span>
+        ${video.embed ? '' : `<em>${escapeHtml(video.badge || panel.comingSoon || '')}</em>`}
+      </button>`;
+    }).join('');
+    return `
+      <div class="igt-panel-head">
+        <div class="igt-eyebrow">${escapeHtml(panel.eyebrow)}</div>
+        <h2 class="igt-panel-title">${escapeHtml(panel.title)}</h2>
+        <p class="igt-panel-lead">${escapeHtml(panel.lead)}</p>
+      </div>
+      <div class="igt-media-shell">
+        <div class="igt-media-tabs" role="tablist">${tabs}</div>
+        <article class="igt-media-detail ${activeVideo.embed ? 'has-video' : 'is-coming-soon'}">
+          <div class="igt-media-frame">${activeVideo.embed
+            ? `<iframe src="${escapeHtml(activeVideo.embed)}" title="${escapeHtml(activeVideo.title)}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`
+            : `<div class="igt-media-placeholder"><span>${escapeHtml(activeVideo.badge || panel.comingSoon || '')}</span></div>`}
+          </div>
+          <div class="igt-media-body">
+            <div class="igt-media-kicker">${escapeHtml(activeVideo.kicker || '')}</div>
+            <h3>${escapeHtml(activeVideo.title || '')}</h3>
+            <p>${escapeHtml(activeVideo.copy || '')}</p>
+          </div>
+        </article>
+      </div>`;
+  }
+
+  function renderPanel(name, panel, root) {
     if (name === 'turrets') return renderTurrets(panel);
     if (name === 'final-plan') return renderFinal(panel);
     if (name === 'about') return renderAbout(panel);
+    if (name === 'media') return renderMedia(panel, root);
     if (name === 'players') return renderPlayers(panel);
     return renderImport(panel);
   }
@@ -209,13 +243,14 @@
         else if (key === 'turrets') label.textContent = copy.tab_turrets;
         else if (key === 'final-plan') label.textContent = copy.tab_final_plan;
         else if (key === 'about') label.textContent = copy.tab_about;
+        else if (key === 'media') label.textContent = copy.tab_media;
       }
     });
 
     Object.keys(copy.panels || {}).forEach((name) => {
       const panelNode = root.querySelector(`[data-panel="${name}"]`);
       if (!panelNode) return;
-      panelNode.innerHTML = renderPanel(name, copy.panels[name]);
+      panelNode.innerHTML = renderPanel(name, copy.panels[name], root);
       const visible = name === activeTab;
       panelNode.hidden = !visible;
       panelNode.classList.toggle('is-active', visible);
@@ -249,6 +284,16 @@
         if (root.dataset.expanded !== 'true') root.dataset.expanded = 'true';
         render(root);
       });
+    });
+
+    root.addEventListener('click', (event) => {
+      const mediaTab = event.target?.closest?.('[data-igt-media-tab]');
+      if (!mediaTab || !root.contains(mediaTab)) return;
+      event.preventDefault();
+      root.dataset.mediaTab = String(mediaTab.dataset.igtMediaTab || '0');
+      root.dataset.activeTab = 'media';
+      if (root.dataset.expanded !== 'true') root.dataset.expanded = 'true';
+      render(root);
     });
 
     render(root);

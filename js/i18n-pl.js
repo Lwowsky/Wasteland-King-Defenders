@@ -553,6 +553,7 @@
   "tab_players": "Gracze",
   "tab_turrets": "Wieżyczki",
   "tab_final_plan": "Plan końcowy",
+  "tab_media": "Media",
   "tab_about": "Przegląd",
   "open_label": "Otwórz krótki przewodnik",
   "close_label": "Zwiń krótki przewodnik",
@@ -739,6 +740,32 @@
       ],
       "noteTitle": "Uwaga",
       "noteText": "Planowanie zostaje lokalnie, dopóki go nie wyeksportujesz albo nie udostępnisz."
+    } ,
+    "media": {
+      "eyebrow": "Wideo",
+      "title": "Instrukcje wideo",
+      "lead": "Trzy krótkie filmy: od pierwszego uruchomienia do gotowego planu. Pierwszy film jest już dodany, pozostałe można podmienić później.",
+      "comingSoon": "Wkrótce",
+      "videos": [
+        {
+          "embed": "https://www.youtube.com/embed/YRzMlLhmqGw",
+          "kicker": "Zacznij tutaj",
+          "title": "1. Szybki start + import",
+          "copy": "Pokazuje główny proces: otwarcie strony, import listy i przygotowanie danych."
+        },
+        {
+          "badge": "Wkrótce",
+          "kicker": "Będzie dodane",
+          "title": "2. Edytor graczy",
+          "copy": "Jak poprawiać graczy, sojusze, marsz, rally, tier, zmianę i duplikaty."
+        },
+        {
+          "badge": "Wkrótce",
+          "kicker": "Będzie dodane",
+          "title": "3. Wieżyczki + plan końcowy",
+          "copy": "Jak ustawić kapitanów, wypełnić wieżyczki, sprawdzić rezerwę i wyeksportować PNG/TXT."
+        }
+      ]
     }
   }
 },

@@ -649,6 +649,7 @@
   "tab_players": "玩家",
   "tab_turrets": "炮塔",
   "tab_final_plan": "最终计划",
+  "tab_media": "媒体",
   "tab_about": "概览",
   "open_label": "打开快速指南",
   "close_label": "收起快速指南",
@@ -835,6 +836,32 @@
       ],
       "noteTitle": "说明",
       "noteText": "计划会保存在本地，直到你导出或分享。"
+    } ,
+    "media": {
+      "eyebrow": "视频",
+      "title": "视频教程",
+      "lead": "三个短视频：从第一次打开网站到完成最终计划。第一个视频已添加，其他视频之后可以替换。",
+      "comingSoon": "即将推出",
+      "videos": [
+        {
+          "embed": "https://www.youtube.com/embed/YRzMlLhmqGw",
+          "kicker": "从这里开始",
+          "title": "1. 快速开始 + 导入",
+          "copy": "展示主要流程：打开网站、导入名单并准备数据。"
+        },
+        {
+          "badge": "即将推出",
+          "kicker": "稍后添加",
+          "title": "2. 玩家编辑器",
+          "copy": "如何修正玩家、联盟、行军、集结、等级、班次和重复项。"
+        },
+        {
+          "badge": "即将推出",
+          "kicker": "稍后添加",
+          "title": "3. 炮塔 + 最终计划",
+          "copy": "如何设置队长、填充炮塔、检查预备队并导出 PNG/TXT。"
+        }
+      ]
     }
   }
 },

@@ -647,6 +647,7 @@
   "tab_players": "플레이어",
   "tab_turrets": "포탑",
   "tab_final_plan": "최종 계획",
+  "tab_media": "미디어",
   "tab_about": "개요",
   "open_label": "빠른 가이드 열기",
   "close_label": "빠른 가이드 접기",
@@ -833,6 +834,32 @@
       ],
       "noteTitle": "참고",
       "noteText": "내보내거나 공유하기 전까지 계획은 브라우저에 로컬로 저장됩니다."
+    } ,
+    "media": {
+      "eyebrow": "영상",
+      "title": "영상 가이드",
+      "lead": "처음 실행부터 최종 계획까지 3개의 짧은 영상으로 설명합니다. 첫 영상은 이미 추가되었고 나머지는 나중에 교체할 수 있습니다.",
+      "comingSoon": "곧 추가",
+      "videos": [
+        {
+          "embed": "https://www.youtube.com/embed/YRzMlLhmqGw",
+          "kicker": "여기서 시작",
+          "title": "1. 빠른 시작 + 가져오기",
+          "copy": "사이트 열기, 명단 가져오기, 데이터 준비 과정을 보여줍니다."
+        },
+        {
+          "badge": "곧 추가",
+          "kicker": "나중에 추가",
+          "title": "2. 플레이어 편집기",
+          "copy": "플레이어, 동맹, 행군, 랠리, 티어, 교대, 중복을 수정하는 방법."
+        },
+        {
+          "badge": "곧 추가",
+          "kicker": "나중에 추가",
+          "title": "3. 포탑 + 최종 계획",
+          "copy": "대장 배치, 포탑 채우기, 예비 확인, PNG/TXT 내보내기 방법."
+        }
+      ]
     }
   }
 },

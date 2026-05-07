@@ -556,6 +556,7 @@
   "tab_players": "Players",
   "tab_turrets": "Turrets",
   "tab_final_plan": "Final plan",
+  "tab_media": "Media",
   "tab_about": "Overview",
   "open_label": "Open the quick guide",
   "close_label": "Close the quick guide",
@@ -742,6 +743,32 @@
       ],
       "noteTitle": "Note",
       "noteText": "All planning is local in your browser unless you export or share the result."
+    } ,
+    "media": {
+      "eyebrow": "Video",
+      "title": "Video tutorials",
+      "lead": "Three short videos: from the first launch to the final plan. The first video is already added; the others can be replaced later.",
+      "comingSoon": "Coming soon",
+      "videos": [
+        {
+          "embed": "https://www.youtube.com/embed/YRzMlLhmqGw",
+          "kicker": "Start here",
+          "title": "1. Quick start + import",
+          "copy": "Shows the main flow: open the site, import the roster, and prepare the data."
+        },
+        {
+          "badge": "Coming soon",
+          "kicker": "Coming later",
+          "title": "2. Player editor",
+          "copy": "How to fix players, alliances, march, rally, tier, shift and duplicates."
+        },
+        {
+          "badge": "Coming soon",
+          "kicker": "Coming later",
+          "title": "3. Turrets + final plan",
+          "copy": "How to assign captains, fill turrets, check reserve and export PNG/TXT."
+        }
+      ]
     }
   }
 },
