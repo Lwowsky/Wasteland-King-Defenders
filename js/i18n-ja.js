@@ -745,26 +745,32 @@
     "media": {
       "eyebrow": "動画",
       "title": "動画ガイド",
-      "lead": "初回起動から最終プランまでを3本の短い動画で説明します。1本目は追加済みで、残りは後で差し替えできます。",
-      "comingSoon": "準備中",
+      "lead": "4本の短い動画です。クイックスタート、インポートとプレイヤー表、重複/プレイヤー編集、タレットと最終計画を説明します。",
+      "comingSoon": "近日公開",
       "videos": [
         {
           "embed": "https://www.youtube.com/embed/YRzMlLhmqGw",
           "kicker": "ここから開始",
           "title": "1. クイックスタート + インポート",
-          "copy": "サイトを開き、リストをインポートしてデータを準備する流れを説明します。"
+          "copy": "サイトを開き、名簿をインポートして、データを準備する基本の流れを説明します。"
         },
         {
-          "badge": "準備中",
-          "kicker": "後で追加",
-          "title": "2. プレイヤー編集",
-          "copy": "プレイヤー、同盟、行軍、ラリー、Tier、シフト、重複の修正方法。"
+          "embed": "https://www.youtube.com/embed/nZry69HYoEo",
+          "kicker": "インポート",
+          "title": "2. インポートとプレイヤー表",
+          "copy": "名簿を読み込み、列を確認し、インポートを適用して、プレイヤー表で結果を見る方法です。"
         },
         {
-          "badge": "準備中",
-          "kicker": "後で追加",
-          "title": "3. タレット + 最終プラン",
-          "copy": "キャプテン配置、タレット補充、予備確認、PNG/TXT出力の方法。"
+          "embed": "https://www.youtube.com/embed/ZMzpJZygYJI",
+          "kicker": "エディター",
+          "title": "3. 重複とプレイヤー編集",
+          "copy": "重複したニックネームを見つけ、正しい記録を残し、不要な記録を削除して、プレイヤーを修正する方法です。"
+        },
+        {
+          "embed": "https://www.youtube.com/embed/JFVfcQQOGkg",
+          "kicker": "最終計画",
+          "title": "4. タレット、PNG、TXT",
+          "copy": "タレットのリスト作成、最終計画の確認、PNG画像の保存、TXT計画の出力方法です。"
         }
       ]
     }

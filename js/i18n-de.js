@@ -744,26 +744,32 @@
     "media": {
       "eyebrow": "Video",
       "title": "Videoanleitungen",
-      "lead": "Drei kurze Videos: vom ersten Start bis zum fertigen Plan. Das erste Video ist bereits hinzugefügt, die anderen können später ersetzt werden.",
-      "comingSoon": "Demnächst",
+      "lead": "Vier kurze Videos: Schnellstart, Import mit Spielertabelle, Duplikate/Spielereditor und Türme mit finalem Plan.",
+      "comingSoon": "Bald verfügbar",
       "videos": [
         {
           "embed": "https://www.youtube.com/embed/YRzMlLhmqGw",
           "kicker": "Hier starten",
           "title": "1. Schnellstart + Import",
-          "copy": "Zeigt den Ablauf: Seite öffnen, Liste importieren und Daten vorbereiten."
+          "copy": "Zeigt den Hauptablauf: Seite öffnen, Spielerliste importieren und Daten vorbereiten."
         },
         {
-          "badge": "Demnächst",
-          "kicker": "Kommt später",
-          "title": "2. Spieler-Editor",
-          "copy": "Spieler, Allianzen, Marsch, Rallye, Tier, Schicht und Duplikate korrigieren."
+          "embed": "https://www.youtube.com/embed/nZry69HYoEo",
+          "kicker": "Import",
+          "title": "2. Import und Spielertabelle",
+          "copy": "So lädst du die Liste, prüfst die Spalten, wendest den Import an und kontrollierst das Ergebnis in der Spielertabelle."
         },
         {
-          "badge": "Demnächst",
-          "kicker": "Kommt später",
-          "title": "3. Türme + Endplan",
-          "copy": "Kapitäne setzen, Türme füllen, Reserve prüfen und PNG/TXT exportieren."
+          "embed": "https://www.youtube.com/embed/ZMzpJZygYJI",
+          "kicker": "Editor",
+          "title": "3. Duplikate und Spielereditor",
+          "copy": "So findest du doppelte Namen, behältst den richtigen Eintrag, entfernst überflüssige Daten und korrigierst Spieler im Editor."
+        },
+        {
+          "embed": "https://www.youtube.com/embed/JFVfcQQOGkg",
+          "kicker": "Finaler Plan",
+          "title": "4. Türme, PNG und TXT",
+          "copy": "So erstellst du Turmlisten, prüfst den finalen Plan, lädst ein PNG-Bild herunter und exportierst den TXT-Plan."
         }
       ]
     }

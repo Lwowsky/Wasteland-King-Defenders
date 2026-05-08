@@ -747,7 +747,7 @@
     "media": {
       "eyebrow": "Video",
       "title": "Video tutorials",
-      "lead": "Three short videos: from the first launch to the final plan. The first video is already added; the others can be replaced later.",
+      "lead": "Four short videos: quick start, import with the player table, duplicates/player editor, and turrets with the final plan.",
       "comingSoon": "Coming soon",
       "videos": [
         {
@@ -757,16 +757,22 @@
           "copy": "Shows the main flow: open the site, import the roster, and prepare the data."
         },
         {
-          "badge": "Coming soon",
-          "kicker": "Coming later",
-          "title": "2. Player editor",
-          "copy": "How to fix players, alliances, march, rally, tier, shift and duplicates."
+          "embed": "https://www.youtube.com/embed/nZry69HYoEo",
+          "kicker": "Import",
+          "title": "2. Import and player table",
+          "copy": "How to load the roster, check columns, apply the import, and review the result in the player table."
         },
         {
-          "badge": "Coming soon",
-          "kicker": "Coming later",
-          "title": "3. Turrets + final plan",
-          "copy": "How to assign captains, fill turrets, check reserve and export PNG/TXT."
+          "embed": "https://www.youtube.com/embed/ZMzpJZygYJI",
+          "kicker": "Editor",
+          "title": "3. Duplicates and player editor",
+          "copy": "How to find duplicate nicknames, keep the correct record, remove extra entries, and fix players in the editor."
+        },
+        {
+          "embed": "https://www.youtube.com/embed/JFVfcQQOGkg",
+          "kicker": "Final plan",
+          "title": "4. Turrets, PNG and TXT",
+          "copy": "How to build turret lists, check the final plan, download the PNG image, and export the TXT plan."
         }
       ]
     }

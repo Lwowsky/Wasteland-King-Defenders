@@ -744,26 +744,32 @@
     "media": {
       "eyebrow": "Wideo",
       "title": "Instrukcje wideo",
-      "lead": "Trzy krótkie filmy: od pierwszego uruchomienia do gotowego planu. Pierwszy film jest już dodany, pozostałe można podmienić później.",
+      "lead": "Cztery krótkie filmy: szybki start, import z tabelą graczy, duplikaty/edytor oraz wieże z planem końcowym.",
       "comingSoon": "Wkrótce",
       "videos": [
         {
           "embed": "https://www.youtube.com/embed/YRzMlLhmqGw",
           "kicker": "Zacznij tutaj",
           "title": "1. Szybki start + import",
-          "copy": "Pokazuje główny proces: otwarcie strony, import listy i przygotowanie danych."
+          "copy": "Pokazuje główny przepływ: otwarcie strony, import listy i przygotowanie danych."
         },
         {
-          "badge": "Wkrótce",
-          "kicker": "Będzie dodane",
-          "title": "2. Edytor graczy",
-          "copy": "Jak poprawiać graczy, sojusze, marsz, rally, tier, zmianę i duplikaty."
+          "embed": "https://www.youtube.com/embed/nZry69HYoEo",
+          "kicker": "Import",
+          "title": "2. Import i tabela graczy",
+          "copy": "Jak wczytać listę, sprawdzić kolumny, zastosować import i obejrzeć wynik w tabeli graczy."
         },
         {
-          "badge": "Wkrótce",
-          "kicker": "Będzie dodane",
-          "title": "3. Wieżyczki + plan końcowy",
-          "copy": "Jak ustawić kapitanów, wypełnić wieżyczki, sprawdzić rezerwę i wyeksportować PNG/TXT."
+          "embed": "https://www.youtube.com/embed/ZMzpJZygYJI",
+          "kicker": "Edytor",
+          "title": "3. Duplikaty i edytor graczy",
+          "copy": "Jak znaleźć powtarzające się nicki, zostawić poprawny wpis, usunąć nadmiar i poprawić graczy w edytorze."
+        },
+        {
+          "embed": "https://www.youtube.com/embed/JFVfcQQOGkg",
+          "kicker": "Plan końcowy",
+          "title": "4. Wieże, PNG i TXT",
+          "copy": "Jak tworzyć listy w wieżach, sprawdzić plan końcowy, pobrać obraz PNG i wyeksportować plan TXT."
         }
       ]
     }

@@ -840,7 +840,7 @@
     "media": {
       "eyebrow": "视频",
       "title": "视频教程",
-      "lead": "三个短视频：从第一次打开网站到完成最终计划。第一个视频已添加，其他视频之后可以替换。",
+      "lead": "四个短视频：快速开始、导入与玩家表、重复项/玩家编辑器，以及炮塔与最终计划。",
       "comingSoon": "即将推出",
       "videos": [
         {
@@ -850,16 +850,22 @@
           "copy": "展示主要流程：打开网站、导入名单并准备数据。"
         },
         {
-          "badge": "即将推出",
-          "kicker": "稍后添加",
-          "title": "2. 玩家编辑器",
-          "copy": "如何修正玩家、联盟、行军、集结、等级、班次和重复项。"
+          "embed": "https://www.youtube.com/embed/nZry69HYoEo",
+          "kicker": "导入",
+          "title": "2. 导入和玩家表",
+          "copy": "如何加载名单、检查列、应用导入，并在玩家表中查看结果。"
         },
         {
-          "badge": "即将推出",
-          "kicker": "稍后添加",
-          "title": "3. 炮塔 + 最终计划",
-          "copy": "如何设置队长、填充炮塔、检查预备队并导出 PNG/TXT。"
+          "embed": "https://www.youtube.com/embed/ZMzpJZygYJI",
+          "kicker": "编辑器",
+          "title": "3. 重复项和玩家编辑器",
+          "copy": "如何找到重复昵称，保留正确记录，删除多余记录，并在编辑器中修正玩家。"
+        },
+        {
+          "embed": "https://www.youtube.com/embed/JFVfcQQOGkg",
+          "kicker": "最终计划",
+          "title": "4. 炮塔、PNG 和 TXT",
+          "copy": "如何制作炮塔名单、检查最终计划、下载 PNG 图片并导出 TXT 计划。"
         }
       ]
     }

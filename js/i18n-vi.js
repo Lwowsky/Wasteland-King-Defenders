@@ -836,26 +836,32 @@
     "media": {
       "eyebrow": "Video",
       "title": "Video hướng dẫn",
-      "lead": "Ba video ngắn: từ lần mở đầu tiên đến kế hoạch cuối cùng. Video đầu tiên đã được thêm, các video còn lại có thể thay sau.",
+      "lead": "Bốn video ngắn: bắt đầu nhanh, nhập danh sách và bảng người chơi, trùng lặp/trình sửa người chơi, tháp pháo và kế hoạch cuối.",
       "comingSoon": "Sắp có",
       "videos": [
         {
           "embed": "https://www.youtube.com/embed/YRzMlLhmqGw",
           "kicker": "Bắt đầu tại đây",
-          "title": "1. Bắt đầu nhanh + nhập dữ liệu",
+          "title": "1. Bắt đầu nhanh + nhập",
           "copy": "Hiển thị luồng chính: mở trang, nhập danh sách và chuẩn bị dữ liệu."
         },
         {
-          "badge": "Sắp có",
-          "kicker": "Sẽ thêm sau",
-          "title": "2. Trình sửa người chơi",
-          "copy": "Cách sửa người chơi, liên minh, hành quân, rally, tier, ca và bản trùng."
+          "embed": "https://www.youtube.com/embed/nZry69HYoEo",
+          "kicker": "Nhập dữ liệu",
+          "title": "2. Nhập và bảng người chơi",
+          "copy": "Cách tải danh sách, kiểm tra cột, áp dụng nhập dữ liệu và xem kết quả trong bảng người chơi."
         },
         {
-          "badge": "Sắp có",
-          "kicker": "Sẽ thêm sau",
-          "title": "3. Tháp pháo + kế hoạch cuối",
-          "copy": "Cách đặt đội trưởng, điền tháp pháo, kiểm tra dự bị và xuất PNG/TXT."
+          "embed": "https://www.youtube.com/embed/ZMzpJZygYJI",
+          "kicker": "Trình sửa",
+          "title": "3. Trùng lặp và trình sửa người chơi",
+          "copy": "Cách tìm nickname trùng, giữ bản ghi đúng, xoá mục thừa và sửa người chơi trong trình chỉnh sửa."
+        },
+        {
+          "embed": "https://www.youtube.com/embed/JFVfcQQOGkg",
+          "kicker": "Kế hoạch cuối",
+          "title": "4. Tháp pháo, PNG và TXT",
+          "copy": "Cách tạo danh sách trong tháp pháo, kiểm tra kế hoạch cuối, tải ảnh PNG và xuất kế hoạch TXT."
         }
       ]
     }

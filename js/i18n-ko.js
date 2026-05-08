@@ -836,28 +836,34 @@
       "noteText": "내보내거나 공유하기 전까지 계획은 브라우저에 로컬로 저장됩니다."
     } ,
     "media": {
-      "eyebrow": "영상",
-      "title": "영상 가이드",
-      "lead": "처음 실행부터 최종 계획까지 3개의 짧은 영상으로 설명합니다. 첫 영상은 이미 추가되었고 나머지는 나중에 교체할 수 있습니다.",
-      "comingSoon": "곧 추가",
+      "eyebrow": "동영상",
+      "title": "동영상 가이드",
+      "lead": "짧은 동영상 4개: 빠른 시작, 가져오기와 플레이어 표, 중복/플레이어 편집기, 포탑과 최종 계획입니다.",
+      "comingSoon": "곧 공개",
       "videos": [
         {
           "embed": "https://www.youtube.com/embed/YRzMlLhmqGw",
           "kicker": "여기서 시작",
           "title": "1. 빠른 시작 + 가져오기",
-          "copy": "사이트 열기, 명단 가져오기, 데이터 준비 과정을 보여줍니다."
+          "copy": "사이트를 열고 명단을 가져온 뒤 데이터를 준비하는 기본 흐름을 보여줍니다."
         },
         {
-          "badge": "곧 추가",
-          "kicker": "나중에 추가",
-          "title": "2. 플레이어 편집기",
-          "copy": "플레이어, 동맹, 행군, 랠리, 티어, 교대, 중복을 수정하는 방법."
+          "embed": "https://www.youtube.com/embed/nZry69HYoEo",
+          "kicker": "가져오기",
+          "title": "2. 가져오기와 플레이어 표",
+          "copy": "명단을 불러오고, 열을 확인하고, 가져오기를 적용한 뒤 플레이어 표에서 결과를 확인하는 방법입니다."
         },
         {
-          "badge": "곧 추가",
-          "kicker": "나중에 추가",
-          "title": "3. 포탑 + 최종 계획",
-          "copy": "대장 배치, 포탑 채우기, 예비 확인, PNG/TXT 내보내기 방법."
+          "embed": "https://www.youtube.com/embed/ZMzpJZygYJI",
+          "kicker": "편집기",
+          "title": "3. 중복과 플레이어 편집기",
+          "copy": "중복 닉네임을 찾고, 올바른 기록을 남기고, 불필요한 항목을 삭제하며 플레이어를 수정하는 방법입니다."
+        },
+        {
+          "embed": "https://www.youtube.com/embed/JFVfcQQOGkg",
+          "kicker": "최종 계획",
+          "title": "4. 포탑, PNG, TXT",
+          "copy": "포탑 목록을 만들고, 최종 계획을 확인하고, PNG 이미지와 TXT 계획을 내보내는 방법입니다."
         }
       ]
     }
