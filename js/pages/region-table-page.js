@@ -11,8 +11,10 @@ import {
   troopLabel,
   formatUserDate,
   formatUtcAndLocal,
+  getRegionLifecycle,
+  getRegionActorName,
   listRegionAlliances
-} from '../services/region-db.js?v=39';
+} from '../services/region-db.js?v=42';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -21,6 +23,24 @@ const tv = (key, fallback = '', vars = {}) => {
   Object.entries(vars).forEach(([name, value]) => { text = text.replaceAll(`{${name}}`, String(value)); });
   return text;
 };
+
+function setDynamicText(selector, text) {
+  const el = typeof selector === 'string' ? $(selector) : selector;
+  if (!el) return;
+  el.removeAttribute('data-i18n');
+  el.textContent = text;
+}
+
+function setDynamicHtml(selector, html) {
+  const el = typeof selector === 'string' ? $(selector) : selector;
+  if (!el) return;
+  el.removeAttribute('data-i18n');
+  el.innerHTML = html;
+}
+function infoLine(labelKey, fallbackLabel, value, valueClass = '') {
+  const classAttr = valueClass ? ` class="${valueClass}"` : '';
+  return `<span class="region-info-label">${esc(t(labelKey, fallbackLabel))}</span> <span${classAttr}>${esc(value || '—')}</span>`;
+}
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
 let currentUser = null;
 let currentProfile = null;
@@ -85,25 +105,30 @@ function buildRegionFormLink(region) {
 }
 
 function openedByText(settings = currentSettings || {}) {
-  const direct = String(settings.openedByName || settings.openedByEmail || '').trim();
+  const life = getRegionLifecycle(settings || {});
+  const direct = String(life.openedByName || life.openedByEmail || settings.openedByName || settings.openedByEmail || '').trim();
+  const uid = String(life.openedByUid || settings.openedByUid || settings.updatedBy || '').trim();
+  const email = String(life.openedByEmail || settings.openedByEmail || settings.updatedByEmail || '').trim().toLowerCase();
+  const sameUser = Boolean(currentUser && ((uid && currentUser.uid === uid) || (email && String(currentUser.email || '').toLowerCase() === email)));
+  const profileName = currentUser ? getRegionActorName(currentProfile || {}, currentRegion, currentUser) : '';
+  if (sameUser && profileName) return profileName;
+  const displayName = String(currentUser?.displayName || currentProfile?.displayName || '').trim().toLowerCase();
+  if (profileName && displayName && direct.toLowerCase() === displayName) return profileName;
+  if (direct && !direct.includes('@')) return direct;
+  if ((settings.open || settings.enabled) && profileName && (!direct || direct.includes('@'))) return profileName;
   if (direct) return direct;
-  const uid = String(settings.openedByUid || settings.updatedBy || '').trim();
-  if (uid && currentUser?.uid === uid) {
-    const game = getGameProfile(currentProfile || {});
-    return String(currentUser.displayName || currentProfile?.displayName || game.nickname || currentUser.email || uid).trim();
-  }
   return uid || t('regionSettings.unknownStarter', 'невідомо');
 }
 
 function openedAtText(settings = currentSettings || {}) {
-  const ms = Number(settings.openedAtMs) || Number(settings.openAtMs) || 0;
+  const life = getRegionLifecycle(settings || {});
+  const ms = Number(life.openedAtMs) || Number(life.openAtMs) || Number(life.updatedAtMs) || 0;
   return ms ? formatUtcAndLocal(ms) : t('regionSettings.notStartedYet', 'ще не запускали');
 }
 
 function eventStartText(settings = currentSettings || {}) {
-  const closeMs = Number(settings.closeAtMs) || 0;
-  const closeHours = Number(settings.closeHours) || 24;
-  const ms = Number(settings.eventStartAtMs || settings.startAtMs || settings.wastelandStartAtMs) || (closeMs ? closeMs + closeHours * 60 * 60 * 1000 : 0);
+  const life = getRegionLifecycle(settings || {});
+  const ms = Number(life.eventStartAtMs || life.startAtMs) || 0;
   return ms ? formatUtcAndLocal(ms) : '—';
 }
 
@@ -120,11 +145,11 @@ function startCycleTimer() {
   if (!box || !currentSettings) return;
   const update = () => {
     box.hidden = false;
-    $('#regionTableCycleText') && ($('#regionTableCycleText').textContent = currentSettings.open ? t('region.formOpen', 'Form open') : t('region.formClosed', 'Form closed'));
-    $('#regionTableCloseText') && ($('#regionTableCloseText').textContent = tv('region.closeAtLabel', 'Closes: {value}', { value: formatUtcAndLocal(currentSettings.closeAtMs) }));
-    $('#regionTableStartText') && ($('#regionTableStartText').textContent = tv('region.startAtLabel', 'Start: {value}', { value: eventStartText(currentSettings) }));
-    $('#regionTableOpenedText') && ($('#regionTableOpenedText').textContent = tv('regionSettings.openedAtLabel', 'Started: {value}', { value: openedAtText(currentSettings) }));
-    $('#regionTableOpenedByText') && ($('#regionTableOpenedByText').textContent = tv('regionSettings.openedByLabel', 'Started by: {value}', { value: openedByText(currentSettings) }));
+    setDynamicHtml('#regionTableCycleText', infoLine('regionInfo.statusLabel', 'Статус:', currentSettings.open ? t('region.formOpen', 'Form open') : t('region.formClosed', 'Form closed'), currentSettings.open ? 'region-info-value region-info-value--good' : 'region-info-value'));
+    setDynamicHtml('#regionTableCloseText', infoLine('regionInfo.closeLabel', 'Закриття:', formatUtcAndLocal(currentSettings.closeAtMs), 'region-info-value'));
+    setDynamicHtml('#regionTableStartText', infoLine('regionInfo.startLabel', 'Старт:', eventStartText(currentSettings), 'region-info-value'));
+    setDynamicHtml('#regionTableOpenedText', infoLine('regionInfo.startedAtLabel', 'Запущено:', openedAtText(currentSettings), 'region-info-value'));
+    setDynamicHtml('#regionTableOpenedByText', infoLine('regionInfo.startedByLabel', 'Запустив:', openedByText(currentSettings), 'region-starter-name'));
   };
   clearInterval(timerId);
   update();

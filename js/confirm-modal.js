@@ -9,10 +9,13 @@ WKD.confirmDialog = options => new Promise(resolve => {
   const accept = WKD.$('#confirmAcceptBtn', modal);
   title.textContent = options?.title || window.WKD_t?.('confirm.title') || 'Confirm action?';
   message.textContent = options?.message || window.WKD_t?.('confirm.message') || 'This action cannot be undone.';
-  note.textContent = options?.note || window.WKD_t?.('confirm.note') || 'Check the data before confirming.';
+  const noteText = options?.note === '' ? '' : (options?.note || window.WKD_t?.('confirm.note') || 'Check the data before confirming.');
+  note.textContent = noteText;
+  note.hidden = noteText === '';
   icon.textContent = options?.icon || '⚠';
   accept.textContent = options?.acceptText || window.WKD_t?.('common.confirm') || 'Confirm';
-  WKD.$$('[data-confirm-cancel]', modal).forEach(btn => { btn.textContent = btn.classList.contains('confirm-backdrop') ? btn.textContent : (window.WKD_t?.('common.cancel') || 'Cancel'); });
+  accept.className = options?.acceptClass || 'btn btn-danger-solid';
+  WKD.$$('[data-confirm-cancel]', modal).forEach(btn => { btn.textContent = btn.classList.contains('confirm-backdrop') ? btn.textContent : (options?.cancelText || window.WKD_t?.('common.cancel') || 'Cancel'); });
   modal.classList.add('is-open');
   modal.setAttribute('aria-hidden', 'false');
   const finish = value => {
@@ -27,3 +30,18 @@ WKD.confirmDialog = options => new Promise(resolve => {
   accept.addEventListener('click', onAccept);
   WKD.$$('[data-confirm-cancel]', modal).forEach(btn => btn.addEventListener('click', onCancel));
 });
+
+
+WKD.actionDoneDialog = async options => {
+  const goHome = await WKD.confirmDialog({
+    title: options?.title || window.WKD_t?.('common.done') || 'Done',
+    message: options?.message || '',
+    note: options?.note ?? '',
+    icon: options?.icon || '✅',
+    acceptText: options?.acceptText || window.WKD_t?.('common.goHome') || 'Go to main page',
+    cancelText: options?.cancelText || window.WKD_t?.('common.stayHere') || 'Stay here',
+    acceptClass: options?.acceptClass || 'btn btn-success-solid'
+  });
+  if (goHome) window.location.href = options?.href || 'index.html';
+  return goHome;
+};

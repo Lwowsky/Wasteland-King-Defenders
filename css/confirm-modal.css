@@ -11,3 +11,5 @@
 .btn-danger-solid{background:linear-gradient(135deg,#ff4f63,#ff6b58);border-color:rgba(255,255,255,.06);color:#fff;box-shadow:0 10px 26px rgba(255,79,99,.18)}
 .btn-danger-solid:hover:not(:disabled){box-shadow:0 14px 32px rgba(255,79,99,.24)}
 @media (max-width:560px){.confirm-actions{display:grid;grid-template-columns:1fr}.confirm-actions .btn{width:100%}.confirm-top{grid-template-columns:36px 1fr;padding:16px}.confirm-icon{width:36px;height:36px}.confirm-note{margin:0 16px 14px}.confirm-card h3{font-size:17px}}
+.btn-success-solid{background:linear-gradient(135deg,#19c97f,#6d5cff);border-color:rgba(255,255,255,.08);color:#fff;box-shadow:0 10px 26px rgba(25,201,127,.20)}
+.btn-success-solid:hover:not(:disabled){box-shadow:0 14px 34px rgba(109,92,255,.25)}

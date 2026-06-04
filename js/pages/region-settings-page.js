@@ -10,6 +10,7 @@ import {
   getNextWastelandStart,
   listKnownRegionIds,
   getRegionSettings,
+  ensureRegionRegistrationRunInfo,
   getRegionShareLinkCode,
   listRegionAlliances,
   normalizeRegion,
@@ -22,8 +23,10 @@ import {
   computeCloseAtMs,
   computeOpenAtMs,
   formatCountdown,
-  formatUtcAndLocal
-} from '../services/region-db.js?v=39';
+  formatUtcAndLocal,
+  getRegionLifecycle,
+  getRegionActorName
+} from '../services/region-db.js?v=42';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -51,6 +54,24 @@ function tv(key, fallback = '', vars = {}) {
   let text = t(key, fallback);
   Object.entries(vars).forEach(([name, value]) => { text = text.replaceAll(`{${name}}`, String(value)); });
   return text;
+}
+
+function setDynamicText(selector, text) {
+  const el = typeof selector === 'string' ? $(selector) : selector;
+  if (!el) return;
+  el.removeAttribute('data-i18n');
+  el.textContent = text;
+}
+
+function setDynamicHtml(selector, html) {
+  const el = typeof selector === 'string' ? $(selector) : selector;
+  if (!el) return;
+  el.removeAttribute('data-i18n');
+  el.innerHTML = html;
+}
+function infoLine(labelKey, fallbackLabel, value, valueClass = '') {
+  const classAttr = valueClass ? ` class="${valueClass}"` : '';
+  return `<span class="region-info-label">${escapeHtml(t(labelKey, fallbackLabel))}</span> <span${classAttr}>${escapeHtml(value || '—')}</span>`;
 }
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch])); }
 function textLength(value) { return Array.from(trim(value)).length; }
@@ -375,24 +396,31 @@ function fromUtcInputValue(value) {
 }
 
 function openedByText(settings = currentSettings || {}) {
-  const direct = trim(settings.openedByName || settings.openedByEmail);
+  const life = getRegionLifecycle(settings || {});
+  const direct = String(life.openedByName || life.openedByEmail || settings.openedByName || settings.openedByEmail || '').trim();
+  const uid = String(life.openedByUid || settings.openedByUid || settings.updatedBy || '').trim();
+  const email = String(life.openedByEmail || settings.openedByEmail || settings.updatedByEmail || '').trim().toLowerCase();
+  const sameUser = Boolean(currentUser && ((uid && currentUser.uid === uid) || (email && String(currentUser.email || '').toLowerCase() === email)));
+  const profileName = currentUser ? getRegionActorName(currentProfile || {}, currentRegion, currentUser) : '';
+  if (sameUser && profileName) return profileName;
+  const displayName = String(currentUser?.displayName || currentProfile?.displayName || '').trim().toLowerCase();
+  if (profileName && displayName && direct.toLowerCase() === displayName) return profileName;
+  if (direct && !direct.includes('@')) return direct;
+  if ((settings.open || settings.enabled) && profileName && (!direct || direct.includes('@'))) return profileName;
   if (direct) return direct;
-  const uid = trim(settings.openedByUid || settings.updatedBy);
-  if (uid && currentUser?.uid === uid) {
-    const game = getGameProfile(currentProfile || {});
-    return trim(currentUser.displayName || currentProfile?.displayName || game.nickname || currentUser.email || uid);
-  }
   return uid || t('regionSettings.unknownStarter', 'невідомо');
 }
 
 function openedAtText(settings = currentSettings || {}) {
-  const ms = Number(settings.openedAtMs) || Number(settings.openAtMs) || 0;
+  const life = getRegionLifecycle(settings || {});
+  const ms = Number(life.openedAtMs) || Number(life.openAtMs) || Number(life.updatedAtMs) || 0;
   return ms ? formatUtcAndLocal(ms) : t('regionSettings.notStartedYet', 'ще не запускали');
 }
 
 function eventStartText(settings = currentSettings || {}) {
-  const ms = Number(settings.eventStartAtMs || settings.startAtMs || settings.wastelandStartAtMs) || getNextWastelandStart();
-  return formatUtcAndLocal(ms);
+  const life = getRegionLifecycle(settings || {});
+  const ms = Number(life.eventStartAtMs || life.startAtMs) || 0;
+  return ms ? formatUtcAndLocal(ms) : '—';
 }
 
 function makeCustomId(value = '') {
@@ -491,12 +519,13 @@ function updatePreview() {
   const now = Date.now();
   const closeText = closeAtMs > now ? tv('region.timeUntilClose', 'Until close: {time}', { time: formatCountdown(closeAtMs - now) }) : t('region.registrationClosedByTimer', 'Registration is already closed by timer');
 
-  $('#settingsOpenPreview') && ($('#settingsOpenPreview').textContent = autoOpenEnabled ? tv('regionSettings.openAtLabel', 'Opens: {value}', { value: formatUtcAndLocal(openAtMs) }) : t('regionSettings.opensImmediately', 'Opens immediately when the form is enabled'));
-  $('#settingsClosePreview') && ($('#settingsClosePreview').textContent = tv('region.closeAtLabel', 'Closes: {value}', { value: formatUtcAndLocal(closeAtMs) }));
-  $('#settingsTimerPreview') && ($('#settingsTimerPreview').textContent = closeText);
-  $('#settingsCyclePreview') && ($('#settingsCyclePreview').textContent = tv('region.wastelandStartLabel', 'Wasteland start: {value} · until start {countdown}', { value: eventStartText({ eventStartAtMs }), countdown: formatCountdown(eventStartAtMs - Date.now()) }));
-  $('#settingsOpenedPreview') && ($('#settingsOpenedPreview').textContent = tv('regionSettings.openedAtLabel', 'Started: {value}', { value: openedAtText(currentSettings) }));
-  $('#settingsOpenedByPreview') && ($('#settingsOpenedByPreview').textContent = tv('regionSettings.openedByLabel', 'Started by: {value}', { value: openedByText(currentSettings) }));
+  setDynamicHtml('#settingsOpenPreview', infoLine('regionInfo.openLabel', 'Відкриття:', autoOpenEnabled ? formatUtcAndLocal(openAtMs) : t('regionSettings.opensImmediately', 'Opens immediately when the form is enabled'), 'region-info-value'));
+  setDynamicHtml('#settingsClosePreview', infoLine('regionInfo.closeLabel', 'Закриття:', formatUtcAndLocal(closeAtMs), 'region-info-value'));
+  setDynamicHtml('#settingsTimerPreview', infoLine('regionInfo.remainingLabel', 'Залишилось:', closeText.replace(/^.*?:\s*/, ''), 'region-info-value region-info-value--good'));
+  const startValue = `${eventStartText({ eventStartAtMs })} · ${t('regionInfo.untilStart', 'до старту')}: ${formatCountdown(eventStartAtMs - Date.now())}`;
+  setDynamicHtml('#settingsCyclePreview', infoLine('regionInfo.startLabel', 'Старт:', startValue, 'region-info-value'));
+  setDynamicHtml('#settingsOpenedPreview', infoLine('regionInfo.startedAtLabel', 'Запущено:', openedAtText(currentSettings), 'region-info-value'));
+  setDynamicHtml('#settingsOpenedByPreview', infoLine('regionInfo.startedByLabel', 'Запустив:', openedByText(currentSettings), 'region-starter-name'));
 }
 
 function startPreviewTimer() {
@@ -628,7 +657,16 @@ async function startRegistrationNow() {
   if (newCycle) newCycle.checked = true;
   updatePreview();
   await save({ preventDefault() {} }, { enabled: true, autoOpenEnabled: false, openNewCycle: true, forceOpenNow: true });
+  if (currentRegion) {
+    localStorage.setItem('wkd.players.sourceMode', 'region');
+    localStorage.setItem('wkd.players.activeRegion', currentRegion);
+  }
   setStatus(t('regionSettings.startNowSaved', 'Registration has been started now.'), 'success');
+  window.WKD?.actionDoneDialog?.({
+    title: t('regionSettings.startNowDialogTitle', 'Реєстрацію запущено'),
+    message: tv('regionSettings.startNowDialogMessage', 'Форма регіону R{region} відкрита. Створено новий чистий цикл, таблиця гравців і турелі очищені.', { region: currentRegion }),
+    href: 'index.html'
+  });
 }
 
 async function closeRegistrationNow() {
@@ -912,7 +950,10 @@ async function load(user) {
     return;
   }
   await cleanupOldRegionRegistrations(user, region).catch(error => console.warn('[WKD] old registration cleanup skipped:', error));
-  const settings = await getRegionSettings(region);
+  const settings = await ensureRegionRegistrationRunInfo(user, region).catch(error => {
+    console.warn('[WKD] registration run info repair skipped:', error);
+    return null;
+  }) || await getRegionSettings(region);
   currentShareCode = await getRegionShareLinkCode(user, region).catch(error => {
     console.warn('Short registration link unavailable', error);
     return '';

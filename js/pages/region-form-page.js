@@ -9,6 +9,8 @@ import {
   resolveRegionShareLink,
   shiftLabel,
   getRegionFormStatus,
+  getRegionLifecycle,
+  getRegionActorName,
   formatCountdown,
   formatRegionDate,
   formatUtcAndLocal,
@@ -18,7 +20,7 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=39';
+} from '../services/region-db.js?v=42';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -27,6 +29,24 @@ const tv = (key, fallback = '', vars = {}) => {
   Object.entries(vars).forEach(([name, value]) => { text = text.replaceAll(`{${name}}`, String(value)); });
   return text;
 };
+
+function setDynamicText(selector, text) {
+  const el = typeof selector === 'string' ? $(selector) : selector;
+  if (!el) return;
+  el.removeAttribute('data-i18n');
+  el.textContent = text;
+}
+
+function setDynamicHtml(selector, html) {
+  const el = typeof selector === 'string' ? $(selector) : selector;
+  if (!el) return;
+  el.removeAttribute('data-i18n');
+  el.innerHTML = html;
+}
+function infoLine(labelKey, fallbackLabel, value, valueClass = '') {
+  const classAttr = valueClass ? ` class="${valueClass}"` : '';
+  return `<span class="region-info-label">${esc(t(labelKey, fallbackLabel))}</span> <span${classAttr}>${esc(value || '—')}</span>`;
+}
 const allianceTag3 = value => Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
 function translatedDefaultText(value, key, fallback) {
@@ -175,30 +195,35 @@ function renderEventInfo(settings = {}) {
   const hostAlliance = String(settings.hostAlliance || '').trim();
   const governor = String(settings.governor || '').trim();
   box.hidden = !hostAlliance && !governor;
-  $('#regionHostAllianceText') && ($('#regionHostAllianceText').textContent = tv('region.hostAllianceLabel', 'Host alliance: {value}', { value: hostAlliance || '—' }));
-  $('#regionGovernorText') && ($('#regionGovernorText').textContent = tv('region.governorLabel', 'Governor: {value}', { value: governor || '—' }));
+  setDynamicText('#regionHostAllianceText', tv('region.hostAllianceLabel', 'Host alliance: {value}', { value: hostAlliance || '—' }));
+  setDynamicText('#regionGovernorText', tv('region.governorLabel', 'Governor: {value}', { value: governor || '—' }));
 }
 
 function openedByText(settings = formSettings || {}) {
-  const direct = String(settings.openedByName || settings.openedByEmail || '').trim();
+  const life = getRegionLifecycle(settings || {});
+  const direct = String(life.openedByName || life.openedByEmail || settings.openedByName || settings.openedByEmail || '').trim();
+  const uid = String(life.openedByUid || settings.openedByUid || settings.updatedBy || '').trim();
+  const email = String(life.openedByEmail || settings.openedByEmail || settings.updatedByEmail || '').trim().toLowerCase();
+  const sameUser = Boolean(currentUser && ((uid && currentUser.uid === uid) || (email && String(currentUser.email || '').toLowerCase() === email)));
+  const profileName = currentUser ? getRegionActorName(currentProfile || {}, currentRegion, currentUser) : '';
+  if (sameUser && profileName) return profileName;
+  const displayName = String(currentUser?.displayName || currentProfile?.displayName || '').trim().toLowerCase();
+  if (profileName && displayName && direct.toLowerCase() === displayName) return profileName;
+  if (direct && !direct.includes('@')) return direct;
+  if ((settings.open || settings.enabled) && profileName && (!direct || direct.includes('@'))) return profileName;
   if (direct) return direct;
-  const uid = String(settings.openedByUid || settings.updatedBy || '').trim();
-  if (uid && currentUser?.uid === uid) {
-    const game = getGameProfile(currentProfile || {});
-    return String(currentUser.displayName || currentProfile?.displayName || game.nickname || currentUser.email || uid).trim();
-  }
   return uid || t('regionSettings.unknownStarter', 'невідомо');
 }
 
 function openedAtText(settings = formSettings || {}) {
-  const ms = Number(settings.openedAtMs) || Number(settings.openAtMs) || 0;
+  const life = getRegionLifecycle(settings || {});
+  const ms = Number(life.openedAtMs) || Number(life.openAtMs) || Number(life.updatedAtMs) || 0;
   return ms ? formatUtcAndLocal(ms) : t('regionSettings.notStartedYet', 'ще не запускали');
 }
 
 function eventStartText(settings = formSettings || {}) {
-  const closeMs = Number(settings.closeAtMs) || 0;
-  const closeHours = Number(settings.closeHours) || 24;
-  const ms = Number(settings.eventStartAtMs || settings.startAtMs || settings.wastelandStartAtMs) || (closeMs ? closeMs + closeHours * 60 * 60 * 1000 : 0);
+  const life = getRegionLifecycle(settings || {});
+  const ms = Number(life.eventStartAtMs || life.startAtMs) || 0;
   return ms ? formatUtcAndLocal(ms) : '—';
 }
 
@@ -208,14 +233,16 @@ function startCountdown(settings) {
   const update = () => {
     const status = getRegionFormStatus(settings);
     box.hidden = false;
-    $('#regionCloseText') && ($('#regionCloseText').textContent = tv('region.closeAtLabel', 'Closes: {value}', { value: formatUtcAndLocal(status.closeAtMs) }));
+    setDynamicHtml('#regionCloseText', infoLine('regionInfo.closeLabel', 'Закриття:', formatUtcAndLocal(status.closeAtMs), 'region-info-value'));
     const startMs = Number(status.eventStartAtMs) || 0;
-    $('#regionEventText') && ($('#regionEventText').textContent = tv('region.wastelandStartLabel', 'Wasteland start: {value} · until start {countdown}', { value: eventStartText(status), countdown: startMs ? formatCountdown(startMs - Date.now()) : '—' }));
-    $('#regionOpenedText') && ($('#regionOpenedText').textContent = tv('regionSettings.openedAtLabel', 'Started: {value}', { value: openedAtText(status) }));
-    $('#regionOpenedByText') && ($('#regionOpenedByText').textContent = tv('regionSettings.openedByLabel', 'Started by: {value}', { value: openedByText(status) }));
-    $('#regionCountdownText') && ($('#regionCountdownText').textContent = status.open
-      ? tv('region.remainingLabel', 'Remaining: {value}', { value: formatCountdown(status.closeAtMs - Date.now()) })
-      : (status.reason === 'notOpenYet' ? tv('regionSettings.openAtLabel', 'Opens: {value}', { value: formatUtcAndLocal(status.openAtMs) }) : t('region.registrationClosed', 'Requests are closed. A consul or officer will open the next set.')));
+    const startValue = startMs ? `${eventStartText(status)} · ${t('regionInfo.untilStart', 'до старту')}: ${formatCountdown(startMs - Date.now())}` : '—';
+    setDynamicHtml('#regionEventText', infoLine('regionInfo.startLabel', 'Старт:', startValue, 'region-info-value'));
+    setDynamicHtml('#regionOpenedText', infoLine('regionInfo.startedAtLabel', 'Запущено:', openedAtText(status), 'region-info-value'));
+    setDynamicHtml('#regionOpenedByText', infoLine('regionInfo.startedByLabel', 'Запустив:', openedByText(status), 'region-starter-name'));
+    const countdownValue = status.open
+      ? formatCountdown(status.closeAtMs - Date.now())
+      : (status.reason === 'notOpenYet' ? `${t('regionInfo.opensAt', 'відкриється')}: ${formatUtcAndLocal(status.openAtMs)}` : t('region.registrationClosed', 'Requests are closed. A consul or officer will open the next set.'));
+    setDynamicHtml('#regionCountdownText', infoLine(status.open ? 'regionInfo.remainingLabel' : 'regionInfo.statusLabel', status.open ? 'Залишилось:' : 'Статус:', countdownValue, status.open ? 'region-info-value region-info-value--good' : 'region-info-value'));
     setFormState(status);
   };
   clearInterval(countdownId);
@@ -395,7 +422,7 @@ async function handleSubmit(event) {
   event.preventDefault();
   const status = getRegionFormStatus(formSettings);
   if (!status.open) {
-    setStatus(status.reason === 'notOpenYet' ? t('region.formNotOpenYet', 'Registration is not open yet. Wait for automatic opening or ask the consul to change the time.') : t('region.registrationClosedByTimer', 'Registration is already closed by timer.'), 'error');
+    setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'error');
     return;
   }
   if (!currentUser && localStorage.getItem(publicLockKey())) {
@@ -412,13 +439,24 @@ async function handleSubmit(event) {
     setStatus(t('region.savingRequest', 'Saving request...'), 'muted');
     const savedRequest = await saveWastelandRegistration(currentUser, values, currentRegion);
     localStorage.setItem('wkd.players.sourceMode', 'region');
+    if (currentRegion) localStorage.setItem('wkd.players.activeRegion', currentRegion);
     window.dispatchEvent(new CustomEvent('wkd:region-registration-saved', { detail: { region: currentRegion, farmId: savedRequest?.farmId || values.farmId || 'main' } }));
     if (!currentUser) {
       localStorage.setItem(publicLockKey(), String(Date.now()));
       lockForm(t('region.requestSavedGuestLocked', 'Request saved. Now only a consul or region officer can change it.'));
+      window.WKD?.actionDoneDialog?.({
+        title: t('region.requestSavedDialogTitle', 'Заявку відправлено'),
+        message: tv('region.requestSavedDialogMessage', 'Заявку для регіону R{region} збережено. Її вже видно у заявках регіону.', { region: currentRegion }),
+        href: 'index.html'
+      });
       return;
     }
     setStatus(t('region.requestSavedCurrentCycle', 'Request saved. This player is already submitted for the current set; choose another farm from the list if needed.'), 'success');
+    window.WKD?.actionDoneDialog?.({
+      title: t('region.requestSavedDialogTitle', 'Заявку відправлено'),
+      message: tv('region.requestSavedDialogMessage', 'Заявку для регіону R{region} збережено. Її вже видно у заявках регіону.', { region: currentRegion }),
+      href: 'index.html'
+    });
   } catch (error) {
     console.error(error);
     if (error?.message === 'registration-already-submitted') {
@@ -426,7 +464,7 @@ async function handleSubmit(event) {
       return;
     }
     if (error?.message === 'region-form-closed') {
-      setStatus(t('region.registrationClosedByTimer', 'Registration is already closed by timer.'), 'error');
+      setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'error');
       return;
     }
     setStatus(t('region.requestSaveFailed', 'Could not save the request. Check access rights or try again.'), 'error');
@@ -444,14 +482,6 @@ async function prepareForm(settings) {
   startCountdown(settings);
 
   const status = getRegionFormStatus(settings);
-  if (!status.open) {
-    $('#wastelandForm').hidden = true;
-    setStatus(status.reason === 'disabled'
-      ? t('region.formDisabledNow', 'The form for this region is currently disabled.')
-      : (status.reason === 'notOpenYet' ? t('region.formNotOpenYet', 'Registration is not open yet. Wait for automatic opening or ask the consul to change the time.') : t('region.registrationClosedWaitNext', 'Registration is closed by timer. Wait for the next set.')), 'warn');
-    return false;
-  }
-
   const extraPanel = $('#extraTroopPanel');
   if (extraPanel) extraPanel.hidden = !settings.allowExtraTroop;
   renderTroopOptions(settings);
@@ -461,6 +491,11 @@ async function prepareForm(settings) {
   renderShiftOptions(settings);
   toggleExtraFields();
   $('#wastelandForm').hidden = false;
+
+  if (!status.open) {
+    setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'warn');
+    return false;
+  }
   return true;
 }
 
@@ -515,13 +550,16 @@ async function loadSignedInForm(user) {
   const settings = await getRegionSettings(currentRegion);
   $('#openRegionTableBtn').hidden = !canViewRegion(currentProfile, currentRegion, currentUser);
   const open = await prepareForm(settings);
-  if (!open) return;
   renderSavedFarmTools(currentProfile);
   if (autoFillFromProfileEnabled()) fillProfileFields(currentProfile);
   const saved = await getMyWastelandRegistration(user, currentRegion, selectedFarmId).catch(() => null);
   fillSavedRegistration(saved);
   if (saved && !canManageRegion(currentProfile, currentRegion, currentUser)) {
     lockForm(t('region.requestAlreadySavedLocked', 'Your request is already saved. Only a consul or officer can change it.'));
+    return;
+  }
+  if (!open) {
+    setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'warn');
     return;
   }
   setStatus(saved ? t('region.savedLeaderCanUpdate', 'Your request already exists. You are a region leader, so you can update it.') : t('region.fillRegionForm', 'Fill out the region form.'), saved ? 'success' : 'muted');
@@ -531,20 +569,20 @@ async function switchSavedFarm(farmId = selectedFarmId, { copyProfile = true } =
   const farm = getFarmById(currentProfile || {}, farmId) || getGameProfile(currentProfile || {});
   const nextRegion = farmRegion(farm) || currentRegion;
   selectedFarmId = farm.farmId || farmId || 'main';
+  let isOpen = getRegionFormStatus(formSettings || {}).open;
   if (nextRegion && nextRegion !== currentRegion && currentUser) {
     currentRegion = nextRegion;
     const settings = await getRegionSettings(currentRegion);
-    const open = await prepareForm(settings);
+    isOpen = await prepareForm(settings);
     renderSavedFarmTools(currentProfile);
     $('#openRegionTableBtn').hidden = !canViewRegion(currentProfile, currentRegion, currentUser);
-    if (!open) return false;
   } else {
     renderSavedFarmTools(currentProfile);
   }
   if (copyProfile) fillProfileFields(currentProfile, selectedFarmId);
   const saved = await getMyWastelandRegistration(currentUser, currentRegion, selectedFarmId).catch(() => null);
   if (saved) fillSavedRegistration(saved);
-  return true;
+  return isOpen;
 }
 
 function autoFillFromProfileEnabled() {

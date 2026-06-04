@@ -1,9 +1,10 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getGameProfile, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=39';
+import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
+import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=42';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
+const REGION_KEY = 'wkd.players.activeRegion';
 const MODES = ['local', 'region'];
 
 let currentUser = null;
@@ -19,6 +20,7 @@ const allianceTag3 = value => Array.from(String(value ?? '').trim().replace(/[\/
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
+const esc = value => String(value ?? '').replace(/[&<>'\"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
 const tv = (key, fallback = '', vars = {}) => {
   let text = t(key, fallback);
   Object.entries(vars || {}).forEach(([name, value]) => {
@@ -120,6 +122,37 @@ function canMoveLocalToRegion() {
 function currentRegionLabel() {
   const region = loadedRegion || getGameProfile(currentProfile || {}).region;
   return region ? `R${region}` : t('region.ownRegion', 'your region');
+}
+
+function profileRegionOptions() {
+  const items = [];
+  const add = (region, label = '') => {
+    const safe = String(region || '').replace(/[^0-9]/g, '');
+    if (!safe || items.some(item => item.region === safe)) return;
+    items.push({ region: safe, label: label || `R${safe}` });
+  };
+  const main = getGameProfile(currentProfile || {});
+  add(main.region, main.nickname ? `R${String(main.region || '').replace(/[^0-9]/g, '')} · ${main.nickname}` : '');
+  getUserFarms(currentProfile || {}).forEach(farm => {
+    add(farm.region, farm.nickname ? `R${String(farm.region || '').replace(/[^0-9]/g, '')} · ${farm.nickname}` : '');
+  });
+  return items.sort((a, b) => Number(a.region) - Number(b.region) || a.region.localeCompare(b.region));
+}
+
+function activeProfileRegion() {
+  const options = profileRegionOptions();
+  const saved = String(localStorage.getItem(REGION_KEY) || '').replace(/[^0-9]/g, '');
+  return options.some(item => item.region === saved) ? saved : (options[0]?.region || getGameProfile(currentProfile || {}).region || '');
+}
+
+function renderRegionSwitch() {
+  const wrap = $('#playersRegionSwitch');
+  const select = $('#playersRegionSelect');
+  if (!wrap || !select) return;
+  const options = profileRegionOptions();
+  wrap.hidden = options.length <= 1;
+  select.innerHTML = options.map(item => `<option value="${esc(item.region)}" ${item.region === loadedRegion ? 'selected' : ''}>${esc(item.label)}</option>`).join('');
+  if (loadedRegion) select.value = loadedRegion;
 }
 
 async function refreshTowerRegionOptions() {
@@ -418,6 +451,11 @@ function bindTabs() {
   });
   localToRegionButton()?.addEventListener('click', copyLocalToRegion);
   regionToLocalButton()?.addEventListener('click', copyRegionToLocal);
+  $('#playersRegionSelect')?.addEventListener('change', event => {
+    loadedRegion = String(event.currentTarget.value || '').replace(/[^0-9]/g, '');
+    if (loadedRegion) localStorage.setItem(REGION_KEY, loadedRegion);
+    applyMode('region', { forceRegion: true, persist: true, region: loadedRegion });
+  });
 }
 
 async function handleAuth(user) {
@@ -425,7 +463,7 @@ async function handleAuth(user) {
   currentProfile = user ? await getUserProfile(user.uid).catch(() => null) : null;
   loadedRegionRows = [];
   loadedRegion = '';
-  currentMode = normalizeMode(localStorage.getItem(SOURCE_KEY) || currentMode || 'local');
+  currentMode = normalizeMode(localStorage.getItem(SOURCE_KEY) || currentMode || 'region');
   updateTabs();
 
   if (!user) {
@@ -446,12 +484,18 @@ async function handleAuth(user) {
     return;
   }
 
+  loadedRegion = activeProfileRegion();
+  if (loadedRegion) localStorage.setItem(REGION_KEY, loadedRegion);
+  currentMode = 'region';
+  saveMode(currentMode);
   setSourcePanelVisible(true);
+  renderRegionSwitch();
   const role = normalizeUserRole(currentProfile?.role || 'player');
   const roleText = role === 'admin' || role === 'moderator'
     ? t('players.adminRegionHelp', 'You can open the table page and switch regions.')
     : tv('players.regionAvailableHelp', 'Your region table {region} is available.', { region: currentRegionLabel() });
   await refreshTowerRegionOptions();
+  renderRegionSwitch();
   setHelp(`${t('players.chooseSourceHelp', 'Choose local list or region table.')} ${roleText}`);
   await applyMode(currentMode, { persist: false });
 }
@@ -495,6 +539,7 @@ async function init() {
 
   document.addEventListener('wkd:language-changed', () => {
     updateTabs();
+    renderRegionSwitch();
     refreshTowerRegionOptions().catch(error => console.warn('[WKD] tower regions language refresh skipped:', error));
     renderCurrentRows();
   });

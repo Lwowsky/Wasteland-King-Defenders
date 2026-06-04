@@ -153,6 +153,11 @@ function gameForRegion(profile = {}, region = '') {
   return allRegionGames(profile || {}).find(game => normalizeRegion(game.region) === safeRegion) || null;
 }
 
+export function getRegionActorName(profile = {}, region = '', actor = null) {
+  const game = gameForRegion(profile || {}, region) || bestRegionGame(profile || {});
+  return trim(game?.nickname || profile?.game?.nickname || profile?.nickname || profile?.displayName || actor?.displayName || actor?.email || actor?.uid || '');
+}
+
 function roleForRegion(profile = {}, region = '', actor = null) {
   const globalRole = normalizeUserRole(profile?.role || 'player');
   if (isOwnerEmail(actor?.email || profile?.email)) return 'admin';
@@ -542,6 +547,88 @@ export function formatUtcAndLocal(value) {
   return `${serviceT('common.utc', 'UTC')}: ${formatUtcDate(value)} · ${serviceT('region.yourTime', 'Your time')}: ${formatLocalDate(value)}`;
 }
 
+
+export function getRegionLifecycle(settings = {}, nowMs = Date.now()) {
+  const closeHours = Math.max(1, Math.min(168, Number(settings.closeHours) || DEFAULT_REGION_FORM.closeHours));
+  const closeRule = settings.closeRule || DEFAULT_REGION_FORM.closeRule;
+  const autoOpenEnabled = 'autoOpenEnabled' in settings ? Boolean(settings.autoOpenEnabled) : DEFAULT_REGION_FORM.autoOpenEnabled;
+  const autoOpenDay = Math.max(0, Math.min(6, Number(settings.autoOpenDay ?? DEFAULT_REGION_FORM.autoOpenDay)));
+  const autoOpenTime = /^\d{2}:\d{2}$/.test(trim(settings.autoOpenTime)) ? trim(settings.autoOpenTime) : DEFAULT_REGION_FORM.autoOpenTime;
+
+  const explicitCloseAtMs = firstPositiveMs(
+    settings.closeAtMs,
+    settings.closeAt,
+    settings.registrationCloseAtMs,
+    settings.registrationCloseAt
+  );
+  const explicitEventStartAtMs = firstPositiveMs(
+    settings.eventStartAtMs,
+    settings.startAtMs,
+    settings.wastelandStartAtMs,
+    settings.eventStartAt,
+    settings.startAt,
+    settings.wastelandStartAt
+  );
+  const eventStartAtMs = explicitEventStartAtMs || (explicitCloseAtMs ? explicitCloseAtMs + closeHours * 60 * 60 * 1000 : getNextWastelandStart(nowMs));
+  const closeAtMs = explicitCloseAtMs || computeCloseAtMs(eventStartAtMs, closeRule, closeHours);
+  const explicitOpenAtMs = firstPositiveMs(
+    settings.openAtMs,
+    settings.openAt,
+    settings.registrationOpenAtMs,
+    settings.registrationOpenAt
+  );
+  const openAtMs = explicitOpenAtMs || computeOpenAtMs(eventStartAtMs, autoOpenEnabled, autoOpenDay, autoOpenTime);
+  const updatedAtMs = firstPositiveMs(settings.updatedAtMs, settings.updatedAt);
+  const openedAtMs = firstPositiveMs(
+    settings.openedAtMs,
+    settings.openedAt,
+    settings.registrationOpenedAtMs,
+    settings.registrationOpenedAt,
+    settings.startedAtMs,
+    settings.startedAt
+  ) || ((settings.enabled || settings.open) ? (firstPositiveMs(openAtMs) || updatedAtMs || 0) : 0);
+  const closedAtMs = firstPositiveMs(
+    settings.closedAtMs,
+    settings.closedAt,
+    settings.registrationClosedAtMs,
+    settings.registrationClosedAt
+  );
+  const openedByUid = trim(firstValue(
+    settings.openedByUid,
+    settings.startedByUid,
+    settings.registrationOpenedByUid,
+    settings.updatedBy
+  ));
+  const openedByName = trim(firstValue(
+    settings.openedByName,
+    settings.startedByName,
+    settings.registrationOpenedByName,
+    settings.updatedByName,
+    settings.openedByEmail,
+    settings.startedByEmail,
+    settings.registrationOpenedByEmail,
+    settings.updatedByEmail
+  ));
+  const openedByEmail = trim(firstValue(
+    settings.openedByEmail,
+    settings.startedByEmail,
+    settings.registrationOpenedByEmail,
+    settings.updatedByEmail
+  ));
+  return {
+    eventStartAtMs,
+    startAtMs: eventStartAtMs,
+    closeAtMs,
+    openAtMs,
+    openedAtMs,
+    closedAtMs,
+    openedByUid,
+    openedByName,
+    openedByEmail,
+    updatedAtMs
+  };
+}
+
 export function formatCountdown(ms) {
   const total = Math.max(0, Math.floor(Number(ms) / 1000));
   const days = Math.floor(total / 86400);
@@ -614,16 +701,15 @@ function mergeRegionSettings(data = {}) {
 
 export function getRegionFormStatus(settings = {}, nowMs = Date.now()) {
   const merged = mergeRegionSettings(settings);
-  const closeAtMs = Number(merged.closeAtMs) || computeCloseAtMs(merged.eventStartAtMs, merged.closeRule, merged.closeHours);
-  const openAtMs = Number(merged.openAtMs) || computeOpenAtMs(merged.eventStartAtMs, merged.autoOpenEnabled, merged.autoOpenDay, merged.autoOpenTime);
-  const eventEndAtMs = Number(merged.eventStartAtMs) + WASTELAND_DURATION_MS;
-  const open = Boolean(merged.enabled) && nowMs >= openAtMs && nowMs < closeAtMs && nowMs < eventEndAtMs;
+  const lifecycle = getRegionLifecycle(merged, nowMs);
+  const eventEndAtMs = Number(lifecycle.eventStartAtMs) + WASTELAND_DURATION_MS;
+  const open = Boolean(merged.enabled) && nowMs >= lifecycle.openAtMs && nowMs < lifecycle.closeAtMs && nowMs < eventEndAtMs;
   let reason = 'open';
   if (!merged.enabled) reason = 'disabled';
-  else if (nowMs < openAtMs) reason = 'notOpenYet';
-  else if (nowMs >= closeAtMs) reason = 'closedByTimer';
+  else if (nowMs < lifecycle.openAtMs) reason = 'notOpenYet';
+  else if (nowMs >= lifecycle.closeAtMs) reason = 'closedByTimer';
   else if (nowMs >= eventEndAtMs) reason = 'eventFinished';
-  return { ...merged, open, reason, openAtMs, closeAtMs, eventEndAtMs };
+  return { ...merged, ...lifecycle, open, reason, eventEndAtMs };
 }
 
 async function getFirebaseParts() {
@@ -770,6 +856,64 @@ export async function cleanupOldRegionRegistrations(user, regionOverride = '', o
   return { region: safeRegion, deletedCount: expiredIds.length, retentionDays: REGION_REGISTRATION_RETENTION_DAYS };
 }
 
+
+export async function ensureRegionRegistrationRunInfo(user, regionOverride = '') {
+  if (!user) return null;
+  const { db, firestoreMod } = await getFirebaseParts();
+  const profile = await getUserProfile(user.uid);
+  const safeRegion = normalizeRegion(regionOverride || getGameProfile(profile || {}).region);
+  if (!safeRegion || !canManageRegion(profile, safeRegion, user)) return null;
+  const current = await getRegionSettings(safeRegion).catch(() => null);
+  if (!current?.enabled) return current;
+  const status = getRegionFormStatus(current);
+  const hasRunTime = Number(status.openedAtMs) > 0;
+  const hasRunActor = Boolean(trim(status.openedByName || status.openedByEmail || status.openedByUid));
+  if (hasRunTime && hasRunActor && Number(status.eventStartAtMs) > 0) return status;
+
+  const nowMs = Date.now();
+  const actorName = getRegionActorName(profile || {}, safeRegion, user);
+  const actorEmail = trim(user.email);
+  const openedAtMs = Number(status.openedAtMs) || Number(status.openAtMs) || Number(status.updatedAtMs) || nowMs;
+  const eventStartAtMs = Number(status.eventStartAtMs || status.startAtMs) || getNextWastelandStart(nowMs);
+  const closeAtMs = Number(status.closeAtMs) || computeCloseAtMs(eventStartAtMs, status.closeRule, status.closeHours);
+  const openAtMs = Number(status.openAtMs) || (status.autoOpenEnabled ? computeOpenAtMs(eventStartAtMs, status.autoOpenEnabled, status.autoOpenDay, status.autoOpenTime) : Math.max(0, openedAtMs - 1000));
+  const patch = {
+    region: safeRegion,
+    registrationForm: {
+      ...(current || {}),
+      enabled: true,
+      eventStartAtMs,
+      startAtMs: eventStartAtMs,
+      closeAtMs,
+      openAtMs,
+      openedAtMs,
+      openedByUid: status.openedByUid || user.uid,
+      openedByName: status.openedByName || actorName,
+      openedByEmail: status.openedByEmail || actorEmail,
+      updatedAtMs: nowMs,
+      updatedBy: user.uid,
+      updatedByName: actorName,
+      updatedByEmail: actorEmail
+    },
+    openedAtMs,
+    openedByUid: status.openedByUid || user.uid,
+    openedByName: status.openedByName || actorName,
+    openedByEmail: status.openedByEmail || actorEmail,
+    registrationOpenedAtMs: openedAtMs,
+    registrationOpenedByUid: status.openedByUid || user.uid,
+    registrationOpenedByName: status.openedByName || actorName,
+    registrationOpenedByEmail: status.openedByEmail || actorEmail,
+    updatedAtMs: nowMs,
+    updatedBy: user.uid,
+    updatedByName: actorName,
+    updatedByEmail: actorEmail
+  };
+  await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), patch, { merge: true }).catch(error => {
+    console.warn('[WKD] registration run info repair skipped:', error);
+  });
+  return getRegionSettings(safeRegion).then(getRegionFormStatus).catch(() => status);
+}
+
 export async function saveRegionSettings(user, region, settings) {
   if (!user) throw new Error('auth-required');
   const { db, firestoreMod } = await getFirebaseParts();
@@ -804,7 +948,7 @@ export async function saveRegionSettings(user, region, settings) {
   const baseCycleId = makeCycleId(eventStartAtMs);
   const currentCycleId = openNewCycle ? `${baseCycleId}-${Date.now()}` : (oldSettings.currentCycleId || baseCycleId);
   const now = firestoreMod.serverTimestamp();
-  const actorName = trim(user.displayName || profile?.displayName || getGameProfile(profile || {}).nickname || user.email || user.uid);
+  const actorName = getRegionActorName(profile || {}, safeRegion, user);
   const actorEmail = trim(user.email);
 
   const clean = {
@@ -1255,8 +1399,15 @@ function mergeRows(players = [], registrations = [], activeCycle = '') {
 export async function listRegionRegistrations(user, regionOverride = '') {
   const { db, firestoreMod } = await getFirebaseParts();
   const { profile, region } = await getMyRegionContext(user, regionOverride);
-  const settings = await getRegionSettings(region);
-  const status = getRegionFormStatus(settings);
+  let settings = await getRegionSettings(region);
+  let status = getRegionFormStatus(settings);
+  if (canManageRegion(profile, region, user) && status.enabled && (!status.openedAtMs || !(status.openedByName || status.openedByEmail || status.openedByUid))) {
+    status = await ensureRegionRegistrationRunInfo(user, region).catch(error => {
+      console.warn('[WKD] registration run info repair skipped:', error);
+      return status;
+    });
+    settings = status;
+  }
   await cleanupOldRegionRegistrations(user, region).catch(error => console.warn('[WKD] old registration cleanup skipped:', error));
 
   const registrationsRef = firestoreMod.collection(db, 'regions', region, 'wastelandRegistrations');

@@ -51,10 +51,10 @@
   <script defer src="js/duplicate-nick-modal.js"></script>
   <script defer src="js/player-edit-modal.js"></script>
   <script defer src="js/player-manager-modal.js"></script>
-  <script defer src="js/tower-planner.js?v=39"></script>
+  <script defer src="js/tower-planner.js?v=42"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/app.js"></script>
-  <script type="module" src="js/player-manager-region-bridge.js?v=39"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=42"></script>
   <script type="module" src="js/auth-google.js"></script>
   <script type="module" src="js/pages/index-region-players.js"></script>
 </head>
@@ -87,6 +87,9 @@
           <div class="players-source-tabs" role="tablist" aria-label="Джерело даних">
             <button class="source-tab is-active" type="button" role="tab" aria-selected="true" data-source-mode="local" data-i18n="players.sourceLocal">Локальний список</button>
             <button class="source-tab" type="button" role="tab" aria-selected="false" data-source-mode="region" data-i18n="players.sourceRegion">Заявки регіону</button>
+          </div>
+          <div class="players-region-switch" id="playersRegionSwitch" hidden>
+            <label><span data-i18n="players.regionSwitchLabel">Регіон</span><select id="playersRegionSelect" aria-label="Регіон" data-i18n-aria-label="players.regionSwitchLabel"></select></label>
           </div>
           <div class="players-source-transfer" id="playersSourceTransfer">
             <button class="btn source-transfer-btn" id="copyLocalToRegionBtn" type="button" data-i18n="players.copyLocalToRegion">Локальний → регіон</button>

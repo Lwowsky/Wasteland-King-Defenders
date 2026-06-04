@@ -215,3 +215,10 @@
 .region-request-empty{margin:0;padding:12px 14px;border:1px dashed rgba(255,255,255,.14);border-radius:14px;color:#9fb0d7;font-weight:850;background:#07101f}
 .region-request-extra-list{display:flex;gap:10px;flex-wrap:wrap}.region-request-extra-list .tag{min-height:34px;padding-inline:14px}
 @media(max-width:700px){.region-request-modal-card{max-height:calc(100dvh - 18px);border-radius:20px}.region-request-detail-grid{grid-template-columns:1fr}.region-request-modal-body{padding:10px}.region-request-detail-section{padding:12px}}
+
+/* v42: clearer region cycle information */
+.region-timer-card .region-info-label{display:inline-block;margin-right:6px;color:#93a5ce;font-weight:900;letter-spacing:.02em}
+.region-timer-card .region-info-value{color:#eef5ff;font-weight:900}
+.region-timer-card .region-info-value--good{color:#66e6a4}
+.region-timer-card .region-starter-name{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:3px 10px;border-radius:999px;border:1px solid rgba(255,214,112,.45);background:linear-gradient(135deg,rgba(255,214,112,.18),rgba(151,87,255,.24));color:#ffe88a;font-weight:950;text-shadow:0 0 14px rgba(255,214,112,.42);box-shadow:0 0 0 1px rgba(255,255,255,.06) inset,0 8px 26px rgba(139,92,246,.18)}
+.region-timer-card--public{gap:10px}.region-timer-card--public b,.region-timer-card--public span,.region-timer-card--public small{display:block;padding:9px 12px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(3,10,23,.45)}
