@@ -1,0 +1,332 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function ownerEmail() {
+      return signedIn() && request.auth.token.email in ['vovapotaychuk@gmail.com'];
+    }
+
+    function userDoc(userId) {
+      return get(/databases/$(database)/documents/users/$(userId));
+    }
+
+    function currentUserDoc() {
+      return userDoc(request.auth.uid);
+    }
+
+    function currentRole() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? currentUserDoc().data.role
+        : 'player';
+    }
+
+    function currentRegion() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? currentUserDoc().data.gameProfile.region
+        : '';
+    }
+
+    function currentAlliance() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? currentUserDoc().data.gameProfile.alliance
+        : '';
+    }
+
+    function currentRank() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? currentUserDoc().data.gameProfile.rank
+        : '';
+    }
+
+    function isSameRegion(regionId) {
+      return signedIn() && currentRegion() == regionId;
+    }
+
+    function currentUserExists() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function hasRegionAccess(regionId) {
+      return currentUserExists()
+        && (currentRegion() == regionId
+          || (currentUserDoc().data.keys().hasAny(['regionAccess']) && regionId in currentUserDoc().data.regionAccess));
+    }
+
+    function currentRegionRole(regionId) {
+      return ownerEmail() ? 'admin'
+        : currentRole() in ['admin', 'moderator'] ? currentRole()
+        : isSameRegion(regionId) ? currentRole()
+        : (currentUserExists()
+          && currentUserDoc().data.keys().hasAny(['regionRoles'])
+          && currentUserDoc().data.regionRoles.keys().hasAny([regionId])
+            ? currentUserDoc().data.regionRoles[regionId]
+            : 'player');
+    }
+
+    function regionRolesWriteSafe() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['regionRoles'])
+        || (
+          request.resource.data.keys().hasAny(['regionRoles'])
+          && (
+            (resource.data.keys().hasAny(['regionRoles']) && request.resource.data.regionRoles.keys().hasOnly(resource.data.regionRoles.keys()))
+            || (!resource.data.keys().hasAny(['regionRoles']) && request.resource.data.regionRoles.keys().size() == 0)
+          )
+        );
+    }
+
+    function isAdmin() {
+      return ownerEmail() || currentRole() == 'admin';
+    }
+
+    function isModerator() {
+      return currentRole() == 'moderator';
+    }
+
+    function isRegionLeader() {
+      return currentRole() in ['consul', 'officer'];
+    }
+
+    function canManageAllianceList(regionId) {
+      return ownerEmail() || currentRole() in ['admin', 'moderator'] || (currentRegionRole(regionId) in ['admin', 'moderator', 'consul', 'officer'] && hasRegionAccess(regionId));
+    }
+
+    function canUseAdminPanel() {
+      return ownerEmail() || isAdmin() || isModerator();
+    }
+
+    function canManageRegion(regionId) {
+      return ownerEmail() || isAdmin() || isModerator() || (currentRegionRole(regionId) in ['admin', 'moderator', 'consul', 'officer'] && hasRegionAccess(regionId));
+    }
+
+    function canManageOwnAllianceColor(regionId, allianceId) {
+      return signedIn()
+        && currentRegionRole(regionId) == 'officer'
+        && hasRegionAccess(regionId)
+        && currentAlliance() == allianceId
+        && currentRank() in ['p4', 'p5', 'r4', 'r5', '4', '5'];
+    }
+
+    function allianceColorWriteSafe(allianceId) {
+      return request.resource.data.tag == allianceId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tag', 'colorHue', 'colorMode', 'colorUpdatedAt', 'colorUpdatedBy']);
+    }
+
+    function allianceColorCreateSafe(allianceId) {
+      return request.resource.data.keys().hasOnly(['tag', 'colorHue', 'colorMode', 'colorUpdatedAt', 'colorUpdatedBy'])
+        && request.resource.data.tag == allianceId;
+    }
+
+    function canDeleteWastelandRegistration(regionId) {
+      return ownerEmail() || isAdmin() || isModerator() || (currentRegionRole(regionId) in ['admin', 'moderator', 'consul'] && hasRegionAccess(regionId));
+    }
+
+    function canAssignRole(role) {
+      return ownerEmail()
+        || (isAdmin() && role in ['moderator', 'consul', 'officer', 'player'])
+        || (isModerator() && role in ['consul', 'officer', 'player']);
+    }
+
+    function roleIsSafeOnCreate() {
+      return request.resource.data.role == 'player';
+    }
+
+    function ownerKeepsProtectedFields() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['role', 'createdAt', 'uid', 'email', 'providerId', 'regionAccess', 'regionRoles']);
+    }
+
+    function ownerProfileUpdateSafe(userId) {
+      return isOwner(userId)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName', 'photoURL', 'lastLoginAt', 'updatedAt',
+          'country', 'countryCode', 'regionAccess', 'regionRoles',
+          'profileComplete', 'gameNick', 'nickname', 'region', 'alliance', 'rank', 'shk',
+          'gameProfile', 'farms', 'farmCount', 'activeFarmId', 'roleRequest', 'profileVisibility'
+        ])
+        && regionRolesWriteSafe();
+    }
+
+
+    function ownerRegionRoleDowngradeSafe(userId) {
+      return isOwner(userId)
+        && resource.data.role in ['consul', 'officer']
+        && request.resource.data.role == 'player'
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.gameProfile.region != resource.data.gameProfile.region
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName', 'photoURL', 'lastLoginAt', 'updatedAt',
+          'country', 'countryCode', 'regionAccess', 'regionRoles',
+          'profileComplete', 'gameNick', 'nickname', 'region', 'alliance', 'rank', 'shk',
+          'gameProfile', 'farms', 'farmCount', 'activeFarmId', 'roleRequest', 'role', 'roleLabel', 'profileVisibility'
+        ])
+        && regionRolesWriteSafe();
+    }
+
+    function managerUpdateSafe() {
+      return canUseAdminPanel()
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (!('providerId' in resource.data) || request.resource.data.providerId == resource.data.providerId)
+        && canAssignRole(request.resource.data.role);
+    }
+
+    function requestableRole() {
+      return request.resource.data.requestedRole in ['officer', 'consul']
+        || (ownerEmail() && request.resource.data.requestedRole in ['admin', 'moderator']);
+    }
+
+    function ownerRoleRequestSafe(requestId) {
+      return signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && requestableRole()
+        && request.resource.data.status in ['pending', 'cancelled'];
+    }
+
+    function ownerCanReadRoleRequest() {
+      return signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    function publicPlayerSafe(userId) {
+      return isOwner(userId)
+        && request.resource.data.uid == userId
+        && !('email' in request.resource.data)
+        && request.resource.data.role == userDoc(userId).data.role;
+    }
+
+    function managerPublicPlayerSafe() {
+      return canUseAdminPanel()
+        && !('email' in request.resource.data)
+        && canAssignRole(request.resource.data.role);
+    }
+
+    function publicPlayerForRegionSafe(userId, regionId) {
+      return isOwner(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.region == regionId
+        && !('email' in request.resource.data)
+        && request.resource.data.role == userDoc(userId).data.role;
+    }
+
+    function regionDoc(regionId) {
+      return get(/databases/$(database)/documents/regions/$(regionId));
+    }
+
+    function regionFormOpen(regionId) {
+      return exists(/databases/$(database)/documents/regions/$(regionId))
+        && regionDoc(regionId).data.registrationForm.enabled == true;
+    }
+
+    function activeCycleMatches(regionId) {
+      return request.resource.data.cycleId is string
+        && request.resource.data.cycleId == regionDoc(regionId).data.registrationForm.currentCycleId;
+    }
+
+    function wastelandRegistrationFieldsSafe(regionId) {
+      return regionFormOpen(regionId)
+        && activeCycleMatches(regionId)
+        && request.resource.data.region == regionId
+        && request.resource.data.nickname is string
+        && request.resource.data.alliance is string
+        && request.resource.data.troopType is string
+        && request.resource.data.shift is string
+        && request.resource.data.shift in regionDoc(regionId).data.registrationForm.shifts;
+    }
+
+    function publicWastelandRegistrationSafe(regionId) {
+      return wastelandRegistrationFieldsSafe(regionId)
+        && request.resource.data.publicLink == true;
+    }
+
+    function signedWastelandRegistrationSafe(regionId, registrationId) {
+      return signedIn()
+        && wastelandRegistrationFieldsSafe(regionId)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.createdByAuth == true;
+    }
+
+    match /users/{userId} {
+      allow create: if ownerEmail() || (isOwner(userId) && roleIsSafeOnCreate());
+      allow read: if isOwner(userId) || canUseAdminPanel();
+      allow update: if ownerEmail() || managerUpdateSafe() || ownerProfileUpdateSafe(userId) || ownerRegionRoleDowngradeSafe(userId) || (isOwner(userId) && ownerKeepsProtectedFields());
+      allow delete: if ownerEmail() || isAdmin();
+    }
+
+    match /publicPlayers/{userId} {
+      allow read: if true;
+      allow create, update: if ownerEmail() || managerPublicPlayerSafe() || publicPlayerSafe(userId);
+      allow delete: if ownerEmail() || isAdmin();
+    }
+
+    match /roleRequests/{requestId} {
+      allow create: if ownerEmail() || ownerRoleRequestSafe(requestId) || canUseAdminPanel();
+      allow read: if ownerCanReadRoleRequest() || canUseAdminPanel();
+      allow update: if ownerEmail() || ownerRoleRequestSafe(requestId) || canUseAdminPanel();
+      allow delete: if ownerEmail() || isAdmin();
+    }
+
+    match /regions/{regionId} {
+      allow read: if true;
+      allow create, update: if canManageRegion(regionId);
+      allow delete: if ownerEmail() || isAdmin();
+
+      match /alliances/{allianceId} {
+        allow read: if true;
+        allow create: if canManageAllianceList(regionId) || (canManageOwnAllianceColor(regionId, allianceId) && allianceColorCreateSafe(allianceId));
+        allow update: if canManageAllianceList(regionId) || (canManageOwnAllianceColor(regionId, allianceId) && allianceColorWriteSafe(allianceId));
+        allow delete: if canManageAllianceList(regionId);
+      }
+
+      match /privateSettings/{settingId} {
+        allow read, create, update, delete: if canManageRegion(regionId);
+      }
+
+      match /players/{userId} {
+        allow read: if hasRegionAccess(regionId) || canManageRegion(regionId);
+        allow create, update: if ownerEmail() || managerPublicPlayerSafe() || publicPlayerForRegionSafe(userId, regionId);
+        allow delete: if canManageRegion(regionId) || isOwner(userId);
+      }
+
+      match /wastelandRegistrations/{registrationId} {
+        allow read: if hasRegionAccess(regionId) || canManageRegion(regionId);
+        allow create: if ownerEmail() || canManageRegion(regionId) || signedWastelandRegistrationSafe(regionId, registrationId) || publicWastelandRegistrationSafe(regionId);
+        allow update: if ownerEmail() || canManageRegion(regionId);
+        allow delete: if canDeleteWastelandRegistration(regionId);
+      }
+
+      match /wastelandTowerPlans/{planId} {
+        allow read: if hasRegionAccess(regionId) || canManageRegion(regionId);
+        allow create, update: if canManageRegion(regionId);
+        allow delete: if canManageRegion(regionId);
+      }
+    }
+
+    match /shortRegionLinks/{code} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && request.resource.data.region is string
+        && canManageRegion(request.resource.data.region);
+      allow delete: if signedIn()
+        && resource.data.region is string
+        && canManageRegion(resource.data.region);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

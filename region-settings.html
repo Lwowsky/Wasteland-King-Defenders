@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="uk" translate="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="google" content="notranslate" />
+  <title data-i18n="regionSettings.pageTitle">Форма регіону — Wasteland King Defenders</title>
+  <link rel="icon" href="favicon.png" type="image/png" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/header.css" />
+  <link rel="stylesheet" href="css/auth-page.css" />
+  <link rel="stylesheet" href="css/profile-page.css" />
+  <link rel="stylesheet" href="css/admin-page.css" />
+  <link rel="stylesheet" href="css/region-page.css" />
+  <link rel="stylesheet" href="css/modal-import.css" />
+  <link rel="stylesheet" href="css/modal-regions.css" />
+  <link rel="stylesheet" href="css/modal-tiers.css" />
+  <link rel="stylesheet" href="css/confirm-modal.css" />
+  <link rel="stylesheet" href="css/player-edit-modal.css" />
+  <link rel="stylesheet" href="css/player-manager-modal.css" />
+  <link rel="stylesheet" href="css/tower-planner.css" />
+  <link rel="stylesheet" href="css/tower-planner-tablet.css" />
+  <link rel="stylesheet" href="css/tower-planner-mobile.css" />
+  <link rel="stylesheet" href="css/contact-modal.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script defer src="js/i18n.js"></script>
+  <script defer src="js/i18n-uk.js"></script>
+  <script defer src="js/i18n-en.js"></script>
+  <script defer src="js/i18n-ru.js"></script>
+  <script defer src="js/i18n-pl.js"></script>
+  <script defer src="js/i18n-de.js"></script>
+  <script defer src="js/i18n-ja.js"></script>
+  <script defer src="js/i18n-zh.js"></script>
+  <script defer src="js/i18n-ko.js"></script>
+  <script defer src="js/i18n-vi.js"></script>
+  <script defer src="js/i18n-ar.js"></script>
+  <script defer src="js/i18n-autokeys.js"></script>
+  <script defer src="js/core/dom.js"></script>
+  <script defer src="js/core/partials.js"></script>
+  <script defer src="js/header.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="js/core/state.js"></script>
+  <script defer src="js/import-modal.js"></script>
+  <script defer src="js/import-regions.js"></script>
+  <script defer src="js/import-file.js"></script>
+  <script defer src="js/import-mapping.js"></script>
+  <script defer src="js/import-shift-recognition.js"></script>
+  <script defer src="js/visible-tiers.js"></script>
+  <script defer src="js/players-table.js"></script>
+  <script defer src="js/confirm-modal.js"></script>
+  <script defer src="js/player-edit-modal.js"></script>
+  <script defer src="js/player-manager-modal.js"></script>
+  <script defer src="js/tower-planner.js?v=39"></script>
+  <script defer src="js/contact-modal.js"></script>
+  <script defer src="js/app-login-shell.js"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=39"></script>
+  <script type="module" src="js/auth-google.js"></script>
+  <script type="module" src="js/pages/region-settings-page.js?v=39"></script>
+</head>
+<body class="notranslate">
+  <div data-include="partials/header.html"></div>
+
+  <main class="profile-page container">
+    <section class="profile-card region-card">
+      <div class="profile-head">
+        <div>
+          <p class="auth-eyebrow" data-i18n="regionSettings.eyebrow">Налаштування форми регіону</p>
+          <h2 data-i18n="region.formTitle">Форма регіону</h2>
+        </div>
+        <div class="region-head-actions">
+          <label class="region-switcher" id="regionSettingsSwitcher" hidden>
+            <span data-i18n="regionSettings.regionPicker">Регіон</span>
+            <select id="regionSettingsRegionSelect" aria-label="Регіон" data-i18n-aria-label="regionSettings.regionPicker"></select>
+          </label>
+          <button class="btn region-add-btn" id="openAddRegionBtn" type="button" data-i18n="regionSettings.addRegion" hidden>+ Додати регіон</button>
+          <span class="region-pill region-pill--region" id="settingsRegionPill">Регіон —</span>
+        </div>
+      </div>
+
+      <div class="auth-status" id="regionSettingsStatus" data-i18n="regionSettings.loadingSettings">Завантажую налаштування регіону...</div>
+
+      <form class="region-manual-add" id="regionManualAddForm" hidden>
+        <div>
+          <strong data-i18n="regionSettings.addRegionTitle">Додати регіон вручну</strong>
+          <small data-i18n="regionSettings.addRegionHelp">Порожній регіон зʼявиться у списку, після цього можна налаштувати форму й альянси.</small>
+        </div>
+        <label>
+          <span data-i18n="regionSettings.regionNumber">Номер регіону</span>
+          <input id="settingsNewRegionId" inputmode="numeric" maxlength="8" placeholder="987" required />
+        </label>
+        <label>
+          <span data-i18n="regionSettings.regionName">Назва</span>
+          <input id="settingsNewRegionName" maxlength="60" placeholder="R987" data-i18n-placeholder="admin.regionNamePlaceholder" />
+        </label>
+        <label>
+          <span data-i18n="regionSettings.regionNote">Коментар</span>
+          <input id="settingsNewRegionNote" maxlength="120" placeholder="Наприклад: новий регіон" data-i18n-placeholder="admin.regionNotePlaceholder" />
+        </label>
+        <div class="region-manual-actions">
+          <button class="btn region-save" type="submit" data-i18n="regionSettings.saveRegion">Додати регіон</button>
+          <button class="btn" id="cancelAddRegionBtn" type="button" data-i18n="regionSettings.cancelAddRegion">Скасувати</button>
+        </div>
+      </form>
+
+      <div class="profile-tabs region-settings-tabs" role="tablist" aria-label="Налаштування форми регіону">
+        <button class="profile-tab is-active" type="button" data-region-settings-tab="form" role="tab" aria-selected="true" data-i18n="region.settings.formTab">Форма</button>
+        <button class="profile-tab" type="button" data-region-settings-tab="alliances" role="tab" aria-selected="false" data-i18n="region.settings.alliancesTab">Альянси</button>
+      </div>
+
+      <section data-region-settings-panel="form">
+      <form class="region-form-block" id="regionSettingsForm" hidden>
+        <div class="region-grid">
+          <div class="region-field region-field--full region-share-field">
+            <span data-i18n="regionSettings.shortLink">Коротке посилання для гравців</span>
+            <div class="region-share-row">
+              <input id="regionShareLink" readonly />
+              <button class="btn" id="copyRegionShareBtn" type="button" data-i18n="common.copy">Скопіювати</button>
+            </div>
+            <small data-i18n="regionSettings.shortLinkHelp">Це посилання можна кинути в чат. Гравець зможе заповнити заявку навіть без Google-входу.</small>
+          </div>
+          <label class="region-field"><span data-i18n="regionSettings.formEnabled">Форма активна</span><select id="settingsEnabled"><option value="true" data-i18n="regionSettings.enabledOn">Включено</option><option value="false" data-i18n="regionSettings.enabledOff">Відключено</option></select></label>
+          <label class="region-field"><span data-i18n="regionSettings.formName">Назва форми</span><input id="settingsTitle" /></label>
+          <label class="region-field"><span data-i18n="regionSettings.hostAlliance">Альянс проводить Пустош</span><input id="settingsHostAlliance" maxlength="3" placeholder="Наприклад: YYY" data-i18n-placeholder="region.exampleYYY" /></label>
+          <label class="region-field"><span data-i18n="regionSettings.governor">Губернатор</span><input id="settingsGovernor" maxlength="60" placeholder="Нік губернатора" data-i18n-placeholder="regionSettings.governorPlaceholder" /></label>
+          <div class="region-field region-rotation-open-field"><span data-i18n="regionSettings.rotationTitle">Ротація альянсів</span><button class="btn" id="openRotationModalBtn" type="button" data-i18n="regionSettings.rotationButton">Ротація</button><small id="rotationSummary" data-i18n="regionSettings.rotationSummaryEmpty">Ротація не налаштована.</small></div>
+          <div class="region-field region-field--full region-cycle-panel">
+            <span data-i18n="regionSettings.wastelandCycle">Цикл Пустоші</span>
+            <div class="region-cycle-grid">
+              <label><small data-i18n="regionSettings.wastelandStartUtc">Старт Пустоші UTC</small><input id="settingsEventStart" type="datetime-local" /></label>
+              <label><small data-i18n="regionSettings.registrationClose">Закриття реєстрації</small><select id="settingsCloseRule"><option value="hoursBeforeEvent" data-i18n="regionSettings.hoursBeforeStartOption">За кілька годин до старту</option><option value="gameResetFridayUtc" data-i18n="regionSettings.fridayResetOption">П’ятниця 00:00 UTC / новий день гри</option></select></label>
+              <label><small data-i18n="regionSettings.hoursBeforeStart">Годин до старту</small><input id="settingsCloseHours" type="number" min="1" max="168" step="1" value="24" /></label>
+            </div>
+            <div class="region-cycle-grid region-auto-open-grid">
+              <label class="region-check region-check--inline"><input id="settingsAutoOpen" type="checkbox" /> <span data-i18n="regionSettings.autoOpenEnabled">Автоматично відкривати реєстрацію</span></label>
+              <label><small data-i18n="regionSettings.autoOpenDay">День відкриття</small><select id="settingsAutoOpenDay"><option value="1" data-i18n="weekday.monday">Понеділок</option><option value="2" data-i18n="weekday.tuesday">Вівторок</option><option value="3" data-i18n="weekday.wednesday">Середа</option><option value="4" data-i18n="weekday.thursday">Четвер</option><option value="5" data-i18n="weekday.friday">П’ятниця</option><option value="6" data-i18n="weekday.saturday">Субота</option><option value="0" data-i18n="weekday.sunday">Неділя</option></select></label>
+              <label><small data-i18n="regionSettings.autoOpenTime">Час відкриття UTC</small><input id="settingsAutoOpenTime" type="time" value="00:00" /></label>
+            </div>
+            <div class="region-timer-card">
+              <b id="settingsOpenPreview">Відкриття: —</b>
+              <b id="settingsClosePreview">Закриття: —</b>
+              <span id="settingsTimerPreview">Таймер: —</span>
+              <small id="settingsCyclePreview" data-i18n="region.startPlaceholder">Старт: —</small>
+              <small id="settingsOpenedPreview" data-i18n="regionSettings.openedAtPlaceholder">Запущено: —</small>
+              <small id="settingsOpenedByPreview" data-i18n="regionSettings.openedByPlaceholder">Запустив: —</small>
+            </div>
+            <label class="region-check region-check--cycle"><input id="settingsNewCycle" type="checkbox" /> <span data-i18n="regionSettings.openNewCycle">Відкрити новий цикл реєстрації і показати чисту таблицю</span></label>
+            <div class="region-cycle-actions">
+              <button class="btn region-save" id="startRegistrationNowBtn" type="button" data-i18n="regionSettings.startNow">Запустити зараз</button>
+              <button class="btn farm-delete" id="closeRegistrationNowBtn" type="button" data-i18n="regionSettings.closeNow">Закрити реєстрацію</button>
+            </div>
+          </div>
+          <label class="region-field region-field--full"><span data-i18n="regionSettings.description">Опис</span><textarea id="settingsDescription"></textarea></label>
+          <div class="region-field region-field--full">
+            <span data-i18n="regionSettings.registrationShifts">Зміни для реєстрації</span>
+            <div class="region-check-grid" id="settingsShiftDefaultList">
+              <label class="region-check"><input type="checkbox" name="settingsShift" value="shift1" /> <span data-i18n="shift.shift1">Зміна 1</span></label>
+              <label class="region-check"><input type="checkbox" name="settingsShift" value="shift2" /> <span data-i18n="shift.shift2">Зміна 2</span></label>
+              <label class="region-check"><input type="checkbox" name="settingsShift" value="shift3" /> <span data-i18n="shift.shift3">Зміна 3</span></label>
+              <label class="region-check"><input type="checkbox" name="settingsShift" value="shift4" /> <span data-i18n="shift.shift4">Зміна 4</span></label>
+              <label class="region-check"><input type="checkbox" name="settingsShift" value="both" /> <span data-i18n="shift.both">Обидві</span></label>
+            </div>
+            <div class="region-rules-grid region-rules-grid--shift">
+              <label><small data-i18n="regionSettings.newShift">Нова зміна</small><input id="settingsCustomShiftLabel" maxlength="28" placeholder="Наприклад: Резерв" data-i18n-placeholder="regionSettings.newShiftPlaceholder" /></label>
+              <button class="btn" id="addCustomShiftBtn" type="button" data-i18n="regionSettings.addShift">Додати зміну</button>
+            </div>
+          </div>
+          <div class="region-field region-field--full">
+            <span data-i18n="region.settings.extraOptions">Додаткові опції</span>
+            <div class="region-check-grid">
+              <label class="region-check"><input id="settingsExtraTroop" type="checkbox" /> <span data-i18n="region.settings.allowExtraTroop">Дозволити додатковий загін</span></label>
+            </div>
+            <small data-i18n="region.settings.extraOptionsHelp">Галочка капітана у заявці завжди необов’язкова. Додатковий загін — покаже у формі вибір другого типу військ і тіру.</small>
+          </div>
+
+          <div class="region-field region-field--full region-rules-panel">
+            <span data-i18n="regionSettings.requestValues">Значення для заявки</span>
+            <small data-i18n="regionSettings.rulesShown">Ці правила будуть показуватись у формі «Реєстрація на пустош» саме для цього регіону.</small>
+            <div class="region-rules-grid">
+              <label><small data-i18n="regionSettings.minimumTier">Мінімальний тір</small><select id="settingsMinTier">
+                <option value="T14">T14 і вище</option><option value="T13">T13 і вище</option><option value="T12">T12 і вище</option><option value="T11">T11 і вище</option><option value="T10">T10 і вище</option><option value="T9">T9 і вище</option><option value="T8">T8 і вище</option><option value="T7">T7 і вище</option><option value="T6">T6 і вище</option><option value="T5">T5 і вище</option><option value="T4">T4 і вище</option><option value="T3">T3 і вище</option><option value="T2">T2 і вище</option><option value="T1">T1 і вище</option>
+              </select></label>
+              <label><small data-i18n="regionSettings.additionalTroopType">Додатковий тип військ</small><input id="settingsCustomTroopName" maxlength="30" placeholder="Наприклад: Таксі" data-i18n-placeholder="regionSettings.taxiPlaceholder" /></label>
+              <button class="btn" id="addCustomTroopBtn" type="button" data-i18n="regionSettings.addType">Додати тип</button>
+            </div>
+            <div class="region-chip-list" id="settingsCustomTroopList"></div>
+            <div class="region-rules-grid region-rules-grid--fields">
+              <label><small data-i18n="regionSettings.additionalColumn">Додаткова колонка</small><input id="settingsCustomFieldLabel" maxlength="34" placeholder="Наприклад: Коментар лідеру" data-i18n-placeholder="regionSettings.commentLeaderPlaceholder" /></label>
+              <label><small data-i18n="regionSettings.fieldType">Тип поля</small><select id="settingsCustomFieldType"><option value="text" data-i18n="regionSettings.fieldTypeText">Текст</option><option value="checkbox" data-i18n="regionSettings.fieldTypeCheckbox">Галочка</option></select></label>
+              <button class="btn" id="addCustomFieldBtn" type="button" data-i18n="regionSettings.addColumn">Додати колонку</button>
+            </div>
+            <div class="region-chip-list" id="settingsCustomFieldList"></div>
+          </div>
+        </div>
+        <div class="region-actions">
+          <button class="btn region-save" type="submit" data-i18n="regionSettings.saveForm">Зберегти форму</button>
+          <button class="btn" id="openRegionTableFromSettingsBtn" type="button" data-i18n="regionSettings.regionTable">Заявки регіону</button>
+        </div>
+      </form>
+      </section>
+
+      <section class="region-form-block region-alliances-panel" id="regionAlliancesPanel" data-region-settings-panel="alliances" hidden>
+        <div class="region-form-title">
+          <div>
+            <h3 data-i18n="region.alliancesTitle">Альянси регіону</h3>
+          </div>
+          <span class="region-pill" id="regionAllianceCount">0 альянсів</span>
+        </div>
+
+        <div class="player-manager-alliance-tabs region-alliance-subtabs" role="tablist" aria-label="Альянси регіону" data-i18n-aria-label="region.alliancesTitle">
+          <button class="player-manager-alliance-tab is-active" type="button" data-region-alliance-subtab="list" data-i18n="regionSettings.listTab">Альянси регіону</button>
+          <button class="player-manager-alliance-tab" type="button" data-region-alliance-subtab="colors" data-i18n="regionSettings.colorBuilderTab">Конструктор кольорів альянсів</button>
+        </div>
+
+        <div data-region-alliance-pane="list">
+          <form class="region-alliance-form" id="regionAllianceForm">
+            <label class="region-field"><span data-i18n="region.allianceTag">Тег альянсу <b>*</b></span><input id="allianceTag" maxlength="3" placeholder="YYY" required /></label>
+            <label class="region-field"><span data-i18n="region.allianceName">Назва / опис</span><input id="allianceName" maxlength="40" placeholder="Основний альянс" /></label>
+            <label class="region-field region-field--wide"><span data-i18n="region.allianceNote">Коментар</span><input id="allianceNote" maxlength="80" placeholder="Наприклад: головний, ферми, союзники" /></label>
+            <button class="btn region-save" id="allianceSaveBtn" type="submit" data-i18n="region.saveAlliance">Зберегти альянс</button>
+            <button class="btn" id="allianceClearBtn" type="button" data-i18n="common.clear">Очистити</button>
+          </form>
+
+          <div class="region-note" id="regionAllianceStatus"></div>
+          <div class="region-alliance-list" id="regionAllianceList"></div>
+        </div>
+
+        <div class="player-manager-color-builder region-color-builder" data-region-alliance-pane="colors" hidden>
+          <div class="player-manager-color-layout">
+            <aside class="player-manager-color-side">
+              <section class="player-manager-color-card player-manager-color-picked-card">
+                <h4 data-i18n="regionSettings.singleAllianceColor">Колір одного альянсу</h4>
+                <div class="player-manager-color-picked" id="regionColorPicked" data-i18n="regionSettings.pickAllianceRight">Вибери альянс у перегляді справа.</div>
+                <div class="player-manager-color-actions">
+                  <button class="btn btn-sm" type="button" id="regionAllianceAutoColorBtn" data-i18n="regionSettings.autoColor">✦ Авто-колір</button>
+                  <button class="btn btn-sm" type="button" id="regionAllianceResetColorBtn" data-i18n="regionSettings.resetColor">Скинути</button>
+                </div>
+              </section>
+              <section class="player-manager-color-card">
+                <h4 data-i18n="regionSettings.palette">Палітра</h4>
+                <div class="player-manager-color-palette" id="regionAlliancePalette"></div>
+                <button class="btn btn-sm" type="button" id="regionRegeneratePaletteBtn" data-i18n="regionSettings.generatePalette">↝ Згенерувати палітру</button>
+              </section>
+            </aside>
+            <section class="player-manager-color-preview-card">
+              <div class="player-manager-color-preview-head">
+                <h4 data-i18n="regionSettings.preview">Попередній перегляд</h4>
+                <span id="regionAllianceColorCount">0 альянсів</span>
+              </div>
+              <div class="player-manager-color-preview" id="regionAllianceColorPreview"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+
+  <div class="region-rotation-backdrop" id="regionRotationBackdrop" hidden>
+    <section class="region-rotation-modal" role="dialog" aria-modal="true" aria-labelledby="regionRotationTitle">
+      <div class="region-rotation-head">
+        <div>
+          <p class="auth-eyebrow" data-i18n="regionSettings.rotationEyebrow">Черга альянсів</p>
+          <h3 id="regionRotationTitle" data-i18n="regionSettings.rotationTitle">Ротація альянсів</h3>
+          <small data-i18n="regionSettings.rotationHelp">Додай альянси у чергу Пустоші. Поточний альянс підсвічується.</small>
+        </div>
+        <button class="btn btn-icon" id="closeRotationModalBtn" type="button" aria-label="Close" data-i18n-aria-label="common.close">✕</button>
+      </div>
+      <div class="region-rotation-body">
+        <div class="region-check-grid region-rotation-toggles">
+          <label class="region-check"><input id="rotationEnabled" type="checkbox" /> <span data-i18n="regionSettings.rotationEnabled">Активувати ротацію</span></label>
+          <label class="region-check"><input id="rotationLoop" type="checkbox" /> <span data-i18n="regionSettings.rotationLoop">Йти по колу</span></label>
+        </div>
+        <div class="region-rotation-add">
+          <label class="region-field"><span data-i18n="regionSettings.rotationPickAlliance">Вибрати зі списку</span><select id="rotationAllianceSelect"></select></label>
+          <label class="region-field"><span data-i18n="regionSettings.rotationManualTag">Або вписати тег</span><input id="rotationManualTag" maxlength="3" placeholder="YYY" /></label>
+          <button class="btn" id="addRotationAllianceBtn" type="button" data-i18n="regionSettings.rotationAddAlliance">Додати альянс</button>
+        </div>
+        <div class="region-rotation-current" id="rotationCurrentText" data-i18n="regionSettings.rotationCurrentEmpty">Поточний альянс ще не вибрано.</div>
+        <div class="region-rotation-list" id="rotationAllianceList"></div>
+      </div>
+      <div class="region-rotation-actions">
+        <button class="btn" id="cancelRotationModalBtn" type="button" data-i18n="ui.cancel">Скасувати</button>
+        <button class="btn region-save" id="saveRotationModalBtn" type="button" data-i18n="regionSettings.rotationSave">Зберегти ротацію</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="container"><div data-include="partials/footer.html"></div></div>
+  <div data-include="partials/import-modal.html"></div>
+  <div data-include="partials/contact-modal.html"></div>
+  <div data-include="partials/confirm-modal.html"></div>
+  <div data-include="partials/player-edit-modal.html"></div>
+  <div data-include="partials/player-manager-modal.html"></div>
+  <div data-include="partials/tower-planner-modal.html"></div>
+  <div data-include="partials/final-plan-modal.html"></div>
+</body>
+</html>

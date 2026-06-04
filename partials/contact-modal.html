@@ -1,0 +1,56 @@
+<section aria-label="Написати нам" class="modal contact-modal" data-i18n-aria-label="contact.title" id="contactModal" aria-hidden="true">
+  <button aria-label="Закрити" class="modal-backdrop" data-contact-modal-close type="button"></button>
+  <div aria-modal="true" class="modal-card contact-modal-card" role="dialog" aria-labelledby="contactModalTitle">
+    <div class="modal-head contact-modal-head">
+      <div>
+        <h2 id="contactModalTitle" data-i18n="contact.title">Написати нам</h2>
+        <p class="muted" data-i18n="contact.subtitle">Зв’язок, ідеї та пропозиції по сайту.</p>
+      </div>
+      <button aria-label="Закрити" class="btn btn-icon" data-contact-modal-close data-i18n-aria-label="common.close" type="button">✕</button>
+    </div>
+
+    <div class="modal-grid contact-modal-grid">
+      <section class="panel subpanel stack contact-modal-info">
+        <div class="contact-modal-kicker" data-i18n="contact.kicker">Зв’язок</div>
+        <h3 data-i18n="contact.introTitle">Напиши нам у зручному форматі</h3>
+        <p class="muted" data-i18n="contact.introText">Залиш своє ім’я, нік, регіон, альянс і коротко опиши питання або пропозицію. Повідомлення прийде нам у Telegram.</p>
+        <div class="contact-modal-note" data-i18n="contact.note">Після натискання кнопки повідомлення буде надіслано нам у Telegram.</div>
+      </section>
+
+      <form class="panel subpanel stack contact-modal-form" id="contactModalForm" novalidate>
+        <input autocomplete="off" class="contact-honeypot" id="contactWebsiteInput" name="website" tabindex="-1" type="text" aria-hidden="true" />
+        <div class="contact-form-grid">
+          <label>
+            <span data-i18n="contact.name">Ім’я</span>
+            <input autocomplete="name" id="contactNameInput" name="contactName" data-i18n-placeholder="contact.placeholderName" placeholder="Твоє ім’я" type="text" />
+          </label>
+          <label>
+            <span data-i18n="contact.nickname">Нікнейм</span>
+            <input autocomplete="nickname" id="contactNicknameInput" name="contactNickname" data-i18n-placeholder="contact.placeholderNickname" placeholder="Нік у грі" type="text" />
+          </label>
+          <label>
+            <span data-i18n="contact.region">Регіон</span>
+            <input id="contactRegionInput" name="contactRegion" data-i18n-placeholder="contact.placeholderRegion" placeholder="Наприклад: 987" type="text" />
+          </label>
+          <label>
+            <span data-i18n="account.alliance">Альянс</span>
+            <input id="contactAllianceInput" name="contactAlliance" data-i18n-placeholder="contact.placeholderAlliance" placeholder="Тег альянсу" type="text" />
+          </label>
+          <label class="contact-form-full">
+            <span data-i18n="contact.email">Ел. пошта</span>
+            <input autocomplete="email" id="contactEmailInput" name="contactEmail" data-i18n-placeholder="contact.placeholderEmail" placeholder="name@example.com" type="email" />
+          </label>
+          <label class="contact-form-full">
+            <span data-i18n="contact.message">Повідомлення</span>
+            <textarea id="contactMessageInput" name="contactMessage" data-i18n-placeholder="contact.placeholderMessage" placeholder="Напиши, що хочеш покращити або про що хочеш запитати"></textarea>
+          </label>
+        </div>
+        <div aria-live="polite" class="contact-modal-status" id="contactModalStatus"></div>
+        <div class="row gap wrap contact-modal-actions">
+          <button class="btn btn-primary" data-i18n="contact.submit" type="submit">Надіслати</button>
+          <button class="btn" data-contact-modal-close data-i18n="common.cancel" type="button">Скасувати</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>

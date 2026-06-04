@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="uk" translate="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="google" content="notranslate" />
+  <title>Wasteland King Defenders</title>
+  <link rel="icon" href="favicon.png" type="image/png" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/header.css" />
+  <link rel="stylesheet" href="css/players.css" />
+  <link rel="stylesheet" href="css/modal-import.css" />
+  <link rel="stylesheet" href="css/modal-regions.css" />
+  <link rel="stylesheet" href="css/modal-tiers.css" />
+  <link rel="stylesheet" href="css/confirm-modal.css" />
+  <link rel="stylesheet" href="css/duplicate-nick-modal.css" />
+  <link rel="stylesheet" href="css/player-edit-modal.css" />
+  <link rel="stylesheet" href="css/player-manager-modal.css" />
+  <link rel="stylesheet" href="css/tower-planner.css" />
+  <link rel="stylesheet" href="css/tower-planner-tablet.css" />
+  <link rel="stylesheet" href="css/tower-planner-mobile.css" />
+  <link rel="stylesheet" href="css/contact-modal.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script defer src="js/i18n.js"></script>
+  <script defer src="js/i18n-uk.js"></script>
+  <script defer src="js/i18n-en.js"></script>
+  <script defer src="js/i18n-ru.js"></script>
+  <script defer src="js/i18n-pl.js"></script>
+  <script defer src="js/i18n-de.js"></script>
+  <script defer src="js/i18n-ja.js"></script>
+  <script defer src="js/i18n-zh.js"></script>
+  <script defer src="js/i18n-ko.js"></script>
+  <script defer src="js/i18n-vi.js"></script>
+  <script defer src="js/i18n-ar.js"></script>
+  <script defer src="js/i18n-autokeys.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="js/core/dom.js"></script>
+  <script defer src="js/core/state.js"></script>
+  <script defer src="js/core/partials.js"></script>
+  <script defer src="js/confirm-modal.js"></script>
+  <script defer src="js/header.js"></script>
+  <script defer src="js/import-modal.js"></script>
+  <script defer src="js/import-regions.js"></script>
+  <script defer src="js/import-file.js"></script>
+  <script defer src="js/import-mapping.js"></script>
+  <script defer src="js/import-shift-recognition.js"></script>
+  <script defer src="js/visible-tiers.js"></script>
+  <script defer src="js/players-table.js"></script>
+  <script defer src="js/duplicate-nick-modal.js"></script>
+  <script defer src="js/player-edit-modal.js"></script>
+  <script defer src="js/player-manager-modal.js"></script>
+  <script defer src="js/tower-planner.js?v=39"></script>
+  <script defer src="js/contact-modal.js"></script>
+  <script defer src="js/app.js"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=39"></script>
+  <script type="module" src="js/auth-google.js"></script>
+  <script type="module" src="js/pages/index-region-players.js"></script>
+</head>
+<body class="notranslate">
+  <a id="top"></a>
+
+  <div data-include="partials/header.html"></div>
+
+<main class="layout container">
+    <section class="panel players-panel" id="playersPanel">
+      <div class="panel-head">
+        <div>
+          <h2>Гравці</h2>
+        </div>
+        <div class="panel-actions">
+          <button class="btn" id="showAllDataBtn" type="button" aria-pressed="false">Показати всі дані</button>
+          <a class="btn" href="profile.html?tab=region">Форма регіону</a>
+          <button class="btn btn-primary" id="openImportQuickBtn" type="button">Імпорт CSV/XLSX/URL</button>
+        </div>
+      </div>
+
+      <div class="auth-status index-mode-note" id="indexModeNote">Гостьовий режим: список зберігається на цьому пристрої.</div>
+
+      <div class="players-source-card" id="playersSourcePanel" aria-label="Джерело даних таблиці" hidden>
+        <div class="players-source-copy">
+          <b data-i18n="players.sourceTitle">Джерело даних</b>
+          <small id="playersSourceHelp" data-i18n="players.sourceHelp">Обери локальний список або таблицю регіону.</small>
+        </div>
+        <div class="players-source-controls">
+          <div class="players-source-tabs" role="tablist" aria-label="Джерело даних">
+            <button class="source-tab is-active" type="button" role="tab" aria-selected="true" data-source-mode="local" data-i18n="players.sourceLocal">Локальний список</button>
+            <button class="source-tab" type="button" role="tab" aria-selected="false" data-source-mode="region" data-i18n="players.sourceRegion">Заявки регіону</button>
+          </div>
+          <div class="players-source-transfer" id="playersSourceTransfer">
+            <button class="btn source-transfer-btn" id="copyLocalToRegionBtn" type="button" data-i18n="players.copyLocalToRegion">Локальний → регіон</button>
+            <button class="btn source-transfer-btn" id="copyRegionToLocalBtn" type="button" data-i18n="players.copyRegionToLocal">Регіон → локальний</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card stat-card--duo">
+          <div class="stat-duo-item"><span>Усього гравців</span><strong id="totalPlayers">0</strong></div>
+          <div class="stat-duo-divider"></div>
+          <div class="stat-duo-item"><span>Капітани готові</span><strong id="captainsReady">0</strong></div>
+        </div>
+        <div class="stat-card stat-card--plain">
+          <div class="stat-split stat-split--roles">
+            <div class="stat-chip stat-chip--role is-fighter"><b id="fighterCount">0</b><small>Бійці</small></div>
+            <div class="stat-chip stat-chip--role is-rider"><b id="riderCount">0</b><small>Наїзники</small></div>
+            <div class="stat-chip stat-chip--role is-shooter"><b id="shooterCount">0</b><small>Стрільці</small></div>
+          </div>
+        </div>
+        <div class="stat-card stat-card--plain stat-card--shifts">
+          <div class="stat-split stat-split--shifts">
+            <div class="stat-chip stat-chip--shift is-shift1"><b id="shift1Count">0</b><small>Зміна 1</small></div>
+            <div class="stat-chip stat-chip--shift is-shift2"><b id="shift2Count">0</b><small>Зміна 2</small></div>
+            <div class="stat-chip stat-chip--shift is-shift3"><b id="shift3Count">0</b><small>Зміна 3</small></div>
+            <div class="stat-chip stat-chip--shift is-shift4"><b id="shift4Count">0</b><small>Зміна 4</small></div>
+            <div class="stat-chip stat-chip--shift is-both"><b id="bothCount">0</b><small>Всі</small></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="filters-card">
+        <label><span>Пошук</span><input id="searchFilter" type="search" placeholder="Пошук за ніком / альянсом" /></label>
+        <label><span>Тип військ</span><select id="roleFilter"><option value="all">Усі</option><option value="Fighter">Бійці</option><option value="Rider">Наїзники</option><option value="Shooter">Стрільці</option></select></label>
+        <label><span>Зміна</span><select id="shiftFilter"><option value="all">Усі</option><option value="shift1">Зміна 1</option><option value="shift2">Зміна 2</option><option value="shift3">Зміна 3</option><option value="shift4">Зміна 4</option><option value="both">Всі</option></select></label>
+        <label><span>Статус</span><select id="statusFilter"><option value="all">Усі</option><option value="captains">Капітани</option></select></label>
+        <label><span>Тір</span><select id="tierFilter"><option value="all">Усі</option><option>T14</option><option>T13</option><option>T12</option><option>T11</option><option>T10</option><option>T9</option><option>T8</option><option>T7</option></select></label>
+        <label><span>Рядків</span><select id="pageSizeSelect"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="all">Усі</option></select></label>
+        <button class="btn" id="resetFiltersBtn" type="button">Скинути фільтри</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th data-field="name"><span>Нік гравця</span><button class="sort-btn" data-sort="name" type="button" title="Сортувати">↓</button></th>
+              <th data-field="alliance"><span>Альянс</span><button class="sort-btn" data-sort="alliance" type="button" title="Сортувати">↓</button></th>
+              <th data-field="role"><span>Тип військ</span><button class="sort-btn" data-sort="role" type="button" title="Сортувати">↓</button></th>
+              <th data-field="tier"><span>Тір</span><button class="sort-btn" data-sort="tier" type="button" title="Сортувати">↓</button></th>
+              <th data-field="march"><span>Розмір маршу</span><button class="sort-btn" data-sort="march" type="button" title="Сортувати">↓</button></th>
+              <th data-field="rally"><span>Розмір ралі</span><button class="sort-btn" data-sort="rally" type="button" title="Сортувати">↓</button></th>
+              <th data-field="captainReady"><span>Капітан</span><button class="sort-btn" data-sort="captain" type="button" title="Сортувати">↓</button></th>
+              <th data-field="shiftLabel"><span>Зміна</span><button class="sort-btn" data-sort="shift" type="button" title="Сортувати">↓</button></th>
+              <th class="optional-col is-hidden-col" data-field="lair"><span>Захоплення</span><button class="sort-btn" data-sort="lair" type="button" title="Сортувати">↓</button></th>
+              <th class="optional-col is-hidden-col" data-field="lairLevel"><span>Розмір лігва</span><button class="sort-btn" data-sort="lairLevel" type="button" title="Сортувати">↓</button></th>
+              <th data-field="actions"><span>Розміщення</span><button class="sort-btn" type="button" title="Сортувати">↓</button></th>
+            </tr>
+          </thead>
+          <tbody id="playersTbody">
+            <tr><td class="empty-cell" colspan="11">Імпортуй Excel або CSV файл, щоб показати гравців.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        <button class="btn btn-icon" id="pagePrevBtn" type="button" aria-label="Попередня сторінка">‹</button>
+        <span id="pageInfoText">Сторінка 1 / 1 • показано 0</span>
+        <button class="btn btn-icon" id="pageNextBtn" type="button" aria-label="Наступна сторінка">›</button>
+      </div>
+    </section>
+
+    <div data-include="partials/footer.html"></div>
+  </main>
+
+
+  <div data-include="partials/import-modal.html"></div>
+  <div data-include="partials/duplicate-modal.html"></div>
+  <div data-include="partials/player-edit-modal.html"></div>
+  <div data-include="partials/player-manager-modal.html"></div>
+  <div data-include="partials/tower-planner-modal.html"></div>
+  <div data-include="partials/final-plan-modal.html"></div>
+  <div data-include="partials/contact-modal.html"></div>
+  <div data-include="partials/confirm-modal.html"></div>
+
+</body>
+</html>

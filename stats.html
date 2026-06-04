@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="uk" translate="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="google" content="notranslate" />
+  <title data-i18n="stats.pageTitle">Статистика гравців — Wasteland King Defenders</title>
+  <link rel="icon" href="favicon.png" type="image/png" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/header.css" />
+  <link rel="stylesheet" href="css/auth-page.css" />
+  <link rel="stylesheet" href="css/profile-page.css" />
+  <link rel="stylesheet" href="css/admin-page.css" />
+  <link rel="stylesheet" href="css/stats-page.css?v=25" />
+  <link rel="stylesheet" href="css/modal-import.css" />
+  <link rel="stylesheet" href="css/modal-regions.css" />
+  <link rel="stylesheet" href="css/modal-tiers.css" />
+  <link rel="stylesheet" href="css/confirm-modal.css" />
+  <link rel="stylesheet" href="css/player-edit-modal.css" />
+  <link rel="stylesheet" href="css/player-manager-modal.css" />
+  <link rel="stylesheet" href="css/tower-planner.css" />
+  <link rel="stylesheet" href="css/tower-planner-tablet.css" />
+  <link rel="stylesheet" href="css/tower-planner-mobile.css" />
+  <link rel="stylesheet" href="css/contact-modal.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script defer src="js/i18n.js"></script>
+  <script defer src="js/i18n-uk.js"></script>
+  <script defer src="js/i18n-en.js"></script>
+  <script defer src="js/i18n-ru.js"></script>
+  <script defer src="js/i18n-pl.js"></script>
+  <script defer src="js/i18n-de.js"></script>
+  <script defer src="js/i18n-ja.js"></script>
+  <script defer src="js/i18n-zh.js"></script>
+  <script defer src="js/i18n-ko.js"></script>
+  <script defer src="js/i18n-vi.js"></script>
+  <script defer src="js/i18n-ar.js"></script>
+  <script defer src="js/i18n-autokeys.js"></script>
+  <script defer src="js/core/dom.js"></script>
+  <script defer src="js/core/partials.js"></script>
+  <script defer src="js/header.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="js/core/state.js"></script>
+  <script defer src="js/import-modal.js"></script>
+  <script defer src="js/import-regions.js"></script>
+  <script defer src="js/import-file.js"></script>
+  <script defer src="js/import-mapping.js"></script>
+  <script defer src="js/import-shift-recognition.js"></script>
+  <script defer src="js/visible-tiers.js"></script>
+  <script defer src="js/players-table.js"></script>
+  <script defer src="js/confirm-modal.js"></script>
+  <script defer src="js/player-edit-modal.js"></script>
+  <script defer src="js/player-manager-modal.js"></script>
+  <script defer src="js/tower-planner.js?v=39"></script>
+  <script defer src="js/contact-modal.js"></script>
+  <script defer src="js/app-login-shell.js"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=39"></script>
+  <script type="module" src="js/auth-google.js"></script>
+  <script type="module" src="js/pages/stats-page.js?v=26"></script>
+</head>
+<body class="notranslate">
+  <div data-include="partials/header.html"></div>
+
+  <main class="profile-page container">
+    <section class="profile-card stats-card">
+      <div class="profile-head">
+        <div>
+          <h2 data-i18n="stats.title">Статистика гравців</h2>
+        </div>
+      </div>
+
+      <div class="stats-status-line">
+        <div class="auth-status" id="statsStatus" data-i18n="stats.checkingAccess">Завантажую статистику...</div>
+        <div class="admin-summary" id="statsSummary" aria-live="polite"></div>
+      </div>
+
+      <div class="admin-stats" id="publicStats">
+        <div class="admin-stat-card"><span data-i18n="stats.players">Гравців</span><b>0</b></div>
+        <div class="admin-stat-card"><span data-i18n="stats.regions">Регіонів</span><b>0</b></div>
+        <div class="admin-stat-card"><span data-i18n="stats.alliances">Альянсів</span><b>0</b></div>
+        <div class="admin-stat-card"><span data-i18n="stats.leadershipRoles">Керівних ролей</span><b>0</b></div>
+      </div>
+
+      <div class="admin-toolbar admin-toolbar--grid stats-toolbar">
+        <label>
+          <span data-i18n="account.nickname">Нік</span>
+          <input id="statsNickSearch" type="search" placeholder="Lwowsky" />
+        </label>
+        <label>
+          <span data-i18n="account.alliance">Альянс</span>
+          <input id="statsAllianceSearch" type="search" placeholder="YYY" maxlength="3" />
+        </label>
+        <label>
+          <span data-i18n="account.region">Регіон</span>
+          <input id="statsRegionSearch" type="search" inputmode="numeric" placeholder="987" />
+        </label>
+        <label>
+          <span data-i18n="account.role">Роль</span>
+          <select id="statsRoleFilter">
+            <option value="all" data-i18n="common.all">Усі</option>
+            <option value="admin" data-i18n="role.admin">Адмін</option>
+            <option value="moderator" data-i18n="role.moderator">Модератор</option>
+            <option value="consul" data-i18n="role.consul">Консул</option>
+            <option value="officer" data-i18n="role.officer">Офіцер</option>
+            <option value="player" data-i18n="role.player">Гравець</option>
+          </select>
+        </label>
+        <label>
+          <span data-i18n="stats.rows">Рядків</span>
+          <select id="statsRowsFilter">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="all" data-i18n="common.all">Усі</option>
+          </select>
+        </label>
+        <label class="stats-toggle-label">
+          <span data-i18n="stats.display">Показ</span>
+          <span class="stats-toggle-box"><input id="statsIncludeFarmsToggle" type="checkbox" /> <b data-i18n="stats.includeFarms">Основи + ферми</b></span>
+        </label>
+        <button class="btn btn-primary" id="refreshStatsBtn" type="button" data-i18n="common.refresh">Оновити</button>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table stats-table" id="publicPlayersTable">
+          <thead>
+            <tr>
+              <th><button type="button" data-sort="nickname"><span data-i18n="account.nickname">Нік</span> ↓</button></th>
+              <th><button type="button" data-sort="region"><span data-i18n="account.region">Регіон</span> ↓</button></th>
+              <th><button type="button" data-sort="farmCount"><span data-i18n="stats.farmsCount">Ферм</span> ↓</button></th>
+              <th><button type="button" data-sort="alliance"><span data-i18n="account.alliance">Альянс</span> ↓</button></th>
+              <th><button type="button" data-sort="rank"><span data-i18n="account.rank">Ранг</span> ↓</button></th>
+              <th><button type="button" data-sort="shk"><span data-i18n="account.shk">ШК</span> ↓</button></th>
+              <th><button type="button" data-sort="role"><span data-i18n="account.role">Роль</span> ↓</button></th>
+              <th><button type="button" data-sort="createdAt"><span data-i18n="stats.registeredAt">Дата реєстрації</span> ↓</button></th>
+            </tr>
+          </thead>
+          <tbody id="publicPlayersBody">
+            <tr><td colspan="8" data-i18n="stats.loadingPlayers">Завантажую гравців...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div class="stats-modal" id="playerStatsModal" hidden aria-hidden="true">
+    <div class="stats-modal__backdrop" data-close-stats-modal></div>
+    <section class="stats-modal__card" role="dialog" aria-modal="true" aria-labelledby="playerStatsModalTitle">
+      <button class="stats-modal__close" type="button" data-close-stats-modal aria-label="Закрити" data-i18n-aria-label="common.close">×</button>
+      <div class="stats-modal__head">
+        <div>
+          <p class="auth-eyebrow" data-i18n="stats.modalEyebrow">Профіль гравця</p>
+          <h2 id="playerStatsModalTitle" data-i18n="stats.modalTitle">Профіль гравця</h2>
+          <p id="playerStatsModalLead" data-i18n="stats.modalLead">Повна публічна інформація профілю.</p>
+        </div>
+        <span class="role-badge" id="playerStatsModalRole">Гравець</span>
+      </div>
+      <div class="stats-modal-tabs" role="tablist" aria-label="Дані гравця" data-i18n-aria-label="stats.playerData">
+        <button class="stats-modal-tab is-active" type="button" data-stats-tab="profile" data-i18n="common.profile">Профіль</button>
+        <button class="stats-modal-tab" type="button" data-stats-tab="extra" data-i18n="stats.extraInfo">Додаткова інформація</button>
+        <button class="stats-modal-tab" type="button" data-stats-tab="farms" data-i18n="stats.farms">Ферми</button>
+      </div>
+      <div class="stats-modal-panels" id="playerStatsModalBody"></div>
+    </section>
+  </div>
+
+  <div class="container"><div data-include="partials/footer.html"></div></div>
+  <div data-include="partials/import-modal.html"></div>
+  <div data-include="partials/contact-modal.html"></div>
+  <div data-include="partials/confirm-modal.html"></div>
+  <div data-include="partials/player-edit-modal.html"></div>
+  <div data-include="partials/player-manager-modal.html"></div>
+  <div data-include="partials/tower-planner-modal.html"></div>
+  <div data-include="partials/final-plan-modal.html"></div>
+</body>
+</html>

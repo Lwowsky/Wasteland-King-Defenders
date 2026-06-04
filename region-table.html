@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="uk" translate="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="google" content="notranslate" />
+  <title data-i18n="region.tableTitle">Заявки регіону — Wasteland King Defenders</title>
+  <link rel="icon" href="favicon.png" type="image/png" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/header.css" />
+  <link rel="stylesheet" href="css/auth-page.css" />
+  <link rel="stylesheet" href="css/profile-page.css" />
+  <link rel="stylesheet" href="css/players.css" />
+  <link rel="stylesheet" href="css/admin-page.css" />
+  <link rel="stylesheet" href="css/region-page.css" />
+  <link rel="stylesheet" href="css/modal-import.css" />
+  <link rel="stylesheet" href="css/modal-regions.css" />
+  <link rel="stylesheet" href="css/modal-tiers.css" />
+  <link rel="stylesheet" href="css/confirm-modal.css" />
+  <link rel="stylesheet" href="css/player-edit-modal.css" />
+  <link rel="stylesheet" href="css/player-manager-modal.css" />
+  <link rel="stylesheet" href="css/tower-planner.css" />
+  <link rel="stylesheet" href="css/tower-planner-tablet.css" />
+  <link rel="stylesheet" href="css/tower-planner-mobile.css" />
+  <link rel="stylesheet" href="css/contact-modal.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script defer src="js/i18n.js"></script>
+  <script defer src="js/i18n-uk.js"></script>
+  <script defer src="js/i18n-en.js"></script>
+  <script defer src="js/i18n-ru.js"></script>
+  <script defer src="js/i18n-pl.js"></script>
+  <script defer src="js/i18n-de.js"></script>
+  <script defer src="js/i18n-ja.js"></script>
+  <script defer src="js/i18n-zh.js"></script>
+  <script defer src="js/i18n-ko.js"></script>
+  <script defer src="js/i18n-vi.js"></script>
+  <script defer src="js/i18n-ar.js"></script>
+  <script defer src="js/i18n-autokeys.js"></script>
+  <script defer src="js/core/dom.js"></script>
+  <script defer src="js/core/partials.js"></script>
+  <script defer src="js/header.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="js/core/state.js"></script>
+  <script defer src="js/import-modal.js"></script>
+  <script defer src="js/import-regions.js"></script>
+  <script defer src="js/import-file.js"></script>
+  <script defer src="js/import-mapping.js"></script>
+  <script defer src="js/import-shift-recognition.js"></script>
+  <script defer src="js/visible-tiers.js"></script>
+  <script defer src="js/players-table.js"></script>
+  <script defer src="js/confirm-modal.js"></script>
+  <script defer src="js/player-edit-modal.js"></script>
+  <script defer src="js/player-manager-modal.js"></script>
+  <script defer src="js/tower-planner.js?v=39"></script>
+  <script defer src="js/contact-modal.js"></script>
+  <script defer src="js/app-login-shell.js"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=39"></script>
+  <script type="module" src="js/auth-google.js"></script>
+  <script type="module" src="js/pages/region-table-page.js?v=39"></script>
+</head>
+<body class="notranslate">
+  <div data-include="partials/header.html"></div>
+
+  <main class="profile-page container">
+    <section class="profile-card region-card">
+      <div class="profile-head">
+        <div>
+          <h2 data-i18n="region.table">Заявки регіону</h2>
+        </div>
+        <div class="region-head-actions">
+          <span class="region-pill region-pill--region" id="regionTablePill">Регіон —</span>
+          <button class="btn" id="openWastelandRegisterBtn" type="button" data-i18n="region.myRequest">Моя заявка</button>
+          <button class="btn" id="openRegionSettingsBtn" type="button" hidden data-i18n="region.formTab">Форма регіону</button>
+        </div>
+      </div>
+
+      <div class="auth-status" id="regionTableStatus" data-i18n="region.loadingTable">Завантажую таблицю...</div>
+
+      <div class="region-timer-card region-timer-card--compact" id="regionTableCycleBox" hidden>
+        <span id="regionTableCycleText">Форма регіону</span>
+        <b id="regionTableCloseText">Закриття: —</b>
+        <small id="regionTableStartText" data-i18n="region.startPlaceholder">Старт: —</small>
+        <small id="regionTableOpenedText" data-i18n="regionSettings.openedAtPlaceholder">Запущено: —</small>
+        <small id="regionTableOpenedByText" data-i18n="regionSettings.openedByPlaceholder">Запустив: —</small>
+      </div>
+
+      <div class="region-manager-switch" id="regionManagerSwitch" hidden>
+        <div>
+          <b data-i18n="region.regionView">Перегляд регіонів</b>
+          <small data-i18n="region.regionViewHelp">Адмін і модератор можуть відкрити таблицю будь-якого регіону за номером.</small>
+        </div>
+        <label>
+          <span data-i18n="account.region">Регіон</span>
+          <input id="regionLookupInput" type="text" inputmode="numeric" autocomplete="off" placeholder="Наприклад: 987" data-i18n-placeholder="region.example987" />
+        </label>
+        <button class="btn btn-primary" id="openRegionLookupBtn" type="button" data-i18n="region.openRegion">Відкрити</button>
+        <button class="btn" id="copyRegionFormLinkBtn" type="button" data-i18n="region.copyFormLink">Скопіювати форму</button>
+      </div>
+
+      <div class="admin-toolbar admin-toolbar--grid stats-toolbar">
+        <label><span data-i18n="account.nickname">Нік</span><input id="regionNickSearch" type="search" placeholder="Lwowsky" /></label>
+        <label><span data-i18n="account.alliance">Альянс</span><input id="regionAllianceSearch" type="search" placeholder="YYY" maxlength="3" /></label>
+        <label><span data-i18n="playerEdit.troopType">Тип</span><select id="regionTroopFilter"><option value="all" data-i18n="common.all">Усі</option><option value="fighter" data-i18n="troop.fighter">Бійці</option><option value="rider" data-i18n="troop.rider">Наїзники</option><option value="shooter" data-i18n="troop.shooter">Стрільці</option></select></label>
+        <label><span data-i18n="common.shift">Зміна</span><select id="regionShiftFilter"><option value="all" data-i18n="common.all">Усі</option><option value="shift1" data-i18n="shift.shift1">Зміна 1</option><option value="shift2" data-i18n="shift.shift2">Зміна 2</option><option value="shift3" data-i18n="shift.shift3">Зміна 3</option><option value="shift4" data-i18n="shift.shift4">Зміна 4</option><option value="both" data-i18n="shift.both">Обидві</option></select></label>
+        <button class="btn btn-primary" id="refreshRegionTableBtn" type="button" data-i18n="common.refresh">Оновити</button>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table region-public-table">
+          <thead>
+            <tr>
+              <th data-i18n="account.nickname">Нік</th><th data-i18n="account.alliance">Альянс</th><th data-i18n="playerEdit.troopType">Тип</th><th data-i18n="playerEdit.tier">Тір</th><th data-i18n="playerEdit.march">Марш</th><th data-i18n="playerEdit.rally">Ралі</th><th data-i18n="players.captain">Капітан</th><th data-i18n="common.shift">Зміна</th>
+            </tr>
+          </thead>
+          <tbody id="regionRegistrationsBody"><tr><td colspan="8" data-i18n="region.loadingRequests">Завантажую заявки...</td></tr></tbody>
+        </table>
+      </div>
+      <p class="region-mobile-help" data-i18n="region.mobileScrollHelp">На телефоні таблицю можна прокручувати горизонтально.</p>
+      <section class="modal region-request-modal" id="regionRequestDetailsModal" aria-hidden="true" aria-label="Деталі заявки" data-i18n-aria-label="region.requestDetails">
+        <button class="modal-backdrop" type="button" aria-label="Закрити" data-i18n-aria-label="common.close" data-region-request-close></button>
+        <div class="modal-card region-request-modal-card" role="dialog" aria-modal="true" aria-labelledby="regionRequestDetailsTitle">
+          <div class="modal-head region-request-modal-head">
+            <div>
+              <h2 id="regionRequestDetailsTitle" data-i18n="region.requestDetails">Деталі заявки</h2>
+              <p data-i18n="region.requestDetailsHelp">Повна інформація, яку гравець заповнив у формі реєстрації.</p>
+            </div>
+            <button class="btn btn-icon" type="button" aria-label="Закрити" data-i18n-aria-label="common.close" data-region-request-close>✕</button>
+          </div>
+          <div class="modal-grid region-request-modal-body" id="regionRequestDetailsBody"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div class="container"><div data-include="partials/footer.html"></div></div>
+  <div data-include="partials/import-modal.html"></div>
+  <div data-include="partials/contact-modal.html"></div>
+  <div data-include="partials/confirm-modal.html"></div>
+  <div data-include="partials/player-edit-modal.html"></div>
+  <div data-include="partials/player-manager-modal.html"></div>
+  <div data-include="partials/tower-planner-modal.html"></div>
+  <div data-include="partials/final-plan-modal.html"></div>
+</body>
+</html>

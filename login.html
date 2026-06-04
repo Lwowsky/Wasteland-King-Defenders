@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="uk" translate="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="google" content="notranslate" />
+  <title>Google вхід — Wasteland King Defenders</title>
+  <link rel="icon" href="favicon.png" type="image/png" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/header.css" />
+  <link rel="stylesheet" href="css/auth-page.css" />
+  <link rel="stylesheet" href="css/modal-import.css" />
+  <link rel="stylesheet" href="css/modal-regions.css" />
+  <link rel="stylesheet" href="css/modal-tiers.css" />
+  <link rel="stylesheet" href="css/confirm-modal.css" />
+  <link rel="stylesheet" href="css/player-edit-modal.css" />
+  <link rel="stylesheet" href="css/player-manager-modal.css" />
+  <link rel="stylesheet" href="css/tower-planner.css" />
+  <link rel="stylesheet" href="css/tower-planner-tablet.css" />
+  <link rel="stylesheet" href="css/tower-planner-mobile.css" />
+  <link rel="stylesheet" href="css/contact-modal.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script defer src="js/i18n.js"></script>
+  <script defer src="js/i18n-uk.js"></script>
+  <script defer src="js/i18n-en.js"></script>
+  <script defer src="js/i18n-ru.js"></script>
+  <script defer src="js/i18n-pl.js"></script>
+  <script defer src="js/i18n-de.js"></script>
+  <script defer src="js/i18n-ja.js"></script>
+  <script defer src="js/i18n-zh.js"></script>
+  <script defer src="js/i18n-ko.js"></script>
+  <script defer src="js/i18n-vi.js"></script>
+  <script defer src="js/i18n-ar.js"></script>
+  <script defer src="js/i18n-autokeys.js"></script>
+  <script defer src="js/core/dom.js"></script>
+  <script defer src="js/core/partials.js"></script>
+  <script defer src="js/header.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="js/core/state.js"></script>
+  <script defer src="js/import-modal.js"></script>
+  <script defer src="js/import-regions.js"></script>
+  <script defer src="js/import-file.js"></script>
+  <script defer src="js/import-mapping.js"></script>
+  <script defer src="js/import-shift-recognition.js"></script>
+  <script defer src="js/visible-tiers.js"></script>
+  <script defer src="js/players-table.js"></script>
+  <script defer src="js/confirm-modal.js"></script>
+  <script defer src="js/player-edit-modal.js"></script>
+  <script defer src="js/player-manager-modal.js"></script>
+  <script defer src="js/tower-planner.js?v=39"></script>
+  <script defer src="js/contact-modal.js"></script>
+  <script defer src="js/app-login-shell.js"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=39"></script>
+  <script type="module" src="js/auth-google.js"></script>
+  <script type="module" src="js/pages/login-page.js"></script>
+</head>
+<body class="notranslate">
+  <div data-include="partials/header.html"></div>
+
+  <main class="auth-page container">
+    <section class="auth-card">
+      <div class="auth-card-top">
+        <img class="auth-card-logo" src="img/logo.webp" alt="Wasteland King Defenders" />
+        <div>
+          <p class="auth-eyebrow" data-i18n="login.googleAccount">Обліковий запис Google</p>
+          <h2 data-i18n="login.title">Вхід для гравців</h2>
+          <p data-i18n="login.lead">Увійди через Google, щоб зберегти свій ігровий профіль, регіон і заявку на роль. Гостьовий режим залишився для швидкого перегляду сайту.</p>
+        </div>
+      </div>
+
+      <div class="auth-actions">
+        <button class="btn auth-google-main" id="loginGoogleBtn" type="button" data-i18n="login.googleButton">Увійти через Google</button>
+        <button class="btn auth-guest" id="guestBtn" type="button" data-i18n="login.guestButton">Продовжити як гість</button>
+        <button class="btn auth-guest" id="goAppBtn" type="button" data-i18n="login.goSite" hidden>Перейти на сайт</button>
+        <button class="btn auth-guest" id="loginLogoutBtn" type="button" data-i18n="common.signOut" hidden>Вийти</button>
+      </div>
+
+      <div class="auth-status" id="loginStatus" data-i18n="login.checkingFirebase">Готую вхід...</div>
+
+      <div class="login-user-card is-hidden" id="loginUserCard">
+        <img id="loginAvatar" src="img/logo.webp" alt="Avatar" />
+        <div>
+          <strong id="loginName" data-i18n="profile.googleUser">Користувач Google</strong>
+          <span id="loginEmail"></span>
+        </div>
+      </div>
+
+      <div class="auth-info-grid">
+        <article>
+          <strong data-i18n="login.firstLoginTitle">Перший вхід</strong>
+          <span data-i18n="login.firstLoginText">Після Google-входу сайт попросить заповнити нік у грі, регіон, альянс, ранг і ШК.</span>
+        </article>
+        <article>
+          <strong data-i18n="login.roleRequestTitle">Заявка на роль</strong>
+          <span data-i18n="login.roleRequestText">Офіцера або консула можна запросити у профілі. Роль підтвердить адмін.</span>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <div class="container"><div data-include="partials/footer.html"></div></div>
+  <div data-include="partials/import-modal.html"></div>
+  <div data-include="partials/contact-modal.html"></div>
+  <div data-include="partials/confirm-modal.html"></div>
+  <div data-include="partials/player-edit-modal.html"></div>
+  <div data-include="partials/player-manager-modal.html"></div>
+  <div data-include="partials/tower-planner-modal.html"></div>
+  <div data-include="partials/final-plan-modal.html"></div>
+</body>
+</html>

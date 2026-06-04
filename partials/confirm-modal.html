@@ -1,0 +1,17 @@
+<section class="confirm-modal" id="confirmModal" aria-hidden="true" aria-label="Підтвердження дії" data-i18n-aria-label="confirm.title">
+  <button class="confirm-backdrop" type="button" data-confirm-cancel aria-label="Скасувати" data-i18n-aria-label="common.cancel"></button>
+  <div class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="confirm-top">
+      <span class="confirm-icon" id="confirmIcon" aria-hidden="true">⚠</span>
+      <div>
+        <h3 id="confirmTitle">Підтвердити дію?</h3>
+        <p id="confirmMessage">Цю дію не можна скасувати.</p>
+      </div>
+    </div>
+    <div class="confirm-note" id="confirmNote">Перевір дані перед підтвердженням.</div>
+    <div class="confirm-actions">
+      <button class="btn" type="button" data-confirm-cancel data-i18n="common.cancel">Скасувати</button>
+      <button class="btn btn-danger-solid" type="button" id="confirmAcceptBtn">Підтвердити</button>
+    </div>
+  </div>
+</section>

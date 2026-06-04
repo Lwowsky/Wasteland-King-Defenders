@@ -1,0 +1,93 @@
+<form class="profile-form" id="accountForm" autocomplete="on">
+  <div class="profile-form-layout">
+    <section class="profile-field profile-avatar-panel" aria-label="Аватар гравця" data-i18n-aria-label="profile.avatar">
+      <span data-i18n="profile.avatar">Аватар</span>
+      <div class="profile-avatar-wrap">
+        <img id="accountAvatar" src="img/logo.webp" alt="Avatar" />
+        <div>
+          <strong id="accountGoogleName" data-i18n="profile.googleUser">Користувач Google</strong>
+          <small id="accountEmail"></small>
+          <em id="accountRole">Гравець</em>
+        </div>
+      </div>
+      <small data-i18n="profile.googleAvatarNote">Поки використовується Google-аватар. Пізніше додамо готові аватарки для вибору на сайті.</small>
+    </section>
+
+    <label class="profile-field profile-field--role">
+      <span data-i18n="profile.roleRequestTitle">Роль / заявка</span>
+      <small class="profile-current-role"><span data-i18n="profile.currentRoleLabel">Поточна роль:</span> <b id="currentRoleText">Гравець</b></small>
+      <select id="requestedRole" name="requestedRole">
+        <option value="player" data-i18n="role.player">Гравець</option>
+        <option value="officer" data-i18n="profile.roleOptionOfficer">Офіцер — потрібне підтвердження</option>
+        <option value="consul" data-i18n="profile.roleOptionConsul">Консул — потрібне підтвердження</option>
+      </select>
+      <small id="roleRequestHint" data-i18n="profile.roleRequestHint">Офіцера або консула підтверджує тільки адмін. Адміна і модератора можна отримати тільки вручну.</small>
+    </label>
+
+    <section class="profile-field profile-farm-panel">
+      <span data-i18n="account.farmsTitle">Мої гравці / ферми</span>
+      <small data-i18n="account.farmsHelp">Можеш зберегти основного гравця і додаткові ферми. Потім вибереш потрібний нік у формі Пустоші.</small>
+      <div class="profile-farm-row">
+        <select id="farmSelect" name="farmSelect" aria-label="Мої гравці"></select>
+        <button class="btn" id="addFarmBtn" type="button" data-i18n="account.addFarm">+ Додати ферму</button>
+        <button class="btn farm-primary" id="makePrimaryFarmBtn" type="button" data-i18n="account.makePrimary" hidden>Зробити основним</button>
+        <button class="btn btn-primary profile-farm-save" id="saveFarmBtn" type="submit" data-i18n="account.saveFarm">Зберегти гравця</button>
+        <button class="btn farm-delete" id="deleteFarmBtn" type="button" data-i18n="account.deleteFarm" hidden>Видалити</button>
+      </div>
+    </section>
+
+    <section class="profile-field profile-privacy-panel">
+      <span data-i18n="account.privacyTitle">Видимість у статистиці</span>
+      <small data-i18n="account.privacyHelp">Email ніколи не показується. Тут можна дозволити показувати дані з форми регіону і ферми у статистиці гравців.</small>
+      <div class="profile-privacy-grid">
+        <label class="profile-check"><input id="showWastelandInfo" name="showWastelandInfo" type="checkbox" /> <b data-i18n="account.showWastelandInfo">Показувати доп. інфо з форми регіону</b><small>Рівень лігва, тип, тір, марш, ралі, зміна і готовність.</small></label>
+        <label class="profile-check"><input id="showFarmsInfo" name="showFarmsInfo" type="checkbox" /> <b data-i18n="account.showFarmsInfo">Показувати інформацію про ферми</b><small>Якщо вимкнено — у статистиці буде видно тільки кількість ферм.</small></label>
+      </div>
+    </section>
+
+
+    <label class="profile-field profile-field--country">
+      <span data-i18n="account.country">Країна</span>
+      <input id="country" name="country" type="text" maxlength="80" placeholder="Наприклад: Україна / Japan" data-i18n-placeholder="account.countryPlaceholder" list="countryList" autocomplete="country-name" />
+      <input id="countryCode" name="countryCode" type="hidden" />
+      <datalist id="countryList"></datalist>
+    </label>
+
+    <label class="profile-field profile-field--nick">
+      <span data-i18n="account.nickname">Нік у грі <b>*</b></span>
+      <input id="nickname" name="nickname" type="text" maxlength="40" placeholder="Наприклад: Lwowsky" data-i18n-placeholder="common.exampleLwowsky" required />
+    </label>
+
+    <label class="profile-field profile-field--region">
+      <span data-i18n="account.region">Регіон <b>*</b></span>
+      <input id="region" name="region" type="number" min="1" max="1200" step="1" placeholder="142" required />
+    </label>
+
+    <label class="profile-field profile-field--alliance">
+      <span data-i18n="account.alliance">Альянс <b>*</b></span>
+      <input id="alliance" name="alliance" type="text" maxlength="3" placeholder="YYY" required />
+    </label>
+
+    <label class="profile-field profile-field--rank">
+      <span data-i18n="account.rank">Ранг <b>*</b></span>
+      <select id="rank" name="rank" required>
+        <option value="p1">P1</option>
+        <option value="p2">P2</option>
+        <option value="p3">P3</option>
+        <option value="p4">P4</option>
+        <option value="p5">P5</option>
+      </select>
+    </label>
+
+    <label class="profile-field profile-field--shk">
+      <span data-i18n="account.shk">ШК <b>*</b></span>
+      <input id="shk" name="shk" type="number" min="1" max="45" step="1" placeholder="45" required />
+    </label>
+  </div>
+
+  <div class="profile-actions">
+    <button class="btn btn-primary profile-save" type="submit" data-i18n="profile.saveProfile">Зберегти профіль</button>
+    <button class="btn" id="backToSiteBtn" type="button" data-i18n="common.backToSite">На сайт</button>
+    <button class="btn" id="signOutBtn" type="button" data-i18n="common.signOut">Вийти</button>
+  </div>
+</form>

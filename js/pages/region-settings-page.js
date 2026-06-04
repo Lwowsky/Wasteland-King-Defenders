@@ -1,0 +1,1072 @@
+import { watchAuth } from '../services/firebase-service.js';
+import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js';
+import {
+  canManageRegion,
+  canViewAnyRegion,
+  createManualRegion,
+  deleteRegionAlliance,
+  getManagedRegionOptions,
+  getMyRegionContext,
+  getNextWastelandStart,
+  listKnownRegionIds,
+  getRegionSettings,
+  getRegionShareLinkCode,
+  listRegionAlliances,
+  normalizeRegion,
+  readRegionFromUrl,
+  saveRegionAlliance,
+  saveRegionAllianceColor as saveRegionAllianceColorDb,
+  saveRegionSettings,
+  saveRegionTowerPlan,
+  cleanupOldRegionRegistrations,
+  computeCloseAtMs,
+  computeOpenAtMs,
+  formatCountdown,
+  formatUtcAndLocal
+} from '../services/region-db.js?v=39';
+
+const $ = selector => document.querySelector(selector);
+const $$ = selector => [...document.querySelectorAll(selector)];
+const trim = value => String(value ?? '').trim();
+
+let currentUser = null;
+let currentProfile = null;
+let currentRegion = '';
+let currentSettings = null;
+let currentAlliances = [];
+let currentCanViewAnyRegion = false;
+let currentShareCode = '';
+let customTroopTypes = [];
+let customFields = [];
+let customShifts = [];
+let editingAllianceId = '';
+let selectedRegionColorTag = '';
+let rotationDraft = { enabled: false, loop: true, activeIndex: 0, alliances: [] };
+let timerId = null;
+let ready = false;
+
+const colorBuilderKey = 'wkd.regionAllianceColorBuilder.offset';
+function t(key, fallback = '') { return window.WKD_t ? window.WKD_t(key) : (fallback || key); }
+function tv(key, fallback = '', vars = {}) {
+  let text = t(key, fallback);
+  Object.entries(vars).forEach(([name, value]) => { text = text.replaceAll(`{${name}}`, String(value)); });
+  return text;
+}
+function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch])); }
+function textLength(value) { return Array.from(trim(value)).length; }
+function isAllianceInvalid(value) { return textLength(normalizeAllianceTag(value)) !== 3; }
+function toNumber(value) { const n = Number(String(value ?? '').replace(/[^0-9.-]/g, '')); return Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0; }
+function colorOffset() { return toNumber(localStorage.getItem(colorBuilderKey)); }
+function hashNumber(value) { let hash = 2166136261; for (const ch of String(value || 'empty')) { hash ^= ch.codePointAt(0) || 0; hash = Math.imul(hash, 16777619) >>> 0; } return hash >>> 0; }
+function hueFromValue(value) { const n = Number(value); return Number.isFinite(n) ? ((Math.round(n) % 360) + 360) % 360 : null; }
+function makeNeonColor(hue, seed = 0) {
+  const h = hueFromValue(hue) ?? 132;
+  const sat = 76 + (Math.abs(seed) % 16);
+  const light = 46 + (Math.abs(seed >> 3) % 10);
+  const accentHue = (h + 18 + (Math.abs(seed >> 8) % 26)) % 360;
+  return {
+    hue: h,
+    bg: `linear-gradient(135deg,hsla(${h},${sat}%,${light}%,.24),hsla(${accentHue},${Math.min(96, sat + 8)}%,${Math.min(70, light + 12)}%,.15))`,
+    border: `hsla(${accentHue},${Math.min(98, sat + 10)}%,${Math.min(78, light + 18)}%,.86)`,
+    glow: `hsla(${h},${Math.min(98, sat + 10)}%,${Math.min(68, light + 10)}%,.28)`,
+    accent: `hsl(${accentHue},${Math.min(98, sat + 12)}%,${Math.min(82, light + 20)}%)`
+  };
+}
+function allianceRecord(tag) { const wanted = normalizeAllianceTag(tag); return currentAlliances.find(item => normalizeAllianceTag(item.tag || item.id) === wanted) || null; }
+function customAllianceHue(tag) { return hueFromValue(allianceRecord(tag)?.colorHue); }
+function allianceColor(tag, index = 0) {
+  const base = hashNumber(String(tag || 'empty'));
+  const manualHue = customAllianceHue(tag);
+  return makeNeonColor(manualHue !== null ? manualHue : (base + colorOffset() + Math.round(index * 137.508)) % 360, base);
+}
+function allianceBadge(tag, index = 0) {
+  const value = trim(tag);
+  const color = allianceColor(value || '—', index);
+  const style = `--ally-hue:${color.hue};--ally-bg:${color.bg};--ally-border:${color.border};--ally-glow:${color.glow};--ally-accent:${color.accent};`;
+  return `<span class="alliance-badge player-manager-alliance-badge ${isAllianceInvalid(value) ? 'is-invalid' : 'is-valid'} ${!value ? 'is-empty' : ''}" style="${escapeHtml(style)}"><i class="badge-dot"></i><span>${escapeHtml(value || '—')}</span></span>`;
+}
+
+function currentGame() {
+  const safeRegion = normalizeRegion(currentRegion);
+  const main = { ...getGameProfile(currentProfile || {}), farmId: 'main', id: 'main' };
+  const farms = getUserFarms(currentProfile || {});
+  if (safeRegion) {
+    const match = [main, ...farms].find(farm => normalizeRegion(farm.region) === safeRegion);
+    if (match) return match;
+  }
+  const active = getFarmById(currentProfile || {}, currentProfile?.activeFarmId || 'main');
+  if (active?.region) return active;
+  return farms.find(farm => farm.region) || main;
+}
+function currentRole() {
+  const globalRole = normalizeUserRole(currentProfile?.role || 'player');
+  if (isOwnerAdmin() || globalRole === 'admin' || globalRole === 'moderator') return globalRole;
+  const game = currentGame();
+  return game?.farmId === 'main' ? globalRole : normalizeUserRole(game?.role || 'player');
+}
+function ownAlliance() { return normalizeAllianceTag(currentGame().alliance); }
+function ownRank() { return trim(currentGame().rank).toLowerCase(); }
+function isOwnerAdmin() { return String(currentUser?.email || '').trim().toLowerCase() === 'vovapotaychuk@gmail.com'; }
+function isRankR4R5(rank = ownRank()) {
+  return ['p4', 'p5', 'r4', 'r5', '4', '5'].includes(trim(rank).toLowerCase());
+}
+function canEditAllAllianceColors() {
+  const role = currentRole();
+  const sameRegion = normalizeRegion(currentGame().region) === normalizeRegion(currentRegion);
+  return Boolean(currentUser && (isOwnerAdmin() || role === 'admin' || role === 'moderator' || (role === 'consul' && sameRegion)));
+}
+function canEditRegionAllianceColor(tag = '') {
+  const wanted = normalizeAllianceTag(tag);
+  if (!wanted || !currentUser) return false;
+  if (canEditAllAllianceColors()) return true;
+  return currentRole() === 'officer'
+    && normalizeRegion(currentGame().region) === normalizeRegion(currentRegion)
+    && ownAlliance() === wanted
+    && isRankR4R5();
+}
+function canManageRotationSettings() {
+  const role = currentRole();
+  return Boolean(currentUser && (isOwnerAdmin() || role === 'admin' || role === 'moderator' || (role === 'consul' && normalizeRegion(currentGame().region) === normalizeRegion(currentRegion))));
+}
+
+function normalizeAllianceTag(value = '') {
+  return Array.from(trim(value).replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
+}
+function collectAllianceTags() {
+  const fromData = currentAlliances.map(item => normalizeAllianceTag(item.tag || item.id)).filter(Boolean);
+  const fromDom = $$('[data-edit-alliance]').map(item => normalizeAllianceTag(item.dataset.editAlliance)).filter(Boolean);
+  return [...new Set([...fromData, ...fromDom])];
+}
+function normalizeRotation(items = []) {
+  return (Array.isArray(items) ? items : [])
+    .map(item => {
+      const tag = normalizeAllianceTag(typeof item === 'string' ? item : (item.tag || item.id));
+      const record = allianceRecord(tag);
+      const name = trim(typeof item === 'string' ? '' : item.name) || trim(record?.name || '');
+      return tag ? { tag, name } : null;
+    })
+    .filter(Boolean)
+    .filter((item, index, arr) => arr.findIndex(other => other.tag === item.tag) === index)
+    .slice(0, 40);
+}
+function updateRotationSummary(settings = currentSettings || {}) {
+  const box = $('#rotationSummary');
+  if (!box) return;
+  const list = normalizeRotation(settings.rotationAlliances || rotationDraft.alliances || []);
+  const active = list[Math.max(0, Math.min(list.length - 1, Number(settings.rotationActiveIndex ?? rotationDraft.activeIndex) || 0))];
+  if (!settings.rotationEnabled || !list.length) {
+    box.textContent = t('regionSettings.rotationSummaryEmpty', 'Rotation is not configured.');
+    return;
+  }
+  box.textContent = tv('regionSettings.rotationSummaryActive', 'Active: {tag} · {count} alliances', { tag: active?.tag || '—', count: list.length });
+}
+function renderRegionColorBuilder() {
+  const preview = $('#regionAllianceColorPreview');
+  const palette = $('#regionAlliancePalette');
+  const count = $('#regionAllianceColorCount');
+  const picked = $('#regionColorPicked');
+  const autoBtn = $('#regionAllianceAutoColorBtn');
+  const resetBtn = $('#regionAllianceResetColorBtn');
+  const list = collectAllianceTags().slice(0, 80);
+  if (!selectedRegionColorTag || !list.includes(selectedRegionColorTag)) selectedRegionColorTag = list[0] || '';
+  const canEditSelectedColor = selectedRegionColorTag && canEditRegionAllianceColor(selectedRegionColorTag);
+  if (palette) {
+    const hues = [132,182,212,260,292,330,0,26,42,58,82,148,166,202];
+    palette.innerHTML = hues.map((hue, index) => {
+      const shifted = (hue + colorOffset() + index * 3) % 360;
+      const disabled = !canEditSelectedColor ? ' disabled' : '';
+      return `<button class="player-manager-color-swatch" type="button" data-region-color-hue="${shifted}" style="--swatch:hsl(${shifted},88%,56%)" aria-label="${t('playerManager.autoColor', 'Auto color')}"${disabled}></button>`;
+    }).join('');
+  }
+  if (!preview) return;
+  if (!list.length) {
+    preview.innerHTML = `<div class="region-empty">${escapeHtml(t('regionSettings.noAlliancesYet', 'No alliances yet. Add the first tag for this region.'))}</div>`;
+    if (count) count.textContent = tv('region.allianceCount', '{count} alliances', { count: 0 });
+    if (picked) picked.textContent = t('playerManager.chooseAllianceRight', 'Choose an alliance on the right');
+    if (autoBtn) autoBtn.disabled = true;
+    if (resetBtn) resetBtn.disabled = true;
+    return;
+  }
+  preview.innerHTML = list.map((tag, index) => {
+    const color = allianceColor(tag, index);
+    const manual = customAllianceHue(tag) !== null;
+    return `<button class="player-manager-color-item ${tag === selectedRegionColorTag ? 'is-selected' : ''} ${manual ? 'has-manual-color' : ''}" type="button" data-region-color-tag="${escapeHtml(tag)}" style="--ally-accent:${escapeHtml(color.accent)}">${allianceBadge(tag, index)}<small class="player-manager-color-state">${manual ? t('playerManager.savedColor', 'Saved color') : t('playerManager.randomColor', 'Random color')}</small></button>`;
+  }).join('');
+  if (count) count.textContent = tv('region.allianceCount', '{count} alliances', { count: list.length });
+  if (picked) {
+    const index = list.indexOf(selectedRegionColorTag);
+    picked.innerHTML = selectedRegionColorTag ? `${allianceBadge(selectedRegionColorTag, Math.max(0, index))}` : t('playerManager.chooseAllianceRight', 'Choose an alliance on the right');
+  }
+  if (autoBtn) autoBtn.disabled = !canEditSelectedColor;
+  if (resetBtn) resetBtn.disabled = !canEditSelectedColor || customAllianceHue(selectedRegionColorTag) === null;
+}
+async function saveRegionAllianceColor(tag, hue) {
+  const safeTag = normalizeAllianceTag(tag);
+  if (!safeTag) return;
+  if (!canEditRegionAllianceColor(safeTag)) {
+    setAllianceStatus(t('region.allianceColorAccess', 'Only the region consul or an R5/R4 officer of this alliance can change the color.'), 'error');
+    return;
+  }
+  const current = allianceRecord(safeTag) || { id: safeTag, tag: safeTag };
+  try {
+    setAllianceStatus(t('region.savingAllianceColor', 'Saving alliance color...'), 'muted');
+    await saveRegionAllianceColorDb(currentUser, currentRegion, safeTag, hue);
+    await refreshAlliances();
+    selectedRegionColorTag = safeTag;
+    setRegionAllianceSubtab('colors');
+    window.WKD = window.WKD || {};
+    window.WKD.regionAllianceColorMap = Object.fromEntries(currentAlliances.map(item => [normalizeAllianceTag(item.tag || item.id), hueFromValue(item.colorHue)]).filter(([, hue]) => hue !== null));
+    document.dispatchEvent(new CustomEvent('wkd:alliance-colors-updated', { detail: { tag: safeTag, hue, source: 'region-settings' } }));
+    setAllianceStatus(t('region.allianceColorSaved', 'Alliance color saved.'), 'success');
+  } catch (error) {
+    console.error(error);
+    setAllianceStatus(t('region.allianceColorFailed', 'Could not save alliance color. Check access rights.'), 'error');
+  }
+}
+async function confirmAllianceLength(value) {
+  if (!isAllianceInvalid(value)) return true;
+  const message = t('region.allianceTagLengthConfirm', 'In the game, an alliance tag has 3 characters. Save this name anyway?');
+  if (window.WKD?.confirmDialog) return window.WKD.confirmDialog({ title: t('region.checkAllianceTag', 'Check alliance tag'), message, acceptText: t('ui.save', 'Save'), cancelText: t('ui.cancel', 'Cancel') });
+  return window.confirm(message);
+}
+function setRegionAllianceSubtab(tab = 'list') {
+  const active = tab === 'colors' ? 'colors' : 'list';
+  $$('[data-region-alliance-subtab]').forEach(button => button.classList.toggle('is-active', button.dataset.regionAllianceSubtab === active));
+  $$('[data-region-alliance-pane]').forEach(pane => { pane.hidden = pane.dataset.regionAlliancePane !== active; });
+  renderRegionColorBuilder();
+}
+
+function setStatus(text, type = 'muted') {
+  const box = $('#regionSettingsStatus');
+  if (!box) return;
+  box.removeAttribute('data-i18n');
+  box.textContent = text;
+  box.dataset.type = type;
+}
+
+function setAllianceStatus(text, type = 'muted') {
+  const box = $('#regionAllianceStatus');
+  if (!box) return;
+  box.removeAttribute('data-i18n');
+  box.textContent = text;
+  box.dataset.type = type;
+}
+
+
+
+function localizedDefaultText(value, key, fallback = '') {
+  const raw = trim(value);
+  const allDefaults = Object.values(window.WKD_TRANSLATIONS || {}).map(dict => dict?.[key]).filter(Boolean);
+  if (!raw || raw === fallback || allDefaults.includes(raw)) return t(key, fallback);
+  return raw;
+}
+function cleanDefaultText(value, key, fallback = '') {
+  const raw = trim(value);
+  const allDefaults = Object.values(window.WKD_TRANSLATIONS || {}).map(dict => dict?.[key]).filter(Boolean);
+  return (!raw || raw === fallback || allDefaults.includes(raw)) ? '' : raw;
+}
+
+function updateRegionPill(region = currentRegion) {
+  const pill = $('#settingsRegionPill');
+  if (pill) pill.textContent = region ? `R${region}` : 'R—';
+}
+
+async function refreshRegionSwitcher() {
+  const wrap = $('#regionSettingsSwitcher');
+  const select = $('#regionSettingsRegionSelect');
+  const addButton = $('#openAddRegionBtn');
+  if (addButton) addButton.hidden = !currentCanViewAnyRegion;
+  if (!wrap || !select || !currentUser || !currentProfile) return;
+  let regions = [];
+  if (currentCanViewAnyRegion) {
+    regions = await listKnownRegionIds().catch(error => {
+      console.warn('[WKD] known regions unavailable:', error);
+      return [];
+    });
+  } else {
+    regions = getManagedRegionOptions(currentProfile, currentUser);
+  }
+  if (currentRegion && !regions.includes(currentRegion)) regions.push(currentRegion);
+  regions = [...new Set(regions.map(normalizeRegion).filter(Boolean))].sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
+  select.innerHTML = regions.map(region => `<option value="${escapeHtml(region)}">R${escapeHtml(region)}</option>`).join('');
+  select.value = currentRegion;
+  wrap.hidden = regions.length < 2;
+}
+
+async function switchRegion(region) {
+  const nextRegion = normalizeRegion(region);
+  if (!nextRegion || nextRegion === currentRegion) return;
+  const url = new URL(window.location.href);
+  url.searchParams.set('region', nextRegion);
+  window.history.replaceState({}, '', url);
+  $('#regionSettingsForm') && ($('#regionSettingsForm').hidden = true);
+  setStatus(t('regionSettings.switchingRegion', 'Opening selected region...'), 'muted');
+  await load(currentUser);
+}
+
+function toggleManualRegionForm(show = null) {
+  const form = $('#regionManualAddForm');
+  if (!form) return;
+  const next = show === null ? form.hidden : Boolean(show);
+  form.hidden = !next;
+  if (next) $('#settingsNewRegionId')?.focus();
+}
+
+async function saveManualRegionFromSettings(event) {
+  event.preventDefault();
+  if (!currentCanViewAnyRegion) return;
+  const region = normalizeRegion($('#settingsNewRegionId')?.value);
+  if (!region) {
+    setStatus(t('admin.regionNumberRequired', 'Enter the region number.'), 'error');
+    return;
+  }
+  try {
+    setStatus(t('admin.savingRegion', 'Saving region...'), 'muted');
+    await createManualRegion(currentUser, {
+      region,
+      name: $('#settingsNewRegionName')?.value || `R${region}`,
+      note: $('#settingsNewRegionNote')?.value || '',
+      active: true
+    });
+    $('#settingsNewRegionId') && ($('#settingsNewRegionId').value = '');
+    $('#settingsNewRegionName') && ($('#settingsNewRegionName').value = '');
+    $('#settingsNewRegionNote') && ($('#settingsNewRegionNote').value = '');
+    toggleManualRegionForm(false);
+    setStatus(t('regionSettings.regionAddedOpening', 'Region added. Opening its settings...'), 'success');
+    await switchRegion(region);
+  } catch (error) {
+    console.error(error);
+    setStatus(t('regionSettings.regionAddFailed', 'Could not add region. Check access rights.'), 'error');
+  }
+}
+
+function buildShareLink(region) {
+  if (!currentShareCode || !region) return '';
+  const url = new URL('region-form.html', window.location.href);
+  url.searchParams.set('r', normalizeRegion(region));
+  url.searchParams.set('s', currentShareCode);
+  return url.toString();
+}
+
+function updateShareLink() {
+  const input = $('#regionShareLink');
+  if (!input) return;
+  input.value = buildShareLink(currentRegion);
+  input.placeholder = input.value ? '' : t('region.shortLinkAfterSave', 'A secret short link will be created after saving the form');
+  if (input.value && currentShareCode) {
+    try {
+      sessionStorage.setItem('wkd.regionForm.shortCode', currentShareCode);
+      sessionStorage.setItem('wkd.regionForm.region', normalizeRegion(currentRegion));
+    } catch {}
+  }
+}
+
+function toUtcInputValue(ms) {
+  const date = new Date(Number(ms) || getNextWastelandStart());
+  const pad = value => String(value).padStart(2, '0');
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}T${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+}
+
+function fromUtcInputValue(value) {
+  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!match) return getNextWastelandStart();
+  const [, year, month, day, hour, minute] = match.map(Number);
+  return Date.UTC(year, month - 1, day, hour, minute, 0);
+}
+
+function openedByText(settings = currentSettings || {}) {
+  const direct = trim(settings.openedByName || settings.openedByEmail);
+  if (direct) return direct;
+  const uid = trim(settings.openedByUid || settings.updatedBy);
+  if (uid && currentUser?.uid === uid) {
+    const game = getGameProfile(currentProfile || {});
+    return trim(currentUser.displayName || currentProfile?.displayName || game.nickname || currentUser.email || uid);
+  }
+  return uid || t('regionSettings.unknownStarter', 'невідомо');
+}
+
+function openedAtText(settings = currentSettings || {}) {
+  const ms = Number(settings.openedAtMs) || Number(settings.openAtMs) || 0;
+  return ms ? formatUtcAndLocal(ms) : t('regionSettings.notStartedYet', 'ще не запускали');
+}
+
+function eventStartText(settings = currentSettings || {}) {
+  const ms = Number(settings.eventStartAtMs || settings.startAtMs || settings.wastelandStartAtMs) || getNextWastelandStart();
+  return formatUtcAndLocal(ms);
+}
+
+function makeCustomId(value = '') {
+  return trim(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9а-яіїєґ_-]+/giu, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40) || `custom-${Date.now()}`;
+}
+
+function renderRuleLists() {
+  const troopList = $('#settingsCustomTroopList');
+  const fieldList = $('#settingsCustomFieldList');
+  if (troopList) {
+    troopList.innerHTML = customTroopTypes.length ? customTroopTypes.map(item => `
+      <span class="region-chip"><b>${item.label}</b><button type="button" data-remove-custom-troop="${item.id}" aria-label="${escapeHtml(t('common.delete', 'Delete'))}">×</button></span>
+    `).join('') : `<small>${t('regionSettings.noExtraTypes', 'No additional types yet.')}</small>`;
+  }
+  if (fieldList) {
+    fieldList.innerHTML = customFields.length ? customFields.map(item => `
+      <span class="region-chip"><b>${item.label}</b><em>${item.type === 'checkbox' ? t('ui.checkbox', 'Checkbox') : t('ui.text', 'Text')}</em><button type="button" data-remove-custom-field="${item.id}" aria-label="${escapeHtml(t('common.delete', 'Delete'))}">×</button></span>
+    `).join('') : `<small>${t('regionSettings.noExtraColumns', 'No additional columns yet.')}</small>`;
+  }
+  renderCustomShifts();
+}
+
+function renderCustomShifts() {
+  const list = $('#settingsShiftDefaultList');
+  if (!list) return;
+  const selected = new Set($$('input[name="settingsShift"]:checked').map(input => input.value));
+  list.querySelectorAll('[data-custom-shift-row]').forEach(item => item.remove());
+  list.insertAdjacentHTML('beforeend', customShifts.map(item => `
+    <label class="region-check" data-custom-shift-row>
+      <input type="checkbox" name="settingsShift" value="${escapeHtml(item.id)}" ${selected.has(item.id) ? 'checked' : ''} />
+      <span>${escapeHtml(item.label)}</span>
+      <button class="region-shift-remove" type="button" data-remove-custom-shift="${escapeHtml(item.id)}" aria-label="${t('ui.delete', 'Delete')}">×</button>
+    </label>`).join(''));
+}
+
+function addCustomTroop() {
+  const input = $('#settingsCustomTroopName');
+  const label = trim(input?.value);
+  if (!label) return;
+  const id = makeCustomId(label);
+  if (!customTroopTypes.some(item => item.id === id)) customTroopTypes.push({ id, label });
+  if (input) input.value = '';
+  renderRuleLists();
+}
+
+function addCustomField() {
+  const input = $('#settingsCustomFieldLabel');
+  const label = trim(input?.value);
+  if (!label) return;
+  const id = makeCustomId(label);
+  const type = $('#settingsCustomFieldType')?.value === 'checkbox' ? 'checkbox' : 'text';
+  if (!customFields.some(item => item.id === id)) customFields.push({ id, label, type });
+  if (input) input.value = '';
+  renderRuleLists();
+}
+
+function removeCustomTroop(id) {
+  customTroopTypes = customTroopTypes.filter(item => item.id !== id);
+  renderRuleLists();
+}
+
+function removeCustomField(id) {
+  customFields = customFields.filter(item => item.id !== id);
+  renderRuleLists();
+}
+
+function addCustomShift() {
+  const input = $('#settingsCustomShiftLabel');
+  const label = trim(input?.value);
+  if (!label) return;
+  const id = makeCustomId(label);
+  const defaultIds = ['shift1', 'shift2', 'shift3', 'shift4', 'both'];
+  if (!defaultIds.includes(id) && !customShifts.some(item => item.id === id)) customShifts.push({ id, label });
+  if (input) input.value = '';
+  renderRuleLists();
+}
+
+function removeCustomShift(id) {
+  customShifts = customShifts.filter(item => item.id !== id);
+  renderRuleLists();
+}
+
+function updatePreview() {
+  const eventStartAtMs = fromUtcInputValue($('#settingsEventStart')?.value);
+  const closeRule = $('#settingsCloseRule')?.value || 'hoursBeforeEvent';
+  const closeHours = Number($('#settingsCloseHours')?.value) || 24;
+  const closeAtMs = computeCloseAtMs(eventStartAtMs, closeRule, closeHours);
+  const autoOpenEnabled = $('#settingsAutoOpen')?.checked ?? true;
+  const autoOpenDay = Number($('#settingsAutoOpenDay')?.value ?? 5);
+  const autoOpenTime = $('#settingsAutoOpenTime')?.value || '00:00';
+  const openAtMs = computeOpenAtMs(eventStartAtMs, autoOpenEnabled, autoOpenDay, autoOpenTime);
+  const now = Date.now();
+  const closeText = closeAtMs > now ? tv('region.timeUntilClose', 'Until close: {time}', { time: formatCountdown(closeAtMs - now) }) : t('region.registrationClosedByTimer', 'Registration is already closed by timer');
+
+  $('#settingsOpenPreview') && ($('#settingsOpenPreview').textContent = autoOpenEnabled ? tv('regionSettings.openAtLabel', 'Opens: {value}', { value: formatUtcAndLocal(openAtMs) }) : t('regionSettings.opensImmediately', 'Opens immediately when the form is enabled'));
+  $('#settingsClosePreview') && ($('#settingsClosePreview').textContent = tv('region.closeAtLabel', 'Closes: {value}', { value: formatUtcAndLocal(closeAtMs) }));
+  $('#settingsTimerPreview') && ($('#settingsTimerPreview').textContent = closeText);
+  $('#settingsCyclePreview') && ($('#settingsCyclePreview').textContent = tv('region.wastelandStartLabel', 'Wasteland start: {value} · until start {countdown}', { value: eventStartText({ eventStartAtMs }), countdown: formatCountdown(eventStartAtMs - Date.now()) }));
+  $('#settingsOpenedPreview') && ($('#settingsOpenedPreview').textContent = tv('regionSettings.openedAtLabel', 'Started: {value}', { value: openedAtText(currentSettings) }));
+  $('#settingsOpenedByPreview') && ($('#settingsOpenedByPreview').textContent = tv('regionSettings.openedByLabel', 'Started by: {value}', { value: openedByText(currentSettings) }));
+}
+
+function startPreviewTimer() {
+  clearInterval(timerId);
+  updatePreview();
+  timerId = setInterval(updatePreview, 30000);
+}
+
+function fill(settings) {
+  currentSettings = settings;
+  $('#settingsEnabled').value = String(Boolean(settings.enabled));
+  $('#settingsTitle').value = localizedDefaultText(settings.title, 'region.formTitle', 'Реєстрація на пустош');
+  $('#settingsHostAlliance') && ($('#settingsHostAlliance').value = settings.hostAlliance || '');
+  $('#settingsGovernor') && ($('#settingsGovernor').value = settings.governor || '');
+  $('#settingsDescription').value = localizedDefaultText(settings.description, 'region.formDefaultDescription', 'Заповни заявку для свого регіону. Консул або офіцер побачить її в таблиці регіону.');
+  $('#settingsExtraTroop').checked = Boolean(settings.allowExtraTroop);
+  $('#settingsMinTier') && ($('#settingsMinTier').value = settings.minTier || 'T10');
+  customTroopTypes = Array.isArray(settings.customTroopTypes) ? [...settings.customTroopTypes] : [];
+  customFields = Array.isArray(settings.customFields) ? [...settings.customFields] : [];
+  customShifts = Array.isArray(settings.customShifts) ? [...settings.customShifts] : [];
+  renderRuleLists();
+  rotationDraft = { enabled: Boolean(settings.rotationEnabled), loop: 'rotationLoop' in settings ? Boolean(settings.rotationLoop) : true, activeIndex: Number(settings.rotationActiveIndex) || 0, alliances: normalizeRotation(settings.rotationAlliances || []) };
+  updateRotationSummary(settings);
+  $('#openRotationModalBtn') && ($('#openRotationModalBtn').disabled = !canManageRotationSettings());
+  $('#settingsEventStart').value = toUtcInputValue(settings.eventStartAtMs);
+  $('#settingsCloseRule').value = settings.closeRule || 'hoursBeforeEvent';
+  $('#settingsCloseHours').value = settings.closeHours || 24;
+  $('#settingsAutoOpen') && ($('#settingsAutoOpen').checked = 'autoOpenEnabled' in settings ? Boolean(settings.autoOpenEnabled) : true);
+  $('#settingsAutoOpenDay') && ($('#settingsAutoOpenDay').value = String(settings.autoOpenDay ?? 5));
+  $('#settingsAutoOpenTime') && ($('#settingsAutoOpenTime').value = settings.autoOpenTime || '00:00')
+  $('#settingsNewCycle').checked = false;
+  $$('input[name="settingsShift"]').forEach(input => {
+    input.checked = settings.shifts?.includes(input.value);
+  });
+  updateShareLink();
+  startPreviewTimer();
+}
+
+function read() {
+  return {
+    enabled: $('#settingsEnabled').value === 'true',
+    title: cleanDefaultText($('#settingsTitle').value, 'region.formTitle', 'Реєстрація на пустош'),
+    description: cleanDefaultText($('#settingsDescription').value, 'region.formDefaultDescription', 'Заповни заявку для свого регіону. Консул або офіцер побачить її в таблиці регіону.'),
+    hostAlliance: $('#settingsHostAlliance')?.value || '',
+    governor: $('#settingsGovernor')?.value || '',
+    shifts: $$('input[name="settingsShift"]:checked').map(input => input.value),
+    customShifts: customShifts.map(item => ({ id: item.id, label: item.label })),
+    requireCaptain: false,
+    allowExtraTroop: $('#settingsExtraTroop').checked,
+    minTier: $('#settingsMinTier')?.value || 'T10',
+    customTroopTypes: customTroopTypes.map(item => ({ id: item.id, label: item.label })),
+    customFields: customFields.map(item => ({ id: item.id, label: item.label, type: item.type })),
+    eventStartAtMs: fromUtcInputValue($('#settingsEventStart').value),
+    closeRule: $('#settingsCloseRule').value,
+    closeHours: $('#settingsCloseHours').value,
+    autoOpenEnabled: $('#settingsAutoOpen')?.checked ?? true,
+    autoOpenDay: Number($('#settingsAutoOpenDay')?.value ?? 5),
+    autoOpenTime: $('#settingsAutoOpenTime')?.value || '00:00',
+    rotationEnabled: Boolean(rotationDraft.enabled),
+    rotationLoop: Boolean(rotationDraft.loop),
+    rotationActiveIndex: Number(rotationDraft.activeIndex) || 0,
+    rotationAlliances: normalizeRotation(rotationDraft.alliances),
+    openNewCycle: $('#settingsNewCycle').checked
+  };
+}
+
+function activateSettingsTab(name) {
+  $$('[data-region-settings-tab]').forEach(button => {
+    const active = button.dataset.regionSettingsTab === name;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-selected', String(active));
+  });
+  $$('[data-region-settings-panel]').forEach(panel => {
+    const active = panel.dataset.regionSettingsPanel === name;
+    panel.hidden = !active;
+    panel.classList.toggle('is-active', active);
+  });
+  if (name === 'alliances') renderRegionColorBuilder();
+}
+
+async function save(event, overrides = {}) {
+  event.preventDefault();
+  const values = { ...read(), ...overrides };
+  if (!values.shifts.length) {
+    setStatus(t('region.selectAtLeastOneShift', 'Choose at least one shift for the form.'), 'error');
+    return;
+  }
+  try {
+    setStatus(t('region.savingRegionForm', 'Saving region form...'), 'muted');
+    currentSettings = await saveRegionSettings(currentUser, currentRegion, values);
+    currentShareCode = currentSettings.shortLinkCode || currentShareCode;
+    const openedNewCycle = Boolean(currentSettings.openedNewCycle || values.openNewCycle);
+    if (openedNewCycle) {
+      await saveRegionTowerPlan(currentUser, currentRegion, { version: 1, updatedAtMs: Date.now(), regions: { home: {}, region2: {}, region3: {} } }).catch(error => console.warn('tower plan reset skipped', error));
+      window.WKD?.resetTowerPlannerPlan?.('registration-form-new-cycle');
+      document.dispatchEvent(new CustomEvent('wkd:tower-plan-hard-reset', { detail: { source: 'registration-form-new-cycle' } }));
+    }
+    fill(currentSettings);
+    const note = openedNewCycle ? ` ${t('regionSettings.newCycleSavedNote', 'New cycle opened: the table shows a clean list, and old requests remain in the previous cycle.')}` : '';
+    const cleanupNote = currentSettings.cleanupDeletedCount
+      ? ` ${tv('regionSettings.oldRequestsCleanupNote', 'Old requests older than 14 days deleted: {count}.', { count: currentSettings.cleanupDeletedCount })}`
+      : '';
+    setStatus(`${t('regionSettings.formSaved', 'Region form saved.')}${note}${cleanupNote}`, 'success');
+  } catch (error) {
+    console.error(error);
+    setStatus(t('regionSettings.saveFailed', 'Could not save the form. Check access rights.'), 'error');
+  }
+}
+
+
+async function startRegistrationNow() {
+  if (!currentUser || !currentRegion) return;
+  const message = t('regionSettings.startNowConfirmMessage', 'The form will open immediately and a new clean cycle will be created. The player table and tower plan will be cleared.');
+  const ok = window.WKD?.confirmDialog
+    ? await window.WKD.confirmDialog({
+        title: t('regionSettings.startNowConfirmTitle', 'Start registration now?'),
+        message,
+        acceptText: t('regionSettings.startNow', 'Start now'),
+        cancelText: t('ui.cancel', 'Cancel')
+      })
+    : window.confirm(message);
+  if (!ok) return;
+
+  const enabled = $('#settingsEnabled');
+  const autoOpen = $('#settingsAutoOpen');
+  const newCycle = $('#settingsNewCycle');
+  if (enabled) enabled.value = 'true';
+  if (autoOpen) autoOpen.checked = false;
+  if (newCycle) newCycle.checked = true;
+  updatePreview();
+  await save({ preventDefault() {} }, { enabled: true, autoOpenEnabled: false, openNewCycle: true, forceOpenNow: true });
+  setStatus(t('regionSettings.startNowSaved', 'Registration has been started now.'), 'success');
+}
+
+async function closeRegistrationNow() {
+  if (!currentUser || !currentRegion) return;
+  const message = t('regionSettings.closeNowConfirmMessage', 'The registration form will be closed now. Existing requests in the current cycle will stay in the table.');
+  const ok = window.WKD?.confirmDialog
+    ? await window.WKD.confirmDialog({
+        title: t('regionSettings.closeNowConfirmTitle', 'Close registration now?'),
+        message,
+        acceptText: t('regionSettings.closeNow', 'Close registration'),
+        cancelText: t('ui.cancel', 'Cancel')
+      })
+    : window.confirm(message);
+  if (!ok) return;
+
+  const enabled = $('#settingsEnabled');
+  const autoOpen = $('#settingsAutoOpen');
+  const newCycle = $('#settingsNewCycle');
+  if (enabled) enabled.value = 'false';
+  if (autoOpen) autoOpen.checked = false;
+  if (newCycle) newCycle.checked = false;
+  currentSettings = { ...(currentSettings || {}), enabled: false, autoOpenEnabled: false, openAtMs: 0, closeAtMs: Date.now(), closedAtMs: Date.now() };
+  updatePreview();
+  await save({ preventDefault() {} }, { enabled: false, autoOpenEnabled: false, openNewCycle: false, forceCloseNow: true });
+  setStatus(t('regionSettings.closeNowSaved', 'Registration has been closed.'), 'success');
+}
+
+function clearAllianceForm() {
+  editingAllianceId = '';
+  $('#allianceTag') && ($('#allianceTag').value = '');
+  $('#allianceName') && ($('#allianceName').value = '');
+  $('#allianceNote') && ($('#allianceNote').value = '');
+  $('#allianceSaveBtn') && ($('#allianceSaveBtn').textContent = t('region.saveAlliance', 'Save alliance'));
+  $('#allianceTag')?.removeAttribute('readonly');
+}
+
+function renderAlliances() {
+  const list = $('#regionAllianceList');
+  const counter = $('#regionAllianceCount');
+  if (counter) counter.textContent = tv('region.allianceCount', '{count} alliances', { count: currentAlliances.length });
+  if (!list) return;
+  if (!currentAlliances.length) {
+    list.innerHTML = `<div class="region-empty">${escapeHtml(t('regionSettings.noAlliancesYet', 'No alliances yet. Add the first tag for this region.'))}</div>`;
+    renderRegionColorBuilder();
+    return;
+  }
+  const sorted = currentAlliances.slice().sort((a, b) => Number(isAllianceInvalid(b.tag || b.id)) - Number(isAllianceInvalid(a.tag || a.id)) || String(a.tag || a.id).localeCompare(String(b.tag || b.id), document.documentElement.lang || 'en', { numeric: true, sensitivity: 'variant' }));
+  list.innerHTML = sorted.map((alliance, index) => {
+    const tag = alliance.tag || alliance.id || '';
+    const invalid = isAllianceInvalid(tag);
+    const status = invalid ? `<small class="region-alliance-warning">${escapeHtml(t('regionSettings.needThreeChars', '3 characters required'))}</small>` : '';
+    return `<article class="region-alliance-card ${invalid ? 'is-invalid' : 'is-ok'}">
+      <div class="region-alliance-card-main">${allianceBadge(tag, index)}<span>${escapeHtml(alliance.name || tag || alliance.id)}</span>${status}${alliance.note ? `<small>${escapeHtml(alliance.note)}</small>` : ''}</div>
+      <div class="region-alliance-actions">
+        <button class="btn" type="button" data-edit-alliance="${escapeHtml(alliance.id)}">${escapeHtml(t('common.edit', 'Edit'))}</button>
+        <button class="btn farm-delete" type="button" data-delete-alliance="${escapeHtml(alliance.id)}">${escapeHtml(t('common.delete', 'Delete'))}</button>
+      </div>
+    </article>`;
+  }).join('');
+  renderRegionColorBuilder();
+}
+
+async function refreshAlliances() {
+  if (!currentRegion) return;
+  currentAlliances = await listRegionAlliances(currentRegion);
+  window.WKD = window.WKD || {};
+  window.WKD.regionAllianceColorMap = Object.fromEntries(currentAlliances.map(item => [normalizeAllianceTag(item.tag || item.id), hueFromValue(item.colorHue)]).filter(([, hue]) => hue !== null));
+  document.dispatchEvent(new CustomEvent('wkd:alliance-colors-updated', { detail: { source: 'region-settings-load', region: currentRegion } }));
+  renderAlliances();
+  renderRotationModal();
+  updateRotationSummary();
+}
+
+async function saveAlliance(event) {
+  event.preventDefault();
+  const tag = normalizeAllianceTag($('#allianceTag')?.value);
+  const name = trim($('#allianceName')?.value);
+  const note = trim($('#allianceNote')?.value);
+  if (!tag) {
+    setAllianceStatus(t('regionSettings.enterAllianceTag', 'Enter an alliance tag.'), 'error');
+    return;
+  }
+  if (isAllianceInvalid(tag)) {
+    setAllianceStatus(t('region.allianceTagLengthRequired', 'Alliance tag must contain exactly 3 symbols.'), 'error');
+    return;
+  }
+  try {
+    setAllianceStatus(t('regionSettings.savingAlliance', 'Saving alliance...'), 'muted');
+    if (editingAllianceId && normalizeAllianceTag(editingAllianceId) !== tag) {
+      await deleteRegionAlliance(currentUser, currentRegion, editingAllianceId).catch(error => console.warn('Old alliance tag delete skipped:', error));
+    }
+    const saved = await saveRegionAlliance(currentUser, currentRegion, { id: tag, tag, name, note });
+    currentAlliances = currentAlliances.filter(item => normalizeAllianceTag(item.id || item.tag) !== normalizeAllianceTag(saved.id || saved.tag) && normalizeAllianceTag(item.id || item.tag) !== normalizeAllianceTag(editingAllianceId));
+    currentAlliances.push(saved);
+    selectedRegionColorTag = normalizeAllianceTag(saved.tag || saved.id);
+    clearAllianceForm();
+    renderAlliances();
+    try { await refreshAlliances(); } catch (refreshError) { console.warn('Alliance refresh skipped after save', refreshError); }
+    setAllianceStatus(t('regionSettings.allianceSaved', 'Alliance saved.'), 'success');
+  } catch (error) {
+    console.error(error);
+    const existing = currentAlliances.some(item => normalizeAllianceTag(item.id || item.tag) === normalizeAllianceTag(tag));
+    if (existing) {
+      renderAlliances();
+      setAllianceStatus(t('regionSettings.allianceSaved', 'Alliance saved.'), 'success');
+      return;
+    }
+    setAllianceStatus(t('regionSettings.allianceSaveFailed', 'Could not save alliance. Check access rights.'), 'error');
+  }
+}
+
+function editAlliance(id) {
+  const alliance = currentAlliances.find(item => item.id === id);
+  if (!alliance) return;
+  editingAllianceId = alliance.id;
+  $('#allianceTag') && ($('#allianceTag').value = alliance.tag || alliance.id);
+  $('#allianceName') && ($('#allianceName').value = alliance.name || '');
+  $('#allianceNote') && ($('#allianceNote').value = alliance.note || '');
+  $('#allianceSaveBtn') && ($('#allianceSaveBtn').textContent = t('common.saveChanges', 'Save changes'));
+  $('#allianceTag')?.removeAttribute('readonly');
+  setAllianceStatus(tv('regionSettings.editingAlliance', 'Editing alliance {tag}.', { tag: alliance.tag || alliance.id }), 'muted');
+}
+
+async function removeAlliance(id) {
+  const alliance = currentAlliances.find(item => item.id === id);
+  const ok = window.WKD?.confirmDialog
+    ? await window.WKD.confirmDialog({
+      title: t('regionSettings.deleteAllianceTitle', 'Delete alliance?'),
+      message: tv('regionSettings.deleteAllianceMessage', 'Alliance {tag} will be removed from this region list.', { tag: alliance?.tag || id }),
+      note: t('regionSettings.deleteAllianceNote', 'Player requests will not be deleted.'),
+      icon: '✕',
+      acceptText: t('common.delete', 'Delete')
+    })
+    : window.confirm(t('regionSettings.deleteAllianceTitle', 'Delete alliance?'));
+  if (!ok) return;
+  try {
+    setAllianceStatus(t('regionSettings.deletingAlliance', 'Deleting alliance...'), 'muted');
+    await deleteRegionAlliance(currentUser, currentRegion, id);
+    if (editingAllianceId === id) clearAllianceForm();
+    await refreshAlliances();
+    setAllianceStatus(t('regionSettings.allianceDeleted', 'Alliance deleted.'), 'success');
+  } catch (error) {
+    console.error(error);
+    setAllianceStatus(t('regionSettings.allianceDeleteFailed', 'Could not delete alliance.'), 'error');
+  }
+}
+
+
+function renderRotationModal() {
+  const enabled = $('#rotationEnabled');
+  const loop = $('#rotationLoop');
+  const select = $('#rotationAllianceSelect');
+  const listBox = $('#rotationAllianceList');
+  const current = $('#rotationCurrentText');
+  if (enabled) enabled.checked = Boolean(rotationDraft.enabled);
+  if (loop) loop.checked = Boolean(rotationDraft.loop);
+  const tags = collectAllianceTags().filter(tag => !rotationDraft.alliances.some(item => item.tag === tag));
+  if (select) {
+    select.innerHTML = tags.length
+      ? tags.map(tag => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`).join('')
+      : `<option value="">${escapeHtml(t('regionSettings.noAllianceInList', 'No alliance in the list'))}</option>`;
+  }
+  const normalized = normalizeRotation(rotationDraft.alliances);
+  rotationDraft.alliances = normalized;
+  if (rotationDraft.activeIndex >= normalized.length) rotationDraft.activeIndex = Math.max(0, normalized.length - 1);
+  const active = normalized[rotationDraft.activeIndex];
+  if (current) current.innerHTML = active
+    ? tv('regionSettings.rotationCurrentAlliance', 'Current Wasteland alliance: {tag}', { tag: active.tag })
+    : t('regionSettings.rotationCurrentEmpty', 'Current alliance is not selected yet.');
+  if (!listBox) return;
+  listBox.innerHTML = normalized.length ? normalized.map((item, index) => {
+    const activeClass = index === rotationDraft.activeIndex ? ' is-current' : '';
+    return `<article class="region-rotation-item${activeClass}" draggable="true" data-rotation-index="${index}">
+      <span class="region-rotation-drag" aria-hidden="true">☰</span>
+      ${allianceBadge(item.tag, index)}
+      <strong>${escapeHtml(item.name || item.tag)}</strong>
+      <span class="region-rotation-current-badge">${index === rotationDraft.activeIndex ? escapeHtml(t('regionSettings.rotationCurrentBadge', 'Current')) : ''}</span>
+      <div class="region-rotation-item-actions">
+        <button class="btn btn-sm" type="button" data-rotation-up="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
+        <button class="btn btn-sm" type="button" data-rotation-down="${index}" ${index === normalized.length - 1 ? 'disabled' : ''}>↓</button>
+        <button class="btn btn-sm" type="button" data-rotation-current="${index}">${escapeHtml(t('regionSettings.rotationSetCurrent', 'Set current'))}</button>
+        <button class="btn btn-sm farm-delete" type="button" data-rotation-delete="${index}">×</button>
+      </div>
+    </article>`;
+  }).join('') : `<div class="region-empty">${escapeHtml(t('regionSettings.rotationEmpty', 'No alliances in rotation yet.'))}</div>`;
+}
+function openRotationModal() {
+  if (!canManageRotationSettings()) { setStatus(t('regionSettings.rotationAccessDenied', 'Only the region consul, admin or moderator can configure rotation.'), 'error'); return; }
+  rotationDraft = {
+    enabled: Boolean(currentSettings?.rotationEnabled ?? rotationDraft.enabled),
+    loop: 'rotationLoop' in (currentSettings || {}) ? Boolean(currentSettings.rotationLoop) : Boolean(rotationDraft.loop ?? true),
+    activeIndex: Number(currentSettings?.rotationActiveIndex ?? rotationDraft.activeIndex) || 0,
+    alliances: normalizeRotation(currentSettings?.rotationAlliances || rotationDraft.alliances || [])
+  };
+  $('#regionRotationBackdrop') && ($('#regionRotationBackdrop').hidden = false);
+  renderRotationModal();
+}
+function closeRotationModal() {
+  $('#regionRotationBackdrop') && ($('#regionRotationBackdrop').hidden = true);
+}
+function addRotationAlliance() {
+  const picked = normalizeAllianceTag($('#rotationAllianceSelect')?.value);
+  const manual = normalizeAllianceTag($('#rotationManualTag')?.value);
+  const tag = manual || picked;
+  if (!tag || rotationDraft.alliances.some(item => item.tag === tag)) return;
+  const record = allianceRecord(tag);
+  rotationDraft.alliances.push({ tag, name: trim(record?.name || '') });
+  if ($('#rotationManualTag')) $('#rotationManualTag').value = '';
+  if (rotationDraft.alliances.length === 1) rotationDraft.activeIndex = 0;
+  renderRotationModal();
+}
+function moveRotationAlliance(from, to) {
+  const list = rotationDraft.alliances;
+  if (to < 0 || to >= list.length || from === to) return;
+  const [item] = list.splice(from, 1);
+  list.splice(to, 0, item);
+  if (rotationDraft.activeIndex === from) rotationDraft.activeIndex = to;
+  else if (from < rotationDraft.activeIndex && to >= rotationDraft.activeIndex) rotationDraft.activeIndex -= 1;
+  else if (from > rotationDraft.activeIndex && to <= rotationDraft.activeIndex) rotationDraft.activeIndex += 1;
+  renderRotationModal();
+}
+async function deleteRotationAlliance(index) {
+  const item = rotationDraft.alliances[index];
+  if (!item) return;
+  const ok = window.WKD?.confirmDialog
+    ? await window.WKD.confirmDialog({
+      title: t('regionSettings.rotationDeleteTitle', 'Remove alliance from rotation?'),
+      message: tv('regionSettings.rotationDeleteMessage', 'Alliance {tag} will be removed from the rotation list.', { tag: item.tag }),
+      note: t('regionSettings.rotationDeleteNote', 'The alliance itself will stay in the region alliance list.'),
+      icon: '⚠',
+      acceptText: t('common.delete', 'Delete')
+    })
+    : window.confirm(t('regionSettings.rotationDeleteTitle', 'Remove alliance from rotation?'));
+  if (!ok) return;
+  rotationDraft.alliances.splice(index, 1);
+  rotationDraft.activeIndex = Math.max(0, Math.min(rotationDraft.activeIndex, rotationDraft.alliances.length - 1));
+  renderRotationModal();
+}
+function saveRotationDraft() {
+  if (!canManageRotationSettings()) return;
+  rotationDraft.enabled = $('#rotationEnabled')?.checked ?? rotationDraft.enabled;
+  rotationDraft.loop = $('#rotationLoop')?.checked ?? rotationDraft.loop;
+  rotationDraft.alliances = normalizeRotation(rotationDraft.alliances);
+  rotationDraft.activeIndex = Math.max(0, Math.min(Math.max(0, rotationDraft.alliances.length - 1), Number(rotationDraft.activeIndex) || 0));
+  const active = rotationDraft.alliances[rotationDraft.activeIndex];
+  if (active && $('#settingsHostAlliance')) $('#settingsHostAlliance').value = active.tag;
+  updateRotationSummary({ ...currentSettings, rotationEnabled: rotationDraft.enabled, rotationLoop: rotationDraft.loop, rotationActiveIndex: rotationDraft.activeIndex, rotationAlliances: rotationDraft.alliances });
+  closeRotationModal();
+}
+
+async function copyShareLink() {
+  const input = $('#regionShareLink');
+  if (!input?.value) return;
+  try {
+    await navigator.clipboard.writeText(input.value);
+    setStatus(t('region.linkCopiedPublic', 'Link copied. You can send it to players without site registration.'), 'success');
+  } catch {
+    input.select();
+    document.execCommand('copy');
+    setStatus(t('region.linkSelectedManual', 'Link selected. Copy it manually if the browser did not allow copying.'), 'warn');
+  }
+}
+
+async function load(user) {
+  currentUser = user;
+  if (!user) {
+    setStatus(t('regionSettings.signInRequired', 'Увійди через Google, щоб налаштувати форму.'), 'warn');
+    setTimeout(() => { window.location.href = 'login.html'; }, 800);
+    return;
+  }
+  await saveSignedInUser(user).catch(() => null);
+  const { profile, region } = await getMyRegionContext(user, readRegionFromUrl());
+  currentProfile = profile;
+  currentRegion = region;
+  currentCanViewAnyRegion = canViewAnyRegion(profile, user);
+  updateRegionPill(region);
+  await refreshRegionSwitcher();
+  $('#openRegionTableFromSettingsBtn') && ($('#openRegionTableFromSettingsBtn').hidden = false);
+  if (!canManageRegion(profile, region, user)) {
+    setStatus(t('regionSettings.accessDenied', 'Only an admin, moderator, consul or officer of their own region can edit the region form.'), 'error');
+    return;
+  }
+  await cleanupOldRegionRegistrations(user, region).catch(error => console.warn('[WKD] old registration cleanup skipped:', error));
+  const settings = await getRegionSettings(region);
+  currentShareCode = await getRegionShareLinkCode(user, region).catch(error => {
+    console.warn('Short registration link unavailable', error);
+    return '';
+  });
+  fill(settings);
+  $('#regionSettingsForm').hidden = false;
+  await refreshAlliances().catch(error => {
+    console.warn('Alliance list failed', error);
+    currentAlliances = normalizeRotation(settings.rotationAlliances || [])
+      .map(item => ({ id: item.tag, tag: item.tag, name: item.name || item.tag }));
+    if (settings.hostAlliance && !currentAlliances.some(item => normalizeAllianceTag(item.tag) === normalizeAllianceTag(settings.hostAlliance))) {
+      currentAlliances.push({ id: normalizeAllianceTag(settings.hostAlliance), tag: normalizeAllianceTag(settings.hostAlliance), name: settings.hostAlliance });
+    }
+    renderAlliances();
+  });
+  setStatus(t('regionSettings.readyStatus', 'Configure the form, close time and secret link for players in your region.'), 'success');
+}
+
+function bind() {
+  $('#regionSettingsForm')?.addEventListener('submit', save);
+  $('#openAddRegionBtn')?.addEventListener('click', () => toggleManualRegionForm());
+  $('#cancelAddRegionBtn')?.addEventListener('click', () => toggleManualRegionForm(false));
+  $('#regionManualAddForm')?.addEventListener('submit', saveManualRegionFromSettings);
+  $('#startRegistrationNowBtn')?.addEventListener('click', () => startRegistrationNow().catch(error => {
+    console.error(error);
+    setStatus(t('regionSettings.saveFailed', 'Could not save the form. Check access rights.'), 'error');
+  }));
+  $('#closeRegistrationNowBtn')?.addEventListener('click', () => closeRegistrationNow().catch(error => {
+    console.error(error);
+    setStatus(t('regionSettings.saveFailed', 'Could not save the form. Check access rights.'), 'error');
+  }));
+  $('#regionSettingsRegionSelect')?.addEventListener('change', event => switchRegion(event.currentTarget.value).catch(error => {
+    console.error(error);
+    setStatus(t('regionSettings.openFailed', 'Could not open region settings.'), 'error');
+  }));
+  $('#regionAllianceForm')?.addEventListener('submit', saveAlliance);
+  $('#allianceClearBtn')?.addEventListener('click', clearAllianceForm);
+  $('#addCustomTroopBtn')?.addEventListener('click', addCustomTroop);
+  $('#addCustomFieldBtn')?.addEventListener('click', addCustomField);
+  $('#addCustomShiftBtn')?.addEventListener('click', addCustomShift);
+  $('#settingsCustomTroopName')?.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); addCustomTroop(); } });
+  $('#settingsCustomFieldLabel')?.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); addCustomField(); } });
+  $('#settingsCustomShiftLabel')?.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); addCustomShift(); } });
+  $('#settingsCustomTroopList')?.addEventListener('click', event => {
+    const id = event.target.closest('[data-remove-custom-troop]')?.dataset.removeCustomTroop;
+    if (id) removeCustomTroop(id);
+  });
+  $('#settingsCustomFieldList')?.addEventListener('click', event => {
+    const id = event.target.closest('[data-remove-custom-field]')?.dataset.removeCustomField;
+    if (id) removeCustomField(id);
+  });
+  $('#settingsShiftDefaultList')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-remove-custom-shift]');
+    const id = button?.dataset.removeCustomShift;
+    if (!id) return;
+    event.preventDefault();
+    event.stopPropagation();
+    removeCustomShift(id);
+  });
+  $('#openRotationModalBtn')?.addEventListener('click', openRotationModal);
+  $('#closeRotationModalBtn')?.addEventListener('click', closeRotationModal);
+  $('#cancelRotationModalBtn')?.addEventListener('click', closeRotationModal);
+  $('#saveRotationModalBtn')?.addEventListener('click', saveRotationDraft);
+  $('#addRotationAllianceBtn')?.addEventListener('click', addRotationAlliance);
+  ['#allianceTag', '#rotationManualTag', '#settingsHostAlliance'].forEach(selector => {
+    const input = $(selector);
+    input?.addEventListener('input', () => { input.value = normalizeAllianceTag(input.value); });
+  });
+  $('#rotationManualTag')?.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); addRotationAlliance(); } });
+  $('#rotationEnabled')?.addEventListener('change', event => { rotationDraft.enabled = event.currentTarget.checked; renderRotationModal(); });
+  $('#rotationLoop')?.addEventListener('change', event => { rotationDraft.loop = event.currentTarget.checked; renderRotationModal(); });
+  $('#regionRotationBackdrop')?.addEventListener('click', event => { if (event.target.id === 'regionRotationBackdrop') closeRotationModal(); });
+  $('#rotationAllianceList')?.addEventListener('click', event => {
+    const currentButton = event.target.closest('[data-rotation-current]');
+    const upButton = event.target.closest('[data-rotation-up]');
+    const downButton = event.target.closest('[data-rotation-down]');
+    const deleteButton = event.target.closest('[data-rotation-delete]');
+    if (currentButton) { rotationDraft.activeIndex = Number(currentButton.dataset.rotationCurrent) || 0; renderRotationModal(); }
+    if (upButton) moveRotationAlliance(Number(upButton.dataset.rotationUp) || 0, (Number(upButton.dataset.rotationUp) || 0) - 1);
+    if (downButton) moveRotationAlliance(Number(downButton.dataset.rotationDown) || 0, (Number(downButton.dataset.rotationDown) || 0) + 1);
+    if (deleteButton) deleteRotationAlliance(Number(deleteButton.dataset.rotationDelete) || 0);
+  });
+  let rotationDragIndex = null;
+  $('#rotationAllianceList')?.addEventListener('dragstart', event => { rotationDragIndex = Number(event.target.closest('[data-rotation-index]')?.dataset.rotationIndex); });
+  $('#rotationAllianceList')?.addEventListener('dragover', event => { if (event.target.closest('[data-rotation-index]')) event.preventDefault(); });
+  $('#rotationAllianceList')?.addEventListener('drop', event => {
+    const targetIndex = Number(event.target.closest('[data-rotation-index]')?.dataset.rotationIndex);
+    if (Number.isFinite(rotationDragIndex) && Number.isFinite(targetIndex)) moveRotationAlliance(rotationDragIndex, targetIndex);
+    rotationDragIndex = null;
+  });
+  $('#copyRegionShareBtn')?.addEventListener('click', copyShareLink);
+  $('#openRegionTableFromSettingsBtn')?.addEventListener('click', () => { if (currentCanViewAnyRegion) window.location.href = `region-table.html?region=${currentRegion}`; });
+  $('#regionAllianceList')?.addEventListener('click', event => {
+    const editId = event.target.closest('[data-edit-alliance]')?.dataset.editAlliance;
+    const deleteId = event.target.closest('[data-delete-alliance]')?.dataset.deleteAlliance;
+    if (editId) editAlliance(editId);
+    if (deleteId) removeAlliance(deleteId);
+  });
+  $$('[data-region-alliance-subtab]').forEach(button => {
+    button.addEventListener('click', () => setRegionAllianceSubtab(button.dataset.regionAllianceSubtab));
+  });
+  $('#regionAllianceColorPreview')?.addEventListener('click', event => {
+    const item = event.target.closest('[data-region-color-tag]');
+    if (!item) return;
+    selectedRegionColorTag = trim(item.dataset.regionColorTag);
+    renderRegionColorBuilder();
+  });
+  $('#regionAlliancePalette')?.addEventListener('click', event => {
+    const swatch = event.target.closest('[data-region-color-hue]');
+    if (!swatch) return;
+    saveRegionAllianceColor(selectedRegionColorTag, Number(swatch.dataset.regionColorHue));
+  });
+  $('#regionAllianceAutoColorBtn')?.addEventListener('click', () => saveRegionAllianceColor(selectedRegionColorTag, Math.floor(Math.random() * 360)));
+  $('#regionAllianceResetColorBtn')?.addEventListener('click', () => saveRegionAllianceColor(selectedRegionColorTag, null));
+  $('#regionRegeneratePaletteBtn')?.addEventListener('click', () => {
+    localStorage.setItem(colorBuilderKey, String((colorOffset() + 37) % 360));
+    renderRegionColorBuilder();
+  });
+  $$('[data-region-settings-tab]').forEach(button => {
+    button.addEventListener('click', () => activateSettingsTab(button.dataset.regionSettingsTab));
+  });
+  ['#settingsEventStart', '#settingsCloseRule', '#settingsCloseHours', '#settingsAutoOpen', '#settingsAutoOpenDay', '#settingsAutoOpenTime'].forEach(selector => {
+    $(selector)?.addEventListener('input', updatePreview);
+    $(selector)?.addEventListener('change', updatePreview);
+  });
+}
+
+async function init() {
+  if (ready) return;
+  ready = true;
+  bind();
+  activateSettingsTab('form');
+  await watchAuth(user => load(user).catch(error => {
+    console.error(error);
+    setStatus(t('regionSettings.openFailed', 'Could not open region settings.'), 'error');
+  }));
+}
+
+document.addEventListener('wkd:partials-ready', init);
+document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));
+
+document.addEventListener('wkd:language-changed', () => {
+  if (!ready) return;
+  updateRegionPill();
+  if (currentUser && currentRegion) setStatus(t('regionSettings.readyStatus', 'Configure the form, close time and secret link for players in your region.'), 'success');
+  if (editingAllianceId) setAllianceStatus(tv('regionSettings.editingAlliance', 'Editing alliance {tag}.', { tag: $('#allianceTag')?.value || editingAllianceId }), 'muted');
+  if (currentSettings) {
+    $('#settingsTitle') && ($('#settingsTitle').value = localizedDefaultText(currentSettings.title, 'region.formTitle', 'Реєстрація на пустош'));
+    $('#settingsDescription') && ($('#settingsDescription').value = localizedDefaultText(currentSettings.description, 'region.formDefaultDescription', 'Заповни заявку для свого регіону. Консул або офіцер побачить її в таблиці регіону.'));
+  }
+  renderRuleLists();
+  renderAlliances();
+  renderRegionColorBuilder();
+  renderRotationModal();
+  updateRotationSummary();
+  updatePreview();
+});

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="uk" translate="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="google" content="notranslate" />
+  <title data-i18n="admin.pageTitle">Адмінка — Wasteland King Defenders</title>
+  <link rel="icon" href="favicon.png" type="image/png" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/header.css" />
+  <link rel="stylesheet" href="css/auth-page.css" />
+  <link rel="stylesheet" href="css/profile-page.css" />
+  <link rel="stylesheet" href="css/admin-page.css" />
+  <link rel="stylesheet" href="css/modal-import.css" />
+  <link rel="stylesheet" href="css/modal-regions.css" />
+  <link rel="stylesheet" href="css/modal-tiers.css" />
+  <link rel="stylesheet" href="css/confirm-modal.css" />
+  <link rel="stylesheet" href="css/player-edit-modal.css" />
+  <link rel="stylesheet" href="css/player-manager-modal.css" />
+  <link rel="stylesheet" href="css/tower-planner.css" />
+  <link rel="stylesheet" href="css/tower-planner-tablet.css" />
+  <link rel="stylesheet" href="css/tower-planner-mobile.css" />
+  <link rel="stylesheet" href="css/contact-modal.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script defer src="js/i18n.js"></script>
+  <script defer src="js/i18n-uk.js"></script>
+  <script defer src="js/i18n-en.js"></script>
+  <script defer src="js/i18n-ru.js"></script>
+  <script defer src="js/i18n-pl.js"></script>
+  <script defer src="js/i18n-de.js"></script>
+  <script defer src="js/i18n-ja.js"></script>
+  <script defer src="js/i18n-zh.js"></script>
+  <script defer src="js/i18n-ko.js"></script>
+  <script defer src="js/i18n-vi.js"></script>
+  <script defer src="js/i18n-ar.js"></script>
+  <script defer src="js/i18n-autokeys.js"></script>
+  <script defer src="js/core/dom.js"></script>
+  <script defer src="js/core/partials.js"></script>
+  <script defer src="js/header.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="js/core/state.js"></script>
+  <script defer src="js/import-modal.js"></script>
+  <script defer src="js/import-regions.js"></script>
+  <script defer src="js/import-file.js"></script>
+  <script defer src="js/import-mapping.js"></script>
+  <script defer src="js/import-shift-recognition.js"></script>
+  <script defer src="js/visible-tiers.js"></script>
+  <script defer src="js/players-table.js"></script>
+  <script defer src="js/confirm-modal.js"></script>
+  <script defer src="js/player-edit-modal.js"></script>
+  <script defer src="js/player-manager-modal.js"></script>
+  <script defer src="js/tower-planner.js?v=39"></script>
+  <script defer src="js/contact-modal.js"></script>
+  <script defer src="js/app-login-shell.js"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=39"></script>
+  <script type="module" src="js/auth-google.js"></script>
+  <script type="module" src="js/pages/admin-page.js?v=39"></script>
+</head>
+<body class="notranslate">
+  <div data-include="partials/header.html"></div>
+
+  <main class="profile-page container">
+    <section class="profile-card admin-card">
+      <div class="profile-head">
+        <div>
+          <p class="auth-eyebrow" data-i18n="admin.eyebrow">Панель адміністратора</p>
+          <h2 data-i18n="admin.title">Адмінка</h2>
+          <p data-i18n="admin.lead">Керуй заявками на ролі, переглядай зареєстрованих гравців і редагуй їхні дані з бази.</p>
+        </div>
+      </div>
+
+      <div class="admin-status-row">
+        <div class="admin-summary" id="adminSummary"></div>
+        <div class="auth-status" id="adminStatus" data-i18n="admin.loadingPanel">Завантажую адмінку...</div>
+      </div>
+
+      <div class="admin-stats" id="adminStats">
+        <div class="admin-stat-card"><span data-i18n="stats.players">Гравців</span><b>0</b></div>
+        <div class="admin-stat-card"><span data-i18n="stats.regions">Регіонів</span><b>0</b></div>
+        <div class="admin-stat-card"><span data-i18n="stats.leadershipRoles">Керівних ролей</span><b>0</b></div>
+        <div class="admin-stat-card"><span data-i18n="admin.requests">Заявок</span><b>0</b></div>
+      </div>
+
+      <div class="admin-tabs" role="tablist" aria-label="Адмінка">
+        <button class="admin-tab is-active" type="button" data-admin-tab="players" data-i18n="admin.registeredPlayers">Зареєстровані гравці</button>
+        <button class="admin-tab" type="button" data-admin-tab="requests" data-i18n="admin.roleRequests">Заявки на ролі</button>
+        <button class="admin-tab" type="button" data-admin-tab="regions" data-i18n="admin.regionsTab">Регіони</button>
+      </div>
+
+      <section class="admin-section is-active" id="adminPlayersSection" data-admin-panel="players">
+        <div class="admin-toolbar admin-toolbar--grid admin-toolbar--players">
+          <label>
+            <span data-i18n="account.nickname">Нік</span>
+            <input id="adminNickSearch" type="search" placeholder="Пошук по ніку" />
+          </label>
+          <label>
+            <span data-i18n="account.alliance">Альянс</span>
+            <input id="adminAllianceSearch" type="search" placeholder="YYY" maxlength="3" />
+          </label>
+          <label>
+            <span data-i18n="account.region">Регіон</span>
+            <input id="adminRegionSearch" type="search" inputmode="numeric" placeholder="987" />
+          </label>
+          <label>
+            <span data-i18n="account.role">Роль</span>
+            <select id="adminRoleFilter">
+              <option value="all" data-i18n="common.all">Усі</option>
+              <option value="admin" data-i18n="role.admin">Адмін</option>
+              <option value="moderator" data-i18n="role.moderator">Модератор</option>
+              <option value="consul" data-i18n="role.consul">Консул</option>
+              <option value="officer" data-i18n="role.officer">Офіцер</option>
+              <option value="player" data-i18n="role.player">Гравець</option>
+            </select>
+          </label>
+          <label>
+            <span data-i18n="stats.rows">Рядків</span>
+            <select id="adminRowsFilter">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="all" data-i18n="common.all">Усі</option>
+            </select>
+          </label>
+          <label class="stats-toggle-label admin-farms-toggle">
+            <span data-i18n="stats.display">Показ</span>
+            <span class="stats-toggle-box"><input id="adminIncludeFarmsToggle" type="checkbox" /> <b data-i18n="stats.includeFarms">Основи + ферми</b></span>
+          </label>
+          <button class="btn btn-primary" id="refreshPlayersBtn" type="button" data-i18n="common.refresh">Оновити</button>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="registeredPlayersTable">
+            <thead>
+              <tr>
+                <th><button type="button" data-sort="nickname"><span data-i18n="account.nickname">Нік</span> ↓</button></th>
+                <th><button type="button" data-sort="region"><span data-i18n="account.region">Регіон</span> ↓</button></th>
+                <th><button type="button" data-sort="alliance"><span data-i18n="account.alliance">Альянс</span> ↓</button></th>
+                <th><button type="button" data-sort="rank"><span data-i18n="account.rank">Ранг</span> ↓</button></th>
+                <th><button type="button" data-sort="shk"><span data-i18n="account.shk">ШК</span> ↓</button></th>
+                <th><button type="button" data-sort="role"><span data-i18n="account.role">Роль</span> ↓</button></th>
+                <th><button type="button" data-sort="createdAt"><span data-i18n="admin.registrationDate">Дата реєстрації</span> ↓</button></th>
+                <th data-i18n="admin.actions">Дії</th>
+              </tr>
+            </thead>
+            <tbody id="registeredPlayersBody">
+              <tr><td colspan="8" data-i18n="stats.loadingPlayers">Завантажую гравців...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="admin-section" id="adminRequestsSection" data-admin-panel="requests">
+        <div class="admin-toolbar">
+          <button class="btn btn-primary" id="refreshRequestsBtn" type="button" data-i18n="admin.refreshRequests">Оновити заявки</button>
+          <button class="btn" id="backToProfileBtn" type="button" data-i18n="admin.myProfile">Мій профіль</button>
+        </div>
+        <div class="admin-list" id="roleRequestsList">
+          <div class="admin-empty" data-i18n="admin.noRequests">Заявок поки немає.</div>
+        </div>
+      </section>
+
+      <section class="admin-section" id="adminRegionsSection" data-admin-panel="regions">
+        <div class="admin-region-panel">
+          <div class="admin-region-head">
+            <div>
+              <h3 data-i18n="admin.regionsTitle">Регіони сайту</h3>
+              <p data-i18n="admin.manualRegionHelp">Адмін або модератор може додати порожній регіон вручну. Після цього для нього можна налаштувати форму, альянси й таблицю.</p>
+            </div>
+          </div>
+
+          <form class="admin-region-form" id="adminRegionForm">
+            <label>
+              <span data-i18n="admin.regionNumber">Номер регіону</span>
+              <input id="adminRegionId" inputmode="numeric" maxlength="8" placeholder="987" required />
+            </label>
+            <label>
+              <span data-i18n="admin.regionName">Назва</span>
+              <input id="adminRegionName" maxlength="60" placeholder="R987" data-i18n-placeholder="admin.regionNamePlaceholder" />
+            </label>
+            <label>
+              <span data-i18n="admin.regionNote">Коментар</span>
+              <input id="adminRegionNote" maxlength="120" placeholder="Наприклад: основний регіон" data-i18n-placeholder="admin.regionNotePlaceholder" />
+            </label>
+            <label class="admin-region-check">
+              <input id="adminRegionActive" type="checkbox" checked />
+              <span data-i18n="admin.regionActive">Активний</span>
+            </label>
+            <button class="btn btn-primary" type="submit" data-i18n="admin.saveRegion">Додати регіон</button>
+          </form>
+
+          <div class="admin-list admin-region-list" id="adminRegionList">
+            <div class="admin-empty" data-i18n="admin.loadingRegions">Завантажую регіони...</div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div class="container"><div data-include="partials/footer.html"></div></div>
+  <div data-include="partials/import-modal.html"></div>
+  <div data-include="partials/contact-modal.html"></div>
+  <div data-include="partials/confirm-modal.html"></div>
+
+  <div data-include="partials/player-edit-modal.html"></div>
+  <div data-include="partials/player-manager-modal.html"></div>
+  <div data-include="partials/tower-planner-modal.html"></div>
+  <div data-include="partials/final-plan-modal.html"></div>
+</body>
+</html>

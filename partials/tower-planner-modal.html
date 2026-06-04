@@ -1,0 +1,84 @@
+<section class="modal tower-planner-modal" id="towerPlannerModal" aria-hidden="true" aria-label="Розподіл по турелях" data-i18n-aria-label="tower.title">
+  <button class="modal-backdrop" type="button" aria-label="Закрити" data-i18n-aria-label="common.close" data-tower-close></button>
+  <div class="modal-card tower-planner-card" role="dialog" aria-modal="true" aria-labelledby="towerPlannerTitle">
+    <div class="modal-head tower-planner-head">
+      <div>
+        <h2 id="towerPlannerTitle" class="tower-planner-title"><span data-i18n="tower.title">Розподіл по турелях</span> <span id="towerPlannerScopeBadge" class="tower-scope-badge" hidden></span> <button class="tower-source-trigger" id="towerSourceTrigger" type="button" data-tower-scope-open hidden>Локально</button></h2>
+        <p class="muted" id="towerPlannerSubtitle" hidden></p>
+      </div>
+      <button class="btn btn-icon" type="button" aria-label="Закрити" data-i18n-aria-label="common.close" data-tower-close>✕</button>
+    </div>
+
+    <div class="tower-planner-body">
+      <section class="tower-tabs-card">
+        <div class="tower-main-tabs" role="tablist" aria-label="Розподіл по турелях" data-i18n-aria-label="tower.title">
+          <button class="btn btn-sm is-active" type="button" data-tower-main-tab="setup" data-i18n="tower.tab.setup">Налаштування</button>
+          <button class="btn btn-sm" type="button" data-tower-main-tab="towers" data-i18n="tower.tab.towers">Налаштування турелей</button>
+          <button class="btn btn-sm" type="button" data-tower-main-tab="status" data-i18n="tower.tab.status">Статус гравців</button>
+          <button class="btn btn-sm" type="button" data-tower-main-tab="final" data-i18n="tower.tab.final">Фінальний план</button>
+        </div>
+        <div class="tower-region-note" id="towerPlannerAccessNote" hidden></div>
+      </section>
+
+      <section class="tower-panel is-active" data-tower-panel="setup">
+        <div class="tower-summary-grid" id="towerSetupSummary"></div>
+        <div class="tower-actions-row tower-actions-row--split">
+          <div class="tower-actions-main">
+            <button class="btn" type="button" id="towerAutoDistributeBtn" data-i18n="tower.redistribute">Застосувати перерозподіл</button>
+            <button class="btn" type="button" id="towerAutoFillBtn" data-i18n="tower.refill">Дозаповнити турелі</button>
+            <span class="tower-clear-wrap">
+              <button class="btn" type="button" id="towerClearPlanBtn" aria-expanded="false"><span data-i18n="tower.clear">Очистити</span> ▾</button>
+              <span class="tower-clear-menu" id="towerClearPlanMenu" hidden></span>
+            </span>
+          </div>
+          <div class="tower-plan-region-tabs tower-plan-region-tabs--setup" id="towerSetupRegionTabs"></div>
+        </div>
+        <section class="tower-box tower-fill-inline">
+          <h3 data-i18n="tower.fillTitle">Заповнення турелі</h3>
+          <div class="tower-fill-row">
+            <label class="tower-field tower-fill-mode-field"><span data-i18n="tower.mode">Режим</span><select id="towerFillMode"><option value="mid" data-i18n="tower.mode.balance">Баланс — рівномірно</option><option value="min" data-i18n="tower.mode.min">Мінімум — вищі тірі першими</option><option value="max" data-i18n="tower.mode.max">Максимум — заповнити ралі</option></select></label>
+            <div class="tower-fill-checks">
+              <label class="tower-check"><input id="towerOnlyCaptains" type="checkbox" checked><span data-i18n="tower.onlyCaptainsFull">Тільки капітани на капітанське місце</span></label>
+              <label class="tower-check"><input id="towerMatchShift" type="checkbox" checked><span data-i18n="tower.matchShift">Враховувати зміну гравця</span></label>
+              <label class="tower-check"><input id="towerSameRole" type="checkbox" checked><span data-i18n="tower.sameRole">Лише той самий тип військ</span></label>
+              <label class="tower-check"><input id="towerUseBoth" type="checkbox"><span data-i18n="tower.useBoth">Використовувати «Обидві зміни»</span></label>
+            </div>
+          </div>
+        </section>
+        <div class="tower-settings-grid tower-settings-grid--both-limits">
+          <div id="towerManualShiftControls"></div>
+          <section class="tower-box tower-tier-limits-box">
+            <h3 data-i18n="tower.tierLimitTitle">Ліміт маршу за тіром</h3>
+            <label class="tower-check tower-tier-limit-toggle"><input id="towerUseTierLimits" type="checkbox"><span data-i18n="tower.useSavedLimits">Використовувати прописані ліміти</span></label>
+            <p class="tower-help-text" data-i18n="tower.tierLimitHelp">Після нового Excel або оновлення таблиці регіону ця галочка вимкнена. Увімкни її вручну, якщо хочеш жорстко обмежити марш по тірах.</p>
+            <div class="tower-tier-grid" id="towerTierLimits"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tower-panel" data-tower-panel="towers">
+        <div class="tower-shift-region-row">
+          <div class="tower-shift-tabs" id="towerShiftTabs"></div>
+          <div class="tower-plan-region-tabs" id="towerPlanRegionTabs"></div>
+        </div>
+        <div class="tower-cards-grid" id="towerCardsGrid"></div>
+      </section>
+
+      <section class="tower-panel" data-tower-panel="status">
+        <div class="tower-status-head" id="towerStatusHead"></div>
+        <div class="tower-status-filters" id="towerStatusFilters"></div>
+        <div class="tower-status-table-wrap">
+          <table class="tower-status-table">
+            <thead><tr><th data-i18n="tower.status.player">Гравець</th><th data-i18n="tower.status.alliance">Альянс</th><th data-i18n="tower.status.roleTier">Роль / Тір</th><th data-i18n="tower.status.march">Марш</th><th data-i18n="tower.status.status">Статус</th><th data-i18n="tower.status.turret">Турель</th><th data-i18n="tower.status.actions">Дії</th></tr></thead>
+            <tbody id="towerStatusBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="tower-panel" data-tower-panel="final">
+        <div class="tower-final-toolbar" data-final-toolbar></div>
+        <div class="tower-final-board-wrap"><div id="towerFinalBoard"></div></div>
+      </section>
+    </div>
+  </div>
+</section>

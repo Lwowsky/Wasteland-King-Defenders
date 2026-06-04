@@ -1,0 +1,97 @@
+<section class="modal player-edit-modal" id="playerEditModal" aria-hidden="true" aria-label="Редагування гравця" data-i18n-aria-label="playerEdit.title">
+  <button class="modal-backdrop" type="button" aria-label="Закрити" data-i18n-aria-label="common.close" data-player-edit-close></button>
+  <div class="modal-card player-edit-modal-card" role="dialog" aria-modal="true" aria-labelledby="playerEditModalTitle">
+    <div class="modal-head player-edit-modal-head">
+      <div>
+        <h2 id="playerEditModalTitle" data-i18n="playerEdit.title">Редагування гравця</h2>
+      </div>
+      <button class="btn btn-icon" type="button" aria-label="Закрити" data-i18n-aria-label="common.close" data-player-edit-close>✕</button>
+    </div>
+
+    <div class="modal-grid player-edit-modal-grid">
+      <section class="panel subpanel player-edit-panel">
+        <div class="player-placement-editor">
+          <div class="player-placement-editor__head">
+            <strong data-i18n="playerEdit.placementTitle">Куди поставити гравця</strong>
+          </div>
+          <div class="player-placement-editor-grid">
+            <label class="player-edit-field">
+              <span data-i18n="common.shift">Зміна</span>
+              <select id="playerEditShift">
+                <option value="shift1" data-i18n="shift.shift1">Зміна 1</option>
+                <option value="shift2" data-i18n="shift.shift2">Зміна 2</option>
+                <option value="shift3" data-i18n="shift.shift3">Зміна 3</option>
+                <option value="shift4" data-i18n="shift.shift4">Зміна 4</option>
+                <option value="both" data-i18n="shift.both">Обидві</option>
+              </select>
+            </label>
+            <label class="player-edit-field">
+              <span data-i18n="tower.turret">Турель</span>
+              <select id="playerEditPlacement">
+                <option value="reserve" data-i18n="common.reserve">Резерв</option>
+                <option value="hub" data-i18n="tower.hub">Техно-Центр</option>
+                <option value="north" data-i18n="tower.north">Північна турель</option>
+                <option value="west" data-i18n="tower.west">Західна турель</option>
+                <option value="east" data-i18n="tower.east">Східна турель</option>
+                <option value="south" data-i18n="tower.south">Південна турель</option>
+              </select>
+            </label>
+            <label class="player-edit-field">
+              <span data-i18n="playerEdit.towerRole">Роль у турелі</span>
+              <select id="playerEditPlacementRole">
+                <option value="helper" data-i18n="tower.helper">Помічник</option>
+                <option value="captain" data-i18n="players.captain">Капітан</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="player-edit-fields-grid">
+          <label class="player-edit-field">
+            <span data-i18n="account.nickname">Нік</span>
+            <input id="playerEditName" autocomplete="off" placeholder="Нік гравця" data-i18n-placeholder="playerEdit.nicknamePlaceholder" />
+          </label>
+          <label class="player-edit-field">
+            <span data-i18n="account.alliance">Альянс</span>
+            <input id="playerEditAlliance" maxlength="3" autocomplete="off" placeholder="Альянс" data-i18n-placeholder="account.alliance" />
+          </label>
+          <label class="player-edit-field">
+            <span data-i18n="playerEdit.tier">Тір</span>
+            <input id="playerEditTier" autocomplete="off" placeholder="T10" />
+          </label>
+          <label class="player-edit-field">
+            <span data-i18n="playerEdit.troopType">Тип військ</span>
+            <select id="playerEditRole">
+              <option value="Shooter" data-i18n="troop.shooterSingle">Стрілець</option>
+              <option value="Fighter" data-i18n="troop.fighterSingle">Боєць</option>
+              <option value="Rider" data-i18n="troop.riderSingle">Наїзник</option>
+            </select>
+          </label>
+          <label class="player-edit-field">
+            <span data-i18n="playerEdit.march">Марш</span>
+            <input id="playerEditMarch" inputmode="numeric" min="0" placeholder="0" type="number" />
+          </label>
+          <label class="player-edit-field">
+            <span data-i18n="playerEdit.rally">Розмір ралі</span>
+            <input id="playerEditRally" inputmode="numeric" min="0" placeholder="0" type="number" />
+          </label>
+          <label class="player-edit-check">
+            <input id="playerEditLair" type="checkbox" />
+            <span data-i18n="player.captureRegion">Захоплення регіону</span>
+          </label>
+          <label class="player-edit-check">
+            <input id="playerEditCaptain" type="checkbox" />
+            <span data-i18n="region.form.captainReady">Готовий бути капітаном</span>
+          </label>
+        </div>
+
+        <div class="player-edit-status" id="playerEditStatus" hidden></div>
+        <div class="player-edit-actions">
+          <button class="btn btn-primary" id="playerEditSaveBtn" type="button" data-i18n="common.save">Зберегти</button>
+          <button class="btn" id="playerEditReserveBtn" type="button" data-i18n="playerEdit.removeFromTurret">Прибрати з турелі</button>
+          <button class="btn player-edit-danger" id="playerEditDeleteBtn" type="button" data-i18n="playerEdit.deletePlayer">Видалити гравця</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>

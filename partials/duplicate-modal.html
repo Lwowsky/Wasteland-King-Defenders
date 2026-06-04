@@ -1,0 +1,34 @@
+<section class="modal duplicate-nick-modal" id="duplicateNickModal" aria-hidden="true" aria-label="Дублікати ніків">
+  <button class="modal-backdrop" type="button" aria-label="Закрити" data-duplicate-modal-close></button>
+  <div class="modal-card duplicate-nick-modal-card" role="dialog" aria-modal="true" aria-labelledby="duplicateNickModalTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="duplicateNickModalTitle">Дублікати ніків</h2>
+        <p class="muted" id="duplicateNickModalSubtitle">Подивись усі однакові реєстрації, залиш одного гравця й прибери зайві дублікати.</p>
+      </div>
+      <button class="btn btn-icon" type="button" aria-label="Закрити" data-duplicate-modal-close>✕</button>
+    </div>
+
+    <div class="duplicate-nick-modal-grid">
+      <section class="panel subpanel duplicate-nick-modal-main">
+        <div class="duplicate-nick-modal-summary">
+          <div class="duplicate-nick-modal-kicker" id="duplicateNickModalShift">Зміна</div>
+          <div class="duplicate-nick-modal-meta" id="duplicateNickModalMeta">—</div>
+          <div class="duplicate-nick-modal-hint" id="duplicateNickModalHint">Вибери один запис, який треба залишити. Решту можна видалити одним кліком.</div>
+        </div>
+        <div class="duplicate-nick-modal-list" id="duplicateNickModalList"></div>
+      </section>
+
+      <aside class="panel subpanel duplicate-nick-modal-side">
+        <div class="duplicate-nick-actions-title">Що зробити</div>
+        <div class="muted small duplicate-nick-actions-text" id="duplicateNickModalSelectionHint">Вибери один запис, який потрібно залишити активним.</div>
+        <div class="duplicate-nick-modal-actions">
+          <button class="btn btn-primary" id="duplicateNickKeepOnlyBtn" type="button">Залишити тільки вибраний</button>
+          <button class="btn btn-sm btn-danger-soft" id="duplicateNickDeleteCurrentBtn" type="button">Видалити вибраний запис</button>
+          <button class="btn btn-sm" data-duplicate-modal-close type="button">Закрити</button>
+        </div>
+        <div class="duplicate-nick-modal-status" id="duplicateNickModalStatus" hidden></div>
+      </aside>
+    </div>
+  </div>
+</section>

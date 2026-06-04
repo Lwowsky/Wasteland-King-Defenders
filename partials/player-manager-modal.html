@@ -1,0 +1,130 @@
+<section class="modal player-manager-modal" id="playerManagerModal" aria-hidden="true" aria-label="Редактор гравців" data-i18n-aria-label="playerManager.title">
+  <button class="modal-backdrop" type="button" aria-label="Закрити" data-i18n-aria-label="common.close" data-player-manager-close></button>
+  <div class="modal-card player-manager-card" role="dialog" aria-modal="true" aria-labelledby="playerManagerTitle">
+    <div class="modal-head player-manager-head">
+      <div>
+        <h2 id="playerManagerTitle" data-i18n="playerManager.title">Редактор гравців</h2>
+      </div>
+      <button class="btn btn-icon" type="button" aria-label="Закрити" data-i18n-aria-label="common.close" data-player-manager-close>✕</button>
+    </div>
+
+    <div class="player-manager-source" id="playerManagerSourceBar">
+      <div class="player-manager-source-copy">
+        <b id="playerManagerSourceTitle">Локальний список</b>
+        <small id="playerManagerSourceHint"></small>
+      </div>
+      <div class="player-manager-source-actions" role="tablist" aria-label="Джерело даних редактора" data-i18n-aria-label="playerManager.sourceLabel">
+        <button class="player-manager-source-tab is-active" type="button" data-player-manager-source="local" data-i18n="playerManager.local">Локальний</button>
+        <button class="player-manager-source-tab" type="button" data-player-manager-source="region" data-i18n="playerManager.region">Регіон</button>
+      </div>
+    </div>
+
+    <div class="player-manager-mobile-tabs" role="tablist" aria-label="Редактор гравців" data-i18n-aria-label="playerManager.title">
+      <button class="is-active" type="button" data-player-manager-pane="list" data-i18n="playerManager.list">Список</button>
+      <button type="button" data-player-manager-pane="form" data-i18n="playerManager.editor">Редактор</button>
+    </div>
+
+    <div class="player-manager-layout">
+      <aside class="player-manager-list-panel panel subpanel">
+        <label class="player-manager-search-label">
+          <span data-i18n="playerManager.search">Пошук</span>
+          <input autocomplete="off" id="playerManagerSearchInput" placeholder="Пошук по ніку / альянсу" data-i18n-placeholder="playerManager.searchPlaceholder" type="search" />
+        </label>
+        <div class="player-manager-list" id="playerManagerList"></div>
+      </aside>
+
+      <section class="player-manager-form-panel panel subpanel">
+        <div class="player-manager-form-top" id="playerManagerFormTop">
+          <h3 id="playerManagerFormTitle" data-i18n="playerManager.newPlayer">Новий гравець</h3>
+          <button class="btn btn-sm" id="playerManagerNewBtn" type="button" data-i18n="playerManager.new">Новий</button>
+        </div>
+
+        <div class="player-manager-tabs" role="tablist" aria-label="Інструменти редактора гравців" data-i18n-aria-label="playerManager.toolsLabel">
+          <button class="player-manager-tab is-active" data-player-manager-tab="players" type="button" data-i18n="playerManager.players">Гравці</button>
+          <button class="player-manager-tab" data-player-manager-tab="alliances" type="button" data-i18n="playerManager.alliances">Альянси</button>
+          <button class="player-manager-tab" data-player-manager-tab="march" type="button" data-i18n="playerManager.marchSize">Розмір маршу</button>
+          <button class="player-manager-tab" data-player-manager-tab="rally" type="button" data-i18n="playerManager.rallySize">Розмір ралі</button>
+        </div>
+
+        <div class="player-manager-alliance-panel" id="playerManagerAlliancePanel" hidden>
+          <div class="player-manager-alliance-tabs" role="tablist" aria-label="Альянси">
+            <button class="player-manager-alliance-tab is-active" type="button" data-player-manager-alliance-tab="region" data-i18n="playerManager.regionAlliances">Альянси регіону</button>
+            <button class="player-manager-alliance-tab" type="button" data-player-manager-alliance-tab="colors" data-i18n="playerManager.allianceColorBuilder">Конструктор кольорів альянсів</button>
+          </div>
+          <div class="player-manager-alliance-pane" id="playerManagerAllianceRegionPane" data-player-manager-alliance-pane="region">
+            <div class="player-manager-alliance-list" id="playerManagerAllianceList"></div>
+          </div>
+          <div class="player-manager-alliance-pane player-manager-color-builder" id="playerManagerAllianceColorPane" data-player-manager-alliance-pane="colors" hidden>
+            <div class="player-manager-color-layout">
+              <aside class="player-manager-color-side">
+                <section class="player-manager-color-card player-manager-color-picked-card">
+                  <h4 data-i18n="playerManager.singleAllianceColor">Колір одного альянсу</h4>
+                  <div class="player-manager-color-picked" id="playerManagerColorPicked" data-i18n="playerManager.chooseAllianceRight">Вибери альянс у перегляді справа.</div>
+                  <div class="player-manager-color-actions">
+                    <button class="btn btn-sm" type="button" id="playerManagerAllianceAutoColorBtn">✦ <span data-i18n="playerManager.autoColor">Авто-колір</span></button>
+                    <button class="btn btn-sm" type="button" id="playerManagerAllianceResetColorBtn" data-i18n="common.reset">Скинути</button>
+                  </div>
+                </section>
+                <section class="player-manager-color-card">
+                  <h4 data-i18n="playerManager.palette">Палітра</h4>
+                  <div class="player-manager-color-palette" id="playerManagerAlliancePalette"></div>
+                  <button class="btn btn-sm" type="button" id="playerManagerRegeneratePaletteBtn">↝ <span data-i18n="playerManager.generatePalette">Згенерувати палітру</span></button>
+                </section>
+              </aside>
+              <section class="player-manager-color-preview-card">
+                <div class="player-manager-color-preview-head">
+                  <h4 data-i18n="playerManager.preview">Попередній перегляд</h4>
+                  <span id="playerManagerAllianceColorCount">0 альянсів</span>
+                </div>
+                <div class="player-manager-color-preview" id="playerManagerAllianceColorPreview"></div>
+              </section>
+            </div>
+          </div>
+        </div>
+
+        <div class="player-manager-metric-panel" id="playerManagerMarchPanel" data-player-manager-metric="march" hidden>
+          <div class="player-manager-tool-head">
+            <div>
+              <h3 data-i18n="playerManager.marchSize">Розмір маршу</h3>
+
+            </div>
+            <button class="btn btn-sm" type="button" data-player-manager-sort="march" data-i18n="playerManager.sortDesc">Від більшого до меншого</button>
+          </div>
+          <div class="player-manager-metric-list" id="playerManagerMarchList"></div>
+        </div>
+
+        <div class="player-manager-metric-panel" id="playerManagerRallyPanel" data-player-manager-metric="rally" hidden>
+          <div class="player-manager-tool-head">
+            <div>
+              <h3 data-i18n="playerManager.rallySize">Розмір ралі</h3>
+
+            </div>
+            <button class="btn btn-sm" type="button" data-player-manager-sort="rally" data-i18n="playerManager.sortDesc">Від більшого до меншого</button>
+          </div>
+          <div class="player-manager-metric-list" id="playerManagerRallyList"></div>
+        </div>
+
+        <form id="playerManagerForm" class="player-manager-form" autocomplete="off">
+          <input id="playerManagerId" type="hidden" />
+          <div class="player-manager-grid">
+            <label><span data-i18n="account.nickname">Нік</span><input id="playerManagerName" required type="text" /></label>
+            <label><span data-i18n="account.alliance">Альянс</span><input id="playerManagerAlliance" list="playerManagerAllianceOptions" maxlength="3" type="text" /><datalist id="playerManagerAllianceOptions"></datalist></label>
+            <label><span data-i18n="playerManager.marchSize">Розмір маршу</span><input id="playerManagerMarch" min="0" inputmode="numeric" type="number" /></label>
+            <label><span data-i18n="playerManager.rallySize">Розмір ралі</span><input id="playerManagerRally" min="0" inputmode="numeric" type="number" /></label>
+            <label><span data-i18n="playerEdit.troopType">Тип військ</span><select id="playerManagerRole"><option value="Fighter" data-i18n="troop.fighterSingle">Боєць</option><option value="Rider" data-i18n="troop.riderSingle">Наїзник</option><option value="Shooter" data-i18n="troop.shooterSingle">Стрілець</option></select></label>
+            <label><span data-i18n="playerManager.troopTier">Тір військ</span><select id="playerManagerTier"></select></label>
+            <label><span data-i18n="common.shift">Зміна</span><select id="playerManagerShift"><option value="shift1" data-i18n="shift.shift1">Зміна 1</option><option value="shift2" data-i18n="shift.shift2">Зміна 2</option><option value="shift3" data-i18n="shift.shift3">Зміна 3</option><option value="shift4" data-i18n="shift.shift4">Зміна 4</option><option value="both" data-i18n="shift.both">Обидві</option></select></label>
+            <label><span data-i18n="players.captain">Капітан</span><select id="playerManagerCaptain"><option value="yes" data-i18n="common.yes">Так</option><option value="no" data-i18n="common.no">Ні</option></select></label>
+            <label><span data-i18n="player.lairLevel">Розмір лігва</span><input id="playerManagerLairLevel" min="1" max="70" inputmode="numeric" type="number" placeholder="1–70" /></label>
+            <label class="player-manager-check"><input id="playerManagerLair" type="checkbox" /><span data-i18n="player.captureRegion">Захоплення регіону</span></label>
+          </div>
+          <div class="player-manager-actions">
+            <button class="btn btn-primary" id="playerManagerSaveBtn" type="submit" data-i18n="common.save">Зберегти</button>
+            <button class="btn btn-danger-soft" id="playerManagerDeleteBtn" type="button" data-i18n="playerEdit.deletePlayer">Видалити гравця</button>
+            <span class="muted small" id="playerManagerStatus"></span>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+</section>
