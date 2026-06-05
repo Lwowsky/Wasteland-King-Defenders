@@ -1730,4 +1730,7 @@ window.WKD_TRANSLATIONS.ko = {
   'region.publicTableNotFound': '지역 표를 찾을 수 없거나 링크가 만료되었습니다.',
   'region.errorNicknameDuplicateRegion': '이 지역에는 같은 닉네임의 신청이 이미 있습니다.',
   'actionLog.regionTableShared': '지역 표 비밀 링크 생성',
+  'notifications.inboxTab': '내 알림',
+  'notifications.composeTab': '메시지 작성',
+  'messages.noRegionSelected': '지역 또는 플레이어를 선택하세요.',
 };

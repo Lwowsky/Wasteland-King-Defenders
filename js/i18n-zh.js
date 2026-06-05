@@ -1730,4 +1730,7 @@ window.WKD_TRANSLATIONS.zh = {
   'region.publicTableNotFound': '找不到地区表格或链接已失效。',
   'region.errorNicknameDuplicateRegion': '该地区已存在相同昵称的申请。',
   'actionLog.regionTableShared': '已创建地区表格秘密链接',
+  'notifications.inboxTab': '我的通知',
+  'notifications.composeTab': '写消息',
+  'messages.noRegionSelected': '请选择区域或玩家。',
 };

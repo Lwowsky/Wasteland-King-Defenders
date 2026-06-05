@@ -1098,7 +1098,14 @@ export async function resolveRegionTableShare(codeValue) {
   if (!code) throw new Error('region-table-link-required');
   const snap = await firestoreMod.getDoc(firestoreMod.doc(db, 'regionTableShares', code));
   if (!snap.exists()) throw new Error('region-table-link-not-found');
-  return { code, ...(snap.data() || {}) };
+  const data = snap.data() || {};
+  const region = normalizeRegion(data.region);
+  if (region && data.cycleId) {
+    const regionSnap = await firestoreMod.getDoc(firestoreMod.doc(db, 'regions', region)).catch(() => null);
+    const activeCycle = regionSnap?.exists?.() ? String(regionSnap.data()?.registrationForm?.currentCycleId || regionSnap.data()?.currentCycleId || '') : '';
+    if (activeCycle && activeCycle !== String(data.cycleId || '')) throw new Error('region-table-link-expired');
+  }
+  return { code, ...data };
 }
 
 

@@ -422,3 +422,28 @@
 .region-head-actions .btn[hidden]{display:none!important;}
 @media(max-width:980px){.region-card{width:100%!important;}.region-table-card .region-timer-card--compact,.region-form-shell .region-timer-card--public,.region-settings-page .region-timer-card--settings{grid-template-columns:1fr 1fr!important;}}
 @media(max-width:640px){.region-table-card .region-timer-card--compact,.region-form-shell .region-timer-card--public,.region-settings-page .region-timer-card--settings{grid-template-columns:1fr!important;}}
+
+/* v53: full-width lifecycle cards, notification tabs, stable selects */
+.region-table-card .region-timer-card--compact,
+.region-card .region-timer-card--compact,
+.region-form-shell .region-timer-card--public{
+  width:100%!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+}
+.region-table-card .region-timer-card--compact > *,
+.region-card .region-timer-card--compact > *,
+.region-form-shell .region-timer-card--public > *{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+}
+.region-table-card .region-timer-card--compact .region-starter-name,
+.region-card .region-timer-card--compact .region-starter-name,
+.region-form-shell .region-timer-card--public .region-starter-name{
+  width:max-content!important;
+  max-width:100%!important;
+}
+.notifications-tabs{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.notifications-tabs .profile-tab{min-height:44px}.notifications-inbox[hidden],.notifications-compose[hidden]{display:none!important}.notifications-page .message-grid select{appearance:auto}.notifications-page .message-grid input[list]{border-color:rgba(122,148,230,.28)}
+.action-log-page .region-table-controls input[list]{min-width:140px}.action-log-page .region-table-controls{align-items:end}
+@media(max-width:980px){.region-table-card .region-timer-card--compact,.region-card .region-timer-card--compact,.region-form-shell .region-timer-card--public{grid-template-columns:1fr 1fr!important}}
+@media(max-width:640px){.region-table-card .region-timer-card--compact,.region-card .region-timer-card--compact,.region-form-shell .region-timer-card--public{grid-template-columns:1fr!important}}

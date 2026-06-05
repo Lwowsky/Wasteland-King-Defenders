@@ -38,7 +38,7 @@
   <script defer src="js/i18n-ar.js"></script>
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
-  <script defer src="js/badges.js?v=52"></script>
+  <script defer src="js/badges.js?v=53"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -53,14 +53,14 @@
   <script defer src="js/players-table.js"></script>
   <script defer src="js/player-edit-modal.js"></script>
   <script defer src="js/player-manager-modal.js"></script>
-  <script defer src="js/tower-planner.js?v=52"></script>
-  <script type="module" src="js/player-manager-region-bridge.js?v=52"></script>
+  <script defer src="js/tower-planner.js?v=53"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=53"></script>
   <script defer src="js/confirm-modal.js"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/app-login-shell.js"></script>
   <script type="module" src="js/auth-google.js"></script>
-  <script type="module" src="js/notifications.js?v=52"></script>
-  <script type="module" src="js/pages/action-log-page.js?v=52"></script>
+  <script type="module" src="js/notifications.js?v=53"></script>
+  <script type="module" src="js/pages/action-log-page.js?v=53"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -72,7 +72,7 @@
       </div>
       <div class="auth-status" id="actionLogStatus" data-i18n="actionLog.loading">Завантажую журнал...</div>
       <div class="region-table-controls">
-        <label class="region-control region-control--region"><span data-i18n="account.region">Регіон</span><input id="actionLogRegionInput" inputmode="numeric" placeholder="987" /></label>
+        <label class="region-control region-control--region"><span data-i18n="account.region">Регіон</span><input id="actionLogRegionInput" inputmode="numeric" placeholder="987" list="actionLogRegionList" /><datalist id="actionLogRegionList"></datalist></label>
         <button class="btn btn-primary region-open-btn" id="actionLogOpenBtn" type="button" data-i18n="region.openRegion">Відкрити</button>
       </div>
       <div class="admin-table-wrap">

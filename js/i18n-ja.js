@@ -1730,4 +1730,7 @@ window.WKD_TRANSLATIONS.ja = {
   'region.publicTableNotFound': '地域テーブルが見つからないか、リンクが無効です。',
   'region.errorNicknameDuplicateRegion': 'この地域には同じニックネームの申請が既にあります。',
   'actionLog.regionTableShared': '地域テーブルの秘密リンクを作成しました',
+  'notifications.inboxTab': '自分の通知',
+  'notifications.composeTab': 'メッセージを書く',
+  'messages.noRegionSelected': '地域またはプレイヤーを選択してください。',
 };

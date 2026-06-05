@@ -1730,4 +1730,7 @@ window.WKD_TRANSLATIONS.pl = {
   'region.publicTableNotFound': 'Nie znaleziono tabeli regionu albo link jest nieważny.',
   'region.errorNicknameDuplicateRegion': 'W tym regionie istnieje już zgłoszenie z tym nickiem.',
   'actionLog.regionTableShared': 'Utworzono tajny link do tabeli regionu',
+  'notifications.inboxTab': 'Moje powiadomienia',
+  'notifications.composeTab': 'Napisz wiadomość',
+  'messages.noRegionSelected': 'Wybierz region lub gracza.',
 };

@@ -1730,4 +1730,7 @@ window.WKD_TRANSLATIONS.vi = {
   'region.publicTableNotFound': 'Không tìm thấy bảng khu vực hoặc liên kết đã hết hạn.',
   'region.errorNicknameDuplicateRegion': 'Khu vực này đã có yêu cầu với biệt danh này.',
   'actionLog.regionTableShared': 'Đã tạo liên kết bí mật bảng khu vực',
+  'notifications.inboxTab': 'Thông báo của tôi',
+  'notifications.composeTab': 'Viết tin nhắn',
+  'messages.noRegionSelected': 'Chọn khu vực hoặc người chơi.',
 };

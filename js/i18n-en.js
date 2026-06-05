@@ -1730,4 +1730,7 @@ window.WKD_TRANSLATIONS.en = {
   'region.publicTableNotFound': 'Region table not found or the link is no longer valid.',
   'region.errorNicknameDuplicateRegion': 'This region already has a request with this nickname.',
   'actionLog.regionTableShared': 'Created secret region table link',
+  'notifications.inboxTab': 'My notifications',
+  'notifications.composeTab': 'Write a message',
+  'messages.noRegionSelected': 'Choose a region or player.',
 };

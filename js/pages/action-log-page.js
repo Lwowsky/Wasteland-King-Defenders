@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { saveSignedInUser } from '../services/user-db.js';
-import { listRegionActionLogs, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=52';
+import { canUseAdminPanel, getUserProfile, saveSignedInUser } from '../services/user-db.js';
+import { getManagedRegionOptions, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=53';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -8,6 +8,8 @@ const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback |
 let currentUser = null;
 let currentRegion = '';
 let rows = [];
+let currentProfile = null;
+let regionOptions = [];
 let ready = false;
 
 function setStatus(text, type = 'muted') {
@@ -21,9 +23,19 @@ function actionLabel(action = '', fallback = '') {
   const key = `actionLog.type.${action}`;
   return t(key, fallback || action || '—');
 }
+function renderRegionList() {
+  const list = $('#actionLogRegionList');
+  if (!list) return;
+  list.innerHTML = regionOptions.map(item => {
+    const region = normalizeRegion(item.region || item.id || item);
+    const label = String(item.name || item.nickname || '').trim();
+    return region ? `<option value="${esc(region)}">R${esc(region)}${label ? ` · ${esc(label)}` : ''}</option>` : '';
+  }).join('');
+}
 function render() {
   $('#actionLogRegionPill') && ($('#actionLogRegionPill').textContent = currentRegion ? `R${currentRegion}` : 'R—');
   $('#actionLogRegionInput') && ($('#actionLogRegionInput').value = currentRegion || '');
+  renderRegionList();
   const body = $('#actionLogBody');
   if (!body) return;
   body.innerHTML = rows.length ? rows.map(row => `
@@ -42,7 +54,13 @@ async function load(user, region = '') {
     return;
   }
   await saveSignedInUser(user).catch(() => null);
-  const result = await listRegionActionLogs(user, region || readRegionFromUrl()).catch(error => {
+  currentProfile = await getUserProfile(user.uid).catch(() => null);
+  if (canUseAdminPanel(user, currentProfile) && ['admin','moderator'].includes(String(currentProfile?.role || '').toLowerCase())) {
+    regionOptions = await listRegionCatalog({ includeInactive: true }).catch(() => []);
+  } else {
+    regionOptions = getManagedRegionOptions(currentProfile || {}, user).map(region => ({ region }));
+  }
+  const result = await listRegionActionLogs(user, region || readRegionFromUrl() || normalizeRegion(regionOptions[0]?.region || regionOptions[0]?.id || '')).catch(error => {
     console.error(error);
     setStatus(t('actionLog.accessDenied', 'Немає доступу до журналу цього регіону.'), 'error');
     return null;

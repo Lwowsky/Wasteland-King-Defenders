@@ -1728,4 +1728,7 @@ window.WKD_TRANSLATIONS.ar = {
   'region.publicTableNotFound': 'لم يتم العثور على جدول المنطقة أو انتهت صلاحية الرابط.',
   'region.errorNicknameDuplicateRegion': 'يوجد طلب بهذا الاسم في هذه المنطقة بالفعل.',
   'actionLog.regionTableShared': 'تم إنشاء رابط سري لجدول المنطقة',
+  'notifications.inboxTab': 'إشعاراتي',
+  'notifications.composeTab': 'كتابة رسالة',
+  'messages.noRegionSelected': 'اختر منطقة أو لاعباً.',
 };

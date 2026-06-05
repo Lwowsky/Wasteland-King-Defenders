@@ -1730,4 +1730,7 @@ window.WKD_TRANSLATIONS.uk = {
   'region.publicTableNotFound': 'Таблицю регіону не знайдено або посилання вже недійсне.',
   'region.errorNicknameDuplicateRegion': 'У цьому регіоні вже є заявка з таким нікнеймом.',
   'actionLog.regionTableShared': 'Створено секретне посилання таблиці регіону',
+  'notifications.inboxTab': 'Мої сповіщення',
+  'notifications.composeTab': 'Написати повідомлення',
+  'messages.noRegionSelected': 'Вибери регіон або гравця.',
 };

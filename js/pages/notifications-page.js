@@ -1,4 +1,5 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
+import { listRegionCatalog } from '../services/region-db.js?v=53';
 import {
   canUseAdminPanel,
   createUserNotification,
@@ -22,6 +23,8 @@ let currentProfile = null;
 let rows = [];
 let directory = [];
 let composeReady = false;
+let activeTab = 'inbox';
+let knownRegionOptions = [];
 
 function setStatus(text, type = 'muted') {
   const box = $('#notificationsStatus');
@@ -60,7 +63,17 @@ function ownAlliances(region = '') {
   const r = regionOf(region);
   return [...new Set(playerGames().filter(game => !r || regionOf(game.region) === r).map(game => tag(game.alliance)).filter(Boolean))];
 }
-function directoryGames() { return directory.flatMap(gameRowsFromAccount).filter(item => item.uid && item.uid !== currentUser?.uid); }
+function directoryGames() {
+  const all = directory.flatMap(gameRowsFromAccount).filter(item => item.uid);
+  const own = currentProfile ? gameRowsFromAccount({ ...(currentProfile || {}), uid: currentUser?.uid }) : [];
+  const seen = new Set();
+  return [...all, ...own].filter(item => {
+    const key = `${item.uid}:${item.farmId || item.nickname || item.region || 'main'}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 function targetOptions() {
   const r = role();
   if (isGlobalManager()) return [
@@ -89,7 +102,11 @@ function targetOptions() {
   ];
 }
 function regionOptions() {
-  if (isGlobalManager()) return [...new Set(directoryGames().map(p => regionOf(p.region)).filter(Boolean))].sort((a, b) => Number(a) - Number(b));
+  if (isGlobalManager()) {
+    const fromCatalog = knownRegionOptions.map(item => regionOf(item.region || item.id)).filter(Boolean);
+    const fromDirectory = directoryGames().map(p => regionOf(p.region)).filter(Boolean);
+    return [...new Set([...fromCatalog, ...fromDirectory, ...ownRegions()])].sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
+  }
   return ownRegions();
 }
 function playerLabel(player = {}) {
@@ -126,7 +143,7 @@ function filteredRecipients(type = $('#messageTargetType')?.value || 'player', o
   else if (type === 'consuls') list = list.filter(p => regionOf(p.region) === region && normalizeUserRole(p.role || p.accountRole || 'player') === 'consul' && (isGlobalManager() || ownRegions().includes(region)));
   else if (type === 'officers') list = list.filter(p => regionOf(p.region) === region && normalizeUserRole(p.role || p.accountRole || 'player') === 'officer' && (isGlobalManager() || ownRegions().includes(region)));
   else if (type === 'alliance') list = list.filter(p => regionOf(p.region) === region && tag(p.alliance) === alliance && (isGlobalManager() || ownAlliances(region).includes(alliance) || ['consul', 'officer'].includes(role())));
-  else if (type === 'player' && !options.preview) list = list.filter(p => playerLabel(p).toLowerCase() === selectedPlayer || String(p.nickname || p.gameNick || '').toLowerCase() === selectedPlayer);
+  else if (type === 'player' && !options.preview) list = list.filter(p => { const label = playerLabel(p).toLowerCase(); const nick = String(p.nickname || p.gameNick || '').toLowerCase(); return label === selectedPlayer || nick === selectedPlayer || (selectedPlayer && label.includes(selectedPlayer)); });
   if (!isGlobalManager()) list = list.filter(canReachPlayer);
   return options.preview ? list : dedupeAccounts(list);
 }
@@ -153,9 +170,15 @@ function renderPlayerList() {
 }
 function updateComposeVisibility() {
   const type = $('#messageTargetType')?.value || 'player';
-  $('#messageRegionWrap') && ($('#messageRegionWrap').hidden = !['region', 'alliance', 'consuls', 'officers'].includes(type) && !isGlobalManager());
+  $('#messageRegionWrap') && ($('#messageRegionWrap').hidden = !['region', 'alliance', 'consuls', 'officers'].includes(type));
   $('#messageAllianceWrap') && ($('#messageAllianceWrap').hidden = type !== 'alliance');
   $('#messagePlayerWrap') && ($('#messagePlayerWrap').hidden = type !== 'player');
+}
+function switchTab(tab = 'inbox') {
+  activeTab = tab === 'compose' ? 'compose' : 'inbox';
+  $('#notificationsInbox') && ($('#notificationsInbox').hidden = activeTab !== 'inbox');
+  $('#notificationsCompose') && ($('#notificationsCompose').hidden = activeTab !== 'compose');
+  document.querySelectorAll('[data-notifications-tab]').forEach(btn => btn.classList.toggle('is-active', btn.dataset.notificationsTab === activeTab));
 }
 function renderCompose() {
   const box = $('#notificationsCompose');
@@ -181,14 +204,20 @@ function renderCompose() {
   renderPlayerList();
 }
 async function loadDirectory() {
-  if (isManager()) {
-    const users = await listRegisteredUsers().catch(error => {
-      console.warn('[WKD] private user directory unavailable, public fallback used', error);
-      return null;
-    });
-    if (Array.isArray(users)) return users;
-  }
-  return await listPublicPlayers().catch(() => []);
+  const [privateUsers, publicUsers, catalog] = await Promise.all([
+    isManager() ? listRegisteredUsers().catch(error => { console.warn('[WKD] private user directory unavailable, public fallback used', error); return []; }) : Promise.resolve([]),
+    listPublicPlayers().catch(() => []),
+    isGlobalManager() ? listRegionCatalog({ includeInactive: true }).catch(() => []) : Promise.resolve([])
+  ]);
+  knownRegionOptions = Array.isArray(catalog) ? catalog : [];
+  const byUid = new Map();
+  [...(Array.isArray(publicUsers) ? publicUsers : []), ...(Array.isArray(privateUsers) ? privateUsers : [])].forEach(item => {
+    const uid = item.uid || item.id;
+    if (!uid) return;
+    byUid.set(uid, { ...(byUid.get(uid) || {}), ...item, uid });
+  });
+  if (currentUser && currentProfile) byUid.set(currentUser.uid, { ...(byUid.get(currentUser.uid) || {}), ...currentProfile, uid: currentUser.uid });
+  return [...byUid.values()];
 }
 async function load(user) {
   currentUser = user || null;
@@ -208,6 +237,7 @@ async function load(user) {
   rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   setStatus(t('notifications.loaded', 'Сповіщення оновлено.'), 'success');
   renderCompose();
+  switchTab(activeTab);
   render();
 }
 async function markAll() {
@@ -229,7 +259,11 @@ async function sendMessage() {
   if (!body) { setHint(t('messages.emptyBody', 'Напиши текст повідомлення.')); return; }
   const type = $('#messageTargetType')?.value || 'player';
   const recipients = filteredRecipients(type);
-  if (!recipients.length) { setHint(t('messages.noRecipients', 'Немає отримувачів для цього вибору.')); return; }
+  if (!recipients.length) {
+    const region = activeRegion();
+    setHint(region ? `${t('messages.noRecipients', 'Немає отримувачів для цього вибору.')} R${region}` : t('messages.noRegionSelected', 'Вибери регіон або гравця.'));
+    return;
+  }
   setHint(t('messages.sending', 'Відправляю...'));
   await Promise.all(recipients.slice(0, 500).map(player => createUserNotification(player.uid, {
     type: 'site_message',
@@ -247,6 +281,7 @@ async function sendMessage() {
 function bindCompose() {
   if (composeReady) return;
   composeReady = true;
+  document.querySelectorAll('[data-notifications-tab]').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.notificationsTab || 'inbox')));
   $('#notificationsMarkAllBtn')?.addEventListener('click', () => markAll().catch(console.error));
   $('#sendSiteMessageBtn')?.addEventListener('click', () => sendMessage().catch(error => { console.error(error); setHint(t('messages.sendFailed', 'Не вдалося відправити повідомлення.')); }));
   $('#messageTargetType')?.addEventListener('change', () => { updateComposeVisibility(); renderPlayerList(); });
