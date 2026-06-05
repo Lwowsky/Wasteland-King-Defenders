@@ -32,8 +32,6 @@ function setUserShell(user, profile = null) {
   const drawerAdminBtn = $('#drawerAdminBtn');
   const actionLogBtn = $('#actionLogBtn');
   const drawerActionLogBtn = $('#drawerActionLogBtn');
-  const securityBtn = $('#securityBtn');
-  const drawerSecurityBtn = $('#drawerSecurityBtn');
   const regionFormBtn = $('#regionFormBtn');
   const regionTableBtn = $('#regionTableBtn');
   const regionSettingsBtn = $('#regionSettingsBtn');
@@ -59,8 +57,6 @@ function setUserShell(user, profile = null) {
   if (drawerRegionSettingsBtn) drawerRegionSettingsBtn.hidden = !regionManager;
   if (actionLogBtn) actionLogBtn.hidden = !regionManager && !admin;
   if (drawerActionLogBtn) drawerActionLogBtn.hidden = !regionManager && !admin;
-  if (securityBtn) securityBtn.hidden = !admin;
-  if (drawerSecurityBtn) drawerSecurityBtn.hidden = !admin;
   if (adminBtn) adminBtn.hidden = !admin;
   if (drawerAdminBtn) drawerAdminBtn.hidden = !admin;
 }
@@ -83,10 +79,6 @@ function openAdminPage() {
 
 function openActionLogPage() {
   window.location.href = 'action-log.html';
-}
-
-function openSecurityPage() {
-  window.location.href = 'admin.html#security';
 }
 
 function openRegionFormPage() {
@@ -127,8 +119,6 @@ async function initAuthGoogle() {
   $('#drawerRegionSettingsBtn')?.addEventListener('click', openRegionSettingsPage);
   $('#actionLogBtn')?.addEventListener('click', openActionLogPage);
   $('#drawerActionLogBtn')?.addEventListener('click', openActionLogPage);
-  $('#securityBtn')?.addEventListener('click', openSecurityPage);
-  $('#drawerSecurityBtn')?.addEventListener('click', openSecurityPage);
   $('#adminBtn')?.addEventListener('click', openAdminPage);
   $('#drawerAdminBtn')?.addEventListener('click', openAdminPage);
 

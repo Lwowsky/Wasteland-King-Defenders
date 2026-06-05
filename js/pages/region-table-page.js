@@ -14,8 +14,9 @@ import {
   getRegionLifecycle,
   getRegionActorName,
   listRegionAlliances,
-  listRegionCatalog
-} from '../services/region-db.js?v=51';
+  listRegionCatalog,
+  shareRegionTable
+} from '../services/region-db.js?v=52';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -473,7 +474,9 @@ async function load(user) {
   renderTierFilter();
   regionOptions = await loadRegionOptions();
   $('#regionTablePill').textContent = regionPillText();
-  $('#openRegionSettingsBtn').hidden = !canManageRegion(currentProfile, currentRegion, currentUser);
+  const canManage = canManageRegion(currentProfile, currentRegion, currentUser);
+  $('#openRegionSettingsBtn').hidden = !canManage;
+  $('#shareRegionTableBtn') && ($('#shareRegionTableBtn').hidden = !canManage);
   setManagerSwitch();
   await populateRegionLookupList();
   startCycleTimer();
@@ -489,6 +492,21 @@ function handleLanguageChange() {
   const modal = $('#regionRequestDetailsModal');
   const rowId = modal?.classList.contains('is-open') ? modal.dataset.rowId : '';
   if (rowId) openRequestDetails(rowId);
+}
+
+async function shareRegionTableLink() {
+  if (!currentUser || !currentRegion) return;
+  try {
+    const result = await shareRegionTable(currentUser, currentRegion);
+    const link = new URL('rt.html', window.location.origin);
+    link.hash = result.code;
+    await navigator.clipboard.writeText(link.toString());
+    setStatus(t('region.tableLinkCopied', 'Секретне посилання таблиці скопійовано.'), 'success');
+    window.WKD?.showNotice?.(t('region.tableLinkCopied', 'Секретне посилання таблиці скопійовано.'));
+  } catch (error) {
+    console.error(error);
+    setStatus(t('region.tableLinkFailed', 'Не вдалося створити секретне посилання таблиці.'), 'error');
+  }
 }
 
 function bind() {
@@ -529,6 +547,7 @@ function bind() {
   });
   $('#openWastelandRegisterBtn')?.addEventListener('click', () => { window.location.href = `region-form.html?r=${currentRegion}`; });
   $('#openRegionSettingsBtn')?.addEventListener('click', () => { window.location.href = `region-settings.html?region=${currentRegion}`; });
+  $('#shareRegionTableBtn')?.addEventListener('click', () => shareRegionTableLink().catch(console.error));
   document.addEventListener('wkd:language-changed', handleLanguageChange);
   document.addEventListener('wkd:time-display-changed', startCycleTimer);
 }

@@ -1047,6 +1047,61 @@ export async function resolveRegionFinalPlanShare(codeValue) {
 }
 
 
+function sanitizeRegionTableRow(row = {}) {
+  return {
+    nickname: trim(row.nickname).slice(0, 80),
+    region: normalizeRegion(row.region),
+    alliance: normalizeAllianceTag(row.alliance),
+    troopType: trim(row.troopType).slice(0, 40),
+    troopLabel: trim(row.troopLabel).slice(0, 80),
+    tier: trim(row.tier).toUpperCase().slice(0, 8),
+    marchSize: numberValue(row.marchSize),
+    rallySize: numberValue(row.rallySize),
+    captainReady: Boolean(row.captainReady),
+    shift: trim(row.shift).slice(0, 40),
+    shiftLabel: trim(row.shiftLabel).slice(0, 80)
+  };
+}
+
+export async function shareRegionTable(user, region) {
+  if (!user) throw new Error('auth-required');
+  const firebase = await getFirebaseParts();
+  const { db, firestoreMod } = firebase;
+  const profile = await getUserProfile(user.uid);
+  const safeRegion = normalizeRegion(region || getGameProfile(profile || {}).region);
+  if (!safeRegion) throw new Error('region-required');
+  if (!canManageRegion(profile, safeRegion, user)) throw new Error('region-table-share-denied');
+  const result = await listRegionRegistrations(user, safeRegion);
+  const code = makeShortLinkCode();
+  const settings = result.settings || {};
+  const rows = (result.rows || []).map(sanitizeRegionTableRow).filter(row => row.nickname).slice(0, 800);
+  await firestoreMod.setDoc(firestoreMod.doc(db, 'regionTableShares', code), {
+    code,
+    region: safeRegion,
+    cycleId: settings.currentCycleId || '',
+    eventStartAtMs: Number(settings.eventStartAtMs) || 0,
+    closeAtMs: Number(settings.closeAtMs) || 0,
+    open: Boolean(settings.open),
+    rows,
+    createdAt: firestoreMod.serverTimestamp(),
+    createdAtMs: Date.now(),
+    createdBy: user.uid,
+    createdByName: getRegionActorName(profile || {}, safeRegion, user)
+  });
+  await writeRegionActionLog(firebase, user, profile, safeRegion, 'region_table_shared', { summary: serviceT('actionLog.regionTableShared', 'Створено секретне посилання таблиці регіону') }).catch(() => null);
+  return { code, region: safeRegion };
+}
+
+export async function resolveRegionTableShare(codeValue) {
+  const { db, firestoreMod } = await getFirebaseParts();
+  const code = normalizeShortLinkCode(codeValue);
+  if (!code) throw new Error('region-table-link-required');
+  const snap = await firestoreMod.getDoc(firestoreMod.doc(db, 'regionTableShares', code));
+  if (!snap.exists()) throw new Error('region-table-link-not-found');
+  return { code, ...(snap.data() || {}) };
+}
+
+
 function cycleIdToMs(cycleId = '') {
   const match = String(cycleId || '').match(/wasteland-(\d{10,})/);
   return match ? Number(match[1]) || 0 : 0;
@@ -1507,6 +1562,22 @@ function validateRegistration(data = {}, settings = {}) {
   }
 }
 
+async function assertRegionNicknameFree(firestoreMod, db, region, data = {}, currentDocIds = []) {
+  const nick = trim(data.nickname).toLowerCase();
+  if (!nick || !data.cycleId) return;
+  const collectionRef = firestoreMod.collection(db, 'regions', region, 'wastelandRegistrations');
+  const q = firestoreMod.query(collectionRef, firestoreMod.where('cycleId', '==', data.cycleId));
+  const snap = await firestoreMod.getDocs(q).catch(() => null);
+  if (!snap) return;
+  const ownIds = new Set((Array.isArray(currentDocIds) ? currentDocIds : [currentDocIds]).filter(Boolean));
+  const duplicate = snap.docs.find(doc => {
+    if (ownIds.has(doc.id)) return false;
+    const row = doc.data() || {};
+    return trim(row.nickname).toLowerCase() === nick && normalizeRegion(row.region) === region;
+  });
+  if (duplicate) throw new Error('registration-nickname-duplicate-region');
+}
+
 function safeDocPart(value = '') {
   return trim(value).replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '').slice(0, 120) || 'default';
 }
@@ -1565,9 +1636,11 @@ export async function saveWastelandRegistration(user, values, regionOverride = '
     if (sameCycleAlreadyExists && !managerCanEdit) {
       throw new Error('registration-already-submitted');
     }
+    await assertRegionNicknameFree(firestoreMod, db, region, data, [docId, legacyDocId]);
     if (managerCanEdit) await firestoreMod.setDoc(docRef, payload, { merge: true });
     else await firestoreMod.setDoc(docRef, payload);
   } else {
+    await assertRegionNicknameFree(firestoreMod, db, region, data, []);
     await firestoreMod.addDoc(collectionRef, payload);
   }
 

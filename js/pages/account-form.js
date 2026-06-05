@@ -315,6 +315,10 @@ async function handleSave(event) {
     }
   } catch (error) {
     console.error(error);
+    if (error?.message === 'nickname-duplicate-region') {
+      setStatus(t('account.nicknameDuplicateRegion', 'У цьому регіоні вже є гравець з таким нікнеймом.'), 'error');
+      return;
+    }
     setStatus(t('account.saveFailed', 'Could not save the profile. Check access rights and Google sign-in.'), 'error');
   }
 }

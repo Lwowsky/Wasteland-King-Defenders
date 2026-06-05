@@ -101,11 +101,9 @@ async function markRead(){
 }
 function bind(){
   $('#notifyBtn')?.addEventListener('click', event => {
+    event.preventDefault();
     event.stopPropagation();
-    const menu = $('#notifyMenu');
-    if (!menu) return;
-    const isOpen = menu.classList.toggle('is-open');
-    $('#notifyBtn')?.setAttribute('aria-expanded', String(isOpen));
+    if (currentUser) window.location.href = 'notifications.html';
   });
   $('#notifyOpenPageBtn')?.addEventListener('click', () => { window.location.href = 'notifications.html'; });
   $('#drawerNotificationsBtn')?.addEventListener('click', () => { window.location.href = 'notifications.html'; });

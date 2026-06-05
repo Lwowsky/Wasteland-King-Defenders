@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="google" content="notranslate" />
-  <title data-i18n="finalPlan.publicTitle">Фінальний план — Wasteland King Defenders</title>
+  <title data-i18n="region.publicTableTitle">Таблиця регіону — Wasteland King Defenders</title>
   <link rel="icon" href="favicon.png" type="image/png" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/base.css" />
@@ -12,10 +12,8 @@
   <link rel="stylesheet" href="css/auth-page.css" />
   <link rel="stylesheet" href="css/profile-page.css" />
   <link rel="stylesheet" href="css/players.css" />
+  <link rel="stylesheet" href="css/admin-page.css" />
   <link rel="stylesheet" href="css/region-page.css" />
-  <link rel="stylesheet" href="css/tower-planner.css" />
-  <link rel="stylesheet" href="css/tower-planner-tablet.css" />
-  <link rel="stylesheet" href="css/tower-planner-mobile.css" />
   <link rel="stylesheet" href="css/contact-modal.css" />
   <link rel="stylesheet" href="css/responsive.css" />
   <script defer src="js/i18n.js"></script>
@@ -35,28 +33,34 @@
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/contact-modal.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script type="module" src="js/pages/public-plan-page.js?v=52"></script>
+  <script type="module" src="js/pages/public-region-table-page.js?v=52"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
-  <main class="profile-page container public-plan-page">
-    <section class="profile-card region-card">
+  <main class="profile-page container public-region-table-page">
+    <section class="profile-card region-card region-table-card">
       <div class="profile-head">
-        <div>
-          <h2 data-i18n="finalPlan.publicTitle">Фінальний план</h2>
-          <p data-i18n="finalPlan.publicSubtitle">Перегляд за секретним посиланням.</p>
-        </div>
-        <div class="region-head-actions"><span class="region-pill region-pill--region" id="publicPlanRegion">R—</span></div>
+        <div><h2 data-i18n="region.publicTableTitle">Таблиця регіону</h2></div>
+        <div class="region-head-actions"><span class="region-pill region-pill--region" id="publicRegionTablePill">R—</span></div>
       </div>
-      <div class="auth-status" id="publicPlanStatus" data-i18n="finalPlan.loadingShared">Завантажую фінальний план...</div>
-      <div class="public-plan-actions" id="publicPlanActions" hidden>
-        <button class="btn btn-primary" id="publicPlanDownloadPngBtn" type="button" data-i18n="finalPlan.downloadPng">Завантажити PNG</button>
-        <button class="btn" id="publicPlanDownloadTxtBtn" type="button" data-i18n="finalPlan.downloadTxt">TXT</button>
-        <button class="btn" id="publicPlanCopyLinkBtn" type="button" data-i18n="finalPlan.copyLink">Копіювати посилання</button>
-        <button class="btn" id="publicPlanShareBtn" type="button" data-i18n="finalPlan.share">Поділитися</button>
+      <div class="auth-status" id="publicRegionTableStatus" data-i18n="region.publicTableLoading">Завантажую таблицю регіону...</div>
+      <div class="admin-table-wrap">
+        <table class="admin-table region-public-table">
+          <thead>
+            <tr>
+              <th data-i18n="account.nickname">Нік</th>
+              <th data-i18n="account.alliance">Альянс</th>
+              <th data-i18n="playerEdit.troopType">Тип</th>
+              <th data-i18n="playerEdit.tier">Тір</th>
+              <th data-i18n="playerEdit.march">Марш</th>
+              <th data-i18n="playerEdit.rally">Ралі</th>
+              <th data-i18n="players.captain">Капітан</th>
+              <th data-i18n="common.shift">Зміна</th>
+            </tr>
+          </thead>
+          <tbody id="publicRegionTableBody"><tr><td colspan="8">...</td></tr></tbody>
+        </table>
       </div>
-      <div class="tower-final-board-wrap public-plan-wrap"><div id="publicPlanBoard"></div></div>
     </section>
   </main>
   <div class="container"><div data-include="partials/footer.html"></div></div>

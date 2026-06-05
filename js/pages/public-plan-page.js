@@ -1,4 +1,4 @@
-import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=51';
+import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=52';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -82,13 +82,12 @@ async function pngFiles() {
   return files;
 }
 async function downloadPng() {
-  const sheets = $$('.board-sheet', $('#publicPlanBoard'));
-  if (!sheets.length) return notify(t('finalPlan.sharedNotFound', 'Фінальний план не знайдено або посилання вже недійсне.'), 'error');
-  let index = 1;
-  for (const sheet of sheets) {
-    const blob = await sheetToPngBlob(sheet);
-    if (blob) downloadBlob(`wasteland-final-plan-${index++}.png`, blob);
-  }
+  const board = $('#publicPlanBoard');
+  const sheets = $$('.board-sheet', board);
+  if (!board || !sheets.length) return notify(t('finalPlan.sharedNotFound', 'Фінальний план не знайдено або посилання вже недійсне.'), 'error');
+  const target = sheets.length === 1 ? sheets[0] : board;
+  const blob = await sheetToPngBlob(target);
+  if (blob) downloadBlob(`wasteland-final-plan-${Date.now()}.png`, blob);
   notify(t('finalPlan.pngDownloaded', 'PNG завантажено.'));
 }
 async function copyLink() {

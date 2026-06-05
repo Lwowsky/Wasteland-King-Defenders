@@ -134,6 +134,11 @@ export default {
       return Response.redirect(`${url.origin}/public-plan.html?s=${encodeURIComponent(planMatch[1])}`, 302);
     }
 
+    const regionTableMatch = url.pathname.match(/^\/rt\/([A-Za-z0-9_-]{6,120})$/);
+    if (regionTableMatch) {
+      return Response.redirect(`${url.origin}/public-region-table.html?s=${encodeURIComponent(regionTableMatch[1])}`, 302);
+    }
+
     if (env.ASSETS) {
       return env.ASSETS.fetch(request);
     }

@@ -17,6 +17,11 @@
         window.location.replace('/public-plan.html?s=' + encodeURIComponent(plan[1]));
         return;
       }
+      var table = path.match(/^\/rt\/([A-Za-z0-9_-]{6,160})\/?$/);
+      if (table) {
+        window.location.replace('/public-region-table.html?s=' + encodeURIComponent(table[1]));
+        return;
+      }
       window.location.replace('/index.html');
     })();
   </script>

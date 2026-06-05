@@ -260,6 +260,19 @@ service cloud.firestore {
         : '';
     }
 
+    function targetHasRegionAccess(userId, regionId) {
+      return exists(/databases/$(database)/documents/users/$(userId))
+        && (userDoc(userId).data.gameProfile.region == regionId
+          || (userDoc(userId).data.keys().hasAny(['regionAccess']) && regionId in userDoc(userId).data.regionAccess));
+    }
+
+    function hasAllianceAccess(regionId, allianceTag) {
+      return currentUserExists()
+        && allianceTag != ''
+        && ((currentRegion() == regionId && currentAlliance() == allianceTag)
+          || (currentUserDoc().data.keys().hasAny(['allianceAccess']) && (regionId + ':' + allianceTag) in currentUserDoc().data.allianceAccess));
+    }
+
     function notificationCreateSafe(userId) {
       return signedIn()
         && request.resource.data.actorUid == request.auth.uid
@@ -275,8 +288,8 @@ service cloud.firestore {
       return notificationCreateSafe(userId)
         && (
           ownerEmail() || isAdmin() || isModerator()
-          || (currentRole() in ['consul', 'officer'] && request.resource.data.region == currentRegion() && targetUserRegion(userId) == currentRegion())
-          || (request.resource.data.region == currentRegion() && request.resource.data.alliance == currentAlliance() && targetUserRegion(userId) == currentRegion() && targetUserAlliance(userId) == currentAlliance())
+          || (currentRole() in ['consul', 'officer'] && request.resource.data.region != '' && hasRegionAccess(request.resource.data.region) && targetHasRegionAccess(userId, request.resource.data.region))
+          || (request.resource.data.region != '' && request.resource.data.alliance != '' && hasRegionAccess(request.resource.data.region) && hasAllianceAccess(request.resource.data.region, request.resource.data.alliance) && targetHasRegionAccess(userId, request.resource.data.region))
         );
     }
 
@@ -362,6 +375,16 @@ service cloud.firestore {
     }
 
     match /shortRegionLinks/{code} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && request.resource.data.region is string
+        && canManageRegion(request.resource.data.region);
+      allow delete: if signedIn()
+        && resource.data.region is string
+        && canManageRegion(resource.data.region);
+    }
+
+    match /regionTableShares/{code} {
       allow read: if true;
       allow create, update: if signedIn()
         && request.resource.data.region is string

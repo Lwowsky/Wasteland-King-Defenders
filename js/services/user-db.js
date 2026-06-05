@@ -40,6 +40,15 @@ function buildRegionRoles(main = {}, farms = []) {
   });
   return roles;
 }
+function buildAllianceAccess(main = {}, farms = []) {
+  return [...new Set([main, ...(Array.isArray(farms) ? farms : [])]
+    .map(game => {
+      const region = normalizeText(game?.region).replace(/[^0-9]/g, '');
+      const alliance = normalizeAllianceTag(game?.alliance);
+      return region && alliance ? `${region}:${alliance}` : '';
+    })
+    .filter(Boolean))];
+}
 const isRequestableRole = role => REQUESTABLE_ROLES.includes(role);
 function serviceT(key, fallback) { return globalThis.window?.WKD_t ? globalThis.window.WKD_t(key) : fallback; }
 function serviceLocale() {
@@ -419,6 +428,7 @@ export async function saveSignedInUser(user) {
       },
       farms: [],
       regionAccess: [],
+      allianceAccess: [],
       regionRoles: {},
       activeFarmId: 'main',
       profileVisibility: { showWastelandInfo: false, showFarmsInfo: false }
@@ -431,6 +441,7 @@ export async function saveSignedInUser(user) {
       displayName: user.displayName || old.displayName || '',
       photoURL: user.photoURL || old.photoURL || '',
       regionAccess: buildRegionAccess(oldMain, oldFarms),
+      allianceAccess: buildAllianceAccess(oldMain, oldFarms),
       regionRoles: buildRegionRoles(oldMain, oldFarms),
       lastLoginAt: now,
       updatedAt: now
@@ -553,6 +564,8 @@ export async function saveGameRegistration(user, values) {
     clean.roleLabel = roleLabel('player');
   }
 
+  await assertNicknameRegionUnique(db, firestoreMod, uid, farmId, clean);
+
   const regionChangedByLeader = farmId === 'main'
     && ['consul', 'officer'].includes(currentRole)
     && oldMain.region
@@ -612,6 +625,7 @@ export async function saveGameRegistration(user, values) {
     farms: nextFarms,
     farmCount: getFarmCount({ gameProfile: mainGame, farms: nextFarms, profileComplete }),
     regionAccess: buildRegionAccess(mainGame, nextFarms),
+    allianceAccess: buildAllianceAccess(mainGame, nextFarms),
     regionRoles: buildRegionRoles(mainGame, nextFarms),
     activeFarmId: farmId,
     profileVisibility,
@@ -660,6 +674,8 @@ export async function saveFarmWastelandProfile(user, farmId = 'main', values = {
     updatedAt: Date.now()
   }, safeFarmId);
 
+  await assertNicknameRegionUnique(db, firestoreMod, user.uid, safeFarmId, updatedFarm);
+
   let nextMain = oldMain;
   let nextFarms = oldFarms;
   if (safeFarmId === 'main') {
@@ -680,6 +696,7 @@ export async function saveFarmWastelandProfile(user, farmId = 'main', values = {
     farms: nextFarms,
     farmCount: getFarmCount({ gameProfile: nextMain, farms: nextFarms, profileComplete }),
     regionAccess: buildRegionAccess(nextMain, nextFarms),
+    allianceAccess: buildAllianceAccess(nextMain, nextFarms),
     regionRoles: buildRegionRoles(nextMain, nextFarms),
     activeFarmId: safeFarmId,
     updatedAt: now
@@ -770,6 +787,7 @@ export async function makeFarmPrimary(user, farmId) {
     farms: nextFarms,
     farmCount: getFarmCount({ gameProfile: newMain, farms: nextFarms, profileComplete }),
     regionAccess: buildRegionAccess(newMain, nextFarms),
+    allianceAccess: buildAllianceAccess(newMain, nextFarms),
     regionRoles: buildRegionRoles(newMain, nextFarms),
     activeFarmId: 'main',
     updatedAt: now
@@ -802,6 +820,7 @@ export async function deleteFarm(user, farmId) {
     farms,
     farmCount: getFarmCount({ ...oldProfile, farms }),
     regionAccess: buildRegionAccess(getGameProfile(oldProfile), farms),
+    allianceAccess: buildAllianceAccess(getGameProfile(oldProfile), farms),
     regionRoles: buildRegionRoles(getGameProfile(oldProfile), farms),
     activeFarmId: 'main',
     updatedAt: now
@@ -871,6 +890,23 @@ export async function syncPublicPlayersFromUsers() {
   return count;
 }
 
+async function assertNicknameRegionUnique(db, firestoreMod, uid = '', farmId = 'main', target = {}) {
+  const nickname = normalizeText(target.nickname || target.gameNick);
+  const region = gameRegion(target);
+  if (!nickname || !region) return;
+  const snap = await firestoreMod.getDocs(firestoreMod.collection(db, 'users'));
+  const duplicate = snap.docs.some(doc => {
+    const data = { id: doc.id, ...doc.data() };
+    const games = [{ ...getGameProfile(data), farmId: 'main' }, ...getUserFarms(data)];
+    return games.some(game => {
+      const gameFarmId = normalizeText(game.farmId || game.id || 'main') || 'main';
+      if (doc.id === uid && gameFarmId === (farmId || 'main')) return false;
+      return gameRegion(game) === region && normalizeText(game.nickname).toLowerCase() === nickname.toLowerCase();
+    });
+  });
+  if (duplicate) throw new Error('nickname-duplicate-region');
+}
+
 async function assertAllianceRankLimit(db, firestoreMod, uid = '', farmId = 'main', target = {}) {
   const rank = rankNum(target.rank || 'p1');
   if (![4, 5].includes(rank)) return;
@@ -934,6 +970,7 @@ export async function updateUserByAdmin(uid, values) {
     gameProfile: clean,
     profileComplete: true,
     regionAccess: buildRegionAccess(clean, getUserFarms(oldProfile)),
+    allianceAccess: buildAllianceAccess(clean, getUserFarms(oldProfile)),
     regionRoles: buildRegionRoles(clean, getUserFarms(oldProfile)),
     updatedAt: now
   };
@@ -993,6 +1030,7 @@ export async function updateFarmByAdmin(uid, farmId, values) {
     farms: nextFarms,
     farmCount: getFarmCount({ ...oldProfile, farms: nextFarms }),
     regionAccess: buildRegionAccess(mainGame, nextFarms),
+    allianceAccess: buildAllianceAccess(mainGame, nextFarms),
     regionRoles: buildRegionRoles(mainGame, nextFarms),
     updatedAt: now
   };
@@ -1059,6 +1097,7 @@ export async function approveRoleRequest(requestId) {
       farms: nextFarms,
       farmCount: getFarmCount({ ...userData, farms: nextFarms }),
       regionAccess: buildRegionAccess(mainGame, nextFarms),
+      allianceAccess: buildAllianceAccess(mainGame, nextFarms),
       regionRoles: buildRegionRoles(mainGame, nextFarms),
       activeFarmId: requestFarmId,
       roleRequest,
@@ -1075,7 +1114,7 @@ export async function approveRoleRequest(requestId) {
   const updatedPublic = makePublicPlayer({ ...userData, uid, role, roleRequest, updatedAt: now });
   updatedPublic.updatedAt = now;
   updatedPublic.createdAt = userData.createdAt || request.requestedAt || now;
-  batch.set(userRef, { role, roleLabel: roleLabel(role), roleRequest, regionAccess: buildRegionAccess(getGameProfile(userData), getUserFarms(userData)), regionRoles: buildRegionRoles(getGameProfile(userData), getUserFarms(userData)), updatedAt: now }, { merge: true });
+  batch.set(userRef, { role, roleLabel: roleLabel(role), roleRequest, regionAccess: buildRegionAccess(getGameProfile(userData), getUserFarms(userData)), allianceAccess: buildAllianceAccess(getGameProfile(userData), getUserFarms(userData)), regionRoles: buildRegionRoles(getGameProfile(userData), getUserFarms(userData)), updatedAt: now }, { merge: true });
   batch.set(requestRef, { status: 'approved', approvedBy, approvedAt: now, updatedAt: now }, { merge: true });
   batch.set(firestoreMod.doc(db, 'publicPlayers', uid), updatedPublic, { merge: true });
   if (region) batch.set(firestoreMod.doc(db, 'regions', region, 'players', uid), updatedPublic, { merge: true });

@@ -23,7 +23,7 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=51';
+} from '../services/region-db.js?v=52';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -565,6 +565,10 @@ async function submitCurrentRegistration(values, { auto = false } = {}) {
     }
     if (error?.message === 'region-form-closed') {
       setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'error');
+      return false;
+    }
+    if (error?.message === 'registration-nickname-duplicate-region') {
+      setStatus(t('region.errorNicknameDuplicateRegion', 'У цьому регіоні вже є заявка з таким нікнеймом.'), 'error');
       return false;
     }
     setStatus(t('region.requestSaveFailed', 'Could not save the request. Check access rights or try again.'), 'error');
