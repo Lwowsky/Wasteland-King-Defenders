@@ -31,11 +31,12 @@
   <script defer src="js/i18n-ar.js"></script>
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
-  <script defer src="js/badges.js?v=50"></script>
+  <script defer src="js/badges.js?v=51"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/contact-modal.js"></script>
-  <script type="module" src="js/pages/public-plan-page.js?v=50"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script type="module" src="js/pages/public-plan-page.js?v=51"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -49,6 +50,12 @@
         <div class="region-head-actions"><span class="region-pill region-pill--region" id="publicPlanRegion">R—</span></div>
       </div>
       <div class="auth-status" id="publicPlanStatus" data-i18n="finalPlan.loadingShared">Завантажую фінальний план...</div>
+      <div class="public-plan-actions" id="publicPlanActions" hidden>
+        <button class="btn btn-primary" id="publicPlanDownloadPngBtn" type="button" data-i18n="finalPlan.downloadPng">Завантажити PNG</button>
+        <button class="btn" id="publicPlanDownloadTxtBtn" type="button" data-i18n="finalPlan.downloadTxt">TXT</button>
+        <button class="btn" id="publicPlanCopyLinkBtn" type="button" data-i18n="finalPlan.copyLink">Копіювати посилання</button>
+        <button class="btn" id="publicPlanShareBtn" type="button" data-i18n="finalPlan.share">Поділитися</button>
+      </div>
       <div class="tower-final-board-wrap public-plan-wrap"><div id="publicPlanBoard"></div></div>
     </section>
   </main>

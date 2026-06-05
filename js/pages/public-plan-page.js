@@ -1,7 +1,11 @@
-import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=50';
+import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=51';
 
 const $ = selector => document.querySelector(selector);
+const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
+let currentShare = null;
+let currentCode = '';
+let ready = false;
 
 function codeFromUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -9,12 +13,23 @@ function codeFromUrl() {
   const hashCode = String(window.location.hash || '').replace(/^#/, '').trim();
   return params.get('s') || params.get('code') || hashCode || pathMatch?.[1] || '';
 }
+function publicLink() {
+  const code = currentCode || codeFromUrl();
+  if (!code) return window.location.href;
+  const url = new URL('p.html', window.location.origin);
+  url.hash = code;
+  return url.toString();
+}
 function setStatus(text, type = 'muted') {
   const box = $('#publicPlanStatus');
   if (!box) return;
   box.removeAttribute('data-i18n');
   box.textContent = text;
   box.dataset.type = type;
+}
+function notify(text, type = 'success') {
+  if (window.WKD?.showNotice) window.WKD.showNotice(text);
+  else setStatus(text, type);
 }
 function sanitizeFinalHtml(html = '') {
   const template = document.createElement('template');
@@ -34,18 +49,91 @@ function sanitizeFinalHtml(html = '') {
   });
   return `<div class="wkd-final-share-stack">${cleanSheets.join('')}</div>`;
 }
+function downloadBlob(name, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 500);
+}
+function textContent() {
+  return String(currentShare?.text || $('#publicPlanBoard')?.innerText || '').trim();
+}
+function downloadTxt() {
+  const text = textContent();
+  downloadBlob(`wasteland-final-plan-${Date.now()}.txt`, new Blob([text], { type: 'text/plain;charset=utf-8' }));
+  notify(t('finalPlan.txtDownloaded', 'TXT завантажено.'));
+}
+async function sheetToPngBlob(sheet) {
+  if (typeof window.html2canvas !== 'function') throw new Error('html2canvas-missing');
+  const canvas = await window.html2canvas(sheet, { backgroundColor: '#eef2f8', scale: 3, useCORS: true });
+  return await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+}
+async function pngFiles() {
+  const sheets = $$('.board-sheet', $('#publicPlanBoard'));
+  const files = [];
+  let index = 1;
+  for (const sheet of sheets) {
+    const blob = await sheetToPngBlob(sheet);
+    if (blob) files.push(new File([blob], `wasteland-final-plan-${index++}.png`, { type: 'image/png' }));
+  }
+  return files;
+}
+async function downloadPng() {
+  const sheets = $$('.board-sheet', $('#publicPlanBoard'));
+  if (!sheets.length) return notify(t('finalPlan.sharedNotFound', 'Фінальний план не знайдено або посилання вже недійсне.'), 'error');
+  let index = 1;
+  for (const sheet of sheets) {
+    const blob = await sheetToPngBlob(sheet);
+    if (blob) downloadBlob(`wasteland-final-plan-${index++}.png`, blob);
+  }
+  notify(t('finalPlan.pngDownloaded', 'PNG завантажено.'));
+}
+async function copyLink() {
+  const link = publicLink();
+  try { await navigator.clipboard.writeText(link); notify(t('finalPlan.linkCopied', 'Секретне посилання скопійовано.')); }
+  catch { window.prompt(t('common.copyLinkPrompt', 'Скопіюй посилання:'), link); }
+}
+async function sharePlan() {
+  const link = publicLink();
+  const text = textContent();
+  const title = currentShare?.title || 'Wasteland final plan';
+  const files = [];
+  try { files.push(...await pngFiles()); } catch (error) { console.warn('[WKD] public plan png share skipped:', error); }
+  try { files.push(new File([text], 'wasteland-final-plan.txt', { type: 'text/plain' })); } catch (_error) {}
+  const payload = { title, text: `${link}\n\n${text}`.trim(), url: link };
+  if (files.length && navigator.canShare?.({ files })) payload.files = files;
+  if (navigator.share) {
+    try { await navigator.share(payload); return; } catch (error) { if (error?.name === 'AbortError') return; }
+  }
+  await copyLink();
+}
+function bindActions() {
+  $('#publicPlanDownloadPngBtn')?.addEventListener('click', () => downloadPng().catch(error => { console.error(error); notify(t('finalPlan.pngFailed', 'Не вдалося завантажити PNG.'), 'error'); }));
+  $('#publicPlanDownloadTxtBtn')?.addEventListener('click', downloadTxt);
+  $('#publicPlanCopyLinkBtn')?.addEventListener('click', () => copyLink().catch(console.error));
+  $('#publicPlanShareBtn')?.addEventListener('click', () => sharePlan().catch(error => { console.error(error); notify(t('finalPlan.shareLinkFailed', 'Не вдалося створити секретне посилання.'), 'error'); }));
+}
 async function init() {
+  if (ready) return;
+  ready = true;
+  bindActions();
   const code = codeFromUrl();
+  currentCode = code;
   if (!code) {
     setStatus(t('finalPlan.sharedMissing', 'Секретне посилання неправильне або неповне.'), 'error');
     return;
   }
   try {
     const data = await resolveRegionFinalPlanShare(code);
+    currentShare = data;
     $('#publicPlanRegion') && ($('#publicPlanRegion').textContent = data.region ? `R${data.region}` : 'R—');
     const html = sanitizeFinalHtml(data.html || '');
     if (!html) throw new Error('empty-plan');
     $('#publicPlanBoard').innerHTML = html;
+    $('#publicPlanActions') && ($('#publicPlanActions').hidden = false);
     setStatus(t('finalPlan.sharedReady', 'Фінальний план відкрито за секретним посиланням.'), 'success');
   } catch (error) {
     console.error(error);

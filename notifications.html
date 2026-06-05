@@ -28,15 +28,15 @@
   <script defer src="js/i18n-ar.js"></script>
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
-  <script defer src="js/badges.js?v=50"></script>
+  <script defer src="js/badges.js?v=51"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/confirm-modal.js"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/app-login-shell.js"></script>
   <script type="module" src="js/auth-google.js"></script>
-  <script type="module" src="js/notifications.js?v=50"></script>
-  <script type="module" src="js/pages/notifications-page.js?v=50"></script>
+  <script type="module" src="js/notifications.js?v=51"></script>
+  <script type="module" src="js/pages/notifications-page.js?v=51"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -44,6 +44,21 @@
     <section class="profile-card region-card notifications-page">
       <div class="profile-head"><div><h2 data-i18n="notifications.title">Сповіщення</h2></div></div>
       <div class="auth-status" id="notificationsStatus" data-i18n="notifications.loading">Завантажую сповіщення...</div>
+      <section class="notifications-compose" id="notificationsCompose" hidden>
+        <h3 data-i18n="messages.title">Повідомлення на сайті</h3>
+        <div class="message-grid">
+          <label><span data-i18n="messages.target">Кому</span><select id="messageTargetType"></select></label>
+          <label class="message-target-extra" id="messageRegionWrap"><span data-i18n="account.region">Регіон</span><select id="messageRegionSelect"></select></label>
+          <label class="message-target-extra" id="messageAllianceWrap"><span data-i18n="account.alliance">Альянс</span><input id="messageAllianceInput" maxlength="3" placeholder="YYY" /></label>
+          <label class="message-target-extra" id="messagePlayerWrap"><span data-i18n="messages.player">Гравець</span><input id="messagePlayerInput" list="messagePlayerList" placeholder="Lwowsky" /><datalist id="messagePlayerList"></datalist></label>
+          <label class="message-full"><span data-i18n="messages.subject">Тема</span><input id="messageSubjectInput" maxlength="80" placeholder="Повідомлення" /></label>
+          <label class="message-full"><span data-i18n="messages.body">Текст повідомлення</span><textarea id="messageBodyInput" maxlength="600"></textarea></label>
+        </div>
+        <div class="message-actions">
+          <button class="btn btn-primary" id="sendSiteMessageBtn" type="button" data-i18n="messages.send">Відправити</button>
+          <span class="message-hint" id="messageSendHint"></span>
+        </div>
+      </section>
       <div class="notifications-page-list" id="notificationsPageList"></div>
       <div class="region-actions"><button class="btn region-save" id="notificationsMarkAllBtn" type="button" data-i18n="notifications.markRead">Позначити прочитаними</button></div>
     </section>

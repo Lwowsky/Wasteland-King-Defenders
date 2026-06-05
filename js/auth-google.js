@@ -86,7 +86,7 @@ function openActionLogPage() {
 }
 
 function openSecurityPage() {
-  window.location.href = 'security.html';
+  window.location.href = 'admin.html#security';
 }
 
 function openRegionFormPage() {

@@ -247,6 +247,39 @@ service cloud.firestore {
         && request.resource.data.shift in regionDoc(regionId).data.registrationForm.shifts;
     }
 
+
+    function targetUserRegion(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId))
+        ? userDoc(userId).data.gameProfile.region
+        : '';
+    }
+
+    function targetUserAlliance(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId))
+        ? userDoc(userId).data.gameProfile.alliance
+        : '';
+    }
+
+    function notificationCreateSafe(userId) {
+      return signedIn()
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.type is string
+        && request.resource.data.title is string
+        && request.resource.data.message is string
+        && request.resource.data.unread == true
+        && !request.resource.data.keys().hasAny(['email', 'toEmail'])
+        && request.resource.data.keys().hasOnly(['type','title','message','region','alliance','actorUid','actorName','createdAt','createdAtMs','unread']);
+    }
+
+    function canMessageTarget(userId) {
+      return notificationCreateSafe(userId)
+        && (
+          ownerEmail() || isAdmin() || isModerator()
+          || (currentRole() in ['consul', 'officer'] && request.resource.data.region == currentRegion() && targetUserRegion(userId) == currentRegion())
+          || (request.resource.data.region == currentRegion() && request.resource.data.alliance == currentAlliance() && targetUserRegion(userId) == currentRegion() && targetUserAlliance(userId) == currentAlliance())
+        );
+    }
+
     function publicWastelandRegistrationSafe(regionId) {
       return wastelandRegistrationFieldsSafe(regionId)
         && request.resource.data.publicLink == true;
@@ -267,7 +300,7 @@ service cloud.firestore {
 
       match /notifications/{notificationId} {
         allow read, update, delete: if isOwner(userId) || ownerEmail() || isAdmin();
-        allow create: if isOwner(userId) || ownerEmail() || canUseAdminPanel();
+        allow create: if isOwner(userId) || ownerEmail() || canUseAdminPanel() || canMessageTarget(userId);
       }
     }
 

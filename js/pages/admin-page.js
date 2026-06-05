@@ -21,7 +21,7 @@ import {
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=50';
+} from '../services/region-db.js?v=51';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -542,8 +542,14 @@ async function loadAdminData() {
 }
 
 function switchTab(tab) {
-  document.querySelectorAll('[data-admin-tab]').forEach(button => button.classList.toggle('is-active', button.dataset.adminTab === tab));
-  document.querySelectorAll('[data-admin-panel]').forEach(panel => panel.classList.toggle('is-active', panel.dataset.adminPanel === tab));
+  const safeTab = tab || 'players';
+  document.querySelectorAll('[data-admin-tab]').forEach(button => button.classList.toggle('is-active', button.dataset.adminTab === safeTab));
+  document.querySelectorAll('[data-admin-panel]').forEach(panel => panel.classList.toggle('is-active', panel.dataset.adminPanel === safeTab));
+  if (window.location.hash.replace('#','') !== safeTab && safeTab !== 'players') history.replaceState(null, '', `#${safeTab}`);
+}
+function openInitialAdminTab() {
+  const hash = String(window.location.hash || '').replace('#','');
+  if (hash && document.querySelector(`[data-admin-tab="${hash}"]`)) switchTab(hash);
 }
 
 function bindAdminControls() {
@@ -570,6 +576,8 @@ async function initAdminPage() {
   if (adminReady || !$('#registeredPlayersBody')) return;
   adminReady = true;
   bindAdminControls();
+  openInitialAdminTab();
+  window.addEventListener('hashchange', openInitialAdminTab);
 
   await watchAuth(async user => {
     currentUser = user;

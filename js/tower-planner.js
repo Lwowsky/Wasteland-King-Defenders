@@ -2231,6 +2231,8 @@ ${text}` : text };
   };
   WKD.openTowerPlanner = openPlanner;
   WKD.openFinalPlanModal = openFinal;
+  document.addEventListener('wkd:open-final-plan', event => window.setTimeout(() => openFinal(event.detail?.trigger || null), 0));
+  document.addEventListener('wkd:open-tower-planner', event => window.setTimeout(() => openPlanner(event.detail?.trigger || null, 'setup'), 0));
   WKD.renderSharedFinalPlan = renderFinals;
   WKD.ensureTowerPlanLoaded = loadPlan;
   WKD.resetTowerPlannerPlan = resetPlanToEmpty;

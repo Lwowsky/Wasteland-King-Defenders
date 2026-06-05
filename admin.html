@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="css/auth-page.css" />
   <link rel="stylesheet" href="css/profile-page.css" />
   <link rel="stylesheet" href="css/admin-page.css" />
+  <link rel="stylesheet" href="css/region-page.css" />
   <link rel="stylesheet" href="css/modal-import.css" />
   <link rel="stylesheet" href="css/modal-regions.css" />
   <link rel="stylesheet" href="css/modal-tiers.css" />
@@ -36,7 +37,7 @@
   <script defer src="js/i18n-ar.js"></script>
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
-  <script defer src="js/badges.js?v=50"></script>
+  <script defer src="js/badges.js?v=51"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -52,13 +53,14 @@
   <script defer src="js/confirm-modal.js"></script>
   <script defer src="js/player-edit-modal.js"></script>
   <script defer src="js/player-manager-modal.js"></script>
-  <script defer src="js/tower-planner.js?v=50"></script>
+  <script defer src="js/tower-planner.js?v=51"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/player-manager-region-bridge.js?v=50"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=51"></script>
   <script type="module" src="js/auth-google.js"></script>
-  <script type="module" src="js/notifications.js?v=50"></script>
-  <script type="module" src="js/pages/admin-page.js?v=50"></script>
+  <script type="module" src="js/notifications.js?v=51"></script>
+  <script type="module" src="js/pages/admin-page.js?v=51"></script>
+  <script type="module" src="js/pages/security-page.js?v=51"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -89,6 +91,7 @@
         <button class="admin-tab is-active" type="button" data-admin-tab="players" data-i18n="admin.registeredPlayers">Зареєстровані гравці</button>
         <button class="admin-tab" type="button" data-admin-tab="requests" data-i18n="admin.roleRequests">Заявки на ролі</button>
         <button class="admin-tab" type="button" data-admin-tab="regions" data-i18n="admin.regionsTab">Регіони</button>
+        <button class="admin-tab" type="button" data-admin-tab="security" data-i18n="security.title">Безпека</button>
       </div>
 
       <section class="admin-section is-active" id="adminPlayersSection" data-admin-panel="players">
@@ -194,6 +197,17 @@
 
           <div class="admin-list admin-region-list" id="adminRegionList">
             <div class="admin-empty" data-i18n="admin.loadingRegions">Завантажую регіони...</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section" id="adminSecuritySection" data-admin-panel="security">
+        <div class="security-page">
+          <div class="auth-status" id="securityStatus" data-i18n="security.loading">Перевіряю безпеку...</div>
+          <div class="security-grid" id="securityGrid"></div>
+          <div class="region-note security-note" id="securityAdvice"></div>
+          <div class="region-actions" id="securityActions" hidden>
+            <button class="btn region-save" id="cleanupEmailFieldsBtn" type="button" data-i18n="security.cleanupEmails">Очистити старі email-поля</button>
           </div>
         </div>
       </section>
