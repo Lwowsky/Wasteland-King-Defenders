@@ -281,7 +281,7 @@ service cloud.firestore {
         && request.resource.data.message is string
         && request.resource.data.unread == true
         && !request.resource.data.keys().hasAny(['email', 'toEmail'])
-        && request.resource.data.keys().hasOnly(['type','title','message','region','alliance','actorUid','actorName','createdAt','createdAtMs','unread']);
+        && request.resource.data.keys().hasOnly(['type','title','message','region','alliance','actorUid','actorName','actorRole','actorRoleText','actorPhotoURL','createdAt','createdAtMs','unread']);
     }
 
     function canMessageTarget(userId) {

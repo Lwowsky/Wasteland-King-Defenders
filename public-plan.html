@@ -31,12 +31,13 @@
   <script defer src="js/i18n-ar.js"></script>
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
-  <script defer src="js/badges.js?v=53"></script>
+  <script defer src="js/badges.js?v=54"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/contact-modal.js"></script>
+  <script defer src="js/app-login-shell.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script type="module" src="js/pages/public-plan-page.js?v=53"></script>
+  <script type="module" src="js/pages/public-plan-page.js?v=54"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -47,7 +48,7 @@
           <h2 data-i18n="finalPlan.publicTitle">Фінальний план</h2>
           <p data-i18n="finalPlan.publicSubtitle">Перегляд за секретним посиланням.</p>
         </div>
-        <div class="region-head-actions"><span class="region-pill region-pill--region" id="publicPlanRegion">R—</span></div>
+        <div class="region-head-actions"><a class="btn" href="index.html" data-i18n="common.homePage">На головну</a><span class="region-pill region-pill--region" id="publicPlanRegion">R—</span></div>
       </div>
       <div class="auth-status" id="publicPlanStatus" data-i18n="finalPlan.loadingShared">Завантажую фінальний план...</div>
       <div class="public-plan-actions" id="publicPlanActions" hidden>

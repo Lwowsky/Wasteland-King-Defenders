@@ -6,7 +6,8 @@ const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback |
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 let currentUser = null;
 let items = [];
-let ready = false;
+let bound = false;
+let authStarted = false;
 function regionOf(value=''){ return String(value||'').replace(/[^0-9]/g,''); }
 function profileRegions(profile={}){
   const main = getGameProfile(profile||{});
@@ -47,7 +48,6 @@ async function regionStatusNotifications(firebase, user, profile){
 }
 function render(){
   const nav = $('#notifyNav');
-  const btn = $('#notifyBtn');
   const count = $('#notifyCount');
   const list = $('#notifyList');
   const drawer = $('#drawerNotificationsBtn');
@@ -65,7 +65,7 @@ function render(){
     <div class="notify-item ${item.unread !== false && !item.readAtMs && !item.readAt ? 'is-unread' : ''}">
       <b>${esc(item.title || item.type || t('notifications.title','Сповіщення'))}</b>
       <span>${esc(item.message || item.text || item.summary || '')}</span>
-      <small>${esc(item.region ? `R${item.region} · ` : '')}${esc(formatUserDate(item.createdAt) || (item.createdAtMs ? new Date(item.createdAtMs).toLocaleString() : ''))}</small>
+      <small>${esc(item.region ? `R${item.region} · ` : '')}${esc(item.createdAt ? formatUserDate(item.createdAt) : (item.createdAtMs ? new Date(item.createdAtMs).toLocaleString() : ''))}</small>
     </div>`).join('');
 }
 async function load(user){
@@ -100,24 +100,27 @@ async function markRead(){
   render();
 }
 function bind(){
+  if (bound || !$('#notifyNav')) return;
+  bound = true;
   $('#notifyBtn')?.addEventListener('click', event => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (currentUser) window.location.href = 'notifications.html';
+    if (!currentUser) event.preventDefault();
   });
   $('#notifyOpenPageBtn')?.addEventListener('click', () => { window.location.href = 'notifications.html'; });
   $('#drawerNotificationsBtn')?.addEventListener('click', () => { window.location.href = 'notifications.html'; });
   $('#notifyMarkReadBtn')?.addEventListener('click', () => markRead().catch(console.error));
   document.addEventListener('click', () => $('#notifyMenu')?.classList.remove('is-open'));
   document.addEventListener('wkd:language-changed', render);
+  render();
 }
 function init(){
-  if (ready) return;
-  ready = true;
   bind();
+  if (authStarted) return;
+  authStarted = true;
   watchAuth(user => load(user).catch(console.error));
 }
+
 document.addEventListener('wkd:partials-ready', init);
-document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));
+if (document.readyState !== 'loading') window.setTimeout(init, 0);
 window.WKD = window.WKD || {};
+window.WKD.initNotifications = init;
 window.WKD.refreshNotifications = () => load(currentUser).catch(console.error);

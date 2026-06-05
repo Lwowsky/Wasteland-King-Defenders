@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try { if (typeof window.WKD_applyI18n === 'function') window.WKD_applyI18n(); } catch (error) { console.warn('[WKD] i18n skipped:', error); }
   safeInit('header', WKD.initHeader);
+  safeInit('notifications', WKD.initNotifications);
   safeInit('import modal', WKD.initImportModal);
   safeInit('import regions', WKD.initImportRegions);
   safeInit('import file', WKD.initImportFile);

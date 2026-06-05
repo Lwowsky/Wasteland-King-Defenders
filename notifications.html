@@ -37,7 +37,7 @@
   <script defer src="js/i18n-ar.js"></script>
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
-  <script defer src="js/badges.js?v=53"></script>
+  <script defer src="js/badges.js?v=54"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/confirm-modal.js"></script>
@@ -54,12 +54,12 @@
   <script defer src="js/players-table.js"></script>
   <script defer src="js/player-edit-modal.js"></script>
   <script defer src="js/player-manager-modal.js"></script>
-  <script defer src="js/tower-planner.js?v=53"></script>
-  <script type="module" src="js/player-manager-region-bridge.js?v=53"></script>
+  <script defer src="js/tower-planner.js?v=54"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=54"></script>
   <script defer src="js/app-login-shell.js"></script>
   <script type="module" src="js/auth-google.js"></script>
-  <script type="module" src="js/notifications.js?v=53"></script>
-  <script type="module" src="js/pages/notifications-page.js?v=53"></script>
+  <script type="module" src="js/notifications.js?v=54"></script>
+  <script type="module" src="js/pages/notifications-page.js?v=54"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -68,9 +68,17 @@
       <div class="profile-head"><div><h2 data-i18n="notifications.title">Сповіщення</h2></div></div>
       <div class="auth-status" id="notificationsStatus" data-i18n="notifications.loading">Завантажую сповіщення...</div>
       <div class="profile-tabs notifications-tabs" role="tablist" aria-label="Сповіщення">
-        <button class="profile-tab is-active" id="notificationsInboxTab" type="button" data-notifications-tab="inbox" data-i18n="notifications.inboxTab">Мої сповіщення</button>
+        <button class="profile-tab is-active" id="notificationsNoticeTab" type="button" data-notifications-tab="notifications" data-i18n="notifications.noticeTab">Сповіщення</button>
+        <button class="profile-tab" id="notificationsInboxTab" type="button" data-notifications-tab="inbox" data-i18n="notifications.inboxTab">Отримані повідомлення</button>
         <button class="profile-tab" id="notificationsComposeTab" type="button" data-notifications-tab="compose" data-i18n="notifications.composeTab">Написати повідомлення</button>
       </div>
+      <section class="notifications-panel notifications-notices" id="notificationsNotices">
+        <p class="notifications-readonly" data-i18n="notifications.readOnlyHint">Сповіщення тільки для перегляду. Написати повідомлення можна в окремій вкладці.</p>
+        <div class="notifications-page-list" id="notificationsNoticeList"></div>
+      </section>
+      <section class="notifications-panel notifications-inbox" id="notificationsInbox" hidden>
+        <div class="notifications-page-list notifications-message-list" id="notificationsInboxList"></div>
+      </section>
       <section class="notifications-compose" id="notificationsCompose" hidden>
         <h3 data-i18n="messages.title">Повідомлення на сайті</h3>
         <div class="message-grid">
@@ -86,10 +94,7 @@
           <span class="message-hint" id="messageSendHint"></span>
         </div>
       </section>
-      <section class="notifications-inbox" id="notificationsInbox">
-        <div class="notifications-page-list" id="notificationsPageList"></div>
-        <div class="region-actions"><button class="btn region-save" id="notificationsMarkAllBtn" type="button" data-i18n="notifications.markRead">Позначити прочитаними</button></div>
-      </section>
+      <div class="region-actions"><button class="btn region-save" id="notificationsMarkAllBtn" type="button" data-i18n="notifications.markRead">Позначити прочитаними</button></div>
     </section>
   </main>
   <div class="container"><div data-include="partials/footer.html"></div></div>

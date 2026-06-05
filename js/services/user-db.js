@@ -196,6 +196,9 @@ export async function createUserNotification(uid, values = {}) {
     alliance: normalizeAllianceTag(values.alliance || ''),
     actorUid: normalizeText(values.actorUid || ''),
     actorName: normalizeText(values.actorName || ''),
+    actorRole: normalizeRole(values.actorRole || 'player'),
+    actorRoleText: normalizeText(values.actorRoleText || roleLabel(values.actorRole || 'player')).slice(0, 80),
+    actorPhotoURL: normalizeText(values.actorPhotoURL || '').slice(0, 300),
     createdAt: firestoreMod.serverTimestamp(),
     createdAtMs: nowMs,
     unread: true

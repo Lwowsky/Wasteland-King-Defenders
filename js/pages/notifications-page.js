@@ -1,5 +1,5 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
-import { listRegionCatalog } from '../services/region-db.js?v=53';
+import { listRegionCatalog } from '../services/region-db.js?v=54';
 import {
   canUseAdminPanel,
   createUserNotification,
@@ -9,10 +9,12 @@ import {
   getUserProfile,
   listPublicPlayers,
   listRegisteredUsers,
-  normalizeUserRole
+  normalizeUserRole,
+  roleLabel
 } from '../services/user-db.js';
 
 const $ = selector => document.querySelector(selector);
+const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const regionOf = value => String(value || '').replace(/[^0-9]/g, '');
@@ -23,8 +25,9 @@ let currentProfile = null;
 let rows = [];
 let directory = [];
 let composeReady = false;
-let activeTab = 'inbox';
+let activeTab = 'notifications';
 let knownRegionOptions = [];
+let directReply = null;
 
 function setStatus(text, type = 'muted') {
   const box = $('#notificationsStatus');
@@ -33,10 +36,19 @@ function setStatus(text, type = 'muted') {
   box.textContent = text;
   box.dataset.type = type;
 }
-function setHint(text = '') { const el = $('#messageSendHint'); if (el) el.textContent = text; }
-function role() { return normalizeUserRole(currentProfile?.role || 'player'); }
-function isGlobalManager() { return Boolean(currentUser && canUseAdminPanel(currentUser, currentProfile) && ['admin', 'moderator'].includes(role())); }
-function isManager() { return Boolean(currentUser && canUseAdminPanel(currentUser, currentProfile)); }
+function setHint(text = '') {
+  const el = $('#messageSendHint');
+  if (el) el.textContent = text;
+}
+function role() {
+  return normalizeUserRole(currentProfile?.role || 'player');
+}
+function isGlobalManager() {
+  return Boolean(currentUser && canUseAdminPanel(currentUser, currentProfile) && ['admin', 'moderator'].includes(role()));
+}
+function isManager() {
+  return Boolean(currentUser && canUseAdminPanel(currentUser, currentProfile));
+}
 function playerGames(profile = currentProfile || {}) {
   const main = getGameProfile(profile || {});
   return [
@@ -48,17 +60,35 @@ function gameRowsFromAccount(account = {}) {
   const uid = account.uid || account.id || '';
   const main = getGameProfile(account || {});
   const baseRole = normalizeUserRole(account.role || 'player');
-  const rows = [];
+  const out = [];
   if (main.nickname || main.region || main.alliance) {
-    rows.push({ ...main, uid, farmId: 'main', role: baseRole, accountRole: baseRole, accountName: account.displayName || account.nickname || account.gameNick || '' });
+    out.push({
+      ...main,
+      uid,
+      farmId: 'main',
+      role: baseRole,
+      accountRole: baseRole,
+      accountName: account.displayName || account.nickname || account.gameNick || '',
+      photoURL: account.photoURL || ''
+    });
   }
   getUserFarms(account || {}).forEach((farm, index) => {
     if (!(farm.nickname || farm.region || farm.alliance)) return;
-    rows.push({ ...farm, uid, farmId: farm.farmId || farm.id || `farm-${index + 1}`, role: normalizeUserRole(farm.role || 'player'), accountRole: baseRole, accountName: account.displayName || account.nickname || account.gameNick || '' });
+    out.push({
+      ...farm,
+      uid,
+      farmId: farm.farmId || farm.id || `farm-${index + 1}`,
+      role: normalizeUserRole(farm.role || 'player'),
+      accountRole: baseRole,
+      accountName: account.displayName || account.nickname || account.gameNick || '',
+      photoURL: account.photoURL || ''
+    });
   });
-  return rows;
+  return out;
 }
-function ownRegions() { return [...new Set(playerGames().map(game => regionOf(game.region)).filter(Boolean))]; }
+function ownRegions() {
+  return [...new Set(playerGames().map(game => regionOf(game.region)).filter(Boolean))];
+}
 function ownAlliances(region = '') {
   const r = regionOf(region);
   return [...new Set(playerGames().filter(game => !r || regionOf(game.region) === r).map(game => tag(game.alliance)).filter(Boolean))];
@@ -112,9 +142,29 @@ function regionOptions() {
 function playerLabel(player = {}) {
   return `${player.nickname || player.gameNick || '—'} · R${regionOf(player.region) || '—'} · ${tag(player.alliance) || '—'}`;
 }
-function actorName() { return getGameProfile(currentProfile || {}).nickname || currentUser?.displayName || currentUser?.email || '—'; }
-function activeRegion() { return $('#messageRegionSelect')?.value || ownRegions()[0] || ''; }
-function activeAlliance() { return tag($('#messageAllianceInput')?.value || ownAlliances(activeRegion())[0] || ''); }
+function actorGameForTarget(region = '', alliance = '') {
+  const games = playerGames();
+  const r = regionOf(region);
+  const a = tag(alliance);
+  return games.find(game => regionOf(game.region) === r && (!a || tag(game.alliance) === a))
+    || games.find(game => regionOf(game.region) === r)
+    || games[0]
+    || {};
+}
+function actorName(target = {}) {
+  const game = actorGameForTarget(target.region, target.alliance);
+  return game.nickname || getGameProfile(currentProfile || {}).nickname || currentUser?.displayName || currentUser?.email || '—';
+}
+function actorRole(target = {}) {
+  const game = actorGameForTarget(target.region, target.alliance);
+  return normalizeUserRole(game.role || currentProfile?.role || 'player');
+}
+function activeRegion() {
+  return $('#messageRegionSelect')?.value || ownRegions()[0] || '';
+}
+function activeAlliance() {
+  return tag($('#messageAllianceInput')?.value || ownAlliances(activeRegion())[0] || '');
+}
 function canReachPlayer(player = {}) {
   if (isGlobalManager()) return true;
   const r = regionOf(player.region);
@@ -133,6 +183,7 @@ function dedupeAccounts(list = []) {
   return [...seen.values()];
 }
 function filteredRecipients(type = $('#messageTargetType')?.value || 'player', options = {}) {
+  if (!options.preview && directReply?.uid && type === 'player') return [directReply];
   const region = activeRegion();
   const alliance = activeAlliance();
   const selectedPlayer = String($('#messagePlayerInput')?.value || '').trim().toLowerCase();
@@ -143,19 +194,100 @@ function filteredRecipients(type = $('#messageTargetType')?.value || 'player', o
   else if (type === 'consuls') list = list.filter(p => regionOf(p.region) === region && normalizeUserRole(p.role || p.accountRole || 'player') === 'consul' && (isGlobalManager() || ownRegions().includes(region)));
   else if (type === 'officers') list = list.filter(p => regionOf(p.region) === region && normalizeUserRole(p.role || p.accountRole || 'player') === 'officer' && (isGlobalManager() || ownRegions().includes(region)));
   else if (type === 'alliance') list = list.filter(p => regionOf(p.region) === region && tag(p.alliance) === alliance && (isGlobalManager() || ownAlliances(region).includes(alliance) || ['consul', 'officer'].includes(role())));
-  else if (type === 'player' && !options.preview) list = list.filter(p => { const label = playerLabel(p).toLowerCase(); const nick = String(p.nickname || p.gameNick || '').toLowerCase(); return label === selectedPlayer || nick === selectedPlayer || (selectedPlayer && label.includes(selectedPlayer)); });
+  else if (type === 'player' && !options.preview) list = list.filter(p => {
+    const label = playerLabel(p).toLowerCase();
+    const nick = String(p.nickname || p.gameNick || '').toLowerCase();
+    return label === selectedPlayer || nick === selectedPlayer || (selectedPlayer && label.includes(selectedPlayer));
+  });
   if (!isGlobalManager()) list = list.filter(canReachPlayer);
   return options.preview ? list : dedupeAccounts(list);
 }
-function render() {
-  const list = $('#notificationsPageList');
+function isMessage(item = {}) {
+  return item.type === 'site_message';
+}
+function initials(name = '') {
+  const clean = String(name || '').trim();
+  const parts = clean.split(/\s+/).filter(Boolean).slice(0, 2);
+  return (parts.map(part => Array.from(part)[0]).join('') || 'WK').toUpperCase();
+}
+function accountByUid(uid = '') {
+  return directory.find(item => (item.uid || item.id) === uid) || null;
+}
+function senderGame(item = {}) {
+  const games = directoryGames().filter(game => game.uid === item.actorUid);
+  const r = regionOf(item.region);
+  const a = tag(item.alliance);
+  return games.find(game => regionOf(game.region) === r && (!a || tag(game.alliance) === a))
+    || games.find(game => regionOf(game.region) === r)
+    || games[0]
+    || null;
+}
+function senderMeta(item = {}) {
+  const account = accountByUid(item.actorUid) || {};
+  const game = senderGame(item) || {};
+  const senderRole = normalizeUserRole(item.actorRole || game.role || account.role || 'player');
+  const name = item.actorName || game.nickname || account.displayName || account.nickname || account.gameNick || t('messages.unknownSender', 'Невідомий відправник');
+  return {
+    uid: item.actorUid || game.uid || account.uid || account.id || '',
+    name,
+    label: game.uid ? playerLabel(game) : name,
+    role: senderRole,
+    roleText: item.actorRoleText || roleLabel(senderRole),
+    photoURL: item.actorPhotoURL || game.photoURL || account.photoURL || '',
+    region: regionOf(item.region || game.region),
+    alliance: tag(item.alliance || game.alliance)
+  };
+}
+function dateText(item = {}) {
+  const formatted = item.createdAt ? formatUserDate(item.createdAt) : '';
+  if (formatted && formatted !== '—') return formatted;
+  return item.createdAtMs ? new Date(item.createdAtMs).toLocaleString() : '';
+}
+function renderAvatar(meta = {}) {
+  if (meta.photoURL) {
+    return `<span class="message-avatar"><img src="${esc(meta.photoURL)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.message-avatar').textContent='${esc(initials(meta.name))}'"></span>`;
+  }
+  return `<span class="message-avatar">${esc(initials(meta.name))}</span>`;
+}
+function renderNoticeList() {
+  const list = $('#notificationsNoticeList');
   if (!list) return;
-  list.innerHTML = rows.length ? rows.map(item => `
+  const notices = rows.filter(item => !isMessage(item));
+  list.innerHTML = notices.length ? notices.map(item => `
     <article class="notify-item ${item.unread !== false && !item.readAt ? 'is-unread' : ''}">
       <b>${esc(item.title || t('notifications.title', 'Сповіщення'))}</b>
       <span>${esc(item.message || item.summary || '')}</span>
-      <small>${esc(item.region ? `R${item.region} · ` : '')}${esc(item.actorName ? `${item.actorName} · ` : '')}${esc(formatUserDate(item.createdAt) || (item.createdAtMs ? new Date(item.createdAtMs).toLocaleString() : ''))}</small>
+      <small>${esc(item.region ? `R${item.region} · ` : '')}${esc(item.actorName ? `${item.actorName} · ` : '')}${esc(dateText(item))}</small>
     </article>`).join('') : `<div class="notify-empty">${esc(t('notifications.empty', 'Нових сповіщень немає.'))}</div>`;
+}
+function renderMessageList() {
+  const list = $('#notificationsInboxList');
+  if (!list) return;
+  const messages = rows.filter(isMessage);
+  list.innerHTML = messages.length ? messages.map(item => {
+    const meta = senderMeta(item);
+    const unread = item.unread !== false && !item.readAt;
+    return `
+      <article class="site-message-card ${unread ? 'is-unread' : ''}">
+        <div class="site-message-main">
+          ${renderAvatar(meta)}
+          <div class="site-message-content">
+            <div class="site-message-sender">
+              <strong>${esc(meta.name)}</strong>
+              <span class="role-badge role-${esc(meta.role)}">${esc(meta.roleText)}</span>
+            </div>
+            <small>${esc(meta.region ? `R${meta.region}` : 'R—')} · ${esc(meta.alliance || '—')} · ${esc(dateText(item))}</small>
+            <h3>${esc(item.title || t('messages.defaultSubject', 'Повідомлення'))}</h3>
+            <p>${esc(item.message || item.summary || '')}</p>
+          </div>
+        </div>
+        ${meta.uid ? `<button class="btn site-message-reply" type="button" data-reply-id="${esc(item.id || '')}" data-i18n="messages.reply">${esc(t('messages.reply', 'Відповісти'))}</button>` : ''}
+      </article>`;
+  }).join('') : `<div class="notify-empty">${esc(t('notifications.noMessages', 'Отриманих повідомлень немає.'))}</div>`;
+}
+function render() {
+  renderNoticeList();
+  renderMessageList();
 }
 function renderPlayerList() {
   const datalist = $('#messagePlayerList');
@@ -174,16 +306,16 @@ function updateComposeVisibility() {
   $('#messageAllianceWrap') && ($('#messageAllianceWrap').hidden = type !== 'alliance');
   $('#messagePlayerWrap') && ($('#messagePlayerWrap').hidden = type !== 'player');
 }
-function switchTab(tab = 'inbox') {
-  activeTab = tab === 'compose' ? 'compose' : 'inbox';
+function switchTab(tab = 'notifications') {
+  activeTab = ['notifications', 'inbox', 'compose'].includes(tab) ? tab : 'notifications';
+  $('#notificationsNotices') && ($('#notificationsNotices').hidden = activeTab !== 'notifications');
   $('#notificationsInbox') && ($('#notificationsInbox').hidden = activeTab !== 'inbox');
   $('#notificationsCompose') && ($('#notificationsCompose').hidden = activeTab !== 'compose');
-  document.querySelectorAll('[data-notifications-tab]').forEach(btn => btn.classList.toggle('is-active', btn.dataset.notificationsTab === activeTab));
+  $$('[data-notifications-tab]').forEach(btn => btn.classList.toggle('is-active', btn.dataset.notificationsTab === activeTab));
 }
 function renderCompose() {
   const box = $('#notificationsCompose');
   if (!box || !currentUser) return;
-  box.hidden = false;
   const type = $('#messageTargetType');
   const selected = type?.value || '';
   const options = targetOptions();
@@ -265,33 +397,77 @@ async function sendMessage() {
     return;
   }
   setHint(t('messages.sending', 'Відправляю...'));
-  await Promise.all(recipients.slice(0, 500).map(player => createUserNotification(player.uid, {
-    type: 'site_message',
-    title,
-    message: body,
-    region: regionOf(player.region) || activeRegion(),
-    alliance: tag(player.alliance) || activeAlliance(),
-    actorUid: currentUser.uid,
-    actorName: actorName()
-  }).catch(error => console.warn('[WKD] message skipped', player.uid, error))));
-  $('#messageBodyInput') && ($('#messageBodyInput').value = '');
+  await Promise.all(recipients.slice(0, 500).map(player => {
+    const target = { region: regionOf(player.region) || activeRegion(), alliance: tag(player.alliance) || activeAlliance() };
+    const senderRole = actorRole(target);
+    return createUserNotification(player.uid, {
+      type: 'site_message',
+      title,
+      message: body,
+      region: target.region,
+      alliance: target.alliance,
+      actorUid: currentUser.uid,
+      actorName: actorName(target),
+      actorRole: senderRole,
+      actorRoleText: roleLabel(senderRole),
+      actorPhotoURL: currentProfile?.photoURL || currentUser?.photoURL || ''
+    }).catch(error => console.warn('[WKD] message skipped', player.uid, error));
+  }));
+  const bodyInput = $('#messageBodyInput');
+  if (bodyInput) bodyInput.value = '';
+  directReply = null;
   setHint(`${t('messages.sent', 'Повідомлення відправлено')}: ${recipients.length}`);
   await load(currentUser).catch(() => null);
+}
+function clearDirectReply() {
+  directReply = null;
+}
+function startReply(item = {}) {
+  const meta = senderMeta(item);
+  if (!meta.uid) return;
+  directReply = {
+    uid: meta.uid,
+    nickname: meta.name,
+    gameNick: meta.name,
+    region: meta.region || item.region || activeRegion(),
+    alliance: meta.alliance || item.alliance || activeAlliance(),
+    role: meta.role,
+    accountRole: meta.role
+  };
+  switchTab('compose');
+  renderCompose();
+  const type = $('#messageTargetType');
+  if (type) type.value = 'player';
+  updateComposeVisibility();
+  const playerInput = $('#messagePlayerInput');
+  if (playerInput) playerInput.value = meta.label || meta.name;
+  const subjectInput = $('#messageSubjectInput');
+  if (subjectInput && !String(subjectInput.value || '').trim()) subjectInput.value = `Re: ${item.title || t('messages.defaultSubject', 'Повідомлення')}`.slice(0, 80);
+  setHint(`${t('messages.replyTo', 'Відповідь для')}: ${meta.name}`);
+  $('#messageBodyInput')?.focus();
 }
 function bindCompose() {
   if (composeReady) return;
   composeReady = true;
-  document.querySelectorAll('[data-notifications-tab]').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.notificationsTab || 'inbox')));
+  $$('[data-notifications-tab]').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.notificationsTab || 'notifications')));
   $('#notificationsMarkAllBtn')?.addEventListener('click', () => markAll().catch(console.error));
   $('#sendSiteMessageBtn')?.addEventListener('click', () => sendMessage().catch(error => { console.error(error); setHint(t('messages.sendFailed', 'Не вдалося відправити повідомлення.')); }));
-  $('#messageTargetType')?.addEventListener('change', () => { updateComposeVisibility(); renderPlayerList(); });
-  $('#messageRegionSelect')?.addEventListener('change', () => { $('#messageAllianceInput') && ($('#messageAllianceInput').value = ownAlliances(activeRegion())[0] || ''); renderPlayerList(); });
-  $('#messageAllianceInput')?.addEventListener('input', renderPlayerList);
+  $('#messageTargetType')?.addEventListener('change', () => { clearDirectReply(); updateComposeVisibility(); renderPlayerList(); });
+  $('#messageRegionSelect')?.addEventListener('change', () => { clearDirectReply(); const allianceInput = $('#messageAllianceInput'); if (allianceInput) allianceInput.value = ownAlliances(activeRegion())[0] || ''; renderPlayerList(); });
+  $('#messageAllianceInput')?.addEventListener('input', () => { clearDirectReply(); renderPlayerList(); });
+  $('#messagePlayerInput')?.addEventListener('input', clearDirectReply);
+  $('#notificationsInboxList')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-reply-id]');
+    if (!button) return;
+    const item = rows.find(row => row.id === button.dataset.replyId);
+    if (item) startReply(item);
+  });
 }
 function init() {
   bindCompose();
   document.addEventListener('wkd:language-changed', () => { renderCompose(); render(); });
   watchAuth(user => load(user).catch(error => { console.error(error); setStatus(t('notifications.loadFailed', 'Не вдалося завантажити сповіщення.'), 'error'); }));
 }
+
 document.addEventListener('wkd:partials-ready', init);
-document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));
+if (document.readyState !== 'loading') window.setTimeout(init, 0);

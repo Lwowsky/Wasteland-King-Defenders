@@ -1,4 +1,4 @@
-import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=53';
+import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=54';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -141,4 +141,5 @@ async function init() {
 }
 
 document.addEventListener('wkd:partials-ready', init);
-document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));
+if (document.readyState !== 'loading') window.setTimeout(init, 0);
+else document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));

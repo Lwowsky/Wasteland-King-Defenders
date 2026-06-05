@@ -1,8 +1,9 @@
-import { resolveRegionTableShare, troopLabel, shiftLabel } from '../services/region-db.js?v=53';
+import { resolveRegionTableShare, troopLabel, shiftLabel } from '../services/region-db.js?v=54';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+let ready = false;
 
 function codeFromUrl() {
   const params = new URLSearchParams(location.search);
@@ -29,6 +30,8 @@ function rowHtml(row = {}) {
   return `<tr><td>${esc(row.nickname || '—')}</td><td>${alliance}</td><td>${troop}</td><td>${tier}</td><td>${formatNumber(row.marchSize)}</td><td>${formatNumber(row.rallySize)}</td><td>${captain}</td><td>${shift}</td></tr>`;
 }
 async function init() {
+  if (ready) return;
+  ready = true;
   const code = codeFromUrl();
   if (!code) { setStatus(t('region.publicTableMissing', 'Секретне посилання неправильне або неповне.'), 'error'); return; }
   try {
@@ -43,4 +46,5 @@ async function init() {
   }
 }
 document.addEventListener('wkd:partials-ready', init);
-document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));
+if (document.readyState !== 'loading') window.setTimeout(init, 0);
+else document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));
