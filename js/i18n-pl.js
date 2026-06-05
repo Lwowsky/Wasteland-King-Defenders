@@ -1625,4 +1625,18 @@ window.WKD_TRANSLATIONS.pl = {
   'region.showUtcAndLocal': 'Pokaż UTC i mój czas',
 
   "region.draftSavedAccount": "Aktualne dane zgłoszenia zapisano na koncie.",
+  "regionSettings.playerLinks": "Linki dla graczy",
+  "regionSettings.fullLink": "Pełny link",
+  "regionSettings.shortLink": "Krótki link",
+  "finalPlan.publicTitle": "Plan końcowy",
+  "finalPlan.publicSubtitle": "Podgląd przez tajny link.",
+  "finalPlan.loadingShared": "Ładuję plan końcowy...",
+  "finalPlan.sharedMissing": "Tajny link jest niepoprawny lub niepełny.",
+  "finalPlan.sharedReady": "Plan końcowy otwarty przez tajny link.",
+  "finalPlan.sharedNotFound": "Nie znaleziono planu albo link jest już nieważny.",
+  "finalPlan.shareLinkReadyTitle": "Link gotowy",
+  "finalPlan.shareLinkReadyMessage": "Tajny link do planu został skopiowany. Gracze mogą go otworzyć bez logowania.",
+  "finalPlan.openSharedPlan": "Otwórz plan",
+  "finalPlan.shareLinkFailed": "Nie udało się utworzyć tajnego linku.",
+
 };

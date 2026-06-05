@@ -325,6 +325,16 @@ service cloud.firestore {
         && canManageRegion(resource.data.region);
     }
 
+    match /finalPlanShares/{code} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && request.resource.data.region is string
+        && canManageRegion(request.resource.data.region);
+      allow delete: if signedIn()
+        && resource.data.region is string
+        && canManageRegion(resource.data.region);
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

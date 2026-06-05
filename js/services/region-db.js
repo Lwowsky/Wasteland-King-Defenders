@@ -861,6 +861,65 @@ export async function resolveRegionShareLink(codeValue) {
   return { code, region, settings };
 }
 
+async function saveRegionFinalPlanShareLink({ db, firestoreMod }, user, region, settings, forceNew = false) {
+  const safeRegion = normalizeRegion(region);
+  const privateRef = firestoreMod.doc(db, 'regions', safeRegion, 'privateSettings', 'finalPlanShare');
+  const privateSnap = await firestoreMod.getDoc(privateRef).catch(() => null);
+  const oldCode = normalizeShortLinkCode(privateSnap?.exists?.() ? privateSnap.data()?.code : '');
+  const code = forceNew || !oldCode ? makeShortLinkCode() : oldCode;
+  const now = firestoreMod.serverTimestamp();
+  if (oldCode && oldCode !== code) {
+    await firestoreMod.deleteDoc(firestoreMod.doc(db, 'finalPlanShares', oldCode)).catch(() => null);
+  }
+  await firestoreMod.setDoc(privateRef, {
+    code,
+    region: safeRegion,
+    cycleId: settings.currentCycleId || '',
+    eventStartAtMs: Number(settings.eventStartAtMs) || 0,
+    updatedAt: now,
+    updatedBy: user.uid
+  }, { merge: true });
+  return code;
+}
+
+export async function shareRegionFinalPlan(user, region, payload = {}) {
+  if (!user) throw new Error('auth-required');
+  const firebase = await getFirebaseParts();
+  const { db, firestoreMod } = firebase;
+  const profile = await getUserProfile(user.uid);
+  const safeRegion = normalizeRegion(region);
+  if (!safeRegion) throw new Error('region-required');
+  const settings = await getRegionSettings(safeRegion);
+  if (!canEditRegionTowerPlan(profile, safeRegion, user, settings)) throw new Error('region-plan-access-denied');
+  const code = await saveRegionFinalPlanShareLink(firebase, user, safeRegion, settings, false);
+  const cleanHtml = trim(payload.html).slice(0, 700000);
+  const cleanText = trim(payload.text).slice(0, 50000);
+  await firestoreMod.setDoc(firestoreMod.doc(db, 'finalPlanShares', code), {
+    code,
+    region: safeRegion,
+    cycleId: settings.currentCycleId || '',
+    eventStartAtMs: Number(settings.eventStartAtMs) || 0,
+    html: cleanHtml,
+    text: cleanText,
+    title: trim(payload.title || 'Final plan').slice(0, 120),
+    shift: trim(payload.shift || '').slice(0, 40),
+    updatedAt: firestoreMod.serverTimestamp(),
+    updatedAtMs: Date.now(),
+    updatedBy: user.uid,
+    updatedByName: getRegionActorName(profile || {}, safeRegion, user)
+  }, { merge: true });
+  return { code, region: safeRegion };
+}
+
+export async function resolveRegionFinalPlanShare(codeValue) {
+  const { db, firestoreMod } = await getFirebaseParts();
+  const code = normalizeShortLinkCode(codeValue);
+  if (!code) throw new Error('final-plan-link-required');
+  const snap = await firestoreMod.getDoc(firestoreMod.doc(db, 'finalPlanShares', code));
+  if (!snap.exists()) throw new Error('final-plan-link-not-found');
+  return { code, ...(snap.data() || {}) };
+}
+
 
 function cycleIdToMs(cycleId = '') {
   const match = String(cycleId || '').match(/wasteland-(\d{10,})/);
@@ -935,7 +994,7 @@ export async function ensureRegionRegistrationRunInfo(user, regionOverride = '')
 
   const nowMs = Date.now();
   const actorName = getRegionActorName(profile || {}, safeRegion, user);
-  const actorEmail = trim(user.email);
+  const actorEmail = ''; // do not expose account email in public region documents
   const openedAtMs = Number(status.openedAtMs) || Number(status.openAtMs) || Number(status.updatedAtMs) || nowMs;
   const eventStartAtMs = Number(status.eventStartAtMs || status.startAtMs) || getNextWastelandStart(nowMs);
   const closeAtMs = Number(status.closeAtMs) || computeCloseAtMs(eventStartAtMs, status.closeRule, status.closeHours);
@@ -1014,7 +1073,7 @@ export async function saveRegionSettings(user, region, settings) {
   const currentCycleId = openNewCycle ? `${baseCycleId}-${Date.now()}` : (oldSettings.currentCycleId || baseCycleId);
   const now = firestoreMod.serverTimestamp();
   const actorName = getRegionActorName(profile || {}, safeRegion, user);
-  const actorEmail = trim(user.email);
+  const actorEmail = ''; // do not expose account email in public region documents
 
   const clean = {
     enabled: enabledNow,
@@ -1116,7 +1175,11 @@ export async function saveRegionSettings(user, region, settings) {
     return { deletedCount: 0 };
   });
   const shortLinkCode = await saveRegionShareLink({ db, firestoreMod }, user, safeRegion, clean, openNewCycle);
-  return { ...clean, shortLinkCode, openedNewCycle: openNewCycle, cleanupDeletedCount: cleanup.deletedCount || 0 };
+  const finalPlanShareCode = await saveRegionFinalPlanShareLink({ db, firestoreMod }, user, safeRegion, clean, openNewCycle).catch(error => {
+    console.warn('[WKD] final plan share code skipped:', error);
+    return '';
+  });
+  return { ...clean, shortLinkCode, finalPlanShareCode, openedNewCycle: openNewCycle, cleanupDeletedCount: cleanup.deletedCount || 0 };
 }
 
 

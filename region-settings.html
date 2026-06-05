@@ -52,12 +52,12 @@
   <script defer src="js/confirm-modal.js"></script>
   <script defer src="js/player-edit-modal.js"></script>
   <script defer src="js/player-manager-modal.js"></script>
-  <script defer src="js/tower-planner.js?v=46"></script>
+  <script defer src="js/tower-planner.js?v=47"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/player-manager-region-bridge.js?v=46"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=47"></script>
   <script type="module" src="js/auth-google.js"></script>
-  <script type="module" src="js/pages/region-settings-page.js?v=46"></script>
+  <script type="module" src="js/pages/region-settings-page.js?v=47"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -113,12 +113,11 @@
       <form class="region-form-block" id="regionSettingsForm" hidden>
         <div class="region-grid">
           <div class="region-field region-field--full region-share-field">
-            <span data-i18n="regionSettings.shortLink">Коротке посилання для гравців</span>
-            <div class="region-share-row">
-              <input id="regionShareLink" readonly />
-              <button class="btn" id="copyRegionShareBtn" type="button" data-i18n="common.copy">Скопіювати</button>
+            <span data-i18n="regionSettings.playerLinks">Посилання для гравців</span>
+            <div class="region-share-stack">
+              <label class="region-share-mini"><small data-i18n="regionSettings.fullLink">Повне посилання</small><div class="region-share-row"><input id="regionShareLinkFull" readonly /><button class="btn" id="copyRegionFullShareBtn" type="button" data-i18n="common.copy">Скопіювати</button></div></label>
+              <label class="region-share-mini"><small data-i18n="regionSettings.shortLink">Коротке посилання</small><div class="region-share-row"><input id="regionShareLink" readonly /><button class="btn" id="copyRegionShareBtn" type="button" data-i18n="common.copy">Скопіювати</button></div></label>
             </div>
-            <small data-i18n="regionSettings.shortLinkHelp">Це посилання можна кинути в чат. Гравець зможе заповнити заявку навіть без Google-входу.</small>
           </div>
           <label class="region-field"><span data-i18n="regionSettings.formEnabled">Форма активна</span><select id="settingsEnabled"><option value="true" data-i18n="regionSettings.enabledOn">Включено</option><option value="false" data-i18n="regionSettings.enabledOff">Відключено</option></select></label>
           <label class="region-field"><span data-i18n="regionSettings.formName">Назва форми</span><input id="settingsTitle" /></label>

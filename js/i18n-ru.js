@@ -1625,4 +1625,18 @@ window.WKD_TRANSLATIONS.ru = {
   'region.showUtcAndLocal': 'Показывать UTC и моё время',
 
   "region.draftSavedAccount": "Текущие данные заявки сохранены в аккаунте.",
+  "regionSettings.playerLinks": "Ссылки для игроков",
+  "regionSettings.fullLink": "Полная ссылка",
+  "regionSettings.shortLink": "Короткая ссылка",
+  "finalPlan.publicTitle": "Финальный план",
+  "finalPlan.publicSubtitle": "Просмотр по секретной ссылке.",
+  "finalPlan.loadingShared": "Загружаю финальный план...",
+  "finalPlan.sharedMissing": "Секретная ссылка неправильная или неполная.",
+  "finalPlan.sharedReady": "Финальный план открыт по секретной ссылке.",
+  "finalPlan.sharedNotFound": "Финальный план не найден или ссылка уже недействительна.",
+  "finalPlan.shareLinkReadyTitle": "Ссылка готова",
+  "finalPlan.shareLinkReadyMessage": "Секретная ссылка на финальный план скопирована. Игроки могут открыть её без входа.",
+  "finalPlan.openSharedPlan": "Открыть план",
+  "finalPlan.shareLinkFailed": "Не удалось создать секретную ссылку.",
+
 };

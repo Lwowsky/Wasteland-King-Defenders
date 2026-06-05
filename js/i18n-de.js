@@ -1625,4 +1625,18 @@ window.WKD_TRANSLATIONS.de = {
   'region.showUtcAndLocal': 'UTC und meine Zeit anzeigen',
 
   "region.draftSavedAccount": "Die aktuellen Anmeldedaten wurden in deinem Konto gespeichert.",
+  "regionSettings.playerLinks": "Links für Spieler",
+  "regionSettings.fullLink": "Vollständiger Link",
+  "regionSettings.shortLink": "Kurzlink",
+  "finalPlan.publicTitle": "Finaler Plan",
+  "finalPlan.publicSubtitle": "Ansicht über geheimen Link.",
+  "finalPlan.loadingShared": "Finalen Plan laden...",
+  "finalPlan.sharedMissing": "Der geheime Link ist falsch oder unvollständig.",
+  "finalPlan.sharedReady": "Finaler Plan über geheimen Link geöffnet.",
+  "finalPlan.sharedNotFound": "Finaler Plan nicht gefunden oder Link ist ungültig.",
+  "finalPlan.shareLinkReadyTitle": "Link ist bereit",
+  "finalPlan.shareLinkReadyMessage": "Der geheime Link zum finalen Plan wurde kopiert. Spieler können ihn ohne Anmeldung öffnen.",
+  "finalPlan.openSharedPlan": "Plan öffnen",
+  "finalPlan.shareLinkFailed": "Geheimer Link konnte nicht erstellt werden.",
+
 };

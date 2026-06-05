@@ -26,7 +26,7 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=46';
+} from '../services/region-db.js?v=47';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -361,7 +361,7 @@ async function saveManualRegionFromSettings(event) {
   }
 }
 
-function buildShareLink(region) {
+function buildFullShareLink(region) {
   if (!currentShareCode || !region) return '';
   const url = new URL('region-form.html', window.location.href);
   url.searchParams.set('r', normalizeRegion(region));
@@ -369,12 +369,23 @@ function buildShareLink(region) {
   return url.toString();
 }
 
+function buildShareLink(region) {
+  if (!currentShareCode || !region) return '';
+  const url = new URL(`/f/${normalizeRegion(region)}/${currentShareCode}`, window.location.origin);
+  return url.toString();
+}
+
 function updateShareLink() {
-  const input = $('#regionShareLink');
-  if (!input) return;
-  input.value = buildShareLink(currentRegion);
-  input.placeholder = input.value ? '' : t('region.shortLinkAfterSave', 'A secret short link will be created after saving the form');
-  if (input.value && currentShareCode) {
+  const shortInput = $('#regionShareLink');
+  const fullInput = $('#regionShareLinkFull');
+  const shortLink = buildShareLink(currentRegion);
+  const fullLink = buildFullShareLink(currentRegion);
+  [shortInput, fullInput].forEach(input => {
+    if (!input) return;
+    input.value = input === shortInput ? shortLink : fullLink;
+    input.placeholder = input.value ? '' : t('region.shortLinkAfterSave', 'A secret short link will be created after saving the form');
+  });
+  if (shortLink && currentShareCode) {
     try {
       sessionStorage.setItem('wkd.regionForm.shortCode', currentShareCode);
       sessionStorage.setItem('wkd.regionForm.region', normalizeRegion(currentRegion));
@@ -917,8 +928,8 @@ function saveRotationDraft() {
   closeRotationModal();
 }
 
-async function copyShareLink() {
-  const input = $('#regionShareLink');
+async function copyShareLink(inputId = 'regionShareLink') {
+  const input = $(`#${inputId}`);
   if (!input?.value) return;
   try {
     await navigator.clipboard.writeText(input.value);
@@ -1044,7 +1055,8 @@ function bind() {
     if (Number.isFinite(rotationDragIndex) && Number.isFinite(targetIndex)) moveRotationAlliance(rotationDragIndex, targetIndex);
     rotationDragIndex = null;
   });
-  $('#copyRegionShareBtn')?.addEventListener('click', copyShareLink);
+  $('#copyRegionShareBtn')?.addEventListener('click', () => copyShareLink('regionShareLink'));
+  $('#copyRegionFullShareBtn')?.addEventListener('click', () => copyShareLink('regionShareLinkFull'));
   $('#openRegionTableFromSettingsBtn')?.addEventListener('click', () => { if (currentCanViewAnyRegion) window.location.href = `region-table.html?region=${currentRegion}`; });
   $('#regionAllianceList')?.addEventListener('click', event => {
     const editId = event.target.closest('[data-edit-alliance]')?.dataset.editAlliance;

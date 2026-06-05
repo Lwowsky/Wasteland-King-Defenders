@@ -3,6 +3,7 @@ import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserPro
 import {
   getMyRegionContext,
   getRegionSettings,
+  getRegionShareLinkCode,
   getMyWastelandRegistration,
   saveWastelandRegistration,
   readRegionFromUrl,
@@ -22,7 +23,7 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=46';
+} from '../services/region-db.js?v=47';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -371,6 +372,26 @@ function regionPillText() {
   return currentRegion ? `R${currentRegion}` : 'R—';
 }
 
+function buildShortPlayerLink(code = shortCodeFromLink || '', region = currentRegion) {
+  const safeRegion = String(region || '').trim();
+  const safeCode = String(code || '').trim();
+  if (!safeRegion || !safeCode) return '';
+  return new URL(`/f/${safeRegion}/${safeCode}`, window.location.origin).toString();
+}
+async function updatePlayerShortLinkPanel() {
+  const panel = $('#regionPlayerShortLinkPanel');
+  const input = $('#regionPlayerShortLink');
+  if (!panel || !input) return;
+  panel.hidden = true;
+  if (!currentUser || !canManageRegion(currentProfile || {}, currentRegion, currentUser)) return;
+  const code = shortCodeFromLink || await getRegionShareLinkCode(currentUser, currentRegion).catch(() => '');
+  const link = buildShortPlayerLink(code, currentRegion);
+  if (!link) return;
+  shortCodeFromLink = code;
+  input.value = link;
+  panel.hidden = false;
+}
+
 function farmLabel(farm = {}, index = 0) {
   const name = farm.nickname || (farm.farmId === 'main' ? t('account.mainPlayer', 'Main player') : tv('account.farmNumber', 'Farm {number}', { number: index + 1 }));
   const region = farm.region ? ` · R${farm.region}` : '';
@@ -611,6 +632,7 @@ async function prepareForm(settings) {
   renderEventInfo(settings);
   await loadRegionAlliancesForForm();
   startCountdown(settings);
+  updatePlayerShortLinkPanel().catch(error => console.warn('[WKD] player short link skipped:', error));
 
   const status = getRegionFormStatus(settings);
   const extraPanel = $('#extraTroopPanel');
@@ -807,6 +829,12 @@ function bind() {
       console.error(error);
       setStatus(t('region.formOpenFailed', 'Could not open the region form. Check the link or access rights.'), 'error');
     });
+  });
+  $('#copyRegionPlayerShortLinkBtn')?.addEventListener('click', async () => {
+    const input = $('#regionPlayerShortLink');
+    if (!input?.value) return;
+    try { await navigator.clipboard.writeText(input.value); setStatus(t('region.linkCopiedPublic', 'Посилання скопійовано.'), 'success'); }
+    catch { input.select(); document.execCommand('copy'); setStatus(t('region.linkSelectedManual', 'Посилання виділено. Скопіюй його вручну.'), 'warn'); }
   });
   $('#saveWastelandDraftBtn')?.addEventListener('click', handleSaveDraft);
   $('#resetWastelandFormBtn')?.addEventListener('click', () => {

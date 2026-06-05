@@ -1,6 +1,6 @@
 import { getFirebase, watchAuth } from './services/firebase-service.js';
 import { getGameProfile, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=46';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=47';
 
 window.WKD = window.WKD || {};
 
@@ -197,7 +197,7 @@ async function refreshTowerRegionOptions() {
     const role = currentRole();
     let regions = [];
     if (isOwnerAdmin() || role === 'admin' || role === 'moderator') {
-      const catalog = await listRegionCatalog({ includeInactive: false }).catch(error => {
+      const catalog = await listRegionCatalog({ includeInactive: true }).catch(error => {
         console.warn('[WKD] tower region catalog skipped:', error);
         return [];
       });
@@ -259,6 +259,16 @@ async function saveTowerPlanToActiveSource(plan = {}) {
   if (!canPlanRegion(region)) throw new Error('region-plan-access-denied');
   const result = await saveRegionTowerPlan(currentUser, region, plan);
   return { handled: true, ...result };
+}
+
+async function shareRegionFinalPlan(payload = {}) {
+  await authReady;
+  if (!currentUser) throw new Error('auth-required');
+  const region = currentRegion || regionOf();
+  if (!canPlanRegion(region)) throw new Error('region-plan-access-denied');
+  const result = await shareRegionFinalPlanDb(currentUser, region, payload);
+  const url = new URL(`/plan/${result.code}`, window.location.origin);
+  return { ...result, url: url.toString() };
 }
 
 async function setTowerPlannerSource(options = {}) {
@@ -359,6 +369,7 @@ watchAuth(handleAuth).catch(error => console.warn('[WKD] player manager auth bri
 window.WKD.getPlayersSourceInfo = sourceInfo;
 window.WKD.loadTowerPlanFromActiveSource = loadTowerPlanFromActiveSource;
 window.WKD.saveTowerPlanToActiveSource = saveTowerPlanToActiveSource;
+window.WKD.shareRegionFinalPlan = shareRegionFinalPlan;
 window.WKD.setTowerPlannerSource = setTowerPlannerSource;
 window.WKD.refreshTowerRegionOptions = refreshTowerRegionOptions;
 
@@ -376,6 +387,7 @@ window.WKD.playerManagerRegion = {
   setTowerPlannerSource,
   loadTowerPlanFromActiveSource,
   saveTowerPlanToActiveSource,
+  shareRegionFinalPlan,
   refreshTowerRegionOptions,
   setMode,
   getMode

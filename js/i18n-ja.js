@@ -1625,4 +1625,18 @@ window.WKD_TRANSLATIONS.ja = {
   'region.showUtcAndLocal': 'UTCと自分の時間を表示',
 
   "region.draftSavedAccount": "現在の申請データをアカウントに保存しました。",
+  "regionSettings.playerLinks": "プレイヤー用リンク",
+  "regionSettings.fullLink": "完全なリンク",
+  "regionSettings.shortLink": "短いリンク",
+  "finalPlan.publicTitle": "最終プラン",
+  "finalPlan.publicSubtitle": "秘密リンクで表示します。",
+  "finalPlan.loadingShared": "最終プランを読み込み中...",
+  "finalPlan.sharedMissing": "秘密リンクが正しくないか不完全です。",
+  "finalPlan.sharedReady": "秘密リンクで最終プランを開きました。",
+  "finalPlan.sharedNotFound": "最終プランが見つからないか、リンクが無効です。",
+  "finalPlan.shareLinkReadyTitle": "リンクの準備完了",
+  "finalPlan.shareLinkReadyMessage": "最終プランの秘密リンクをコピーしました。ログインなしで開けます。",
+  "finalPlan.openSharedPlan": "プランを開く",
+  "finalPlan.shareLinkFailed": "秘密リンクを作成できませんでした。",
+
 };

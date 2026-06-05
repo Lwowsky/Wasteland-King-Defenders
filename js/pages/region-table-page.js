@@ -15,7 +15,7 @@ import {
   getRegionActorName,
   listRegionAlliances,
   listRegionCatalog
-} from '../services/region-db.js?v=46';
+} from '../services/region-db.js?v=47';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -160,7 +160,7 @@ function profileRegionOptions(profile = currentProfile || {}) {
 
 async function loadRegionOptions() {
   if (canViewAnyRegion(currentProfile || {}, currentUser)) {
-    const catalog = await listRegionCatalog({ includeInactive: false }).catch(() => []);
+    const catalog = await listRegionCatalog({ includeInactive: true }).catch(() => []);
     const own = profileRegionOptions(currentProfile);
     const seen = new Map();
     [...catalog, ...own].forEach(item => {
@@ -176,7 +176,11 @@ async function loadRegionOptions() {
 async function populateRegionLookupList() {
   const list = $('#regionLookupList');
   if (!list) return;
-  list.innerHTML = regionOptions.map(item => `<option value="${esc(item.region)}">R${esc(item.region)}${item.name ? ` · ${esc(item.name)}` : ''}</option>`).join('');
+  list.innerHTML = regionOptions.map(item => {
+    const label = String(item.name || '').trim();
+    const same = label && label.replace(/^R/i, '') === String(item.region);
+    return `<option value="${esc(item.region)}">R${esc(item.region)}${label && !same ? ` · ${esc(label)}` : ''}</option>`;
+  }).join('');
 }
 
 function setManagerSwitch() {
@@ -532,7 +536,7 @@ function bind() {
   $('#regionLookupInput')?.addEventListener('keydown', event => {
     if (event.key === 'Enter') openRegion(event.currentTarget.value);
   });
-  $('#openWastelandRegisterBtn')?.addEventListener('click', () => { window.location.href = `region-form.html?region=${currentRegion}`; });
+  $('#openWastelandRegisterBtn')?.addEventListener('click', () => { window.location.href = `region-form.html?r=${currentRegion}`; });
   $('#openRegionSettingsBtn')?.addEventListener('click', () => { window.location.href = `region-settings.html?region=${currentRegion}`; });
   document.addEventListener('wkd:language-changed', handleLanguageChange);
   document.addEventListener('wkd:time-display-changed', startCycleTimer);

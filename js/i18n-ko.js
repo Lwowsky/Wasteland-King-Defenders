@@ -1625,4 +1625,18 @@ window.WKD_TRANSLATIONS.ko = {
   'region.showUtcAndLocal': 'UTC와 내 시간 표시',
 
   "region.draftSavedAccount": "현재 신청 데이터가 계정에 저장되었습니다.",
+  "regionSettings.playerLinks": "플레이어용 링크",
+  "regionSettings.fullLink": "전체 링크",
+  "regionSettings.shortLink": "짧은 링크",
+  "finalPlan.publicTitle": "최종 계획",
+  "finalPlan.publicSubtitle": "비밀 링크로 보기.",
+  "finalPlan.loadingShared": "최종 계획을 불러오는 중...",
+  "finalPlan.sharedMissing": "비밀 링크가 잘못되었거나 불완전합니다.",
+  "finalPlan.sharedReady": "비밀 링크로 최종 계획을 열었습니다.",
+  "finalPlan.sharedNotFound": "최종 계획을 찾을 수 없거나 링크가 만료되었습니다.",
+  "finalPlan.shareLinkReadyTitle": "링크 준비 완료",
+  "finalPlan.shareLinkReadyMessage": "최종 계획의 비밀 링크가 복사되었습니다. 로그인 없이 열 수 있습니다.",
+  "finalPlan.openSharedPlan": "계획 열기",
+  "finalPlan.shareLinkFailed": "비밀 링크를 만들 수 없습니다.",
+
 };

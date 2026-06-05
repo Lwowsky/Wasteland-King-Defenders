@@ -1625,4 +1625,18 @@ window.WKD_TRANSLATIONS.en = {
   'region.showUtcAndLocal': 'Show UTC and my time',
 
   "region.draftSavedAccount": "Current request data has been saved to your account.",
+  "regionSettings.playerLinks": "Links for players",
+  "regionSettings.fullLink": "Full link",
+  "regionSettings.shortLink": "Short link",
+  "finalPlan.publicTitle": "Final plan",
+  "finalPlan.publicSubtitle": "View by secret link.",
+  "finalPlan.loadingShared": "Loading final plan...",
+  "finalPlan.sharedMissing": "The secret link is incorrect or incomplete.",
+  "finalPlan.sharedReady": "Final plan opened by secret link.",
+  "finalPlan.sharedNotFound": "Final plan was not found or the link is no longer valid.",
+  "finalPlan.shareLinkReadyTitle": "Link is ready",
+  "finalPlan.shareLinkReadyMessage": "The secret final-plan link was copied. Players can open it without signing in.",
+  "finalPlan.openSharedPlan": "Open plan",
+  "finalPlan.shareLinkFailed": "Could not create a secret link.",
+
 };

@@ -1625,4 +1625,18 @@ window.WKD_TRANSLATIONS.vi = {
   'region.showUtcAndLocal': 'Hiển thị UTC và giờ của tôi',
 
   "region.draftSavedAccount": "Dữ liệu đăng ký hiện tại đã được lưu vào tài khoản.",
+  "regionSettings.playerLinks": "Liên kết cho người chơi",
+  "regionSettings.fullLink": "Liên kết đầy đủ",
+  "regionSettings.shortLink": "Liên kết ngắn",
+  "finalPlan.publicTitle": "Kế hoạch cuối",
+  "finalPlan.publicSubtitle": "Xem bằng liên kết bí mật.",
+  "finalPlan.loadingShared": "Đang tải kế hoạch cuối...",
+  "finalPlan.sharedMissing": "Liên kết bí mật sai hoặc chưa đầy đủ.",
+  "finalPlan.sharedReady": "Đã mở kế hoạch cuối bằng liên kết bí mật.",
+  "finalPlan.sharedNotFound": "Không tìm thấy kế hoạch hoặc liên kết đã hết hiệu lực.",
+  "finalPlan.shareLinkReadyTitle": "Liên kết đã sẵn sàng",
+  "finalPlan.shareLinkReadyMessage": "Liên kết bí mật của kế hoạch cuối đã được sao chép. Người chơi có thể mở mà không cần đăng nhập.",
+  "finalPlan.openSharedPlan": "Mở kế hoạch",
+  "finalPlan.shareLinkFailed": "Không thể tạo liên kết bí mật.",
+
 };

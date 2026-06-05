@@ -1625,4 +1625,18 @@ window.WKD_TRANSLATIONS.zh = {
   'region.showUtcAndLocal': '显示 UTC 和我的时间',
 
   "region.draftSavedAccount": "当前申请数据已保存到你的账号。",
+  "regionSettings.playerLinks": "玩家链接",
+  "regionSettings.fullLink": "完整链接",
+  "regionSettings.shortLink": "短链接",
+  "finalPlan.publicTitle": "最终计划",
+  "finalPlan.publicSubtitle": "通过秘密链接查看。",
+  "finalPlan.loadingShared": "正在加载最终计划...",
+  "finalPlan.sharedMissing": "秘密链接错误或不完整。",
+  "finalPlan.sharedReady": "已通过秘密链接打开最终计划。",
+  "finalPlan.sharedNotFound": "未找到最终计划或链接已失效。",
+  "finalPlan.shareLinkReadyTitle": "链接已准备好",
+  "finalPlan.shareLinkReadyMessage": "最终计划的秘密链接已复制。玩家无需登录即可打开。",
+  "finalPlan.openSharedPlan": "打开计划",
+  "finalPlan.shareLinkFailed": "无法创建秘密链接。",
+
 };

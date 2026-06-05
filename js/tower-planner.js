@@ -1887,6 +1887,26 @@ window.WKD = window.WKD || {};
   }
   async function shareFinalText() {
     const text = currentTxt({ allShifts: true });
+    const info = sourceInfo();
+    const sheet = document.querySelector('.final-plan-modal.is-open .board-sheet') || document.querySelector('#towerPlannerModal.is-open [data-tower-panel="final"].is-active .board-sheet') || document.querySelector('#finalPlanOnlyBoard .board-sheet') || document.querySelector('#towerFinalBoard .board-sheet');
+    if (info.mode === 'region' && typeof WKD.shareRegionFinalPlan === 'function' && sheet) {
+      try {
+        const result = await WKD.shareRegionFinalPlan({ html: sheet.outerHTML, text, title: 'Wasteland final plan', shift: activeFinalShift });
+        const shareText = `${result.url}`;
+        try { await navigator.clipboard.writeText(shareText); } catch (_error) {}
+        WKD.actionDoneDialog?.({
+          title: window.WKD_t?.('finalPlan.shareLinkReadyTitle') || 'Посилання готове',
+          message: window.WKD_t?.('finalPlan.shareLinkReadyMessage') || 'Секретне посилання на фінальний план скопійовано. Його можуть відкрити гравці без входу.',
+          href: result.url,
+          confirmText: window.WKD_t?.('finalPlan.openSharedPlan') || 'Відкрити план',
+          cancelText: window.WKD_t?.('common.continue') || 'Продовжити'
+        });
+        return;
+      } catch (error) {
+        console.error(error);
+        WKD.showNotice?.(window.WKD_t?.('finalPlan.shareLinkFailed') || 'Не вдалося створити секретне посилання.');
+      }
+    }
     if (navigator.share) await navigator.share({ title: 'Wasteland final plan', text }).catch(() => null);
     else copyFinalText();
   }

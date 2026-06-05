@@ -1625,4 +1625,18 @@ window.WKD_TRANSLATIONS.uk = {
   'region.showUtcAndLocal': 'Показувати UTC і свій час',
 
   "region.draftSavedAccount": "Поточні дані заявки збережено в акаунті.",
+  "regionSettings.playerLinks": "Посилання для гравців",
+  "regionSettings.fullLink": "Повне посилання",
+  "regionSettings.shortLink": "Коротке посилання",
+  "finalPlan.publicTitle": "Фінальний план",
+  "finalPlan.publicSubtitle": "Перегляд за секретним посиланням.",
+  "finalPlan.loadingShared": "Завантажую фінальний план...",
+  "finalPlan.sharedMissing": "Секретне посилання неправильне або неповне.",
+  "finalPlan.sharedReady": "Фінальний план відкрито за секретним посиланням.",
+  "finalPlan.sharedNotFound": "Фінальний план не знайдено або посилання вже недійсне.",
+  "finalPlan.shareLinkReadyTitle": "Посилання готове",
+  "finalPlan.shareLinkReadyMessage": "Секретне посилання на фінальний план скопійовано. Його можуть відкрити гравці без входу.",
+  "finalPlan.openSharedPlan": "Відкрити план",
+  "finalPlan.shareLinkFailed": "Не вдалося створити секретне посилання.",
+
 };

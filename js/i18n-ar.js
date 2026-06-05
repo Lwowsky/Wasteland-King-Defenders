@@ -1623,4 +1623,18 @@ window.WKD_TRANSLATIONS.ar = {
   'region.showUtcAndLocal': 'إظهار UTC ووقتي',
 
   "region.draftSavedAccount": "تم حفظ بيانات الطلب الحالية في حسابك.",
+  "regionSettings.playerLinks": "روابط اللاعبين",
+  "regionSettings.fullLink": "الرابط الكامل",
+  "regionSettings.shortLink": "الرابط القصير",
+  "finalPlan.publicTitle": "الخطة النهائية",
+  "finalPlan.publicSubtitle": "عرض عبر رابط سري.",
+  "finalPlan.loadingShared": "جارٍ تحميل الخطة النهائية...",
+  "finalPlan.sharedMissing": "الرابط السري غير صحيح أو غير مكتمل.",
+  "finalPlan.sharedReady": "تم فتح الخطة النهائية عبر الرابط السري.",
+  "finalPlan.sharedNotFound": "لم يتم العثور على الخطة أو انتهت صلاحية الرابط.",
+  "finalPlan.shareLinkReadyTitle": "الرابط جاهز",
+  "finalPlan.shareLinkReadyMessage": "تم نسخ الرابط السري للخطة النهائية. يمكن للاعبين فتحه بدون تسجيل دخول.",
+  "finalPlan.openSharedPlan": "فتح الخطة",
+  "finalPlan.shareLinkFailed": "تعذر إنشاء الرابط السري.",
+
 };

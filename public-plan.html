@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="uk" translate="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="google" content="notranslate" />
+  <title data-i18n="finalPlan.publicTitle">Фінальний план — Wasteland King Defenders</title>
+  <link rel="icon" href="favicon.png" type="image/png" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/header.css" />
+  <link rel="stylesheet" href="css/auth-page.css" />
+  <link rel="stylesheet" href="css/profile-page.css" />
+  <link rel="stylesheet" href="css/players.css" />
+  <link rel="stylesheet" href="css/region-page.css" />
+  <link rel="stylesheet" href="css/tower-planner.css" />
+  <link rel="stylesheet" href="css/tower-planner-tablet.css" />
+  <link rel="stylesheet" href="css/tower-planner-mobile.css" />
+  <link rel="stylesheet" href="css/contact-modal.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script defer src="js/i18n.js"></script>
+  <script defer src="js/i18n-uk.js"></script>
+  <script defer src="js/i18n-en.js"></script>
+  <script defer src="js/i18n-ru.js"></script>
+  <script defer src="js/i18n-pl.js"></script>
+  <script defer src="js/i18n-de.js"></script>
+  <script defer src="js/i18n-ja.js"></script>
+  <script defer src="js/i18n-zh.js"></script>
+  <script defer src="js/i18n-ko.js"></script>
+  <script defer src="js/i18n-vi.js"></script>
+  <script defer src="js/i18n-ar.js"></script>
+  <script defer src="js/i18n-autokeys.js"></script>
+  <script defer src="js/core/dom.js"></script>
+  <script defer src="js/core/partials.js"></script>
+  <script defer src="js/header.js"></script>
+  <script defer src="js/contact-modal.js"></script>
+  <script type="module" src="js/pages/public-plan-page.js?v=47"></script>
+</head>
+<body class="notranslate">
+  <div data-include="partials/header.html"></div>
+  <main class="profile-page container public-plan-page">
+    <section class="profile-card region-card">
+      <div class="profile-head">
+        <div>
+          <h2 data-i18n="finalPlan.publicTitle">Фінальний план</h2>
+          <p data-i18n="finalPlan.publicSubtitle">Перегляд за секретним посиланням.</p>
+        </div>
+        <div class="region-head-actions"><span class="region-pill region-pill--region" id="publicPlanRegion">R—</span></div>
+      </div>
+      <div class="auth-status" id="publicPlanStatus" data-i18n="finalPlan.loadingShared">Завантажую фінальний план...</div>
+      <div class="tower-final-board-wrap public-plan-wrap"><div id="publicPlanBoard"></div></div>
+    </section>
+  </main>
+  <div class="container"><div data-include="partials/footer.html"></div></div>
+  <div data-include="partials/contact-modal.html"></div>
+</body>
+</html>

@@ -11,6 +11,12 @@
 
   <div class="auth-status" id="regionStatus">...</div>
 
+  <div class="region-form-shortlink" id="regionPlayerShortLinkPanel" hidden>
+    <span data-i18n="regionSettings.playerLinks">Посилання для гравців</span>
+    <input id="regionPlayerShortLink" readonly />
+    <button class="btn" id="copyRegionPlayerShortLinkBtn" type="button" data-i18n="common.copy">Скопіювати</button>
+  </div>
+
   <div class="region-timer-card region-timer-card--public" id="regionCountdownBox" hidden>
     <b id="regionCloseText" data-i18n="region.closeAt">Закриття реєстрації: —</b>
     <span id="regionCountdownText" data-i18n="region.timer">Таймер: —</span>

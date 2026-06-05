@@ -124,6 +124,16 @@ export default {
       return handleContact(request, env);
     }
 
+    const formMatch = url.pathname.match(/^\/f\/(\d{1,8})\/([A-Za-z0-9_-]{6,80})$/);
+    if (formMatch) {
+      return Response.redirect(`${url.origin}/region-form.html?r=${encodeURIComponent(formMatch[1])}&s=${encodeURIComponent(formMatch[2])}`, 302);
+    }
+
+    const planMatch = url.pathname.match(/^\/plan\/([A-Za-z0-9_-]{6,120})$/);
+    if (planMatch) {
+      return Response.redirect(`${url.origin}/public-plan.html?s=${encodeURIComponent(planMatch[1])}`, 302);
+    }
+
     if (env.ASSETS) {
       return env.ASSETS.fetch(request);
     }
