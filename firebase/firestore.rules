@@ -264,6 +264,11 @@ service cloud.firestore {
       allow read: if isOwner(userId) || canUseAdminPanel();
       allow update: if ownerEmail() || managerUpdateSafe() || ownerProfileUpdateSafe(userId) || ownerRegionRoleDowngradeSafe(userId) || (isOwner(userId) && ownerKeepsProtectedFields());
       allow delete: if ownerEmail() || isAdmin();
+
+      match /notifications/{notificationId} {
+        allow read, update, delete: if isOwner(userId) || ownerEmail() || isAdmin();
+        allow create: if isOwner(userId) || ownerEmail() || canUseAdminPanel();
+      }
     }
 
     match /publicPlayers/{userId} {

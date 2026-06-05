@@ -1,4 +1,4 @@
-import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=49';
+import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=50';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -6,7 +6,8 @@ const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback |
 function codeFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const pathMatch = String(window.location.pathname || '').match(/^\/plan\/([A-Za-z0-9_-]{6,160})\/?$/);
-  return params.get('s') || params.get('code') || pathMatch?.[1] || '';
+  const hashCode = String(window.location.hash || '').replace(/^#/, '').trim();
+  return params.get('s') || params.get('code') || hashCode || pathMatch?.[1] || '';
 }
 function setStatus(text, type = 'muted') {
   const box = $('#publicPlanStatus');

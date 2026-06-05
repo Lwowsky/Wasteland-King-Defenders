@@ -23,7 +23,7 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=49';
+} from '../services/region-db.js?v=50';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -65,9 +65,11 @@ const readFarmFromUrl = () => new URLSearchParams(window.location.search).get('f
 function readShortLinkFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const hashText = String(window.location.hash || '').replace(/^#/, '').replace(/^\?/, '');
+  const hashParts = hashText.match(/^(\d{1,8})\/([A-Za-z0-9_-]{6,120})$/);
+  if (hashParts?.[1] && !params.get('r')) { try { params.set('r', hashParts[1]); } catch {} }
   const hashParams = new URLSearchParams(hashText);
   const pathMatch = String(window.location.pathname || '').match(/^\/f\/\d{1,8}\/([A-Za-z0-9_-]{6,120})\/?$/);
-  const code = params.get('s') || params.get('code') || params.get('link') || hashParams.get('s') || hashParams.get('code') || hashParams.get('link') || pathMatch?.[1] || '';
+  const code = params.get('s') || params.get('code') || params.get('link') || hashParams.get('s') || hashParams.get('code') || hashParams.get('link') || hashParts?.[2] || pathMatch?.[1] || '';
   if (code) {
     try { sessionStorage.setItem('wkd.regionForm.shortCode', code); } catch {}
     return code;
@@ -377,7 +379,9 @@ function buildShortPlayerLink(code = shortCodeFromLink || '', region = currentRe
   const safeRegion = String(region || '').trim();
   const safeCode = String(code || '').trim();
   if (!safeRegion || !safeCode) return '';
-  return new URL(`/f/${safeRegion}/${safeCode}`, window.location.origin).toString();
+  const url = new URL('f.html', window.location.origin);
+  url.hash = `${safeRegion}/${safeCode}`;
+  return url.toString();
 }
 async function updatePlayerShortLinkPanel() {
   const panel = $('#regionPlayerShortLinkPanel');

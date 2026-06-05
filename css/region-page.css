@@ -327,3 +327,42 @@
 .public-plan-page .public-plan-wrap{overflow:auto}.public-plan-page .wkd-final-share-stack{display:grid;gap:20px}.public-plan-page .board-sheet{margin-inline:auto}.final-plan-head .muted:empty{display:none}
 @media(max-width:1280px){.region-timer-card--settings{grid-template-columns:repeat(3,minmax(160px,1fr))!important}}
 @media(max-width:760px){.region-timer-card--settings{grid-template-columns:1fr!important}}
+
+/* v50: shared compact registration lifecycle row */
+.region-timer-card--settings,
+.region-settings-page .region-timer-card--compact,
+.region-cycle-panel .region-timer-card--compact{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  align-items:stretch!important;
+  gap:10px!important;
+  overflow-x:auto!important;
+  padding-bottom:4px!important;
+}
+.region-timer-card--settings > *,
+.region-settings-page .region-timer-card--compact > *,
+.region-cycle-panel .region-timer-card--compact > *{
+  flex:1 0 170px!important;
+  min-width:170px!important;
+  max-width:none!important;
+  min-height:74px!important;
+}
+.region-timer-card--settings .region-info-label,
+.region-settings-page .region-info-label,
+.region-cycle-panel .region-info-label{
+  display:block!important;
+  margin:0 0 6px!important;
+  color:#93a5ce!important;
+  font-size:12px!important;
+  font-weight:950!important;
+  text-transform:uppercase!important;
+  letter-spacing:.07em!important;
+}
+.region-timer-card--settings .region-info-value,
+.region-settings-page .region-info-value,
+.region-cycle-panel .region-info-value{
+  display:block!important;
+  color:#f5f8ff!important;
+  font-weight:950!important;
+}
+.notifications-page-list{display:grid;gap:10px;margin-top:16px}.notifications-page .notify-item{max-width:820px}.notifications-page .region-actions{margin-top:16px}

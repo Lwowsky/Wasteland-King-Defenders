@@ -4,18 +4,15 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="google" content="notranslate" />
-  <title data-i18n="finalPlan.publicTitle">Фінальний план — Wasteland King Defenders</title>
+  <title data-i18n="notifications.title">Сповіщення — Wasteland King Defenders</title>
   <link rel="icon" href="favicon.png" type="image/png" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/header.css" />
   <link rel="stylesheet" href="css/auth-page.css" />
   <link rel="stylesheet" href="css/profile-page.css" />
-  <link rel="stylesheet" href="css/players.css" />
   <link rel="stylesheet" href="css/region-page.css" />
-  <link rel="stylesheet" href="css/tower-planner.css" />
-  <link rel="stylesheet" href="css/tower-planner-tablet.css" />
-  <link rel="stylesheet" href="css/tower-planner-mobile.css" />
+  <link rel="stylesheet" href="css/confirm-modal.css" />
   <link rel="stylesheet" href="css/contact-modal.css" />
   <link rel="stylesheet" href="css/responsive.css" />
   <script defer src="js/i18n.js"></script>
@@ -34,25 +31,25 @@
   <script defer src="js/badges.js?v=50"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
+  <script defer src="js/confirm-modal.js"></script>
   <script defer src="js/contact-modal.js"></script>
-  <script type="module" src="js/pages/public-plan-page.js?v=50"></script>
+  <script defer src="js/app-login-shell.js"></script>
+  <script type="module" src="js/auth-google.js"></script>
+  <script type="module" src="js/notifications.js?v=50"></script>
+  <script type="module" src="js/pages/notifications-page.js?v=50"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
-  <main class="profile-page container public-plan-page">
-    <section class="profile-card region-card">
-      <div class="profile-head">
-        <div>
-          <h2 data-i18n="finalPlan.publicTitle">Фінальний план</h2>
-          <p data-i18n="finalPlan.publicSubtitle">Перегляд за секретним посиланням.</p>
-        </div>
-        <div class="region-head-actions"><span class="region-pill region-pill--region" id="publicPlanRegion">R—</span></div>
-      </div>
-      <div class="auth-status" id="publicPlanStatus" data-i18n="finalPlan.loadingShared">Завантажую фінальний план...</div>
-      <div class="tower-final-board-wrap public-plan-wrap"><div id="publicPlanBoard"></div></div>
+  <main class="profile-page container">
+    <section class="profile-card region-card notifications-page">
+      <div class="profile-head"><div><h2 data-i18n="notifications.title">Сповіщення</h2></div></div>
+      <div class="auth-status" id="notificationsStatus" data-i18n="notifications.loading">Завантажую сповіщення...</div>
+      <div class="notifications-page-list" id="notificationsPageList"></div>
+      <div class="region-actions"><button class="btn region-save" id="notificationsMarkAllBtn" type="button" data-i18n="notifications.markRead">Позначити прочитаними</button></div>
     </section>
   </main>
   <div class="container"><div data-include="partials/footer.html"></div></div>
+  <div data-include="partials/confirm-modal.html"></div>
   <div data-include="partials/contact-modal.html"></div>
 </body>
 </html>

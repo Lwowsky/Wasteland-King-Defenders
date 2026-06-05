@@ -26,7 +26,7 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=49';
+} from '../services/region-db.js?v=50';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -371,7 +371,8 @@ function buildFullShareLink(region) {
 
 function buildShareLink(region) {
   if (!currentShareCode || !region) return '';
-  const url = new URL(`/f/${normalizeRegion(region)}/${currentShareCode}`, window.location.origin);
+  const url = new URL('f.html', window.location.origin);
+  url.hash = `${normalizeRegion(region)}/${currentShareCode}`;
   return url.toString();
 }
 

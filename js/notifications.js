@@ -1,0 +1,125 @@
+import { getFirebase, watchAuth } from './services/firebase-service.js';
+import { getGameProfile, getUserFarms, getUserProfile, formatUserDate } from './services/user-db.js';
+
+const $ = selector => document.querySelector(selector);
+const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
+const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+let currentUser = null;
+let items = [];
+let ready = false;
+function regionOf(value=''){ return String(value||'').replace(/[^0-9]/g,''); }
+function profileRegions(profile={}){
+  const main = getGameProfile(profile||{});
+  return [...new Set([main.region, ...getUserFarms(profile||{}).map(f=>f.region)].map(regionOf).filter(Boolean))];
+}
+function statusKey(uid, region){ return `wkd.notify.regionStatus.${uid}.${region}`; }
+async function userNotifications(firebase, uid){
+  const { db, firestoreMod } = firebase;
+  const ref = firestoreMod.collection(db, 'users', uid, 'notifications');
+  const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(20));
+  const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
+  return snap.docs.map(doc => ({ id: doc.id, source:'account', ...doc.data() }));
+}
+async function regionStatusNotifications(firebase, user, profile){
+  const { db, firestoreMod } = firebase;
+  const out = [];
+  for (const region of profileRegions(profile)) {
+    const snap = await firestoreMod.getDoc(firestoreMod.doc(db, 'regions', region)).catch(() => null);
+    if (!snap?.exists?.()) continue;
+    const form = snap.data()?.registrationForm || {};
+    const open = Boolean(form.enabled);
+    const old = localStorage.getItem(statusKey(user.uid, region));
+    const code = open ? 'open' : 'closed';
+    if (old && old !== code) {
+      out.push({
+        id: `region-${region}-${code}`,
+        source:'region-status',
+        unread:true,
+        region,
+        title: open ? t('notifications.registrationOpen','Реєстрація відкрита') : t('notifications.registrationClosed','Реєстрація закрита'),
+        message: `R${region}`,
+        createdAtMs: Date.now()
+      });
+    }
+    if (!old) localStorage.setItem(statusKey(user.uid, region), code);
+  }
+  return out;
+}
+function render(){
+  const nav = $('#notifyNav');
+  const btn = $('#notifyBtn');
+  const count = $('#notifyCount');
+  const list = $('#notifyList');
+  const drawer = $('#drawerNotificationsBtn');
+  const signed = Boolean(currentUser);
+  if (nav) nav.hidden = !signed;
+  if (drawer) drawer.hidden = !signed;
+  const unread = items.filter(item => item.unread !== false && !item.readAtMs && !item.readAt).length;
+  if (count) { count.hidden = !unread; count.textContent = unread > 99 ? '99+' : String(unread); }
+  if (!list) return;
+  if (!items.length) {
+    list.innerHTML = `<div class="notify-empty">${esc(t('notifications.empty','Нових сповіщень немає.'))}</div>`;
+    return;
+  }
+  list.innerHTML = items.slice(0, 12).map(item => `
+    <div class="notify-item ${item.unread !== false && !item.readAtMs && !item.readAt ? 'is-unread' : ''}">
+      <b>${esc(item.title || item.type || t('notifications.title','Сповіщення'))}</b>
+      <span>${esc(item.message || item.text || item.summary || '')}</span>
+      <small>${esc(item.region ? `R${item.region} · ` : '')}${esc(formatUserDate(item.createdAt) || (item.createdAtMs ? new Date(item.createdAtMs).toLocaleString() : ''))}</small>
+    </div>`).join('');
+}
+async function load(user){
+  currentUser = user || null;
+  if (!user) { items = []; render(); return; }
+  const firebase = await getFirebase();
+  if (!firebase) return;
+  const profile = await getUserProfile(user.uid).catch(() => null);
+  const [accountItems, statusItems] = await Promise.all([
+    userNotifications(firebase, user.uid),
+    profile ? regionStatusNotifications(firebase, user, profile) : []
+  ]);
+  items = [...statusItems, ...accountItems].sort((a,b)=>(Number(b.createdAtMs)||0)-(Number(a.createdAtMs)||0));
+  render();
+}
+async function markRead(){
+  if (!currentUser) return;
+  const firebase = await getFirebase();
+  if (!firebase) return;
+  const { db, firestoreMod } = firebase;
+  const batch = firestoreMod.writeBatch(db);
+  items.filter(item => item.source === 'account' && item.id && !item.readAt).forEach(item => {
+    batch.set(firestoreMod.doc(db, 'users', currentUser.uid, 'notifications', item.id), { readAt: firestoreMod.serverTimestamp(), readAtMs: Date.now(), unread:false }, { merge:true });
+  });
+  const profile = await getUserProfile(currentUser.uid).catch(() => null);
+  profileRegions(profile||{}).forEach(region => {
+    const open = items.find(item => item.source==='region-status' && item.region === region)?.title?.includes('відкрита') ? 'open' : localStorage.getItem(statusKey(currentUser.uid, region)) || 'closed';
+    localStorage.setItem(statusKey(currentUser.uid, region), open);
+  });
+  await batch.commit().catch(() => null);
+  items = items.map(item => ({ ...item, unread:false, readAtMs: Date.now() }));
+  render();
+}
+function bind(){
+  $('#notifyBtn')?.addEventListener('click', event => {
+    event.stopPropagation();
+    const menu = $('#notifyMenu');
+    if (!menu) return;
+    const isOpen = menu.classList.toggle('is-open');
+    $('#notifyBtn')?.setAttribute('aria-expanded', String(isOpen));
+  });
+  $('#notifyOpenPageBtn')?.addEventListener('click', () => { window.location.href = 'notifications.html'; });
+  $('#drawerNotificationsBtn')?.addEventListener('click', () => { window.location.href = 'notifications.html'; });
+  $('#notifyMarkReadBtn')?.addEventListener('click', () => markRead().catch(console.error));
+  document.addEventListener('click', () => $('#notifyMenu')?.classList.remove('is-open'));
+  document.addEventListener('wkd:language-changed', render);
+}
+function init(){
+  if (ready) return;
+  ready = true;
+  bind();
+  watchAuth(user => load(user).catch(console.error));
+}
+document.addEventListener('wkd:partials-ready', init);
+document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));
+window.WKD = window.WKD || {};
+window.WKD.refreshNotifications = () => load(currentUser).catch(console.error);

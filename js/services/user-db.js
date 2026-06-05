@@ -170,6 +170,46 @@ export function timestampToMs(value) {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
+
+export async function createUserNotification(uid, values = {}) {
+  const userId = normalizeText(uid);
+  if (!userId) return null;
+  const firebase = await getFirebase();
+  if (!firebase) return null;
+  const { db, firestoreMod } = firebase;
+  const nowMs = Date.now();
+  const id = `${nowMs}-${Math.random().toString(36).slice(2, 8)}`;
+  const payload = {
+    type: normalizeText(values.type || 'notice').slice(0, 80),
+    title: normalizeText(values.title || serviceT('notifications.title', 'Сповіщення')).slice(0, 160),
+    message: normalizeText(values.message || values.summary || '').slice(0, 500),
+    region: normalizeText(values.region || '').replace(/[^0-9]/g, ''),
+    alliance: normalizeAllianceTag(values.alliance || ''),
+    actorUid: normalizeText(values.actorUid || ''),
+    actorName: normalizeText(values.actorName || ''),
+    createdAt: firestoreMod.serverTimestamp(),
+    createdAtMs: nowMs,
+    unread: true
+  };
+  await firestoreMod.setDoc(firestoreMod.doc(db, 'users', userId, 'notifications', id), payload);
+  return { id, ...payload };
+}
+
+export async function listUserNotifications(uid, limitCount = 100) {
+  const userId = normalizeText(uid);
+  if (!userId) return [];
+  const firebase = await getFirebase();
+  if (!firebase) return [];
+  const { db, firestoreMod } = firebase;
+  const q = firestoreMod.query(
+    firestoreMod.collection(db, 'users', userId, 'notifications'),
+    firestoreMod.orderBy('createdAtMs', 'desc'),
+    firestoreMod.limit(Math.max(1, Math.min(200, Number(limitCount) || 100)))
+  );
+  const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
+  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
 export function formatUserDate(value) {
   const ms = timestampToMs(value);
   if (!ms) return '—';
@@ -910,6 +950,10 @@ export async function updateUserByAdmin(uid, values) {
     batch.delete(firestoreMod.doc(db, 'regions', oldGame.region, 'players', uid));
   }
   await batch.commit();
+  const changed = [];
+  if (oldGame.rank !== clean.rank) changed.push(`${serviceT('account.rank','Ранг')}: ${clean.rank.toUpperCase()}`);
+  if (oldProfile?.role !== role) changed.push(`${serviceT('account.role','Роль')}: ${roleLabel(role)}`);
+  if (changed.length) await createUserNotification(uid, { type:'profile_changed', title: serviceT('notifications.profileChanged','Профіль оновлено'), message: changed.join(' · '), region: clean.region, alliance: clean.alliance }).catch(() => null);
   return getUserProfile(uid);
 }
 
@@ -959,6 +1003,11 @@ export async function updateFarmByAdmin(uid, farmId, values) {
   batch.set(firestoreMod.doc(db, 'users', uid), userPatch, { merge: true });
   if (oldProfile.profileComplete) batch.set(firestoreMod.doc(db, 'publicPlayers', uid), publicPlayer, { merge: true });
   await batch.commit();
+  const oldFarm = farms[index] || {};
+  const changed = [];
+  if (oldFarm.rank !== nextFarm.rank) changed.push(`${serviceT('account.rank','Ранг')}: ${nextFarm.rank.toUpperCase()}`);
+  if (oldFarm.role !== nextFarm.role) changed.push(`${serviceT('account.role','Роль')}: ${roleLabel(nextFarm.role)}`);
+  if (changed.length) await createUserNotification(uid, { type:'farm_profile_changed', title: serviceT('notifications.profileChanged','Профіль оновлено'), message: `${nextFarm.nickname || serviceT('account.farm','Ферма')}: ${changed.join(' · ')}`, region: nextFarm.region, alliance: nextFarm.alliance }).catch(() => null);
   return getUserProfile(uid);
 }
 
@@ -1018,6 +1067,7 @@ export async function approveRoleRequest(requestId) {
     batch.set(requestRef, { status: 'approved', approvedBy, approvedAt: now, updatedAt: now }, { merge: true });
     if (userData.profileComplete) batch.set(firestoreMod.doc(db, 'publicPlayers', uid), updatedPublic, { merge: true });
     await batch.commit();
+    await createUserNotification(uid, { type:'role_approved', title: serviceT('notifications.roleApproved','Роль підтверджено'), message: `${request.farmName || serviceT('account.farm','Ферма')}: ${roleLabel(role)}`, region: request.region, alliance: request.alliance }).catch(() => null);
     return;
   }
 
@@ -1030,6 +1080,7 @@ export async function approveRoleRequest(requestId) {
   batch.set(firestoreMod.doc(db, 'publicPlayers', uid), updatedPublic, { merge: true });
   if (region) batch.set(firestoreMod.doc(db, 'regions', region, 'players', uid), updatedPublic, { merge: true });
   await batch.commit();
+  await createUserNotification(uid, { type:'role_approved', title: serviceT('notifications.roleApproved','Роль підтверджено'), message: roleLabel(role), region, alliance: request.alliance }).catch(() => null);
 }
 
 export async function declineRoleRequest(requestId) {

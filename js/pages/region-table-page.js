@@ -15,7 +15,7 @@ import {
   getRegionActorName,
   listRegionAlliances,
   listRegionCatalog
-} from '../services/region-db.js?v=49';
+} from '../services/region-db.js?v=50';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);

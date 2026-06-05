@@ -1129,7 +1129,8 @@ window.WKD = window.WKD || {};
       <button class="btn btn-sm tower-final-lang-trigger board-lang-trigger" type="button" data-final-lang-open>Мова плану</button>
       <button class="btn btn-sm" type="button" data-final-download>Завантажити PNG</button>
       <button class="btn btn-sm" type="button" data-final-txt>TXT</button>
-      <button class="btn btn-sm" type="button" data-final-share>Поділитися</button>`;
+      <button class="btn btn-sm" type="button" data-final-share>Поділитися</button>
+      <button class="btn btn-sm" type="button" data-final-copy-link>${window.WKD_t?.('finalPlan.copyLink') || 'Копіювати посилання'}</button>`;
   }
   function towerTitle(tower) {
     return combinedText(lang => towerLangName(tower, lang));
@@ -1942,38 +1943,50 @@ window.WKD = window.WKD || {};
     }
     return files;
   }
-  async function shareFinalText() {
+  async function makeFinalShareData() {
     const text = currentTxt({ allShifts: true });
     const info = sourceInfo();
     const sheets = renderFinalShareSheets(finalShareShifts());
     const html = `<div class="wkd-final-share-stack">${sheets.map(item => item.html).join('')}</div>`;
     let shareUrl = '';
     if (info.mode === 'region' && typeof WKD.shareRegionFinalPlan === 'function' && sheets.length) {
-      try {
-        const result = await WKD.shareRegionFinalPlan({ html, text, title: 'Wasteland final plan', shift: sheets.map(item => item.shift).join(',') });
-        shareUrl = result.url || '';
-      } catch (error) {
-        console.error(error);
-        WKD.showNotice?.(window.WKD_t?.('finalPlan.shareLinkFailed') || 'Не вдалося створити секретне посилання.');
-      }
+      const result = await WKD.shareRegionFinalPlan({ html, text, title: 'Wasteland final plan', shift: sheets.map(item => item.shift).join(',') });
+      shareUrl = result.url || '';
     }
-
+    return { text, sheets, shareUrl };
+  }
+  async function copyFinalShareLink() {
+    try {
+      const { shareUrl } = await makeFinalShareData();
+      if (!shareUrl) throw new Error('share-url-empty');
+      await navigator.clipboard.writeText(shareUrl);
+      WKD.showNotice?.(window.WKD_t?.('finalPlan.linkCopied') || 'Секретне посилання скопійовано.');
+    } catch (error) {
+      console.error(error);
+      WKD.showNotice?.(window.WKD_t?.('finalPlan.shareLinkFailed') || 'Не вдалося створити секретне посилання.');
+    }
+  }
+  async function shareFinalText() {
+    let data;
+    try {
+      data = await makeFinalShareData();
+    } catch (error) {
+      console.error(error);
+      WKD.showNotice?.(window.WKD_t?.('finalPlan.shareLinkFailed') || 'Не вдалося створити секретне посилання.');
+      data = { text: currentTxt({ allShifts: true }), sheets: renderFinalShareSheets(finalShareShifts()), shareUrl: '' };
+    }
+    const { text, sheets, shareUrl } = data;
     const title = 'Wasteland final plan';
     const files = await finalSharePngFiles(sheets);
     try { files.push(new File([text], 'wasteland-final-plan.txt', { type: 'text/plain' })); } catch (_error) {}
+    const sharePayload = { title, text: shareUrl ? `${shareUrl}
 
-    const sharePayload = { title, text: shareUrl ? `${shareUrl}\n\n${text}` : text };
+${text}` : text };
     if (shareUrl) sharePayload.url = shareUrl;
     if (files.length && navigator.canShare?.({ files })) sharePayload.files = files;
-
     if (navigator.share) {
-      try {
-        await navigator.share(sharePayload);
-        if (shareUrl) { try { await navigator.clipboard.writeText(shareUrl); } catch (_error) {} }
-        return;
-      } catch (_error) {}
+      try { await navigator.share(sharePayload); return; } catch (_error) {}
     }
-
     if (shareUrl) {
       try { await navigator.clipboard.writeText(shareUrl); } catch (_error) {}
       WKD.actionDoneDialog?.({
@@ -1985,7 +1998,6 @@ window.WKD = window.WKD || {};
       });
       return;
     }
-
     try {
       await navigator.clipboard.writeText(text);
       WKD.showNotice?.(window.WKD_t?.('finalPlan.txtCopied') || 'Фінальний план скопійовано в TXT.');
@@ -2130,6 +2142,7 @@ window.WKD = window.WKD || {};
       if (event.target.closest('[data-final-download]')) { event.preventDefault(); downloadFinalPng(); return; }
       if (event.target.closest('[data-final-txt]')) { event.preventDefault(); downloadFinalTxt(); return; }
       if (event.target.closest('[data-final-share]')) { event.preventDefault(); shareFinalText(); return; }
+      if (event.target.closest('[data-final-copy-link]')) { event.preventDefault(); copyFinalShareLink(); return; }
     });
     document.addEventListener('input', event => {
       if (event.target.matches('[data-tower-scope-search]')) { filterTowerSourceRegions(event.target.value); return; }

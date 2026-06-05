@@ -7,7 +7,8 @@ import {
   normalizeUserRole,
   roleLabel,
   formatUserDate,
-  timestampToMs
+  timestampToMs,
+  createUserNotification
 } from './user-db.js';
 
 const trim = value => String(value ?? '').trim();
@@ -287,6 +288,8 @@ export function readRegionFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const fromQuery = normalizeRegion(params.get('region') || params.get('r') || '');
   if (fromQuery) return fromQuery;
+  const hashMatch = String(window.location.hash || '').replace(/^#/, '').match(/^(\d{1,8})\//);
+  if (hashMatch?.[1]) return normalizeRegion(hashMatch[1]);
   const match = String(window.location.pathname || '').match(/^\/f\/(\d{1,8})\//);
   return normalizeRegion(match?.[1] || '');
 }
@@ -1569,6 +1572,9 @@ export async function saveWastelandRegistration(user, values, regionOverride = '
   }
 
   await writeRegionActionLog({ db, firestoreMod }, user || { uid: 'guest' }, profile || {}, region, 'registration_submitted', { summary: data.nickname || 'Заявка', alliance: data.alliance, targetName: data.nickname });
+  if (user?.uid) {
+    await createUserNotification(user.uid, { type:'registration_submitted', title: serviceT('notifications.registrationSubmitted','Заявку відправлено'), message: `R${region} · ${data.nickname || ''}`, region, alliance: data.alliance }).catch(() => null);
+  }
   return data;
 }
 

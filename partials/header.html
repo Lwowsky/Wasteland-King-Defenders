@@ -9,6 +9,18 @@
     </a>
 
     <div class="header-tools">
+
+      <div class="notify-nav" id="notifyNav" hidden>
+        <button class="notify-btn" id="notifyBtn" type="button" aria-haspopup="menu" aria-expanded="false" title="Сповіщення">
+          <span aria-hidden="true">🔔</span>
+          <b class="notify-count" id="notifyCount" hidden>0</b>
+        </button>
+        <div class="notify-menu" id="notifyMenu" role="menu" aria-label="Сповіщення">
+          <div class="notify-menu-head"><strong data-i18n="notifications.title">Сповіщення</strong><button class="link-btn" id="notifyOpenPageBtn" type="button" data-i18n="notifications.openPage">Усі</button></div>
+          <div class="notify-list" id="notifyList"><div class="notify-empty" data-i18n="notifications.empty">Нових сповіщень немає.</div></div>
+          <button class="notify-read-btn" id="notifyMarkReadBtn" type="button" data-i18n="notifications.markRead">Позначити прочитаними</button>
+        </div>
+      </div>
       <div class="account-nav" id="accountNav">
         <button class="account-btn" id="accountBtn" type="button" aria-haspopup="menu" aria-expanded="false">
           <span class="account-name" id="authUserText">Акаунт</span>
@@ -60,6 +72,7 @@
         <div class="drawer-account-menu" id="drawerAccountMenu">
           <button class="btn btn-primary" id="drawerGoogleLoginBtn" type="button">Увійти через Google</button>
           <button class="btn" id="drawerProfileBtn" type="button" hidden>Профіль гравця</button>
+          <button class="btn" id="drawerNotificationsBtn" type="button" hidden data-i18n="notifications.title">Сповіщення</button>
           <button class="btn" id="drawerRegionFormBtn" type="button" hidden>Реєстрація пустоші</button>
           <button class="btn" id="drawerRegionTableBtn" type="button" hidden data-i18n="region.table">Таблиця регіону</button>
           <button class="btn" id="drawerRegionSettingsBtn" type="button" hidden>Форма регіону</button>
