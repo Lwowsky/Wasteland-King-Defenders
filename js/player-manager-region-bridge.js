@@ -1,6 +1,6 @@
 import { getFirebase, watchAuth } from './services/firebase-service.js';
 import { getGameProfile, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=42';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=46';
 
 window.WKD = window.WKD || {};
 
@@ -17,6 +17,7 @@ let loadingPromise = null;
 let loadingRegion = '';
 let allianceLoadingPromise = null;
 let loadedAlliancesRegion = '';
+let currentRegionSettings = null;
 let authReadyResolve = null;
 const authReady = new Promise(resolve => { authReadyResolve = resolve; });
 
@@ -25,6 +26,7 @@ function normalizeMode(mode) { return mode === 'region' ? 'region' : 'local'; }
 function regionOf(profile = currentProfile) { return String(getGameProfile(profile || {}).region || currentRegion || '').trim(); }
 function canUseRegion() { return Boolean(currentUser && isProfileComplete(currentProfile)); }
 function canEditRegion(region = currentRegion) { return Boolean(currentUser && region && canManageRegion(currentProfile, region, currentUser)); }
+function canPlanRegion(region = currentRegion) { return Boolean(currentUser && region && canEditRegionTowerPlan(currentProfile, region, currentUser, currentRegionSettings || {})); }
 function canDeleteRegion(region = currentRegion) { return Boolean(currentUser && region && canDeleteRegionRegistration(currentProfile, region, currentUser)); }
 function rowKey(player = {}) { return String(player._rowId || player.id || player.uid || ''); }
 function normTag(value = '') { return Array.from(String(value || '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join(''); }
@@ -74,35 +76,9 @@ function nextRegionId(values = {}) {
 }
 
 function expandRegionPlayerRow(row = {}) {
-  const main = regionRegistrationToPlayer(row);
-  const extraSquads = Array.isArray(main.extraSquads)
-    ? main.extraSquads
-    : (main.extraEnabled && main.extraTroopType && main.extraTier ? [{ troopType: main.extraTroopType, troopLabel: main.extraTroopLabel, tier: main.extraTier }] : []);
-  if (!extraSquads.length) return [main];
-  const baseId = rowKey(main) || main.id || main.uid || row.id || row.uid || 'extra';
-  const extras = extraSquads.map((extra, index) => {
-    const extraId = `${baseId}__extra_${extra.troopType || index}`;
-    return {
-      ...main,
-      id: extraId,
-      _rowId: extraId,
-      regionRegistrationId: main.regionRegistrationId || main.id || row.id || '',
-      name: `${main.name || row.nickname || 'Гравець'} · додатковий загін`,
-      role: extra.troopLabel || extra.troopType,
-      tier: extra.tier,
-      march: Number(main.extraMarchSize || main.extraMarch || 0) || Number(main.march || 0) || 0,
-      rally: 0,
-      captain: false,
-      captainReady: 'Ні',
-      isExtraTroopRow: true,
-      extraTroopType: extra.troopType || '',
-      extraTroopLabel: extra.troopLabel || extra.troopType || '',
-      extraTier: extra.tier || '',
-      placement: 'Додатковий загін'
-    };
-  });
-  return [main, ...extras];
+  return [regionRegistrationToPlayer(row)];
 }
+
 
 async function loadRegionRows(force = false, regionOverride = '') {
   await authReady;
@@ -117,6 +93,7 @@ async function loadRegionRows(force = false, regionOverride = '') {
   loadingPromise = listRegionRegistrations(currentUser, requestedRegion).then(result => {
     currentProfile = result.profile || currentProfile;
     currentRegion = result.region || currentRegion || requestedRegion || regionOf(result.profile || currentProfile);
+    currentRegionSettings = result.settings || currentRegionSettings;
     loadedRows = (result.rows || []).flatMap(row => expandRegionPlayerRow(row).map(player => ({ ...player, source: REGION_SOURCE })));
     return { rows: loadedRows, region: currentRegion, profile: currentProfile, canUseRegion: true };
   }).finally(() => { loadingPromise = null; loadingRegion = ''; });
@@ -279,7 +256,7 @@ async function saveTowerPlanToActiveSource(plan = {}) {
   if (currentMode !== 'region') return { handled: false };
   if (!currentUser) throw new Error('auth-required');
   const region = currentRegion || regionOf();
-  if (!canEditRegion(region)) throw new Error('region-plan-access-denied');
+  if (!canPlanRegion(region)) throw new Error('region-plan-access-denied');
   const result = await saveRegionTowerPlan(currentUser, region, plan);
   return { handled: true, ...result };
 }
@@ -312,7 +289,7 @@ function sourceInfo(mode = currentMode) {
     label: normalizeMode(mode) === 'region' ? (region ? `R${region}` : tr('playerManager.regionList', 'region table')) : tr('playerManager.localList', 'local list'),
     canUpdate: normalizeMode(mode) !== 'region' || canEditRegion(),
     canDelete: normalizeMode(mode) !== 'region' || canDeleteRegion(),
-    canPlan: normalizeMode(mode) !== 'region' || canEditRegion(),
+    canPlan: normalizeMode(mode) !== 'region' || canPlanRegion(),
     canViewRegion: canUseRegion(),
     userRole: normalizeUserRole(currentProfile?.role || 'player')
   };

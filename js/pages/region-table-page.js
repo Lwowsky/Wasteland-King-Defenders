@@ -1,5 +1,5 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getGameProfile, getUserProfile, saveSignedInUser } from '../services/user-db.js';
+import { getGameProfile, getUserFarms, getUserProfile, saveSignedInUser } from '../services/user-db.js';
 import {
   listRegionRegistrations,
   canManageRegion,
@@ -13,8 +13,9 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName,
-  listRegionAlliances
-} from '../services/region-db.js?v=42';
+  listRegionAlliances,
+  listRegionCatalog
+} from '../services/region-db.js?v=46';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -49,6 +50,8 @@ let rows = [];
 let allianceColorMap = new Map();
 let currentSettings = null;
 let canSwitchRegion = false;
+let regionOptions = [];
+let tableSort = { field: 'nickname', dir: 1 };
 let timerId = null;
 let ready = false;
 
@@ -62,7 +65,18 @@ function allianceHue(tag) {
 }
 function allianceBadge(tag) {
   const safe = normTag(tag) || '—';
+  if (window.WKD?.renderPlayerManagerAllianceBadge) {
+    return window.WKD.renderPlayerManagerAllianceBadge(safe, allianceHue(safe));
+  }
   return `<span class="alliance-badge" style="--ally-hue:${allianceHue(safe)}"><span class="badge-dot"></span><span>${esc(safe)}</span></span>`;
+}
+
+function roleNameForBadge(type = '') {
+  const value = String(type || '').trim().toLowerCase();
+  if (value === 'fighter') return 'Fighter';
+  if (value === 'rider') return 'Rider';
+  if (value === 'shooter') return 'Shooter';
+  return type || '—';
 }
 
 function rowTypeLabel(value = '') {
@@ -132,12 +146,57 @@ function eventStartText(settings = currentSettings || {}) {
   return ms ? formatUtcAndLocal(ms) : '—';
 }
 
+function profileRegionOptions(profile = currentProfile || {}) {
+  const games = [getGameProfile(profile || {}), ...getUserFarms(profile || {})];
+  const seen = new Map();
+  games.forEach(game => {
+    const region = normalizeRegion(game?.region);
+    if (!region || seen.has(region)) return;
+    const nick = String(game?.nickname || '').trim();
+    seen.set(region, { region, name: nick ? `${nick}` : '' });
+  });
+  return [...seen.values()].sort((a, b) => Number(a.region) - Number(b.region) || a.region.localeCompare(b.region));
+}
+
+async function loadRegionOptions() {
+  if (canViewAnyRegion(currentProfile || {}, currentUser)) {
+    const catalog = await listRegionCatalog({ includeInactive: false }).catch(() => []);
+    const own = profileRegionOptions(currentProfile);
+    const seen = new Map();
+    [...catalog, ...own].forEach(item => {
+      const region = normalizeRegion(item.region || item.id);
+      if (!region) return;
+      if (!seen.has(region)) seen.set(region, { region, name: item.name || item.nickname || '' });
+    });
+    return [...seen.values()].sort((a, b) => Number(a.region) - Number(b.region) || a.region.localeCompare(b.region));
+  }
+  return profileRegionOptions(currentProfile);
+}
+
+async function populateRegionLookupList() {
+  const list = $('#regionLookupList');
+  if (!list) return;
+  list.innerHTML = regionOptions.map(item => `<option value="${esc(item.region)}">R${esc(item.region)}${item.name ? ` · ${esc(item.name)}` : ''}</option>`).join('');
+}
+
 function setManagerSwitch() {
-  const switchBox = $('#regionManagerSwitch');
+  const field = $('#regionManagerSwitch');
+  const button = $('#openRegionLookupBtn');
   const input = $('#regionLookupInput');
-  if (!switchBox) return;
-  switchBox.hidden = !canSwitchRegion;
+  canSwitchRegion = regionOptions.length > 1;
+  if (field) field.hidden = !canSwitchRegion;
+  if (button) button.hidden = !canSwitchRegion;
   if (input) input.value = currentRegion || readRegionFromUrl() || '';
+}
+
+function renderTierFilter() {
+  const select = $('#regionTierFilter');
+  if (!select) return;
+  const oldValue = select.value || 'all';
+  const tiers = [...new Set(rows.map(row => String(row.tier || '').trim().toUpperCase()).filter(Boolean))]
+    .sort((a, b) => (Number(b.replace(/[^0-9]/g, '')) || 0) - (Number(a.replace(/[^0-9]/g, '')) || 0));
+  select.innerHTML = `<option value="all">${esc(t('common.all', 'Усі'))}</option>` + tiers.map(tier => `<option value="${esc(tier)}">${esc(tier)}</option>`).join('');
+  select.value = oldValue === 'all' || tiers.includes(oldValue) ? oldValue : 'all';
 }
 
 function startCycleTimer() {
@@ -216,18 +275,53 @@ function troopClass(type = '') {
   return ['fighter', 'rider', 'shooter'].includes(troopType) ? troopType : '';
 }
 
+function tierBadge(tier = '') {
+  if (window.WKD?.tierBadge) return window.WKD.tierBadge(tier);
+  const safe = esc(tier || '—');
+  const number = Number(String(tier || '').replace(/[^0-9]/g, '')) || 0;
+  return `<span class="tier-badge tier-badge--t${number || 'unknown'}" data-tier-level="${number}"><span class="badge-dot"></span><span>${safe}</span></span>`;
+}
+function captainBadge(value) {
+  if (window.WKD?.captainBadge) return window.WKD.captainBadge(Boolean(value));
+  return `<span class="captain-badge ${value ? 'yes' : 'no'}">${value ? esc(t('common.yes', 'Yes')) : esc(t('common.no', 'No'))}</span>`;
+}
+function shiftBadge(shift = '') {
+  const safe = esc(shiftLabel(shift, currentSettings) || shift || '—');
+  const cls = esc(String(shift || '').trim().toLowerCase() || 'shift');
+  return `<span class="shift-badge ${cls}">${safe}</span>`;
+}
+
+function sortValue(row = {}, field = '') {
+  if (field === 'troopType') return troopLabel(row.troopType, currentSettings) || row.troopLabel || row.troopType || '';
+  if (field === 'tier') return Number(String(row.tier || '').replace(/[^0-9]/g, '')) || 0;
+  if (field === 'marchSize' || field === 'rallySize') return Number(row[field]) || 0;
+  if (field === 'captainReady') return row.captainReady ? 1 : 0;
+  if (field === 'shift') return shiftLabel(row.shift, currentSettings) || row.shiftLabel || row.shift || '';
+  return String(row[field] ?? '').trim().toLowerCase();
+}
+
+function compareRows(a, b) {
+  const av = sortValue(a, tableSort.field);
+  const bv = sortValue(b, tableSort.field);
+  if (typeof av === 'number' || typeof bv === 'number') return ((Number(av) || 0) - (Number(bv) || 0)) * tableSort.dir;
+  return String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' }) * tableSort.dir;
+}
+
 function filteredRows() {
   const nick = String($('#regionNickSearch')?.value || '').trim().toLowerCase();
   const alliance = String($('#regionAllianceSearch')?.value || '').trim().toLowerCase();
   const troop = $('#regionTroopFilter')?.value || 'all';
+  const tier = $('#regionTierFilter')?.value || 'all';
   const shift = $('#regionShiftFilter')?.value || 'all';
-  return rows.filter(row => {
+  const list = rows.filter(row => {
     if (nick && !String(row.nickname || '').toLowerCase().includes(nick)) return false;
     if (alliance && !String(row.alliance || '').toLowerCase().includes(alliance)) return false;
-    if (troop !== 'all' && row.troopType !== troop && !rowExtraSquads(row).some(item => item.troopType === troop)) return false;
+    if (troop !== 'all' && row.troopType !== troop) return false;
+    if (tier !== 'all' && String(row.tier || '').trim().toUpperCase() !== tier) return false;
     if (shift !== 'all' && row.shift !== shift) return false;
     return true;
   });
+  return [...list].sort(compareRows);
 }
 
 function regionTableLabels() {
@@ -256,11 +350,11 @@ function rowHtml(row) {
     <td data-label="${labels.nickname}"><button class="region-request-link" type="button" data-region-request-id="${esc(rowId)}" aria-label="${esc(tv('region.openRequestDetails', 'Open request for {name}', { name: nickname }))}">${esc(nickname)}</button></td>
     <td data-label="${labels.alliance}">${allianceBadge(row.alliance)}</td>
     <td data-label="${labels.troop}"><span class="tag ${troopClass(row.troopType)}">${esc(troopLabel(row.troopType, currentSettings) || row.troopLabel || '—')}</span></td>
-    <td data-label="${labels.tier}"><span class="rank-badge">${esc(row.tier || '—')}</span></td>
+    <td data-label="${labels.tier}">${tierBadge(row.tier)}</td>
     <td data-label="${labels.march}">${formatNumber(row.marchSize)}</td>
     <td data-label="${labels.rally}">${formatNumber(row.rallySize)}</td>
-    <td data-label="${labels.captain}"><span class="role-badge ${row.captainReady ? 'role-consul' : 'role-player'}">${row.captainReady ? t('common.yes', 'Yes') : t('common.no', 'No')}</span></td>
-    <td data-label="${labels.shift}"><span class="role-badge role-officer">${esc(shiftLabel(row.shift, currentSettings) || row.shiftLabel || '—')}</span></td>
+    <td data-label="${labels.captain}">${captainBadge(row.captainReady)}</td>
+    <td data-label="${labels.shift}">${shiftBadge(row.shift || row.shiftLabel)}</td>
   </tr>`;
 }
 
@@ -292,7 +386,7 @@ function customFieldsHtml(row = {}) {
 function extraSquadsHtml(row = {}) {
   const squads = rowExtraSquads(row);
   if (!squads.length) return `<p class="region-request-empty">${esc(t('region.details.noExtra', 'No extra squads.'))}</p>`;
-  return `<div class="region-request-extra-list">${squads.map(item => `<span class="tag ${troopClass(item.troopType)}">${esc(troopLabel(item.troopType, currentSettings))} · ${esc(item.tier || '—')}</span>`).join('')}</div>`;
+  return `<div class="region-request-extra-list">${squads.map(item => `<span class="tag ${troopClass(item.troopType)}">${esc(troopLabel(item.troopType, currentSettings))} · ${tierBadge(item.tier || '—')}</span>`).join('')}</div>`;
 }
 
 function requestDetailsHtml(row = {}) {
@@ -381,10 +475,12 @@ async function load(user) {
   currentSettings = result.settings;
   await loadAllianceColors();
   renderTroopFilter(currentSettings);
-  canSwitchRegion = canViewAnyRegion(currentProfile, currentUser);
+  renderTierFilter();
+  regionOptions = await loadRegionOptions();
   $('#regionTablePill').textContent = regionPillText();
   $('#openRegionSettingsBtn').hidden = !canManageRegion(currentProfile, currentRegion, currentUser);
   setManagerSwitch();
+  await populateRegionLookupList();
   startCycleTimer();
   render();
 }
@@ -392,7 +488,7 @@ async function load(user) {
 
 function handleLanguageChange() {
   $('#regionTablePill') && ($('#regionTablePill').textContent = regionPillText());
-  if (currentSettings) renderTroopFilter(currentSettings);
+  if (currentSettings) { renderTroopFilter(currentSettings); renderTierFilter(); }
   startCycleTimer();
   render();
   const modal = $('#regionRequestDetailsModal');
@@ -401,15 +497,30 @@ function handleLanguageChange() {
 }
 
 function bind() {
-  ['#regionNickSearch', '#regionAllianceSearch', '#regionTroopFilter', '#regionShiftFilter'].forEach(selector => {
+  ['#regionNickSearch', '#regionAllianceSearch', '#regionTroopFilter', '#regionTierFilter', '#regionShiftFilter'].forEach(selector => {
     $(selector)?.addEventListener('input', render);
     $(selector)?.addEventListener('change', render);
   });
+
+  document.querySelectorAll('[data-region-sort]').forEach(button => {
+    button.addEventListener('click', () => {
+      const field = button.dataset.regionSort || 'nickname';
+      tableSort.dir = tableSort.field === field ? tableSort.dir * -1 : 1;
+      tableSort.field = field;
+      document.querySelectorAll('[data-region-sort]').forEach(btn => btn.classList.remove('is-desc'));
+      button.classList.toggle('is-desc', tableSort.dir < 0);
+      render();
+    });
+  });
+
   $('#regionRegistrationsBody')?.addEventListener('click', event => {
     const button = event.target.closest('[data-region-request-id]');
-    if (button) openRequestDetails(button.dataset.regionRequestId || '');
+    if (button) { event.preventDefault(); openRequestDetails(button.dataset.regionRequestId || ''); }
   });
   document.querySelectorAll('[data-region-request-close]').forEach(button => button.addEventListener('click', closeRequestDetails));
+  $('#regionRequestDetailsModal')?.addEventListener('click', event => {
+    if (event.target?.matches?.('[data-region-request-close], .modal-backdrop')) closeRequestDetails();
+  });
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') closeRequestDetails();
   });
@@ -421,10 +532,10 @@ function bind() {
   $('#regionLookupInput')?.addEventListener('keydown', event => {
     if (event.key === 'Enter') openRegion(event.currentTarget.value);
   });
-  $('#copyRegionFormLinkBtn')?.addEventListener('click', copyRegionFormLink);
   $('#openWastelandRegisterBtn')?.addEventListener('click', () => { window.location.href = `region-form.html?region=${currentRegion}`; });
   $('#openRegionSettingsBtn')?.addEventListener('click', () => { window.location.href = `region-settings.html?region=${currentRegion}`; });
   document.addEventListener('wkd:language-changed', handleLanguageChange);
+  document.addEventListener('wkd:time-display-changed', startCycleTimer);
 }
 
 async function init() {

@@ -372,3 +372,10 @@ function shiftLabel(shift) {
 document.addEventListener('wkd:alliance-colors-updated', () => { if (window.WKD?.renderPlayers) window.WKD.renderPlayers(); });
 
 document.addEventListener('wkd:language-changed', () => { if (window.WKD?.renderPlayers) window.WKD.renderPlayers(); });
+
+
+WKD.allianceBadge = allianceBadge;
+WKD.tierBadge = tierBadge;
+WKD.captainBadge = value => `<span class="captain-badge ${value ? 'yes' : 'no'}">${value ? t('common.yes', 'Так') : t('common.no', 'Ні')}</span>`;
+WKD.troopRoleClass = roleClass;
+WKD.troopRoleLabel = roleLabel;

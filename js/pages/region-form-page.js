@@ -1,5 +1,5 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile } from '../services/user-db.js';
+import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile, saveFarmWastelandProfile } from '../services/user-db.js';
 import {
   getMyRegionContext,
   getRegionSettings,
@@ -14,13 +14,15 @@ import {
   formatCountdown,
   formatRegionDate,
   formatUtcAndLocal,
+  isUtcAndLocalShown,
+  setUtcAndLocalShown,
   canManageRegion,
   canViewAnyRegion,
   canViewRegion,
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=42';
+} from '../services/region-db.js?v=46';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -82,6 +84,93 @@ let selectedFarmId = 'main';
 let regionAlliances = [];
 let countdownId = null;
 let ready = false;
+
+let autoSubmitting = false;
+
+function storageSuffix(region = currentRegion, farmId = selectedFarmId) {
+  const uid = currentUser?.uid || 'guest';
+  const cycle = formSettings?.currentCycleId || 'default';
+  return `${uid}.${region || 'region'}.${farmId || 'main'}.${cycle}`;
+}
+function draftKey(region = currentRegion, farmId = selectedFarmId) {
+  return `wkd.regionFormDraft.${storageSuffix(region, farmId)}`;
+}
+function readJsonStorage(key) {
+  try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; }
+}
+function writeJsonStorage(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+function activeFarmProfile(profile = currentProfile, farmId = selectedFarmId) {
+  return getFarmById(profile || {}, farmId || 'main') || getGameProfile(profile || {});
+}
+function accountDraft(profile = currentProfile, farmId = selectedFarmId) {
+  const farm = activeFarmProfile(profile, farmId);
+  const saved = farm?.wastelandProfile || null;
+  if (!saved) return null;
+  const hasData = ['nickname', 'alliance', 'troopType', 'tier', 'marchSize', 'rallySize', 'lairLevel', 'shift', 'comment']
+    .some(key => String((key === 'nickname' ? farm?.nickname : key === 'alliance' ? farm?.alliance : saved[key]) ?? '').trim()) || Boolean(saved.extraEnabled || saved.readyToAttack || saved.captainReady);
+  return hasData ? {
+    ...saved,
+    nickname: saved.nickname || farm?.nickname || '',
+    alliance: saved.alliance || farm?.alliance || '',
+    region: currentRegion || saved.region || farm?.region || '',
+    farmId: farmId || 'main'
+  } : null;
+}
+function getAutoProfilePreference(region = currentRegion, farmId = selectedFarmId) {
+  if (!currentUser) return false;
+  const farm = activeFarmProfile(currentProfile, farmId);
+  return Boolean(farm?.wastelandProfile?.autoSubmitEnabled);
+}
+async function setAutoProfilePreference(enabled, region = currentRegion, farmId = selectedFarmId) {
+  if (!currentUser) return;
+  const values = { ...(accountDraft(currentProfile, farmId) || {}), ...readForm(), autoSubmitEnabled: enabled };
+  currentProfile = await saveFarmWastelandProfile(currentUser, farmId || 'main', values).catch(error => {
+    console.warn('[WKD] auto profile preference save failed:', error);
+    return currentProfile;
+  });
+}
+function syncAutoProfileCheckbox() {
+  const input = $('#wrAutoFillProfile');
+  if (!input) return false;
+  input.checked = getAutoProfilePreference();
+  input.disabled = !currentUser;
+  return input.checked;
+}
+function syncTimeDisplayCheckbox() {
+  const input = $('#wrShowUtcAndLocal');
+  if (!input) return;
+  input.checked = isUtcAndLocalShown();
+}
+function setFormInputsDisabled(disabled) {
+  const form = $('#wastelandForm');
+  if (!form) return;
+  const keepEnabled = new Set(['openRegionTableBtn', 'wrSavedFarmSelect', 'wrAutoFillProfile', 'wrShowUtcAndLocal', 'wrFillFromProfileBtn']);
+  [...form.elements].forEach(element => {
+    element.disabled = disabled && !keepEnabled.has(element.id);
+  });
+}
+async function saveDraft(values = readForm()) {
+  const payload = { ...values, region: currentRegion, farmId: selectedFarmId || 'main', savedAtMs: Date.now(), cycleId: formSettings?.currentCycleId || '', autoSubmitEnabled: getAutoProfilePreference(currentRegion, selectedFarmId) };
+  if (currentUser) {
+    currentProfile = await saveFarmWastelandProfile(currentUser, selectedFarmId || 'main', payload);
+    return payload;
+  }
+  writeJsonStorage(draftKey(), payload);
+  return payload;
+}
+function loadDraft() {
+  if (currentUser) return accountDraft(currentProfile, selectedFarmId);
+  const draft = readJsonStorage(draftKey());
+  if (!draft || String(draft.region || '') !== String(currentRegion || '')) return null;
+  if ((draft.cycleId || '') && (formSettings?.currentCycleId || '') && draft.cycleId !== formSettings.currentCycleId) return null;
+  return draft;
+}
+function clearDraft() {
+  if (currentUser) return;
+  try { localStorage.removeItem(draftKey()); } catch {}
+}
 
 function setStatus(text, type = 'muted') {
   const box = $('#regionStatus');
@@ -256,11 +345,7 @@ function publicLockKey() {
 }
 
 function lockForm(message) {
-  const form = $('#wastelandForm');
-  if (!form) return;
-  [...form.elements].forEach(element => {
-    if (element.id !== 'openRegionTableBtn') element.disabled = true;
-  });
+  setFormInputsDisabled(true);
   setStatus(message, 'success');
 }
 
@@ -418,10 +503,83 @@ function validate(values) {
   return errors;
 }
 
+async function submitCurrentRegistration(values, { auto = false } = {}) {
+  try {
+    setStatus(auto ? t('region.autoSubmitting', 'Автоматично відправляю заявку з профілю...') : t('region.savingRequest', 'Saving request...'), 'muted');
+    const savedRequest = await saveWastelandRegistration(currentUser, values, currentRegion);
+    if (currentUser) await saveDraft(values).catch(error => console.warn('[WKD] account request draft save skipped:', error));
+    clearDraft();
+    localStorage.setItem('wkd.players.sourceMode', 'region');
+    if (currentRegion) localStorage.setItem('wkd.players.activeRegion', currentRegion);
+    window.dispatchEvent(new CustomEvent('wkd:region-registration-saved', { detail: { region: currentRegion, farmId: savedRequest?.farmId || values.farmId || 'main' } }));
+    if (!currentUser) {
+      localStorage.setItem(publicLockKey(), String(Date.now()));
+      lockForm(t('region.requestSavedGuestLocked', 'Request saved. Now only a consul or region officer can change it.'));
+      window.WKD?.actionDoneDialog?.({
+        title: t('region.requestSavedDialogTitle', 'Заявку відправлено'),
+        message: tv('region.requestSavedDialogMessage', 'Заявку для регіону R{region} збережено. Її вже видно у таблиці регіону.', { region: currentRegion }),
+        href: 'index.html',
+        cancelText: t('common.continue', 'Продовжити')
+      });
+      return true;
+    }
+    setStatus(auto ? t('region.autoSubmitted', 'Автоматична заявка з профілю відправлена.') : t('region.requestSavedCurrentCycle', 'Request saved. This player is already submitted for the current set; choose another farm from the list if needed.'), 'success');
+    window.WKD?.actionDoneDialog?.({
+      title: t('region.requestSavedDialogTitle', 'Заявку відправлено'),
+      message: tv('region.requestSavedDialogMessage', 'Заявку для регіону R{region} збережено. Її вже видно у таблиці регіону.', { region: currentRegion }),
+      href: 'index.html',
+      cancelText: t('common.continue', 'Продовжити')
+    });
+    return true;
+  } catch (error) {
+    console.error(error);
+    if (error?.message === 'registration-already-submitted') {
+      lockForm(t('region.requestAlreadySavedLocked', 'Your request is already saved. Only a consul or officer can change it.'));
+      return false;
+    }
+    if (error?.message === 'region-form-closed') {
+      setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'error');
+      return false;
+    }
+    setStatus(t('region.requestSaveFailed', 'Could not save the request. Check access rights or try again.'), 'error');
+    return false;
+  }
+}
+
+async function maybeAutoSubmitFromProfile(reason = '') {
+  if (!currentUser || autoSubmitting || !autoFillFromProfileEnabled()) return false;
+  const status = getRegionFormStatus(formSettings);
+  fillProfileFields(currentProfile, selectedFarmId);
+  const values = readForm();
+  await saveDraft(values);
+  if (!status.open) {
+    setStatus(t('region.autoProfileSavedClosed', 'Автозаповнення для цього гравця збережено. Форма зараз закрита, тому заявку можна буде відправити після відкриття реєстрації.'), 'warn');
+    return false;
+  }
+  const saved = await getMyWastelandRegistration(currentUser, currentRegion, selectedFarmId).catch(() => null);
+  if (saved) {
+    fillSavedRegistration(saved);
+    setStatus(t('region.requestAlreadySavedShort', 'Заявка для цього гравця вже є в активному циклі.'), 'success');
+    return false;
+  }
+  const errors = validate(values);
+  if (errors.length) {
+    setStatus(errors.join(' '), 'error');
+    return false;
+  }
+  autoSubmitting = true;
+  try {
+    return await submitCurrentRegistration(values, { auto: true, reason });
+  } finally {
+    autoSubmitting = false;
+  }
+}
+
 async function handleSubmit(event) {
   event.preventDefault();
   const status = getRegionFormStatus(formSettings);
   if (!status.open) {
+    await saveDraft(readForm());
     setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'error');
     return;
   }
@@ -435,40 +593,13 @@ async function handleSubmit(event) {
     setStatus(errors.join(' '), 'error');
     return;
   }
-  try {
-    setStatus(t('region.savingRequest', 'Saving request...'), 'muted');
-    const savedRequest = await saveWastelandRegistration(currentUser, values, currentRegion);
-    localStorage.setItem('wkd.players.sourceMode', 'region');
-    if (currentRegion) localStorage.setItem('wkd.players.activeRegion', currentRegion);
-    window.dispatchEvent(new CustomEvent('wkd:region-registration-saved', { detail: { region: currentRegion, farmId: savedRequest?.farmId || values.farmId || 'main' } }));
-    if (!currentUser) {
-      localStorage.setItem(publicLockKey(), String(Date.now()));
-      lockForm(t('region.requestSavedGuestLocked', 'Request saved. Now only a consul or region officer can change it.'));
-      window.WKD?.actionDoneDialog?.({
-        title: t('region.requestSavedDialogTitle', 'Заявку відправлено'),
-        message: tv('region.requestSavedDialogMessage', 'Заявку для регіону R{region} збережено. Її вже видно у заявках регіону.', { region: currentRegion }),
-        href: 'index.html'
-      });
-      return;
-    }
-    setStatus(t('region.requestSavedCurrentCycle', 'Request saved. This player is already submitted for the current set; choose another farm from the list if needed.'), 'success');
-    window.WKD?.actionDoneDialog?.({
-      title: t('region.requestSavedDialogTitle', 'Заявку відправлено'),
-      message: tv('region.requestSavedDialogMessage', 'Заявку для регіону R{region} збережено. Її вже видно у заявках регіону.', { region: currentRegion }),
-      href: 'index.html'
-    });
-  } catch (error) {
-    console.error(error);
-    if (error?.message === 'registration-already-submitted') {
-      lockForm(t('region.requestAlreadySavedLocked', 'Your request is already saved. Only a consul or officer can change it.'));
-      return;
-    }
-    if (error?.message === 'region-form-closed') {
-      setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'error');
-      return;
-    }
-    setStatus(t('region.requestSaveFailed', 'Could not save the request. Check access rights or try again.'), 'error');
-  }
+  await submitCurrentRegistration(values);
+}
+
+async function handleSaveDraft() {
+  const values = readForm();
+  await saveDraft(values);
+  setStatus(currentUser ? t('region.draftSavedAccount', 'Поточні дані заявки збережено в акаунті.') : t('region.draftSaved', 'Поточні дані заявки збережено на цьому пристрої.'), 'success');
 }
 
 async function prepareForm(settings) {
@@ -512,6 +643,9 @@ async function loadPublicForm(region) {
   currentRegion = shortCodeFromLink ? currentRegion : region;
   $('#openRegionTableBtn').hidden = true;
   const open = await prepareForm(settings);
+  syncTimeDisplayCheckbox();
+  const draft = loadDraft();
+  if (draft) fillSavedRegistration(draft);
   if (!open) return;
   if (localStorage.getItem(publicLockKey())) {
     lockForm(t('region.alreadySubmittedBrowser', 'A request has already been sent from this browser. Only a consul or region officer can change it.'));
@@ -551,13 +685,19 @@ async function loadSignedInForm(user) {
   $('#openRegionTableBtn').hidden = !canViewRegion(currentProfile, currentRegion, currentUser);
   const open = await prepareForm(settings);
   renderSavedFarmTools(currentProfile);
-  if (autoFillFromProfileEnabled()) fillProfileFields(currentProfile);
+  syncTimeDisplayCheckbox();
+  const autoProfile = syncAutoProfileCheckbox();
+  if (autoProfile) fillProfileFields(currentProfile);
   const saved = await getMyWastelandRegistration(user, currentRegion, selectedFarmId).catch(() => null);
-  fillSavedRegistration(saved);
+  const draft = loadDraft();
+  if (saved) fillSavedRegistration(saved);
+  else if (draft) fillSavedRegistration(draft);
   if (saved && !canManageRegion(currentProfile, currentRegion, currentUser)) {
     lockForm(t('region.requestAlreadySavedLocked', 'Your request is already saved. Only a consul or officer can change it.'));
     return;
   }
+  setFormInputsDisabled(false);
+  if (autoProfile && !saved) await maybeAutoSubmitFromProfile('load');
   if (!open) {
     setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'warn');
     return;
@@ -579,15 +719,22 @@ async function switchSavedFarm(farmId = selectedFarmId, { copyProfile = true } =
   } else {
     renderSavedFarmTools(currentProfile);
   }
+  syncAutoProfileCheckbox();
+  syncTimeDisplayCheckbox();
   if (copyProfile) fillProfileFields(currentProfile, selectedFarmId);
   const saved = await getMyWastelandRegistration(currentUser, currentRegion, selectedFarmId).catch(() => null);
+  const draft = loadDraft();
   if (saved) fillSavedRegistration(saved);
+  else if (draft) fillSavedRegistration(draft);
+  if (saved && !canManageRegion(currentProfile, currentRegion, currentUser)) lockForm(t('region.requestAlreadySavedLocked', 'Your request is already saved. Only a consul or officer can change it.'));
+  else setFormInputsDisabled(false);
+  if (!saved && autoFillFromProfileEnabled()) await maybeAutoSubmitFromProfile('switch');
   return isOpen;
 }
 
 function autoFillFromProfileEnabled() {
   const input = $('#wrAutoFillProfile');
-  return !input || input.checked;
+  return Boolean(input?.checked);
 }
 
 
@@ -623,11 +770,30 @@ function bind() {
   document.addEventListener('change', event => {
     if (event.target?.matches?.('#wrExtraEnabled, [data-extra-troop]')) toggleExtraFields();
   });
+  $('#wrAutoFillProfile')?.addEventListener('change', event => {
+    selectedFarmId = $('#wrSavedFarmSelect')?.value || selectedFarmId || 'main';
+    const enabled = Boolean(event.currentTarget.checked);
+    setAutoProfilePreference(enabled).catch(error => console.warn('[WKD] auto profile preference save failed:', error));
+    if (!enabled) {
+      setStatus(t('region.autoProfileOff', 'Автозаповнення з профілю вимкнено для цього гравця.'), 'muted');
+      return;
+    }
+    switchSavedFarm(selectedFarmId, { copyProfile: true }).then(() => maybeAutoSubmitFromProfile('toggle')).catch(error => {
+      console.error(error);
+      setStatus(t('region.formOpenFailed', 'Could not open the region form. Check the link or access rights.'), 'error');
+    });
+  });
+  $('#wrShowUtcAndLocal')?.addEventListener('change', event => {
+    setUtcAndLocalShown(Boolean(event.currentTarget.checked));
+    document.dispatchEvent(new CustomEvent('wkd:time-display-changed'));
+    if (formSettings) startCountdown(formSettings);
+  });
   $('#wrSavedFarmSelect')?.addEventListener('change', event => {
     selectedFarmId = event.currentTarget.value || 'main';
     switchSavedFarm(selectedFarmId, { copyProfile: autoFillFromProfileEnabled() }).then(ok => {
       if (ok && autoFillFromProfileEnabled()) setStatus(t('region.selectedPlayerCopied', 'Selected player data copied to the form. Check troop type, tier and shift.'), 'success');
       else if (ok) setStatus(t('region.selectedPlayerChanged', 'Selected player changed. You can copy saved data manually.'), 'muted');
+      else setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'warn');
     }).catch(error => {
       console.error(error);
       setStatus(t('region.formOpenFailed', 'Could not open the region form. Check the link or access rights.'), 'error');
@@ -642,13 +808,17 @@ function bind() {
       setStatus(t('region.formOpenFailed', 'Could not open the region form. Check the link or access rights.'), 'error');
     });
   });
+  $('#saveWastelandDraftBtn')?.addEventListener('click', handleSaveDraft);
   $('#resetWastelandFormBtn')?.addEventListener('click', () => {
     $('#wastelandForm')?.reset();
-    if (currentProfile) fillProfileFields(currentProfile, selectedFarmId);
+    if (autoFillFromProfileEnabled() && currentProfile) fillProfileFields(currentProfile, selectedFarmId);
+    syncAutoProfileCheckbox();
+    syncTimeDisplayCheckbox();
     toggleExtraFields();
   });
   $('#openRegionTableBtn')?.addEventListener('click', () => { window.location.href = `region-table.html?region=${currentRegion}`; });
   document.addEventListener('wkd:language-changed', handleLanguageChange);
+  document.addEventListener('wkd:time-display-changed', () => { if (formSettings) startCountdown(formSettings); });
 }
 
 async function init() {

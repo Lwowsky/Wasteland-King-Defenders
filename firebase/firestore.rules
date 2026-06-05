@@ -95,11 +95,11 @@ service cloud.firestore {
     }
 
     function canManageAllianceList(regionId) {
-      return ownerEmail() || currentRole() in ['admin', 'moderator'] || (currentRegionRole(regionId) in ['admin', 'moderator', 'consul', 'officer'] && hasRegionAccess(regionId));
+      return ownerEmail() || currentRole() in ['admin', 'moderator'] || (currentRegionRole(regionId) in ['admin', 'moderator', 'consul'] && hasRegionAccess(regionId));
     }
 
     function canUseAdminPanel() {
-      return ownerEmail() || isAdmin() || isModerator();
+      return ownerEmail() || isAdmin() || isModerator() || currentRole() in ['consul', 'officer'] || currentRank() in ['p5', 'r5', '5'];
     }
 
     function canManageRegion(regionId) {

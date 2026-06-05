@@ -13,9 +13,13 @@ WKD.confirmDialog = options => new Promise(resolve => {
   note.textContent = noteText;
   note.hidden = noteText === '';
   icon.textContent = options?.icon || '⚠';
+  accept.removeAttribute('data-i18n');
   accept.textContent = options?.acceptText || window.WKD_t?.('common.confirm') || 'Confirm';
   accept.className = options?.acceptClass || 'btn btn-danger-solid';
-  WKD.$$('[data-confirm-cancel]', modal).forEach(btn => { btn.textContent = btn.classList.contains('confirm-backdrop') ? btn.textContent : (options?.cancelText || window.WKD_t?.('common.cancel') || 'Cancel'); });
+  WKD.$$('[data-confirm-cancel]', modal).forEach(btn => {
+    if (!btn.classList.contains('confirm-backdrop')) btn.removeAttribute('data-i18n');
+    btn.textContent = btn.classList.contains('confirm-backdrop') ? btn.textContent : (options?.cancelText || window.WKD_t?.('common.cancel') || 'Cancel');
+  });
   modal.classList.add('is-open');
   modal.setAttribute('aria-hidden', 'false');
   const finish = value => {
@@ -39,7 +43,7 @@ WKD.actionDoneDialog = async options => {
     note: options?.note ?? '',
     icon: options?.icon || '✅',
     acceptText: options?.acceptText || window.WKD_t?.('common.goHome') || 'Go to main page',
-    cancelText: options?.cancelText || window.WKD_t?.('common.stayHere') || 'Stay here',
+    cancelText: options?.cancelText || window.WKD_t?.('common.continue') || window.WKD_t?.('common.stayHere') || 'Continue',
     acceptClass: options?.acceptClass || 'btn btn-success-solid'
   });
   if (goHome) window.location.href = options?.href || 'index.html';

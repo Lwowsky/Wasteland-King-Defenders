@@ -51,10 +51,10 @@
   <script defer src="js/duplicate-nick-modal.js"></script>
   <script defer src="js/player-edit-modal.js"></script>
   <script defer src="js/player-manager-modal.js"></script>
-  <script defer src="js/tower-planner.js?v=42"></script>
+  <script defer src="js/tower-planner.js?v=46"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/app.js"></script>
-  <script type="module" src="js/player-manager-region-bridge.js?v=42"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=46"></script>
   <script type="module" src="js/auth-google.js"></script>
   <script type="module" src="js/pages/index-region-players.js"></script>
 </head>
@@ -71,7 +71,7 @@
         </div>
         <div class="panel-actions">
           <button class="btn" id="showAllDataBtn" type="button" aria-pressed="false">Показати всі дані</button>
-          <a class="btn" href="profile.html?tab=region">Форма регіону</a>
+          <a class="btn" href="region-settings.html">Форма регіону</a>
           <button class="btn btn-primary" id="openImportQuickBtn" type="button">Імпорт CSV/XLSX/URL</button>
         </div>
       </div>
@@ -86,7 +86,7 @@
         <div class="players-source-controls">
           <div class="players-source-tabs" role="tablist" aria-label="Джерело даних">
             <button class="source-tab is-active" type="button" role="tab" aria-selected="true" data-source-mode="local" data-i18n="players.sourceLocal">Локальний список</button>
-            <button class="source-tab" type="button" role="tab" aria-selected="false" data-source-mode="region" data-i18n="players.sourceRegion">Заявки регіону</button>
+            <button class="source-tab" type="button" role="tab" aria-selected="false" data-source-mode="region" data-i18n="players.sourceRegion">Таблиця регіону</button>
           </div>
           <div class="players-region-switch" id="playersRegionSwitch" hidden>
             <label><span data-i18n="players.regionSwitchLabel">Регіон</span><select id="playersRegionSelect" aria-label="Регіон" data-i18n-aria-label="players.regionSwitchLabel"></select></label>

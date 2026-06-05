@@ -1,9 +1,7 @@
 <div class="region-form-shell">
   <div class="profile-head region-form-head">
     <div>
-      <p class="auth-eyebrow" data-i18n="region.formEyebrow">Реєстрація на пустош</p>
       <h2 data-i18n="region.formTitle">Реєстрація на пустош</h2>
-      <p data-i18n="region.formLead">Заповни заявку за посиланням від консула або офіцера. Таблицю бачать тільки гравці цього регіону.</p>
     </div>
     <div class="region-head-actions">
       <span class="region-pill region-pill--region" id="regionNumberPill">R—</span>
@@ -28,12 +26,12 @@
 
   <form class="region-form-block" id="wastelandForm" hidden>
     <div class="region-profile-tools" id="regionProfileTools" hidden>
-      <div>
+      <div class="region-profile-tools-title">
         <b data-i18n="region.useSavedPlayerTitle">Дані з профілю</b>
-        <small data-i18n="region.useSavedPlayerHelp">Вибери основного гравця або ферму і перенеси збережені дані у заявку.</small>
       </div>
       <select id="wrSavedFarmSelect" aria-label="Збережені гравці"></select>
-      <label class="region-check region-check--inline"><input id="wrAutoFillProfile" type="checkbox" checked /> <span data-i18n="region.autoFillFromProfile">Автоматично заповнювати з профілю</span></label>
+      <label class="region-check region-check--inline"><input id="wrAutoFillProfile" type="checkbox" /> <span data-i18n="region.autoFillFromProfile">Автоматично заповнювати з профілю</span></label>
+      <label class="region-check region-check--inline"><input id="wrShowUtcAndLocal" type="checkbox" /> <span data-i18n="region.showUtcAndLocal">Показувати UTC і свій час</span></label>
       <button class="btn btn-primary" id="wrFillFromProfileBtn" type="button" data-i18n="region.fillFromProfile">Заповнити з профілю</button>
     </div>
 
@@ -42,7 +40,7 @@
         <h3 id="regionFormTitleText" data-i18n="region.formTitle">Реєстрація на пустош</h3>
         <p id="regionFormDescText" data-i18n="region.fillRequest">Заповни заявку для свого регіону.</p>
       </div>
-      <button class="btn" id="openRegionTableBtn" type="button" data-i18n="region.table">Заявки регіону</button>
+      <button class="btn" id="openRegionTableBtn" type="button" data-i18n="region.table">Таблиця регіону</button>
     </div>
 
     <div class="region-grid">
@@ -92,6 +90,7 @@
     </div>
 
     <div class="region-actions">
+      <button class="btn" id="saveWastelandDraftBtn" type="button" data-i18n="regionForm.saveDraft">Зберегти заявку</button>
       <button class="btn region-save" type="submit" data-i18n="regionForm.submit">Відправити заявку</button>
       <button class="btn" id="resetWastelandFormBtn" type="button" data-i18n="common.clear">Очистити</button>
     </div>

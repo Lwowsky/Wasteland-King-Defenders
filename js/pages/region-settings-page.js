@@ -26,7 +26,7 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=42';
+} from '../services/region-db.js?v=46';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -1110,4 +1110,8 @@ document.addEventListener('wkd:language-changed', () => {
   renderRotationModal();
   updateRotationSummary();
   updatePreview();
+});
+
+document.addEventListener('wkd:time-display-changed', () => {
+  if (ready) updatePreview();
 });

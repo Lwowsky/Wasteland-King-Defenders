@@ -293,6 +293,55 @@ export function canManageRegion(profile = {}, region = '', actor = null) {
   return ['admin', 'moderator', 'consul', 'officer'].includes(role) && canViewRegion(profile, region, actor);
 }
 
+function activeRotationAlliance(settings = {}) {
+  const list = normalizeRotationAlliances(settings.rotationAlliances || []);
+  if (!settings.rotationEnabled || !list.length) return normalizeAllianceTag(settings.hostAlliance || '');
+  const index = Math.max(0, Math.min(list.length - 1, Number(settings.rotationActiveIndex) || 0));
+  return normalizeAllianceTag(list[index]?.tag || settings.hostAlliance || '');
+}
+
+function actorAllianceForRegion(profile = {}, region = '') {
+  const game = gameForRegion(profile || {}, region) || bestRegionGame(profile || {});
+  return normalizeAllianceTag(game?.alliance || '');
+}
+
+function actorRankForRegion(profile = {}, region = '') {
+  const game = gameForRegion(profile || {}, region) || bestRegionGame(profile || {});
+  return trim(game?.rank || '').toLowerCase();
+}
+
+export function canLeadCurrentRotation(profile = {}, region = '', actor = null, settings = {}) {
+  const safeRegion = normalizeRegion(region);
+  if (!safeRegion || !canViewRegion(profile, safeRegion, actor)) return false;
+  const role = roleForRegion(profile, safeRegion, actor);
+  if (['admin', 'moderator', 'consul'].includes(role)) return true;
+  if (role !== 'officer') return false;
+  const active = activeRotationAlliance(settings);
+  return Boolean(active && actorAllianceForRegion(profile, safeRegion) === active);
+}
+
+export function canOpenCloseRegion(profile = {}, region = '', actor = null, settings = {}) {
+  return canLeadCurrentRotation(profile, region, actor, settings);
+}
+
+export function canEditRegionTowerPlan(profile = {}, region = '', actor = null, settings = {}) {
+  return canLeadCurrentRotation(profile, region, actor, settings);
+}
+
+export function canPromoteAllianceMember(profile = {}, region = '', target = {}, targetRole = 'player', actor = null) {
+  const safeRegion = normalizeRegion(region);
+  const role = roleForRegion(profile, safeRegion, actor);
+  const targetAlliance = normalizeAllianceTag(target.alliance || '');
+  if (!targetAlliance || !canViewRegion(profile, safeRegion, actor)) return false;
+  if (['admin', 'moderator'].includes(role)) return true;
+  const ownAlliance = actorAllianceForRegion(profile, safeRegion);
+  const ownRank = actorRankForRegion(profile, safeRegion);
+  const wanted = normalizeUserRole(targetRole);
+  if (role === 'consul' && ownAlliance === targetAlliance) return ['officer', 'player'].includes(wanted) || ['p4', 'p5'].includes(String(target.rank || '').toLowerCase());
+  if (role === 'officer' && ownAlliance === targetAlliance && ['p5', 'r5', '5'].includes(ownRank)) return wanted === 'player' || String(target.rank || '').toLowerCase() === 'p4';
+  return false;
+}
+
 export function canDeleteRegionRegistration(profile = {}, region = '', actor = null) {
   const role = roleForRegion(profile, region, actor);
   return ['admin', 'moderator', 'consul'].includes(role) && canViewRegion(profile, region, actor);
@@ -543,8 +592,22 @@ export function formatLocalDate(value) {
   return formatDateInZone(value);
 }
 
+export function isUtcAndLocalShown() {
+  try {
+    return globalThis.localStorage?.getItem('wkd.time.showUtcAndLocal') !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+export function setUtcAndLocalShown(value) {
+  try { globalThis.localStorage?.setItem('wkd.time.showUtcAndLocal', value ? 'true' : 'false'); } catch {}
+}
+
 export function formatUtcAndLocal(value) {
-  return `${serviceT('common.utc', 'UTC')}: ${formatUtcDate(value)} · ${serviceT('region.yourTime', 'Your time')}: ${formatLocalDate(value)}`;
+  const localText = `${serviceT('region.yourTime', 'Your time')}: ${formatLocalDate(value)}`;
+  if (!isUtcAndLocalShown()) return localText;
+  return `${serviceT('common.utc', 'UTC')}: ${formatUtcDate(value)} · ${localText}`;
 }
 
 
@@ -922,6 +985,8 @@ export async function saveRegionSettings(user, region, settings) {
   if (!canManageRegion(profile, safeRegion, user)) throw new Error('region-access-denied');
 
   const oldSettings = await getRegionSettings(safeRegion).catch(() => mergeRegionSettings({}));
+  const actionSettings = { ...oldSettings, ...settings };
+  if ((settings.forceOpenNow || settings.forceCloseNow || 'enabled' in settings || settings.openNewCycle) && !canOpenCloseRegion(profile, safeRegion, user, actionSettings)) throw new Error('region-open-close-denied');
   const forceOpenNow = Boolean(settings.forceOpenNow);
   const forceCloseNow = Boolean(settings.forceCloseNow);
   const nowMs = Date.now();
@@ -1113,9 +1178,9 @@ export async function saveRegionAlliance(user, region, values = {}) {
   const { db, firestoreMod } = await getFirebaseParts();
   const profile = await getUserProfile(user.uid);
   const safeRegion = normalizeRegion(region);
-  if (!canManageRegion(profile, safeRegion, user)) throw new Error('region-access-denied');
   const tag = normalizeAllianceTag(values.tag || values.id);
   if (!tag || Array.from(tag).length !== 3) throw new Error('alliance-tag-required');
+  if (!canManageAllianceColors(profile, safeRegion, tag, user)) throw new Error('region-access-denied');
   const ref = firestoreMod.doc(db, 'regions', safeRegion, 'alliances', tag);
   const old = await firestoreMod.getDoc(ref);
   const now = firestoreMod.serverTimestamp();
@@ -1147,9 +1212,9 @@ export async function deleteRegionAlliance(user, region, allianceId) {
   const { db, firestoreMod } = await getFirebaseParts();
   const profile = await getUserProfile(user.uid);
   const safeRegion = normalizeRegion(region);
-  if (!canManageRegion(profile, safeRegion, user)) throw new Error('region-access-denied');
   const tag = normalizeAllianceTag(allianceId);
   if (!tag) throw new Error('alliance-tag-required');
+  if (!canManageAllianceColors(profile, safeRegion, tag, user)) throw new Error('region-access-denied');
   await firestoreMod.deleteDoc(firestoreMod.doc(db, 'regions', safeRegion, 'alliances', tag));
 }
 
@@ -1686,7 +1751,8 @@ export async function saveRegionTowerPlan(user, region, plan = {}) {
   const profile = await getUserProfile(user.uid);
   const safeRegion = normalizeRegion(region || getGameProfile(profile || {}).region);
   if (!safeRegion) throw new Error('region-required');
-  if (!canManageRegion(profile, safeRegion, user)) throw new Error('region-plan-access-denied');
+  const settings = await getRegionSettings(safeRegion).catch(() => mergeRegionSettings({}));
+  if (!canEditRegionTowerPlan(profile, safeRegion, user, settings)) throw new Error('region-plan-access-denied');
   const cleanPlan = plan && typeof plan === 'object' ? plan : {};
   await firestoreMod.setDoc(
     firestoreMod.doc(db, 'regions', safeRegion, 'wastelandTowerPlans', 'current'),

@@ -57,6 +57,10 @@ export function normalizeWastelandProfile(raw = {}) {
     .filter((item, index, arr) => arr.findIndex(other => other.troopType === item.troopType) === index);
   const firstExtra = extraSquads[0] || {};
   return {
+    nickname: normalizeText(raw.nickname),
+    alliance: normalizeAllianceTag(raw.alliance),
+    region: normalizeText(raw.region),
+    farmId: normalizeText(raw.farmId),
     troopType: normalizeText(raw.troopType),
     tier: normalizeText(raw.tier || 'T10').toUpperCase(),
     lairLevel: normalizeText(raw.lairLevel || raw.lair),
@@ -71,11 +75,47 @@ export function normalizeWastelandProfile(raw = {}) {
     extraSquads,
     extraTroopType: firstExtra.troopType || '',
     extraTier: firstExtra.tier || '',
-    extraMarchSize: ''
+    extraMarchSize: '',
+    autoSubmitEnabled: Boolean(raw.autoSubmitEnabled)
   };
 }
 const isOwnerEmail = email => OWNER_EMAILS.includes(String(email || '').trim().toLowerCase());
 const isAdminEmail = email => ADMIN_EMAILS.includes(String(email || '').trim().toLowerCase());
+function gameRegion(game = {}) { return normalizeText(game.region).replace(/[^0-9]/g, ''); }
+function rankNum(rank = '') { const m = String(rank || '').match(/[1-5]/); return m ? Number(m[0]) : 1; }
+function allActorGames(profile = {}) {
+  const main = getGameProfile(profile || {});
+  return [{ ...main, role: normalizeRole(profile?.role || 'player'), farmId: 'main' }, ...getUserFarms(profile || {})];
+}
+function isRegionalManagerProfile(profile = {}) {
+  return allActorGames(profile).some(game => ['consul', 'officer'].includes(normalizeRole(game.role || 'player')) || rankNum(game.rank) === 5);
+}
+function bestActorGameForTarget(actorProfile = {}, target = {}) {
+  const region = gameRegion(target);
+  const alliance = normalizeAllianceTag(target.alliance);
+  return allActorGames(actorProfile).find(game => gameRegion(game) === region && (!alliance || normalizeAllianceTag(game.alliance) === alliance))
+    || allActorGames(actorProfile).find(game => gameRegion(game) === region)
+    || null;
+}
+function isGlobalAdminActor(actor = null, actorProfile = null) {
+  return isOwnerUser(actor, actorProfile) || ['admin', 'moderator'].includes(normalizeRole(actorProfile?.role || 'player'));
+}
+function canRegionalEditTarget(actor = null, actorProfile = null, target = {}, oldTarget = {}) {
+  if (isGlobalAdminActor(actor, actorProfile)) return true;
+  const actorGame = bestActorGameForTarget(actorProfile || {}, target);
+  if (!actorGame) return false;
+  const actorRole = normalizeRole(actorGame.role || 'player');
+  const actorRank = rankNum(actorGame.rank);
+  const sameAlliance = normalizeAllianceTag(actorGame.alliance) === normalizeAllianceTag(target.alliance);
+  const wantedRole = normalizeRole(target.role || oldTarget.role || 'player');
+  const wantedRank = rankNum(target.rank || oldTarget.rank || 'p1');
+  if (actorRole === 'consul' && gameRegion(actorGame) === gameRegion(target)) {
+    return ['player', 'officer'].includes(wantedRole) && wantedRank <= 5;
+  }
+  if (sameAlliance && actorRole === 'officer') return wantedRole === normalizeRole(oldTarget.role || 'player');
+  if (sameAlliance && actorRank === 5) return wantedRole === normalizeRole(oldTarget.role || 'player') && wantedRank <= 4;
+  return false;
+}
 
 export function roleLabel(role = 'player') {
   const key = normalizeRole(role);
@@ -106,13 +146,14 @@ export function isModeratorUser(user, profile = null) {
 }
 
 export function canUseAdminPanel(user, profile = null) {
-  return isOwnerUser(user, profile) || profile?.role === 'admin' || profile?.role === 'moderator';
+  return isOwnerUser(user, profile) || profile?.role === 'admin' || profile?.role === 'moderator' || isRegionalManagerProfile(profile || {});
 }
 
 export function assignableRolesForActor(user, profile = null) {
   if (isOwnerUser(user, profile)) return ['admin', 'moderator', 'consul', 'officer', 'player'];
   if (profile?.role === 'admin') return ['moderator', 'consul', 'officer', 'player'];
   if (profile?.role === 'moderator') return ['consul', 'officer', 'player'];
+  if (isRegionalManagerProfile(profile || {})) return ['officer', 'player'];
   return [];
 }
 
@@ -790,6 +831,27 @@ export async function syncPublicPlayersFromUsers() {
   return count;
 }
 
+async function assertAllianceRankLimit(db, firestoreMod, uid = '', farmId = 'main', target = {}) {
+  const rank = rankNum(target.rank || 'p1');
+  if (![4, 5].includes(rank)) return;
+  const region = gameRegion(target);
+  const alliance = normalizeAllianceTag(target.alliance);
+  if (!region || !alliance) return;
+  const snap = await firestoreMod.getDocs(firestoreMod.collection(db, 'users'));
+  let count = 0;
+  snap.docs.forEach(doc => {
+    const data = { id: doc.id, ...doc.data() };
+    const games = [{ ...getGameProfile(data), farmId: 'main' }, ...getUserFarms(data)];
+    games.forEach(game => {
+      const gameFarmId = normalizeText(game.farmId || game.id || 'main') || 'main';
+      if (doc.id === uid && gameFarmId === (farmId || 'main')) return;
+      if (gameRegion(game) === region && normalizeAllianceTag(game.alliance) === alliance && rankNum(game.rank) === rank) count += 1;
+    });
+  });
+  if (rank === 5 && count >= 1) throw new Error('rank-p5-limit');
+  if (rank === 4 && count >= 20) throw new Error('rank-p4-limit');
+}
+
 export async function updateUserByAdmin(uid, values) {
   if (!uid) throw new Error('missing-user-id');
   const firebase = await getFirebase();
@@ -812,9 +874,11 @@ export async function updateUserByAdmin(uid, values) {
   const role = normalizeRole(values.role || oldProfile.role || 'player');
   const actor = firebase.auth?.currentUser || null;
   const actorProfile = actor ? await getUserProfile(actor.uid) : null;
-  if (!canAssignRole(actor, actorProfile, role)) {
+  const requestedTarget = { ...clean, role };
+  if (!canAssignRole(actor, actorProfile, role) || !canRegionalEditTarget(actor, actorProfile, requestedTarget, { ...oldGame, role: oldProfile.role || 'player' })) {
     throw new Error('role-not-allowed');
   }
+  await assertAllianceRankLimit(db, firestoreMod, uid, 'main', clean);
   const fullUser = {
     uid,
     gameNick: clean.nickname,
@@ -863,7 +927,9 @@ export async function updateFarmByAdmin(uid, farmId, values) {
   const actor = firebase.auth?.currentUser || null;
   const actorProfile = actor ? await getUserProfile(actor.uid) : null;
   const role = normalizeRole(values.role || farms[index].role || 'player');
-  if (!canAssignRole(actor, actorProfile, role)) throw new Error('role-not-allowed');
+  const targetPreview = { ...farms[index], ...values, role, region: normalizeText(values.region || farms[index].region).replace(/[^0-9]/g, ''), alliance: normalizeAllianceTag(values.alliance || farms[index].alliance), rank: normalizeText(values.rank || farms[index].rank || 'p1').toLowerCase() };
+  if (!canAssignRole(actor, actorProfile, role) || !canRegionalEditTarget(actor, actorProfile, targetPreview, farms[index])) throw new Error('role-not-allowed');
+  await assertAllianceRankLimit(db, firestoreMod, uid, farmId, targetPreview);
 
   const now = firestoreMod.serverTimestamp();
   const nextFarm = normalizeFarm({

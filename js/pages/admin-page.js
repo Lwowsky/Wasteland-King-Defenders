@@ -21,7 +21,7 @@ import {
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=42';
+} from '../services/region-db.js?v=46';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -166,6 +166,29 @@ function rowRole(row) {
   return row.isFarmRow ? (row.game.role || 'player') : (row.user.role || 'player');
 }
 
+function actorIsGlobalManager() {
+  return isOwnerUser(currentUser, currentProfile) || ['admin', 'moderator'].includes(String(currentProfile?.role || '').toLowerCase());
+}
+function actorGames() {
+  return [{ ...getGameProfile(currentProfile || {}), role: currentProfile?.role || 'player', farmId: 'main' }, ...getUserFarms(currentProfile || {})];
+}
+function sameRegionAlliance(a = {}, b = {}) {
+  return String(a.region || '').replace(/[^0-9]/g, '') === String(b.region || '').replace(/[^0-9]/g, '')
+    && allianceTag3(a.alliance) === allianceTag3(b.alliance);
+}
+function canDisplayRow(row = {}) {
+  if (actorIsGlobalManager()) return true;
+  const target = row.game || {};
+  return actorGames().some(game => {
+    const role = String(game.role || 'player').toLowerCase();
+    const rank = String(game.rank || '').toLowerCase();
+    const sameRegion = String(game.region || '').replace(/[^0-9]/g, '') === String(target.region || '').replace(/[^0-9]/g, '');
+    if (role === 'consul' && sameRegion) return true;
+    if (sameRegionAlliance(game, target) && (role === 'officer' || ['p5', 'r5', '5'].includes(rank))) return true;
+    return false;
+  });
+}
+
 function sortRows(a, b) {
   const dir = sortState.dir === 'asc' ? 1 : -1;
   const av = sortState.key === 'createdAt' ? (a.user.createdAt?.toMillis?.() || 0) : (a.game[sortState.key] ?? a.user[sortState.key] ?? '');
@@ -180,6 +203,7 @@ function filteredUsers() {
   const role = $('#adminRoleFilter')?.value || 'all';
   const rows = $('#adminRowsFilter')?.value || '10';
   const sorted = adminRows()
+    .filter(canDisplayRow)
     .filter(row => (role === 'all' || rowRole(row) === role))
     .filter(row => {
       const game = row.game || {};

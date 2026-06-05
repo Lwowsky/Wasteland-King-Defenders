@@ -5,8 +5,8 @@
 .region-pill--open{background:linear-gradient(135deg,#0e4d34,#16895a);box-shadow:0 0 20px #2ddd9140;color:#c9ffe1}
 .region-pill--closed{background:linear-gradient(135deg,#4e1b2a,#7c2941);box-shadow:0 0 20px #ff658640;color:#ffdce2}
 
-.region-manager-switch{display:grid;grid-template-columns:minmax(0,1fr) minmax(160px,220px) auto auto;gap:12px;align-items:end;margin:14px 0;padding:14px;border:1px solid #ffffff14;border-radius:22px;background:linear-gradient(135deg,#101a31,#0a1224)}
-.region-manager-switch b{display:block;color:#f3f7ff;font-weight:950}.region-manager-switch small{display:block;margin-top:4px;color:#9fb0d7;line-height:1.35}.region-manager-switch label{display:grid;gap:6px}.region-manager-switch label span{font-size:12px;font-weight:950;color:#9fb0d7;text-transform:uppercase;letter-spacing:.05em}.region-manager-switch input{min-height:46px;padding:0 14px;border:1px solid #243250;border-radius:16px;background:#07101f;color:#fff;font:inherit;font-weight:900;outline:none}.region-manager-switch input:focus{border-color:#6d86ff;box-shadow:0 0 0 3px #6d86ff24}.region-manager-switch .btn{min-height:46px;border-radius:16px;white-space:nowrap}
+.region-manager-switch{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(120px,170px) auto;gap:12px;align-items:end;margin:14px 0;padding:14px;border:1px solid #ffffff14;border-radius:22px;background:linear-gradient(135deg,#101a31,#0a1224)}
+.region-manager-switch b{display:block;color:#f3f7ff;font-weight:950}.region-manager-switch small{display:block;margin-top:4px;color:#9fb0d7;line-height:1.35}.region-manager-switch label{display:grid;gap:6px}.region-manager-switch label span{font-size:12px;font-weight:950;color:#9fb0d7;text-transform:uppercase;letter-spacing:.05em}.region-manager-switch input{min-height:44px;padding:0 14px;border:1px solid #243250;border-radius:16px;background:#07101f;color:#fff;font:inherit;font-weight:900;outline:none}.region-manager-switch input:focus{border-color:#6d86ff;box-shadow:0 0 0 3px #6d86ff24}.region-manager-switch .btn{min-height:44px;border-radius:16px;white-space:nowrap}
 
 .region-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}
 .region-field{display:grid;gap:8px;padding:14px;border:1px solid #ffffff12;border-radius:22px;background:linear-gradient(180deg,#131d33,#0b1222)}
@@ -222,3 +222,46 @@
 .region-timer-card .region-info-value--good{color:#66e6a4}
 .region-timer-card .region-starter-name{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:3px 10px;border-radius:999px;border:1px solid rgba(255,214,112,.45);background:linear-gradient(135deg,rgba(255,214,112,.18),rgba(151,87,255,.24));color:#ffe88a;font-weight:950;text-shadow:0 0 14px rgba(255,214,112,.42);box-shadow:0 0 0 1px rgba(255,255,255,.06) inset,0 8px 26px rgba(139,92,246,.18)}
 .region-timer-card--public{gap:10px}.region-timer-card--public b,.region-timer-card--public span,.region-timer-card--public small{display:block;padding:9px 12px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(3,10,23,.45)}
+
+/* v44: clean request modal, account-saved profile tools, and unified badges */
+.region-request-modal{position:fixed!important;inset:0!important;z-index:12000!important;align-items:center!important;justify-content:center!important;padding:18px!important}
+.region-request-modal .modal-backdrop{position:fixed!important;inset:0!important;z-index:0!important;background:rgba(2,7,18,.72)!important;backdrop-filter:blur(8px)!important}
+.region-request-modal-card{position:relative!important;z-index:1!important;grid-template-areas:"head" "body";grid-template-rows:auto minmax(0,1fr)!important;width:min(760px,calc(100vw - 28px))!important;max-height:min(84dvh,760px)!important}
+.region-request-modal-head{grid-area:head!important}
+.region-request-modal-body{grid-area:body!important;min-height:0!important}
+.region-request-modal:not(.is-open){display:none!important}.region-request-modal.is-open{display:flex!important}
+.region-request-extra-list .tier-badge{min-height:28px;padding:0 10px;margin-left:4px}
+.region-profile-tools{grid-template-columns:minmax(190px,1fr) minmax(190px,1fr) minmax(190px,1fr) minmax(180px,.9fr)!important;align-items:stretch!important}
+.region-profile-tools-title{grid-column:1/-1;display:grid;gap:4px;align-content:start}
+.region-profile-tools-title b{font-size:22px;letter-spacing:-.01em}
+.region-actions #saveWastelandDraftBtn{background:linear-gradient(135deg,#15223e,#10182d);border-color:rgba(120,150,230,.26);color:#dce8ff}
+@media(max-width:1180px){.region-profile-tools{grid-template-columns:1fr 1fr!important}.region-profile-tools .btn{width:100%}}
+@media(max-width:820px){.region-profile-tools{grid-template-columns:1fr!important}}
+
+.region-request-modal.is-open .region-request-modal-card{transform:none!important;opacity:1!important}
+.region-request-modal-head .btn-icon{position:relative;z-index:2}
+
+/* v46: compact region table filters */
+.region-table-controls{
+  display:flex;
+  align-items:end;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:16px 0 14px;
+}
+.region-table-controls .region-control{display:grid;gap:6px;min-width:0}
+.region-table-controls .region-control span{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#aeb8d1}
+.region-table-controls input,.region-table-controls select{width:100%;height:48px;border-radius:12px;border:1px solid var(--line);background:#071023;color:#f4f7ff;font-weight:800;padding:0 14px}
+.region-control--region{flex:0 0 150px}
+.region-control--nick{flex:0 0 230px}
+.region-control--ally{flex:0 0 125px}
+.region-control--troop{flex:0 0 150px}
+.region-control--tier{flex:0 0 112px}
+.region-control--shift{flex:0 0 140px}
+.region-open-btn{flex:0 0 auto;width:auto;min-width:auto;height:48px;padding-inline:20px;white-space:nowrap}
+.region-public-table thead th{white-space:nowrap;vertical-align:middle}
+.region-public-table thead th>span{display:inline-block;vertical-align:middle}
+@media (max-width: 760px){
+  .region-table-controls{display:grid;grid-template-columns:1fr 1fr;align-items:stretch}
+  .region-table-controls .region-control,.region-open-btn{flex:auto;width:100%}
+}
