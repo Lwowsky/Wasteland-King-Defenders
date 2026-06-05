@@ -23,7 +23,7 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=47';
+} from '../services/region-db.js?v=49';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -66,7 +66,8 @@ function readShortLinkFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const hashText = String(window.location.hash || '').replace(/^#/, '').replace(/^\?/, '');
   const hashParams = new URLSearchParams(hashText);
-  const code = params.get('s') || params.get('code') || params.get('link') || hashParams.get('s') || hashParams.get('code') || hashParams.get('link') || '';
+  const pathMatch = String(window.location.pathname || '').match(/^\/f\/\d{1,8}\/([A-Za-z0-9_-]{6,120})\/?$/);
+  const code = params.get('s') || params.get('code') || params.get('link') || hashParams.get('s') || hashParams.get('code') || hashParams.get('link') || pathMatch?.[1] || '';
   if (code) {
     try { sessionStorage.setItem('wkd.regionForm.shortCode', code); } catch {}
     return code;

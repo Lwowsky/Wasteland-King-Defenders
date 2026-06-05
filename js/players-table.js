@@ -374,8 +374,8 @@ document.addEventListener('wkd:alliance-colors-updated', () => { if (window.WKD?
 document.addEventListener('wkd:language-changed', () => { if (window.WKD?.renderPlayers) window.WKD.renderPlayers(); });
 
 
-WKD.allianceBadge = allianceBadge;
-WKD.tierBadge = tierBadge;
-WKD.captainBadge = value => `<span class="captain-badge ${value ? 'yes' : 'no'}">${value ? t('common.yes', 'Так') : t('common.no', 'Ні')}</span>`;
+WKD.allianceBadge = WKD.Badges?.alliance || allianceBadge;
+WKD.tierBadge = WKD.Badges?.tier || tierBadge;
+WKD.captainBadge = WKD.Badges?.captain || (value => `<span class="captain-badge ${value ? 'yes' : 'no'}">${value ? t('common.yes', 'Так') : t('common.no', 'Ні')}</span>`);
 WKD.troopRoleClass = roleClass;
 WKD.troopRoleLabel = roleLabel;

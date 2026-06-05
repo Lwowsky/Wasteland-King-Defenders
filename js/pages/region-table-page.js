@@ -15,7 +15,7 @@ import {
   getRegionActorName,
   listRegionAlliances,
   listRegionCatalog
-} from '../services/region-db.js?v=47';
+} from '../services/region-db.js?v=49';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -65,10 +65,7 @@ function allianceHue(tag) {
 }
 function allianceBadge(tag) {
   const safe = normTag(tag) || '—';
-  if (window.WKD?.renderPlayerManagerAllianceBadge) {
-    return window.WKD.renderPlayerManagerAllianceBadge(safe, allianceHue(safe));
-  }
-  return `<span class="alliance-badge" style="--ally-hue:${allianceHue(safe)}"><span class="badge-dot"></span><span>${esc(safe)}</span></span>`;
+  return (window.WKD?.Badges?.alliance || window.WKD?.allianceBadge || ((tag) => `<span class="alliance-badge"><span class="badge-dot"></span><span>${esc(tag || '—')}</span></span>`))(safe, { hue: allianceHue(safe), region: currentRegion });
 }
 
 function roleNameForBadge(type = '') {
@@ -280,19 +277,13 @@ function troopClass(type = '') {
 }
 
 function tierBadge(tier = '') {
-  if (window.WKD?.tierBadge) return window.WKD.tierBadge(tier);
-  const safe = esc(tier || '—');
-  const number = Number(String(tier || '').replace(/[^0-9]/g, '')) || 0;
-  return `<span class="tier-badge tier-badge--t${number || 'unknown'}" data-tier-level="${number}"><span class="badge-dot"></span><span>${safe}</span></span>`;
+  return (window.WKD?.Badges?.tier || window.WKD?.tierBadge || (value => esc(value || '—')))(tier);
 }
 function captainBadge(value) {
-  if (window.WKD?.captainBadge) return window.WKD.captainBadge(Boolean(value));
-  return `<span class="captain-badge ${value ? 'yes' : 'no'}">${value ? esc(t('common.yes', 'Yes')) : esc(t('common.no', 'No'))}</span>`;
+  return (window.WKD?.Badges?.captain || window.WKD?.captainBadge || (flag => `<span class="captain-badge ${flag ? 'yes' : 'no'}">${flag ? esc(t('common.yes', 'Yes')) : esc(t('common.no', 'No'))}</span>`))(Boolean(value));
 }
 function shiftBadge(shift = '') {
-  const safe = esc(shiftLabel(shift, currentSettings) || shift || '—');
-  const cls = esc(String(shift || '').trim().toLowerCase() || 'shift');
-  return `<span class="shift-badge ${cls}">${safe}</span>`;
+  return (window.WKD?.Badges?.shift || window.WKD?.shiftBadge || ((value, label) => `<span class="shift-badge">${esc(label || value || '—')}</span>`))(shift, shiftLabel(shift, currentSettings) || shift || '—');
 }
 
 function sortValue(row = {}, field = '') {
@@ -353,7 +344,7 @@ function rowHtml(row) {
   return `<tr>
     <td data-label="${labels.nickname}"><button class="region-request-link" type="button" data-region-request-id="${esc(rowId)}" aria-label="${esc(tv('region.openRequestDetails', 'Open request for {name}', { name: nickname }))}">${esc(nickname)}</button></td>
     <td data-label="${labels.alliance}">${allianceBadge(row.alliance)}</td>
-    <td data-label="${labels.troop}"><span class="tag ${troopClass(row.troopType)}">${esc(troopLabel(row.troopType, currentSettings) || row.troopLabel || '—')}</span></td>
+    <td data-label="${labels.troop}">${(window.WKD?.Badges?.troop || window.WKD?.troopBadge || ((type,label)=>`<span class="tag ${troopClass(type)}">${esc(label || '—')}</span>`))(row.troopType, troopLabel(row.troopType, currentSettings) || row.troopLabel || '—')}</td>
     <td data-label="${labels.tier}">${tierBadge(row.tier)}</td>
     <td data-label="${labels.march}">${formatNumber(row.marchSize)}</td>
     <td data-label="${labels.rally}">${formatNumber(row.rallySize)}</td>

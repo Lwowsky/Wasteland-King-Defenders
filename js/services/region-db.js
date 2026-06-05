@@ -285,7 +285,10 @@ export function normalizeRegion(region) {
 
 export function readRegionFromUrl() {
   const params = new URLSearchParams(window.location.search);
-  return normalizeRegion(params.get('region') || params.get('r') || '');
+  const fromQuery = normalizeRegion(params.get('region') || params.get('r') || '');
+  if (fromQuery) return fromQuery;
+  const match = String(window.location.pathname || '').match(/^\/f\/(\d{1,8})\//);
+  return normalizeRegion(match?.[1] || '');
 }
 
 export function canManageRegion(profile = {}, region = '', actor = null) {
@@ -803,6 +806,125 @@ export async function getRegionSettings(region) {
   return mergeRegionSettings(withRegionRootFallback(regionData));
 }
 
+function actionLabel(action = '') {
+  const labels = {
+    registration_started: 'Запустив реєстрацію',
+    registration_closed: 'Закрив реєстрацію',
+    registration_settings_saved: 'Зберіг форму регіону',
+    registration_submitted: 'Подав заявку',
+    tower_plan_saved: 'Зберіг розподіл турелей',
+    final_plan_shared: 'Створив посилання фінального плану',
+    alliance_saved: 'Змінив альянс регіону',
+    alliance_deleted: 'Видалив альянс регіону'
+  };
+  return labels[action] || action || 'Дія';
+}
+function regionActionVisibleTo(profile = {}, region = '', actor = null, entry = {}) {
+  const safeRegion = normalizeRegion(region);
+  const role = roleForRegion(profile || {}, safeRegion, actor);
+  if (['admin', 'moderator', 'consul'].includes(role)) return true;
+  if (role !== 'officer') return false;
+  const ownAlliance = actorAllianceForRegion(profile || {}, safeRegion);
+  return Boolean(ownAlliance && normalizeAllianceTag(entry.alliance || entry.actorAlliance || entry.details?.alliance) === ownAlliance);
+}
+async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
+  try {
+    const safeRegion = normalizeRegion(region);
+    if (!user?.uid || !safeRegion) return null;
+    const { db, firestoreMod } = firebase || await getFirebaseParts();
+    const game = gameForRegion(profile || {}, safeRegion) || bestRegionGame(profile || {});
+    const actorName = getRegionActorName(profile || {}, safeRegion, user) || user.uid;
+    const actorAlliance = normalizeAllianceTag(game?.alliance || '');
+    const payload = {
+      region: safeRegion,
+      action: trim(action),
+      actionLabel: actionLabel(action),
+      actorUid: user.uid,
+      actorName,
+      actorAlliance,
+      actorRole: roleForRegion(profile || {}, safeRegion, user),
+      alliance: normalizeAllianceTag(details.alliance || actorAlliance),
+      targetName: trim(details.targetName || ''),
+      targetUid: trim(details.targetUid || ''),
+      summary: trim(details.summary || ''),
+      details: Object.fromEntries(Object.entries(details || {}).filter(([, value]) => value !== undefined && value !== null).map(([key, value]) => [key, typeof value === 'object' ? JSON.stringify(value).slice(0, 400) : trim(value).slice(0, 400)])),
+      createdAt: firestoreMod.serverTimestamp(),
+      createdAtMs: Date.now()
+    };
+    await firestoreMod.addDoc(firestoreMod.collection(db, 'regions', safeRegion, 'actionLogs'), payload);
+    return payload;
+  } catch (error) {
+    console.warn('[WKD] action log skipped:', error);
+    return null;
+  }
+}
+export async function listRegionActionLogs(user, regionOverride = '', { limitCount = 120 } = {}) {
+  if (!user) throw new Error('auth-required');
+  const { db, firestoreMod } = await getFirebaseParts();
+  const { profile, region } = await getMyRegionContext(user, regionOverride);
+  if (!canViewRegion(profile || {}, region, user)) throw new Error('region-access-denied');
+  const ref = firestoreMod.collection(db, 'regions', region, 'actionLogs');
+  const role = roleForRegion(profile || {}, region, user);
+  const ownAlliance = actorAllianceForRegion(profile || {}, region);
+  const limitValue = Math.max(20, Math.min(300, Number(limitCount) || 120));
+  let q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(limitValue));
+  if (role === 'officer' && ownAlliance) {
+    q = firestoreMod.query(ref, firestoreMod.where('alliance', '==', ownAlliance), firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(limitValue));
+  }
+  const snap = await firestoreMod.getDocs(q).catch(async () => {
+    if (role === 'officer' && ownAlliance) return firestoreMod.getDocs(firestoreMod.query(ref, firestoreMod.where('alliance', '==', ownAlliance)));
+    return firestoreMod.getDocs(ref);
+  });
+  const rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    .filter(row => regionActionVisibleTo(profile || {}, region, user, row))
+    .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
+  return { profile, region, rows };
+}
+export async function getSecurityOverview(user) {
+  if (!user) throw new Error('auth-required');
+  const { db, firestoreMod } = await getFirebaseParts();
+  const profile = await getUserProfile(user.uid);
+  if (!canViewAnyRegion(profile || {}, user)) throw new Error('security-access-denied');
+  const regionsSnap = await firestoreMod.getDocs(firestoreMod.collection(db, 'regions')).catch(() => ({ docs: [] }));
+  let regions = 0, openForms = 0, oldEmailFields = 0, publicPlanLinks = 0;
+  regionsSnap.docs.forEach(doc => {
+    regions += 1;
+    const data = doc.data() || {};
+    const form = data.registrationForm || {};
+    if (form.enabled) openForms += 1;
+    if (data.openedByEmail || data.updatedByEmail || data.registrationOpenedByEmail || form.openedByEmail || form.updatedByEmail) oldEmailFields += 1;
+  });
+  const sharesSnap = await firestoreMod.getDocs(firestoreMod.collection(db, 'finalPlanShares')).catch(() => ({ docs: [] }));
+  publicPlanLinks = sharesSnap.docs.length;
+  return { profile, regions, openForms, oldEmailFields, publicPlanLinks };
+}
+
+
+export async function cleanupOldEmailFields(user) {
+  if (!user) throw new Error('auth-required');
+  const { db, firestoreMod } = await getFirebaseParts();
+  const profile = await getUserProfile(user.uid);
+  if (!canViewAnyRegion(profile || {}, user)) throw new Error('security-access-denied');
+  const regionsSnap = await firestoreMod.getDocs(firestoreMod.collection(db, 'regions')).catch(() => ({ docs: [] }));
+  let cleaned = 0;
+  for (const docSnap of regionsSnap.docs) {
+    const data = docSnap.data() || {};
+    const form = data.registrationForm || {};
+    if (!(data.openedByEmail || data.updatedByEmail || data.registrationOpenedByEmail || form.openedByEmail || form.updatedByEmail)) continue;
+    await firestoreMod.updateDoc(docSnap.ref, {
+      openedByEmail: firestoreMod.deleteField(),
+      updatedByEmail: firestoreMod.deleteField(),
+      registrationOpenedByEmail: firestoreMod.deleteField(),
+      'registrationForm.openedByEmail': firestoreMod.deleteField(),
+      'registrationForm.updatedByEmail': firestoreMod.deleteField(),
+      'registrationForm.startedByEmail': firestoreMod.deleteField(),
+      'registrationForm.closedByEmail': firestoreMod.deleteField()
+    }).catch(() => null);
+    cleaned += 1;
+  }
+  return { cleaned };
+}
+
 async function saveRegionShareLink({ db, firestoreMod }, user, region, settings, forceNew = false) {
   const safeRegion = normalizeRegion(region);
   const privateRef = firestoreMod.doc(db, 'regions', safeRegion, 'privateSettings', 'shortLink');
@@ -894,6 +1016,7 @@ export async function shareRegionFinalPlan(user, region, payload = {}) {
   const code = await saveRegionFinalPlanShareLink(firebase, user, safeRegion, settings, false);
   const cleanHtml = trim(payload.html).slice(0, 700000);
   const cleanText = trim(payload.text).slice(0, 50000);
+  await writeRegionActionLog(firebase, user, profile, safeRegion, 'final_plan_shared', { summary: 'Створено секретне посилання фінального плану', shift: trim(payload.shift || '') });
   await firestoreMod.setDoc(firestoreMod.doc(db, 'finalPlanShares', code), {
     code,
     region: safeRegion,
@@ -1154,6 +1277,7 @@ export async function saveRegionSettings(user, region, settings) {
   }
 
   await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), regionPatch, { merge: true });
+  await writeRegionActionLog({ db, firestoreMod }, user, profile, safeRegion, forceCloseNow ? 'registration_closed' : (forceOpenNow || openNewCycle ? 'registration_started' : 'registration_settings_saved'), { summary: clean.enabled ? 'Форма відкрита' : 'Форма закрита', alliance: clean.hostAlliance || '' });
 
   if (openNewCycle) {
     await firestoreMod.setDoc(
@@ -1267,6 +1391,7 @@ export async function saveRegionAlliance(user, region, values = {}) {
   }
   if (!old.exists()) clean.createdAt = now;
   await firestoreMod.setDoc(ref, clean, { merge: true });
+  await writeRegionActionLog({ db, firestoreMod }, user, profile, safeRegion, 'alliance_saved', { alliance: tag, summary: clean.name || tag });
   return { id: tag, ...clean };
 }
 
@@ -1279,6 +1404,7 @@ export async function deleteRegionAlliance(user, region, allianceId) {
   if (!tag) throw new Error('alliance-tag-required');
   if (!canManageAllianceColors(profile, safeRegion, tag, user)) throw new Error('region-access-denied');
   await firestoreMod.deleteDoc(firestoreMod.doc(db, 'regions', safeRegion, 'alliances', tag));
+  await writeRegionActionLog({ db, firestoreMod }, user, profile, safeRegion, 'alliance_deleted', { alliance: tag, summary: tag });
 }
 
 function numberValue(value) {
@@ -1442,6 +1568,7 @@ export async function saveWastelandRegistration(user, values, regionOverride = '
     await firestoreMod.addDoc(collectionRef, payload);
   }
 
+  await writeRegionActionLog({ db, firestoreMod }, user || { uid: 'guest' }, profile || {}, region, 'registration_submitted', { summary: data.nickname || 'Заявка', alliance: data.alliance, targetName: data.nickname });
   return data;
 }
 
@@ -1835,6 +1962,7 @@ export async function saveRegionTowerPlan(user, region, plan = {}) {
     lastTowerPlanUpdateAt: firestoreMod.serverTimestamp(),
     lastTowerPlanUpdateBy: user.uid
   }, { merge: true }).catch(() => null);
+  await writeRegionActionLog({ db, firestoreMod }, user, profile, safeRegion, 'tower_plan_saved', { summary: 'Оновлено регіональний розподіл турелей' });
   return { region: safeRegion, plan: cleanPlan };
 }
 

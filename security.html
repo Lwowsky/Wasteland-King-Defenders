@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="google" content="notranslate" />
-  <title data-i18n="region.formPageTitle">Реєстрація на пустош — Wasteland King Defenders</title>
+  <title data-i18n="security.title">Безпека — Wasteland King Defenders</title>
   <link rel="icon" href="favicon.png" type="image/png" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/base.css" />
@@ -13,15 +13,7 @@
   <link rel="stylesheet" href="css/profile-page.css" />
   <link rel="stylesheet" href="css/admin-page.css" />
   <link rel="stylesheet" href="css/region-page.css" />
-  <link rel="stylesheet" href="css/modal-import.css" />
-  <link rel="stylesheet" href="css/modal-regions.css" />
-  <link rel="stylesheet" href="css/modal-tiers.css" />
   <link rel="stylesheet" href="css/confirm-modal.css" />
-  <link rel="stylesheet" href="css/player-edit-modal.css" />
-  <link rel="stylesheet" href="css/player-manager-modal.css" />
-  <link rel="stylesheet" href="css/tower-planner.css" />
-  <link rel="stylesheet" href="css/tower-planner-tablet.css" />
-  <link rel="stylesheet" href="css/tower-planner-mobile.css" />
   <link rel="stylesheet" href="css/contact-modal.css" />
   <link rel="stylesheet" href="css/responsive.css" />
   <script defer src="js/i18n.js"></script>
@@ -40,42 +32,25 @@
   <script defer src="js/badges.js?v=49"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script defer src="js/core/state.js"></script>
-  <script defer src="js/import-modal.js"></script>
-  <script defer src="js/import-regions.js"></script>
-  <script defer src="js/import-file.js"></script>
-  <script defer src="js/import-mapping.js"></script>
-  <script defer src="js/import-shift-recognition.js"></script>
-  <script defer src="js/visible-tiers.js"></script>
-  <script defer src="js/players-table.js"></script>
   <script defer src="js/confirm-modal.js"></script>
-  <script defer src="js/player-edit-modal.js"></script>
-  <script defer src="js/player-manager-modal.js"></script>
-  <script defer src="js/tower-planner.js?v=49"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/player-manager-region-bridge.js?v=49"></script>
   <script type="module" src="js/auth-google.js"></script>
-  <script type="module" src="js/pages/region-form-page.js?v=49"></script>
+  <script type="module" src="js/pages/security-page.js?v=49"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
-
   <main class="profile-page container">
-    <section class="profile-card region-card">
-      <div data-include="partials/region-form-panel.html"></div>
+    <section class="profile-card region-card security-page">
+      <div class="profile-head"><div><h2 data-i18n="security.title">Безпека</h2></div></div>
+      <div class="auth-status" id="securityStatus" data-i18n="security.loading">Перевіряю безпеку...</div>
+      <div class="security-grid" id="securityGrid"></div>
+      <div class="region-note security-note" id="securityAdvice"></div>
+      <div class="region-actions" id="securityActions" hidden><button class="btn region-save" id="cleanupEmailFieldsBtn" type="button" data-i18n="security.cleanupEmails">Очистити старі email-поля</button></div>
     </section>
   </main>
-
   <div class="container"><div data-include="partials/footer.html"></div></div>
-  <div data-include="partials/import-modal.html"></div>
-  <div data-include="partials/contact-modal.html"></div>
   <div data-include="partials/confirm-modal.html"></div>
-  <div data-include="partials/player-edit-modal.html"></div>
-  <div data-include="partials/player-manager-modal.html"></div>
-  <div data-include="partials/tower-planner-modal.html"></div>
-  <div data-include="partials/final-plan-modal.html"></div>
+  <div data-include="partials/contact-modal.html"></div>
 </body>
 </html>

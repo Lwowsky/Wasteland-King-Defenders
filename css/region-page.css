@@ -275,3 +275,55 @@
 .region-table-controls{display:flex;align-items:end;gap:10px;flex-wrap:nowrap}.region-table-controls .region-control--nick{flex:0 0 160px}.region-table-controls .region-control--ally{flex:0 0 96px}.region-table-controls .region-control--region{flex:0 0 112px}.region-table-controls .region-control--troop{flex:0 0 140px}.region-table-controls .region-control--tier{flex:0 0 96px}.region-table-controls .region-control--shift{flex:0 0 130px}.region-open-btn{flex:0 0 auto;min-width:max-content;padding-left:18px;padding-right:18px}.region-public-table .sort-btn{display:inline-grid;place-items:center;width:24px;height:24px;margin-left:5px;border:0;border-radius:8px;background:#3d5eaf;color:#fff;font-weight:900;cursor:pointer;vertical-align:middle;line-height:1}.region-public-table .sort-btn.is-desc{transform:rotate(180deg)}
 @media(max-width:1180px){.region-table-controls{flex-wrap:wrap}.region-table-controls .region-control,.region-open-btn{flex:1 1 150px}.region-timer-card--public{grid-template-columns:1fr 1fr}.region-form-shortlink>span{flex:1 1 100%}}
 @media(max-width:720px){.region-timer-card--public{grid-template-columns:1fr}.region-form-shortlink input,.region-form-shortlink .btn{width:100%;flex:1 1 100%}}
+
+/* v48: compact public registration time cards, action log, security */
+.region-form-shell .region-timer-card--public,
+.region-table-card .region-timer-card--compact{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(150px,1fr));
+  gap:10px;
+  align-items:stretch;
+}
+.region-form-shell .region-timer-card--public b,
+.region-form-shell .region-timer-card--public span,
+.region-form-shell .region-timer-card--public small,
+.region-timer-card--compact b,
+.region-timer-card--compact span,
+.region-timer-card--compact small{
+  display:grid!important;
+  align-content:start!important;
+  min-height:76px;
+  padding:12px 14px!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:16px!important;
+  background:rgba(3,10,23,.55)!important;
+  line-height:1.35;
+}
+.security-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}
+.security-card{display:grid;gap:8px;padding:16px;border:1px solid rgba(122,148,230,.18);border-radius:20px;background:linear-gradient(180deg,rgba(19,31,59,.72),rgba(9,17,33,.92))}
+.security-card span{color:#aebce7;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}.security-card b{font-size:34px;color:#fff}.security-card small{color:#c7d2f4;line-height:1.4}.security-card.is-good{border-color:rgba(88,214,141,.3)}.security-card.is-warn{border-color:rgba(255,194,86,.35);box-shadow:0 0 24px rgba(255,194,86,.08)}.security-note{padding:16px;border-radius:18px;background:rgba(7,16,35,.72);border:1px solid rgba(255,255,255,.08)}
+@media(max-width:1100px){.region-form-shell .region-timer-card--public,.region-table-card .region-timer-card--compact{grid-template-columns:1fr 1fr}.security-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.region-form-shell .region-timer-card--public,.region-table-card .region-timer-card--compact,.security-grid{grid-template-columns:1fr}}
+
+/* v49: one-row cycle cards in region settings and cleaner public final plan */
+.region-timer-card--settings{
+  display:grid!important;
+  grid-template-columns:repeat(6,minmax(140px,1fr))!important;
+  gap:10px!important;
+  align-items:stretch!important;
+}
+.region-timer-card--settings b,
+.region-timer-card--settings span,
+.region-timer-card--settings small{
+  display:grid!important;
+  align-content:start!important;
+  min-height:70px!important;
+  padding:12px 14px!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:16px!important;
+  background:rgba(3,10,23,.55)!important;
+  line-height:1.35!important;
+}
+.public-plan-page .public-plan-wrap{overflow:auto}.public-plan-page .wkd-final-share-stack{display:grid;gap:20px}.public-plan-page .board-sheet{margin-inline:auto}.final-plan-head .muted:empty{display:none}
+@media(max-width:1280px){.region-timer-card--settings{grid-template-columns:repeat(3,minmax(160px,1fr))!important}}
+@media(max-width:760px){.region-timer-card--settings{grid-template-columns:1fr!important}}

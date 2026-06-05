@@ -30,6 +30,10 @@ function setUserShell(user, profile = null) {
   const drawerStatsNav = $('#drawerStatsNavBtn');
   const adminBtn = $('#adminBtn');
   const drawerAdminBtn = $('#drawerAdminBtn');
+  const actionLogBtn = $('#actionLogBtn');
+  const drawerActionLogBtn = $('#drawerActionLogBtn');
+  const securityBtn = $('#securityBtn');
+  const drawerSecurityBtn = $('#drawerSecurityBtn');
   const regionFormBtn = $('#regionFormBtn');
   const regionTableBtn = $('#regionTableBtn');
   const regionSettingsBtn = $('#regionSettingsBtn');
@@ -53,6 +57,10 @@ function setUserShell(user, profile = null) {
   if (drawerRegionFormBtn) drawerRegionFormBtn.hidden = !profileReady;
   if (drawerRegionTableBtn) drawerRegionTableBtn.hidden = !regionTablePageAllowed;
   if (drawerRegionSettingsBtn) drawerRegionSettingsBtn.hidden = !regionManager;
+  if (actionLogBtn) actionLogBtn.hidden = !regionManager && !admin;
+  if (drawerActionLogBtn) drawerActionLogBtn.hidden = !regionManager && !admin;
+  if (securityBtn) securityBtn.hidden = !admin;
+  if (drawerSecurityBtn) drawerSecurityBtn.hidden = !admin;
   if (adminBtn) adminBtn.hidden = !admin;
   if (drawerAdminBtn) drawerAdminBtn.hidden = !admin;
 }
@@ -71,6 +79,14 @@ function openStatsPage() {
 
 function openAdminPage() {
   window.location.href = 'admin.html';
+}
+
+function openActionLogPage() {
+  window.location.href = 'action-log.html';
+}
+
+function openSecurityPage() {
+  window.location.href = 'security.html';
 }
 
 function openRegionFormPage() {
@@ -109,6 +125,10 @@ async function initAuthGoogle() {
   $('#drawerRegionTableBtn')?.addEventListener('click', openRegionTablePage);
   $('#regionSettingsBtn')?.addEventListener('click', openRegionSettingsPage);
   $('#drawerRegionSettingsBtn')?.addEventListener('click', openRegionSettingsPage);
+  $('#actionLogBtn')?.addEventListener('click', openActionLogPage);
+  $('#drawerActionLogBtn')?.addEventListener('click', openActionLogPage);
+  $('#securityBtn')?.addEventListener('click', openSecurityPage);
+  $('#drawerSecurityBtn')?.addEventListener('click', openSecurityPage);
   $('#adminBtn')?.addEventListener('click', openAdminPage);
   $('#drawerAdminBtn')?.addEventListener('click', openAdminPage);
 

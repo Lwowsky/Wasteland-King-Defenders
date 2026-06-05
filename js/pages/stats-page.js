@@ -1,6 +1,6 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
 import { ensureCurrentUserPublished, formatUserDate, listPublicPlayers, roleLabel } from '../services/user-db.js';
-import { troopLabel } from '../services/region-db.js?v=47';
+import { troopLabel } from '../services/region-db.js?v=49';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -44,22 +44,14 @@ function allianceHue(region, alliance) {
   const custom = allianceColorCache.get(key);
   return Number.isFinite(custom) ? custom : ((hashHue(`${region}:${alliance}`) % 360) + 360) % 360;
 }
-function allianceBadge(region, alliance) {
-  const tag = normTag(alliance) || '—';
-  const hue = allianceHue(region, tag);
-  return `<span class="alliance-badge" style="--ally-hue:${hue}"><span class="badge-dot"></span><span>${escapeHtml(tag)}</span></span>`;
-}
+function allianceBadge(region, alliance) { const tag = normTag(alliance) || '—'; const hue = allianceHue(region, tag); return window.WKD?.Badges?.alliance ? window.WKD.Badges.alliance(tag, { hue, region }) : `<span class="alliance-badge"><span>${escapeHtml(tag)}</span></span>`; }
 
 function rankCode(value) {
   const raw = String(value || 'P1').trim().toUpperCase();
   const match = raw.match(/P\s*([1-5])/i);
   return match ? `P${match[1]}` : 'P1';
 }
-function rankBadge(value, { profile = false } = {}) {
-  const code = rankCode(value);
-  const small = profile ? `<small>${escapeHtml(t('account.rank', 'Rank'))}</small>` : '';
-  return `<span class="rank-badge stats-rank-badge rank-${code.toLowerCase()}" title="${escapeHtml(t('account.rank', 'Rank'))} ${escapeHtml(code)}"><span class="stats-badge-dot"></span><b>${escapeHtml(code)}</b>${small}</span>`;
-}
+function rankBadge(value, { profile = false } = {}) { return window.WKD?.Badges?.rank ? window.WKD.Badges.rank(value) : `<span class="rank-badge">${escapeHtml(rankCode(value))}</span>`; }
 function shkNumber(value) {
   const match = String(value ?? '').match(/\d+/);
   return match ? Number(match[0]) : 0;
@@ -82,14 +74,8 @@ function shkTier(value) {
   if (n <= 43) return 13;
   return 14;
 }
-function shkBadge(value, { profile = false } = {}) {
-  const n = shkNumber(value);
-  if (!n) return `<span class="shk-badge stats-shk-badge shk-tier-0">—</span>`;
-  const tier = shkTier(n);
-  const small = profile ? `<small>${escapeHtml(t('account.shk', 'HQ'))} ${escapeHtml(n)}</small>` : '';
-  const label = profile ? `T${tier}` : String(n);
-  return `<span class="shk-badge stats-shk-badge shk-tier-${tier}" title="T${tier} · ${escapeHtml(t('account.shk', 'HQ'))} ${escapeHtml(n)}"><span class="stats-badge-dot"></span><b>${escapeHtml(label)}</b>${small}</span>`;
-}
+function shkBadge(value, { profile = false } = {}) { return window.WKD?.Badges?.shk ? window.WKD.Badges.shk(value) : `<span class="shk-badge">${escapeHtml(value || '—')}</span>`; }
+
 function extraInfoItemsHtml(wasteland = null) {
   if (!wasteland) return '';
   return `${textLine(t('stats.lairLevel', 'Lair level'), wasteland.lairLevel)}

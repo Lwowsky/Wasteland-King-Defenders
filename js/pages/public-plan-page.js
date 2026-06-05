@@ -1,11 +1,12 @@
-import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=47';
+import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=49';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 
 function codeFromUrl() {
   const params = new URLSearchParams(window.location.search);
-  return params.get('s') || params.get('code') || '';
+  const pathMatch = String(window.location.pathname || '').match(/^\/plan\/([A-Za-z0-9_-]{6,160})\/?$/);
+  return params.get('s') || params.get('code') || pathMatch?.[1] || '';
 }
 function setStatus(text, type = 'muted') {
   const box = $('#publicPlanStatus');
@@ -17,16 +18,20 @@ function setStatus(text, type = 'muted') {
 function sanitizeFinalHtml(html = '') {
   const template = document.createElement('template');
   template.innerHTML = String(html || '').trim();
-  const sheet = template.content.querySelector('.board-sheet');
-  if (!sheet) return '';
-  sheet.querySelectorAll('script,iframe,object,embed,link,style').forEach(node => node.remove());
-  sheet.querySelectorAll('*').forEach(node => {
-    [...node.attributes].forEach(attr => {
-      if (/^on/i.test(attr.name) || attr.name === 'srcdoc') node.removeAttribute(attr.name);
-      if ((attr.name === 'href' || attr.name === 'src') && /^javascript:/i.test(attr.value)) node.removeAttribute(attr.name);
+  const sheets = [...template.content.querySelectorAll('.board-sheet')];
+  if (!sheets.length) return '';
+  const cleanSheets = sheets.slice(0, 6).map(sheet => {
+    const copy = sheet.cloneNode(true);
+    copy.querySelectorAll('script,iframe,object,embed,link,style').forEach(node => node.remove());
+    copy.querySelectorAll('*').forEach(node => {
+      [...node.attributes].forEach(attr => {
+        if (/^on/i.test(attr.name) || attr.name === 'srcdoc') node.removeAttribute(attr.name);
+        if ((attr.name === 'href' || attr.name === 'src') && /^javascript:/i.test(attr.value)) node.removeAttribute(attr.name);
+      });
     });
+    return copy.outerHTML;
   });
-  return sheet.outerHTML;
+  return `<div class="wkd-final-share-stack">${cleanSheets.join('')}</div>`;
 }
 async function init() {
   const code = codeFromUrl();

@@ -1885,30 +1885,113 @@ window.WKD = window.WKD || {};
     try { await navigator.clipboard.writeText(text); WKD.showNotice?.('Фінальний план скопійовано в TXT.'); }
     catch { window.prompt('Скопіюй TXT:', text); }
   }
+  function finalShareShifts() {
+    const shifts = txtShiftsToExport();
+    return (shifts.length ? shifts : [activeFinalShift]).filter(Boolean).slice(0, 6);
+  }
+  function renderFinalShareSheets(shifts = finalShareShifts()) {
+    const originalShift = activeFinalShift;
+    const temp = document.createElement('div');
+    temp.className = 'wkd-final-share-render';
+    temp.style.position = 'fixed';
+    temp.style.left = '-10000px';
+    temp.style.top = '0';
+    temp.style.width = '1800px';
+    temp.style.pointerEvents = 'none';
+    document.body.appendChild(temp);
+    const sheets = [];
+    try {
+      shifts.forEach(shift => {
+        activeFinalShift = shift;
+        renderFinalBoard(temp);
+        const sheet = temp.querySelector('.board-sheet');
+        if (sheet) sheets.push({ shift, html: sheet.outerHTML, node: sheet.cloneNode(true) });
+      });
+    } finally {
+      activeFinalShift = originalShift;
+      temp.remove();
+      renderFinals();
+    }
+    return sheets;
+  }
+  async function finalSharePngFiles(sheets = []) {
+    if (!sheets.length || typeof window.html2canvas !== 'function') return [];
+    const files = [];
+    const wrap = document.createElement('div');
+    wrap.style.position = 'fixed';
+    wrap.style.left = '-10000px';
+    wrap.style.top = '0';
+    wrap.style.width = '1800px';
+    wrap.style.pointerEvents = 'none';
+    document.body.appendChild(wrap);
+    try {
+      for (const item of sheets) {
+        wrap.innerHTML = '';
+        wrap.appendChild(item.node.cloneNode(true));
+        const sheet = wrap.querySelector('.board-sheet');
+        if (!sheet) continue;
+        try {
+          const pngBlob = await renderSheetToPngBlob(sheet, { scale: 4 });
+          files.push(new File([pngBlob], `wasteland-final-plan-${item.shift}.png`, { type: 'image/png' }));
+        } catch (error) {
+          console.warn('[WKD] share png skipped:', item.shift, error);
+        }
+      }
+    } finally {
+      wrap.remove();
+    }
+    return files;
+  }
   async function shareFinalText() {
     const text = currentTxt({ allShifts: true });
     const info = sourceInfo();
-    const sheet = document.querySelector('.final-plan-modal.is-open .board-sheet') || document.querySelector('#towerPlannerModal.is-open [data-tower-panel="final"].is-active .board-sheet') || document.querySelector('#finalPlanOnlyBoard .board-sheet') || document.querySelector('#towerFinalBoard .board-sheet');
-    if (info.mode === 'region' && typeof WKD.shareRegionFinalPlan === 'function' && sheet) {
+    const sheets = renderFinalShareSheets(finalShareShifts());
+    const html = `<div class="wkd-final-share-stack">${sheets.map(item => item.html).join('')}</div>`;
+    let shareUrl = '';
+    if (info.mode === 'region' && typeof WKD.shareRegionFinalPlan === 'function' && sheets.length) {
       try {
-        const result = await WKD.shareRegionFinalPlan({ html: sheet.outerHTML, text, title: 'Wasteland final plan', shift: activeFinalShift });
-        const shareText = `${result.url}`;
-        try { await navigator.clipboard.writeText(shareText); } catch (_error) {}
-        WKD.actionDoneDialog?.({
-          title: window.WKD_t?.('finalPlan.shareLinkReadyTitle') || 'Посилання готове',
-          message: window.WKD_t?.('finalPlan.shareLinkReadyMessage') || 'Секретне посилання на фінальний план скопійовано. Його можуть відкрити гравці без входу.',
-          href: result.url,
-          confirmText: window.WKD_t?.('finalPlan.openSharedPlan') || 'Відкрити план',
-          cancelText: window.WKD_t?.('common.continue') || 'Продовжити'
-        });
-        return;
+        const result = await WKD.shareRegionFinalPlan({ html, text, title: 'Wasteland final plan', shift: sheets.map(item => item.shift).join(',') });
+        shareUrl = result.url || '';
       } catch (error) {
         console.error(error);
         WKD.showNotice?.(window.WKD_t?.('finalPlan.shareLinkFailed') || 'Не вдалося створити секретне посилання.');
       }
     }
-    if (navigator.share) await navigator.share({ title: 'Wasteland final plan', text }).catch(() => null);
-    else copyFinalText();
+
+    const title = 'Wasteland final plan';
+    const files = await finalSharePngFiles(sheets);
+    try { files.push(new File([text], 'wasteland-final-plan.txt', { type: 'text/plain' })); } catch (_error) {}
+
+    const sharePayload = { title, text: shareUrl ? `${shareUrl}\n\n${text}` : text };
+    if (shareUrl) sharePayload.url = shareUrl;
+    if (files.length && navigator.canShare?.({ files })) sharePayload.files = files;
+
+    if (navigator.share) {
+      try {
+        await navigator.share(sharePayload);
+        if (shareUrl) { try { await navigator.clipboard.writeText(shareUrl); } catch (_error) {} }
+        return;
+      } catch (_error) {}
+    }
+
+    if (shareUrl) {
+      try { await navigator.clipboard.writeText(shareUrl); } catch (_error) {}
+      WKD.actionDoneDialog?.({
+        title: window.WKD_t?.('finalPlan.shareLinkReadyTitle') || 'Посилання готове',
+        message: window.WKD_t?.('finalPlan.shareLinkReadyMessage') || 'Секретне посилання на фінальний план скопійовано. Його можуть відкрити гравці без входу.',
+        href: shareUrl,
+        acceptText: window.WKD_t?.('finalPlan.openSharedPlan') || 'Відкрити план',
+        cancelText: window.WKD_t?.('common.continue') || 'Продовжити'
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      WKD.showNotice?.(window.WKD_t?.('finalPlan.txtCopied') || 'Фінальний план скопійовано в TXT.');
+    } catch {
+      window.prompt('Скопіюй TXT:', text);
+    }
   }
   function cycleFinalLang() {
     openFinalLangDialog();

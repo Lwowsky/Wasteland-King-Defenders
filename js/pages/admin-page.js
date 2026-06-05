@@ -21,7 +21,7 @@ import {
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=47';
+} from '../services/region-db.js?v=49';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -62,10 +62,7 @@ function setSummary(text) {
   if (box) box.textContent = text;
 }
 
-function getRoleBadge(role) {
-  const normalized = role || 'player';
-  return `<span class="role-badge role-${escapeHtml(normalized)}">${escapeHtml(roleLabel(normalized))}</span>`;
-}
+function getRoleBadge(role) { return window.WKD?.Badges?.role ? window.WKD.Badges.role(role || 'player') : `<span class="role-badge role-${escapeHtml(role || 'player')}">${escapeHtml(roleLabel(role || 'player'))}</span>`; }
 
 function rankCode(value) {
   const raw = String(value || 'P1').trim().toUpperCase();
@@ -73,10 +70,7 @@ function rankCode(value) {
   return match ? `P${match[1]}` : 'P1';
 }
 
-function getRankBadge(rank) {
-  const code = rankCode(rank);
-  return `<span class="rank-badge rank-${code.toLowerCase()}" title="${escapeHtml(t('account.rank', 'Rank'))} ${escapeHtml(code)}"><span class="admin-badge-dot"></span><b>${escapeHtml(code)}</b></span>`;
-}
+function getRankBadge(rank) { return window.WKD?.Badges?.rank ? window.WKD.Badges.rank(rank) : `<span class="rank-badge">${escapeHtml(rankCode(rank))}</span>`; }
 
 function getRegionBadge(region) {
   return `<span class="region-badge">${escapeHtml(region || '—')}</span>`;
@@ -106,12 +100,7 @@ function shkTier(value) {
   return 14;
 }
 
-function getShkBadge(shk) {
-  const n = shkNumber(shk);
-  if (!n) return `<span class="shk-badge shk-tier-0">—</span>`;
-  const tier = shkTier(n);
-  return `<span class="shk-badge shk-tier-${tier}" title="T${tier} · ${escapeHtml(t('account.shk', 'HQ'))} ${escapeHtml(n)}"><span class="admin-badge-dot"></span><b>${escapeHtml(n)}</b></span>`;
-}
+function getShkBadge(shk) { return window.WKD?.Badges?.shk ? window.WKD.Badges.shk(shk) : `<span class="shk-badge">${escapeHtml(shk || '—')}</span>`; }
 
 function roleOptionsFor(currentRole = 'player') {
   const allowed = assignableRolesForActor(currentUser, currentProfile);

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="uk" translate="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wasteland King Defenders</title>
+  <script>
+    (function () {
+      var path = window.location.pathname || '';
+      var form = path.match(/^\/f\/(\d{1,8})\/([A-Za-z0-9_-]{6,120})\/?$/);
+      if (form) {
+        window.location.replace('/region-form.html?r=' + encodeURIComponent(form[1]) + '&s=' + encodeURIComponent(form[2]));
+        return;
+      }
+      var plan = path.match(/^\/plan\/([A-Za-z0-9_-]{6,160})\/?$/);
+      if (plan) {
+        window.location.replace('/public-plan.html?s=' + encodeURIComponent(plan[1]));
+        return;
+      }
+      window.location.replace('/index.html');
+    })();
+  </script>
+</head>
+<body></body>
+</html>

@@ -37,6 +37,7 @@
   <script defer src="js/i18n-ar.js"></script>
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
+  <script defer src="js/badges.js?v=49"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -52,12 +53,12 @@
   <script defer src="js/confirm-modal.js"></script>
   <script defer src="js/player-edit-modal.js"></script>
   <script defer src="js/player-manager-modal.js"></script>
-  <script defer src="js/tower-planner.js?v=47"></script>
+  <script defer src="js/tower-planner.js?v=49"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/player-manager-region-bridge.js?v=47"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=49"></script>
   <script type="module" src="js/auth-google.js"></script>
-  <script type="module" src="js/pages/region-settings-page.js?v=47"></script>
+  <script type="module" src="js/pages/region-settings-page.js?v=49"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -136,7 +137,7 @@
               <label><small data-i18n="regionSettings.autoOpenDay">День відкриття</small><select id="settingsAutoOpenDay"><option value="1" data-i18n="weekday.monday">Понеділок</option><option value="2" data-i18n="weekday.tuesday">Вівторок</option><option value="3" data-i18n="weekday.wednesday">Середа</option><option value="4" data-i18n="weekday.thursday">Четвер</option><option value="5" data-i18n="weekday.friday">П’ятниця</option><option value="6" data-i18n="weekday.saturday">Субота</option><option value="0" data-i18n="weekday.sunday">Неділя</option></select></label>
               <label><small data-i18n="regionSettings.autoOpenTime">Час відкриття UTC</small><input id="settingsAutoOpenTime" type="time" value="00:00" /></label>
             </div>
-            <div class="region-timer-card">
+            <div class="region-timer-card region-timer-card--compact region-timer-card--settings">
               <b id="settingsOpenPreview">Відкриття: —</b>
               <b id="settingsClosePreview">Закриття: —</b>
               <span id="settingsTimerPreview">Таймер: —</span>
