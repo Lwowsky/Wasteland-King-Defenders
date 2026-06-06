@@ -1315,7 +1315,9 @@ window.WKD = window.WKD || {};
     }));
   }
   async function renderSheetToPngBlob(sheet, options = {}) {
-    if (!sheet || typeof window.html2canvas !== 'function') throw new Error('html2canvas_unavailable');
+    if (!sheet) throw new Error('html2canvas_unavailable');
+    if (typeof window.html2canvas !== 'function' && typeof WKD.ensureHtml2Canvas === 'function') await WKD.ensureHtml2Canvas();
+    if (typeof window.html2canvas !== 'function') throw new Error('html2canvas_unavailable');
     const exportScale = Math.max(4, Math.min(5, Number(options.scale || preferredPngScale()) || 5));
     const cleanup = [];
     try {
@@ -1393,6 +1395,13 @@ window.WKD = window.WKD || {};
   async function downloadFinalPng() {
     const sheet = document.querySelector('.final-plan-modal.is-open .board-sheet') || document.querySelector('#towerPlannerModal.is-open [data-tower-panel="final"].is-active .board-sheet') || document.querySelector('#finalPlanOnlyBoard .board-sheet') || document.querySelector('#towerFinalBoard .board-sheet');
     if (!sheet) return;
+    try {
+      if (typeof window.html2canvas !== 'function' && typeof WKD.ensureHtml2Canvas === 'function') await WKD.ensureHtml2Canvas();
+    } catch (error) {
+      console.error(error);
+      WKD.showNotice?.('Не вдалося завантажити бібліотеку для PNG. Перевір інтернет і спробуй ще раз.');
+      return;
+    }
     if (typeof window.html2canvas !== 'function') {
       WKD.showNotice?.('Не вдалося завантажити PNG: бібліотека html2canvas ще не завантажилась. Онови сторінку і спробуй ще раз.');
       return;
@@ -1916,7 +1925,14 @@ window.WKD = window.WKD || {};
     return sheets;
   }
   async function finalSharePngFiles(sheets = []) {
-    if (!sheets.length || typeof window.html2canvas !== 'function') return [];
+    if (!sheets.length) return [];
+    try {
+      if (typeof window.html2canvas !== 'function' && typeof WKD.ensureHtml2Canvas === 'function') await WKD.ensureHtml2Canvas();
+    } catch (error) {
+      console.warn('[WKD] html2canvas lazy load failed:', error);
+      return [];
+    }
+    if (typeof window.html2canvas !== 'function') return [];
     const files = [];
     const wrap = document.createElement('div');
     wrap.style.position = 'fixed';

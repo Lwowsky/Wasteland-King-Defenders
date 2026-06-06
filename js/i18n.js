@@ -45,16 +45,23 @@ window.WKD_tv = (key, vars = {}, fallback = '') => {
 window.WKD_I18N_TEXT_NODE_KEYS = window.WKD_I18N_TEXT_NODE_KEYS || new WeakMap();
 window.WKD_applyI18n = (root = document) => {
   const scope = root || document;
-  scope.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = window.WKD_t(el.dataset.i18n); });
-  scope.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.setAttribute('placeholder', window.WKD_t(el.dataset.i18nPlaceholder)); });
-  scope.querySelectorAll('[data-i18n-title]').forEach(el => { el.setAttribute('title', window.WKD_t(el.dataset.i18nTitle)); });
-  scope.querySelectorAll('[data-i18n-aria-label]').forEach(el => { el.setAttribute('aria-label', window.WKD_t(el.dataset.i18nAriaLabel)); });
+  const queryWithRoot = selector => {
+    if (scope === document || scope === document.documentElement) return [...document.querySelectorAll(selector)];
+    const out = [];
+    if (scope.matches?.(selector)) out.push(scope);
+    scope.querySelectorAll?.(selector)?.forEach(el => out.push(el));
+    return out;
+  };
+  queryWithRoot('[data-i18n]').forEach(el => { el.textContent = window.WKD_t(el.dataset.i18n); });
+  queryWithRoot('[data-i18n-placeholder]').forEach(el => { el.setAttribute('placeholder', window.WKD_t(el.dataset.i18nPlaceholder)); });
+  queryWithRoot('[data-i18n-title]').forEach(el => { el.setAttribute('title', window.WKD_t(el.dataset.i18nTitle)); });
+  queryWithRoot('[data-i18n-aria-label]').forEach(el => { el.setAttribute('aria-label', window.WKD_t(el.dataset.i18nAriaLabel)); });
 
   const autoText = window.WKD_I18N_AUTO_TEXT || {};
   const autoAttr = window.WKD_I18N_AUTO_ATTR || {};
   const nodeKeys = window.WKD_I18N_TEXT_NODE_KEYS;
   const rootNode = scope === document ? document.documentElement : scope;
-  const skipSelector = 'script,style,noscript,.lang-menu,.drawer-lang-menu,.lang-name,.lang-code,.board-sheet,#towerStatusBody,#publicPlayersBody,#registeredPlayersBody,#regionRegistrationsBody,#playersTableBody,[data-no-auto-i18n]';
+  const skipSelector = 'script,style,noscript,.lang-menu,.drawer-lang-menu,.lang-name,.lang-code,.board-sheet,.wkd-final-share-stack,#publicPlanBoard,#publicRegionTableBody,#towerStatusBody,#publicPlayersBody,#registeredPlayersBody,#regionRegistrationsBody,#playersTableBody,[data-no-auto-i18n]';
   if (rootNode && Object.keys(autoText).length && document.createTreeWalker) {
     const walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
@@ -99,16 +106,35 @@ window.WKD_startI18nObserver = () => {
   if (window.WKD_I18N_OBSERVER_STARTED || !window.MutationObserver || !document.body) return;
   window.WKD_I18N_OBSERVER_STARTED = true;
   let scheduled = false;
+  const pendingRoots = new Set();
+  const heavySelector = '.board-sheet,.wkd-final-share-stack,#publicPlanBoard,#publicRegionTableBody,#towerStatusBody,#publicPlayersBody,#registeredPlayersBody,#regionRegistrationsBody,#playersTableBody,[data-no-auto-i18n]';
+  const shouldSkip = node => {
+    if (!node) return true;
+    const el = node.nodeType === 1 ? node : node.parentElement;
+    return !el || Boolean(el.matches?.(heavySelector) || el.closest?.(heavySelector));
+  };
+  const addRoot = node => {
+    if (!node || shouldSkip(node)) return;
+    const root = node.nodeType === 1 ? node : node.parentElement;
+    if (root && root !== document.body && root !== document.documentElement) pendingRoots.add(root);
+  };
   const schedule = () => {
     if (scheduled) return;
     scheduled = true;
     requestAnimationFrame(() => {
       scheduled = false;
-      window.WKD_applyI18n?.();
+      const roots = [...pendingRoots];
+      pendingRoots.clear();
+      roots.slice(0, 40).forEach(root => window.WKD_applyI18n?.(root));
     });
   };
   const observer = new MutationObserver(mutations => {
-    if (mutations.some(item => item.type === 'childList' && (item.addedNodes.length || item.removedNodes.length))) schedule();
+    let hasAdded = false;
+    mutations.forEach(item => {
+      if (item.type !== 'childList' || !item.addedNodes.length) return;
+      item.addedNodes.forEach(node => { addRoot(node); hasAdded = true; });
+    });
+    if (hasAdded && pendingRoots.size) schedule();
   });
   observer.observe(document.body, { childList: true, subtree: true });
 };

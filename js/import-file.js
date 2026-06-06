@@ -216,6 +216,7 @@ WKD.clearPendingImport = () => {
 async function readFile(file) {
   const name = file.name.toLowerCase();
   if (name.endsWith('.csv') || name.endsWith('.txt')) return parseCsvText(await file.text());
+  if (!window.XLSX && typeof WKD.ensureXlsx === 'function') await WKD.ensureXlsx();
   if (!window.XLSX) throw new Error('SheetJS not loaded');
   const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];

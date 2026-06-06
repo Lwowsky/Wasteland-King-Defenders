@@ -97,7 +97,7 @@ function allActorGames(profile = {}) {
   return [{ ...main, role: normalizeRole(profile?.role || 'player'), farmId: 'main' }, ...getUserFarms(profile || {})];
 }
 function isRegionalManagerProfile(profile = {}) {
-  return allActorGames(profile).some(game => ['consul', 'officer'].includes(normalizeRole(game.role || 'player')) || rankNum(game.rank) === 5);
+  return allActorGames(profile).some(game => ['consul', 'officer'].includes(normalizeRole(game.role || 'player')));
 }
 function bestActorGameForTarget(actorProfile = {}, target = {}) {
   const region = gameRegion(target);
@@ -155,14 +155,13 @@ export function isModeratorUser(user, profile = null) {
 }
 
 export function canUseAdminPanel(user, profile = null) {
-  return isOwnerUser(user, profile) || profile?.role === 'admin' || profile?.role === 'moderator' || isRegionalManagerProfile(profile || {});
+  return isOwnerUser(user, profile) || profile?.role === 'admin' || profile?.role === 'moderator';
 }
 
 export function assignableRolesForActor(user, profile = null) {
   if (isOwnerUser(user, profile)) return ['admin', 'moderator', 'consul', 'officer', 'player'];
   if (profile?.role === 'admin') return ['moderator', 'consul', 'officer', 'player'];
   if (profile?.role === 'moderator') return ['consul', 'officer', 'player'];
-  if (isRegionalManagerProfile(profile || {})) return ['officer', 'player'];
   return [];
 }
 
@@ -185,20 +184,25 @@ export async function createUserNotification(uid, values = {}) {
   if (!userId) return null;
   const firebase = await getFirebase();
   if (!firebase) return null;
-  const { db, firestoreMod } = firebase;
+  const { db, auth, firestoreMod } = firebase;
+  const authUser = auth?.currentUser || null;
   const nowMs = Date.now();
   const id = `${nowMs}-${Math.random().toString(36).slice(2, 8)}`;
+  const actorUid = normalizeText(values.actorUid || authUser?.uid || '');
+  const actorName = normalizeText(values.actorName || authUser?.displayName || authUser?.email || '');
+  const actorPhotoURL = normalizeText(values.actorPhotoURL || authUser?.photoURL || '').slice(0, 300);
+  const actorRole = normalizeRole(values.actorRole || 'player');
   const payload = {
     type: normalizeText(values.type || 'notice').slice(0, 80),
     title: normalizeText(values.title || serviceT('notifications.title', 'Сповіщення')).slice(0, 160),
     message: normalizeText(values.message || values.summary || '').slice(0, 500),
     region: normalizeText(values.region || '').replace(/[^0-9]/g, ''),
     alliance: normalizeAllianceTag(values.alliance || ''),
-    actorUid: normalizeText(values.actorUid || ''),
-    actorName: normalizeText(values.actorName || ''),
-    actorRole: normalizeRole(values.actorRole || 'player'),
-    actorRoleText: normalizeText(values.actorRoleText || roleLabel(values.actorRole || 'player')).slice(0, 80),
-    actorPhotoURL: normalizeText(values.actorPhotoURL || '').slice(0, 300),
+    actorUid,
+    actorName,
+    actorRole,
+    actorRoleText: normalizeText(values.actorRoleText || roleLabel(actorRole)).slice(0, 80),
+    actorPhotoURL,
     createdAt: firestoreMod.serverTimestamp(),
     createdAtMs: nowMs,
     unread: true

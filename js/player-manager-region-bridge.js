@@ -1,6 +1,7 @@
+import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=73';
 import { getFirebase, watchAuth } from './services/firebase-service.js';
 import { getGameProfile, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=54';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=73';
 
 window.WKD = window.WKD || {};
 
@@ -267,9 +268,9 @@ async function shareRegionFinalPlan(payload = {}) {
   const region = currentRegion || regionOf();
   if (!canPlanRegion(region)) throw new Error('region-plan-access-denied');
   const result = await shareRegionFinalPlanDb(currentUser, region, payload);
-  const url = new URL('p.html', window.location.origin);
-  url.hash = result.code || '';
-  return { ...result, url: url.toString() };
+  const url = makePublicShareUrl('./public-plan.html', result.code || '');
+  rememberShareCode('finalPlan', result.code || '', { region });
+  return { ...result, url };
 }
 
 async function setTowerPlannerSource(options = {}) {

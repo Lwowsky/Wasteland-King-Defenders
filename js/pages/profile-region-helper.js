@@ -7,7 +7,7 @@ import {
   saveFarmWastelandProfile,
   saveSignedInUser
 } from '../services/user-db.js';
-import { getRegionSettings } from '../services/region-db.js?v=54';
+import { getRegionSettings } from '../services/region-db.js?v=73';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -231,6 +231,7 @@ function toggleExtraFields() {
 
 function prepareProfileForm() {
   $('#regionCountdownBox') && ($('#regionCountdownBox').hidden = true);
+  $('#wrRegionSelectWrap') && ($('#wrRegionSelectWrap').hidden = true);
   $('#regionFormState') && ($('#regionFormState').textContent = t('profile.savingToProfile', 'Saving to profile'));
   $('#regionFormState')?.classList.add('region-pill--open');
   $('#regionFormTitleText') && ($('#regionFormTitleText').textContent = t('profile.regionFormDataTitle', 'Region form data'));

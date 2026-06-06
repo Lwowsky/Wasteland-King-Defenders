@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
+  if (document.documentElement.dataset.wkdAppReady === '1') return;
+  document.documentElement.dataset.wkdAppReady = '1';
   const safeInit = (name, fn) => {
     try {
       if (typeof fn === 'function') fn();

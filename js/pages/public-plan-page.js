@@ -1,4 +1,5 @@
-import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=54';
+import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=73';
+import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=73';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -8,17 +9,14 @@ let currentCode = '';
 let ready = false;
 
 function codeFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const pathMatch = String(window.location.pathname || '').match(/^\/plan\/([A-Za-z0-9_-]{6,160})\/?$/);
-  const hashCode = String(window.location.hash || '').replace(/^#/, '').trim();
-  return params.get('s') || params.get('code') || hashCode || pathMatch?.[1] || '';
+  return readShareCode('finalPlan', {
+    blockedPathNames: ['p', 'public-plan'],
+    pathRegex: /\/plan\/([A-Za-z0-9_-]{6,120})\/?$/
+  });
 }
 function publicLink() {
   const code = currentCode || codeFromUrl();
-  if (!code) return window.location.href;
-  const url = new URL('p.html', window.location.origin);
-  url.hash = code;
-  return url.toString();
+  return code ? makePublicShareUrl('./public-plan.html', code) : window.location.href;
 }
 function setStatus(text, type = 'muted') {
   const box = $('#publicPlanStatus');
@@ -47,7 +45,7 @@ function sanitizeFinalHtml(html = '') {
     });
     return copy.outerHTML;
   });
-  return `<div class="wkd-final-share-stack">${cleanSheets.join('')}</div>`;
+  return `<div class="wkd-final-share-stack" data-no-auto-i18n="1">${cleanSheets.join('')}</div>`;
 }
 function downloadBlob(name, blob) {
   const url = URL.createObjectURL(blob);
@@ -67,6 +65,7 @@ function downloadTxt() {
   notify(t('finalPlan.txtDownloaded', 'TXT завантажено.'));
 }
 async function sheetToPngBlob(sheet) {
+  if (typeof window.html2canvas !== 'function' && typeof window.WKD?.ensureHtml2Canvas === 'function') await window.WKD.ensureHtml2Canvas();
   if (typeof window.html2canvas !== 'function') throw new Error('html2canvas-missing');
   const canvas = await window.html2canvas(sheet, { backgroundColor: '#eef2f8', scale: 3, useCORS: true });
   return await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
@@ -121,6 +120,7 @@ async function init() {
   bindActions();
   const code = codeFromUrl();
   currentCode = code;
+  keepShareCodeInUrl('finalPlan', code);
   if (!code) {
     setStatus(t('finalPlan.sharedMissing', 'Секретне посилання неправильне або неповне.'), 'error');
     return;
@@ -131,7 +131,13 @@ async function init() {
     $('#publicPlanRegion') && ($('#publicPlanRegion').textContent = data.region ? `R${data.region}` : 'R—');
     const html = sanitizeFinalHtml(data.html || '');
     if (!html) throw new Error('empty-plan');
-    $('#publicPlanBoard').innerHTML = html;
+    const board = $('#publicPlanBoard');
+    if (board) {
+      board.setAttribute('data-no-auto-i18n', '1');
+      board.innerHTML = '';
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      board.innerHTML = html;
+    }
     $('#publicPlanActions') && ($('#publicPlanActions').hidden = false);
     setStatus(t('finalPlan.sharedReady', 'Фінальний план відкрито за секретним посиланням.'), 'success');
   } catch (error) {

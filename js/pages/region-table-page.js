@@ -1,3 +1,4 @@
+import { makePublicShareUrl, rememberShareCode } from '../core/share-links.js?v=73';
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, saveSignedInUser } from '../services/user-db.js';
 import {
@@ -16,7 +17,7 @@ import {
   listRegionAlliances,
   listRegionCatalog,
   shareRegionTable
-} from '../services/region-db.js?v=54';
+} from '../services/region-db.js?v=73';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -498,9 +499,9 @@ async function shareRegionTableLink() {
   if (!currentUser || !currentRegion) return;
   try {
     const result = await shareRegionTable(currentUser, currentRegion);
-    const link = new URL('rt.html', window.location.origin);
-    link.hash = result.code;
-    await navigator.clipboard.writeText(link.toString());
+    const link = makePublicShareUrl('./public-region-table.html', result.code || '');
+    rememberShareCode('regionTable', result.code || '', { region: result.region || currentRegion || '' });
+    await navigator.clipboard.writeText(link);
     setStatus(t('region.tableLinkCopied', 'Секретне посилання таблиці скопійовано.'), 'success');
     window.WKD?.showNotice?.(t('region.tableLinkCopied', 'Секретне посилання таблиці скопійовано.'));
   } catch (error) {

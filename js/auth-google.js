@@ -1,7 +1,9 @@
 import { isFirebaseConfigured, getFirebase, watchAuth } from './services/firebase-service.js';
-import { canUseAdminPanel, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js';
+import { canUseAdminPanel, getUserProfile, isProfileComplete } from './services/user-db.js';
+import { canOpenRegionTools } from './services/region-db.js';
 
 const $ = selector => document.querySelector(selector);
+const shellT = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : fallback;
 
 let authReady = false;
 let currentUser = null;
@@ -12,11 +14,12 @@ function setUserShell(user, profile = null) {
   currentProfile = profile;
   const signedIn = Boolean(user);
   const gameNick = profile?.gameProfile?.nickname || profile?.gameNick;
-  const name = gameNick || user?.displayName || user?.email || 'Акаунт';
+  const accountLabel = shellT('header.account', 'Акаунт');
+  const guestLabel = shellT('role.guest', 'Гість');
+  const name = gameNick || user?.displayName || user?.email || accountLabel;
   const admin = signedIn && canUseAdminPanel(user, profile);
-  const role = normalizeUserRole(profile?.role || 'player');
   const profileReady = signedIn && isProfileComplete(profile);
-  const regionManager = profileReady && ['admin', 'moderator', 'consul', 'officer'].includes(role);
+  const regionManager = profileReady && canOpenRegionTools(profile || {});
   const regionTablePageAllowed = profileReady;
   const drawer = $('#drawer');
   const userText = $('#authUserText');
@@ -40,12 +43,12 @@ function setUserShell(user, profile = null) {
   const drawerRegionSettingsBtn = $('#drawerRegionSettingsBtn');
 
   if (drawer) drawer.classList.toggle('is-guest', !signedIn);
-  if (userText) userText.textContent = signedIn ? name : 'Акаунт';
-  if (drawerAccountLabel) drawerAccountLabel.textContent = signedIn ? name : 'Гість';
+  if (userText) userText.textContent = signedIn ? name : accountLabel;
+  if (drawerAccountLabel) drawerAccountLabel.textContent = signedIn ? name : guestLabel;
   if (login) login.hidden = signedIn;
   if (drawerLogin) drawerLogin.hidden = signedIn;
   if (drawerLogout) drawerLogout.hidden = !signedIn;
-  if (drawerStatsNav) drawerStatsNav.hidden = !signedIn;
+  if (drawerStatsNav) drawerStatsNav.hidden = false;
   if (logout) logout.hidden = !signedIn;
   if (profileBtn) profileBtn.hidden = !signedIn;
   if (drawerProfileBtn) drawerProfileBtn.hidden = !signedIn;
@@ -139,3 +142,8 @@ async function initAuthGoogle() {
 
 document.addEventListener('wkd:partials-ready', initAuthGoogle);
 document.addEventListener('DOMContentLoaded', () => setTimeout(initAuthGoogle, 0));
+
+
+document.addEventListener('wkd:language-changed', () => {
+  setUserShell(currentUser, currentProfile);
+});

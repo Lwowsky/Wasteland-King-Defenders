@@ -190,7 +190,6 @@
 
 /* Compact alliance color labels and readable alliance counts. */
 .player-manager-color-item{display:grid;place-items:center;gap:5px;text-align:center}.player-manager-color-state{display:block;color:#aebce7;font-size:10px;font-weight:850;line-height:1.15;white-space:nowrap}.player-manager-color-item.has-manual-color .player-manager-color-state{color:#baffd9}.player-manager-alliance-meta{font-size:13px;line-height:1.25}.player-manager-alliance-count,.player-manager-alliance-status{font-size:13px;font-weight:950}.player-manager-alliance-row input{max-width:88px;min-width:72px}.player-manager-alliance-row{grid-template-columns:minmax(0,1fr) minmax(72px,88px) auto}.player-manager-color-picked .player-manager-alliance-badge{align-self:center;justify-self:center}.player-manager-color-picked{align-items:center;justify-content:center}
-@media (max-width:920px){.player-manager-alliance-row{grid-template-columns:minmax(0,1fr) minmax(72px,88px) auto}}
 @media (max-width:760px){.player-manager-alliance-row{grid-template-columns:1fr}.player-manager-alliance-row input{max-width:none;width:100%}}
 
 

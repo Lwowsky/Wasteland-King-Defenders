@@ -1,10 +1,7 @@
 .stats-card .profile-head{align-items:start}
 .stats-table td:first-child strong{font-size:16px}
-.stats-toolbar{grid-template-columns:minmax(130px,1fr) minmax(105px,.7fr) minmax(95px,.55fr) 150px 110px max-content;gap:10px;align-items:end}
 .stats-toolbar .btn{min-height:46px;padding:0 18px;white-space:nowrap}
-@media (max-width:1120px){.stats-toolbar{grid-template-columns:repeat(3,minmax(120px,1fr)) 150px 110px}.stats-toolbar .btn{width:100%}}
-@media (max-width:760px){.stats-toolbar{grid-template-columns:1fr 1fr}.stats-card{border-radius:24px}}
-@media (max-width:560px){.stats-toolbar{grid-template-columns:1fr}}
+@media (max-width:760px){.stats-card{border-radius:24px}}
 
 .farm-count-badge{
   display:inline-flex;
@@ -66,7 +63,7 @@
 @media(max-width:620px){.stats-status-line .admin-summary{max-width:none}}
 
 /* v9: table can show account main/farm rows. */
-.stats-toolbar{grid-template-columns:minmax(130px,1fr) minmax(105px,.7fr) minmax(95px,.55fr) 150px 110px minmax(155px,.65fr) max-content}
+.stats-toolbar{grid-template-columns:minmax(130px,1fr) minmax(105px,.7fr) minmax(95px,.55fr) 150px 110px minmax(155px,.65fr) max-content;gap:10px;align-items:end}
 .stats-toggle-label{align-self:end}.stats-toggle-box{display:flex!important;align-items:center;gap:10px;min-height:46px;padding:0 14px;border:1px solid #243250;border-radius:15px;background:#07101f;color:#fff;font-weight:900}.stats-toggle-box input{width:18px;height:18px;accent-color:#7c7bff}.stats-toggle-box b{font-size:13px;color:#eaf0ff;white-space:nowrap}
 .stats-account-badge{display:inline-flex;align-items:center;max-width:220px;min-height:34px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.14);font-weight:900;color:#dfe7ff;background:rgba(255,255,255,.06);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stats-account-badge.is-main{background:linear-gradient(135deg,rgba(38,55,95,.9),rgba(67,85,125,.85))}.stats-account-badge.is-farm{background:linear-gradient(135deg,rgba(29,95,72,.9),rgba(47,137,116,.78));color:#eafff6}.stats-table tr.is-farm-row td{background:rgba(35,165,120,.035)}.stats-player-link small{display:block;margin-top:4px;color:#88e6c1;font-size:12px;font-weight:900}.stats-farm-head{display:flex!important;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.stats-farm-title{display:grid;gap:4px;min-width:0}.stats-farm-title b{font-size:18px}.stats-farm-title span,.stats-farm-meta{color:#aeb9d3;font-weight:900;overflow-wrap:anywhere}.stats-farm-card .role-badge{min-width:104px;box-shadow:0 0 18px rgba(120,140,255,.16)}
 @media (max-width:1180px){.stats-toolbar{grid-template-columns:repeat(3,minmax(120px,1fr)) 150px 110px minmax(150px,1fr)}.stats-toolbar .btn{width:100%}}

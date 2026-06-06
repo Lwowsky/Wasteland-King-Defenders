@@ -1,4 +1,5 @@
-import { resolveRegionTableShare, troopLabel, shiftLabel } from '../services/region-db.js?v=54';
+import { resolveRegionTableShare, troopLabel, shiftLabel } from '../services/region-db.js?v=73';
+import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=73';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -6,8 +7,10 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;'
 let ready = false;
 
 function codeFromUrl() {
-  const params = new URLSearchParams(location.search);
-  return params.get('s') || params.get('code') || String(location.hash || '').replace(/^#/, '').trim();
+  return readShareCode('regionTable', {
+    blockedPathNames: ['rt', 'public-region-table'],
+    pathRegex: /\/rt\/([A-Za-z0-9_-]{6,120})\/?$/
+  });
 }
 function setStatus(text, type = 'muted') {
   const box = $('#publicRegionTableStatus');
@@ -33,12 +36,15 @@ async function init() {
   if (ready) return;
   ready = true;
   const code = codeFromUrl();
+  keepShareCodeInUrl('regionTable', code);
   if (!code) { setStatus(t('region.publicTableMissing', 'Секретне посилання неправильне або неповне.'), 'error'); return; }
   try {
     const data = await resolveRegionTableShare(code);
     $('#publicRegionTablePill') && ($('#publicRegionTablePill').textContent = data.region ? `R${data.region}` : 'R—');
     const rows = Array.isArray(data.rows) ? data.rows : [];
-    $('#publicRegionTableBody').innerHTML = rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="8">${esc(t('region.table.emptyCycle', 'У цьому активному наборі ще немає гравців або заявок.'))}</td></tr>`;
+    const body = $('#publicRegionTableBody');
+    if (body) body.setAttribute('data-no-auto-i18n', '1');
+    if (body) body.innerHTML = rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="8">${esc(t('region.table.emptyCycle', 'У цьому активному наборі ще немає гравців або заявок.'))}</td></tr>`;
     setStatus(t('region.publicTableReady', 'Таблицю регіону відкрито за секретним посиланням.'), 'success');
   } catch (error) {
     console.error(error);

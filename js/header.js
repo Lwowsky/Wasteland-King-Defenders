@@ -15,6 +15,11 @@ WKD.initHeader = () => {
   const drawerAccountBtn = $('#drawerAccountBtn');
   const drawerAccountMenu = $('#drawerAccountMenu');
   if (!drawer || !burger || !close || !backdrop || !langBtn || !langMenu) return;
+  if (document.documentElement.dataset.wkdHeaderReady === '1') {
+    renderLanguages();
+    return;
+  }
+  document.documentElement.dataset.wkdHeaderReady = '1';
 
   const closeAccountMenu = () => {
     accountMenu?.classList.remove('is-open');
@@ -102,6 +107,11 @@ WKD.initHeader = () => {
       fn(button);
       return;
     }
+    if (!isHomePage()) {
+      closeDrawer();
+      window.location.href = `index.html${hash}`;
+      return;
+    }
     document.dispatchEvent(new CustomEvent(isFinal ? 'wkd:open-final-plan' : 'wkd:open-tower-planner', { detail: { trigger: button } }));
     if (attempt < 12) {
       window.setTimeout(() => openToolWithRetry(button, type, attempt + 1), 80);
@@ -110,6 +120,13 @@ WKD.initHeader = () => {
     closeDrawer();
     showNotice(isFinal ? 'Фінальний план ще завантажується. Спробуй ще раз через секунду.' : 'Розподіл по турелях ще завантажується. Спробуй ще раз через секунду.');
   }
+
+  $$('[data-open-player-manager]').forEach(button => button.addEventListener('click', event => {
+    if (typeof WKD.openPlayerManagerModal === 'function') return;
+    event.preventDefault();
+    closeDrawer();
+    window.location.href = isHomePage() ? '#playersPanel' : 'index.html#playersPanel';
+  }));
 
   $$('[data-disabled-note]').forEach(button => button.addEventListener('click', event => {
     const note = button.dataset.disabledNote || '';

@@ -12,6 +12,11 @@ WKD.initPlayersTable = () => {
   state.players = state.players
     .map((row, index) => finalizePlayer(normalizeStoredPlayer(row), row, index))
     .filter(player => player.name);
+  if (document.documentElement.dataset.wkdPlayersTableReady === '1') {
+    WKD.renderPlayers?.();
+    return;
+  }
+  document.documentElement.dataset.wkdPlayersTableReady = '1';
 
   ['searchFilter', 'roleFilter', 'shiftFilter', 'statusFilter', 'tierFilter', 'pageSizeSelect'].forEach(id => {
     $('#' + id).addEventListener('input', () => {

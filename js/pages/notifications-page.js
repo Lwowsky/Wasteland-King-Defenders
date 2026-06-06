@@ -1,5 +1,5 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
-import { listRegionCatalog } from '../services/region-db.js?v=54';
+import { listRegionCatalog } from '../services/region-db.js?v=73';
 import {
   canUseAdminPanel,
   createUserNotification,
@@ -25,6 +25,7 @@ let currentProfile = null;
 let rows = [];
 let directory = [];
 let composeReady = false;
+let pageReady = false;
 let activeTab = 'notifications';
 let knownRegionOptions = [];
 let directReply = null;
@@ -464,6 +465,8 @@ function bindCompose() {
   });
 }
 function init() {
+  if (pageReady) return;
+  pageReady = true;
   bindCompose();
   document.addEventListener('wkd:language-changed', () => { renderCompose(); render(); });
   watchAuth(user => load(user).catch(error => { console.error(error); setStatus(t('notifications.loadFailed', 'Не вдалося завантажити сповіщення.'), 'error'); }));

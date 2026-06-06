@@ -1,4 +1,8 @@
-#contactModal{z-index:9600;padding:24px}
+#contactModal.modal{position:fixed;inset:0;z-index:9600;display:none;align-items:center;justify-content:center;box-sizing:border-box;padding:24px}
+#contactModal.modal.is-open{display:flex}
+#contactModal[aria-hidden="true"]:not(.is-open){display:none!important}
+#contactModal .modal-backdrop{position:absolute;inset:0;border:0;cursor:pointer}
+#contactModal .modal-card{position:relative;z-index:1}
 .footer-action-contact{appearance:none;text-align:left;font:inherit;cursor:pointer}
 .footer-action-contact:hover{border-color:#ffffff28;transform:translateY(-1px)}
 

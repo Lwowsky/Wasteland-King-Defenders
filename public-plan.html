@@ -31,13 +31,13 @@
   <script defer src="js/i18n-ar.js"></script>
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
-  <script defer src="js/badges.js?v=54"></script>
+  <script defer src="js/core/assets-loader.js"></script>
+  <script defer src="js/badges.js?v=73"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script type="module" src="js/pages/public-plan-page.js?v=54"></script>
+  <script type="module" src="js/pages/public-plan-page.js?v=73"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -57,7 +57,7 @@
         <button class="btn" id="publicPlanCopyLinkBtn" type="button" data-i18n="finalPlan.copyLink">Копіювати посилання</button>
         <button class="btn" id="publicPlanShareBtn" type="button" data-i18n="finalPlan.share">Поділитися</button>
       </div>
-      <div class="tower-final-board-wrap public-plan-wrap"><div id="publicPlanBoard"></div></div>
+      <div class="tower-final-board-wrap public-plan-wrap"><div id="publicPlanBoard" data-no-auto-i18n="1"></div></div>
     </section>
   </main>
   <div class="container"><div data-include="partials/footer.html"></div></div>

@@ -1,6 +1,7 @@
 window.WKD_TRANSLATIONS.vi = {
   "account.addFarm": "+ Thêm farm",
   "account.alliance": "Liên minh",
+  "account.roleApprovalRequired": "{role} — cần xác nhận",
   "account.backToSite": "Về trang",
   "account.deleteFarm": "Xóa",
   "account.farmsHelp": "Lưu người chơi chính và farm để nhanh chóng đưa dữ liệu vào đơn Wasteland.",
@@ -584,6 +585,16 @@ window.WKD_TRANSLATIONS.vi = {
   "header.logout": "Đăng xuất",
   "header.profile": "Hồ sơ",
   "header.stats": "Thống kê người chơi",
+  "account.shift": "Ca",
+  "playerManager.regionList": "Danh sách khu vực",
+  "header.subtitle": "Puzzle & Survival — Trình lập kế hoạch tháp pháo",
+  "header.homeAria": "Wasteland King Defenders — về trang chủ",
+  "header.language": "Ngôn ngữ",
+  "header.languageWithIcon": "🌐 Ngôn ngữ",
+  "header.menu": "Menu",
+  "header.openMenu": "Mở menu",
+  "header.closeMenu": "Đóng menu",
+  "header.turretDistribution": "Phân bổ tháp pháo",
   "import.optional": "Cột bổ sung",
   "import.required": "Cột bắt buộc",
   "import.reset": "Đặt lại dữ liệu",
@@ -1740,4 +1751,7 @@ window.WKD_TRANSLATIONS.vi = {
   'messages.replyTo': 'Trả lời cho',
   'messages.unknownSender': 'Người gửi không xác định',
   'common.homePage': 'Về trang chính',
+  'region.chooseRegion': 'Khu vực biểu mẫu',
+  'region.regionChanged': 'Đã đổi khu vực sang R{region}.',
+
 };

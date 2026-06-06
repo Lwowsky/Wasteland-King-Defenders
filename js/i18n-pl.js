@@ -1,6 +1,7 @@
 window.WKD_TRANSLATIONS.pl = {
   "account.addFarm": "+ Dodaj farmę",
   "account.alliance": "Sojusz",
+  "account.roleApprovalRequired": "{role} — wymagane potwierdzenie",
   "account.backToSite": "Na stronę",
   "account.deleteFarm": "Usuń",
   "account.farmsHelp": "Zapisz głównego gracza i farmy, aby szybko przenieść dane do zgłoszenia Pustkowia.",
@@ -584,6 +585,16 @@ window.WKD_TRANSLATIONS.pl = {
   "header.logout": "Wyloguj",
   "header.profile": "Profil",
   "header.stats": "Statystyki graczy",
+  "account.shift": "Zmiana",
+  "playerManager.regionList": "Lista regionu",
+  "header.subtitle": "Puzzle & Survival — Planer wieżyczek",
+  "header.homeAria": "Wasteland King Defenders — strona główna",
+  "header.language": "Język",
+  "header.languageWithIcon": "🌐 Język",
+  "header.menu": "Menu",
+  "header.openMenu": "Otwórz menu",
+  "header.closeMenu": "Zamknij menu",
+  "header.turretDistribution": "Przydział do wieżyczek",
   "import.optional": "Dodatkowe kolumny",
   "import.required": "Wymagane kolumny",
   "import.reset": "Reset danych",
@@ -1740,4 +1751,7 @@ window.WKD_TRANSLATIONS.pl = {
   'messages.replyTo': 'Odpowiedź dla',
   'messages.unknownSender': 'Nieznany nadawca',
   'common.homePage': 'Na główną',
+  'region.chooseRegion': 'Region formularza',
+  'region.regionChanged': 'Region zmieniono na R{region}.',
+
 };

@@ -35,12 +35,31 @@ let currentProfile = null;
 let currentFarmId = 'main';
 let draftFarm = null;
 let accountReady = false;
+let lastStatusState = null;
 
-function setStatus(text, type = 'muted') {
+function statusTextFromState(state = {}) {
+  if (!state?.key) return '';
+  const vars = state.vars || {};
+  return Object.keys(vars).length
+    ? tv(state.key, state.fallback || state.key, vars)
+    : t(state.key, state.fallback || state.key);
+}
+
+function setStatusKey(key, fallback = '', type = 'muted', vars = {}) {
+  const state = { key, fallback, vars, type };
+  setStatus(statusTextFromState(state), type, state);
+}
+
+function setStatus(text, type = 'muted', state = null) {
   const box = $('#accountStatus');
   if (!box) return;
+  // The initial HTML uses data-i18n="profile.loading" only as a placeholder.
+  // Once the real account state is known, remove it so language refreshes do not
+  // overwrite statuses like "Profile saved" back to "Loading profile...".
+  box.removeAttribute('data-i18n');
   box.textContent = text;
   box.dataset.type = type;
+  lastStatusState = state;
 }
 
 
@@ -107,11 +126,16 @@ function selectableRoleIds(currentRole = 'player') {
   return [...new Set(['player', role, ...base, ...actorSafe, ...keepCurrent])].filter(Boolean);
 }
 
+function roleOptionText(role = 'player') {
+  const label = roleLabel(role);
+  return role === 'player' ? label : tv('account.roleApprovalRequired', '{role} — approval required', { role: label });
+}
+
 function renderRoleOptions(selectedRole = 'player') {
   const select = $('#requestedRole');
   if (!select) return;
   const options = selectableRoleIds(selectedRole);
-  select.innerHTML = options.map(role => `<option value="${role}">${roleLabel(role)}${role !== 'player' ? ' — потрібне підтвердження' : ''}</option>`).join('');
+  select.innerHTML = options.map(role => `<option value="${role}">${roleOptionText(role)}</option>`).join('');
   select.value = options.includes(selectedRole) ? selectedRole : 'player';
 }
 
@@ -335,6 +359,12 @@ function handleRoleChange() {
   }
 }
 
+function refreshAccountLocale() {
+  refreshCountryLocale();
+  if (currentProfile) fillForm(currentProfile || {});
+  if (lastStatusState) setStatusKey(lastStatusState.key, lastStatusState.fallback, lastStatusState.type, lastStatusState.vars);
+}
+
 function handleFarmChange(event) {
   currentFarmId = event.currentTarget.value || 'main';
   draftFarm = draftFarm && currentFarmId === draftFarm.farmId ? draftFarm : null;
@@ -431,7 +461,7 @@ async function initAccountPage() {
   $('#signOutBtn')?.addEventListener('click', signOut);
   $('#country')?.addEventListener('input', event => { updateCountryList(event.currentTarget.value); syncCountryInput(false); });
   $('#country')?.addEventListener('blur', () => syncCountryInput(true));
-  document.addEventListener('wkd:language-changed', refreshCountryLocale);
+  document.addEventListener('wkd:language-changed', refreshAccountLocale);
 
   await watchAuth(async user => {
     currentUser = user;
@@ -453,10 +483,13 @@ async function initAccountPage() {
         setStatus(t('account.completeMainFirst', 'Complete the main player registration first.'), 'warn');
       } else {
         const request = getActiveRoleRequest(currentProfile);
-        setStatus(request?.status === 'pending'
-          ? tv('account.requestPending', 'Role request “{role}” is waiting for approval.', { role: roleLabel(request.requestedRole) })
-          : (page === 'register' ? t('account.fillMainFirst', 'Fill in the main player data for the first registration.') : t('account.profileHelp', 'Here you can update the main player and add farms.')), 
-          request?.status === 'pending' ? 'warn' : 'muted');
+        if (request?.status === 'pending') {
+          setStatusKey('account.requestPending', 'Role request “{role}” is waiting for approval.', 'warn', { role: roleLabel(request.requestedRole) });
+        } else if (page === 'register') {
+          setStatusKey('account.fillMainFirst', 'Fill in the main player data for the first registration.', 'muted');
+        } else {
+          setStatusKey('account.profileHelp', 'Here you can update the main player and add farms.', 'muted');
+        }
       }
     } catch (error) {
       console.error(error);

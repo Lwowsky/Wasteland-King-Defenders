@@ -1,6 +1,7 @@
 window.WKD_TRANSLATIONS.ar = {
   "account.addFarm": "+ إضافة مزرعة",
   "account.alliance": "التحالف",
+  "account.roleApprovalRequired": "{role} — يتطلب تأكيدًا",
   "account.backToSite": "إلى الموقع",
   "account.deleteFarm": "حذف",
   "account.farmsHelp": "احفظ اللاعب الرئيسي والمزارع لنقل البيانات بسرعة إلى طلب Wasteland.",
@@ -584,6 +585,16 @@ window.WKD_TRANSLATIONS.ar = {
   "header.logout": "تسجيل الخروج",
   "header.profile": "الملف الشخصي",
   "header.stats": "إحصاءات اللاعبين",
+  "account.shift": "الوردية",
+  "playerManager.regionList": "قائمة المنطقة",
+  "header.subtitle": "Puzzle & Survival — مخطط الأبراج",
+  "header.homeAria": "Wasteland King Defenders — الصفحة الرئيسية",
+  "header.language": "اللغة",
+  "header.languageWithIcon": "🌐 اللغة",
+  "header.menu": "القائمة",
+  "header.openMenu": "فتح القائمة",
+  "header.closeMenu": "إغلاق القائمة",
+  "header.turretDistribution": "توزيع الأبراج",
   "import.optional": "أعمدة إضافية",
   "import.required": "الأعمدة المطلوبة",
   "import.reset": "إعادة ضبط البيانات",
@@ -1738,4 +1749,7 @@ window.WKD_TRANSLATIONS.ar = {
   'messages.replyTo': 'رد على',
   'messages.unknownSender': 'مرسل غير معروف',
   'common.homePage': 'إلى الرئيسية',
+  'region.chooseRegion': 'منطقة النموذج',
+  'region.regionChanged': 'تم تغيير المنطقة إلى R{region}.',
+
 };

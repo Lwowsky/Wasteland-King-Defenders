@@ -1,6 +1,7 @@
 window.WKD_TRANSLATIONS.de = {
   "account.addFarm": "+ Farm hinzufügen",
   "account.alliance": "Allianz",
+  "account.roleApprovalRequired": "{role} — Bestätigung erforderlich",
   "account.backToSite": "Zur Seite",
   "account.deleteFarm": "Löschen",
   "account.farmsHelp": "Speichere Hauptspieler und Farmen, damit du die Daten schnell in die Wasteland-Anmeldung übernehmen kannst.",
@@ -584,6 +585,16 @@ window.WKD_TRANSLATIONS.de = {
   "header.logout": "Abmelden",
   "header.profile": "Profil",
   "header.stats": "Spielerstatistik",
+  "account.shift": "Schicht",
+  "playerManager.regionList": "Regionsliste",
+  "header.subtitle": "Puzzle & Survival — Turmplaner",
+  "header.homeAria": "Wasteland King Defenders — Startseite",
+  "header.language": "Sprache",
+  "header.languageWithIcon": "🌐 Sprache",
+  "header.menu": "Menü",
+  "header.openMenu": "Menü öffnen",
+  "header.closeMenu": "Menü schließen",
+  "header.turretDistribution": "Turmverteilung",
   "import.optional": "Zusätzliche Spalten",
   "import.required": "Pflichtspalten",
   "import.reset": "Daten zurücksetzen",
@@ -1740,4 +1751,7 @@ window.WKD_TRANSLATIONS.de = {
   'messages.replyTo': 'Antwort an',
   'messages.unknownSender': 'Unbekannter Absender',
   'common.homePage': 'Zur Startseite',
+  'region.chooseRegion': 'Formularregion',
+  'region.regionChanged': 'Region wurde auf R{region} geändert.',
+
 };

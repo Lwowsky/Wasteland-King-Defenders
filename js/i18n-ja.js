@@ -1,6 +1,7 @@
 window.WKD_TRANSLATIONS.ja = {
   "account.addFarm": "+ ファーム追加",
   "account.alliance": "同盟",
+  "account.roleApprovalRequired": "{role} — 承認が必要",
   "account.backToSite": "サイトへ",
   "account.deleteFarm": "削除",
   "account.farmsHelp": "メインプレイヤーとファームを保存して、荒野申請にすぐ反映できます。",
@@ -584,6 +585,16 @@ window.WKD_TRANSLATIONS.ja = {
   "header.logout": "ログアウト",
   "header.profile": "プロフィール",
   "header.stats": "プレイヤー統計",
+  "account.shift": "シフト",
+  "playerManager.regionList": "地域リスト",
+  "header.subtitle": "Puzzle & Survival — タレットプランナー",
+  "header.homeAria": "Wasteland King Defenders — ホームへ",
+  "header.language": "言語",
+  "header.languageWithIcon": "🌐 言語",
+  "header.menu": "メニュー",
+  "header.openMenu": "メニューを開く",
+  "header.closeMenu": "メニューを閉じる",
+  "header.turretDistribution": "タレット配置",
   "import.optional": "追加列",
   "import.required": "必須列",
   "import.reset": "データリセット",
@@ -1740,4 +1751,7 @@ window.WKD_TRANSLATIONS.ja = {
   'messages.replyTo': '返信先',
   'messages.unknownSender': '不明な送信者',
   'common.homePage': 'ホームへ',
+  'region.chooseRegion': 'フォームの地域',
+  'region.regionChanged': '地域をR{region}に変更しました。',
+
 };

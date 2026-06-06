@@ -1,6 +1,7 @@
 window.WKD_TRANSLATIONS.zh = {
   "account.addFarm": "+ 添加小号",
   "account.alliance": "联盟",
+  "account.roleApprovalRequired": "{role} — 需要确认",
   "account.backToSite": "返回网站",
   "account.deleteFarm": "删除",
   "account.farmsHelp": "保存主玩家和农场，方便快速复制到荒野申请。",
@@ -584,6 +585,16 @@ window.WKD_TRANSLATIONS.zh = {
   "header.logout": "退出",
   "header.profile": "资料",
   "header.stats": "玩家统计",
+  "account.shift": "班次",
+  "playerManager.regionList": "区域列表",
+  "header.subtitle": "Puzzle & Survival — 炮塔规划器",
+  "header.homeAria": "Wasteland King Defenders — 返回首页",
+  "header.language": "语言",
+  "header.languageWithIcon": "🌐 语言",
+  "header.menu": "菜单",
+  "header.openMenu": "打开菜单",
+  "header.closeMenu": "关闭菜单",
+  "header.turretDistribution": "炮塔分配",
   "import.optional": "附加列",
   "import.required": "必填列",
   "import.reset": "重置数据",
@@ -1740,4 +1751,7 @@ window.WKD_TRANSLATIONS.zh = {
   'messages.replyTo': '回复给',
   'messages.unknownSender': '未知发送者',
   'common.homePage': '返回主页',
+  'region.chooseRegion': '表单区域',
+  'region.regionChanged': '区域已更改为 R{region}。',
+
 };

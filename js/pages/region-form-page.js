@@ -1,3 +1,4 @@
+import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=73';
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile, saveFarmWastelandProfile } from '../services/user-db.js';
 import {
@@ -20,10 +21,11 @@ import {
   canManageRegion,
   canViewAnyRegion,
   canViewRegion,
+  listKnownRegionIds,
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=54';
+} from '../services/region-db.js?v=73';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -63,15 +65,13 @@ function settingsDescription(settings = {}) { return translatedDefaultText(setti
 const tiers = Array.from({ length: 14 }, (_, i) => `T${14 - i}`);
 const readFarmFromUrl = () => new URLSearchParams(window.location.search).get('farm') || '';
 function readShortLinkFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const hashText = String(window.location.hash || '').replace(/^#/, '').replace(/^\?/, '');
-  const hashParts = hashText.match(/^(\d{1,8})\/([A-Za-z0-9_-]{6,120})$/);
-  if (hashParts?.[1] && !params.get('r')) { try { params.set('r', hashParts[1]); } catch {} }
-  const hashParams = new URLSearchParams(hashText);
-  const pathMatch = String(window.location.pathname || '').match(/^\/f\/\d{1,8}\/([A-Za-z0-9_-]{6,120})\/?$/);
-  const code = params.get('s') || params.get('code') || params.get('link') || hashParams.get('s') || hashParams.get('code') || hashParams.get('link') || hashParts?.[2] || pathMatch?.[1] || '';
+  const code = readShareCode('regionForm', {
+    blockedPathNames: ['f', 'region-form'],
+    pathRegex: /\/f\/\d{1,8}\/([A-Za-z0-9_-]{6,120})\/?$/
+  });
   if (code) {
     try { sessionStorage.setItem('wkd.regionForm.shortCode', code); } catch {}
+    keepShareCodeInUrl('regionForm', code);
     return code;
   }
   try { sessionStorage.removeItem('wkd.regionForm.shortCode'); } catch {}
@@ -86,10 +86,22 @@ let farmFromLink = '';
 let formSettings = null;
 let selectedFarmId = 'main';
 let regionAlliances = [];
+let regionOptions = [];
 let countdownId = null;
 let ready = false;
 
 let autoSubmitting = false;
+
+function readStoredActiveRegion() {
+  try { return String(localStorage.getItem('wkd.players.activeRegion') || '').trim().replace(/[^0-9]/g, ''); } catch { return ''; }
+}
+
+function rememberActiveRegion(region = currentRegion) {
+  const safeRegion = String(region || '').trim().replace(/[^0-9]/g, '');
+  if (!safeRegion) return;
+  try { localStorage.setItem('wkd.players.activeRegion', safeRegion); } catch {}
+}
+
 
 function storageSuffix(region = currentRegion, farmId = selectedFarmId) {
   const uid = currentUser?.uid || 'guest';
@@ -371,6 +383,48 @@ function firstFarmIdForRegion(profile = {}, region = '') {
   return getSavedFarms(profile, safeRegion).find(farm => farmRegion(farm) === safeRegion)?.farmId || '';
 }
 
+function uniqueRegionsFromProfile(profile = {}) {
+  return [...new Set(getSavedFarms(profile, '', { allRegions: true })
+    .map(farm => farmRegion(farm))
+    .filter(Boolean))]
+    .sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
+}
+
+async function buildRegionOptions(profile = currentProfile, user = currentUser) {
+  const regions = new Set(uniqueRegionsFromProfile(profile || {}));
+  if (currentRegion) regions.add(currentRegion);
+  if (regionFromLink) regions.add(regionFromLink);
+  if (readStoredActiveRegion()) regions.add(readStoredActiveRegion());
+  if (user && canViewAnyRegion(profile || {}, user)) {
+    const known = await listKnownRegionIds().catch(error => {
+      console.warn('[WKD] region form known regions skipped:', error);
+      return [];
+    });
+    known.forEach(region => { if (region) regions.add(region); });
+  }
+  return [...regions].filter(Boolean).sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
+}
+
+async function refreshRegionOptions() {
+  regionOptions = await buildRegionOptions(currentProfile || {}, currentUser);
+  if (!currentRegion && regionOptions.length) currentRegion = regionOptions[0];
+  renderRegionSelect();
+  return regionOptions;
+}
+
+function renderRegionSelect() {
+  const wrap = $('#wrRegionSelectWrap');
+  const select = $('#wrRegionSelect');
+  if (!wrap || !select) return;
+  const list = regionOptions.length ? regionOptions : (currentRegion ? [currentRegion] : []);
+  const canSeeSelector = Boolean(currentUser && list.length > 1);
+  wrap.hidden = !canSeeSelector;
+  if (!canSeeSelector) return;
+  const oldValue = select.value || currentRegion || list[0] || '';
+  select.innerHTML = list.map(region => `<option value="${esc(region)}">R${esc(region)}</option>`).join('');
+  select.value = list.includes(currentRegion) ? currentRegion : (list.includes(oldValue) ? oldValue : list[0] || '');
+}
+
 function regionPillText() {
   return currentRegion ? `R${currentRegion}` : 'R—';
 }
@@ -379,7 +433,9 @@ function buildShortPlayerLink(code = shortCodeFromLink || '', region = currentRe
   const safeRegion = String(region || '').trim();
   const safeCode = String(code || '').trim();
   if (!safeRegion || !safeCode) return '';
-  const url = new URL('f.html', window.location.origin);
+  const url = new URL('./f.html', window.location.href);
+  url.searchParams.set('r', safeRegion);
+  url.searchParams.set('s', safeCode);
   url.hash = `${safeRegion}/${safeCode}`;
   return url.toString();
 }
@@ -409,13 +465,22 @@ function renderSavedFarmTools(profile = {}) {
   if (!panel || !select) return;
   const showAllRegions = Boolean(currentUser);
   const farms = getSavedFarms(profile, currentRegion, { allRegions: showAllRegions });
-  panel.hidden = !currentUser || !farms.length;
-  if (!farms.length) return;
+  const hasRegionOptions = Boolean(currentUser && regionOptions.length > 1);
+  panel.hidden = !currentUser || (!farms.length && !hasRegionOptions);
+  select.hidden = !farms.length;
+  if (!farms.length) {
+    renderRegionSelect();
+    return;
+  }
+  const selectedFarm = getFarmById(profile, selectedFarmId);
+  const matchingFarmId = currentRegion ? firstFarmIdForRegion(profile, currentRegion) : '';
+  if (!selectedFarm) selectedFarmId = matchingFarmId || farms[0].farmId || 'main';
+  else if (matchingFarmId && farmRegion(selectedFarm) !== currentRegion) selectedFarmId = matchingFarmId;
   select.innerHTML = farms.map((farm, index) => `
     <option value="${farm.farmId || farm.id || 'main'}" ${(farm.farmId || farm.id) === selectedFarmId ? 'selected' : ''}>${farmLabel(farm, index)}</option>
   `).join('');
-  if (!getFarmById(profile, selectedFarmId)) selectedFarmId = farms[0].farmId || 'main';
   select.value = selectedFarmId;
+  renderRegionSelect();
 }
 
 function fillProfileFields(profile, farmId = selectedFarmId) {
@@ -634,6 +699,7 @@ async function handleSaveDraft() {
 
 async function prepareForm(settings) {
   formSettings = settings;
+  rememberActiveRegion(currentRegion);
   $('#regionNumberPill').textContent = regionPillText();
   $('#regionFormTitleText').textContent = settingsTitle(settings);
   $('#regionFormDescText').textContent = settingsDescription(settings);
@@ -700,14 +766,17 @@ async function loadSignedInForm(user) {
     if (farmFromLink && getFarmById(currentProfile || {}, farmFromLink)) selectedFarmId = farmFromLink;
   }
   if (!currentRegion && regionFromLink) {
-    currentRegion = regionFromLink;
+    const context = await getMyRegionContext(user, regionFromLink);
+    currentProfile = context.profile || currentProfile;
+    currentRegion = context.region;
     if (farmFromLink && getFarmById(currentProfile || {}, farmFromLink)) selectedFarmId = farmFromLink;
   }
   if (!currentRegion) {
-    const context = await getMyRegionContext(user);
+    const context = await getMyRegionContext(user, readStoredActiveRegion());
     currentProfile = context.profile;
     currentRegion = context.region;
   }
+  await refreshRegionOptions();
   if (!farmFromLink) {
     const matchFarmId = firstFarmIdForRegion(currentProfile, currentRegion);
     if (matchFarmId) selectedFarmId = matchFarmId;
@@ -743,6 +812,10 @@ async function switchSavedFarm(farmId = selectedFarmId, { copyProfile = true } =
   let isOpen = getRegionFormStatus(formSettings || {}).open;
   if (nextRegion && nextRegion !== currentRegion && currentUser) {
     currentRegion = nextRegion;
+    rememberActiveRegion(currentRegion);
+    if (!regionOptions.includes(currentRegion)) {
+      regionOptions = [...new Set([...regionOptions, currentRegion])].sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
+    }
     const settings = await getRegionSettings(currentRegion);
     isOpen = await prepareForm(settings);
     renderSavedFarmTools(currentProfile);
@@ -760,6 +833,33 @@ async function switchSavedFarm(farmId = selectedFarmId, { copyProfile = true } =
   if (saved && !canManageRegion(currentProfile, currentRegion, currentUser)) lockForm(t('region.requestAlreadySavedLocked', 'Your request is already saved. Only a consul or officer can change it.'));
   else setFormInputsDisabled(false);
   if (!saved && autoFillFromProfileEnabled()) await maybeAutoSubmitFromProfile('switch');
+  return isOpen;
+}
+
+async function switchRegion(region = currentRegion, { copyProfile = true } = {}) {
+  const nextRegion = String(region || '').trim().replace(/[^0-9]/g, '');
+  if (!nextRegion || !currentUser) return false;
+  currentRegion = nextRegion;
+  rememberActiveRegion(currentRegion);
+  if (!regionOptions.includes(currentRegion)) {
+    regionOptions = [...new Set([...regionOptions, currentRegion])].sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
+  }
+  const matchingFarmId = firstFarmIdForRegion(currentProfile || {}, currentRegion);
+  if (matchingFarmId) selectedFarmId = matchingFarmId;
+  const settings = await getRegionSettings(currentRegion);
+  const isOpen = await prepareForm(settings);
+  renderSavedFarmTools(currentProfile);
+  $('#openRegionTableBtn').hidden = !canViewRegion(currentProfile, currentRegion, currentUser);
+  syncAutoProfileCheckbox();
+  syncTimeDisplayCheckbox();
+  if (copyProfile && getFarmById(currentProfile || {}, selectedFarmId)) fillProfileFields(currentProfile, selectedFarmId);
+  const saved = await getMyWastelandRegistration(currentUser, currentRegion, selectedFarmId).catch(() => null);
+  const draft = loadDraft();
+  if (saved) fillSavedRegistration(saved);
+  else if (draft) fillSavedRegistration(draft);
+  if (saved && !canManageRegion(currentProfile, currentRegion, currentUser)) lockForm(t('region.requestAlreadySavedLocked', 'Your request is already saved. Only a consul or officer can change it.'));
+  else setFormInputsDisabled(false);
+  if (!saved && autoFillFromProfileEnabled()) await maybeAutoSubmitFromProfile('region');
   return isOpen;
 }
 
@@ -791,6 +891,7 @@ function handleLanguageChange() {
     input.checked = Boolean(extraByType[input.dataset.extraTroop]);
   });
   setFormState(formSettings);
+  renderRegionSelect();
   renderEventInfo(formSettings);
   startCountdown(formSettings);
   toggleExtraFields();
@@ -818,6 +919,17 @@ function bind() {
     setUtcAndLocalShown(Boolean(event.currentTarget.checked));
     document.dispatchEvent(new CustomEvent('wkd:time-display-changed'));
     if (formSettings) startCountdown(formSettings);
+  });
+  $('#wrRegionSelect')?.addEventListener('change', event => {
+    const nextRegion = event.currentTarget.value || currentRegion;
+    switchRegion(nextRegion, { copyProfile: autoFillFromProfileEnabled() }).then(ok => {
+      if (ok && autoFillFromProfileEnabled()) setStatus(t('region.selectedPlayerCopied', 'Selected player data copied to the form. Check troop type, tier and shift.'), 'success');
+      else if (ok) setStatus(tv('region.regionChanged', 'Region changed to R{region}.', { region: currentRegion }), 'muted');
+      else setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'warn');
+    }).catch(error => {
+      console.error(error);
+      setStatus(t('region.formOpenFailed', 'Could not open the region form. Check the link or access rights.'), 'error');
+    });
   });
   $('#wrSavedFarmSelect')?.addEventListener('change', event => {
     selectedFarmId = event.currentTarget.value || 'main';

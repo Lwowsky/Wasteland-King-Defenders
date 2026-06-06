@@ -1,6 +1,7 @@
 window.WKD_TRANSLATIONS.ru = {
   "account.addFarm": "+ Добавить ферму",
   "account.alliance": "Альянс",
+  "account.roleApprovalRequired": "{role} — требуется подтверждение",
   "account.backToSite": "На сайт",
   "account.deleteFarm": "Удалить",
   "account.farmsHelp": "Сохрани основного игрока и фермы, чтобы быстро переносить данные в заявку Пустоши.",
@@ -584,6 +585,16 @@ window.WKD_TRANSLATIONS.ru = {
   "header.logout": "Выйти",
   "header.profile": "Профиль",
   "header.stats": "Статистика игроков",
+  "account.shift": "Смена",
+  "playerManager.regionList": "Региональный список",
+  "header.subtitle": "Puzzle & Survival — Планировщик турелей",
+  "header.homeAria": "Wasteland King Defenders — на главную",
+  "header.language": "Язык",
+  "header.languageWithIcon": "🌐 Язык",
+  "header.menu": "Меню",
+  "header.openMenu": "Открыть меню",
+  "header.closeMenu": "Закрыть меню",
+  "header.turretDistribution": "Распределение по турелям",
   "import.optional": "Дополнительные колонки",
   "import.required": "Обязательные колонки",
   "import.reset": "Сброс данных",
@@ -1740,4 +1751,7 @@ window.WKD_TRANSLATIONS.ru = {
   'messages.replyTo': 'Ответ для',
   'messages.unknownSender': 'Неизвестный отправитель',
   'common.homePage': 'На главную',
+  'region.chooseRegion': 'Регион формы',
+  'region.regionChanged': 'Регион изменён на R{region}.',
+
 };

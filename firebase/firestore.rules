@@ -76,10 +76,14 @@ service cloud.firestore {
         || (
           request.resource.data.keys().hasAny(['regionRoles'])
           && (
-            (resource.data.keys().hasAny(['regionRoles']) && request.resource.data.regionRoles.keys().hasOnly(resource.data.regionRoles.keys()))
+            (resource.data.keys().hasAny(['regionRoles']) && request.resource.data.regionRoles == resource.data.regionRoles)
             || (!resource.data.keys().hasAny(['regionRoles']) && request.resource.data.regionRoles.keys().size() == 0)
           )
         );
+    }
+
+    function canReviewRoleRequests() {
+      return ownerEmail() || isAdmin() || isModerator();
     }
 
     function isAdmin() {
@@ -99,7 +103,7 @@ service cloud.firestore {
     }
 
     function canUseAdminPanel() {
-      return ownerEmail() || isAdmin() || isModerator() || currentRole() in ['consul', 'officer'] || currentRank() in ['p5', 'r5', '5'];
+      return ownerEmail() || isAdmin() || isModerator();
     }
 
     function canManageRegion(regionId) {
@@ -273,23 +277,49 @@ service cloud.firestore {
           || (currentUserDoc().data.keys().hasAny(['allianceAccess']) && (regionId + ':' + allianceTag) in currentUserDoc().data.allianceAccess));
     }
 
+    function targetHasAllianceAccess(userId, regionId, allianceTag) {
+      return exists(/databases/$(database)/documents/users/$(userId))
+        && allianceTag != ''
+        && ((userDoc(userId).data.gameProfile.region == regionId && userDoc(userId).data.gameProfile.alliance == allianceTag)
+          || (userDoc(userId).data.keys().hasAny(['allianceAccess']) && (regionId + ':' + allianceTag) in userDoc(userId).data.allianceAccess));
+    }
+
+    function canReadUser(userId) {
+      return isOwner(userId)
+        || canUseAdminPanel()
+        || (currentRegionRole(targetUserRegion(userId)) in ['consul', 'officer'] && targetHasRegionAccess(userId, targetUserRegion(userId)));
+    }
+
     function notificationCreateSafe(userId) {
       return signedIn()
         && request.resource.data.actorUid == request.auth.uid
         && request.resource.data.type is string
         && request.resource.data.title is string
         && request.resource.data.message is string
+        && request.resource.data.region is string
+        && request.resource.data.alliance is string
+        && request.resource.data.actorName is string
+        && request.resource.data.actorRole is string
+        && request.resource.data.actorRoleText is string
+        && request.resource.data.actorPhotoURL is string
+        && request.resource.data.createdAtMs is int
         && request.resource.data.unread == true
         && !request.resource.data.keys().hasAny(['email', 'toEmail'])
         && request.resource.data.keys().hasOnly(['type','title','message','region','alliance','actorUid','actorName','actorRole','actorRoleText','actorPhotoURL','createdAt','createdAtMs','unread']);
+    }
+
+    function selfNotificationCreateSafe(userId) {
+      return isOwner(userId)
+        && notificationCreateSafe(userId)
+        && request.resource.data.type in ['notice', 'profile_changed', 'farm_profile_changed', 'registration_submitted', 'role_approved', 'site_message'];
     }
 
     function canMessageTarget(userId) {
       return notificationCreateSafe(userId)
         && (
           ownerEmail() || isAdmin() || isModerator()
-          || (currentRole() in ['consul', 'officer'] && request.resource.data.region != '' && hasRegionAccess(request.resource.data.region) && targetHasRegionAccess(userId, request.resource.data.region))
-          || (request.resource.data.region != '' && request.resource.data.alliance != '' && hasRegionAccess(request.resource.data.region) && hasAllianceAccess(request.resource.data.region, request.resource.data.alliance) && targetHasRegionAccess(userId, request.resource.data.region))
+          || (currentRegionRole(request.resource.data.region) in ['consul', 'officer'] && request.resource.data.region != '' && hasRegionAccess(request.resource.data.region) && targetHasRegionAccess(userId, request.resource.data.region))
+          || (request.resource.data.region != '' && request.resource.data.alliance != '' && hasRegionAccess(request.resource.data.region) && hasAllianceAccess(request.resource.data.region, request.resource.data.alliance) && targetHasAllianceAccess(userId, request.resource.data.region, request.resource.data.alliance))
         );
     }
 
@@ -307,13 +337,13 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow create: if ownerEmail() || (isOwner(userId) && roleIsSafeOnCreate());
-      allow read: if isOwner(userId) || canUseAdminPanel();
+      allow read: if canReadUser(userId);
       allow update: if ownerEmail() || managerUpdateSafe() || ownerProfileUpdateSafe(userId) || ownerRegionRoleDowngradeSafe(userId) || (isOwner(userId) && ownerKeepsProtectedFields());
       allow delete: if ownerEmail() || isAdmin();
 
       match /notifications/{notificationId} {
         allow read, update, delete: if isOwner(userId) || ownerEmail() || isAdmin();
-        allow create: if isOwner(userId) || ownerEmail() || canUseAdminPanel() || canMessageTarget(userId);
+        allow create: if selfNotificationCreateSafe(userId) || canMessageTarget(userId);
       }
     }
 
@@ -324,9 +354,9 @@ service cloud.firestore {
     }
 
     match /roleRequests/{requestId} {
-      allow create: if ownerEmail() || ownerRoleRequestSafe(requestId) || canUseAdminPanel();
-      allow read: if ownerCanReadRoleRequest() || canUseAdminPanel();
-      allow update: if ownerEmail() || ownerRoleRequestSafe(requestId) || canUseAdminPanel();
+      allow create: if ownerEmail() || ownerRoleRequestSafe(requestId) || canReviewRoleRequests();
+      allow read: if ownerCanReadRoleRequest() || canReviewRoleRequests();
+      allow update: if ownerEmail() || ownerRoleRequestSafe(requestId) || canReviewRoleRequests();
       allow delete: if ownerEmail() || isAdmin();
     }
 

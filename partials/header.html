@@ -1,10 +1,10 @@
 <header class="app-header">
   <div class="container header-inner">
-    <a class="brand" href="index.html" aria-label="Wasteland King Defenders — на головну">
+    <a class="brand" href="index.html" aria-label="Wasteland King Defenders — на головну" data-i18n-aria-label="header.homeAria">
       <img class="brand-logo" src="img/logo.webp" width="170" height="170" alt="Wasteland King Defenders" />
       <div class="brand-text">
         <h1>Wasteland <span>King</span> Defenders</h1>
-        <p>Puzzle &amp; Survival — Планувальник турелей</p>
+        <p data-i18n="header.subtitle">Puzzle &amp; Survival — Планувальник турелей</p>
       </div>
     </a>
 
@@ -15,7 +15,7 @@
           <span aria-hidden="true">🔔</span>
           <b class="notify-count" id="notifyCount" hidden>0</b>
         </a>
-        <div class="notify-menu" id="notifyMenu" role="menu" aria-label="Сповіщення">
+        <div class="notify-menu" id="notifyMenu" role="menu" aria-label="Сповіщення" data-i18n-aria-label="notifications.title">
           <div class="notify-menu-head"><strong data-i18n="notifications.title">Сповіщення</strong><button class="link-btn" id="notifyOpenPageBtn" type="button" data-i18n="notifications.openPage">Усі</button></div>
           <div class="notify-list" id="notifyList"><div class="notify-empty" data-i18n="notifications.empty">Нових сповіщень немає.</div></div>
           <button class="notify-read-btn" id="notifyMarkReadBtn" type="button" data-i18n="notifications.markRead">Позначити прочитаними</button>
@@ -26,15 +26,15 @@
           <span class="account-name" id="authUserText">Акаунт</span>
           <span class="account-caret" aria-hidden="true">▾</span>
         </button>
-        <div class="account-menu" id="accountMenu" role="menu" aria-label="Акаунт">
-          <button class="account-item account-login" id="googleLoginBtn" type="button" role="menuitem">Увійти через Google</button>
-          <button class="account-item" id="profileBtn" type="button" role="menuitem" hidden>Профіль</button>
-          <button class="account-item" id="regionFormBtn" type="button" role="menuitem" hidden>Реєстрація пустоші</button>
+        <div class="account-menu" id="accountMenu" role="menu" aria-label="Акаунт" data-i18n-aria-label="header.account">
+          <button class="account-item account-login" id="googleLoginBtn" type="button" role="menuitem" data-i18n="header.googleLogin">Увійти через Google</button>
+          <button class="account-item" id="profileBtn" type="button" role="menuitem" hidden data-i18n="header.profile">Профіль</button>
+          <button class="account-item" id="regionFormBtn" type="button" role="menuitem" hidden data-i18n="region.formTitle">Реєстрація пустоші</button>
           <button class="account-item" id="regionTableBtn" type="button" role="menuitem" hidden data-i18n="region.table">Таблиця регіону</button>
-          <button class="account-item" id="regionSettingsBtn" type="button" role="menuitem" hidden>Форма регіону</button>
+          <button class="account-item" id="regionSettingsBtn" type="button" role="menuitem" hidden data-i18n="region.settings">Форма регіону</button>
           <button class="account-item" id="actionLogBtn" type="button" role="menuitem" hidden data-i18n="actionLog.title">Журнал дій</button>
-          <button class="account-item" id="adminBtn" type="button" role="menuitem" hidden>Адмінка</button>
-          <button class="account-item account-logout" id="googleLogoutBtn" type="button" role="menuitem" hidden>Вийти</button>
+          <button class="account-item" id="adminBtn" type="button" role="menuitem" hidden data-i18n="header.admin">Адмінка</button>
+          <button class="account-item account-logout" id="googleLogoutBtn" type="button" role="menuitem" hidden data-i18n="header.logout">Вийти</button>
         </div>
       </div>
 
@@ -44,10 +44,10 @@
           <span class="lang-label" id="currentLangLabel">Українська</span>
           <span class="lang-caret" aria-hidden="true">▾</span>
         </button>
-        <div class="lang-menu" id="langMenu" role="listbox" aria-label="Мова"></div>
+        <div class="lang-menu" id="langMenu" role="listbox" aria-label="Мова" data-i18n-aria-label="header.language"></div>
       </div>
 
-      <button class="burger-btn" id="burgerBtn" type="button" aria-label="Відкрити меню" aria-expanded="false">
+      <button class="burger-btn" id="burgerBtn" type="button" aria-label="Відкрити меню" aria-expanded="false" data-i18n-aria-label="header.openMenu">
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -56,44 +56,44 @@
 
 <div class="drawer" id="drawer" aria-hidden="true">
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
-  <aside class="drawer-panel" role="dialog" aria-modal="true" aria-label="Меню">
+  <aside class="drawer-panel" role="dialog" aria-modal="true" aria-label="Меню" data-i18n-aria-label="header.menu">
     <div class="drawer-top">
-      <div class="drawer-title">Меню</div>
-      <button class="drawer-close" id="drawerClose" type="button" aria-label="Закрити меню">✕</button>
+      <div class="drawer-title" data-i18n="header.menu">Меню</div>
+      <button class="drawer-close" id="drawerClose" type="button" aria-label="Закрити меню" data-i18n-aria-label="header.closeMenu">✕</button>
     </div>
     <div class="drawer-body">
       <div class="drawer-auth">
         <button class="drawer-account-toggle" id="drawerAccountBtn" type="button" aria-expanded="false" aria-controls="drawerAccountMenu">
-          <span>Акаунт</span>
+          <span data-i18n="header.account">Акаунт</span>
           <b id="drawerAccountLabel">Гість</b>
           <span aria-hidden="true">▾</span>
         </button>
         <div class="drawer-account-menu" id="drawerAccountMenu">
-          <button class="btn btn-primary" id="drawerGoogleLoginBtn" type="button">Увійти через Google</button>
-          <button class="btn" id="drawerProfileBtn" type="button" hidden>Профіль гравця</button>
+          <button class="btn btn-primary" id="drawerGoogleLoginBtn" type="button" data-i18n="header.googleLogin">Увійти через Google</button>
+          <button class="btn" id="drawerProfileBtn" type="button" hidden data-i18n="account.profileTitle">Профіль гравця</button>
           <button class="btn" id="drawerNotificationsBtn" type="button" hidden data-i18n="notifications.title">Сповіщення</button>
-          <button class="btn" id="drawerRegionFormBtn" type="button" hidden>Реєстрація пустоші</button>
+          <button class="btn" id="drawerRegionFormBtn" type="button" hidden data-i18n="region.formTitle">Реєстрація пустоші</button>
           <button class="btn" id="drawerRegionTableBtn" type="button" hidden data-i18n="region.table">Таблиця регіону</button>
-          <button class="btn" id="drawerRegionSettingsBtn" type="button" hidden>Форма регіону</button>
+          <button class="btn" id="drawerRegionSettingsBtn" type="button" hidden data-i18n="region.settings">Форма регіону</button>
           <button class="btn" id="drawerActionLogBtn" type="button" hidden data-i18n="actionLog.title">Журнал дій</button>
-          <button class="btn" id="drawerAdminBtn" type="button" hidden>Адмінка</button>
-          <button class="btn" id="drawerGoogleLogoutBtn" type="button" hidden>Вийти</button>
+          <button class="btn" id="drawerAdminBtn" type="button" hidden data-i18n="header.admin">Адмінка</button>
+          <button class="btn" id="drawerGoogleLogoutBtn" type="button" hidden data-i18n="header.logout">Вийти</button>
         </div>
       </div>
 
       <div class="drawer-lang">
         <button class="drawer-lang-toggle" id="drawerLangBtn" type="button" aria-expanded="false" aria-controls="drawerLangMenu">
-          <span>🌐 Мова</span>
+          <span data-i18n="header.languageWithIcon">🌐 Мова</span>
           <b id="drawerCurrentLangLabel">Українська</b>
           <span aria-hidden="true">▾</span>
         </button>
-        <div class="drawer-lang-menu" id="drawerLangMenu" role="listbox" aria-label="Мова"></div>
+        <div class="drawer-lang-menu" id="drawerLangMenu" role="listbox" aria-label="Мова" data-i18n-aria-label="header.language"></div>
       </div>
 
-      <button class="btn btn-primary" id="drawerImportBtn" type="button">Налаштування / Імпорт</button>
-      <button class="btn" data-disabled-note="Фінальний план" type="button">Фінальний план</button>
-      <button class="btn" data-disabled-note="Розподіл по турелях" type="button">Розподіл по турелях</button>
-      <button class="btn" data-open-player-manager type="button">Редактор гравців</button>
+      <button class="btn btn-primary" id="drawerImportBtn" type="button" data-i18n="import.title">Налаштування / Імпорт</button>
+      <button class="btn" data-disabled-note="Фінальний план" type="button" data-i18n="finalPlan.title">Фінальний план</button>
+      <button class="btn" data-disabled-note="Розподіл по турелях" type="button" data-i18n="header.turretDistribution">Розподіл по турелях</button>
+      <button class="btn" data-open-player-manager type="button" data-i18n="playerManager.title">Редактор гравців</button>
       <button class="btn" id="drawerStatsNavBtn" type="button" data-i18n="header.stats" hidden>Статистика гравців</button>
     </div>
   </aside>

@@ -1,6 +1,7 @@
 window.WKD_TRANSLATIONS.ko = {
   "account.addFarm": "+ 팜 추가",
   "account.alliance": "동맹",
+  "account.roleApprovalRequired": "{role} — 승인 필요",
   "account.backToSite": "사이트로",
   "account.deleteFarm": "삭제",
   "account.farmsHelp": "메인 플레이어와 농장을 저장해 황무지 신청에 빠르게 넣을 수 있습니다.",
@@ -584,6 +585,16 @@ window.WKD_TRANSLATIONS.ko = {
   "header.logout": "로그아웃",
   "header.profile": "프로필",
   "header.stats": "플레이어 통계",
+  "account.shift": "교대",
+  "playerManager.regionList": "지역 목록",
+  "header.subtitle": "Puzzle & Survival — 포탑 플래너",
+  "header.homeAria": "Wasteland King Defenders — 홈으로",
+  "header.language": "언어",
+  "header.languageWithIcon": "🌐 언어",
+  "header.menu": "메뉴",
+  "header.openMenu": "메뉴 열기",
+  "header.closeMenu": "메뉴 닫기",
+  "header.turretDistribution": "포탑 배치",
   "import.optional": "추가 열",
   "import.required": "필수 열",
   "import.reset": "데이터 초기화",
@@ -1740,4 +1751,7 @@ window.WKD_TRANSLATIONS.ko = {
   'messages.replyTo': '답장 대상',
   'messages.unknownSender': '알 수 없는 보낸 사람',
   'common.homePage': '홈으로',
+  'region.chooseRegion': '양식 지역',
+  'region.regionChanged': '지역이 R{region}(으)로 변경되었습니다.',
+
 };

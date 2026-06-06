@@ -1,6 +1,7 @@
 window.WKD_TRANSLATIONS.uk = {
   "account.addFarm": "+ Додати ферму",
   "account.alliance": "Альянс",
+  "account.roleApprovalRequired": "{role} — потрібне підтвердження",
   "account.backToSite": "На сайт",
   "account.deleteFarm": "Видалити",
   "account.farmsHelp": "Збережи основного гравця і ферми, щоб швидко переносити дані в заявку Пустоші.",
@@ -584,6 +585,16 @@ window.WKD_TRANSLATIONS.uk = {
   "header.logout": "Вийти",
   "header.profile": "Профіль",
   "header.stats": "Статистика гравців",
+  "account.shift": "Зміна",
+  "playerManager.regionList": "Регіональний список",
+  "header.subtitle": "Puzzle & Survival — Планувальник турелей",
+  "header.homeAria": "Wasteland King Defenders — на головну",
+  "header.language": "Мова",
+  "header.languageWithIcon": "🌐 Мова",
+  "header.menu": "Меню",
+  "header.openMenu": "Відкрити меню",
+  "header.closeMenu": "Закрити меню",
+  "header.turretDistribution": "Розподіл по турелях",
   "import.optional": "Додаткові колонки",
   "import.required": "Обов’язкові колонки",
   "import.reset": "Скидання даних",
@@ -1740,4 +1751,7 @@ window.WKD_TRANSLATIONS.uk = {
   'messages.replyTo': 'Відповідь для',
   'messages.unknownSender': 'Невідомий відправник',
   'common.homePage': 'На головну',
+  'region.chooseRegion': 'Регіон форми',
+  'region.regionChanged': 'Регіон змінено на R{region}.',
+
 };
