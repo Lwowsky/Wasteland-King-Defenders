@@ -1805,9 +1805,10 @@ window.WKD_TRANSLATIONS.ru = {
   'admin.usage.month.deletes': 'Deletes / month',
 
   'stats.refreshCache': 'Обновить кэш',
-  'stats.loadPlayerList': 'Показать список',
+  'stats.refreshList': 'Обновить список',
+  'stats.loadPlayerList': 'Обновить список',
   'stats.publicCacheSummary': '{mode}: {count}. Обновлено: {updated}',
-  'stats.listNotLoaded': 'Для экономии Firebase подробный список игроков не загружается автоматически. Нажми “Показать список”, если он нужен.',
+  'stats.listNotLoaded': 'Список игроков загружается из публичного JSON без чтений Firebase.',
   'stats.loadingSummary': 'Загружаю публичный кэш статистики...',
   'stats.cacheUpdated': 'Статистика загружена из публичного кэша.',
   'stats.cacheFailed': 'Публичный кэш статистики еще не создан. Список можно загрузить вручную или настроить GitHub Actions.',

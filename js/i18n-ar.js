@@ -1803,9 +1803,10 @@ window.WKD_TRANSLATIONS.ar = {
   'admin.usage.month.deletes': 'Deletes / month',
 
   'stats.refreshCache': 'تحديث التخزين المؤقت',
-  'stats.loadPlayerList': 'تحميل القائمة',
+  'stats.refreshList': 'تحديث القائمة',
+  'stats.loadPlayerList': 'تحديث القائمة',
   'stats.publicCacheSummary': '{mode}: {count}. تم التحديث: {updated}',
-  'stats.listNotLoaded': 'لتوفير حدود Firebase، لا يتم تحميل قائمة اللاعبين التفصيلية تلقائيًا. اضغط “تحميل القائمة” عند الحاجة.',
+  'stats.listNotLoaded': 'يتم تحميل قائمة اللاعبين من JSON العام دون قراءات Firebase.',
   'stats.loadingSummary': 'جارٍ تحميل ذاكرة الإحصاءات العامة...',
   'stats.cacheUpdated': 'تم تحميل الإحصاءات من الذاكرة العامة.',
   'stats.cacheFailed': 'لم يتم إنشاء ذاكرة الإحصاءات العامة بعد. حمّل القائمة يدويًا أو اضبط GitHub Actions.',

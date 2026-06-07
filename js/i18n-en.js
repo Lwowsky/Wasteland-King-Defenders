@@ -1805,9 +1805,10 @@ window.WKD_TRANSLATIONS.en = {
   'admin.usage.month.deletes': 'Deletes / month',
 
   'stats.refreshCache': 'Refresh cache',
-  'stats.loadPlayerList': 'Load player list',
+  'stats.refreshList': 'Refresh list',
+  'stats.loadPlayerList': 'Refresh list',
   'stats.publicCacheSummary': '{mode}: {count}. Updated: {updated}',
-  'stats.listNotLoaded': 'To save Firebase limits, the detailed player list is not loaded automatically. Press “Load player list” if needed.',
+  'stats.listNotLoaded': 'The player list is loaded from the public JSON without Firebase reads.',
   'stats.loadingSummary': 'Loading public statistics cache...',
   'stats.cacheUpdated': 'Statistics loaded from public cache.',
   'stats.cacheFailed': 'Public statistics cache is not generated yet. Load the list manually or set up GitHub Actions.',

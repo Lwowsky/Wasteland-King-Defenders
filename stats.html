@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="css/auth-page.css" />
   <link rel="stylesheet" href="css/profile-page.css" />
   <link rel="stylesheet" href="css/admin-page.css" />
-  <link rel="stylesheet" href="css/stats-page.css?v=83" />
+  <link rel="stylesheet" href="css/stats-page.css?v=85" />
   <link rel="stylesheet" href="css/responsive.css" />
   <script defer src="js/i18n.js"></script>
   <script defer src="js/i18n-uk.js"></script>
@@ -28,14 +28,14 @@
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
   <script defer src="js/core/assets-loader.js"></script>
-  <script defer src="js/badges.js?v=83"></script>
+  <script defer src="js/badges.js?v=85"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/core/state.js"></script>
   <script defer src="js/app-login-shell.js"></script>
   <script type="module" src="js/auth-google.js"></script>
-  <script type="module" src="js/notifications.js?v=83"></script>
-  <script type="module" src="js/pages/stats-page.js?v=83"></script>
+  <script type="module" src="js/notifications.js?v=85"></script>
+  <script type="module" src="js/pages/stats-page.js?v=85"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -98,7 +98,7 @@
           <span class="stats-toggle-box"><input id="statsIncludeFarmsToggle" type="checkbox" /> <b data-i18n="stats.includeFarms">Основи + ферми</b></span>
         </label>
         <button class="btn btn-primary" id="refreshStatsBtn" type="button" data-i18n="stats.refreshCache">Оновити кеш</button>
-        <button class="btn" id="loadStatsDetailsBtn" type="button" data-i18n="stats.loadPlayerList">Показати список</button>
+        <button class="btn" id="loadStatsDetailsBtn" type="button" data-i18n="stats.refreshList">Оновити список</button>
       </div>
 
       <div class="admin-table-wrap">
@@ -116,7 +116,7 @@
             </tr>
           </thead>
           <tbody id="publicPlayersBody">
-            <tr><td colspan="8" data-i18n="stats.listNotLoaded">Для економії Firebase детальний список гравців не завантажується автоматично. Натисни “Показати список”, якщо він потрібний.</td></tr>
+            <tr><td colspan="8" data-i18n="stats.listNotLoaded">Список гравців завантажується з публічного JSON без читань Firebase.</td></tr>
           </tbody>
         </table>
       </div>

@@ -1,9 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import crypto from 'node:crypto';
 import admin from 'firebase-admin';
 
-const CACHE_PATH = process.env.STATS_CACHE_PATH || 'public-cache/stats-summary.json';
+const SUMMARY_CACHE_PATH = process.env.STATS_CACHE_PATH || 'public-cache/stats-summary.json';
+const PLAYERS_CACHE_PATH = process.env.STATS_PLAYERS_CACHE_PATH || 'public-cache/stats-players.json';
 const FULL_REBUILD_HOUR_UTC = Number(process.env.STATS_FULL_REBUILD_HOUR_UTC ?? 3);
 const MAX_PENDING_CHANGES = Number(process.env.STATS_MAX_PENDING_CHANGES ?? 250);
 const CHANGE_RETENTION_DAYS = Number(process.env.STATS_CHANGE_RETENTION_DAYS ?? 30);
@@ -33,6 +35,99 @@ async function writeJson(filePath, data) {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
 }
+
+function timestampToIso(value) {
+  if (!value) return null;
+  if (typeof value.toDate === 'function') return value.toDate().toISOString();
+  if (typeof value.toMillis === 'function') return new Date(value.toMillis()).toISOString();
+  if (typeof value === 'number') return Number.isFinite(value) ? new Date(value).toISOString() : null;
+  if (typeof value === 'string') {
+    const date = new Date(value);
+    return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+  }
+  if (typeof value === 'object' && typeof value.seconds === 'number') {
+    return new Date(value.seconds * 1000 + Math.floor((Number(value.nanoseconds) || 0) / 1000000)).toISOString();
+  }
+  return null;
+}
+function publicKeyFor(playerKey = '') {
+  const clean = String(playerKey || '').trim();
+  return clean ? crypto.createHash('sha256').update(clean).digest('hex').slice(0, 24) : '';
+}
+function cleanString(value, max = 80) {
+  return String(value ?? '').trim().slice(0, max);
+}
+function sanitizeWastelandInfo(profile = null) {
+  if (!profile || typeof profile !== 'object') return null;
+  return {
+    lairLevel: cleanString(profile.lairLevel, 12),
+    troopType: cleanString(profile.troopType, 24),
+    tier: cleanString(profile.tier, 12),
+    marchSize: cleanString(profile.marchSize, 24),
+    rallySize: cleanString(profile.rallySize, 24),
+    captainReady: Boolean(profile.captainReady),
+    readyToJoin: Boolean(profile.readyToJoin),
+    readyToAttack: Boolean(profile.readyToAttack),
+    shift: cleanString(profile.shift, 24),
+    extraEnabled: Boolean(profile.extraEnabled),
+    extraSquads: Array.isArray(profile.extraSquads) ? profile.extraSquads.slice(0, 6).map(item => ({
+      troopType: cleanString(item?.troopType, 24),
+      tier: cleanString(item?.tier, 12)
+    })) : [],
+    extraTroopType: cleanString(profile.extraTroopType, 24),
+    extraTier: cleanString(profile.extraTier, 12)
+  };
+}
+function sanitizeFarmForPublic(farm = {}, index = 0, showExtra = false) {
+  const row = {
+    farmKey: `farm-${index + 1}`,
+    nickname: cleanString(farm.nickname || `Farm ${index + 1}`, 80),
+    region: String(farm.region || '').replace(/[^0-9]/g, '').slice(0, 8),
+    alliance: cleanString(farm.alliance, 12),
+    rank: rankCode(farm.rank).toUpperCase(),
+    shk: cleanString(farm.shk, 12),
+    role: cleanString(farm.role || 'player', 24),
+    roleLabel: cleanString(farm.roleLabel || farm.role || 'player', 40)
+  };
+  if (showExtra && farm.wastelandProfile) row.wastelandProfile = sanitizeWastelandInfo(farm.wastelandProfile);
+  return row;
+}
+function sanitizePlayerForPublic(docId = '', player = {}) {
+  if (!player || player.profileComplete === false) return null;
+  const visibility = player.profileVisibility && typeof player.profileVisibility === 'object' ? player.profileVisibility : {};
+  const showExtra = Boolean(visibility.showWastelandInfo);
+  const showFarms = Boolean(visibility.showFarmsInfo);
+  const farms = Array.isArray(player.farms) ? player.farms.filter(farm => farm && (farm.nickname || farm.region || farm.alliance)) : [];
+  const row = {
+    publicKey: publicKeyFor(docId || player.uid || player.id),
+    nickname: cleanString(player.nickname || player.gameNick || '—', 80),
+    gameNick: cleanString(player.gameNick || player.nickname || '—', 80),
+    region: String(player.region || '').replace(/[^0-9]/g, '').slice(0, 8),
+    alliance: cleanString(player.alliance, 12),
+    rank: rankCode(player.rank).toUpperCase(),
+    shk: cleanString(player.shk, 12),
+    role: cleanString(player.role || 'player', 24),
+    roleLabel: cleanString(player.roleLabel || player.role || 'player', 40),
+    country: cleanString(player.country, 60),
+    countryCode: cleanString(player.countryCode, 8),
+    farmCount: Number.isFinite(Number(player.farmCount)) ? Math.max(0, Number(player.farmCount)) : farms.length,
+    profileVisibility: {
+      showWastelandInfo: showExtra,
+      showFarmsInfo: showFarms
+    },
+    createdAt: timestampToIso(player.createdAt),
+    updatedAt: timestampToIso(player.updatedAt)
+  };
+  if (showExtra && player.wastelandProfile) row.wastelandProfile = sanitizeWastelandInfo(player.wastelandProfile);
+  if (showFarms) row.farms = farms.map((farm, index) => sanitizeFarmForPublic(farm, index, showExtra));
+  else row.farms = [];
+  return row;
+}
+function sortPublicPlayers(players = []) {
+  return [...players].sort((a, b) => String(a.region || '').localeCompare(String(b.region || ''), 'uk', { numeric: true })
+    || String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk', { numeric: true }));
+}
+
 
 function emptySummary(extra = {}) {
   return {
@@ -130,6 +225,17 @@ function applyEntry(summary, entry, delta) {
 function applyEntries(summary, entries, delta) {
   (Array.isArray(entries) ? entries : []).forEach(entry => applyEntry(summary, entry, delta));
 }
+function hiddenFarmCountForPlayer(player = {}, entries = []) {
+  const farmCount = Math.max(0, Number(player.farmCount || 0));
+  const visibleFarmEntries = (Array.isArray(entries) ? entries : []).filter(entry => entry?.isFarm).length;
+  return Math.max(0, farmCount - visibleFarmEntries);
+}
+function applyHiddenFarmCount(summary, count, delta) {
+  const value = Math.max(0, Number(count || 0));
+  if (!value) return;
+  summary.totalFarms += value * delta;
+  summary.totalRows += value * delta;
+}
 function normalizeSummary(summary) {
   for (const key of ['totalPlayers', 'totalFarms', 'totalRows', 'leaders', 'leadersWithFarms', 'processedChanges']) {
     summary[key] = Math.max(0, Number(summary[key] || 0));
@@ -171,14 +277,22 @@ async function fullRebuild(db) {
   const publicSnap = await db.collection('publicPlayers').get();
   const publicIds = new Set(publicSnap.docs.map(doc => doc.id));
   const operations = [];
+  const publicPlayers = [];
   publicSnap.docs.forEach(doc => {
     const player = { id: doc.id, ...doc.data() };
     const entries = extractEntries(player);
+    const hiddenFarmCount = hiddenFarmCountForPlayer(player, entries);
     applyEntries(summary, entries, +1);
+    applyHiddenFarmCount(summary, hiddenFarmCount, +1);
+    const publicRow = sanitizePlayerForPublic(doc.id, player);
+    if (publicRow) publicPlayers.push(publicRow);
     operations.push(batch => batch.set(db.collection('statsIndex').doc(doc.id), {
       playerKey: doc.id,
+      publicKey: publicKeyFor(doc.id),
       uid: player.uid || doc.id,
       entries,
+      hiddenFarmCount,
+      publicRow,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true }));
   });
@@ -191,20 +305,24 @@ async function fullRebuild(db) {
     lastFullRebuildAt: admin.firestore.FieldValue.serverTimestamp(),
     lastFullRebuildDate: todayUtc(),
     totalPlayers: summary.totalPlayers,
-    totalRows: summary.totalRows
+    totalRows: summary.totalRows,
+    publicPlayers: publicPlayers.length
   }, { merge: true });
-  return normalizeSummary(summary);
+  return { summary: normalizeSummary(summary), publicPlayers: sortPublicPlayers(publicPlayers) };
 }
 
-async function incrementalUpdate(db, existing) {
+async function incrementalUpdate(db, existing, existingPlayers = []) {
   const changesSnap = await db.collection('statsChanges')
     .where('processed', '==', false)
     .orderBy('createdAt', 'asc')
     .limit(MAX_PENDING_CHANGES)
     .get();
-  if (changesSnap.empty) return { summary: existing, changed: false, processed: 0 };
+  if (changesSnap.empty) return { summary: existing, publicPlayers: existingPlayers, changed: false, processed: 0 };
   const playerKeys = [...new Set(changesSnap.docs.map(doc => String(doc.data()?.playerKey || doc.data()?.uid || '').trim()).filter(Boolean))];
   let summary = emptySummary({ ...existing, source: 'github-actions-incremental' });
+  const publicMap = new Map((Array.isArray(existingPlayers) ? existingPlayers : [])
+    .filter(item => item?.publicKey)
+    .map(item => [item.publicKey, item]));
   const batch = db.batch();
   let processed = 0;
   for (const playerKey of playerKeys) {
@@ -213,14 +331,26 @@ async function incrementalUpdate(db, existing) {
       db.collection('statsIndex').doc(playerKey).get()
     ]);
     const oldEntries = indexDoc.exists ? (indexDoc.data()?.entries || []) : [];
-    const newEntries = playerDoc.exists ? extractEntries({ id: playerDoc.id, ...playerDoc.data() }) : [];
+    const oldHiddenFarmCount = indexDoc.exists ? Number(indexDoc.data()?.hiddenFarmCount || 0) : 0;
+    const oldPublicKey = indexDoc.exists ? (indexDoc.data()?.publicKey || publicKeyFor(playerKey)) : publicKeyFor(playerKey);
+    const playerData = playerDoc.exists ? { id: playerDoc.id, ...playerDoc.data() } : null;
+    const newEntries = playerData ? extractEntries(playerData) : [];
+    const newHiddenFarmCount = playerData ? hiddenFarmCountForPlayer(playerData, newEntries) : 0;
+    const newPublicRow = playerData ? sanitizePlayerForPublic(playerDoc.id, playerData) : null;
     applyEntries(summary, oldEntries, -1);
+    applyHiddenFarmCount(summary, oldHiddenFarmCount, -1);
     applyEntries(summary, newEntries, +1);
+    applyHiddenFarmCount(summary, newHiddenFarmCount, +1);
+    if (oldPublicKey) publicMap.delete(oldPublicKey);
+    if (newPublicRow?.publicKey) publicMap.set(newPublicRow.publicKey, newPublicRow);
     if (playerDoc.exists && newEntries.length) {
       batch.set(db.collection('statsIndex').doc(playerKey), {
         playerKey,
+        publicKey: publicKeyFor(playerKey),
         uid: playerDoc.data()?.uid || playerKey,
         entries: newEntries,
+        hiddenFarmCount: newHiddenFarmCount,
+        publicRow: newPublicRow,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
     } else {
@@ -233,13 +363,15 @@ async function incrementalUpdate(db, existing) {
   });
   await batch.commit();
   summary.processedChanges = Number(summary.processedChanges || 0) + processed;
+  const publicPlayers = sortPublicPlayers([...publicMap.values()]);
   await db.collection('statsMeta').doc('current').set({
     lastIncrementalAt: admin.firestore.FieldValue.serverTimestamp(),
     pendingProcessed: processed,
     totalPlayers: summary.totalPlayers,
-    totalRows: summary.totalRows
+    totalRows: summary.totalRows,
+    publicPlayers: publicPlayers.length
   }, { merge: true });
-  return { summary: normalizeSummary(summary), changed: true, processed };
+  return { summary: normalizeSummary(summary), publicPlayers, changed: true, processed };
 }
 
 async function cleanupOldChanges(db) {
@@ -258,22 +390,29 @@ async function cleanupOldChanges(db) {
 
 async function main() {
   const db = initFirebase();
-  const existing = await readJson(CACHE_PATH, emptySummary());
+  const existing = await readJson(SUMMARY_CACHE_PATH, emptySummary());
+  const existingPlayers = await readJson(PLAYERS_CACHE_PATH, []);
   let summary;
-  if (shouldFullRebuild(existing)) {
-    summary = await fullRebuild(db);
+  let publicPlayers;
+  const playersCacheMissing = !Array.isArray(existingPlayers) || (Number(existing?.totalPlayers || 0) > 0 && existingPlayers.length === 0);
+  if (playersCacheMissing || shouldFullRebuild(existing)) {
+    const result = await fullRebuild(db);
+    summary = result.summary;
+    publicPlayers = result.publicPlayers;
   } else {
-    const result = await incrementalUpdate(db, existing);
+    const result = await incrementalUpdate(db, existing, existingPlayers);
     if (!result.changed) {
       await cleanupOldChanges(db).catch(() => 0);
       console.log('No pending stats changes. Cache unchanged.');
       return;
     }
     summary = result.summary;
+    publicPlayers = result.publicPlayers;
   }
-  await writeJson(CACHE_PATH, summary);
+  await writeJson(SUMMARY_CACHE_PATH, summary);
+  await writeJson(PLAYERS_CACHE_PATH, publicPlayers);
   const cleaned = await cleanupOldChanges(db).catch(() => 0);
-  console.log(`Stats cache updated: players=${summary.totalPlayers}, farms=${summary.totalFarms}, cleanedChanges=${cleaned}`);
+  console.log(`Stats cache updated: players=${summary.totalPlayers}, farms=${summary.totalFarms}, publicRows=${publicPlayers.length}, cleanedChanges=${cleaned}`);
 }
 
 main().catch(error => {

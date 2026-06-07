@@ -1805,9 +1805,10 @@ window.WKD_TRANSLATIONS.vi = {
   'admin.usage.month.deletes': 'Deletes / month',
 
   'stats.refreshCache': 'Làm mới cache',
-  'stats.loadPlayerList': 'Tải danh sách',
+  'stats.refreshList': 'Làm mới danh sách',
+  'stats.loadPlayerList': 'Làm mới danh sách',
   'stats.publicCacheSummary': '{mode}: {count}. Cập nhật: {updated}',
-  'stats.listNotLoaded': 'Để tiết kiệm giới hạn Firebase, danh sách người chơi chi tiết không tự tải. Nhấn “Tải danh sách” nếu cần.',
+  'stats.listNotLoaded': 'Danh sách người chơi được tải từ JSON công khai mà không đọc Firebase.',
   'stats.loadingSummary': 'Đang tải cache thống kê công khai...',
   'stats.cacheUpdated': 'Đã tải thống kê từ cache công khai.',
   'stats.cacheFailed': 'Cache thống kê công khai chưa được tạo. Hãy tải danh sách thủ công hoặc thiết lập GitHub Actions.',

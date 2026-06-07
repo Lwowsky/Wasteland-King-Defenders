@@ -1,6 +1,6 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
 import { formatUserDate, listPublicPlayers, roleLabel } from '../services/user-db.js';
-import { troopLabel } from '../services/region-db.js?v=83';
+import { troopLabel } from '../services/region-db.js?v=85';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -27,7 +27,9 @@ function locale() {
 
 
 const PUBLIC_STATS_CACHE_URL = 'public-cache/stats-summary.json';
-const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v83';
+const PUBLIC_STATS_PLAYERS_URL = 'public-cache/stats-players.json';
+const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v85';
+const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.v85';
 
 function readSummaryCache() {
   try {
@@ -40,6 +42,18 @@ function readSummaryCache() {
 }
 function writeSummaryCache(data) {
   try { localStorage.setItem(STATS_SUMMARY_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), data })); } catch {}
+}
+function readPlayersCache() {
+  try {
+    const raw = localStorage.getItem(STATS_PLAYERS_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.savedAt || Date.now() - Number(parsed.savedAt) > 10 * 60 * 1000) return null;
+    return Array.isArray(parsed.data) ? parsed.data : null;
+  } catch { return null; }
+}
+function writePlayersCache(data) {
+  try { localStorage.setItem(STATS_PLAYERS_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), data: Array.isArray(data) ? data : [] })); } catch {}
 }
 function mapSize(value) {
   return value && typeof value === 'object' ? Object.keys(value).filter(key => Number(value[key]) > 0).length : 0;
@@ -64,6 +78,19 @@ async function fetchPublicStatsSummary({ force = false } = {}) {
   const data = await response.json();
   writeSummaryCache(data);
   return data;
+}
+async function fetchPublicStatsPlayers({ force = false } = {}) {
+  if (!force) {
+    const cached = readPlayersCache();
+    if (cached) return cached;
+  }
+  const url = `${PUBLIC_STATS_PLAYERS_URL}${force ? `?t=${Date.now()}` : ''}`;
+  const response = await fetch(url, { cache: force ? 'no-store' : 'default' });
+  if (!response.ok) throw new Error(`stats-players-${response.status}`);
+  const data = await response.json();
+  const list = Array.isArray(data) ? data : [];
+  writePlayersCache(list);
+  return list;
 }
 function renderSummaryStats(summary = statsSummaryCache) {
   if (!summary) return false;
@@ -91,20 +118,26 @@ function renderSummaryStats(summary = statsSummaryCache) {
 function renderListNotLoaded() {
   const body = $('#publicPlayersBody');
   if (!body) return;
-  body.innerHTML = `<tr><td colspan="8" class="stats-empty-note">${escapeHtml(t('stats.listNotLoaded', 'For Firebase limits, the detailed player list is not loaded automatically. Press “Load player list” if you need it.'))}</td></tr>`;
+  body.innerHTML = `<tr><td colspan="8" class="stats-empty-note">${escapeHtml(t('stats.listNotLoaded', 'The public player JSON is not loaded yet. If needed, refresh the cache or use Firebase fallback.'))}</td></tr>`;
 }
 async function loadSummaryOnly(options = {}) {
   const force = Boolean(options?.force);
   setStatus(t('stats.loadingSummary', 'Loading public statistics cache...'), 'muted');
   try {
-    statsSummaryCache = await fetchPublicStatsSummary({ force });
-    detailsLoaded = false;
-    players = [];
+    const [summary, publicPlayers] = await Promise.all([
+      fetchPublicStatsSummary({ force }),
+      fetchPublicStatsPlayers({ force })
+    ]);
+    statsSummaryCache = summary;
+    players = Array.isArray(publicPlayers) ? publicPlayers : [];
+    detailsLoaded = true;
     renderSummaryStats(statsSummaryCache);
-    renderListNotLoaded();
+    renderPlayers();
     setStatus(t('stats.cacheUpdated', 'Statistics loaded from public cache.'), 'success');
   } catch (error) {
     console.warn('[WKD] public stats cache failed:', error);
+    detailsLoaded = false;
+    players = [];
     renderListNotLoaded();
     setStatus(t('stats.cacheFailed', 'Public statistics cache is not generated yet. Load the list manually or set up GitHub Actions.'), 'error');
   }
@@ -219,8 +252,9 @@ function farmRowsForPlayer(player = {}) {
     .filter(farm => farm && (farm.nickname || farm.region || farm.alliance))
     .map((farm, index) => ({
       ...farm,
-      uid: player.uid || player.id || '',
-      rowId: `${player.uid || player.id || 'player'}::${farm.farmId || farm.id || index}`,
+      uid: player.publicKey || player.uid || player.id || '',
+      publicKey: player.publicKey || '',
+      rowId: `${player.publicKey || player.uid || player.id || 'player'}::${farm.farmKey || farm.farmId || farm.id || index}`,
       isFarmRow: true,
       mainNickname: main,
       mainRegion: player.region || '',
@@ -239,7 +273,7 @@ function farmRowsForPlayer(player = {}) {
 function displayRows() {
   return players.flatMap(player => [{
     ...player,
-    rowId: player.uid || player.id || '',
+    rowId: player.publicKey || player.uid || player.id || '',
     isFarmRow: false,
     mainNickname: mainNick(player)
   }, ...farmRowsForPlayer(player)]);
@@ -288,7 +322,7 @@ function setPlayersCounterLabel() {
 }
 
 function renderStats() {
-  if (!detailsLoaded && renderSummaryStats(statsSummaryCache)) return;
+  if (statsSummaryCache && renderSummaryStats(statsSummaryCache)) return;
   setPlayersCounterLabel();
   const rows = displayRows();
   const regions = new Set(rows.map(player => player.region).filter(Boolean));
@@ -301,7 +335,7 @@ function renderStats() {
 
 function rowTemplate(player) {
   const nick = player.nickname || player.gameNick || '—';
-  const uid = player.uid || player.id || '';
+  const uid = player.publicKey || player.uid || player.id || player.rowId || '';
   const isFarm = Boolean(player.isFarmRow);
   const labels = {
     nickname: escapeHtml(t('account.nickname', 'Nickname')),
@@ -482,7 +516,7 @@ async function loadPlayers(options = {}) {
 
 function bindControls() {
   $('#refreshStatsBtn')?.addEventListener('click', () => loadSummaryOnly({ force: true }));
-  $('#loadStatsDetailsBtn')?.addEventListener('click', () => loadPlayers({ force: true }));
+  $('#loadStatsDetailsBtn')?.addEventListener('click', () => loadSummaryOnly({ force: true }));
   $('#statsNickSearch')?.addEventListener('input', renderPlayers);
   $('#statsAllianceSearch')?.addEventListener('input', renderPlayers);
   $('#statsRegionSearch')?.addEventListener('input', renderPlayers);
@@ -492,7 +526,7 @@ function bindControls() {
   $('#publicPlayersBody')?.addEventListener('click', event => {
     const button = event.target.closest('[data-player-id]');
     if (!button) return;
-    const player = players.find(item => (item.uid || item.id || '') === button.dataset.playerId);
+    const player = players.find(item => (item.publicKey || item.uid || item.id || '') === button.dataset.playerId);
     if (player) openPlayerModal(player, button.dataset.farmRow === '1' ? 'farms' : 'profile', button.dataset.farmIndex || -1);
   });
   document.querySelectorAll('#publicPlayersTable [data-sort]').forEach(button => button.addEventListener('click', () => {

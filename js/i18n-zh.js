@@ -1805,9 +1805,10 @@ window.WKD_TRANSLATIONS.zh = {
   'admin.usage.month.deletes': 'Deletes / month',
 
   'stats.refreshCache': '刷新缓存',
-  'stats.loadPlayerList': '加载列表',
+  'stats.refreshList': '刷新列表',
+  'stats.loadPlayerList': '刷新列表',
   'stats.publicCacheSummary': '{mode}: {count}。更新时间：{updated}',
-  'stats.listNotLoaded': '为节省 Firebase 限额，详细玩家列表不会自动加载。需要时请点击“加载列表”。',
+  'stats.listNotLoaded': '玩家列表从公共 JSON 加载，不产生 Firebase 读取。',
   'stats.loadingSummary': '正在加载公开统计缓存...',
   'stats.cacheUpdated': '已从公开缓存加载统计。',
   'stats.cacheFailed': '公开统计缓存尚未生成。请手动加载列表或设置 GitHub Actions。',

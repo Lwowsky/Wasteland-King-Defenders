@@ -1805,9 +1805,10 @@ window.WKD_TRANSLATIONS.uk = {
   'admin.usage.month.deletes': 'Видалення / місяць',
 
   'stats.refreshCache': 'Оновити кеш',
-  'stats.loadPlayerList': 'Показати список',
+  'stats.refreshList': 'Оновити список',
+  'stats.loadPlayerList': 'Оновити список',
   'stats.publicCacheSummary': '{mode}: {count}. Оновлено: {updated}',
-  'stats.listNotLoaded': 'Для економії Firebase детальний список гравців не завантажується автоматично. Натисни “Показати список”, якщо він потрібний.',
+  'stats.listNotLoaded': 'Список гравців завантажується з публічного JSON без читань Firebase.',
   'stats.loadingSummary': 'Завантажую публічний кеш статистики...',
   'stats.cacheUpdated': 'Статистика завантажена з публічного кешу.',
   'stats.cacheFailed': 'Публічний кеш статистики ще не створений. Показати список можна вручну або налаштуй GitHub Actions.',

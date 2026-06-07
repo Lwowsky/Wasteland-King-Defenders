@@ -1805,9 +1805,10 @@ window.WKD_TRANSLATIONS.ja = {
   'admin.usage.month.deletes': 'Deletes / month',
 
   'stats.refreshCache': 'キャッシュ更新',
-  'stats.loadPlayerList': 'リスト表示',
+  'stats.refreshList': 'リストを更新',
+  'stats.loadPlayerList': 'リストを更新',
   'stats.publicCacheSummary': '{mode}: {count}。更新: {updated}',
-  'stats.listNotLoaded': 'Firebase の上限を節約するため、詳細なプレイヤー一覧は自動で読み込みません。必要なら「リスト表示」を押してください。',
+  'stats.listNotLoaded': 'プレイヤー一覧は Firebase 読み取りなしで公開 JSON から読み込まれます。',
   'stats.loadingSummary': '公開統計キャッシュを読み込み中...',
   'stats.cacheUpdated': '公開キャッシュから統計を読み込みました。',
   'stats.cacheFailed': '公開統計キャッシュはまだ作成されていません。手動で一覧を読み込むか、GitHub Actions を設定してください。',

@@ -1805,9 +1805,10 @@ window.WKD_TRANSLATIONS.ko = {
   'admin.usage.month.deletes': 'Deletes / month',
 
   'stats.refreshCache': '캐시 새로고침',
-  'stats.loadPlayerList': '목록 불러오기',
+  'stats.refreshList': '목록 새로고침',
+  'stats.loadPlayerList': '목록 새로고침',
   'stats.publicCacheSummary': '{mode}: {count}. 업데이트: {updated}',
-  'stats.listNotLoaded': 'Firebase 한도를 절약하기 위해 자세한 플레이어 목록은 자동으로 불러오지 않습니다. 필요하면 “목록 불러오기”를 누르세요.',
+  'stats.listNotLoaded': '플레이어 목록은 Firebase 읽기 없이 공개 JSON에서 로드됩니다.',
   'stats.loadingSummary': '공개 통계 캐시를 불러오는 중...',
   'stats.cacheUpdated': '공개 캐시에서 통계를 불러왔습니다.',
   'stats.cacheFailed': '공개 통계 캐시가 아직 생성되지 않았습니다. 목록을 수동으로 불러오거나 GitHub Actions를 설정하세요.',

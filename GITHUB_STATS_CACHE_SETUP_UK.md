@@ -1,18 +1,18 @@
 # Налаштування безпечного кешу статистики через GitHub Actions
 
-## Що додано у v83
+## Що додано у v85
 
 Ця версія робить статистику дешевшою для Firebase:
 
 - `stats.html` більше не читає всіх гравців автоматично.
-- Сторінка спочатку читає файл `public-cache/stats-summary.json`.
+- Сторінка спочатку читає файли `public-cache/stats-summary.json` і `public-cache/stats-players.json`.
 - Коли гравець змінює профіль або ферму, сайт створює маленький запис у `statsChanges`.
-- GitHub Actions кожні 10 хвилин читає тільки необроблені `statsChanges` і оновлює `public-cache/stats-summary.json`.
+- GitHub Actions кожні 10 хвилин читає тільки необроблені `statsChanges` і оновлює `public-cache/stats-summary.json` і `public-cache/stats-players.json`.
 - 1 раз на день GitHub Actions робить повний контрольний перерахунок.
 
 ## Що НЕ потрапляє в public-cache
 
-У `public-cache/stats-summary.json` не записуються:
+У `public-cache/stats-summary.json` і `public-cache/stats-players.json` не записуються:
 
 - email;
 - UID у списку гравців;
@@ -22,13 +22,13 @@
 - секретні коди;
 - коментарі гравців.
 
-Там тільки агреговані цифри: кількість гравців, ферм, регіонів, альянсів, рангів, ШК.
+У `stats-summary.json` — тільки агреговані цифри. У `stats-players.json` — очищений публічний список: нік, регіон, альянс, ранг, ШК, роль, кількість ферм. Додаткова інформація і ферми додаються тільки якщо гравець увімкнув відповідні галочки видимості.
 
 ## Що треба зробити один раз
 
-### 1. Залити v83 на GitHub
+### 1. Залити v85 на GitHub
 
-Заміни файли сайту на версію v83 і зроби push у GitHub.
+Заміни файли сайту на версію v85 і зроби push у GitHub.
 
 ### 2. Оновити Firestore rules
 
@@ -38,7 +38,7 @@
 firebase deploy --only firestore:rules
 ```
 
-Це потрібно, бо v83 додає правила для `statsChanges`, `statsIndex`, `statsMeta`.
+Це потрібно, бо v85 додає правила для `statsChanges`, `statsIndex`, `statsMeta`.
 
 ### 3. Створити Firebase service account key
 
@@ -78,14 +78,15 @@ FIREBASE_SERVICE_ACCOUNT
 
 ```text
 public-cache/stats-summary.json
+public-cache/stats-players.json
 ```
 
 ### 6. Перевірити сайт
 
 1. Відкрий `stats.html`.
 2. Має написати, що статистика завантажена з public cache.
-3. Детальний список гравців не має вантажитись автоматично.
-4. Якщо треба список — натисни “Показати список”. Це вже буде читати Firebase.
+3. Детальний список гравців має показуватись автоматично з `stats-players.json` без читань Firebase.
+4. Якщо гравець вимкнув додаткову інформацію або ферми — ці поля взагалі не потрапляють у JSON.
 
 ## Як це працює після налаштування
 
@@ -104,14 +105,14 @@ profile save
 кожні 10 хвилин
 → читає необроблені statsChanges
 → читає тільки змінених гравців
-→ оновлює stats-summary.json
+→ оновлює stats-summary.json і stats-players.json
 ```
 
 ### Статистика
 
 ```text
 3000 гравців відкрили stats.html
-→ читають public-cache/stats-summary.json
+→ читають public-cache/stats-summary.json і public-cache/stats-players.json
 → 0 Firestore reads для перегляду статистики
 ```
 
@@ -122,8 +123,8 @@ profile save
 1. Чи зробив `firebase deploy --only firestore:rules`.
 2. Чи є secret `FIREBASE_SERVICE_ACCOUNT` у GitHub.
 3. GitHub → Actions → Update public stats cache → чи немає червоної помилки.
-4. Чи файл `public-cache/stats-summary.json` оновився після action.
+4. Чи файли `public-cache/stats-summary.json` і `public-cache/stats-players.json` оновились після action.
 
 ## Важливо
 
-`public-cache/stats-summary.json` — публічний файл. Туди не можна додавати персональні дані. У v83 туди записуються тільки загальні цифри.
+`public-cache/stats-summary.json` і `public-cache/stats-players.json` — публічні файли. Туди не можна додавати email, UID, повідомлення, логи, секретні коди або приватні коментарі. У v85 список гравців очищається перед записом у JSON.
