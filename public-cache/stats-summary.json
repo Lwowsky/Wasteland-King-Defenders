@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "source": "github-actions-full",
-  "generatedAt": "2026-06-07T10:49:00.106Z",
+  "source": "github-actions-incremental",
+  "generatedAt": "2026-06-07T11:29:46.457Z",
   "lastFullRebuildDate": "2026-06-07",
   "totalPlayers": 1,
   "totalFarms": 3,
@@ -37,5 +37,5 @@
     "t12": 1,
     "t8": 3
   },
-  "processedChanges": 0
+  "processedChanges": 3
 }
