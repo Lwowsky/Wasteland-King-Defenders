@@ -2,6 +2,11 @@ name: Update public stats cache
 
 on:
   workflow_dispatch:
+    inputs:
+      force_full:
+        description: 'Force full rebuild from Firebase users/publicPlayers'
+        required: false
+        default: '1'
   schedule:
     - cron: '*/10 * * * *'
 
@@ -36,6 +41,7 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           STATS_FULL_REBUILD_HOUR_UTC: '3'
           STATS_MAX_PENDING_CHANGES: '250'
+          STATS_FORCE_FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.force_full || '0' }}
         run: node scripts/update-public-stats-cache.mjs
 
       - name: Commit updated cache

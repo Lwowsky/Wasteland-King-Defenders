@@ -1,4 +1,4 @@
-import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=87';
+import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=88';
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile, saveFarmWastelandProfile } from '../services/user-db.js';
 import {
@@ -25,7 +25,7 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=87';
+} from '../services/region-db.js?v=88';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);

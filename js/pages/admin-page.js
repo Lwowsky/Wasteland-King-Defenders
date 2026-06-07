@@ -1,5 +1,5 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=87';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=88';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -23,7 +23,7 @@ import {
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=87';
+} from '../services/region-db.js?v=88';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);

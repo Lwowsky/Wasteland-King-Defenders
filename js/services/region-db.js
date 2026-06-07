@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=87';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=87';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=88';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=88';
 import {
   getUserProfile,
   getFarmById,
@@ -1695,7 +1695,7 @@ export async function saveWastelandRegistration(user, values, regionOverride = '
     await firestoreMod.addDoc(collectionRef, payload);
     trackWrites(1);
   }
-  removeCache(`regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v87`);
+  removeCache(`regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v88`);
 
   await writeRegionActionLog({ db, firestoreMod }, user || { uid: 'guest' }, profile || {}, region, 'registration_submitted', { summary: data.nickname || 'Заявка', alliance: data.alliance, targetName: data.nickname });
   if (user?.uid) {
@@ -1797,7 +1797,7 @@ export async function listRegionRegistrations(user, regionOverride = '', options
   }
   await cleanupOldRegionRegistrations(user, region).catch(error => console.warn('[WKD] old registration cleanup skipped:', error));
 
-  const cacheKey = `regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v87`;
+  const cacheKey = `regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v88`;
   if (!options?.force) {
     const cached = readCache(cacheKey, 60 * 1000);
     if (cached && Array.isArray(cached.rows)) return { profile, region, settings: status, rows: cached.rows, cached: true };
@@ -1845,7 +1845,7 @@ export async function deleteRegionRegistrations(user, region, registrationIds = 
     await batch.commit();
   }
   trackDeletes(ids.length);
-  removeCache(`regionRegistrations.${safeRegion}.no-cycle.v87`);
+  removeCache(`regionRegistrations.${safeRegion}.no-cycle.v88`);
 
   await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), {
     region: safeRegion,
@@ -1900,7 +1900,7 @@ export async function updateRegionRegistration(user, region, registrationId, val
     { merge: true }
   );
   trackWrites(1);
-  removeCache(`regionRegistrations.${safeRegion}.no-cycle.v87`);
+  removeCache(`regionRegistrations.${safeRegion}.no-cycle.v88`);
 
   await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), {
     region: safeRegion,
