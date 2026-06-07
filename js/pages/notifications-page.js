@@ -1,5 +1,6 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
-import { listRegionCatalog } from '../services/region-db.js?v=73';
+import { trackReads, trackWrites, trackDeletes } from '../services/usage-tracker.js?v=83';
+import { listRegionCatalog } from '../services/region-db.js?v=83';
 import {
   canUseAdminPanel,
   createUserNotification,
@@ -23,12 +24,25 @@ const tag = value => Array.from(String(value || '').trim().toUpperCase().replace
 let currentUser = null;
 let currentProfile = null;
 let rows = [];
+let sentRows = [];
 let directory = [];
 let composeReady = false;
 let pageReady = false;
 let activeTab = 'notifications';
 let knownRegionOptions = [];
 let directReply = null;
+let notificationsFilter = 'active';
+let unsubscribePageNotifications = null;
+let notificationPages = { notifications: 0, inbox: 0, sent: 0 };
+
+const MESSAGE_SPAM_WINDOW_MS = 10 * 60 * 1000;
+const MESSAGE_SPAM_MAX = 20;
+const MESSAGE_PAGE_SIZE = 20;
+const NOTIFICATION_QUERY_LIMIT = 50;
+const SENT_QUERY_LIMIT = 50;
+const SERVER_RETENTION_DAYS = 30;
+const LOCAL_ARCHIVE_LIMIT = 180;
+
 
 function setStatus(text, type = 'muted') {
   const box = $('#notificationsStatus');
@@ -183,6 +197,290 @@ function dedupeAccounts(list = []) {
   });
   return [...seen.values()];
 }
+
+function targetTypeLabel(type = 'player') {
+  const labels = Object.fromEntries(targetOptions());
+  const fallbackMap = {
+    system: t('messages.targetSystem', 'Система'),
+    admins: t('messages.targetAdmins', 'Адміни і модератори'),
+    all: t('messages.targetAll', 'Усі гравці'),
+    region: t('messages.targetRegion', 'Регіон'),
+    alliance: t('messages.targetAlliance', 'Альянс'),
+    consuls: t('messages.targetConsuls', 'Консули'),
+    officers: t('messages.targetOfficers', 'Офіцери'),
+    player: t('messages.targetPlayer', 'Гравець')
+  };
+  return labels[type] || fallbackMap[type] || t(`messages.${type}`, type || '—');
+}
+function currentTargetLabel(type = $('#messageTargetType')?.value || 'player', recipients = []) {
+  const region = activeRegion();
+  const alliance = activeAlliance();
+  if (type === 'player') return recipients[0] ? `${t('messages.targetPersonal', 'Особисто')} · ${playerLabel(recipients[0])}` : `${t('messages.targetPersonal', 'Особисто')} · ${String($('#messagePlayerInput')?.value || '').trim()}`;
+  if (type === 'alliance') return `${t('messages.targetAlliance', 'Альянс')} ${alliance || '—'} · R${region || '—'}`;
+  if (type === 'region') return `${t('messages.targetRegion', 'Регіон')} · R${region || '—'}`;
+  if (['consuls', 'officers'].includes(type)) return `${targetTypeLabel(type)} · R${region || '—'}`;
+  return targetTypeLabel(type);
+}
+function messageTargetLabel(item = {}) {
+  const type = String(item.targetType || '').trim() || (isMessage(item) ? 'player' : 'system');
+  if (item.targetLabel) return String(item.targetLabel);
+  const region = regionOf(item.region);
+  const alliance = tag(item.alliance);
+  if (type === 'player') return t('messages.targetPersonal', 'Особисто');
+  if (type === 'alliance') return `${t('messages.targetAlliance', 'Альянс')} ${alliance || '—'} · R${region || '—'}`;
+  if (type === 'region') return `${t('messages.targetRegion', 'Регіон')} · R${region || '—'}`;
+  if (['consuls', 'officers'].includes(type)) return `${targetTypeLabel(type)} · R${region || '—'}`;
+  return targetTypeLabel(type);
+}
+function isUnread(item = {}) {
+  return item.unread !== false && !item.readAt && !item.readAtMs;
+}
+function applyNotificationFilter(list = []) {
+  if (notificationsFilter === 'unread') return list.filter(item => item.archived !== true && isUnread(item));
+  if (notificationsFilter === 'archived') return list.filter(item => item.archived === true);
+  return list.filter(item => item.archived !== true);
+}
+function activePageKey() {
+  if (activeTab === 'inbox') return 'inbox';
+  if (activeTab === 'sent') return 'sent';
+  return 'notifications';
+}
+function resetPage(key = activePageKey()) {
+  notificationPages[key] = 0;
+}
+function createdMs(item = {}) {
+  return Number(item.createdAtMs) || (item.createdAt?.toMillis?.() || item.createdAt?.toDate?.()?.getTime?.() || 0);
+}
+function sourceBucket(item = {}) {
+  const type = String(item.targetType || item.type || 'system').toLowerCase();
+  const roleValue = normalizeUserRole(item.actorRole || 'player');
+  const source = sourceKind(item);
+  const region = regionOf(item.region);
+  const alliance = tag(item.alliance);
+  if (source === 'player' && type === 'player') return `player:${item.actorUid || item.actorName || 'unknown'}`;
+  if (type === 'alliance') return `alliance:${region}:${alliance || 'all'}`;
+  if (type === 'region') return `region:${region || 'all'}`;
+  if (['consuls', 'officers', 'admins', 'all'].includes(type)) return `${type}:${region || 'all'}`;
+  return `${source || roleValue}:${region || 'global'}`;
+}
+function sourceBucketLimit(item = {}) {
+  const type = String(item.targetType || item.type || 'system').toLowerCase();
+  const source = sourceKind(item);
+  if (source === 'player' && type === 'player') return 50;
+  if (type === 'player') return 30;
+  return 20;
+}
+function limitBySourceBuckets(list = []) {
+  const counts = new Map();
+  return [...list]
+    .sort((a, b) => createdMs(b) - createdMs(a))
+    .filter(item => {
+      const key = sourceBucket(item);
+      const count = counts.get(key) || 0;
+      if (count >= sourceBucketLimit(item)) return false;
+      counts.set(key, count + 1);
+      return true;
+    });
+}
+function pageSlice(list = [], key = activePageKey()) {
+  const totalPages = Math.max(1, Math.ceil(list.length / MESSAGE_PAGE_SIZE));
+  const page = Math.min(Math.max(0, Number(notificationPages[key]) || 0), totalPages - 1);
+  notificationPages[key] = page;
+  return list.slice(page * MESSAGE_PAGE_SIZE, (page + 1) * MESSAGE_PAGE_SIZE);
+}
+function paginationHtml(key = activePageKey(), total = 0) {
+  if (total <= MESSAGE_PAGE_SIZE) return '';
+  const page = Math.min(Math.max(0, Number(notificationPages[key]) || 0), Math.max(0, Math.ceil(total / MESSAGE_PAGE_SIZE) - 1));
+  const totalPages = Math.ceil(total / MESSAGE_PAGE_SIZE);
+  const from = page * MESSAGE_PAGE_SIZE + 1;
+  const to = Math.min(total, (page + 1) * MESSAGE_PAGE_SIZE);
+  return `<nav class="notifications-pagination" aria-label="${esc(t('notifications.pagination', 'Сторінки повідомлень'))}">
+    <button class="btn btn-message-soft" type="button" data-page-key="${esc(key)}" data-page-action="prev" ${page <= 0 ? 'disabled' : ''}>← ${esc(t('notifications.prevPage', 'Назад'))}</button>
+    <span>${esc(t('notifications.pageInfo', 'Сторінка'))} ${page + 1}/${totalPages} · ${from}-${to} / ${total}</span>
+    <button class="btn btn-message-soft" type="button" data-page-key="${esc(key)}" data-page-action="next" ${page >= totalPages - 1 ? 'disabled' : ''}>${esc(t('notifications.nextPage', 'Далі'))} →</button>
+  </nav>`;
+}
+function retentionCutoffMs() {
+  return Date.now() - SERVER_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+}
+function localArchiveKey(collectionName = 'notifications') {
+  return `wkd-local-message-archive:${currentUser?.uid || 'guest'}:${collectionName}`;
+}
+function saveLocalArchive(collectionName = 'notifications', list = []) {
+  if (!list.length || !currentUser) return;
+  try {
+    const key = localArchiveKey(collectionName);
+    const old = JSON.parse(localStorage.getItem(key) || '[]');
+    const map = new Map();
+    [...(Array.isArray(old) ? old : []), ...list].forEach(item => {
+      if (!item?.id) return;
+      const safe = {
+        id: String(item.id).slice(0, 140),
+        title: String(item.title || '').slice(0, 160),
+        message: String(item.message || item.summary || '').slice(0, 600),
+        region: regionOf(item.region),
+        alliance: tag(item.alliance),
+        targetType: String(item.targetType || item.type || '').slice(0, 40),
+        targetLabel: String(item.targetLabel || '').slice(0, 160),
+        actorName: String(item.actorName || '').slice(0, 120),
+        actorRole: String(item.actorRole || '').slice(0, 40),
+        createdAtMs: createdMs(item),
+        locallyArchivedAtMs: Date.now()
+      };
+      map.set(safe.id, safe);
+    });
+    const next = [...map.values()].sort((a, b) => createdMs(b) - createdMs(a)).slice(0, LOCAL_ARCHIVE_LIMIT);
+    localStorage.setItem(key, JSON.stringify(next));
+  } catch (_) {}
+}
+async function cleanupOldMessages(firebase, uid = '') {
+  if (!firebase || !uid) return;
+  const { db, firestoreMod } = firebase;
+  const cutoff = retentionCutoffMs();
+  for (const collectionName of ['notifications', 'sentMessages']) {
+    const ref = firestoreMod.collection(db, 'users', uid, collectionName);
+    const q = firestoreMod.query(ref, firestoreMod.where('createdAtMs', '<', cutoff), firestoreMod.orderBy('createdAtMs', 'asc'), firestoreMod.limit(20));
+    const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
+    trackReads(Math.max(1, snap.docs.length));
+    if (!snap.docs?.length) continue;
+    const oldItems = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    saveLocalArchive(collectionName, oldItems);
+    const batch = firestoreMod.writeBatch(db);
+    snap.docs.forEach(docSnap => batch.delete(docSnap.ref));
+    await batch.commit().catch(() => null);
+    trackDeletes(snap.docs.length);
+  }
+}
+function notificationDoc(firebase, id = '') {
+  return firebase.firestoreMod.doc(firebase.db, 'users', currentUser.uid, 'notifications', id);
+}
+function sentMessageDoc(firebase, id = '') {
+  return firebase.firestoreMod.doc(firebase.db, 'users', currentUser.uid, 'sentMessages', id);
+}
+function replyContextFrom(item = {}) {
+  if (!item || !item.id) return {};
+  const meta = senderMeta(item);
+  return {
+    replyToId: String(item.id || '').slice(0, 120),
+    replyToTitle: String(item.title || t('messages.defaultSubject', 'Повідомлення')).trim().slice(0, 160),
+    replyToActorName: String(meta.name || item.actorName || '').trim().slice(0, 120),
+    replyToCreatedAtMs: Number(item.createdAtMs) || Date.now()
+  };
+}
+function renderReplyContext(item = {}) {
+  const title = String(item.replyToTitle || '').trim();
+  const name = String(item.replyToActorName || '').trim();
+  if (!title && !name) return '';
+  const date = item.replyToCreatedAtMs ? new Date(Number(item.replyToCreatedAtMs)).toLocaleString() : '';
+  return `<div class="message-reply-context">
+    <span>${esc(t('messages.replyContext', 'Відповідь на'))}</span>
+    <b>${esc(title || t('messages.defaultSubject', 'Повідомлення'))}</b>
+    ${name ? `<em>${esc(t('messages.replyFrom', 'від'))} ${esc(name)}</em>` : ''}
+    ${date ? `<small>${esc(date)}</small>` : ''}
+  </div>`;
+}
+function spamStorageKey() {
+  return `wkd-message-times:${currentUser?.uid || 'guest'}`;
+}
+function recentMessageTimes() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(spamStorageKey()) || '[]');
+    const now = Date.now();
+    return (Array.isArray(raw) ? raw : []).map(Number).filter(ms => Number.isFinite(ms) && now - ms < MESSAGE_SPAM_WINDOW_MS);
+  } catch (_) {
+    return [];
+  }
+}
+function canSendBySpamLimit() {
+  return recentMessageTimes().length < MESSAGE_SPAM_MAX;
+}
+function rememberMessageSend() {
+  try {
+    const list = [...recentMessageTimes(), Date.now()].slice(-MESSAGE_SPAM_MAX);
+    localStorage.setItem(spamStorageKey(), JSON.stringify(list));
+  } catch (_) {}
+}
+async function loadSentMessages(firebase, uid) {
+  const { db, firestoreMod } = firebase;
+  const ref = firestoreMod.collection(db, 'users', uid, 'sentMessages');
+  const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(SENT_QUERY_LIMIT));
+  const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
+  trackReads(Math.max(1, snap.docs.length));
+  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+function stopPageNotificationsWatch() {
+  if (typeof unsubscribePageNotifications === 'function') {
+    try { unsubscribePageNotifications(); } catch (_) {}
+  }
+  unsubscribePageNotifications = null;
+}
+function watchPageNotifications(firebase, uid) {
+  stopPageNotificationsWatch();
+  if (!firebase || !uid) return;
+  const { db, firestoreMod } = firebase;
+  const ref = firestoreMod.collection(db, 'users', uid, 'notifications');
+  const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(NOTIFICATION_QUERY_LIMIT));
+  unsubscribePageNotifications = firestoreMod.onSnapshot(q, snap => {
+    rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    render();
+  }, error => console.warn('[WKD] notifications page realtime unavailable', error));
+}
+async function saveSentMessage(firebase, values = {}) {
+  if (!currentUser) return null;
+  const { db, firestoreMod } = firebase;
+  const nowMs = Date.now();
+  const id = `${nowMs}-${Math.random().toString(36).slice(2, 8)}`;
+  const payload = {
+    type: 'sent_message',
+    title: String(values.title || t('messages.defaultSubject', 'Повідомлення')).trim().slice(0, 160),
+    message: String(values.message || '').trim().slice(0, 600),
+    region: regionOf(values.region || ''),
+    alliance: tag(values.alliance || ''),
+    targetType: String(values.targetType || 'player').trim().slice(0, 40),
+    targetLabel: String(values.targetLabel || '').trim().slice(0, 160),
+    recipientCount: Math.max(0, Math.min(500, Number(values.recipientCount) || 0)),
+    recipientPreview: String(values.recipientPreview || '').trim().slice(0, 300),
+    actorUid: currentUser.uid,
+    createdAt: firestoreMod.serverTimestamp(),
+    createdAtMs: nowMs,
+    archived: false
+  };
+  if (values.replyToId) payload.replyToId = String(values.replyToId).trim().slice(0, 120);
+  if (values.replyToTitle) payload.replyToTitle = String(values.replyToTitle).trim().slice(0, 160);
+  if (values.replyToActorName) payload.replyToActorName = String(values.replyToActorName).trim().slice(0, 120);
+  if (values.replyToCreatedAtMs) payload.replyToCreatedAtMs = Number(values.replyToCreatedAtMs) || nowMs;
+  await firestoreMod.setDoc(firestoreMod.doc(db, 'users', currentUser.uid, 'sentMessages', id), payload);
+  trackWrites(1);
+  return { id, ...payload };
+}
+async function patchNotification(id = '', values = {}) {
+  if (!currentUser || !id) return;
+  const firebase = await getFirebase();
+  if (!firebase) return;
+  await firebase.firestoreMod.setDoc(notificationDoc(firebase, id), values, { merge: true });
+  trackWrites(1);
+}
+async function deleteNotificationDoc(id = '') {
+  if (!currentUser || !id) return;
+  const firebase = await getFirebase();
+  if (!firebase) return;
+  await firebase.firestoreMod.deleteDoc(notificationDoc(firebase, id));
+  trackDeletes(1);
+}
+async function patchSentMessage(id = '', values = {}) {
+  if (!currentUser || !id) return;
+  const firebase = await getFirebase();
+  if (!firebase) return;
+  await firebase.firestoreMod.setDoc(sentMessageDoc(firebase, id), values, { merge: true });
+  trackWrites(1);
+}
+async function deleteSentMessageDoc(id = '') {
+  if (!currentUser || !id) return;
+  const firebase = await getFirebase();
+  if (!firebase) return;
+  await firebase.firestoreMod.deleteDoc(sentMessageDoc(firebase, id));
+  trackDeletes(1);
+}
 function filteredRecipients(type = $('#messageTargetType')?.value || 'player', options = {}) {
   if (!options.preview && directReply?.uid && type === 'player') return [directReply];
   const region = activeRegion();
@@ -239,6 +537,26 @@ function senderMeta(item = {}) {
     alliance: tag(item.alliance || game.alliance)
   };
 }
+function sourceKind(item = {}, meta = null) {
+  const roleValue = normalizeUserRole(item.actorRole || meta?.role || 'player');
+  const type = String(item.type || item.source || '').toLowerCase();
+  if (item.source === 'region-status' || type.includes('region') || type.includes('registration')) return 'region';
+  if (roleValue === 'admin' || roleValue === 'moderator') return 'admin';
+  if (roleValue === 'consul') return 'consul';
+  if (roleValue === 'officer') return 'officer';
+  return 'player';
+}
+function sourceLabel(item = {}, meta = null) {
+  const kind = sourceKind(item, meta);
+  const map = {
+    admin: t('notifications.fromAdmin', 'Від адміна'),
+    consul: t('notifications.fromConsul', 'Від консула'),
+    officer: t('notifications.fromOfficer', 'Від офіцера'),
+    region: t('notifications.fromRegion', 'Від регіону'),
+    player: t('notifications.fromPlayer', 'Від гравця')
+  };
+  return map[kind] || map.player;
+}
 function dateText(item = {}) {
   const formatted = item.createdAt ? formatUserDate(item.createdAt) : '';
   if (formatted && formatted !== '—') return formatted;
@@ -253,21 +571,36 @@ function renderAvatar(meta = {}) {
 function renderNoticeList() {
   const list = $('#notificationsNoticeList');
   if (!list) return;
-  const notices = rows.filter(item => !isMessage(item));
-  list.innerHTML = notices.length ? notices.map(item => `
-    <article class="notify-item ${item.unread !== false && !item.readAt ? 'is-unread' : ''}">
+  const notices = applyNotificationFilter(limitBySourceBuckets(rows.filter(item => !isMessage(item))));
+  const pageItems = pageSlice(notices, 'notifications');
+  list.innerHTML = notices.length ? pageItems.map(item => {
+    const unread = isUnread(item);
+    const meta = senderMeta(item);
+    return `
+    <article class="notify-item ${unread ? 'is-unread' : ''}">
       <b>${esc(item.title || t('notifications.title', 'Сповіщення'))}</b>
+      <div class="notification-source-row">
+        <span class="notification-source">${esc(sourceLabel(item, meta))}</span>
+        ${meta.name ? `<span>${esc(meta.name)}</span>` : ''}
+      </div>
       <span>${esc(item.message || item.summary || '')}</span>
-      <small>${esc(item.region ? `R${item.region} · ` : '')}${esc(item.actorName ? `${item.actorName} · ` : '')}${esc(dateText(item))}</small>
-    </article>`).join('') : `<div class="notify-empty">${esc(t('notifications.empty', 'Нових сповіщень немає.'))}</div>`;
+      <small>${esc(item.region ? `R${item.region} · ` : '')}${esc(dateText(item))}</small>
+      <div class="notification-card-actions">
+        ${unread ? `<button class="btn btn-message-soft" type="button" data-notification-action="read" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.markOneRead', 'Прочитано'))}</button>` : ''}
+        <button class="btn btn-message-soft" type="button" data-notification-action="archive" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.archive', 'Архівувати'))}</button>
+        <button class="btn btn-message-danger" type="button" data-notification-action="delete" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.delete', 'Видалити'))}</button>
+      </div>
+    </article>`;
+  }).join('') + paginationHtml('notifications', notices.length) : `<div class="notify-empty">${esc(t('notifications.empty', 'Нових сповіщень немає.'))}</div>`;
 }
 function renderMessageList() {
   const list = $('#notificationsInboxList');
   if (!list) return;
-  const messages = rows.filter(isMessage);
-  list.innerHTML = messages.length ? messages.map(item => {
+  const messages = applyNotificationFilter(limitBySourceBuckets(rows.filter(item => isMessage(item))));
+  const pageItems = pageSlice(messages, 'inbox');
+  list.innerHTML = messages.length ? pageItems.map(item => {
     const meta = senderMeta(item);
-    const unread = item.unread !== false && !item.readAt;
+    const unread = isUnread(item);
     return `
       <article class="site-message-card ${unread ? 'is-unread' : ''}">
         <div class="site-message-main">
@@ -275,20 +608,58 @@ function renderMessageList() {
           <div class="site-message-content">
             <div class="site-message-sender">
               <strong>${esc(meta.name)}</strong>
+              <span class="message-origin">${esc(sourceLabel(item, meta))}</span>
+              <span class="message-target-badge">${esc(messageTargetLabel(item))}</span>
               <span class="role-badge role-${esc(meta.role)}">${esc(meta.roleText)}</span>
             </div>
             <small>${esc(meta.region ? `R${meta.region}` : 'R—')} · ${esc(meta.alliance || '—')} · ${esc(dateText(item))}</small>
             <h3>${esc(item.title || t('messages.defaultSubject', 'Повідомлення'))}</h3>
+            ${renderReplyContext(item)}
             <p>${esc(item.message || item.summary || '')}</p>
           </div>
         </div>
-        ${meta.uid ? `<button class="btn site-message-reply" type="button" data-reply-id="${esc(item.id || '')}" data-i18n="messages.reply">${esc(t('messages.reply', 'Відповісти'))}</button>` : ''}
+        <div class="site-message-actions">
+          ${meta.uid ? `<button class="btn site-message-reply" type="button" data-reply-id="${esc(item.id || '')}" data-i18n="messages.reply">${esc(t('messages.reply', 'Відповісти'))}</button>` : ''}
+          ${unread ? `<button class="btn btn-message-soft" type="button" data-notification-action="read" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.markOneRead', 'Прочитано'))}</button>` : ''}
+          <button class="btn btn-message-soft" type="button" data-notification-action="archive" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.archive', 'Архівувати'))}</button>
+          <button class="btn btn-message-danger" type="button" data-notification-action="delete" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.delete', 'Видалити'))}</button>
+        </div>
       </article>`;
-  }).join('') : `<div class="notify-empty">${esc(t('notifications.noMessages', 'Отриманих повідомлень немає.'))}</div>`;
+  }).join('') + paginationHtml('inbox', messages.length) : `<div class="notify-empty">${esc(t('notifications.noMessages', 'Отриманих повідомлень немає.'))}</div>`;
+}
+function renderSentList() {
+  const list = $('#notificationsSentList');
+  if (!list) return;
+  const sent = applyNotificationFilter(limitBySourceBuckets(sentRows));
+  const pageItems = pageSlice(sent, 'sent');
+  list.innerHTML = sent.length ? pageItems.map(item => `
+    <article class="site-message-card sent-message-card">
+      <div class="site-message-main">
+        <span class="message-avatar">${esc(initials(actorName({ region: item.region, alliance: item.alliance })))}</span>
+        <div class="site-message-content">
+          <div class="site-message-sender">
+            <strong>${esc(item.title || t('messages.defaultSubject', 'Повідомлення'))}</strong>
+            <span class="sent-message-target">${esc(messageTargetLabel(item))}</span>
+          </div>
+          <div class="sent-message-meta">
+            <span>${esc(t('messages.recipients', 'Отримувачів'))}: ${esc(item.recipientCount ?? 0)}</span>
+            <span>${esc(dateText(item))}</span>
+          </div>
+          ${item.recipientPreview ? `<small>${esc(item.recipientPreview)}</small>` : ''}
+          ${renderReplyContext(item)}
+          <p>${esc(item.message || '')}</p>
+        </div>
+      </div>
+      <div class="site-message-actions">
+        <button class="btn btn-message-soft" type="button" data-sent-action="archive" data-sent-id="${esc(item.id || '')}">${esc(t('notifications.archive', 'Архівувати'))}</button>
+        <button class="btn btn-message-danger" type="button" data-sent-action="delete" data-sent-id="${esc(item.id || '')}">${esc(t('notifications.delete', 'Видалити'))}</button>
+      </div>
+    </article>`).join('') + paginationHtml('sent', sent.length) : `<div class="notify-empty">${esc(t('messages.noSentMessages', 'Надісланих повідомлень немає.'))}</div>`;
 }
 function render() {
   renderNoticeList();
   renderMessageList();
+  renderSentList();
 }
 function renderPlayerList() {
   const datalist = $('#messagePlayerList');
@@ -308,11 +679,20 @@ function updateComposeVisibility() {
   $('#messagePlayerWrap') && ($('#messagePlayerWrap').hidden = type !== 'player');
 }
 function switchTab(tab = 'notifications') {
-  activeTab = ['notifications', 'inbox', 'compose'].includes(tab) ? tab : 'notifications';
+  activeTab = ['notifications', 'inbox', 'sent', 'compose'].includes(tab) ? tab : 'notifications';
   $('#notificationsNotices') && ($('#notificationsNotices').hidden = activeTab !== 'notifications');
   $('#notificationsInbox') && ($('#notificationsInbox').hidden = activeTab !== 'inbox');
+  $('#notificationsSent') && ($('#notificationsSent').hidden = activeTab !== 'sent');
   $('#notificationsCompose') && ($('#notificationsCompose').hidden = activeTab !== 'compose');
   $$('[data-notifications-tab]').forEach(btn => btn.classList.toggle('is-active', btn.dataset.notificationsTab === activeTab));
+  resetPage(activePageKey());
+  render();
+}
+function setNotificationsFilter(filter = 'active') {
+  notificationsFilter = ['active', 'unread', 'archived'].includes(filter) ? filter : 'active';
+  $$('[data-notifications-filter]').forEach(btn => btn.classList.toggle('is-active', btn.dataset.notificationsFilter === notificationsFilter));
+  resetPage(activePageKey());
+  render();
 }
 function renderCompose() {
   const box = $('#notificationsCompose');
@@ -355,6 +735,7 @@ async function loadDirectory() {
 async function load(user) {
   currentUser = user || null;
   if (!user) {
+    stopPageNotificationsWatch();
     setStatus(t('notifications.authRequired', 'Увійди через Google.'), 'warn');
     setTimeout(() => { window.location.href = 'login.html'; }, 800);
     return;
@@ -362,16 +743,23 @@ async function load(user) {
   const firebase = await getFirebase();
   if (!firebase) return;
   currentProfile = await getUserProfile(user.uid).catch(() => null);
+  cleanupOldMessages(firebase, user.uid).catch(error => console.warn('[WKD] old messages cleanup skipped', error));
   directory = await loadDirectory();
   const { db, firestoreMod } = firebase;
   const ref = firestoreMod.collection(db, 'users', user.uid, 'notifications');
-  const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(100));
-  const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
+  const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(NOTIFICATION_QUERY_LIMIT));
+  const [snap, sent] = await Promise.all([
+    firestoreMod.getDocs(q).catch(() => ({ docs: [] })),
+    loadSentMessages(firebase, user.uid)
+  ]);
+  trackReads(Math.max(1, snap.docs.length));
   rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  sentRows = sent;
   setStatus(t('notifications.loaded', 'Сповіщення оновлено.'), 'success');
   renderCompose();
   switchTab(activeTab);
   render();
+  watchPageNotifications(firebase, user.uid);
 }
 async function markAll() {
   if (!currentUser) return;
@@ -379,8 +767,9 @@ async function markAll() {
   if (!firebase) return;
   const { db, firestoreMod } = firebase;
   const batch = firestoreMod.writeBatch(db);
-  rows.filter(row => row.id && !row.readAt).forEach(row => batch.set(firestoreMod.doc(db, 'users', currentUser.uid, 'notifications', row.id), { readAt: firestoreMod.serverTimestamp(), readAtMs: Date.now(), unread: false }, { merge: true }));
+  rows.filter(row => row.id && row.archived !== true && isUnread(row)).forEach(row => batch.set(firestoreMod.doc(db, 'users', currentUser.uid, 'notifications', row.id), { readAt: firestoreMod.serverTimestamp(), readAtMs: Date.now(), unread: false }, { merge: true }));
   await batch.commit().catch(() => null);
+  trackWrites(rows.filter(row => row.id && row.archived !== true && isUnread(row)).length);
   rows = rows.map(row => ({ ...row, unread: false, readAtMs: Date.now() }));
   render();
   window.WKD?.refreshNotifications?.();
@@ -390,6 +779,16 @@ async function sendMessage() {
   const title = String($('#messageSubjectInput')?.value || t('messages.defaultSubject', 'Повідомлення')).trim().slice(0, 80) || t('messages.defaultSubject', 'Повідомлення');
   const body = String($('#messageBodyInput')?.value || '').trim().slice(0, 600);
   if (!body) { setHint(t('messages.emptyBody', 'Напиши текст повідомлення.')); return; }
+  if (!canSendBySpamLimit()) {
+    setHint(t('messages.spamLimit', 'Забагато повідомлень за короткий час. Спробуй трохи пізніше.'));
+    return;
+  }
+  const replyContext = directReply?.replyToId ? {
+    replyToId: directReply.replyToId,
+    replyToTitle: directReply.replyToTitle,
+    replyToActorName: directReply.replyToActorName,
+    replyToCreatedAtMs: directReply.replyToCreatedAtMs
+  } : {};
   const type = $('#messageTargetType')?.value || 'player';
   const recipients = filteredRecipients(type);
   if (!recipients.length) {
@@ -397,8 +796,12 @@ async function sendMessage() {
     setHint(region ? `${t('messages.noRecipients', 'Немає отримувачів для цього вибору.')} R${region}` : t('messages.noRegionSelected', 'Вибери регіон або гравця.'));
     return;
   }
+  const firebase = await getFirebase();
+  if (!firebase) { setHint(t('messages.sendFailed', 'Не вдалося відправити повідомлення.')); return; }
   setHint(t('messages.sending', 'Відправляю...'));
-  await Promise.all(recipients.slice(0, 500).map(player => {
+  const safeRecipients = recipients.slice(0, 500);
+  const targetLabel = currentTargetLabel(type, safeRecipients);
+  await Promise.all(safeRecipients.map(player => {
     const target = { region: regionOf(player.region) || activeRegion(), alliance: tag(player.alliance) || activeAlliance() };
     const senderRole = actorRole(target);
     return createUserNotification(player.uid, {
@@ -411,9 +814,24 @@ async function sendMessage() {
       actorName: actorName(target),
       actorRole: senderRole,
       actorRoleText: roleLabel(senderRole),
-      actorPhotoURL: currentProfile?.photoURL || currentUser?.photoURL || ''
+      actorPhotoURL: currentProfile?.photoURL || currentUser?.photoURL || '',
+      targetType: type,
+      targetLabel,
+      ...replyContext
     }).catch(error => console.warn('[WKD] message skipped', player.uid, error));
   }));
+  await saveSentMessage(firebase, {
+    title,
+    message: body,
+    region: activeRegion(),
+    alliance: activeAlliance(),
+    targetType: type,
+    targetLabel,
+    recipientCount: safeRecipients.length,
+    recipientPreview: safeRecipients.slice(0, 5).map(playerLabel).join(' • '),
+    ...replyContext
+  }).catch(error => console.warn('[WKD] sent history skipped', error));
+  rememberMessageSend();
   const bodyInput = $('#messageBodyInput');
   if (bodyInput) bodyInput.value = '';
   directReply = null;
@@ -433,7 +851,8 @@ function startReply(item = {}) {
     region: meta.region || item.region || activeRegion(),
     alliance: meta.alliance || item.alliance || activeAlliance(),
     role: meta.role,
-    accountRole: meta.role
+    accountRole: meta.role,
+    ...replyContextFrom(item)
   };
   switchTab('compose');
   renderCompose();
@@ -447,17 +866,87 @@ function startReply(item = {}) {
   setHint(`${t('messages.replyTo', 'Відповідь для')}: ${meta.name}`);
   $('#messageBodyInput')?.focus();
 }
+async function handleNotificationAction(action = '', id = '') {
+  if (!id) return;
+  if (action === 'delete' && !window.confirm(t('notifications.deleteConfirm', 'Видалити це повідомлення?'))) return;
+  if (action === 'read') {
+    await patchNotification(id, { readAtMs: Date.now(), unread: false });
+    rows = rows.map(row => row.id === id ? { ...row, readAtMs: Date.now(), unread: false } : row);
+  } else if (action === 'archive') {
+    await patchNotification(id, { archived: true, readAtMs: Date.now(), unread: false });
+    rows = rows.map(row => row.id === id ? { ...row, archived: true, readAtMs: Date.now(), unread: false } : row);
+  } else if (action === 'delete') {
+    await deleteNotificationDoc(id);
+    rows = rows.filter(row => row.id !== id);
+  }
+  render();
+  window.WKD?.refreshNotifications?.();
+}
+async function handleSentAction(action = '', id = '') {
+  if (!id) return;
+  if (action === 'delete' && !window.confirm(t('notifications.deleteConfirm', 'Видалити це повідомлення?'))) return;
+  if (action === 'archive') await patchSentMessage(id, { archived: true });
+  else if (action === 'delete') await deleteSentMessageDoc(id);
+  sentRows = sentRows.map(row => action === 'archive' && row.id === id ? { ...row, archived: true } : row).filter(row => action === 'delete' ? row.id !== id : true);
+  renderSentList();
+}
+async function clearArchive() {
+  if (!currentUser) return;
+  if (!window.confirm(t('notifications.clearArchiveConfirm', 'Очистити архів у цій вкладці?'))) return;
+  const archivedNotifications = rows.filter(row => row.archived === true && (activeTab === 'inbox' ? isMessage(row) : activeTab === 'notifications' ? !isMessage(row) : false));
+  const archivedSent = activeTab === 'sent' ? sentRows.filter(row => row.archived === true) : [];
+  await Promise.all([
+    ...archivedNotifications.map(row => deleteNotificationDoc(row.id)),
+    ...archivedSent.map(row => deleteSentMessageDoc(row.id))
+  ]);
+  if (archivedNotifications.length) rows = rows.filter(row => !archivedNotifications.some(item => item.id === row.id));
+  if (archivedSent.length) sentRows = sentRows.filter(row => !archivedSent.some(item => item.id === row.id));
+  render();
+  setStatus(t('notifications.archiveCleared', 'Архів очищено.'), 'success');
+  window.WKD?.refreshNotifications?.();
+}
 function bindCompose() {
   if (composeReady) return;
   composeReady = true;
   $$('[data-notifications-tab]').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.notificationsTab || 'notifications')));
+  $$('[data-notifications-filter]').forEach(btn => btn.addEventListener('click', () => setNotificationsFilter(btn.dataset.notificationsFilter || 'active')));
   $('#notificationsMarkAllBtn')?.addEventListener('click', () => markAll().catch(console.error));
+  $('#notificationsClearArchiveBtn')?.addEventListener('click', () => clearArchive().catch(error => {
+    console.error(error);
+    setStatus(t('notifications.actionFailed', 'Не вдалося виконати дію.'), 'error');
+  }));
   $('#sendSiteMessageBtn')?.addEventListener('click', () => sendMessage().catch(error => { console.error(error); setHint(t('messages.sendFailed', 'Не вдалося відправити повідомлення.')); }));
   $('#messageTargetType')?.addEventListener('change', () => { clearDirectReply(); updateComposeVisibility(); renderPlayerList(); });
   $('#messageRegionSelect')?.addEventListener('change', () => { clearDirectReply(); const allianceInput = $('#messageAllianceInput'); if (allianceInput) allianceInput.value = ownAlliances(activeRegion())[0] || ''; renderPlayerList(); });
   $('#messageAllianceInput')?.addEventListener('input', () => { clearDirectReply(); renderPlayerList(); });
   $('#messagePlayerInput')?.addEventListener('input', clearDirectReply);
-  $('#notificationsInboxList')?.addEventListener('click', event => {
+  document.addEventListener('click', event => {
+    const pageBtn = event.target.closest('[data-page-action]');
+    if (pageBtn) {
+      event.preventDefault();
+      const key = ['notifications', 'inbox', 'sent'].includes(pageBtn.dataset.pageKey) ? pageBtn.dataset.pageKey : activePageKey();
+      notificationPages[key] = Math.max(0, (Number(notificationPages[key]) || 0) + (pageBtn.dataset.pageAction === 'next' ? 1 : -1));
+      render();
+      return;
+    }
+    const actionBtn = event.target.closest('[data-notification-action]');
+    if (actionBtn) {
+      event.preventDefault();
+      handleNotificationAction(actionBtn.dataset.notificationAction, actionBtn.dataset.notificationId).catch(error => {
+        console.error(error);
+        setStatus(t('notifications.actionFailed', 'Не вдалося виконати дію.'), 'error');
+      });
+      return;
+    }
+    const sentBtn = event.target.closest('[data-sent-action]');
+    if (sentBtn) {
+      event.preventDefault();
+      handleSentAction(sentBtn.dataset.sentAction, sentBtn.dataset.sentId).catch(error => {
+        console.error(error);
+        setStatus(t('notifications.actionFailed', 'Не вдалося виконати дію.'), 'error');
+      });
+      return;
+    }
     const button = event.target.closest('[data-reply-id]');
     if (!button) return;
     const item = rows.find(row => row.id === button.dataset.replyId);

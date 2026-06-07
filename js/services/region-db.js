@@ -1,4 +1,6 @@
 import { getFirebase } from './firebase-service.js';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=83';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=83';
 import {
   getUserProfile,
   getFarmById,
@@ -805,6 +807,7 @@ export async function getRegionSettings(region) {
   if (!safeRegion) throw new Error('region-required');
   const ref = firestoreMod.doc(db, 'regions', safeRegion);
   const snap = await firestoreMod.getDoc(ref);
+  trackReads(1);
   const regionData = snap.exists() ? (snap.data() || {}) : {};
   return mergeRegionSettings(withRegionRootFallback(regionData));
 }
@@ -875,8 +878,8 @@ export async function listRegionActionLogs(user, regionOverride = '', { limitCou
     q = firestoreMod.query(ref, firestoreMod.where('alliance', '==', ownAlliance), firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(limitValue));
   }
   const snap = await firestoreMod.getDocs(q).catch(async () => {
-    if (role === 'officer' && ownAlliance) return firestoreMod.getDocs(firestoreMod.query(ref, firestoreMod.where('alliance', '==', ownAlliance)));
-    return firestoreMod.getDocs(ref);
+    if (role === 'officer' && ownAlliance) return firestoreMod.getDocs(firestoreMod.query(ref, firestoreMod.where('alliance', '==', ownAlliance), firestoreMod.limit(limitValue)));
+    return firestoreMod.getDocs(firestoreMod.query(ref, firestoreMod.limit(limitValue)));
   });
   const rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
     .filter(row => regionActionVisibleTo(profile || {}, region, user, row))
@@ -898,6 +901,7 @@ export async function getSecurityOverview(user) {
     if (data.openedByEmail || data.updatedByEmail || data.registrationOpenedByEmail || form.openedByEmail || form.updatedByEmail) oldEmailFields += 1;
   });
   const sharesSnap = await firestoreMod.getDocs(firestoreMod.collection(db, 'finalPlanShares')).catch(() => ({ docs: [] }));
+  trackReads(Math.max(1, sharesSnap.docs.length));
   publicPlanLinks = sharesSnap.docs.length;
   return { profile, regions, openForms, oldEmailFields, publicPlanLinks };
 }
@@ -1034,6 +1038,7 @@ export async function shareRegionFinalPlan(user, region, payload = {}) {
     updatedBy: user.uid,
     updatedByName: getRegionActorName(profile || {}, safeRegion, user)
   }, { merge: true });
+  trackWrites(1);
   return { code, region: safeRegion };
 }
 
@@ -1042,6 +1047,7 @@ export async function resolveRegionFinalPlanShare(codeValue) {
   const code = normalizeShortLinkCode(codeValue);
   if (!code) throw new Error('final-plan-link-required');
   const snap = await firestoreMod.getDoc(firestoreMod.doc(db, 'finalPlanShares', code));
+  trackReads(1);
   if (!snap.exists()) throw new Error('final-plan-link-not-found');
   return { code, ...(snap.data() || {}) };
 }
@@ -1071,7 +1077,7 @@ export async function shareRegionTable(user, region) {
   const safeRegion = normalizeRegion(region || getGameProfile(profile || {}).region);
   if (!safeRegion) throw new Error('region-required');
   if (!canManageRegion(profile, safeRegion, user)) throw new Error('region-table-share-denied');
-  const result = await listRegionRegistrations(user, safeRegion);
+  const result = await listRegionRegistrations(user, safeRegion, { force: true });
   const code = makeShortLinkCode();
   const settings = result.settings || {};
   const rows = (result.rows || []).map(sanitizeRegionTableRow).filter(row => row.nickname).slice(0, 800);
@@ -1088,6 +1094,7 @@ export async function shareRegionTable(user, region) {
     createdBy: user.uid,
     createdByName: getRegionActorName(profile || {}, safeRegion, user)
   });
+  trackWrites(1);
   await writeRegionActionLog(firebase, user, profile, safeRegion, 'region_table_shared', { summary: serviceT('actionLog.regionTableShared', 'Створено секретне посилання таблиці регіону') }).catch(() => null);
   return { code, region: safeRegion };
 }
@@ -1097,6 +1104,7 @@ export async function resolveRegionTableShare(codeValue) {
   const code = normalizeShortLinkCode(codeValue);
   if (!code) throw new Error('region-table-link-required');
   const snap = await firestoreMod.getDoc(firestoreMod.doc(db, 'regionTableShares', code));
+  trackReads(1);
   if (!snap.exists()) throw new Error('region-table-link-not-found');
   const data = snap.data() || {};
   const region = normalizeRegion(data.region);
@@ -1150,6 +1158,7 @@ export async function cleanupOldRegionRegistrations(user, regionOverride = '', o
     });
     await batch.commit();
   }
+  trackDeletes(expiredIds.length);
 
   if (expiredIds.length) {
     await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), {
@@ -1164,6 +1173,38 @@ export async function cleanupOldRegionRegistrations(user, regionOverride = '', o
   }
 
   return { region: safeRegion, deletedCount: expiredIds.length, retentionDays: REGION_REGISTRATION_RETENTION_DAYS };
+}
+
+
+export async function cleanupOldPublicDocuments(user, options = {}) {
+  if (!user) return { deletedCount: 0, skipped: 'auth-required' };
+  const { db, firestoreMod } = await getFirebaseParts();
+  const profile = await getUserProfile(user.uid);
+  if (!(isOwnerEmail(user.email) || ['admin', 'moderator'].includes(normalizeUserRole(profile?.role || 'player')))) {
+    return { deletedCount: 0, skipped: 'admin-required' };
+  }
+  const retentionDays = Math.max(30, Math.min(180, Number(options.retentionDays) || 45));
+  const maxDeletes = Math.max(5, Math.min(100, Number(options.maxDeletes) || 40));
+  const cutoffMs = Date.now() - retentionDays * DAY_MS;
+  let deletedCount = 0;
+  const deleteOldFrom = async (collectionName, timeFields = ['createdAtMs', 'updatedAtMs']) => {
+    if (deletedCount >= maxDeletes) return;
+    const snap = await firestoreMod.getDocs(firestoreMod.query(firestoreMod.collection(db, collectionName), firestoreMod.limit(120))).catch(() => ({ docs: [] }));
+    trackReads(Math.max(1, snap.docs.length));
+    for (const docSnap of snap.docs) {
+      if (deletedCount >= maxDeletes) break;
+      const data = docSnap.data() || {};
+      const savedAtMs = timeFields.map(field => Number(data[field]) || timestampToMs(data[field])).find(ms => ms > 0) || 0;
+      const region = normalizeRegion(data.region || '');
+      if (!savedAtMs || savedAtMs >= cutoffMs || !region || !canManageRegion(profile, region, user)) continue;
+      await firestoreMod.deleteDoc(docSnap.ref).catch(() => null);
+      deletedCount += 1;
+    }
+  };
+  await deleteOldFrom('regionTableShares', ['createdAtMs', 'createdAt', 'updatedAtMs', 'updatedAt']);
+  await deleteOldFrom('finalPlanShares', ['updatedAtMs', 'updatedAt', 'createdAtMs', 'createdAt']);
+  trackDeletes(deletedCount);
+  return { deletedCount, retentionDays };
 }
 
 
@@ -1576,6 +1617,7 @@ async function assertRegionNicknameFree(firestoreMod, db, region, data = {}, cur
   const q = firestoreMod.query(collectionRef, firestoreMod.where('cycleId', '==', data.cycleId));
   const snap = await firestoreMod.getDocs(q).catch(() => null);
   if (!snap) return;
+  trackReads(Math.max(1, snap.docs.length));
   const ownIds = new Set((Array.isArray(currentDocIds) ? currentDocIds : [currentDocIds]).filter(Boolean));
   const duplicate = snap.docs.find(doc => {
     if (ownIds.has(doc.id)) return false;
@@ -1637,6 +1679,7 @@ export async function saveWastelandRegistration(user, values, regionOverride = '
       firestoreMod.getDoc(docRef),
       legacyDocId === docId ? Promise.resolve(null) : firestoreMod.getDoc(legacyRef).catch(() => null)
     ]);
+    trackReads(legacyDocId === docId ? 1 : 2);
     const managerCanEdit = canManageRegion(profile, region, user);
     const sameCycleAlreadyExists = (existing.exists() && existing.data()?.cycleId === status.currentCycleId)
       || (legacyExisting?.exists?.() && legacyExisting.data()?.cycleId === status.currentCycleId);
@@ -1646,10 +1689,13 @@ export async function saveWastelandRegistration(user, values, regionOverride = '
     await assertRegionNicknameFree(firestoreMod, db, region, data, [docId, legacyDocId]);
     if (managerCanEdit) await firestoreMod.setDoc(docRef, payload, { merge: true });
     else await firestoreMod.setDoc(docRef, payload);
+    trackWrites(1);
   } else {
     await assertRegionNicknameFree(firestoreMod, db, region, data, []);
     await firestoreMod.addDoc(collectionRef, payload);
+    trackWrites(1);
   }
+  removeCache(`regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v83`);
 
   await writeRegionActionLog({ db, firestoreMod }, user || { uid: 'guest' }, profile || {}, region, 'registration_submitted', { summary: data.nickname || 'Заявка', alliance: data.alliance, targetName: data.nickname });
   if (user?.uid) {
@@ -1737,7 +1783,7 @@ function mergeRows(players = [], registrations = [], activeCycle = '') {
     .sort((a, b) => String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk'));
 }
 
-export async function listRegionRegistrations(user, regionOverride = '') {
+export async function listRegionRegistrations(user, regionOverride = '', options = {}) {
   const { db, firestoreMod } = await getFirebaseParts();
   const { profile, region } = await getMyRegionContext(user, regionOverride);
   let settings = await getRegionSettings(region);
@@ -1751,6 +1797,12 @@ export async function listRegionRegistrations(user, regionOverride = '') {
   }
   await cleanupOldRegionRegistrations(user, region).catch(error => console.warn('[WKD] old registration cleanup skipped:', error));
 
+  const cacheKey = `regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v83`;
+  if (!options?.force) {
+    const cached = readCache(cacheKey, 60 * 1000);
+    if (cached && Array.isArray(cached.rows)) return { profile, region, settings: status, rows: cached.rows, cached: true };
+  }
+
   const registrationsRef = firestoreMod.collection(db, 'regions', region, 'wastelandRegistrations');
   const registrationsQuery = status.currentCycleId
     ? firestoreMod.query(registrationsRef, firestoreMod.where('cycleId', '==', status.currentCycleId))
@@ -1759,6 +1811,7 @@ export async function listRegionRegistrations(user, regionOverride = '') {
     firestoreMod.getDocs(firestoreMod.collection(db, 'regions', region, 'players')).catch(() => ({ docs: [] })),
     firestoreMod.getDocs(registrationsQuery).catch(() => ({ docs: [] }))
   ]);
+  trackReads(Math.max(1, playersSnap.docs.length) + Math.max(1, registrationsSnap.docs.length));
 
   const players = playersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   const game = bestRegionGame(profile || {});
@@ -1766,7 +1819,9 @@ export async function listRegionRegistrations(user, regionOverride = '') {
     players.push({ ...profile, ...game, uid: profile.uid, nickname: game.nickname, source: 'profile' });
   }
   const registrations = registrationsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  return { profile, region, settings: status, rows: mergeRows(players, registrations, status.currentCycleId) };
+  const rows = mergeRows(players, registrations, status.currentCycleId);
+  writeCache(cacheKey, { rows });
+  return { profile, region, settings: status, rows };
 }
 
 export async function deleteRegionRegistrations(user, region, registrationIds = []) {
@@ -1789,6 +1844,8 @@ export async function deleteRegionRegistrations(user, region, registrationIds = 
     });
     await batch.commit();
   }
+  trackDeletes(ids.length);
+  removeCache(`regionRegistrations.${safeRegion}.no-cycle.v83`);
 
   await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), {
     region: safeRegion,
@@ -1842,6 +1899,8 @@ export async function updateRegionRegistration(user, region, registrationId, val
     clean,
     { merge: true }
   );
+  trackWrites(1);
+  removeCache(`regionRegistrations.${safeRegion}.no-cycle.v83`);
 
   await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), {
     region: safeRegion,

@@ -82,6 +82,62 @@ service cloud.firestore {
         );
     }
 
+    function requestFarmsIsList() {
+      return request.resource.data.keys().hasAny(['farms']) && request.resource.data.farms is list;
+    }
+
+    function requestFarm(index) {
+      return requestFarmsIsList() && request.resource.data.farms.size() > index
+        ? request.resource.data.farms[index]
+        : {};
+    }
+
+    function requestFarmRegion(index) {
+      return requestFarm(index).keys().hasAny(['region']) ? requestFarm(index).region : '';
+    }
+
+    function requestFarmAlliance(index) {
+      return requestFarm(index).keys().hasAny(['alliance']) ? requestFarm(index).alliance : '';
+    }
+
+    function profileRegionAllowList() {
+      return [
+        request.resource.data.keys().hasAny(['region']) ? request.resource.data.region : '',
+        request.resource.data.keys().hasAny(['gameProfile']) && request.resource.data.gameProfile.keys().hasAny(['region']) ? request.resource.data.gameProfile.region : '',
+        requestFarmRegion(0), requestFarmRegion(1), requestFarmRegion(2), requestFarmRegion(3), requestFarmRegion(4),
+        requestFarmRegion(5), requestFarmRegion(6), requestFarmRegion(7), requestFarmRegion(8), requestFarmRegion(9),
+        requestFarmRegion(10), requestFarmRegion(11), requestFarmRegion(12), requestFarmRegion(13), requestFarmRegion(14),
+        requestFarmRegion(15), requestFarmRegion(16), requestFarmRegion(17), requestFarmRegion(18), requestFarmRegion(19)
+      ];
+    }
+
+    function profileAllianceAllowList() {
+      return [
+        ((request.resource.data.keys().hasAny(['region']) ? request.resource.data.region : '') + ':' + (request.resource.data.keys().hasAny(['alliance']) ? request.resource.data.alliance : '')),
+        ((request.resource.data.keys().hasAny(['gameProfile']) && request.resource.data.gameProfile.keys().hasAny(['region']) ? request.resource.data.gameProfile.region : '') + ':' + (request.resource.data.keys().hasAny(['gameProfile']) && request.resource.data.gameProfile.keys().hasAny(['alliance']) ? request.resource.data.gameProfile.alliance : '')),
+        requestFarmRegion(0) + ':' + requestFarmAlliance(0), requestFarmRegion(1) + ':' + requestFarmAlliance(1),
+        requestFarmRegion(2) + ':' + requestFarmAlliance(2), requestFarmRegion(3) + ':' + requestFarmAlliance(3),
+        requestFarmRegion(4) + ':' + requestFarmAlliance(4), requestFarmRegion(5) + ':' + requestFarmAlliance(5),
+        requestFarmRegion(6) + ':' + requestFarmAlliance(6), requestFarmRegion(7) + ':' + requestFarmAlliance(7),
+        requestFarmRegion(8) + ':' + requestFarmAlliance(8), requestFarmRegion(9) + ':' + requestFarmAlliance(9),
+        requestFarmRegion(10) + ':' + requestFarmAlliance(10), requestFarmRegion(11) + ':' + requestFarmAlliance(11),
+        requestFarmRegion(12) + ':' + requestFarmAlliance(12), requestFarmRegion(13) + ':' + requestFarmAlliance(13),
+        requestFarmRegion(14) + ':' + requestFarmAlliance(14), requestFarmRegion(15) + ':' + requestFarmAlliance(15),
+        requestFarmRegion(16) + ':' + requestFarmAlliance(16), requestFarmRegion(17) + ':' + requestFarmAlliance(17),
+        requestFarmRegion(18) + ':' + requestFarmAlliance(18), requestFarmRegion(19) + ':' + requestFarmAlliance(19)
+      ];
+    }
+
+    function profileAccessFieldsSafe() {
+      return request.resource.data.keys().hasAny(['regionAccess'])
+        && request.resource.data.keys().hasAny(['allianceAccess'])
+        && request.resource.data.regionAccess is list
+        && request.resource.data.allianceAccess is list
+        && request.resource.data.regionAccess.hasOnly(profileRegionAllowList())
+        && request.resource.data.allianceAccess.hasOnly(profileAllianceAllowList())
+        && regionRolesWriteSafe();
+    }
+
     function canReviewRoleRequests() {
       return ownerEmail() || isAdmin() || isModerator();
     }
@@ -144,7 +200,7 @@ service cloud.firestore {
 
     function ownerKeepsProtectedFields() {
       return !request.resource.data.diff(resource.data).affectedKeys()
-        .hasAny(['role', 'createdAt', 'uid', 'email', 'providerId', 'regionAccess', 'regionRoles']);
+        .hasAny(['role', 'createdAt', 'uid', 'email', 'providerId', 'regionAccess', 'allianceAccess', 'regionRoles']);
     }
 
     function ownerProfileUpdateSafe(userId) {
@@ -155,11 +211,11 @@ service cloud.firestore {
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'displayName', 'photoURL', 'lastLoginAt', 'updatedAt',
-          'country', 'countryCode', 'regionAccess', 'regionRoles',
+          'country', 'countryCode', 'regionAccess', 'allianceAccess', 'regionRoles',
           'profileComplete', 'gameNick', 'nickname', 'region', 'alliance', 'rank', 'shk',
           'gameProfile', 'farms', 'farmCount', 'activeFarmId', 'roleRequest', 'profileVisibility'
         ])
-        && regionRolesWriteSafe();
+        && profileAccessFieldsSafe();
     }
 
 
@@ -173,11 +229,11 @@ service cloud.firestore {
         && request.resource.data.gameProfile.region != resource.data.gameProfile.region
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'displayName', 'photoURL', 'lastLoginAt', 'updatedAt',
-          'country', 'countryCode', 'regionAccess', 'regionRoles',
+          'country', 'countryCode', 'regionAccess', 'allianceAccess', 'regionRoles',
           'profileComplete', 'gameNick', 'nickname', 'region', 'alliance', 'rank', 'shk',
           'gameProfile', 'farms', 'farmCount', 'activeFarmId', 'roleRequest', 'role', 'roleLabel', 'profileVisibility'
         ])
-        && regionRolesWriteSafe();
+        && profileAccessFieldsSafe();
     }
 
     function managerUpdateSafe() {
@@ -209,7 +265,8 @@ service cloud.firestore {
       return isOwner(userId)
         && request.resource.data.uid == userId
         && !('email' in request.resource.data)
-        && request.resource.data.role == userDoc(userId).data.role;
+        && request.resource.data.role == userDoc(userId).data.role
+        && targetHasRegionAccess(userId, request.resource.data.region);
     }
 
     function managerPublicPlayerSafe() {
@@ -223,7 +280,8 @@ service cloud.firestore {
         && request.resource.data.uid == userId
         && request.resource.data.region == regionId
         && !('email' in request.resource.data)
-        && request.resource.data.role == userDoc(userId).data.role;
+        && request.resource.data.role == userDoc(userId).data.role
+        && targetHasRegionAccess(userId, regionId);
     }
 
     function regionDoc(regionId) {
@@ -290,22 +348,77 @@ service cloud.firestore {
         || (currentRegionRole(targetUserRegion(userId)) in ['consul', 'officer'] && targetHasRegionAccess(userId, targetUserRegion(userId)));
     }
 
+    function notificationTargetTypeSafe() {
+      return request.resource.data.targetType in ['system', 'player', 'alliance', 'region', 'consuls', 'officers', 'admins', 'all'];
+    }
+
+
+
+    function statsChangeCreateSafe() {
+      return signedIn()
+        && request.resource.data.keys().hasOnly(['uid', 'playerKey', 'changeType', 'source', 'processed', 'createdAt'])
+        && request.resource.data.uid is string
+        && request.resource.data.playerKey is string
+        && request.resource.data.changeType in ['profile_changed', 'farm_changed', 'role_changed', 'admin_changed', 'sync_changed']
+        && request.resource.data.source is string
+        && request.resource.data.source.size() <= 32
+        && request.resource.data.processed == false
+        && request.resource.data.createdAt == request.time
+        && (request.resource.data.uid == request.auth.uid || canUseAdminPanel());
+    }
+
+    function optionalReplyFieldsSafe() {
+      return (!('replyToId' in request.resource.data) || (request.resource.data.replyToId is string && request.resource.data.replyToId.size() <= 120))
+        && (!('replyToTitle' in request.resource.data) || (request.resource.data.replyToTitle is string && request.resource.data.replyToTitle.size() <= 160))
+        && (!('replyToActorName' in request.resource.data) || (request.resource.data.replyToActorName is string && request.resource.data.replyToActorName.size() <= 120))
+        && (!('replyToCreatedAtMs' in request.resource.data) || request.resource.data.replyToCreatedAtMs is int);
+    }
+
+    function ownerMessageStateUpdateSafe(userId) {
+      return isOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt', 'readAtMs', 'unread', 'archived'])
+        && (!('unread' in request.resource.data) || request.resource.data.unread is bool)
+        && (!('archived' in request.resource.data) || request.resource.data.archived is bool)
+        && (!('readAtMs' in request.resource.data) || request.resource.data.readAtMs is int);
+    }
+
     function notificationCreateSafe(userId) {
       return signedIn()
         && request.resource.data.actorUid == request.auth.uid
         && request.resource.data.type is string
+        && request.resource.data.type in ['notice', 'profile_changed', 'farm_profile_changed', 'registration_submitted', 'role_approved', 'site_message']
         && request.resource.data.title is string
+        && request.resource.data.title.size() <= 160
         && request.resource.data.message is string
+        && request.resource.data.message.size() <= 600
         && request.resource.data.region is string
         && request.resource.data.alliance is string
         && request.resource.data.actorName is string
+        && request.resource.data.actorName.size() <= 120
         && request.resource.data.actorRole is string
+        && request.resource.data.actorRole in ['admin', 'moderator', 'consul', 'officer', 'player']
         && request.resource.data.actorRoleText is string
+        && request.resource.data.actorRoleText.size() <= 80
         && request.resource.data.actorPhotoURL is string
+        && request.resource.data.actorPhotoURL.size() <= 300
+        && request.resource.data.targetType is string
+        && notificationTargetTypeSafe()
+        && request.resource.data.targetLabel is string
+        && request.resource.data.targetLabel.size() <= 160
+        && optionalReplyFieldsSafe()
         && request.resource.data.createdAtMs is int
         && request.resource.data.unread == true
         && !request.resource.data.keys().hasAny(['email', 'toEmail'])
-        && request.resource.data.keys().hasOnly(['type','title','message','region','alliance','actorUid','actorName','actorRole','actorRoleText','actorPhotoURL','createdAt','createdAtMs','unread']);
+        && request.resource.data.keys().hasOnly(['type','title','message','region','alliance','actorUid','actorName','actorRole','actorRoleText','actorPhotoURL','targetType','targetLabel','replyToId','replyToTitle','replyToActorName','replyToCreatedAtMs','createdAt','createdAtMs','unread']);
+    }
+
+    function messageActorRoleSafe() {
+      return request.resource.data.type != 'site_message'
+        || request.resource.data.actorRole == currentRegionRole(request.resource.data.region);
+    }
+
+    function ownerNotificationUpdateSafe(userId) {
+      return ownerMessageStateUpdateSafe(userId);
     }
 
     function selfNotificationCreateSafe(userId) {
@@ -316,11 +429,45 @@ service cloud.firestore {
 
     function canMessageTarget(userId) {
       return notificationCreateSafe(userId)
+        && messageActorRoleSafe()
         && (
           ownerEmail() || isAdmin() || isModerator()
           || (currentRegionRole(request.resource.data.region) in ['consul', 'officer'] && request.resource.data.region != '' && hasRegionAccess(request.resource.data.region) && targetHasRegionAccess(userId, request.resource.data.region))
           || (request.resource.data.region != '' && request.resource.data.alliance != '' && hasRegionAccess(request.resource.data.region) && hasAllianceAccess(request.resource.data.region, request.resource.data.alliance) && targetHasAllianceAccess(userId, request.resource.data.region, request.resource.data.alliance))
         );
+    }
+
+
+    function sentMessageCreateSafe(userId) {
+      return isOwner(userId)
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.type == 'sent_message'
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 160
+        && request.resource.data.message is string
+        && request.resource.data.message.size() <= 600
+        && request.resource.data.region is string
+        && request.resource.data.alliance is string
+        && request.resource.data.targetType is string
+        && request.resource.data.targetType in ['player', 'alliance', 'region', 'consuls', 'officers', 'admins', 'all']
+        && request.resource.data.targetLabel is string
+        && request.resource.data.targetLabel.size() <= 160
+        && request.resource.data.recipientCount is int
+        && request.resource.data.recipientCount >= 0
+        && request.resource.data.recipientCount <= 500
+        && request.resource.data.recipientPreview is string
+        && request.resource.data.recipientPreview.size() <= 300
+        && optionalReplyFieldsSafe()
+        && request.resource.data.createdAtMs is int
+        && request.resource.data.archived == false
+        && !request.resource.data.keys().hasAny(['email', 'toEmail'])
+        && request.resource.data.keys().hasOnly(['type','title','message','region','alliance','targetType','targetLabel','recipientCount','recipientPreview','replyToId','replyToTitle','replyToActorName','replyToCreatedAtMs','actorUid','createdAt','createdAtMs','archived']);
+    }
+
+    function ownerSentMessageUpdateSafe(userId) {
+      return isOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['archived'])
+        && (!('archived' in request.resource.data) || request.resource.data.archived is bool);
     }
 
     function publicWastelandRegistrationSafe(regionId) {
@@ -342,8 +489,18 @@ service cloud.firestore {
       allow delete: if ownerEmail() || isAdmin();
 
       match /notifications/{notificationId} {
-        allow read, update, delete: if isOwner(userId) || ownerEmail() || isAdmin();
+        allow read: if isOwner(userId) || ownerEmail() || isAdmin();
+        allow update: if ownerNotificationUpdateSafe(userId) || ownerEmail() || isAdmin();
+        allow delete: if isOwner(userId) || ownerEmail() || isAdmin();
         allow create: if selfNotificationCreateSafe(userId) || canMessageTarget(userId);
+      }
+
+
+      match /sentMessages/{messageId} {
+        allow read: if isOwner(userId) || ownerEmail() || isAdmin();
+        allow update: if ownerSentMessageUpdateSafe(userId) || ownerEmail() || isAdmin();
+        allow delete: if isOwner(userId) || ownerEmail() || isAdmin();
+        allow create: if sentMessageCreateSafe(userId);
       }
     }
 
@@ -351,6 +508,21 @@ service cloud.firestore {
       allow read: if true;
       allow create, update: if ownerEmail() || managerPublicPlayerSafe() || publicPlayerSafe(userId);
       allow delete: if ownerEmail() || isAdmin();
+    }
+
+
+    match /statsChanges/{changeId} {
+      allow create: if statsChangeCreateSafe();
+      allow read, update, delete: if ownerEmail() || isAdmin() || isModerator();
+    }
+
+    match /statsIndex/{playerKey} {
+      allow read, write: if ownerEmail() || isAdmin() || isModerator();
+    }
+
+    match /statsMeta/{docId} {
+      allow read: if true;
+      allow write: if ownerEmail() || isAdmin() || isModerator();
     }
 
     match /roleRequests/{requestId} {

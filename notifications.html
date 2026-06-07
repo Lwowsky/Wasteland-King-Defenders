@@ -27,14 +27,14 @@
   <script defer src="js/i18n-ar.js"></script>
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
-  <script defer src="js/badges.js?v=73"></script>
+  <script defer src="js/badges.js?v=83"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/core/state.js"></script>
   <script defer src="js/app-login-shell.js"></script>
   <script type="module" src="js/auth-google.js"></script>
-  <script type="module" src="js/notifications.js?v=73"></script>
-  <script type="module" src="js/pages/notifications-page.js?v=73"></script>
+  <script type="module" src="js/notifications.js?v=83"></script>
+  <script type="module" src="js/pages/notifications-page.js?v=83"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -45,7 +45,13 @@
       <div class="profile-tabs notifications-tabs" role="tablist" aria-label="Сповіщення">
         <button class="profile-tab is-active" id="notificationsNoticeTab" type="button" data-notifications-tab="notifications" data-i18n="notifications.noticeTab">Сповіщення</button>
         <button class="profile-tab" id="notificationsInboxTab" type="button" data-notifications-tab="inbox" data-i18n="notifications.inboxTab">Отримані повідомлення</button>
+        <button class="profile-tab" id="notificationsSentTab" type="button" data-notifications-tab="sent" data-i18n="notifications.sentTab">Надіслані повідомлення</button>
         <button class="profile-tab" id="notificationsComposeTab" type="button" data-notifications-tab="compose" data-i18n="notifications.composeTab">Написати повідомлення</button>
+      </div>
+      <div class="notifications-filterbar" aria-label="Фільтр повідомлень">
+        <button class="notifications-filter is-active" type="button" data-notifications-filter="active" data-i18n="notifications.filterActive">Активні</button>
+        <button class="notifications-filter" type="button" data-notifications-filter="unread" data-i18n="notifications.filterUnread">Непрочитані</button>
+        <button class="notifications-filter" type="button" data-notifications-filter="archived" data-i18n="notifications.filterArchived">Архів</button>
       </div>
       <section class="notifications-panel notifications-notices" id="notificationsNotices">
         <p class="notifications-readonly" data-i18n="notifications.readOnlyHint">Сповіщення тільки для перегляду. Написати повідомлення можна в окремій вкладці.</p>
@@ -53,6 +59,9 @@
       </section>
       <section class="notifications-panel notifications-inbox" id="notificationsInbox" hidden>
         <div class="notifications-page-list notifications-message-list" id="notificationsInboxList"></div>
+      </section>
+      <section class="notifications-panel notifications-sent" id="notificationsSent" hidden>
+        <div class="notifications-page-list notifications-sent-list" id="notificationsSentList"></div>
       </section>
       <section class="notifications-compose" id="notificationsCompose" hidden>
         <h3 data-i18n="messages.title">Повідомлення на сайті</h3>
@@ -69,7 +78,7 @@
           <span class="message-hint" id="messageSendHint"></span>
         </div>
       </section>
-      <div class="region-actions"><button class="btn region-save" id="notificationsMarkAllBtn" type="button" data-i18n="notifications.markRead">Позначити прочитаними</button></div>
+      <div class="region-actions"><button class="btn region-save" id="notificationsMarkAllBtn" type="button" data-i18n="notifications.markRead">Позначити прочитаними</button><button class="btn btn-message-soft" id="notificationsClearArchiveBtn" type="button" data-i18n="notifications.clearArchive">Очистити архів</button></div>
     </section>
   </main>
   <div class="container"><div data-include="partials/footer.html"></div></div>

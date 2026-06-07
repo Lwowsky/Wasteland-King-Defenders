@@ -1,4 +1,6 @@
 import { getFirebase } from './firebase-service.js';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=83';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=83';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -174,6 +176,7 @@ export function timestampToMs(value) {
   if (typeof value.toMillis === 'function') return value.toMillis();
   if (typeof value.toDate === 'function') return value.toDate().getTime();
   if (typeof value === 'number') return value;
+  if (typeof value === 'object' && typeof value.seconds === 'number') return value.seconds * 1000 + Math.floor((Number(value.nanoseconds) || 0) / 1000000);
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? 0 : parsed;
 }
@@ -203,11 +206,18 @@ export async function createUserNotification(uid, values = {}) {
     actorRole,
     actorRoleText: normalizeText(values.actorRoleText || roleLabel(actorRole)).slice(0, 80),
     actorPhotoURL,
+    targetType: normalizeText(values.targetType || (values.type === 'site_message' ? 'player' : 'system')).slice(0, 40),
+    targetLabel: normalizeText(values.targetLabel || '').slice(0, 160),
     createdAt: firestoreMod.serverTimestamp(),
     createdAtMs: nowMs,
     unread: true
   };
+  if (values.replyToId) payload.replyToId = normalizeText(values.replyToId).slice(0, 120);
+  if (values.replyToTitle) payload.replyToTitle = normalizeText(values.replyToTitle).slice(0, 160);
+  if (values.replyToActorName) payload.replyToActorName = normalizeText(values.replyToActorName).slice(0, 120);
+  if (values.replyToCreatedAtMs) payload.replyToCreatedAtMs = Number(values.replyToCreatedAtMs) || nowMs;
   await firestoreMod.setDoc(firestoreMod.doc(db, 'users', userId, 'notifications', id), payload);
+  trackWrites(1);
   return { id, ...payload };
 }
 
@@ -378,14 +388,41 @@ export function makePublicPlayer(data = {}) {
 }
 
 
+
+async function markStatsChanged(db, firestoreMod, uid = '', changeType = 'profile_changed', source = 'client') {
+  const safeUid = normalizeText(uid);
+  if (!safeUid) return;
+  try {
+    const allowedTypes = ['profile_changed', 'farm_changed', 'role_changed', 'admin_changed', 'sync_changed'];
+    const type = allowedTypes.includes(changeType) ? changeType : 'profile_changed';
+    const safeSource = normalizeText(source || 'client').slice(0, 32) || 'client';
+    const id = `${safeUid}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    await firestoreMod.setDoc(firestoreMod.doc(db, 'statsChanges', id), {
+      uid: safeUid,
+      playerKey: safeUid,
+      changeType: type,
+      source: safeSource,
+      processed: false,
+      createdAt: firestoreMod.serverTimestamp()
+    });
+    trackWrites(1);
+  } catch (error) {
+    console.warn('[WKD] stats change marker skipped:', error?.code || error?.message || error);
+  }
+}
+
 async function writePublicPlayerFromProfile(db, firestoreMod, profile = {}) {
   if (!profile?.uid || !isProfileComplete(profile)) return null;
   const publicPlayer = makePublicPlayer(profile);
   const region = normalizeText(publicPlayer.region);
   await firestoreMod.setDoc(firestoreMod.doc(db, 'publicPlayers', profile.uid), publicPlayer, { merge: true });
+  trackWrites(1);
   if (region) {
     await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', region, 'players', profile.uid), publicPlayer, { merge: true });
+    trackWrites(1);
   }
+  removeCache('publicPlayers.v83');
+  await markStatsChanged(db, firestoreMod, profile.uid, 'profile_changed', 'profile-save');
   return publicPlayer;
 }
 
@@ -397,6 +434,7 @@ export async function getUserProfile(uid) {
   const { db, firestoreMod } = firebase;
   const ref = firestoreMod.doc(db, 'users', uid);
   const snapshot = await firestoreMod.getDoc(ref);
+  trackReads(1);
   return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
 }
 
@@ -856,21 +894,31 @@ export async function listRegisteredUsers() {
   if (!firebase) return [];
   const { db, firestoreMod } = firebase;
   const snapshot = await firestoreMod.getDocs(firestoreMod.collection(db, 'users'));
+  trackReads(Math.max(1, snapshot.docs.length));
   return snapshot.docs
     .map(doc => ({ id: doc.id, ...doc.data() }))
     .filter(user => user.profileComplete)
     .sort((a, b) => timestampToMs(b.createdAt) - timestampToMs(a.createdAt));
 }
 
-export async function listPublicPlayers() {
+export async function listPublicPlayers(options = {}) {
+  const force = Boolean(options?.force);
+  const cacheKey = 'publicPlayers.v83';
+  if (!force) {
+    const cached = readCache(cacheKey, 10 * 60 * 1000);
+    if (Array.isArray(cached)) return cached;
+  }
   const firebase = await getFirebase();
   if (!firebase) return [];
   const { db, firestoreMod } = firebase;
   const snapshot = await firestoreMod.getDocs(firestoreMod.collection(db, 'publicPlayers'));
-  return snapshot.docs
+  trackReads(Math.max(1, snapshot.docs.length));
+  const result = snapshot.docs
     .map(doc => ({ id: doc.id, ...doc.data() }))
     .filter(player => player.profileComplete !== false)
     .sort((a, b) => String(a.region || '').localeCompare(String(b.region || ''), 'uk', { numeric: true }) || String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk'));
+  writeCache(cacheKey, result);
+  return result;
 }
 
 
@@ -894,6 +942,9 @@ export async function syncPublicPlayersFromUsers() {
   }
 
   if (count % 400 !== 0) await batch.commit();
+  for (const user of allUsers.slice(0, 1000)) {
+    await markStatsChanged(db, firestoreMod, user.uid, 'sync_changed', 'sync-public-players').catch(() => null);
+  }
   return count;
 }
 
@@ -994,6 +1045,7 @@ export async function updateUserByAdmin(uid, values) {
     batch.delete(firestoreMod.doc(db, 'regions', oldGame.region, 'players', uid));
   }
   await batch.commit();
+  await markStatsChanged(db, firestoreMod, uid, 'admin_changed', 'admin-main').catch(() => null);
   const changed = [];
   if (oldGame.rank !== clean.rank) changed.push(`${serviceT('account.rank','Ранг')}: ${clean.rank.toUpperCase()}`);
   if (oldProfile?.role !== role) changed.push(`${serviceT('account.role','Роль')}: ${roleLabel(role)}`);
@@ -1048,6 +1100,7 @@ export async function updateFarmByAdmin(uid, farmId, values) {
   batch.set(firestoreMod.doc(db, 'users', uid), userPatch, { merge: true });
   if (oldProfile.profileComplete) batch.set(firestoreMod.doc(db, 'publicPlayers', uid), publicPlayer, { merge: true });
   await batch.commit();
+  await markStatsChanged(db, firestoreMod, uid, 'admin_changed', 'admin-farm').catch(() => null);
   const oldFarm = farms[index] || {};
   const changed = [];
   if (oldFarm.rank !== nextFarm.rank) changed.push(`${serviceT('account.rank','Ранг')}: ${nextFarm.rank.toUpperCase()}`);
@@ -1113,6 +1166,7 @@ export async function approveRoleRequest(requestId) {
     batch.set(requestRef, { status: 'approved', approvedBy, approvedAt: now, updatedAt: now }, { merge: true });
     if (userData.profileComplete) batch.set(firestoreMod.doc(db, 'publicPlayers', uid), updatedPublic, { merge: true });
     await batch.commit();
+    await markStatsChanged(db, firestoreMod, uid, 'role_changed', 'role-approve').catch(() => null);
     await createUserNotification(uid, { type:'role_approved', title: serviceT('notifications.roleApproved','Роль підтверджено'), message: `${request.farmName || serviceT('account.farm','Ферма')}: ${roleLabel(role)}`, region: request.region, alliance: request.alliance }).catch(() => null);
     return;
   }
@@ -1126,6 +1180,7 @@ export async function approveRoleRequest(requestId) {
   batch.set(firestoreMod.doc(db, 'publicPlayers', uid), updatedPublic, { merge: true });
   if (region) batch.set(firestoreMod.doc(db, 'regions', region, 'players', uid), updatedPublic, { merge: true });
   await batch.commit();
+  await markStatsChanged(db, firestoreMod, uid, 'role_changed', 'role-approve').catch(() => null);
   await createUserNotification(uid, { type:'role_approved', title: serviceT('notifications.roleApproved','Роль підтверджено'), message: roleLabel(role), region, alliance: request.alliance }).catch(() => null);
 }
 
@@ -1164,4 +1219,5 @@ export async function declineRoleRequest(requestId) {
   batch.set(requestRef, { status: 'declined', declinedBy, declinedAt: now, updatedAt: now }, { merge: true });
   if (userData.profileComplete) batch.set(firestoreMod.doc(db, 'publicPlayers', uid), publicPlayer, { merge: true });
   await batch.commit();
+  await markStatsChanged(db, firestoreMod, uid, 'role_changed', 'role-decline').catch(() => null);
 }

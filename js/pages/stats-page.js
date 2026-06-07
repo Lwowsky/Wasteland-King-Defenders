@@ -1,10 +1,12 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
-import { ensureCurrentUserPublished, formatUserDate, listPublicPlayers, roleLabel } from '../services/user-db.js';
-import { troopLabel } from '../services/region-db.js?v=73';
+import { formatUserDate, listPublicPlayers, roleLabel } from '../services/user-db.js';
+import { troopLabel } from '../services/region-db.js?v=83';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
 let players = [];
+let statsSummaryCache = null;
+let detailsLoaded = false;
 let allianceColorCache = new Map();
 let sortState = { key: 'region', dir: 'asc' };
 let statsReady = false;
@@ -21,6 +23,91 @@ function locale() {
   const lang = window.WKD_CURRENT_LANG || document.documentElement.lang || navigator.language || 'en';
   const map = { uk: 'uk-UA', en: 'en-US', ru: 'ru-RU', pl: 'pl-PL', de: 'de-DE', ja: 'ja-JP', zh: 'zh-CN', ko: 'ko-KR', vi: 'vi-VN', ar: 'ar' };
   return map[String(lang).toLowerCase()] || lang || 'en-US';
+}
+
+
+const PUBLIC_STATS_CACHE_URL = 'public-cache/stats-summary.json';
+const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v83';
+
+function readSummaryCache() {
+  try {
+    const raw = localStorage.getItem(STATS_SUMMARY_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.savedAt || Date.now() - Number(parsed.savedAt) > 10 * 60 * 1000) return null;
+    return parsed.data || null;
+  } catch { return null; }
+}
+function writeSummaryCache(data) {
+  try { localStorage.setItem(STATS_SUMMARY_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), data })); } catch {}
+}
+function mapSize(value) {
+  return value && typeof value === 'object' ? Object.keys(value).filter(key => Number(value[key]) > 0).length : 0;
+}
+function summaryNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : 0;
+}
+function formatSummaryUpdatedAt(value) {
+  if (!value) return t('common.unknown', 'Unknown');
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toLocaleString(locale()) : String(value);
+}
+async function fetchPublicStatsSummary({ force = false } = {}) {
+  if (!force) {
+    const cached = readSummaryCache();
+    if (cached) return cached;
+  }
+  const url = `${PUBLIC_STATS_CACHE_URL}${force ? `?t=${Date.now()}` : ''}`;
+  const response = await fetch(url, { cache: force ? 'no-store' : 'default' });
+  if (!response.ok) throw new Error(`stats-summary-${response.status}`);
+  const data = await response.json();
+  writeSummaryCache(data);
+  return data;
+}
+function renderSummaryStats(summary = statsSummaryCache) {
+  if (!summary) return false;
+  setPlayersCounterLabel();
+  const includeFarms = includeFarmRows();
+  const values = includeFarms
+    ? [
+        summaryNumber(summary.totalRows ?? (summary.totalPlayers + summary.totalFarms)),
+        mapSize(summary.regionsWithFarms || summary.regions),
+        mapSize(summary.alliancesWithFarms || summary.alliances),
+        summaryNumber(summary.leadersWithFarms ?? summary.leaders)
+      ]
+    : [
+        summaryNumber(summary.totalPlayers),
+        mapSize(summary.regions),
+        mapSize(summary.alliances),
+        summaryNumber(summary.leaders)
+      ];
+  $('#publicStats')?.querySelectorAll('.admin-stat-card b').forEach((card, index) => { card.textContent = values[index] ?? 0; });
+  const updated = formatSummaryUpdatedAt(summary.generatedAt || summary.updatedAt);
+  const mode = includeFarms ? t('stats.playersAndFarms', 'Players and farms') : t('stats.players', 'Players');
+  setSummary(tv('stats.publicCacheSummary', '{mode}: {count}. Updated: {updated}', { mode, count: values[0], updated }));
+  return true;
+}
+function renderListNotLoaded() {
+  const body = $('#publicPlayersBody');
+  if (!body) return;
+  body.innerHTML = `<tr><td colspan="8" class="stats-empty-note">${escapeHtml(t('stats.listNotLoaded', 'For Firebase limits, the detailed player list is not loaded automatically. Press “Load player list” if you need it.'))}</td></tr>`;
+}
+async function loadSummaryOnly(options = {}) {
+  const force = Boolean(options?.force);
+  setStatus(t('stats.loadingSummary', 'Loading public statistics cache...'), 'muted');
+  try {
+    statsSummaryCache = await fetchPublicStatsSummary({ force });
+    detailsLoaded = false;
+    players = [];
+    renderSummaryStats(statsSummaryCache);
+    renderListNotLoaded();
+    setStatus(t('stats.cacheUpdated', 'Statistics loaded from public cache.'), 'success');
+  } catch (error) {
+    console.warn('[WKD] public stats cache failed:', error);
+    renderListNotLoaded();
+    setStatus(t('stats.cacheFailed', 'Public statistics cache is not generated yet. Load the list manually or set up GitHub Actions.'), 'error');
+  }
 }
 
 function allianceTag3(value) { return Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join(''); }
@@ -201,6 +288,7 @@ function setPlayersCounterLabel() {
 }
 
 function renderStats() {
+  if (!detailsLoaded && renderSummaryStats(statsSummaryCache)) return;
   setPlayersCounterLabel();
   const rows = displayRows();
   const regions = new Set(rows.map(player => player.region).filter(Boolean));
@@ -243,6 +331,10 @@ function rowTemplate(player) {
 function renderPlayers() {
   const body = $('#publicPlayersBody');
   if (!body) return;
+  if (!detailsLoaded) {
+    renderListNotLoaded();
+    return;
+  }
   const visible = filteredPlayers();
   if (!visible.length) {
     body.innerHTML = `<tr><td colspan="8">${escapeHtml(t('stats.noPlayersFound', 'No players found.'))}</td></tr>`;
@@ -377,9 +469,11 @@ function closePlayerModal() {
   activeModalPlayer = null;
 }
 
-async function loadPlayers() {
+async function loadPlayers(options = {}) {
+  const force = Boolean(options?.force);
   setStatus(t('stats.loadingPlayers', 'Loading registered players...'), 'muted');
-  players = await listPublicPlayers();
+  players = await listPublicPlayers({ force });
+  detailsLoaded = true;
   await loadAllianceColorsForPlayers();
   renderStats();
   renderPlayers();
@@ -387,7 +481,8 @@ async function loadPlayers() {
 }
 
 function bindControls() {
-  $('#refreshStatsBtn')?.addEventListener('click', loadPlayers);
+  $('#refreshStatsBtn')?.addEventListener('click', () => loadSummaryOnly({ force: true }));
+  $('#loadStatsDetailsBtn')?.addEventListener('click', () => loadPlayers({ force: true }));
   $('#statsNickSearch')?.addEventListener('input', renderPlayers);
   $('#statsAllianceSearch')?.addEventListener('input', renderPlayers);
   $('#statsRegionSearch')?.addEventListener('input', renderPlayers);
@@ -416,13 +511,10 @@ async function initStatsPage() {
   if (statsReady || !$('#publicPlayersBody')) return;
   statsReady = true;
   bindControls();
-
-  await watchAuth(async user => {
-    if (user) await ensureCurrentUserPublished(user).catch(error => console.warn('Public player sync failed', error));
-    await loadPlayers().catch(error => {
-      console.error(error);
-      setStatus(t('stats.loadFailed', 'Could not load statistics. Try again.'), 'error');
-    });
+  watchAuth(() => {}).catch(() => null);
+  await loadSummaryOnly().catch(error => {
+    console.error(error);
+    setStatus(t('stats.loadFailed', 'Could not load statistics. Try again.'), 'error');
   });
 }
 

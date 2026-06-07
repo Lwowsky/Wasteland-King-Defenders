@@ -1,4 +1,4 @@
-import { makePublicShareUrl, rememberShareCode } from '../core/share-links.js?v=73';
+import { makePublicShareUrl, rememberShareCode } from '../core/share-links.js?v=83';
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, saveSignedInUser } from '../services/user-db.js';
 import {
@@ -17,7 +17,7 @@ import {
   listRegionAlliances,
   listRegionCatalog,
   shareRegionTable
-} from '../services/region-db.js?v=73';
+} from '../services/region-db.js?v=83';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);

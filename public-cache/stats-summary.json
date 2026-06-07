@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "source": "initial-empty-cache",
+  "generatedAt": null,
+  "lastFullRebuildDate": null,
+  "totalPlayers": 0,
+  "totalFarms": 0,
+  "totalRows": 0,
+  "leaders": 0,
+  "leadersWithFarms": 0,
+  "regions": {},
+  "regionsWithFarms": {},
+  "alliances": {},
+  "alliancesWithFarms": {},
+  "ranks": {},
+  "ranksWithFarms": {},
+  "shkTiers": {},
+  "shkTiersWithFarms": {},
+  "processedChanges": 0
+}

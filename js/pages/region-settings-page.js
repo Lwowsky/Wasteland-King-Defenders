@@ -26,7 +26,7 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=73';
+} from '../services/region-db.js?v=83';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];

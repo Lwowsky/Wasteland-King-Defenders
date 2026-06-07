@@ -6,6 +6,9 @@ const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback |
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 let currentUser = null;
 let items = [];
+let accountItems = [];
+let statusItems = [];
+let unsubscribeUserNotifications = null;
 let bound = false;
 let authStarted = false;
 function regionOf(value=''){ return String(value||'').replace(/[^0-9]/g,''); }
@@ -14,12 +17,61 @@ function profileRegions(profile={}){
   return [...new Set([main.region, ...getUserFarms(profile||{}).map(f=>f.region)].map(regionOf).filter(Boolean))];
 }
 function statusKey(uid, region){ return `wkd.notify.regionStatus.${uid}.${region}`; }
+function sourceKind(item = {}){
+  const role = String(item.actorRole || '').toLowerCase();
+  const type = String(item.type || item.source || '').toLowerCase();
+  if (item.source === 'region-status' || type.includes('region') || type.includes('registration')) return 'region';
+  if (role === 'admin' || role === 'moderator') return 'admin';
+  if (role === 'consul') return 'consul';
+  if (role === 'officer') return 'officer';
+  return 'player';
+}
+function sourceLabel(item = {}){
+  const kind = sourceKind(item);
+  const labels = {
+    admin: t('notifications.fromAdmin','Від адміна'),
+    consul: t('notifications.fromConsul','Від консула'),
+    officer: t('notifications.fromOfficer','Від офіцера'),
+    region: t('notifications.fromRegion','Від регіону'),
+    player: t('notifications.fromPlayer','Від гравця')
+  };
+  return labels[kind] || labels.player;
+}
+function mergeAndRender(){
+  items = [...statusItems, ...accountItems]
+    .filter(item => item.archived !== true)
+    .sort((a,b)=>(Number(b.createdAtMs)||0)-(Number(a.createdAtMs)||0));
+  render();
+}
+function stopNotificationWatch(){
+  if (typeof unsubscribeUserNotifications === 'function') {
+    try { unsubscribeUserNotifications(); } catch (_) {}
+  }
+  unsubscribeUserNotifications = null;
+}
 async function userNotifications(firebase, uid){
   const { db, firestoreMod } = firebase;
   const ref = firestoreMod.collection(db, 'users', uid, 'notifications');
   const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(20));
   const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
   return snap.docs.map(doc => ({ id: doc.id, source:'account', ...doc.data() }));
+}
+function watchUserNotifications(firebase, uid){
+  stopNotificationWatch();
+  if (!firebase || !uid) return;
+  const { db, firestoreMod } = firebase;
+  const ref = firestoreMod.collection(db, 'users', uid, 'notifications');
+  const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(20));
+  unsubscribeUserNotifications = firestoreMod.onSnapshot(q, snap => {
+    accountItems = snap.docs.map(doc => ({ id: doc.id, source:'account', ...doc.data() }));
+    mergeAndRender();
+  }, error => {
+    console.warn('[WKD] notifications realtime unavailable', error);
+    userNotifications(firebase, uid).then(list => {
+      accountItems = list;
+      mergeAndRender();
+    }).catch(() => null);
+  });
 }
 async function regionStatusNotifications(firebase, user, profile){
   const { db, firestoreMod } = firebase;
@@ -65,21 +117,26 @@ function render(){
     <div class="notify-item ${item.unread !== false && !item.readAtMs && !item.readAt ? 'is-unread' : ''}">
       <b>${esc(item.title || item.type || t('notifications.title','Сповіщення'))}</b>
       <span>${esc(item.message || item.text || item.summary || '')}</span>
-      <small>${esc(item.region ? `R${item.region} · ` : '')}${esc(item.createdAt ? formatUserDate(item.createdAt) : (item.createdAtMs ? new Date(item.createdAtMs).toLocaleString() : ''))}</small>
+      <small>${esc(sourceLabel(item))}${esc(item.actorName ? ` · ${item.actorName}` : '')}${esc(item.region ? ` · R${item.region}` : '')} · ${esc(item.createdAt ? formatUserDate(item.createdAt) : (item.createdAtMs ? new Date(item.createdAtMs).toLocaleString() : ''))}</small>
     </div>`).join('');
 }
 async function load(user){
   currentUser = user || null;
-  if (!user) { items = []; render(); return; }
+  if (!user) {
+    stopNotificationWatch();
+    accountItems = [];
+    statusItems = [];
+    items = [];
+    render();
+    return;
+  }
   const firebase = await getFirebase();
   if (!firebase) return;
   const profile = await getUserProfile(user.uid).catch(() => null);
-  const [accountItems, statusItems] = await Promise.all([
-    userNotifications(firebase, user.uid),
-    profile ? regionStatusNotifications(firebase, user, profile) : []
-  ]);
-  items = [...statusItems, ...accountItems].sort((a,b)=>(Number(b.createdAtMs)||0)-(Number(a.createdAtMs)||0));
-  render();
+  statusItems = profile ? await regionStatusNotifications(firebase, user, profile) : [];
+  accountItems = await userNotifications(firebase, user.uid);
+  mergeAndRender();
+  watchUserNotifications(firebase, user.uid);
 }
 async function markRead(){
   if (!currentUser) return;
@@ -96,8 +153,9 @@ async function markRead(){
     localStorage.setItem(statusKey(currentUser.uid, region), open);
   });
   await batch.commit().catch(() => null);
-  items = items.map(item => ({ ...item, unread:false, readAtMs: Date.now() }));
-  render();
+  accountItems = accountItems.map(item => ({ ...item, unread:false, readAtMs: Date.now() }));
+  statusItems = statusItems.map(item => ({ ...item, unread:false, readAtMs: Date.now() }));
+  mergeAndRender();
 }
 function bind(){
   if (bound || !$('#notifyNav')) return;

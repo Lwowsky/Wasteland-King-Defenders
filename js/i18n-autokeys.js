@@ -862,4 +862,5 @@ window.WKD_I18N_AUTO_ATTR = {
   "Тег альянсу": "auto.attr.text.72a6ba",
   "name@example.com": "auto.attr.name.example.com.a130ce",
   "Напиши, що хочеш покращити або про що хочеш запитати": "auto.attr.text.2094c8"
+
 };

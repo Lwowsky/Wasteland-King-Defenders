@@ -1,4 +1,5 @@
 import { watchAuth } from '../services/firebase-service.js';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=83';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -18,10 +19,11 @@ import {
 } from '../services/user-db.js';
 import {
   archiveManualRegion,
+  cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=73';
+} from '../services/region-db.js?v=83';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -230,6 +232,77 @@ function setAdminPlayersCounterLabel() {
   const key = includeAdminFarmRows() ? 'stats.playersAndFarms' : 'stats.players';
   label.dataset.i18n = key;
   label.textContent = t(key, includeAdminFarmRows() ? 'Players and farms' : 'Players');
+}
+
+
+function formatCompactNumber(value = 0) {
+  const number = Math.max(0, Number(value) || 0);
+  return number.toLocaleString(window.WKD_CURRENT_LANG || 'uk');
+}
+function usageCardHtml(periodKey, typeKey, row = {}) {
+  const label = t(`admin.usage.${periodKey}.${typeKey}`, `${periodKey} ${typeKey}`);
+  const used = formatCompactNumber(row.used);
+  const limit = formatCompactNumber(row.limit);
+  const remaining = formatCompactNumber(row.remaining);
+  const percent = Math.max(0, Math.min(100, Number(row.percent) || 0));
+  return `<article class="admin-usage-card">
+    <span>${escapeHtml(label)}</span>
+    <b>${escapeHtml(remaining)}</b>
+    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(used)} / ${escapeHtml(limit)}</small>
+    <div class="admin-usage-bar" aria-hidden="true"><i style="width:${percent}%"></i></div>
+  </article>`;
+}
+function renderUsage() {
+  const grid = $('#adminUsageGrid');
+  const note = $('#adminUsageNote');
+  if (!grid) return;
+  const usage = getUsageEstimate();
+  grid.innerHTML = [
+    usageCardHtml('day', 'reads', usage.day.reads),
+    usageCardHtml('day', 'writes', usage.day.writes),
+    usageCardHtml('day', 'deletes', usage.day.deletes),
+    usageCardHtml('month', 'reads', usage.month.reads),
+    usageCardHtml('month', 'writes', usage.month.writes),
+    usageCardHtml('month', 'deletes', usage.month.deletes)
+  ].join('');
+  if (note) note.textContent = t('admin.usageNote', 'Це орієнтовний лічильник сайту, а не офіційні цифри Firebase. Точні ліміти перевіряй у Firebase Console → Usage.');
+}
+
+async function maybeRunOldDocsCleanup() {
+  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  const key = `wkd.autoCleanupOldDocs:${currentUser.uid}`;
+  const now = Date.now();
+  const last = Number(localStorage.getItem(key) || 0);
+  if (now - last < 12 * 60 * 60 * 1000) return;
+  localStorage.setItem(key, String(now));
+  const result = await cleanupOldPublicDocuments(currentUser, { retentionDays: 45, maxDeletes: 25 }).catch(error => {
+    console.warn('[WKD] old public documents cleanup skipped:', error);
+    return null;
+  });
+  if (result?.deletedCount) {
+    renderUsage();
+    setStatus(tv('admin.cleanupOldDocsDone', 'Очищено старих документів: {count}.', { count: result.deletedCount || 0 }), 'success');
+  }
+}
+
+async function runOldDocsCleanup() {
+  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  const ok = await confirmAction({
+    title: t('admin.cleanupOldDocsTitle', 'Очистити старі документи?'),
+    message: t('admin.cleanupOldDocsMessage', 'Будуть видалені старі секретні знімки таблиць і фінальних планів старші 45 днів. Активні дані гравців не чіпаються.'),
+    icon: '🧹',
+    acceptText: t('admin.cleanupOldDocs', 'Очистити старі документи')
+  });
+  if (!ok) return;
+  try {
+    setStatus(t('admin.cleanupOldDocsRunning', 'Очищаю старі документи...'), 'muted');
+    const result = await cleanupOldPublicDocuments(currentUser, { retentionDays: 45, maxDeletes: 40 });
+    renderUsage();
+    setStatus(tv('admin.cleanupOldDocsDone', 'Очищено старих документів: {count}.', { count: result.deletedCount || 0 }), 'success');
+  } catch (error) {
+    console.error(error);
+    setStatus(t('admin.cleanupOldDocsFailed', 'Не вдалося очистити старі документи.'), 'error');
+  }
 }
 
 function renderStats() {
@@ -538,7 +611,9 @@ async function loadAdminData() {
   renderUsers();
   renderRequests();
   renderRegions();
+  renderUsage();
   setStatus(t('admin.dataUpdated', 'Admin data updated.'), 'success');
+  maybeRunOldDocsCleanup().catch(() => null);
 }
 
 function switchTab(tab) {
@@ -555,6 +630,9 @@ function openInitialAdminTab() {
 function bindAdminControls() {
   $('#refreshRequestsBtn')?.addEventListener('click', loadAdminData);
   $('#refreshPlayersBtn')?.addEventListener('click', loadAdminData);
+  $('#refreshUsageBtn')?.addEventListener('click', renderUsage);
+  $('#resetUsageEstimateBtn')?.addEventListener('click', () => { resetUsageEstimate(); renderUsage(); });
+  $('#cleanupOldDocsBtn')?.addEventListener('click', () => runOldDocsCleanup().catch(console.error));
   $('#backToProfileBtn')?.addEventListener('click', () => { window.location.href = 'profile.html'; });
   $('#adminRegionForm')?.addEventListener('submit', saveManualRegion);
   $('#adminRegionList')?.addEventListener('click', handleRegionAction);
@@ -589,6 +667,8 @@ async function initAdminPage() {
 
     currentProfile = await ensureCurrentUserPublished(user).catch(() => getUserProfile(user.uid)).catch(() => null);
     if (!canUseAdminPanel(user, currentProfile)) {
+      $('#adminUsagePanel') && ($('#adminUsagePanel').hidden = true);
+      document.querySelectorAll('[data-admin-tab], [data-admin-panel]').forEach(el => { el.hidden = true; });
       setSummary(t('admin.noAccessShort', 'No access'));
       setStatus(t('admin.noAccess', 'This page is available only to an admin or moderator.'), 'error');
       $('#registeredPlayersBody').innerHTML = `<tr><td colspan="8">${escapeHtml(t('admin.noPlayerAccess', 'You do not have permission to view players.'))}</td></tr>`;
@@ -597,7 +677,10 @@ async function initAdminPage() {
       return;
     }
 
+    $('#adminUsagePanel') && ($('#adminUsagePanel').hidden = false);
+    document.querySelectorAll('[data-admin-tab], [data-admin-panel]').forEach(el => { el.hidden = false; });
     setStatus(t('admin.loadingPanel', 'Loading admin panel...'), 'muted');
+    renderUsage();
     await loadAdminData();
   });
 }
@@ -611,6 +694,7 @@ document.addEventListener('wkd:language-changed', () => {
   renderUsers();
   renderRequests();
   renderRegions();
+  renderUsage();
   if (currentUser && currentProfile && canUseAdminPanel(currentUser, currentProfile)) {
     setStatus(t('admin.statusUpdated', 'Admin data updated.'), 'success');
   }

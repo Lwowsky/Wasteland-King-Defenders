@@ -3,9 +3,13 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "secret:token": "wrangler secret put TELEGRAM_BOT_TOKEN",
-    "secret:chat": "wrangler secret put TELEGRAM_CHAT_ID"
+    "secret:chat": "wrangler secret put TELEGRAM_CHAT_ID",
+    "stats:cache": "node scripts/update-public-stats-cache.mjs"
   },
   "devDependencies": {
     "wrangler": "latest"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
   }
 }
