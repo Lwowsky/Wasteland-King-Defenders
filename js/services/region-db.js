@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=85';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=85';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=86';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=86';
 import {
   getUserProfile,
   getFarmById,

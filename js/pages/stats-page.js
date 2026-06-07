@@ -1,6 +1,6 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
 import { formatUserDate, listPublicPlayers, roleLabel } from '../services/user-db.js';
-import { troopLabel } from '../services/region-db.js?v=85';
+import { troopLabel } from '../services/region-db.js?v=86';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -28,8 +28,8 @@ function locale() {
 
 const PUBLIC_STATS_CACHE_URL = 'public-cache/stats-summary.json';
 const PUBLIC_STATS_PLAYERS_URL = 'public-cache/stats-players.json';
-const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v85';
-const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.v85';
+const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v86';
+const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.v86';
 
 function readSummaryCache() {
   try {
@@ -516,7 +516,6 @@ async function loadPlayers(options = {}) {
 
 function bindControls() {
   $('#refreshStatsBtn')?.addEventListener('click', () => loadSummaryOnly({ force: true }));
-  $('#loadStatsDetailsBtn')?.addEventListener('click', () => loadSummaryOnly({ force: true }));
   $('#statsNickSearch')?.addEventListener('input', renderPlayers);
   $('#statsAllianceSearch')?.addEventListener('input', renderPlayers);
   $('#statsRegionSearch')?.addEventListener('input', renderPlayers);
