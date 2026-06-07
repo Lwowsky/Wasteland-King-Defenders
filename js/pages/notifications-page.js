@@ -1,6 +1,6 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
-import { trackReads, trackWrites, trackDeletes } from '../services/usage-tracker.js?v=86';
-import { listRegionCatalog } from '../services/region-db.js?v=86';
+import { trackReads, trackWrites, trackDeletes } from '../services/usage-tracker.js?v=87';
+import { listRegionCatalog } from '../services/region-db.js?v=87';
 import {
   canUseAdminPanel,
   createUserNotification,

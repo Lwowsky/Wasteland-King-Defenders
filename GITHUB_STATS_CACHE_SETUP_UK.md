@@ -1,6 +1,6 @@
 # Налаштування безпечного кешу статистики через GitHub Actions
 
-## Що додано у v85
+## Що додано у v87
 
 Ця версія робить статистику дешевшою для Firebase:
 
@@ -26,9 +26,9 @@
 
 ## Що треба зробити один раз
 
-### 1. Залити v85 на GitHub
+### 1. Залити v87 на GitHub
 
-Заміни файли сайту на версію v85 і зроби push у GitHub.
+Заміни файли сайту на версію v87 і зроби push у GitHub.
 
 ### 2. Оновити Firestore rules
 
@@ -38,7 +38,7 @@
 firebase deploy --only firestore:rules
 ```
 
-Це потрібно, бо v85 додає правила для `statsChanges`, `statsIndex`, `statsMeta`.
+Це потрібно, бо v87 додає правила для `statsChanges`, `statsIndex`, `statsMeta`.
 
 ### 3. Створити Firebase service account key
 
@@ -127,4 +127,4 @@ profile save
 
 ## Важливо
 
-`public-cache/stats-summary.json` і `public-cache/stats-players.json` — публічні файли. Туди не можна додавати email, UID, повідомлення, логи, секретні коди або приватні коментарі. У v85 список гравців очищається перед записом у JSON.
+`public-cache/stats-summary.json` і `public-cache/stats-players.json` — публічні файли. Туди не можна додавати email, UID, повідомлення, логи, секретні коди або приватні коментарі. У v87 список гравців очищається перед записом у JSON.
