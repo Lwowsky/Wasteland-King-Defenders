@@ -8,17 +8,25 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: update-public-stats-cache
+  cancel-in-progress: false
+
 jobs:
   update-stats:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install dependencies
         run: npm install
@@ -32,12 +40,29 @@ jobs:
 
       - name: Commit updated cache
         run: |
-          if [[ -z "$(git status --porcelain public-cache/stats-summary.json)" ]]; then
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add public-cache/stats-summary.json
+
+          if git diff --cached --quiet; then
             echo "Stats cache did not change."
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public-cache/stats-summary.json
+
           git commit -m "Update public stats cache"
-          git push
+
+          for i in 1 2 3; do
+            echo "Push attempt $i..."
+
+            if git push origin main; then
+              echo "Stats cache pushed successfully."
+              exit 0
+            fi
+
+            echo "Push failed. Pulling latest changes and retrying..."
+            git pull --rebase origin main
+          done
+
+          echo "Failed to push stats cache after 3 attempts."
+          exit 1
