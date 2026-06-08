@@ -157,16 +157,35 @@ async function markRead(){
   statusItems = statusItems.map(item => ({ ...item, unread:false, readAtMs: Date.now() }));
   mergeAndRender();
 }
+function closeMenu(){
+  const menu = $('#notifyMenu');
+  const btn = $('#notifyBtn');
+  menu?.classList.remove('is-open');
+  btn?.setAttribute('aria-expanded', 'false');
+}
+function toggleMenu(){
+  const menu = $('#notifyMenu');
+  const btn = $('#notifyBtn');
+  if (!menu) return;
+  const opened = menu.classList.toggle('is-open');
+  btn?.setAttribute('aria-expanded', opened ? 'true' : 'false');
+}
 function bind(){
   if (bound || !$('#notifyNav')) return;
   bound = true;
+  $('#notifyBtn')?.setAttribute('aria-expanded', 'false');
   $('#notifyBtn')?.addEventListener('click', event => {
-    if (!currentUser) event.preventDefault();
+    event.preventDefault();
+    event.stopPropagation();
+    if (!currentUser) return closeMenu();
+    toggleMenu();
   });
+  $('#notifyNav')?.addEventListener('click', event => event.stopPropagation());
   $('#notifyOpenPageBtn')?.addEventListener('click', () => { window.location.href = 'notifications.html'; });
   $('#drawerNotificationsBtn')?.addEventListener('click', () => { window.location.href = 'notifications.html'; });
   $('#notifyMarkReadBtn')?.addEventListener('click', () => markRead().catch(console.error));
-  document.addEventListener('click', () => $('#notifyMenu')?.classList.remove('is-open'));
+  document.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') closeMenu(); });
   document.addEventListener('wkd:language-changed', render);
   render();
 }
