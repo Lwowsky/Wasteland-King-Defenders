@@ -43,6 +43,12 @@ function mergeAndRender(){
     .sort((a,b)=>(Number(b.createdAtMs)||0)-(Number(a.createdAtMs)||0));
   render();
 }
+function isUnread(item = {}){
+  return item.unread !== false && !item.readAtMs && !item.readAt;
+}
+function newItemsOnly(){
+  return items.filter(isUnread);
+}
 function stopNotificationWatch(){
   if (typeof unsubscribeUserNotifications === 'function') {
     try { unsubscribeUserNotifications(); } catch (_) {}
@@ -103,18 +109,21 @@ function render(){
   const count = $('#notifyCount');
   const list = $('#notifyList');
   const drawer = $('#drawerNotificationsBtn');
+  const markBtn = $('#notifyMarkReadBtn');
   const signed = Boolean(currentUser);
   if (nav) nav.hidden = !signed;
   if (drawer) drawer.hidden = !signed;
-  const unread = items.filter(item => item.unread !== false && !item.readAtMs && !item.readAt).length;
+  const newItems = newItemsOnly();
+  const unread = newItems.length;
   if (count) { count.hidden = !unread; count.textContent = unread > 99 ? '99+' : String(unread); }
+  if (markBtn) markBtn.hidden = !unread;
   if (!list) return;
-  if (!items.length) {
+  if (!newItems.length) {
     list.innerHTML = `<div class="notify-empty">${esc(t('notifications.empty','Нових сповіщень немає.'))}</div>`;
     return;
   }
-  list.innerHTML = items.slice(0, 12).map(item => `
-    <div class="notify-item ${item.unread !== false && !item.readAtMs && !item.readAt ? 'is-unread' : ''}">
+  list.innerHTML = newItems.slice(0, 12).map(item => `
+    <div class="notify-item is-unread">
       <b>${esc(item.title || item.type || t('notifications.title','Сповіщення'))}</b>
       <span>${esc(item.message || item.text || item.summary || '')}</span>
       <small>${esc(sourceLabel(item))}${esc(item.actorName ? ` · ${item.actorName}` : '')}${esc(item.region ? ` · R${item.region}` : '')} · ${esc(item.createdAt ? formatUserDate(item.createdAt) : (item.createdAtMs ? new Date(item.createdAtMs).toLocaleString() : ''))}</small>
@@ -144,7 +153,7 @@ async function markRead(){
   if (!firebase) return;
   const { db, firestoreMod } = firebase;
   const batch = firestoreMod.writeBatch(db);
-  items.filter(item => item.source === 'account' && item.id && !item.readAt).forEach(item => {
+  newItemsOnly().filter(item => item.source === 'account' && item.id && isUnread(item)).forEach(item => {
     batch.set(firestoreMod.doc(db, 'users', currentUser.uid, 'notifications', item.id), { readAt: firestoreMod.serverTimestamp(), readAtMs: Date.now(), unread:false }, { merge:true });
   });
   const profile = await getUserProfile(currentUser.uid).catch(() => null);
@@ -182,6 +191,11 @@ function bind(){
   });
   $('#notifyNav')?.addEventListener('click', event => event.stopPropagation());
   $('#notifyOpenPageBtn')?.addEventListener('click', () => { window.location.href = 'notifications.html'; });
+  $('#notifyCloseBtn')?.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    closeMenu();
+  });
   $('#drawerNotificationsBtn')?.addEventListener('click', () => { window.location.href = 'notifications.html'; });
   $('#notifyMarkReadBtn')?.addEventListener('click', () => markRead().catch(console.error));
   document.addEventListener('click', closeMenu);

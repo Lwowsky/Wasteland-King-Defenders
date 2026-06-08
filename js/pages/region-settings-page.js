@@ -106,8 +106,23 @@ function allianceColor(tag, index = 0) {
 function allianceBadge(tag, index = 0) {
   const value = trim(tag);
   const color = allianceColor(value || '—', index);
+  if (window.WKD?.Badges?.alliance) {
+    return window.WKD.Badges.alliance(value, {
+      preserve: true,
+      strict3: true,
+      className: 'player-manager-alliance-badge',
+      hue: color.hue,
+      styleVars: {
+        '--ally-bg': color.bg,
+        '--ally-border': color.border,
+        '--ally-glow': color.glow,
+        '--ally-accent': color.accent
+      },
+      title: value || '—'
+    });
+  }
   const style = `--ally-hue:${color.hue};--ally-bg:${color.bg};--ally-border:${color.border};--ally-glow:${color.glow};--ally-accent:${color.accent};`;
-  return `<span class="alliance-badge player-manager-alliance-badge ${isAllianceInvalid(value) ? 'is-invalid' : 'is-valid'} ${!value ? 'is-empty' : ''}" style="${escapeHtml(style)}"><i class="badge-dot"></i><span>${escapeHtml(value || '—')}</span></span>`;
+  return `<span class="alliance-badge player-manager-alliance-badge ${isAllianceInvalid(value) ? 'is-invalid' : 'is-valid'} ${!value ? 'is-empty' : ''}" style="${escapeHtml(style)}"><span class="badge-dot"></span><span>${escapeHtml(value || '—')}</span></span>`;
 }
 
 function currentGame() {

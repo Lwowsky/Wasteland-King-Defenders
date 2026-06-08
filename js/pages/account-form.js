@@ -19,7 +19,7 @@ import { countryChoices, localizedCountry, matchCountry } from '../services/coun
 
 const $ = selector => document.querySelector(selector);
 const trim = value => String(value ?? '').trim();
-const allianceTag3 = value => Array.from(trim(value).replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
+const allianceTag3 = value => window.WKD?.allianceTag3 ? window.WKD.allianceTag3(value) : Array.from(trim(value).replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 const tv = (key, fallback = '', vars = {}) => {
   let text = t(key, fallback);

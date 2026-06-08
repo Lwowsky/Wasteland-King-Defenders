@@ -1806,10 +1806,10 @@ window.WKD_TRANSLATIONS.ru = {
   'stats.refreshList': 'Обновить список',
   'stats.loadPlayerList': 'Обновить список',
   'stats.publicCacheSummary': '{mode}: {count}. Обновлено: {updated}',
-  'stats.listNotLoaded': 'Список игроков загружается из публичного JSON без чтений Firebase.',
+  'stats.listNotLoaded': 'Публичный JSON игроков ещё не загружен. Сгенерируй public-cache/stats-players.json через GitHub Actions.',
   'stats.loadingSummary': 'Загружаю публичный кэш статистики...',
-  'stats.cacheUpdated': 'Статистика загружена из публичного кэша.',
-  'stats.cacheFailed': 'Публичный кэш статистики еще не создан. Список можно загрузить вручную или настроить GitHub Actions.',
+  'stats.cacheUpdated': 'Статистика загружена из публичного JSON кеша.',
+  'stats.cacheFailed': 'Публичный JSON кеш статистики ещё не создан. Настрой GitHub Actions и сгенерируй файлы public-cache.',
   "regionSettings.googleFormTitle": 'Reserve Google Form',
   "regionSettings.googleFormHelp": 'The form is created through Google Apps Script for this region and current cycle. Consul email access is not connected yet.',
   "regionSettings.googleFormEnabled": 'Show Google Form button for players',
@@ -1832,4 +1832,9 @@ window.WKD_TRANSLATIONS.ru = {
   "region.googleFormPublicTitle": 'Reserve registration through Google Form',
   "region.googleFormPublicHelp": 'If the site form does not work or you need to save Firebase limits, you can send the request through this region Google Form.',
   "region.googleFormOpenButton": 'Open Google Form',
+  'common.unknown': 'Неизвестно',
+
+  'stats.cacheEmpty': 'Публичный JSON кеш пустой. Запусти GitHub Actions, чтобы сгенерировать public-cache/stats-players.json.',
+  'stats.playersJsonMismatch': 'stats-summary.json содержит числа, но stats-players.json пустой. Замените локальный public-cache файлами, сгенерированными GitHub Actions.',
+
 };

@@ -44,7 +44,7 @@ let regionsCatalog = [];
 let sortState = { key: 'createdAt', dir: 'desc' };
 let editUid = null;
 
-function allianceTag3(value) { return Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join(''); }
+function allianceTag3(value) { return window.WKD?.allianceTag3 ? window.WKD.allianceTag3(value) : Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join(''); }
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
@@ -67,40 +67,15 @@ function setSummary(text) {
 function getRoleBadge(role) { return window.WKD?.Badges?.role ? window.WKD.Badges.role(role || 'player') : `<span class="role-badge role-${escapeHtml(role || 'player')}">${escapeHtml(roleLabel(role || 'player'))}</span>`; }
 
 function rankCode(value) {
-  const raw = String(value || 'P1').trim().toUpperCase();
-  const match = raw.match(/[PRР]\s*([1-5])/i);
+  if (window.WKD?.Badges?.rankCode) return window.WKD.Badges.rankCode(value);
+  const match = String(value || 'P1').trim().toUpperCase().match(/[PRР]\s*([1-5])/i);
   return match ? `P${match[1]}` : 'P1';
 }
 
 function getRankBadge(rank) { return window.WKD?.Badges?.rank ? window.WKD.Badges.rank(rank) : `<span class="rank-badge">${escapeHtml(rankCode(rank))}</span>`; }
 
-function getRegionBadge(region) {
-  return `<span class="region-badge">${escapeHtml(region || '—')}</span>`;
-}
+function getRegionBadge(region) { return window.WKD?.Badges?.region ? window.WKD.Badges.region(region) : `<span class="region-badge">${escapeHtml(region || '—')}</span>`; }
 
-function shkNumber(value) {
-  const match = String(value ?? '').match(/\d+/);
-  return match ? Number(match[0]) : 0;
-}
-
-function shkTier(value) {
-  const n = shkNumber(value);
-  if (n <= 0) return 0;
-  if (n <= 3) return 1;
-  if (n <= 6) return 2;
-  if (n <= 9) return 3;
-  if (n <= 12) return 4;
-  if (n <= 15) return 5;
-  if (n <= 18) return 6;
-  if (n <= 21) return 7;
-  if (n <= 25) return 8;
-  if (n <= 29) return 9;
-  if (n <= 33) return 10;
-  if (n <= 37) return 11;
-  if (n <= 39) return 12;
-  if (n <= 43) return 13;
-  return 14;
-}
 
 function getShkBadge(shk) { return window.WKD?.Badges?.shk ? window.WKD.Badges.shk(shk) : `<span class="shk-badge">${escapeHtml(shk || '—')}</span>`; }
 

@@ -1806,10 +1806,10 @@ window.WKD_TRANSLATIONS.ko = {
   'stats.refreshList': '목록 새로고침',
   'stats.loadPlayerList': '목록 새로고침',
   'stats.publicCacheSummary': '{mode}: {count}. 업데이트: {updated}',
-  'stats.listNotLoaded': '플레이어 목록은 Firebase 읽기 없이 공개 JSON에서 로드됩니다.',
+  'stats.listNotLoaded': '공개 플레이어 JSON이 아직 로드되지 않았습니다. GitHub Actions로 public-cache/stats-players.json을 생성하세요.',
   'stats.loadingSummary': '공개 통계 캐시를 불러오는 중...',
-  'stats.cacheUpdated': '공개 캐시에서 통계를 불러왔습니다.',
-  'stats.cacheFailed': '공개 통계 캐시가 아직 생성되지 않았습니다. 목록을 수동으로 불러오거나 GitHub Actions를 설정하세요.',
+  'stats.cacheUpdated': '공개 JSON 캐시에서 통계를 불러왔습니다.',
+  'stats.cacheFailed': '공개 통계 JSON 캐시가 아직 생성되지 않았습니다. GitHub Actions를 설정하고 public-cache 파일을 생성하세요.',
   "regionSettings.googleFormTitle": 'Reserve Google Form',
   "regionSettings.googleFormHelp": 'The form is created through Google Apps Script for this region and current cycle. Consul email access is not connected yet.',
   "regionSettings.googleFormEnabled": 'Show Google Form button for players',
@@ -1832,4 +1832,9 @@ window.WKD_TRANSLATIONS.ko = {
   "region.googleFormPublicTitle": 'Reserve registration through Google Form',
   "region.googleFormPublicHelp": 'If the site form does not work or you need to save Firebase limits, you can send the request through this region Google Form.',
   "region.googleFormOpenButton": 'Open Google Form',
+  'common.unknown': '알 수 없음',
+
+  'stats.cacheEmpty': '공개 JSON 캐시가 비어 있습니다. GitHub Actions를 실행해 public-cache/stats-players.json을 생성하세요.',
+  'stats.playersJsonMismatch': 'stats-summary.json에는 숫자가 있지만 stats-players.json은 비어 있습니다. 로컬 public-cache를 GitHub Actions가 생성한 파일로 교체하세요.',
+
 };

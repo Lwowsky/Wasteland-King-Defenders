@@ -11,7 +11,7 @@ window.WKD = window.WKD || {};
 
   const $ = selector => document.querySelector(selector);
   const esc = value => WKD.escapeHtml ? WKD.escapeHtml(value) : String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[ch]));
-  const allianceTag3 = value => Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
+  const allianceTag3 = value => window.WKD?.allianceTag3 ? window.WKD.allianceTag3(value) : Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
 const clean = value => WKD.clean ? WKD.clean(value) : String(value ?? '').trim();
   const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
   const tv = (key, fallback = '', vars = {}) => {

@@ -16,7 +16,13 @@
           <b class="notify-count" id="notifyCount" hidden>0</b>
         </a>
         <div class="notify-menu" id="notifyMenu" role="menu" aria-label="Сповіщення" data-i18n-aria-label="notifications.title">
-          <div class="notify-menu-head"><strong data-i18n="notifications.title">Сповіщення</strong><button class="link-btn" id="notifyOpenPageBtn" type="button" data-i18n="notifications.openPage">Усі</button></div>
+          <div class="notify-menu-head">
+            <strong data-i18n="notifications.title">Сповіщення</strong>
+            <div class="notify-menu-actions">
+              <button class="link-btn" id="notifyOpenPageBtn" type="button" data-i18n="notifications.openPage">Усі</button>
+              <button class="notify-close-btn" id="notifyCloseBtn" type="button" aria-label="Закрити" title="Закрити" data-i18n-aria-label="common.close" data-i18n-title="common.close">×</button>
+            </div>
+          </div>
           <div class="notify-list" id="notifyList"><div class="notify-empty" data-i18n="notifications.empty">Нових сповіщень немає.</div></div>
           <button class="notify-read-btn" id="notifyMarkReadBtn" type="button" data-i18n="notifications.markRead">Позначити прочитаними</button>
         </div>

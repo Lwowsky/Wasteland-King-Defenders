@@ -3,7 +3,8 @@ window.WKD = window.WKD || {};
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
   const normalize = value => String(value ?? '').trim();
-  const normalizeAlliance = value => Array.from(normalize(value).replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
+  const cleanAllianceTag = value => Array.from(normalize(value).replace(/[\/\[\]#?]/g, '')).join('');
+  const normalizeAllianceTag = value => Array.from(cleanAllianceTag(value)).slice(0, 3).join('');
   const hashHue = value => {
     let hash = 2166136261;
     for (const ch of String(value || 'empty')) {
@@ -13,6 +14,11 @@ window.WKD = window.WKD || {};
     return ((hash % 360) + 360) % 360;
   };
   const tierNumber = value => Number(String(value || '').replace(/[^0-9]/g, '')) || 0;
+  const rankCode = value => {
+    const raw = normalize(value || 'P1').toUpperCase();
+    const match = raw.match(/[PRР]\s*([1-5])/i);
+    return match ? `P${match[1]}` : 'P1';
+  };
   const troopLabel = value => {
     const key = normalize(value).toLowerCase();
     if (key === 'fighter') return t('troop.fighter', 'Бійці');
@@ -47,14 +53,39 @@ window.WKD = window.WKD || {};
     if (n <= 43) return 13;
     return 14;
   };
+  const cssVars = vars => Object.entries(vars || {})
+    .filter(([, value]) => value !== undefined && value !== null && value !== '')
+    .map(([name, value]) => `${name.startsWith('--') ? name : `--${name}`}:${String(value)}`)
+    .join(';');
 
   const Badges = {
     esc,
     hashHue,
+    tierNumber,
+    rankCode,
+    shkTier,
+    cleanAllianceTag,
+    normalizeAllianceTag,
     alliance(tag, options = {}) {
-      const safe = normalizeAlliance(tag) || '—';
-      const hue = Number.isFinite(Number(options.hue)) ? Number(options.hue) : hashHue(`${options.region || ''}:${safe}`);
-      return `<span class="alliance-badge" style="--ally-hue:${hue}"><span class="badge-dot"></span><span>${esc(safe)}</span></span>`;
+      const raw = options.preserve === true ? cleanAllianceTag(tag) : normalizeAllianceTag(tag);
+      const label = raw || '—';
+      const length = Array.from(raw).length;
+      const strict = options.strict3 === true;
+      const invalid = strict && Boolean(raw) && length !== 3;
+      const empty = !raw;
+      const hue = Number.isFinite(Number(options.hue)) ? Number(options.hue) : hashHue(`${options.region || ''}:${label}`);
+      const extraClass = normalize(options.className || '');
+      const stateClass = strict ? `${invalid ? 'is-invalid' : 'is-valid'} ${empty ? 'is-empty' : ''}` : (empty ? 'is-empty' : '');
+      const style = [
+        `--ally-hue:${hue}`,
+        cssVars(options.styleVars),
+        normalize(options.style || '')
+      ].filter(Boolean).join(';');
+      const title = options.title == null ? label : options.title;
+      return `<span class="alliance-badge ${esc(extraClass)} ${stateClass}" style="${esc(style)}" title="${esc(title)}"><span class="badge-dot"></span><span>${esc(label)}</span></span>`;
+    },
+    region(region = '') {
+      return `<span class="region-badge">${esc(region || '—')}</span>`;
     },
     tier(tier = '') {
       const safe = normalize(tier).toUpperCase() || '—';
@@ -76,7 +107,7 @@ window.WKD = window.WKD || {};
       return `<span class="role-badge role-${esc(key)}">${esc(roleLabel(key))}</span>`;
     },
     rank(rank = '') {
-      const code = normalize(rank).toUpperCase() || 'P1';
+      const code = rankCode(rank);
       return `<span class="rank-badge rank-${esc(code.toLowerCase())}" title="${esc(t('account.rank', 'Ранг'))} ${esc(code)}"><span class="admin-badge-dot"></span><b>${esc(code)}</b></span>`;
     },
     shk(value = '') {
@@ -91,7 +122,10 @@ window.WKD = window.WKD || {};
   };
 
   window.WKD.Badges = Badges;
+  window.WKD.allianceTag3 = normalizeAllianceTag;
+  window.WKD.cleanAllianceTag = cleanAllianceTag;
   window.WKD.allianceBadge = Badges.alliance;
+  window.WKD.regionBadge = Badges.region;
   window.WKD.tierBadge = Badges.tier;
   window.WKD.troopBadge = Badges.troop;
   window.WKD.captainBadge = Badges.captain;

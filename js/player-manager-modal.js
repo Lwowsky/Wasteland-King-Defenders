@@ -18,7 +18,7 @@ window.WKD = window.WKD || {};
   const $ = selector => document.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const esc = value => WKD.escapeHtml ? WKD.escapeHtml(value) : String(value ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
-  const allianceTag3 = value => Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
+  const allianceTag3 = value => WKD.allianceTag3 ? WKD.allianceTag3(value) : Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
 const clean = value => WKD.clean ? WKD.clean(value) : String(value ?? '').trim();
   const sourceKey = 'wkd.players.sourceMode';
   const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -253,12 +253,27 @@ const clean = value => WKD.clean ? WKD.clean(value) : String(value ?? '').trim()
   }
   function allianceBadge(tag, index = 0) {
     const value = clean(tag);
+    const color = allianceColor(value || '—', index);
+    if (window.WKD?.Badges?.alliance) {
+      return window.WKD.Badges.alliance(value, {
+        preserve: true,
+        strict3: true,
+        className: 'player-manager-alliance-badge',
+        hue: color.hue,
+        styleVars: {
+          '--ally-bg': color.bg,
+          '--ally-border': color.border,
+          '--ally-glow': color.glow,
+          '--ally-accent': color.accent
+        },
+        title: value || '—'
+      });
+    }
     const invalid = isAllianceInvalid(value);
     const empty = !value;
-    const color = allianceColor(value || '—', index);
     const style = `--ally-hue:${color.hue};--ally-bg:${color.bg};--ally-border:${color.border};--ally-glow:${color.glow};--ally-accent:${color.accent};`;
     const label = empty ? '—' : value;
-    return `<span class="alliance-badge player-manager-alliance-badge ${invalid ? 'is-invalid' : 'is-valid'} ${empty ? 'is-empty' : ''}" style="${esc(style)}" title="${esc(label)}"><i class="badge-dot"></i><span>${esc(label)}</span></span>`;
+    return `<span class="alliance-badge player-manager-alliance-badge ${invalid ? 'is-invalid' : 'is-valid'} ${empty ? 'is-empty' : ''}" style="${esc(style)}" title="${esc(label)}"><span class="badge-dot"></span><span>${esc(label)}</span></span>`;
   }
   function getAllianceGroups() {
     const map = new Map();

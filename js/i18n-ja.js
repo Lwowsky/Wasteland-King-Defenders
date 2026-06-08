@@ -1806,10 +1806,10 @@ window.WKD_TRANSLATIONS.ja = {
   'stats.refreshList': 'リストを更新',
   'stats.loadPlayerList': 'リストを更新',
   'stats.publicCacheSummary': '{mode}: {count}。更新: {updated}',
-  'stats.listNotLoaded': 'プレイヤー一覧は Firebase 読み取りなしで公開 JSON から読み込まれます。',
+  'stats.listNotLoaded': '公開プレイヤーJSONはまだ読み込まれていません。GitHub Actionsで public-cache/stats-players.json を生成してください。',
   'stats.loadingSummary': '公開統計キャッシュを読み込み中...',
-  'stats.cacheUpdated': '公開キャッシュから統計を読み込みました。',
-  'stats.cacheFailed': '公開統計キャッシュはまだ作成されていません。手動で一覧を読み込むか、GitHub Actions を設定してください。',
+  'stats.cacheUpdated': '公開JSONキャッシュから統計を読み込みました。',
+  'stats.cacheFailed': '公開統計JSONキャッシュはまだ生成されていません。GitHub Actionsを設定してpublic-cacheファイルを生成してください。',
   "regionSettings.googleFormTitle": 'Reserve Google Form',
   "regionSettings.googleFormHelp": 'The form is created through Google Apps Script for this region and current cycle. Consul email access is not connected yet.',
   "regionSettings.googleFormEnabled": 'Show Google Form button for players',
@@ -1832,4 +1832,9 @@ window.WKD_TRANSLATIONS.ja = {
   "region.googleFormPublicTitle": 'Reserve registration through Google Form',
   "region.googleFormPublicHelp": 'If the site form does not work or you need to save Firebase limits, you can send the request through this region Google Form.',
   "region.googleFormOpenButton": 'Open Google Form',
+  'common.unknown': '不明',
+
+  'stats.cacheEmpty': '公開JSONキャッシュは空です。GitHub Actionsを実行して public-cache/stats-players.json を生成してください。',
+  'stats.playersJsonMismatch': 'stats-summary.json には数値がありますが、stats-players.json は空です。ローカルの public-cache を GitHub Actions で生成されたファイルに置き換えてください。',
+
 };

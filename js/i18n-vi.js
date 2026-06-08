@@ -1806,10 +1806,10 @@ window.WKD_TRANSLATIONS.vi = {
   'stats.refreshList': 'Làm mới danh sách',
   'stats.loadPlayerList': 'Làm mới danh sách',
   'stats.publicCacheSummary': '{mode}: {count}. Cập nhật: {updated}',
-  'stats.listNotLoaded': 'Danh sách người chơi được tải từ JSON công khai mà không đọc Firebase.',
+  'stats.listNotLoaded': 'JSON người chơi công khai chưa được tải. Hãy tạo public-cache/stats-players.json bằng GitHub Actions.',
   'stats.loadingSummary': 'Đang tải cache thống kê công khai...',
-  'stats.cacheUpdated': 'Đã tải thống kê từ cache công khai.',
-  'stats.cacheFailed': 'Cache thống kê công khai chưa được tạo. Hãy tải danh sách thủ công hoặc thiết lập GitHub Actions.',
+  'stats.cacheUpdated': 'Đã tải thống kê từ cache JSON công khai.',
+  'stats.cacheFailed': 'Cache JSON thống kê công khai chưa được tạo. Hãy thiết lập GitHub Actions và tạo các tệp public-cache.',
   "regionSettings.googleFormTitle": 'Reserve Google Form',
   "regionSettings.googleFormHelp": 'The form is created through Google Apps Script for this region and current cycle. Consul email access is not connected yet.',
   "regionSettings.googleFormEnabled": 'Show Google Form button for players',
@@ -1832,4 +1832,9 @@ window.WKD_TRANSLATIONS.vi = {
   "region.googleFormPublicTitle": 'Reserve registration through Google Form',
   "region.googleFormPublicHelp": 'If the site form does not work or you need to save Firebase limits, you can send the request through this region Google Form.',
   "region.googleFormOpenButton": 'Open Google Form',
+  'common.unknown': 'Không rõ',
+
+  'stats.cacheEmpty': 'Cache JSON công khai đang trống. Hãy chạy GitHub Actions để tạo public-cache/stats-players.json.',
+  'stats.playersJsonMismatch': 'stats-summary.json có số liệu nhưng stats-players.json đang trống. Hãy thay public-cache cục bộ bằng các tệp do GitHub Actions tạo.',
+
 };

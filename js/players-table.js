@@ -272,8 +272,11 @@ function allianceBadge(alliance) {
   if (typeof WKD.renderPlayerManagerAllianceBadge === 'function') {
     return WKD.renderPlayerManagerAllianceBadge(alliance || '—', hashHue(alliance || 'empty'));
   }
-  const text = WKD.escapeHtml(alliance || '—');
   const hue = hashHue(alliance || 'empty');
+  if (window.WKD?.Badges?.alliance) {
+    return window.WKD.Badges.alliance(alliance || '—', { preserve: true, hue });
+  }
+  const text = WKD.escapeHtml(alliance || '—');
   return `<span class="alliance-badge" style="--ally-hue:${hue}"><span class="badge-dot"></span><span>${text}</span></span>`;
 }
 

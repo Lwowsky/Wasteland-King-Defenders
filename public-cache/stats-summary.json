@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "source": "github-actions-full",
-  "generatedAt": "2026-06-08T04:57:45.782Z",
-  "lastFullRebuildDate": "2026-06-08",
+  "source": "github-actions-incremental",
+  "generatedAt": "2026-06-07T11:29:46.457Z",
+  "lastFullRebuildDate": "2026-06-07",
   "totalPlayers": 1,
   "totalFarms": 3,
   "totalRows": 4,

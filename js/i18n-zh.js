@@ -1806,10 +1806,10 @@ window.WKD_TRANSLATIONS.zh = {
   'stats.refreshList': '刷新列表',
   'stats.loadPlayerList': '刷新列表',
   'stats.publicCacheSummary': '{mode}: {count}。更新时间：{updated}',
-  'stats.listNotLoaded': '玩家列表从公共 JSON 加载，不产生 Firebase 读取。',
+  'stats.listNotLoaded': '公共玩家 JSON 尚未加载。请使用 GitHub Actions 生成 public-cache/stats-players.json。',
   'stats.loadingSummary': '正在加载公开统计缓存...',
-  'stats.cacheUpdated': '已从公开缓存加载统计。',
-  'stats.cacheFailed': '公开统计缓存尚未生成。请手动加载列表或设置 GitHub Actions。',
+  'stats.cacheUpdated': '已从公共 JSON 缓存加载统计数据。',
+  'stats.cacheFailed': '公共统计 JSON 缓存尚未生成。请设置 GitHub Actions 并生成 public-cache 文件。',
   "regionSettings.googleFormTitle": 'Reserve Google Form',
   "regionSettings.googleFormHelp": 'The form is created through Google Apps Script for this region and current cycle. Consul email access is not connected yet.',
   "regionSettings.googleFormEnabled": 'Show Google Form button for players',
@@ -1832,4 +1832,9 @@ window.WKD_TRANSLATIONS.zh = {
   "region.googleFormPublicTitle": 'Reserve registration through Google Form',
   "region.googleFormPublicHelp": 'If the site form does not work or you need to save Firebase limits, you can send the request through this region Google Form.',
   "region.googleFormOpenButton": 'Open Google Form',
+  'common.unknown': '未知',
+
+  'stats.cacheEmpty': '公共 JSON 缓存为空。请运行 GitHub Actions 生成 public-cache/stats-players.json。',
+  'stats.playersJsonMismatch': 'stats-summary.json 有统计数字，但 stats-players.json 为空。请用 GitHub Actions 生成的文件替换本地 public-cache。',
+
 };

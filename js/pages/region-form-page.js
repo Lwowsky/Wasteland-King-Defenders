@@ -52,7 +52,7 @@ function infoLine(labelKey, fallbackLabel, value, valueClass = '') {
   const classAttr = valueClass ? ` class="${valueClass}"` : '';
   return `<span class="region-info-label">${esc(t(labelKey, fallbackLabel))}</span> <span${classAttr}>${esc(value || '—')}</span>`;
 }
-const allianceTag3 = value => Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
+const allianceTag3 = value => window.WKD?.allianceTag3 ? window.WKD.allianceTag3(value) : Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
 function translatedDefaultText(value, key, fallback) {
   const raw = String(value || '').trim();

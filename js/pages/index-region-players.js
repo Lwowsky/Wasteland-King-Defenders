@@ -16,7 +16,7 @@ let loadingRegion = false;
 let loadedRegionAlliances = [];
 let controllerReady = false;
 
-const allianceTag3 = value => Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
+const allianceTag3 = value => window.WKD?.allianceTag3 ? window.WKD.allianceTag3(value) : Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);

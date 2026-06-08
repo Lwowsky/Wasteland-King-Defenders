@@ -1806,10 +1806,10 @@ window.WKD_TRANSLATIONS.de = {
   'stats.refreshList': 'Liste aktualisieren',
   'stats.loadPlayerList': 'Liste aktualisieren',
   'stats.publicCacheSummary': '{mode}: {count}. Aktualisiert: {updated}',
-  'stats.listNotLoaded': 'Die Spielerliste wird aus öffentlichem JSON ohne Firebase-Lesevorgänge geladen.',
+  'stats.listNotLoaded': 'Die öffentliche Spieler-JSON wurde noch nicht geladen. Erzeuge public-cache/stats-players.json mit GitHub Actions.',
   'stats.loadingSummary': 'Öffentlichen Statistik-Cache laden...',
-  'stats.cacheUpdated': 'Statistik aus öffentlichem Cache geladen.',
-  'stats.cacheFailed': 'Der öffentliche Statistik-Cache wurde noch nicht erstellt. Lade die Liste manuell oder richte GitHub Actions ein.',
+  'stats.cacheUpdated': 'Statistiken aus dem öffentlichen JSON-Cache geladen.',
+  'stats.cacheFailed': 'Der öffentliche Statistik-JSON-Cache wurde noch nicht erzeugt. Richte GitHub Actions ein und erzeuge die public-cache-Dateien.',
   "regionSettings.googleFormTitle": 'Reserve Google Form',
   "regionSettings.googleFormHelp": 'The form is created through Google Apps Script for this region and current cycle. Consul email access is not connected yet.',
   "regionSettings.googleFormEnabled": 'Show Google Form button for players',
@@ -1832,4 +1832,9 @@ window.WKD_TRANSLATIONS.de = {
   "region.googleFormPublicTitle": 'Reserve registration through Google Form',
   "region.googleFormPublicHelp": 'If the site form does not work or you need to save Firebase limits, you can send the request through this region Google Form.',
   "region.googleFormOpenButton": 'Open Google Form',
+  'common.unknown': 'Unbekannt',
+
+  'stats.cacheEmpty': 'Der öffentliche JSON-Cache ist leer. Starte GitHub Actions, um public-cache/stats-players.json zu erzeugen.',
+  'stats.playersJsonMismatch': 'stats-summary.json enthält Zahlen, aber stats-players.json ist leer. Ersetze den lokalen public-cache durch die von GitHub Actions generierten Dateien.',
+
 };

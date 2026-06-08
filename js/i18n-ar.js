@@ -1804,10 +1804,10 @@ window.WKD_TRANSLATIONS.ar = {
   'stats.refreshList': 'تحديث القائمة',
   'stats.loadPlayerList': 'تحديث القائمة',
   'stats.publicCacheSummary': '{mode}: {count}. تم التحديث: {updated}',
-  'stats.listNotLoaded': 'يتم تحميل قائمة اللاعبين من JSON العام دون قراءات Firebase.',
+  'stats.listNotLoaded': 'لم يتم تحميل ملف JSON العام للاعبين بعد. أنشئ public-cache/stats-players.json عبر GitHub Actions.',
   'stats.loadingSummary': 'جارٍ تحميل ذاكرة الإحصاءات العامة...',
-  'stats.cacheUpdated': 'تم تحميل الإحصاءات من الذاكرة العامة.',
-  'stats.cacheFailed': 'لم يتم إنشاء ذاكرة الإحصاءات العامة بعد. حمّل القائمة يدويًا أو اضبط GitHub Actions.',
+  'stats.cacheUpdated': 'تم تحميل الإحصائيات من ذاكرة JSON العامة.',
+  'stats.cacheFailed': 'لم يتم إنشاء ذاكرة JSON العامة للإحصائيات بعد. قم بإعداد GitHub Actions وإنشاء ملفات public-cache.',
   "regionSettings.googleFormTitle": 'Reserve Google Form',
   "regionSettings.googleFormHelp": 'The form is created through Google Apps Script for this region and current cycle. Consul email access is not connected yet.',
   "regionSettings.googleFormEnabled": 'Show Google Form button for players',
@@ -1830,4 +1830,9 @@ window.WKD_TRANSLATIONS.ar = {
   "region.googleFormPublicTitle": 'Reserve registration through Google Form',
   "region.googleFormPublicHelp": 'If the site form does not work or you need to save Firebase limits, you can send the request through this region Google Form.',
   "region.googleFormOpenButton": 'Open Google Form',
+  'common.unknown': 'غير معروف',
+
+  'stats.cacheEmpty': 'ذاكرة JSON العامة فارغة. شغّل GitHub Actions لإنشاء public-cache/stats-players.json.',
+  'stats.playersJsonMismatch': 'يحتوي stats-summary.json على أرقام، لكن stats-players.json فارغ. استبدل public-cache المحلي بالملفات التي أنشأها GitHub Actions.',
+
 };
