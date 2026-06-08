@@ -1,4 +1,4 @@
-import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=88';
+import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=89';
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile, saveFarmWastelandProfile } from '../services/user-db.js';
 import {
@@ -25,7 +25,7 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=88';
+} from '../services/region-db.js?v=89';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -302,6 +302,16 @@ function renderEventInfo(settings = {}) {
   box.hidden = !hostAlliance && !governor;
   setDynamicText('#regionHostAllianceText', tv('region.hostAllianceLabel', 'Host alliance: {value}', { value: hostAlliance || '—' }));
   setDynamicText('#regionGovernorText', tv('region.governorLabel', 'Governor: {value}', { value: governor || '—' }));
+}
+
+function renderGoogleFormPublic(settings = {}) {
+  const panel = $('#regionGoogleFormPublicPanel');
+  const link = $('#regionGoogleFormPublicLink');
+  const form = settings?.googleForm || {};
+  const url = String(form.formUrl || '').trim();
+  const show = Boolean(form.enabled && url);
+  if (panel) panel.hidden = !show;
+  if (link && show) link.href = url;
 }
 
 function openedByText(settings = formSettings || {}) {
@@ -705,6 +715,7 @@ async function prepareForm(settings) {
   $('#regionFormDescText').textContent = settingsDescription(settings);
   setFormState(settings);
   renderEventInfo(settings);
+  renderGoogleFormPublic(settings);
   await loadRegionAlliancesForForm();
   startCountdown(settings);
   updatePlayerShortLinkPanel().catch(error => console.warn('[WKD] player short link skipped:', error));
@@ -893,6 +904,7 @@ function handleLanguageChange() {
   setFormState(formSettings);
   renderRegionSelect();
   renderEventInfo(formSettings);
+  renderGoogleFormPublic(formSettings);
   startCountdown(formSettings);
   toggleExtraFields();
 }

@@ -38,7 +38,7 @@
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
   <script defer src="js/core/assets-loader.js"></script>
-  <script defer src="js/badges.js?v=88"></script>
+  <script defer src="js/badges.js?v=89"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/core/state.js"></script>
@@ -52,13 +52,13 @@
   <script defer src="js/confirm-modal.js"></script>
   <script defer src="js/player-edit-modal.js"></script>
   <script defer src="js/player-manager-modal.js"></script>
-  <script defer src="js/tower-planner.js?v=88"></script>
+  <script defer src="js/tower-planner.js?v=89"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/player-manager-region-bridge.js?v=88"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=89"></script>
   <script type="module" src="js/auth-google.js"></script>
-  <script type="module" src="js/notifications.js?v=88"></script>
-  <script type="module" src="js/pages/region-settings-page.js?v=88"></script>
+  <script type="module" src="js/notifications.js?v=89"></script>
+  <script type="module" src="js/pages/region-settings-page.js?v=89"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -191,6 +191,28 @@
               <button class="btn" id="addCustomFieldBtn" type="button" data-i18n="regionSettings.addColumn">Додати колонку</button>
             </div>
             <div class="region-chip-list" id="settingsCustomFieldList"></div>
+          </div>
+
+          <div class="region-field region-field--full region-google-form-panel" id="regionGoogleFormSettingsPanel">
+            <div class="region-google-form-head">
+              <div>
+                <span data-i18n="regionSettings.googleFormTitle">Резервна Google Form</span>
+                <small data-i18n="regionSettings.googleFormHelp">Форма створюється через Google Apps Script для цього регіону і поточного циклу. Email консула поки не підключається.</small>
+              </div>
+              <label class="region-check region-check--inline"><input id="settingsGoogleFormEnabled" type="checkbox" /> <span data-i18n="regionSettings.googleFormEnabled">Показувати кнопку Google Form для гравців</span></label>
+            </div>
+            <div class="region-rules-grid region-google-form-grid">
+              <label><small data-i18n="regionSettings.googleFormWebAppUrl">Apps Script Web App URL</small><input id="settingsGoogleFormWebAppUrl" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" /></label>
+              <label><small data-i18n="regionSettings.googleFormSecret">Секрет Apps Script</small><input id="settingsGoogleFormSecret" placeholder="CHANGE_ME_SECRET" autocomplete="off" /></label>
+              <label><small data-i18n="regionSettings.googleFormUrl">Посилання Google Form для гравців</small><input id="settingsGoogleFormUrl" placeholder="https://docs.google.com/forms/..." /></label>
+              <label><small data-i18n="regionSettings.googleSheetUrl">Посилання Google Sheet для відповідей</small><input id="settingsGoogleSheetUrl" placeholder="https://docs.google.com/spreadsheets/..." /></label>
+            </div>
+            <div class="region-google-form-actions">
+              <button class="btn region-save" id="syncGoogleFormBtn" type="button" data-i18n="regionSettings.googleFormSync">Створити / оновити Google Form</button>
+              <button class="btn" id="openGoogleFormBtn" type="button" data-i18n="regionSettings.googleFormOpen">Відкрити Google Form</button>
+              <button class="btn farm-delete" id="closeGoogleFormBtn" type="button" data-i18n="regionSettings.googleFormClose">Закрити Google Form</button>
+            </div>
+            <small class="region-note" id="googleFormStatus" data-i18n="regionSettings.googleFormNotConfigured">Google Form ще не налаштована.</small>
           </div>
         </div>
         <div class="region-actions">

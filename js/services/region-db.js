@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=88';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=88';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=89';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=89';
 import {
   getUserProfile,
   getFarmById,
@@ -103,7 +103,13 @@ export const DEFAULT_REGION_FORM = {
   rotationEnabled: false,
   rotationLoop: true,
   rotationActiveIndex: 0,
-  rotationAlliances: []
+  rotationAlliances: [],
+  googleForm: {
+    enabled: false,
+    formUrl: '',
+    status: 'not-configured',
+    mode: 'reserve'
+  }
 };
 
 export const DEFAULT_SHIFT_OPTIONS = [
@@ -193,6 +199,49 @@ function normalizeTier(value = 'T10') {
   const tier = String(value || 'T10').trim().toUpperCase();
   return TIER_LIST.includes(tier) ? tier : 'T10';
 }
+
+function sanitizeUrl(value = '') {
+  const url = trim(value).slice(0, 900);
+  if (!url) return '';
+  try {
+    const parsed = new URL(url);
+    return ['https:', 'http:'].includes(parsed.protocol) ? parsed.toString() : '';
+  } catch {
+    return '';
+  }
+}
+
+function normalizeGoogleFormPublic(config = {}) {
+  const status = ['not-configured', 'draft', 'open', 'closed', 'syncing', 'sent', 'error'].includes(trim(config.status))
+    ? trim(config.status)
+    : (config.enabled ? 'draft' : 'not-configured');
+  return {
+    enabled: Boolean(config.enabled),
+    mode: 'reserve',
+    formUrl: sanitizeUrl(config.formUrl),
+    status,
+    region: normalizeRegion(config.region),
+    currentCycleId: trim(config.currentCycleId).slice(0, 80),
+    closeAtMs: Number(config.closeAtMs) || 0,
+    updatedAtMs: Number(config.updatedAtMs) || 0
+  };
+}
+
+function normalizeGoogleFormPrivate(config = {}) {
+  return {
+    ...normalizeGoogleFormPublic(config),
+    webAppUrl: sanitizeUrl(config.webAppUrl),
+    secret: trim(config.secret).slice(0, 160),
+    sheetUrl: sanitizeUrl(config.sheetUrl),
+    editUrl: sanitizeUrl(config.editUrl),
+    formId: trim(config.formId).slice(0, 180),
+    sheetId: trim(config.sheetId).slice(0, 180),
+    lastAction: trim(config.lastAction).slice(0, 60),
+    lastActionAtMs: Number(config.lastActionAtMs) || 0,
+    lastActionResult: trim(config.lastActionResult).slice(0, 400)
+  };
+}
+
 function makeCustomId(value = '') {
   return String(value || '')
     .trim()
@@ -752,6 +801,7 @@ function mergeRegionSettings(data = {}) {
     rotationLoop: 'rotationLoop' in data ? Boolean(data.rotationLoop) : DEFAULT_REGION_FORM.rotationLoop,
     rotationActiveIndex,
     rotationAlliances,
+    googleForm: normalizeGoogleFormPublic(data.googleForm || {}),
     eventStartAtMs,
     startAtMs: eventStartAtMs,
     closeAtMs,
@@ -1327,6 +1377,14 @@ export async function saveRegionSettings(user, region, settings) {
     rotationLoop: 'rotationLoop' in settings ? Boolean(settings.rotationLoop) : DEFAULT_REGION_FORM.rotationLoop,
     rotationActiveIndex,
     rotationAlliances,
+    googleForm: normalizeGoogleFormPublic({
+      ...(oldSettings.googleForm || {}),
+      ...(settings.googleForm || {}),
+      region: safeRegion,
+      currentCycleId,
+      closeAtMs,
+      updatedAtMs: nowMs
+    }),
     eventStartAtMs,
     startAtMs: eventStartAtMs,
     closeAtMs,
@@ -1410,6 +1468,67 @@ export async function saveRegionSettings(user, region, settings) {
     return '';
   });
   return { ...clean, shortLinkCode, finalPlanShareCode, openedNewCycle: openNewCycle, cleanupDeletedCount: cleanup.deletedCount || 0 };
+}
+
+export async function getRegionGoogleFormConfig(user, region) {
+  if (!user) throw new Error('auth-required');
+  const { db, firestoreMod } = await getFirebaseParts();
+  const profile = await getUserProfile(user.uid);
+  const safeRegion = normalizeRegion(region);
+  if (!canManageRegion(profile, safeRegion, user)) throw new Error('region-access-denied');
+  const publicSettings = await getRegionSettings(safeRegion).catch(() => mergeRegionSettings({}));
+  const ref = firestoreMod.doc(db, 'regions', safeRegion, 'privateSettings', 'googleForm');
+  const snap = await firestoreMod.getDoc(ref);
+  trackReads(1, 'region-google-form-config');
+  return normalizeGoogleFormPrivate({
+    ...(publicSettings.googleForm || {}),
+    ...(snap.exists() ? (snap.data() || {}) : {}),
+    region: safeRegion,
+    currentCycleId: publicSettings.currentCycleId || '',
+    closeAtMs: publicSettings.closeAtMs || 0
+  });
+}
+
+export async function saveRegionGoogleFormConfig(user, region, config = {}) {
+  if (!user) throw new Error('auth-required');
+  const { db, firestoreMod } = await getFirebaseParts();
+  const profile = await getUserProfile(user.uid);
+  const safeRegion = normalizeRegion(region);
+  if (!canManageRegion(profile, safeRegion, user)) throw new Error('region-access-denied');
+  const settings = await getRegionSettings(safeRegion).catch(() => mergeRegionSettings({}));
+  const nowMs = Date.now();
+  const clean = normalizeGoogleFormPrivate({
+    ...config,
+    region: safeRegion,
+    currentCycleId: config.currentCycleId || settings.currentCycleId || '',
+    closeAtMs: Number(config.closeAtMs) || Number(settings.closeAtMs) || 0,
+    updatedAtMs: nowMs
+  });
+  const now = firestoreMod.serverTimestamp();
+  await firestoreMod.setDoc(
+    firestoreMod.doc(db, 'regions', safeRegion, 'privateSettings', 'googleForm'),
+    {
+      ...clean,
+      updatedAt: now,
+      updatedAtMs: nowMs,
+      updatedBy: user.uid
+    },
+    { merge: true }
+  );
+  await firestoreMod.setDoc(
+    firestoreMod.doc(db, 'regions', safeRegion),
+    {
+      registrationForm: {
+        googleForm: normalizeGoogleFormPublic(clean)
+      },
+      updatedAt: now,
+      updatedAtMs: nowMs,
+      updatedBy: user.uid
+    },
+    { merge: true }
+  );
+  trackWrites(2, 'region-google-form-config');
+  return clean;
 }
 
 
@@ -1695,7 +1814,7 @@ export async function saveWastelandRegistration(user, values, regionOverride = '
     await firestoreMod.addDoc(collectionRef, payload);
     trackWrites(1);
   }
-  removeCache(`regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v88`);
+  removeCache(`regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v89`);
 
   await writeRegionActionLog({ db, firestoreMod }, user || { uid: 'guest' }, profile || {}, region, 'registration_submitted', { summary: data.nickname || 'Заявка', alliance: data.alliance, targetName: data.nickname });
   if (user?.uid) {
@@ -1797,7 +1916,7 @@ export async function listRegionRegistrations(user, regionOverride = '', options
   }
   await cleanupOldRegionRegistrations(user, region).catch(error => console.warn('[WKD] old registration cleanup skipped:', error));
 
-  const cacheKey = `regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v88`;
+  const cacheKey = `regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v89`;
   if (!options?.force) {
     const cached = readCache(cacheKey, 60 * 1000);
     if (cached && Array.isArray(cached.rows)) return { profile, region, settings: status, rows: cached.rows, cached: true };
@@ -1845,7 +1964,7 @@ export async function deleteRegionRegistrations(user, region, registrationIds = 
     await batch.commit();
   }
   trackDeletes(ids.length);
-  removeCache(`regionRegistrations.${safeRegion}.no-cycle.v88`);
+  removeCache(`regionRegistrations.${safeRegion}.no-cycle.v89`);
 
   await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), {
     region: safeRegion,
@@ -1900,7 +2019,7 @@ export async function updateRegionRegistration(user, region, registrationId, val
     { merge: true }
   );
   trackWrites(1);
-  removeCache(`regionRegistrations.${safeRegion}.no-cycle.v88`);
+  removeCache(`regionRegistrations.${safeRegion}.no-cycle.v89`);
 
   await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), {
     region: safeRegion,

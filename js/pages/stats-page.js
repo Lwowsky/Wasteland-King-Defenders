@@ -1,6 +1,6 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
 import { formatUserDate, listPublicPlayers, roleLabel } from '../services/user-db.js';
-import { troopLabel } from '../services/region-db.js?v=88';
+import { troopLabel } from '../services/region-db.js?v=89';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -28,8 +28,8 @@ function locale() {
 
 const PUBLIC_STATS_CACHE_URL = 'public-cache/stats-summary.json';
 const PUBLIC_STATS_PLAYERS_URL = 'public-cache/stats-players.json';
-const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v88';
-const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.v88';
+const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v89';
+const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.v89';
 
 function readSummaryCache() {
   try {

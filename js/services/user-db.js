@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=88';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=88';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=89';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=89';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -421,7 +421,7 @@ async function writePublicPlayerFromProfile(db, firestoreMod, profile = {}) {
     await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', region, 'players', profile.uid), publicPlayer, { merge: true });
     trackWrites(1);
   }
-  removeCache('publicPlayers.v88');
+  removeCache('publicPlayers.v89');
   await markStatsChanged(db, firestoreMod, profile.uid, 'profile_changed', 'profile-save');
   return publicPlayer;
 }
@@ -903,7 +903,7 @@ export async function listRegisteredUsers() {
 
 export async function listPublicPlayers(options = {}) {
   const force = Boolean(options?.force);
-  const cacheKey = 'publicPlayers.v88';
+  const cacheKey = 'publicPlayers.v89';
   if (!force) {
     const cached = readCache(cacheKey, 10 * 60 * 1000);
     if (Array.isArray(cached)) return cached;
