@@ -482,6 +482,46 @@ service cloud.firestore {
         && request.resource.data.createdByAuth == true;
     }
 
+    function nicknameLockFieldsSafe(regionId) {
+      return request.resource.data.keys().hasOnly([
+          'region', 'cycleId', 'nickname', 'nickKey', 'registrationId', 'ownerUid', 'farmId',
+          'createdByAuth', 'publicLink', 'source', 'createdAt', 'createdAtMs', 'updatedAt', 'updatedAtMs'
+        ])
+        && request.resource.data.region == regionId
+        && request.resource.data.cycleId is string
+        && request.resource.data.cycleId.size() > 0
+        && request.resource.data.cycleId.size() <= 120
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() > 0
+        && request.resource.data.nickname.size() <= 120
+        && request.resource.data.nickKey is string
+        && request.resource.data.nickKey.size() > 0
+        && request.resource.data.nickKey.size() <= 160
+        && request.resource.data.registrationId is string
+        && request.resource.data.registrationId.size() > 0
+        && request.resource.data.registrationId.size() <= 180
+        && request.resource.data.ownerUid is string
+        && request.resource.data.ownerUid.size() <= 160
+        && request.resource.data.farmId is string
+        && request.resource.data.farmId.size() <= 80
+        && request.resource.data.createdByAuth is bool
+        && request.resource.data.publicLink is bool;
+    }
+
+    function signedNicknameLockCreateSafe(regionId) {
+      return signedIn()
+        && nicknameLockFieldsSafe(regionId)
+        && request.resource.data.createdByAuth == true
+        && request.resource.data.ownerUid == request.auth.uid;
+    }
+
+    function publicNicknameLockCreateSafe(regionId) {
+      return nicknameLockFieldsSafe(regionId)
+        && request.resource.data.publicLink == true
+        && request.resource.data.createdByAuth == false
+        && request.resource.data.ownerUid == '';
+    }
+
     match /users/{userId} {
       allow create: if ownerEmail() || (isOwner(userId) && roleIsSafeOnCreate());
       allow read: if canReadUser(userId);
@@ -557,6 +597,14 @@ service cloud.firestore {
       match /wastelandRegistrations/{registrationId} {
         allow read: if hasRegionAccess(regionId) || canManageRegion(regionId);
         allow create: if ownerEmail() || canManageRegion(regionId) || signedWastelandRegistrationSafe(regionId, registrationId) || publicWastelandRegistrationSafe(regionId);
+        allow update: if ownerEmail() || canManageRegion(regionId);
+        allow delete: if canDeleteWastelandRegistration(regionId);
+      }
+
+      match /nicknameLocks/{lockId} {
+        allow get: if true;
+        allow list: if false;
+        allow create: if ownerEmail() || canManageRegion(regionId) || signedNicknameLockCreateSafe(regionId) || publicNicknameLockCreateSafe(regionId);
         allow update: if ownerEmail() || canManageRegion(regionId);
         allow delete: if canDeleteWastelandRegistration(regionId);
       }

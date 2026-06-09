@@ -1648,21 +1648,84 @@ function validateRegistration(data = {}, settings = {}) {
   }
 }
 
-async function assertRegionNicknameFree(firestoreMod, db, region, data = {}, currentDocIds = []) {
-  const nick = trim(data.nickname).toLowerCase();
-  if (!nick || !data.cycleId) return;
-  const collectionRef = firestoreMod.collection(db, 'regions', region, 'wastelandRegistrations');
-  const q = firestoreMod.query(collectionRef, firestoreMod.where('cycleId', '==', data.cycleId));
-  const snap = await firestoreMod.getDocs(q).catch(() => null);
-  if (!snap) return;
-  trackReads(Math.max(1, snap.docs.length));
-  const ownIds = new Set((Array.isArray(currentDocIds) ? currentDocIds : [currentDocIds]).filter(Boolean));
-  const duplicate = snap.docs.find(doc => {
-    if (ownIds.has(doc.id)) return false;
-    const row = doc.data() || {};
-    return trim(row.nickname).toLowerCase() === nick && normalizeRegion(row.region) === region;
-  });
-  if (duplicate) throw new Error('registration-nickname-duplicate-region');
+function normalizeNicknameLockKey(value = '') {
+  return trim(value)
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+function simpleHash(value = '') {
+  let hash = 5381;
+  for (const char of String(value || '')) {
+    hash = ((hash << 5) + hash + char.codePointAt(0)) >>> 0;
+  }
+  return hash.toString(36);
+}
+
+function nicknameLockDocId(data = {}) {
+  const cycle = safeDocPart(data.cycleId || 'cycle');
+  const nickKey = normalizeNicknameLockKey(data.nickname);
+  const visible = safeDocPart(nickKey).slice(0, 40) || 'nick';
+  return `${cycle}_${simpleHash(`${data.region || ''}|${data.cycleId || ''}|${nickKey}`)}_${visible}`.slice(0, 180);
+}
+
+function nicknameLockRef(firestoreMod, db, region, data = {}) {
+  return firestoreMod.doc(db, 'regions', region, 'nicknameLocks', nicknameLockDocId({ ...data, region }));
+}
+
+function nicknameLockPayload(data = {}, registrationId = '', user = null) {
+  const nickKey = normalizeNicknameLockKey(data.nickname);
+  return {
+    region: normalizeRegion(data.region),
+    cycleId: trim(data.cycleId),
+    nickname: trim(data.nickname),
+    nickKey,
+    registrationId: trim(registrationId),
+    ownerUid: trim(data.uid || user?.uid || ''),
+    farmId: trim(data.farmId || 'main') || 'main',
+    createdByAuth: Boolean(data.uid || user?.uid),
+    publicLink: Boolean(data.publicLink),
+    source: trim(data.source || (data.publicLink ? 'public-link' : 'account')),
+    updatedAtMs: Date.now()
+  };
+}
+
+async function assertRegionNicknameFree(firestoreMod, db, region, data = {}, currentDocIds = [], registrationId = '', user = null) {
+  const nickKey = normalizeNicknameLockKey(data.nickname);
+  if (!nickKey || !data.cycleId) return null;
+  const ownIds = new Set((Array.isArray(currentDocIds) ? currentDocIds : [currentDocIds]).filter(Boolean).map(String));
+  if (registrationId) ownIds.add(String(registrationId));
+  const ref = nicknameLockRef(firestoreMod, db, region, data);
+  const snap = await firestoreMod.getDoc(ref).catch(() => null);
+  trackReads(1);
+  if (snap?.exists?.()) {
+    const lock = snap.data() || {};
+    const lockedRegistrationId = trim(lock.registrationId);
+    const lockedUid = trim(lock.ownerUid);
+    const lockedFarmId = trim(lock.farmId || 'main') || 'main';
+    const sameRegistration = lockedRegistrationId && ownIds.has(lockedRegistrationId);
+    const sameOwnerFarm = data.uid && lockedUid === trim(data.uid) && lockedFarmId === (trim(data.farmId || 'main') || 'main');
+    if (!sameRegistration && !sameOwnerFarm) throw new Error('registration-nickname-duplicate-region');
+  }
+  return { ref, payload: nicknameLockPayload({ ...data, region }, registrationId || [...ownIds][0] || '', user), id: ref.id };
+}
+
+function applyNicknameLockToBatch(batch, lock, firestoreMod, createOnly = false) {
+  if (!lock?.ref || !lock?.payload) return 0;
+  const payload = {
+    ...lock.payload,
+    updatedAt: firestoreMod.serverTimestamp(),
+    updatedAtMs: Date.now()
+  };
+  if (createOnly) {
+    payload.createdAt = firestoreMod.serverTimestamp();
+    payload.createdAtMs = Date.now();
+  }
+  if (createOnly) batch.set(lock.ref, payload);
+  else batch.set(lock.ref, payload, { merge: true });
+  return 1;
 }
 
 function safeDocPart(value = '') {
@@ -1724,14 +1787,22 @@ export async function saveWastelandRegistration(user, values, regionOverride = '
     if (sameCycleAlreadyExists && !managerCanEdit) {
       throw new Error('registration-already-submitted');
     }
-    await assertRegionNicknameFree(firestoreMod, db, region, data, [docId, legacyDocId]);
-    if (managerCanEdit) await firestoreMod.setDoc(docRef, payload, { merge: true });
-    else await firestoreMod.setDoc(docRef, payload);
-    trackWrites(1);
+    const lock = await assertRegionNicknameFree(firestoreMod, db, region, data, [docId, legacyDocId], docId, user);
+    const batch = firestoreMod.writeBatch(db);
+    applyNicknameLockToBatch(batch, lock, firestoreMod, !lock?.payload?.ownerUid);
+    if (managerCanEdit) batch.set(docRef, payload, { merge: true });
+    else batch.set(docRef, payload);
+    await batch.commit();
+    trackWrites(1 + (lock ? 1 : 0));
   } else {
-    await assertRegionNicknameFree(firestoreMod, db, region, data, []);
-    await firestoreMod.addDoc(collectionRef, payload);
-    trackWrites(1);
+    const docRef = firestoreMod.doc(collectionRef);
+    const docId = docRef.id;
+    const lock = await assertRegionNicknameFree(firestoreMod, db, region, data, [docId], docId, null);
+    const batch = firestoreMod.writeBatch(db);
+    applyNicknameLockToBatch(batch, lock, firestoreMod, true);
+    batch.set(docRef, payload);
+    await batch.commit();
+    trackWrites(1 + (lock ? 1 : 0));
   }
   removeCache(`regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v89`);
 
@@ -1879,9 +1950,20 @@ export async function deleteRegionRegistrations(user, region, registrationIds = 
   if (!safeRegion) throw new Error('region-required');
   if (!canDeleteRegionRegistration(profile, safeRegion, user)) throw new Error('region-delete-access-denied');
 
-  for (let index = 0; index < ids.length; index += 450) {
+  const registrationSnaps = await Promise.all(
+    ids.map(id => firestoreMod.getDoc(firestoreMod.doc(db, 'regions', safeRegion, 'wastelandRegistrations', id)).catch(() => null))
+  );
+  trackReads(ids.length);
+
+  for (let index = 0; index < ids.length; index += 225) {
     const batch = firestoreMod.writeBatch(db);
-    ids.slice(index, index + 450).forEach(id => {
+    ids.slice(index, index + 225).forEach((id, localIndex) => {
+      const snap = registrationSnaps[index + localIndex];
+      const row = snap?.exists?.() ? { id, ...snap.data() } : null;
+      if (row?.nickname && row?.cycleId) {
+        const lockRef = nicknameLockRef(firestoreMod, db, safeRegion, row);
+        batch.delete(lockRef);
+      }
       batch.delete(firestoreMod.doc(db, 'regions', safeRegion, 'wastelandRegistrations', id));
     });
     await batch.commit();
@@ -1936,12 +2018,24 @@ export async function updateRegionRegistration(user, region, registrationId, val
     throw new Error('registration-invalid');
   }
 
-  await firestoreMod.setDoc(
-    firestoreMod.doc(db, 'regions', safeRegion, 'wastelandRegistrations', id),
-    clean,
-    { merge: true }
-  );
-  trackWrites(1);
+  const registrationRef = firestoreMod.doc(db, 'regions', safeRegion, 'wastelandRegistrations', id);
+  const existingSnap = await firestoreMod.getDoc(registrationRef).catch(() => null);
+  trackReads(1);
+  const existingData = existingSnap?.exists?.() ? { id, ...existingSnap.data() } : {};
+  const activeSettings = await getRegionSettings(safeRegion).catch(() => ({}));
+  const activeCycle = trim(existingData.cycleId || activeSettings.currentCycleId || '');
+  const cleanWithCycle = { ...clean, region: safeRegion, cycleId: activeCycle };
+  const lock = await assertRegionNicknameFree(firestoreMod, db, safeRegion, cleanWithCycle, [id], id, user);
+  const oldLockRef = existingData.nickname && existingData.cycleId
+    ? nicknameLockRef(firestoreMod, db, safeRegion, existingData)
+    : null;
+  const newLockRef = lock?.ref || null;
+  const batch = firestoreMod.writeBatch(db);
+  if (oldLockRef && (!newLockRef || oldLockRef.path !== newLockRef.path)) batch.delete(oldLockRef);
+  applyNicknameLockToBatch(batch, lock, firestoreMod, false);
+  batch.set(registrationRef, clean, { merge: true });
+  await batch.commit();
+  trackWrites(1 + (lock ? 1 : 0) + (oldLockRef && (!newLockRef || oldLockRef.path !== newLockRef.path) ? 1 : 0));
   removeCache(`regionRegistrations.${safeRegion}.no-cycle.v89`);
 
   await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), {
