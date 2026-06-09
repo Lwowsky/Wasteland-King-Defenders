@@ -17,7 +17,7 @@
       "showFarmsInfo": true
     },
     "createdAt": "2026-05-27T13:51:55.337Z",
-    "updatedAt": "2026-06-09T00:31:30.484Z",
+    "updatedAt": "2026-06-09T06:25:35.052Z",
     "wastelandProfile": {
       "lairLevel": "50",
       "troopType": "fighter",
@@ -59,11 +59,11 @@
         "wastelandProfile": {
           "lairLevel": "42",
           "troopType": "rider",
-          "tier": "T8",
+          "tier": "T14",
           "marchSize": "291000",
           "rallySize": "1400000",
           "captainReady": false,
-          "readyToJoin": false,
+          "readyToJoin": true,
           "readyToAttack": false,
           "shift": "shift1",
           "extraEnabled": false,
