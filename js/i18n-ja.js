@@ -1816,4 +1816,17 @@ window.WKD_TRANSLATIONS.ja = {
   'stats.cacheEmpty': '公開JSONキャッシュは空です。public-cache/stats-players.json を確認または置き換えてください。',
   'stats.playersJsonMismatch': 'stats-summary.json には数値がありますが、stats-players.json は空です。ローカルの public-cache を最新のJSONファイルに置き換えてください。',
 
+  'region.requestAlreadySubmittedUpdateTitle': '申請はすでに送信されています',
+  'region.requestAlreadySubmittedUpdateMessage': '同じ内容の申請が現在のサイクルにすでにあります。もう一度更新しますか、それともキャンセルしますか？',
+  'region.requestAlreadySubmittedUpdateNote': '変更がない場合は「キャンセル」を選ぶと、D1への追加書き込みは使われません。',
+  'region.requestAlreadySubmittedUpdateAccept': '申請を更新',
+  'region.requestAlreadySubmittedUpdateCancel': 'キャンセル',
+  'region.requestAlreadySubmittedUpdateCancelled': '更新をキャンセルしました。D1への追加書き込みは行われませんでした。',
+  'region.requestAlreadySavedNoChanges': '申請は変更なしですでに送信されています。',
+  'region.requestUpdatedCurrentCycle': '申請を更新しました。新しいデータは現在のサイクルに保存されました。',
+  'region.savedPlayerCanUpdate': 'あなたの申請はすでにあります。データが変わった場合は、フォームをもう一度送信して更新できます。',
+  'region.errorNicknameDuplicateGuestTitle': 'ニックネームはすでに登録されています',
+  'region.errorNicknameDuplicateGuestMessage': 'この地域には同じニックネームのプレイヤーがすでに登録されています。データを変更するには、サイトに登録するか地域の領事に連絡してください。',
+  'region.errorNicknameDuplicateGuestNote': 'これは別の端末からの重複登録を防ぐためです。',
+
 };

@@ -1814,4 +1814,17 @@ window.WKD_TRANSLATIONS.ar = {
   'stats.cacheEmpty': 'ذاكرة JSON العامة فارغة. تحقق من public-cache/stats-players.json أو استبدله.',
   'stats.playersJsonMismatch': 'يحتوي stats-summary.json على أرقام، لكن stats-players.json فارغ. استبدل public-cache المحلي بأحدث ملفات JSON.',
 
+  'region.requestAlreadySubmittedUpdateTitle': 'تم إرسال الطلب بالفعل',
+  'region.requestAlreadySubmittedUpdateMessage': 'يوجد طلب بنفس البيانات في الدورة النشطة. هل تريد تحديثه مرة أخرى أم الإلغاء؟',
+  'region.requestAlreadySubmittedUpdateNote': 'إذا لم يتغير شيء، اختر “إلغاء” — عندها لن يتم استخدام كتابة إضافية في D1.',
+  'region.requestAlreadySubmittedUpdateAccept': 'تحديث الطلب',
+  'region.requestAlreadySubmittedUpdateCancel': 'إلغاء',
+  'region.requestAlreadySubmittedUpdateCancelled': 'تم إلغاء التحديث. لم يتم تنفيذ كتابة إضافية في D1.',
+  'region.requestAlreadySavedNoChanges': 'تم إرسال الطلب بالفعل بدون تغييرات.',
+  'region.requestUpdatedCurrentCycle': 'تم تحديث الطلب. تم حفظ البيانات الجديدة للدورة النشطة.',
+  'region.savedPlayerCanUpdate': 'طلبك موجود بالفعل. إذا تغيرت البيانات، أرسل النموذج مرة أخرى لتحديثه.',
+  'region.errorNicknameDuplicateGuestTitle': 'اللقب مسجل بالفعل',
+  'region.errorNicknameDuplicateGuestMessage': 'يوجد لاعب بهذا اللقب مسجل بالفعل في هذه المنطقة. لتغيير البيانات، سجل في الموقع أو تواصل مع قنصل المنطقة.',
+  'region.errorNicknameDuplicateGuestNote': 'هذا يحمي الجدول من التكرارات من أجهزة مختلفة.',
+
 };

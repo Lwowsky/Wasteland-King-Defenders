@@ -1816,4 +1816,17 @@ window.WKD_TRANSLATIONS.vi = {
   'stats.cacheEmpty': 'Cache JSON công khai đang trống. Hãy kiểm tra hoặc thay public-cache/stats-players.json.',
   'stats.playersJsonMismatch': 'stats-summary.json có số liệu nhưng stats-players.json đang trống. Hãy thay public-cache cục bộ bằng các tệp JSON mới nhất.',
 
+  'region.requestAlreadySubmittedUpdateTitle': 'Yêu cầu đã được gửi',
+  'region.requestAlreadySubmittedUpdateMessage': 'Một yêu cầu với cùng dữ liệu đã tồn tại trong chu kỳ hiện tại. Cập nhật lại hay hủy?',
+  'region.requestAlreadySubmittedUpdateNote': 'Nếu không có gì thay đổi, chọn “Hủy” — khi đó sẽ không dùng thêm lượt ghi D1.',
+  'region.requestAlreadySubmittedUpdateAccept': 'Cập nhật yêu cầu',
+  'region.requestAlreadySubmittedUpdateCancel': 'Hủy',
+  'region.requestAlreadySubmittedUpdateCancelled': 'Đã hủy cập nhật. Không có lượt ghi D1 bổ sung.',
+  'region.requestAlreadySavedNoChanges': 'Yêu cầu đã được gửi mà không có thay đổi.',
+  'region.requestUpdatedCurrentCycle': 'Yêu cầu đã được cập nhật. Dữ liệu mới đã lưu cho chu kỳ hiện tại.',
+  'region.savedPlayerCanUpdate': 'Yêu cầu của bạn đã tồn tại. Nếu dữ liệu thay đổi, hãy gửi lại biểu mẫu để cập nhật.',
+  'region.errorNicknameDuplicateGuestTitle': 'Nickname đã được đăng ký',
+  'region.errorNicknameDuplicateGuestMessage': 'Một người chơi với nickname này đã được đăng ký trong khu vực này. Để thay đổi dữ liệu, hãy đăng ký trên trang web hoặc liên hệ lãnh sự khu vực.',
+  'region.errorNicknameDuplicateGuestNote': 'Điều này bảo vệ bảng khỏi trùng lặp từ các thiết bị khác nhau.',
+
 };

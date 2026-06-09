@@ -1816,4 +1816,17 @@ window.WKD_TRANSLATIONS.ko = {
   'stats.cacheEmpty': '공개 JSON 캐시가 비어 있습니다. public-cache/stats-players.json을 확인하거나 교체하세요.',
   'stats.playersJsonMismatch': 'stats-summary.json에는 숫자가 있지만 stats-players.json은 비어 있습니다. 로컬 public-cache를 최신 JSON 파일로 교체하세요.',
 
+  'region.requestAlreadySubmittedUpdateTitle': '요청이 이미 제출되었습니다',
+  'region.requestAlreadySubmittedUpdateMessage': '같은 데이터의 요청이 활성 사이클에 이미 있습니다. 다시 업데이트할까요, 아니면 취소할까요?',
+  'region.requestAlreadySubmittedUpdateNote': '변경된 내용이 없으면 “취소”를 선택하세요. 그러면 D1 추가 쓰기가 사용되지 않습니다.',
+  'region.requestAlreadySubmittedUpdateAccept': '요청 업데이트',
+  'region.requestAlreadySubmittedUpdateCancel': '취소',
+  'region.requestAlreadySubmittedUpdateCancelled': '업데이트가 취소되었습니다. D1 추가 쓰기는 실행되지 않았습니다.',
+  'region.requestAlreadySavedNoChanges': '요청이 변경 없이 이미 제출되었습니다.',
+  'region.requestUpdatedCurrentCycle': '요청이 업데이트되었습니다. 새 데이터가 활성 사이클에 저장되었습니다.',
+  'region.savedPlayerCanUpdate': '이미 요청이 있습니다. 데이터가 변경되었다면 양식을 다시 보내 업데이트할 수 있습니다.',
+  'region.errorNicknameDuplicateGuestTitle': '닉네임이 이미 등록되었습니다',
+  'region.errorNicknameDuplicateGuestMessage': '이 지역에는 같은 닉네임의 플레이어가 이미 등록되어 있습니다. 데이터를 변경하려면 사이트에 가입하거나 지역 영사에게 문의하세요.',
+  'region.errorNicknameDuplicateGuestNote': '이 기능은 다른 기기에서 발생하는 중복을 방지합니다.',
+
 };

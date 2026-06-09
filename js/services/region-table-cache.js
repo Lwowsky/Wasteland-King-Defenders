@@ -139,6 +139,14 @@ function sanitizeTableRow(row = {}) {
     readyToAttack: Boolean(row.readyToAttack ?? row.wastelandProfile?.readyToAttack),
     shift: cleanText(row.shift || row.wastelandProfile?.shift || '', 40),
     shiftLabel: cleanText(row.shiftLabel || '', 80),
+    comment: cleanText(row.comment || row.wastelandProfile?.comment || '', 300),
+    extraEnabled: Boolean(row.extraEnabled || row.wastelandProfile?.extraEnabled || (Array.isArray(row.extraSquads) && row.extraSquads.length)),
+    extraSquads: Array.isArray(row.extraSquads)
+      ? row.extraSquads.map(item => ({ troopType: cleanText(item?.troopType || '', 40), tier: cleanText(item?.tier || '', 12).toUpperCase() })).filter(item => item.troopType && item.tier).slice(0, 8)
+      : [],
+    extraTroopType: cleanText(row.extraTroopType || row.wastelandProfile?.extraTroopType || '', 40),
+    extraTier: cleanText(row.extraTier || row.wastelandProfile?.extraTier || '', 12).toUpperCase(),
+    customFields: row.customFields && typeof row.customFields === 'object' && !Array.isArray(row.customFields) ? row.customFields : {},
     source: cleanText(row.source || 'registration', 40),
     rowType: cleanText(row.rowType || '', 80),
     updatedAtMs: Number(row.updatedAtMs || row.submittedAtMs || Date.now()) || Date.now()
@@ -215,7 +223,8 @@ export async function saveRegionRegistrationD1First(user, region, values = {}, s
       publicLink: Boolean(!uid || options?.publicLink || options?.shareCode),
       shareCode: cleanCode(options?.shareCode || ''),
       settings: sanitizeSettings(settings),
-      row
+      row,
+      forceUpdate: Boolean(options?.forceUpdate)
     })
   }).then(result => ({ ...result, ...row, cycleId, region: safeRegion, d1First: true }));
 }

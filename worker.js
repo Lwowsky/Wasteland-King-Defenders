@@ -209,6 +209,10 @@ function sanitizeTableRow(row = {}) {
     extraSquads: Array.isArray(row.extraSquads) ? row.extraSquads.slice(0, 8) : [],
     extraTroopType: clean(row.extraTroopType || "", 40),
     extraTier: clean(row.extraTier || "", 12).toUpperCase(),
+    customFields:
+      row.customFields && typeof row.customFields === "object" && !Array.isArray(row.customFields)
+        ? row.customFields
+        : {},
     source: clean(row.source || "registration", 40),
     rowType: clean(row.rowType || "", 80),
     updatedAtMs: Number(row.updatedAtMs) || Date.now(),
@@ -506,8 +510,58 @@ async function optionalFirebaseToken(request, env) {
   }
 }
 
-function normalizedNickname(value = '') {
-  return clean(value, 120).toLowerCase().replace(/\s+/g, '');
+function normalizedNickname(value = "") {
+  return clean(value, 120).toLowerCase().replace(/\s+/g, "");
+}
+
+function stableStringify(value) {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value ?? null);
+}
+
+function comparableRegistrationRow(row = {}) {
+  const cleanRow = sanitizeTableRow(row);
+  return {
+    uid: cleanRow.uid,
+    publicKey: cleanRow.publicKey,
+    farmId: cleanRow.farmId,
+    nickname: cleanRow.nickname,
+    region: cleanRow.region,
+    alliance: cleanRow.alliance,
+    rank: cleanRow.rank,
+    shk: cleanRow.shk,
+    role: cleanRow.role,
+    roleLabel: cleanRow.roleLabel,
+    troopType: cleanRow.troopType,
+    troopLabel: cleanRow.troopLabel,
+    tier: cleanRow.tier,
+    lairLevel: cleanRow.lairLevel,
+    marchSize: cleanRow.marchSize,
+    rallySize: cleanRow.rallySize,
+    captainReady: cleanRow.captainReady,
+    readyToJoin: cleanRow.readyToJoin,
+    readyToAttack: cleanRow.readyToAttack,
+    shift: cleanRow.shift,
+    shiftLabel: cleanRow.shiftLabel,
+    comment: cleanRow.comment,
+    extraEnabled: cleanRow.extraEnabled,
+    extraSquads: cleanRow.extraSquads,
+    extraTroopType: cleanRow.extraTroopType,
+    extraTier: cleanRow.extraTier,
+    customFields: cleanRow.customFields || {},
+    source: cleanRow.source,
+    rowType: cleanRow.rowType,
+  };
+}
+
+function sameRegistrationData(a = {}, b = {}) {
+  return stableStringify(comparableRegistrationRow(a)) === stableStringify(comparableRegistrationRow(b));
 }
 
 async function handleRegionTableRead(request, env) {
@@ -548,6 +602,28 @@ async function handleRegionTableRegistration(request, env) {
   const isPublicRegistration = Boolean(body?.publicLink || body?.shareCode || body?.row?.publicKey);
   if (!user?.uid && !isPublicRegistration) return json({ ok: false, error: "auth_required" }, 401);
 
+  if (!user?.uid) {
+    const shareCode = normalizeCode(body?.shareCode || "");
+    if (!shareCode) return json({ ok: false, error: "share_code_required" }, 403);
+    const share = await db
+      .prepare(
+        `SELECT code, region, cycle_id, expires_at_ms, revoked FROM region_table_shares WHERE code = ?1 LIMIT 1`,
+      )
+      .bind(shareCode)
+      .first();
+    if (!share || Number(share.revoked) === 1)
+      return json({ ok: false, error: "share_not_found" }, 404);
+    if (
+      Number(share.expires_at_ms) > 0 &&
+      Number(share.expires_at_ms) < Date.now()
+    )
+      return json({ ok: false, error: "share_expired" }, 410);
+    if (normalizeRegion(share.region) !== region)
+      return json({ ok: false, error: "share_region_mismatch" }, 403);
+    if (normalizeCycleId(share.cycle_id || "active") !== cycleId)
+      return json({ ok: false, error: "share_cycle_mismatch" }, 409);
+  }
+
   const row = sanitizeTableRow({
     ...(body?.row || {}),
     region,
@@ -584,19 +660,37 @@ async function handleRegionTableRegistration(request, env) {
       (row.uid && item.uid === row.uid && item.farmId === row.farmId) ||
       (row.publicKey && item.publicKey === row.publicKey && item.farmId === row.farmId),
   );
+  const existingRow = index >= 0 ? rows[index] : null;
+  const nextRow = { ...row, id: existingRow?.id || key };
+  const unchanged = existingRow ? sameRegistrationData(existingRow, nextRow) : false;
+  const forceUpdate = Boolean(body?.forceUpdate);
+
+  if (existingRow && unchanged && !forceUpdate) {
+    return json({
+      ok: true,
+      version: current.version || 0,
+      rowsCount: rows.length,
+      existing: true,
+      unchanged: true,
+      notWritten: true,
+      action: "unchanged",
+    });
+  }
+
+  const nowMs = Date.now();
   if (index >= 0)
     rows[index] = {
       ...rows[index],
       ...row,
       id: rows[index].id || key,
-      updatedAtMs: Date.now(),
+      updatedAtMs: nowMs,
     };
-  else rows.push({ ...row, id: key, updatedAtMs: Date.now() });
+  else rows.push({ ...row, id: key, updatedAtMs: nowMs });
 
   const table = await saveTable(db, {
     region,
     cycleId,
-    version: Date.now(),
+    version: nowMs,
     settings: {
       ...(current.settings || {}),
       ...(body?.settings || {}),
@@ -611,6 +705,9 @@ async function handleRegionTableRegistration(request, env) {
     ok: true,
     version: table.version,
     rowsCount: table.rows.length,
+    existing: index >= 0,
+    unchanged: false,
+    action: index >= 0 ? (unchanged ? "refreshed" : "updated") : "created",
   });
 }
 
@@ -676,7 +773,7 @@ async function handleRegionTableShareCreate(request, env) {
     .filter((row) => row.nickname)
     .slice(0, MAX_TABLE_ROWS);
   const existing = await readTable(db, region, cycleId);
-  if (!existing && rows.length)
+  if (!existing)
     await saveTable(db, {
       region,
       cycleId,
@@ -730,8 +827,14 @@ async function handleRegionTableShareRead(request, env, codeValue) {
     return json({ ok: false, error: "share_expired" }, 410);
   const region = normalizeRegion(share.region);
   const cycleId = normalizeCycleId(share.cycle_id || "active");
-  const table = await readTable(db, region, cycleId);
-  if (!table) return json({ ok: false, error: "table_not_found" }, 404);
+  const table = (await readTable(db, region, cycleId)) || {
+    region,
+    cycleId,
+    version: 0,
+    updatedAtMs: 0,
+    settings: { currentCycleId: cycleId, open: true, enabled: true },
+    rows: [],
+  };
   return json(
     { ok: true, table: { ...table, region, cycleId } },
     200,

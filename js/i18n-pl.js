@@ -1816,4 +1816,17 @@ window.WKD_TRANSLATIONS.pl = {
   'stats.cacheEmpty': 'Publiczny cache JSON jest pusty. Sprawdź lub podmień public-cache/stats-players.json.',
   'stats.playersJsonMismatch': 'stats-summary.json ma liczby, ale stats-players.json jest pusty. Podmień lokalny public-cache na aktualne pliki JSON.',
 
+  'region.requestAlreadySubmittedUpdateTitle': 'Zgłoszenie zostało już wysłane',
+  'region.requestAlreadySubmittedUpdateMessage': 'Zgłoszenie z takimi samymi danymi już istnieje w aktywnym cyklu. Zaktualizować je ponownie czy anulować?',
+  'region.requestAlreadySubmittedUpdateNote': 'Jeśli nic się nie zmieniło, wybierz „Anuluj” — wtedy nie będzie dodatkowego zapisu w D1.',
+  'region.requestAlreadySubmittedUpdateAccept': 'Zaktualizuj zgłoszenie',
+  'region.requestAlreadySubmittedUpdateCancel': 'Anuluj',
+  'region.requestAlreadySubmittedUpdateCancelled': 'Aktualizacja anulowana. Nie wykonano dodatkowego zapisu w D1.',
+  'region.requestAlreadySavedNoChanges': 'Zgłoszenie zostało już wysłane bez zmian.',
+  'region.requestUpdatedCurrentCycle': 'Zgłoszenie zaktualizowane. Nowe dane zapisano dla aktywnego cyklu.',
+  'region.savedPlayerCanUpdate': 'Twoje zgłoszenie już istnieje. Jeśli dane się zmieniły, wyślij formularz ponownie, aby je zaktualizować.',
+  'region.errorNicknameDuplicateGuestTitle': 'Nick jest już zarejestrowany',
+  'region.errorNicknameDuplicateGuestMessage': 'Gracz z tym nickiem jest już zarejestrowany w tym regionie. Aby zmienić dane, zaloguj się na stronie albo skontaktuj się z konsulem regionu.',
+  'region.errorNicknameDuplicateGuestNote': 'To chroni tabelę przed duplikatami z różnych urządzeń.',
+
 };

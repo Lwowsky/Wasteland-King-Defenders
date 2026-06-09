@@ -1816,4 +1816,17 @@ window.WKD_TRANSLATIONS.ru = {
   'stats.cacheEmpty': 'Публичный JSON кеш пустой. Проверь или замени public-cache/stats-players.json.',
   'stats.playersJsonMismatch': 'stats-summary.json содержит числа, но stats-players.json пустой. Замените локальный public-cache актуальными JSON файлами.',
 
+  'region.requestAlreadySubmittedUpdateTitle': 'Заявка уже была подана',
+  'region.requestAlreadySubmittedUpdateMessage': 'Заявка с такими же данными уже есть в активном цикле. Обновить её ещё раз или отменить?',
+  'region.requestAlreadySubmittedUpdateNote': 'Если ничего не изменилось, нажмите «Отмена» — тогда дополнительная запись в D1 не используется.',
+  'region.requestAlreadySubmittedUpdateAccept': 'Обновить заявку',
+  'region.requestAlreadySubmittedUpdateCancel': 'Отмена',
+  'region.requestAlreadySubmittedUpdateCancelled': 'Обновление отменено. Дополнительная запись в D1 не выполнена.',
+  'region.requestAlreadySavedNoChanges': 'Заявка уже была подана без изменений.',
+  'region.requestUpdatedCurrentCycle': 'Заявка обновлена. Новые данные сохранены для активного цикла.',
+  'region.savedPlayerCanUpdate': 'Твоя заявка уже есть. Если данные изменились, можно отправить форму ещё раз и обновить заявку.',
+  'region.errorNicknameDuplicateGuestTitle': 'Никнейм уже зарегистрирован',
+  'region.errorNicknameDuplicateGuestMessage': 'Игрок с таким никнеймом уже зарегистрирован в этом регионе. Чтобы изменить данные, зарегистрируйся на сайте или обратись к консулу региона.',
+  'region.errorNicknameDuplicateGuestNote': 'Это защищает таблицу от дублей с разных устройств.',
+
 };

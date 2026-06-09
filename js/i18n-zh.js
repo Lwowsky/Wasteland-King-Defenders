@@ -1816,4 +1816,17 @@ window.WKD_TRANSLATIONS.zh = {
   'stats.cacheEmpty': '公共 JSON 缓存为空。请检查或替换 public-cache/stats-players.json。',
   'stats.playersJsonMismatch': 'stats-summary.json 有统计数字，但 stats-players.json 为空。请用最新 JSON 文件替换本地 public-cache。',
 
+  'region.requestAlreadySubmittedUpdateTitle': '请求已提交',
+  'region.requestAlreadySubmittedUpdateMessage': '当前周期中已存在相同数据的请求。要再次更新还是取消？',
+  'region.requestAlreadySubmittedUpdateNote': '如果没有变化，请选择“取消”——这样不会产生额外的 D1 写入。',
+  'region.requestAlreadySubmittedUpdateAccept': '更新请求',
+  'region.requestAlreadySubmittedUpdateCancel': '取消',
+  'region.requestAlreadySubmittedUpdateCancelled': '已取消更新。没有执行额外的 D1 写入。',
+  'region.requestAlreadySavedNoChanges': '请求已提交，数据没有变化。',
+  'region.requestUpdatedCurrentCycle': '请求已更新。新数据已保存到当前周期。',
+  'region.savedPlayerCanUpdate': '你的请求已存在。如果数据有变化，可以再次提交表单进行更新。',
+  'region.errorNicknameDuplicateGuestTitle': '昵称已注册',
+  'region.errorNicknameDuplicateGuestMessage': '该地区已有使用此昵称的玩家。要修改数据，请在网站注册或联系该地区领事。',
+  'region.errorNicknameDuplicateGuestNote': '这可以防止不同设备产生重复记录。',
+
 };

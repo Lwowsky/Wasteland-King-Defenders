@@ -25,8 +25,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=105';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled } from '../services/region-table-cache.js?v=105';
+} from '../services/region-db.js?v=106';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled } from '../services/region-table-cache.js?v=106';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -599,28 +599,100 @@ function shouldUseD1FirstRegistration() {
   return Boolean(isRegionTableCacheEnabled && isRegionTableCacheEnabled());
 }
 
-async function submitRegistrationD1First(values) {
+function d1RegistrationErrorCode(error) {
+  return String(error?.data?.error || error?.message || '').trim();
+}
+
+function isHardD1RegistrationError(error) {
+  const code = d1RegistrationErrorCode(error);
+  return error?.status === 409 || [
+    'registration-nickname-duplicate-region',
+    'row_owner_mismatch',
+    'share_code_required',
+    'share_not_found',
+    'share_expired',
+    'share_region_mismatch',
+    'share_cycle_mismatch'
+  ].includes(code);
+}
+
+async function confirmUpdateExistingRequest() {
+  const title = t('region.requestAlreadySubmittedUpdateTitle', 'Заявка вже була подана');
+  const message = t('region.requestAlreadySubmittedUpdateMessage', 'Заявка з такими самими даними вже є в активному циклі. Оновити її ще раз чи скасувати?');
+  if (window.WKD?.confirmDialog) {
+    return window.WKD.confirmDialog({
+      title,
+      message,
+      note: t('region.requestAlreadySubmittedUpdateNote', 'Якщо нічого не змінилось, натисни “Скасувати” — тоді ліміти на запис у D1 не витрачаються.'),
+      icon: 'ℹ️',
+      acceptText: t('region.requestAlreadySubmittedUpdateAccept', 'Оновити заявку'),
+      cancelText: t('region.requestAlreadySubmittedUpdateCancel', 'Скасувати'),
+      acceptClass: 'btn btn-success-solid'
+    });
+  }
+  return window.confirm(`${title}
+
+${message}`);
+}
+
+async function showNicknameDuplicateDialog() {
+  const title = t('region.errorNicknameDuplicateGuestTitle', 'Нікнейм уже зареєстрований');
+  const message = t('region.errorNicknameDuplicateGuestMessage', 'Гравець з таким нікнеймом уже зареєстрований у цьому регіоні. Щоб змінити дані, зареєструйся на сайті або звернись до консула регіону.');
+  setStatus(message, 'error');
+  if (window.WKD?.actionDoneDialog) {
+    await window.WKD.actionDoneDialog({
+      title,
+      message,
+      note: t('region.errorNicknameDuplicateGuestNote', 'Це захищає таблицю від дублікатів з різних пристроїв.'),
+      icon: '⚠️',
+      acceptText: t('common.goHome', 'На головну'),
+      cancelText: t('common.continue', 'Продовжити'),
+      acceptClass: 'btn btn-danger-solid',
+      href: 'index.html'
+    });
+  } else {
+    window.alert(`${title}
+
+${message}`);
+  }
+}
+
+async function submitRegistrationD1First(values, options = {}) {
   const payload = { ...values, region: currentRegion, publicLink: Boolean(!currentUser || shortCodeFromLink) };
   return saveRegionRegistrationD1First(currentUser, currentRegion, payload, formSettings || {}, {
     shareCode: shortCodeFromLink || '',
-    publicLink: Boolean(!currentUser || shortCodeFromLink)
+    publicLink: Boolean(!currentUser || shortCodeFromLink),
+    forceUpdate: Boolean(options.forceUpdate)
   });
 }
 
-async function submitCurrentRegistration(values, { auto = false } = {}) {
+async function submitCurrentRegistration(values, { auto = false, forceUpdate = false } = {}) {
   try {
     setStatus(auto ? t('region.autoSubmitting', 'Автоматично відправляю заявку з профілю...') : t('region.savingRequest', 'Saving request...'), 'muted');
     let savedRequest = null;
     if (shouldUseD1FirstRegistration()) {
       try {
-        savedRequest = await submitRegistrationD1First(values);
+        savedRequest = await submitRegistrationD1First(values, { forceUpdate });
       } catch (d1Error) {
+        if (isHardD1RegistrationError(d1Error)) throw d1Error;
         console.warn('[WKD] D1-first registration failed, using Firebase fallback:', d1Error);
         savedRequest = await saveWastelandRegistration(currentUser, values, currentRegion);
       }
     } else {
       savedRequest = await saveWastelandRegistration(currentUser, values, currentRegion);
     }
+
+    if (savedRequest?.unchanged && !forceUpdate) {
+      setStatus(t('region.requestAlreadySavedNoChanges', 'Заявка вже була подана без змін.'), 'warn');
+      if (auto) return true;
+      const shouldUpdate = await confirmUpdateExistingRequest();
+      if (!shouldUpdate) {
+        setStatus(t('region.requestAlreadySubmittedUpdateCancelled', 'Оновлення скасовано. Додатковий запис у D1 не виконано.'), 'muted');
+        return false;
+      }
+      return submitCurrentRegistration(values, { auto, forceUpdate: true });
+    }
+
     if (currentUser) await saveDraft(values).catch(error => console.warn('[WKD] account request draft save skipped:', error));
     clearDraft();
     localStorage.setItem('wkd.players.sourceMode', 'region');
@@ -637,7 +709,10 @@ async function submitCurrentRegistration(values, { auto = false } = {}) {
       });
       return true;
     }
-    setStatus(auto ? t('region.autoSubmitted', 'Автоматична заявка з профілю відправлена.') : t('region.requestSavedCurrentCycle', 'Request saved. This player is already submitted for the current set; choose another farm from the list if needed.'), 'success');
+    const successMessage = savedRequest?.existing
+      ? t('region.requestUpdatedCurrentCycle', 'Заявку оновлено. Нові дані вже збережені для активного циклу.')
+      : t('region.requestSavedCurrentCycle', 'Request saved. This player is already submitted for the current set; choose another farm from the list if needed.');
+    setStatus(auto ? t('region.autoSubmitted', 'Автоматична заявка з профілю відправлена.') : successMessage, 'success');
     window.WKD?.actionDoneDialog?.({
       title: t('region.requestSavedDialogTitle', 'Заявку відправлено'),
       message: tv('region.requestSavedDialogMessage', 'Заявку для регіону R{region} збережено. Її вже видно у таблиці регіону.', { region: currentRegion }),
@@ -655,8 +730,8 @@ async function submitCurrentRegistration(values, { auto = false } = {}) {
       setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'error');
       return false;
     }
-    if (error?.message === 'registration-nickname-duplicate-region') {
-      setStatus(t('region.errorNicknameDuplicateRegion', 'У цьому регіоні вже є заявка з таким нікнеймом.'), 'error');
+    if (d1RegistrationErrorCode(error) === 'registration-nickname-duplicate-region') {
+      await showNicknameDuplicateDialog();
       return false;
     }
     setStatus(t('region.requestSaveFailed', 'Could not save the request. Check access rights or try again.'), 'error');
@@ -816,8 +891,8 @@ async function loadSignedInForm(user) {
   if (saved) fillSavedRegistration(saved);
   else if (draft) fillSavedRegistration(draft);
   if (saved && !canManageRegion(currentProfile, currentRegion, currentUser)) {
-    lockForm(t('region.requestAlreadySavedLocked', 'Your request is already saved. Only a consul or officer can change it.'));
-    return;
+    setFormInputsDisabled(false);
+    setStatus(t('region.savedPlayerCanUpdate', 'Твоя заявка вже є. Якщо дані змінились, можна відправити форму ще раз і оновити заявку.'), 'success');
   }
   setFormInputsDisabled(false);
   if (autoProfile && !saved) await maybeAutoSubmitFromProfile('load');
@@ -853,8 +928,10 @@ async function switchSavedFarm(farmId = selectedFarmId, { copyProfile = true } =
   const draft = loadDraft();
   if (saved) fillSavedRegistration(saved);
   else if (draft) fillSavedRegistration(draft);
-  if (saved && !canManageRegion(currentProfile, currentRegion, currentUser)) lockForm(t('region.requestAlreadySavedLocked', 'Your request is already saved. Only a consul or officer can change it.'));
-  else setFormInputsDisabled(false);
+  if (saved && !canManageRegion(currentProfile, currentRegion, currentUser)) {
+    setFormInputsDisabled(false);
+    setStatus(t('region.savedPlayerCanUpdate', 'Твоя заявка вже є. Якщо дані змінились, можна відправити форму ще раз і оновити заявку.'), 'success');
+  } else setFormInputsDisabled(false);
   if (!saved && autoFillFromProfileEnabled()) await maybeAutoSubmitFromProfile('switch');
   return isOpen;
 }
@@ -880,8 +957,10 @@ async function switchRegion(region = currentRegion, { copyProfile = true } = {})
   const draft = loadDraft();
   if (saved) fillSavedRegistration(saved);
   else if (draft) fillSavedRegistration(draft);
-  if (saved && !canManageRegion(currentProfile, currentRegion, currentUser)) lockForm(t('region.requestAlreadySavedLocked', 'Your request is already saved. Only a consul or officer can change it.'));
-  else setFormInputsDisabled(false);
+  if (saved && !canManageRegion(currentProfile, currentRegion, currentUser)) {
+    setFormInputsDisabled(false);
+    setStatus(t('region.savedPlayerCanUpdate', 'Твоя заявка вже є. Якщо дані змінились, можна відправити форму ще раз і оновити заявку.'), 'success');
+  } else setFormInputsDisabled(false);
   if (!saved && autoFillFromProfileEnabled()) await maybeAutoSubmitFromProfile('region');
   return isOpen;
 }

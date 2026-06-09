@@ -1816,4 +1816,17 @@ window.WKD_TRANSLATIONS.en = {
   'stats.cacheEmpty': 'The public JSON cache is empty. Check or replace public-cache/stats-players.json.',
   'stats.playersJsonMismatch': 'stats-summary.json has numbers, but stats-players.json is empty. Replace the local public-cache with the latest generated JSON files.',
 
+  'region.requestAlreadySubmittedUpdateTitle': 'Request already submitted',
+  'region.requestAlreadySubmittedUpdateMessage': 'A request with the same data already exists in the active cycle. Update it again or cancel?',
+  'region.requestAlreadySubmittedUpdateNote': 'If nothing changed, choose “Cancel” — then no extra D1 write is used.',
+  'region.requestAlreadySubmittedUpdateAccept': 'Update request',
+  'region.requestAlreadySubmittedUpdateCancel': 'Cancel',
+  'region.requestAlreadySubmittedUpdateCancelled': 'Update cancelled. No additional D1 write was made.',
+  'region.requestAlreadySavedNoChanges': 'The request was already submitted with no changes.',
+  'region.requestUpdatedCurrentCycle': 'Request updated. The new data is saved for the active cycle.',
+  'region.savedPlayerCanUpdate': 'Your request already exists. If the data changed, send the form again to update it.',
+  'region.errorNicknameDuplicateGuestTitle': 'Nickname already registered',
+  'region.errorNicknameDuplicateGuestMessage': 'A player with this nickname is already registered in this region. To change the data, sign in on the site or contact the region consul.',
+  'region.errorNicknameDuplicateGuestNote': 'This protects the table from duplicates from different devices.',
+
 };
