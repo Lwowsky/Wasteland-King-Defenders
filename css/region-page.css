@@ -105,3 +105,39 @@
     width: 100%;
   }
 }
+
+/* Google Form connection mode */
+.region-google-form-mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0 8px;
+}
+.region-google-form-mode .region-check {
+  min-width: 210px;
+  justify-content: flex-start;
+}
+.region-google-form-mode-note {
+  display: block;
+  margin: 0 0 14px;
+}
+.region-google-form-auto {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 16px 18px;
+  border: 1px solid rgba(88, 166, 255, .28);
+  border-radius: 18px;
+  background: rgba(88, 166, 255, .08);
+}
+.region-google-form-auto strong {
+  color: var(--text, #f4f7ff);
+  font-size: 1.02rem;
+}
+.region-google-form-auto small {
+  color: var(--muted, #a9b8d8);
+}
+.region-google-form-grid[hidden],
+.region-google-form-auto[hidden] {
+  display: none !important;
+}

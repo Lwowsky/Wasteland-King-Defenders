@@ -7,6 +7,17 @@
     "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },
+  "d1_databases": [
+    {
+      "binding": "REGION_TABLE_DB",
+      "database_name": "wasteland-region-tables",
+      "database_id": "e2e08d3c-dd9d-4118-bbef-64e7e6caae6f"
+    }
+  ],
+  "vars": {
+    "FIREBASE_PROJECT_ID": "wasteland-king-defender",
+    "REGION_TABLE_ADMIN_UIDS": "b0LEXL31OFcwqByi9UUeywmSx7M2"
+  },
   "observability": {
     "enabled": true
   }

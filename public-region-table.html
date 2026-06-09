@@ -30,13 +30,13 @@
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
   <script defer src="js/core/assets-loader.js"></script>
-  <script defer src="js/badges.js?v=95"></script>
+  <script defer src="js/badges.js?v=99"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/core/app-boot.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/pages/public-region-table-page.js?v=95"></script>
+  <script type="module" src="js/pages/public-region-table-page.js?v=99"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -44,7 +44,7 @@
     <section class="profile-card region-card region-table-card">
       <div class="profile-head">
         <div><h2 data-i18n="region.publicTableTitle">Таблиця регіону</h2></div>
-        <div class="region-head-actions"><a class="btn" href="index.html" data-i18n="common.homePage">На головну</a><span class="region-pill region-pill--region" id="publicRegionTablePill">R—</span></div>
+        <div class="region-head-actions"><a class="btn" href="index.html" data-i18n="common.homePage">На головну</a><button class="btn" id="refreshPublicRegionTableBtn" type="button" data-i18n="common.refresh">Оновити</button><span class="region-pill region-pill--region" id="publicRegionTablePill">R—</span></div>
       </div>
       <div class="auth-status" id="publicRegionTableStatus" data-i18n="region.publicTableLoading">Завантажую таблицю регіону...</div>
       <div class="admin-table-wrap">

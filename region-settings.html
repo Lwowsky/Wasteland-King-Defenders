@@ -38,7 +38,8 @@
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
   <script defer src="js/core/assets-loader.js"></script>
-  <script defer src="js/badges.js?v=95"></script>
+  <script defer src="js/config/google-form.config.js?v=97"></script>
+  <script defer src="js/badges.js?v=97"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/core/state.js"></script>
@@ -48,18 +49,18 @@
   <script defer src="js/import-mapping.js"></script>
   <script defer src="js/import-shift-recognition.js"></script>
   <script defer src="js/visible-tiers.js"></script>
-  <script defer src="js/players-table.js?v=95"></script>
+  <script defer src="js/players-table.js?v=97"></script>
   <script defer src="js/confirm-modal.js"></script>
-  <script defer src="js/player-edit-modal.js?v=95"></script>
-  <script defer src="js/player-manager-modal.js?v=95"></script>
-  <script defer src="js/tower-planner.js?v=95"></script>
+  <script defer src="js/player-edit-modal.js?v=97"></script>
+  <script defer src="js/player-manager-modal.js?v=97"></script>
+  <script defer src="js/tower-planner.js?v=97"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/core/app-boot.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/player-manager-region-bridge.js?v=95"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=97"></script>
   <script type="module" src="js/auth-google.js"></script>
-  <script type="module" src="js/notifications.js?v=95"></script>
-  <script type="module" src="js/pages/region-settings-page.js?v=95"></script>
+  <script type="module" src="js/notifications.js?v=97"></script>
+  <script type="module" src="js/pages/region-settings-page.js?v=97"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -202,7 +203,16 @@
               </div>
               <label class="region-check region-check--inline"><input id="settingsGoogleFormEnabled" type="checkbox" /> <span data-i18n="regionSettings.googleFormEnabled">Показувати кнопку Google Form для гравців</span></label>
             </div>
-            <div class="region-rules-grid region-google-form-grid">
+            <div class="region-google-form-mode" id="settingsGoogleFormConnectionMode" role="radiogroup" aria-label="Google Form connection mode">
+              <label class="region-check region-check--inline"><input type="radio" name="settingsGoogleFormConnectionMode" value="auto" /> <span data-i18n="regionSettings.googleFormModeAuto">Автоматично</span></label>
+              <label class="region-check region-check--inline"><input type="radio" name="settingsGoogleFormConnectionMode" value="manual" /> <span data-i18n="regionSettings.googleFormModeManual">Ручне підключення</span></label>
+            </div>
+            <small class="region-note region-google-form-mode-note" id="googleFormModeHelp" data-i18n="regionSettings.googleFormModeAutoHelp">Автоматичний режим використовує один центральний Apps Script конектор сайту. Консулу не потрібно вводити URL і секрет.</small>
+            <div class="region-google-form-auto" id="googleFormAutoInfo" hidden>
+              <strong data-i18n="regionSettings.googleFormAutoTitle">Автоматичне підключення</strong>
+              <small data-i18n="regionSettings.googleFormAutoInfo">Сайт сам відправить налаштування регіону в центральний Google Form конектор і збереже посилання форми після створення.</small>
+            </div>
+            <div class="region-rules-grid region-google-form-grid" id="googleFormManualFields">
               <label><small data-i18n="regionSettings.googleFormWebAppUrl">Apps Script Web App URL</small><input id="settingsGoogleFormWebAppUrl" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" /></label>
               <label><small data-i18n="regionSettings.googleFormSecret">Секрет Apps Script</small><input id="settingsGoogleFormSecret" placeholder="CHANGE_ME_SECRET" autocomplete="off" /></label>
               <label><small data-i18n="regionSettings.googleFormUrl">Посилання Google Form для гравців</small><input id="settingsGoogleFormUrl" placeholder="https://docs.google.com/forms/..." /></label>

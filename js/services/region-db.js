@@ -108,7 +108,8 @@ export const DEFAULT_REGION_FORM = {
     enabled: false,
     formUrl: '',
     status: 'not-configured',
-    mode: 'reserve'
+    mode: 'reserve',
+    connectionMode: 'auto'
   }
 };
 
@@ -215,9 +216,13 @@ function normalizeGoogleFormPublic(config = {}) {
   const status = ['not-configured', 'draft', 'open', 'closed', 'syncing', 'sent', 'error'].includes(trim(config.status))
     ? trim(config.status)
     : (config.enabled ? 'draft' : 'not-configured');
+  const connectionMode = ['auto', 'manual'].includes(trim(config.connectionMode))
+    ? trim(config.connectionMode)
+    : (trim(config.webAppUrl || config.secret) ? 'manual' : 'auto');
   return {
     enabled: Boolean(config.enabled),
     mode: 'reserve',
+    connectionMode,
     formUrl: sanitizeUrl(config.formUrl),
     status,
     region: normalizeRegion(config.region),
@@ -1103,6 +1108,37 @@ export async function resolveRegionFinalPlanShare(codeValue) {
 }
 
 
+
+async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
+  try {
+    const mod = await import('./region-table-cache.js?v=99');
+    return await mod.mirrorRegionRegistration(user, region, row, settings);
+  } catch (error) {
+    console.warn('[WKD] region table JSON mirror unavailable:', error);
+    return null;
+  }
+}
+
+async function publishSnapshotToRegionTableCache(user, payload) {
+  try {
+    const mod = await import('./region-table-cache.js?v=99');
+    return await mod.publishRegionTableSnapshot(user, payload);
+  } catch (error) {
+    console.warn('[WKD] region table JSON snapshot unavailable:', error);
+    return null;
+  }
+}
+
+async function publishShareToRegionTableCache(user, payload) {
+  try {
+    const mod = await import('./region-table-cache.js?v=99');
+    return await mod.publishRegionTableShare(user, payload);
+  } catch (error) {
+    console.warn('[WKD] region table JSON share unavailable:', error);
+    return null;
+  }
+}
+
 function sanitizeRegionTableRow(row = {}) {
   return {
     nickname: trim(row.nickname).slice(0, 80),
@@ -1145,6 +1181,13 @@ export async function shareRegionTable(user, region) {
     createdByName: getRegionActorName(profile || {}, safeRegion, user)
   });
   trackWrites(1);
+  await publishShareToRegionTableCache(user, {
+    code,
+    region: safeRegion,
+    cycleId: settings.currentCycleId || '',
+    settings,
+    rows
+  });
   await writeRegionActionLog(firebase, user, profile, safeRegion, 'region_table_shared', { summary: serviceT('actionLog.regionTableShared', 'Створено секретне посилання таблиці регіону') }).catch(() => null);
   return { code, region: safeRegion };
 }
@@ -1815,6 +1858,10 @@ export async function saveWastelandRegistration(user, values, regionOverride = '
     trackWrites(1);
   }
   removeCache(`regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v89`);
+
+  if (user?.uid) {
+    await mirrorRegistrationToRegionTableCache(user, region, { ...data, uid: user.uid }, status);
+  }
 
   await writeRegionActionLog({ db, firestoreMod }, user || { uid: 'guest' }, profile || {}, region, 'registration_submitted', { summary: data.nickname || 'Заявка', alliance: data.alliance, targetName: data.nickname });
   if (user?.uid) {

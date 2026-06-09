@@ -1,5 +1,6 @@
-import { resolveRegionTableShare, troopLabel, shiftLabel } from '../services/region-db.js?v=89';
+import { resolveRegionTableShare, troopLabel, shiftLabel } from '../services/region-db.js?v=99';
 import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=89';
+import { isRegionTableCacheEnabled, readRegionTableShare } from '../services/region-table-cache.js?v=99';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -39,7 +40,14 @@ async function init() {
   keepShareCodeInUrl('regionTable', code);
   if (!code) { setStatus(t('region.publicTableMissing', 'Секретне посилання неправильне або неповне.'), 'error'); return; }
   try {
-    const data = await resolveRegionTableShare(code);
+    let data = null;
+    if (isRegionTableCacheEnabled()) {
+      data = await readRegionTableShare(code).catch(error => {
+        console.warn('[WKD] public region table JSON cache unavailable, using Firebase share:', error);
+        return null;
+      });
+    }
+    if (!data) data = await resolveRegionTableShare(code);
     $('#publicRegionTablePill') && ($('#publicRegionTablePill').textContent = data.region ? `R${data.region}` : 'R—');
     const rows = Array.isArray(data.rows) ? data.rows : [];
     const body = $('#publicRegionTableBody');
@@ -52,5 +60,8 @@ async function init() {
   }
 }
 document.addEventListener('wkd:partials-ready', init);
+document.addEventListener('click', event => {
+  if (event.target?.closest?.('#refreshPublicRegionTableBtn')) window.location.reload();
+});
 if (document.readyState !== 'loading') window.setTimeout(init, 0);
 else document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));

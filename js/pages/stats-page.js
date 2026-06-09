@@ -1,5 +1,5 @@
 import { formatUserDate, roleLabel } from '../services/user-db.js';
-import { troopLabel } from '../services/region-db.js?v=95';
+import { troopLabel } from '../services/region-db.js?v=96';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -30,8 +30,8 @@ function locale() {
 
 const PUBLIC_STATS_CACHE_URL = 'public-cache/stats-summary.json';
 const PUBLIC_STATS_PLAYERS_URL = 'public-cache/stats-players.json';
-const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v95.disabled';
-const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.v95.disabled';
+const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v96.disabled';
+const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.v96.disabled';
 
 function readSummaryCache() { return null; }
 function writeSummaryCache(_data) {}
@@ -117,7 +117,7 @@ function renderSummaryStats(summary = statsSummaryCache) {
 function renderListNotLoaded() {
   const body = $('#publicPlayersBody');
   if (!body) return;
-  body.innerHTML = `<tr><td colspan="8" class="stats-empty-note">${escapeHtml(t('stats.listNotLoaded', 'The public player JSON is not loaded yet. Generate public-cache/stats-players.json with GitHub Actions.'))}</td></tr>`;
+  body.innerHTML = `<tr><td colspan="8" class="stats-empty-note">${escapeHtml(t('stats.listNotLoaded', 'The public player JSON is not loaded yet. Check public-cache/stats-players.json.'))}</td></tr>`;
 }
 async function loadSummaryOnly(options = {}) {
   const force = Boolean(options?.force);
@@ -133,13 +133,13 @@ async function loadSummaryOnly(options = {}) {
     renderStats();
     renderPlayers();
     if (isPublicStatsJsonEmpty(summary, publicPlayers)) {
-      setSummary(t('stats.cacheEmpty', 'Public JSON cache is empty. Run GitHub Actions to generate public-cache/stats-players.json.'));
-      setStatus(t('stats.cacheEmpty', 'Public JSON cache is empty. Run GitHub Actions to generate public-cache/stats-players.json.'), 'warning');
+      setSummary(t('stats.cacheEmpty', 'Public JSON cache is empty. Check or replace public-cache/stats-players.json.'));
+      setStatus(t('stats.cacheEmpty', 'Public JSON cache is empty. Check or replace public-cache/stats-players.json.'), 'warning');
       return;
     }
     if (isPublicPlayersJsonMissing(summary, publicPlayers)) {
       renderListNotLoaded();
-      setStatus(t('stats.playersJsonMismatch', 'stats-summary.json has numbers, but stats-players.json is empty. Replace local public-cache with the generated files from GitHub Actions.'), 'warning');
+      setStatus(t('stats.playersJsonMismatch', 'stats-summary.json has numbers, but stats-players.json is empty. Replace the local public-cache with the latest generated JSON files.'), 'warning');
       return;
     }
     setStatus(t('stats.cacheUpdated', 'Statistics loaded from public JSON cache.'), 'success');
@@ -150,7 +150,7 @@ async function loadSummaryOnly(options = {}) {
     players = [];
     renderStats();
     renderListNotLoaded();
-    setStatus(t('stats.cacheFailed', 'Public statistics JSON is not generated yet. Set up GitHub Actions and generate public-cache files.'), 'error');
+    setStatus(t('stats.cacheFailed', 'Public statistics JSON files are not available. Check public-cache/stats-summary.json and stats-players.json.'), 'error');
   }
 }
 

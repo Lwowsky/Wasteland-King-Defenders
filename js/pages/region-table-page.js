@@ -17,7 +17,8 @@ import {
   listRegionAlliances,
   listRegionCatalog,
   shareRegionTable
-} from '../services/region-db.js?v=89';
+} from '../services/region-db.js?v=99';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot } from '../services/region-table-cache.js?v=99';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -465,11 +466,27 @@ async function load(user) {
   if (requestedRegion && !canViewRegion(profile, requestedRegion, user)) {
     setStatus(t('region.otherRegionDenied', 'Only an admin, moderator, or a saved player/farm from that region can open another region.'), 'warn');
   }
-  const result = await listRegionRegistrations(user, canViewRegion(profile, requestedRegion, user) ? requestedRegion : '');
-  currentProfile = result.profile;
+  const allowedRegion = canViewRegion(profile, requestedRegion, user) ? requestedRegion : '';
+  let result = null;
+  if (isRegionTableCacheEnabled() && allowedRegion) {
+    result = await readRegionTableSnapshot(user, allowedRegion).catch(error => {
+      console.warn('[WKD] region table JSON cache unavailable, using Firebase:', error);
+      return null;
+    });
+  }
+  if (!result) {
+    result = await listRegionRegistrations(user, allowedRegion);
+    await publishRegionTableSnapshot(user, {
+      region: result.region,
+      cycleId: result.settings?.currentCycleId || '',
+      settings: result.settings || {},
+      rows: result.rows || []
+    });
+  }
+  currentProfile = result.profile || profile;
   currentRegion = result.region;
-  rows = result.rows;
-  currentSettings = result.settings;
+  rows = result.rows || [];
+  currentSettings = result.settings || {};
   await loadAllianceColors();
   renderTroopFilter(currentSettings);
   renderTierFilter();
