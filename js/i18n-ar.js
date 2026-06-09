@@ -1827,4 +1827,9 @@ window.WKD_TRANSLATIONS.ar = {
   'region.errorNicknameDuplicateGuestMessage': 'يوجد لاعب بهذا اللقب مسجل بالفعل في هذه المنطقة. لتغيير البيانات، سجل في الموقع أو تواصل مع قنصل المنطقة.',
   'region.errorNicknameDuplicateGuestNote': 'هذا يحمي الجدول من التكرارات من أجهزة مختلفة.',
 
+  'notifications.campaign.registrationOpenedTitle': 'تم فتح التسجيل',
+  'notifications.campaign.registrationOpenedMessage': 'تم فتح تسجيل الأرض القاحلة للمنطقة R{region}. بواسطة: {actor}.',
+  'notifications.campaign.registrationClosedTitle': 'تم إغلاق التسجيل',
+  'notifications.campaign.registrationClosedMessage': 'تم إغلاق تسجيل الأرض القاحلة للمنطقة R{region}. بواسطة: {actor}.',
+
 };

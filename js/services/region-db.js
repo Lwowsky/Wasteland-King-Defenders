@@ -10,8 +10,9 @@ import {
   roleLabel,
   formatUserDate,
   timestampToMs,
-  createUserNotification
-} from './user-db.js';
+  createUserNotification,
+  createRegionNotificationCampaign
+} from './user-db.js?v=108';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -1424,6 +1425,22 @@ export async function saveRegionSettings(user, region, settings) {
 
   await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), regionPatch, { merge: true });
   await writeRegionActionLog({ db, firestoreMod }, user, profile, safeRegion, forceCloseNow ? 'registration_closed' : (forceOpenNow || openNewCycle ? 'registration_started' : 'registration_settings_saved'), { summary: clean.enabled ? 'Форма відкрита' : 'Форма закрита', alliance: clean.hostAlliance || '' });
+
+  const campaignType = forceCloseNow ? 'registration_closed' : (justOpened ? 'registration_opened' : '');
+  if (campaignType) {
+    await createRegionNotificationCampaign({
+      type: campaignType,
+      region: safeRegion,
+      cycleId: currentCycleId,
+      titleKey: campaignType === 'registration_closed' ? 'notifications.campaign.registrationClosedTitle' : 'notifications.campaign.registrationOpenedTitle',
+      messageKey: campaignType === 'registration_closed' ? 'notifications.campaign.registrationClosedMessage' : 'notifications.campaign.registrationOpenedMessage',
+      actorUid: user.uid,
+      actorName,
+      actorRole: normalizeUserRole(profile?.role || 'player'),
+      actorRoleText: roleLabel(normalizeUserRole(profile?.role || 'player')),
+      targetLabel: `R${safeRegion}`
+    }).catch(error => console.warn('[WKD] region campaign notification skipped:', error));
+  }
 
   if (openNewCycle) {
     await firestoreMod.setDoc(

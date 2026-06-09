@@ -1829,4 +1829,9 @@ window.WKD_TRANSLATIONS.vi = {
   'region.errorNicknameDuplicateGuestMessage': 'Một người chơi với nickname này đã được đăng ký trong khu vực này. Để thay đổi dữ liệu, hãy đăng ký trên trang web hoặc liên hệ lãnh sự khu vực.',
   'region.errorNicknameDuplicateGuestNote': 'Điều này bảo vệ bảng khỏi trùng lặp từ các thiết bị khác nhau.',
 
+  'notifications.campaign.registrationOpenedTitle': 'Đã mở đăng ký',
+  'notifications.campaign.registrationOpenedMessage': 'Đăng ký wasteland đã mở cho khu vực R{region}. Người mở: {actor}.',
+  'notifications.campaign.registrationClosedTitle': 'Đã đóng đăng ký',
+  'notifications.campaign.registrationClosedMessage': 'Đăng ký wasteland đã đóng cho khu vực R{region}. Người đóng: {actor}.',
+
 };

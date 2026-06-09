@@ -1,23 +1,47 @@
 import { getFirebase, watchAuth } from './services/firebase-service.js';
 import { trackReads, trackWrites } from './services/usage-tracker.js?v=89';
-import { formatUserDate, readUserNotificationSummary, setUserNotificationSummary } from './services/user-db.js';
+import {
+  formatUserDate,
+  getUserProfile,
+  listRegionNotificationCampaignsForProfile,
+  readUserNotificationSummary,
+  setUserNotificationSummary
+} from './services/user-db.js?v=108';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
+const tv = (key, vars = {}, fallback = '') => window.WKD_tv ? window.WKD_tv(key, vars, fallback) : (fallback || t(key, key));
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 
 let currentUser = null;
-let summary = { unreadTotal: 0 };
+let currentProfile = null;
+let summary = { unreadTotal: 0, campaignUnreadTotal: 0, campaignSeenAtMs: 0 };
 let previewItems = [];
+let campaignPreviewItems = [];
 let previewLoaded = false;
 let previewLoading = false;
 let bound = false;
 let authStarted = false;
 
+function campaignVars(item = {}) {
+  return {
+    region: item.region || '',
+    actor: item.actorName || t('notifications.fromRegion', 'Від регіону'),
+    target: item.targetLabel || (item.region ? `R${item.region}` : '')
+  };
+}
+function itemTitle(item = {}) {
+  if (item.titleKey) return tv(item.titleKey, campaignVars(item), item.title || t('notifications.title', 'Сповіщення'));
+  return item.title || item.type || t('notifications.title', 'Сповіщення');
+}
+function itemMessage(item = {}) {
+  if (item.messageKey) return tv(item.messageKey, campaignVars(item), item.message || item.summary || '');
+  return item.message || item.text || item.summary || '';
+}
 function sourceKind(item = {}) {
   const role = String(item.actorRole || '').toLowerCase();
   const type = String(item.type || item.source || '').toLowerCase();
-  if (item.source === 'region-status' || type.includes('region') || type.includes('registration')) return 'region';
+  if (item.source === 'campaign' || item.source === 'region-status' || type.includes('region') || type.includes('registration')) return 'region';
   if (role === 'admin' || role === 'moderator') return 'admin';
   if (role === 'consul') return 'consul';
   if (role === 'officer') return 'officer';
@@ -42,20 +66,23 @@ function cacheKey(uid = '') {
 }
 function normalizeSummary(raw = {}) {
   const unreadTotal = Math.max(0, Number(raw?.unreadTotal) || 0);
+  const campaignUnreadTotal = Math.max(0, Number(raw?.campaignUnreadTotal) || 0);
   return {
     unreadTotal,
+    campaignUnreadTotal,
+    campaignSeenAtMs: Math.max(0, Number(raw?.campaignSeenAtMs) || 0),
     lastTitle: String(raw?.lastTitle || '').trim(),
     lastMessage: String(raw?.lastMessage || '').trim(),
     lastNotificationAtMs: Number(raw?.lastNotificationAtMs || raw?.updatedAtMs || 0) || 0
   };
 }
 function readCachedSummary(uid = '') {
-  if (!uid) return { unreadTotal: 0 };
+  if (!uid) return { unreadTotal: 0, campaignUnreadTotal: 0, campaignSeenAtMs: 0 };
   try {
     const raw = JSON.parse(localStorage.getItem(cacheKey(uid)) || 'null');
     return normalizeSummary(raw || {});
   } catch (_) {
-    return { unreadTotal: 0 };
+    return { unreadTotal: 0, campaignUnreadTotal: 0, campaignSeenAtMs: 0 };
   }
 }
 function writeCachedSummary(uid = '', value = {}) {
@@ -68,13 +95,10 @@ function applySummary(value = {}, cache = true) {
   render();
 }
 function unreadCount() {
-  return Math.max(0, Number(summary?.unreadTotal) || 0);
+  return Math.max(0, Number(summary?.unreadTotal) || 0) + Math.max(0, Number(summary?.campaignUnreadTotal) || 0);
 }
 function newPreviewItems() {
   return previewItems.filter(isUnread);
-}
-function menuOpened() {
-  return $('#notifyMenu')?.classList.contains('is-open');
 }
 async function userNotificationPreview(firebase, uid) {
   const { db, firestoreMod } = firebase;
@@ -83,6 +107,16 @@ async function userNotificationPreview(firebase, uid) {
   const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
   trackReads(Math.max(1, snap.docs.length));
   return snap.docs.map(doc => ({ id: doc.id, source: 'account', ...doc.data() }));
+}
+async function refreshCampaignPreview(force = false) {
+  if (!currentUser || !currentProfile) return [];
+  if (campaignPreviewItems.length && !force) return campaignPreviewItems;
+  campaignPreviewItems = await listRegionNotificationCampaignsForProfile(currentProfile, {
+    sinceMs: Number(summary?.campaignSeenAtMs) || 0,
+    perRegionLimit: 8,
+    totalLimit: 12
+  }).catch(() => []);
+  return campaignPreviewItems;
 }
 async function loadPreview(force = false) {
   if (!currentUser || previewLoading || (previewLoaded && !force)) return;
@@ -94,7 +128,11 @@ async function loadPreview(force = false) {
     render();
     return;
   }
-  previewItems = await userNotificationPreview(firebase, currentUser.uid).catch(() => []);
+  const [personal, campaigns] = await Promise.all([
+    userNotificationPreview(firebase, currentUser.uid).catch(() => []),
+    refreshCampaignPreview(force).catch(() => [])
+  ]);
+  previewItems = [...personal, ...campaigns].sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
   previewLoaded = true;
   previewLoading = false;
   render();
@@ -122,8 +160,9 @@ function render() {
     return;
   }
   if (!previewLoaded) {
-    const title = summary.lastTitle || t('notifications.title', 'Сповіщення');
-    const message = summary.lastMessage || (unread ? t('notifications.openPage', 'Усі') : t('notifications.empty', 'Нових сповіщень немає.'));
+    const newestCampaign = campaignPreviewItems[0] || null;
+    const title = newestCampaign ? itemTitle(newestCampaign) : (summary.lastTitle || t('notifications.title', 'Сповіщення'));
+    const message = newestCampaign ? itemMessage(newestCampaign) : (summary.lastMessage || (unread ? t('notifications.openPage', 'Усі') : t('notifications.empty', 'Нових сповіщень немає.')));
     list.innerHTML = unread
       ? `<div class="notify-item is-unread"><b>${esc(title)}</b><span>${esc(message)}</span></div>`
       : `<div class="notify-empty">${esc(t('notifications.empty', 'Нових сповіщень немає.'))}</div>`;
@@ -137,46 +176,63 @@ function render() {
   }
   list.innerHTML = unreadPreview.slice(0, 8).map(item => `
     <div class="notify-item is-unread">
-      <b>${esc(item.title || item.type || t('notifications.title', 'Сповіщення'))}</b>
-      <span>${esc(item.message || item.text || item.summary || '')}</span>
+      <b>${esc(itemTitle(item))}</b>
+      <span>${esc(itemMessage(item))}</span>
       <small>${esc(sourceLabel(item))}${esc(item.actorName ? ` · ${item.actorName}` : '')}${esc(item.region ? ` · R${item.region}` : '')} · ${esc(item.createdAt ? formatUserDate(item.createdAt) : (item.createdAtMs ? new Date(item.createdAtMs).toLocaleString() : ''))}</small>
     </div>`).join('');
 }
 async function load(user) {
   currentUser = user || null;
+  currentProfile = null;
   previewItems = [];
+  campaignPreviewItems = [];
   previewLoaded = false;
   previewLoading = false;
   if (!user) {
-    summary = { unreadTotal: 0 };
+    summary = { unreadTotal: 0, campaignUnreadTotal: 0, campaignSeenAtMs: 0 };
     render();
     return;
   }
 
   applySummary(readCachedSummary(user.uid), false);
-  const remoteSummary = await readUserNotificationSummary(user.uid).catch(() => null);
-  if (remoteSummary) applySummary(remoteSummary, true);
-  else applySummary(readCachedSummary(user.uid), false);
+  const [remoteSummary, profile] = await Promise.all([
+    readUserNotificationSummary(user.uid).catch(() => null),
+    getUserProfile(user.uid).catch(() => null)
+  ]);
+  currentProfile = profile || null;
+  const baseSummary = normalizeSummary(remoteSummary || readCachedSummary(user.uid));
+  campaignPreviewItems = currentProfile ? await listRegionNotificationCampaignsForProfile(currentProfile, {
+    sinceMs: baseSummary.campaignSeenAtMs,
+    perRegionLimit: 8,
+    totalLimit: 12
+  }).catch(() => []) : [];
+  applySummary({ ...baseSummary, campaignUnreadTotal: campaignPreviewItems.length }, true);
 }
 async function markRead() {
   if (!currentUser) return;
   if (!previewLoaded) await loadPreview();
-  const unreadPreview = newPreviewItems().filter(item => item.source === 'account' && item.id);
-  if (!unreadPreview.length) return;
+  const unreadPreview = newPreviewItems();
+  const unreadPersonal = unreadPreview.filter(item => item.source === 'account' && item.id);
+  const unreadCampaigns = unreadPreview.filter(item => item.source === 'campaign');
+  if (!unreadPersonal.length && !unreadCampaigns.length) return;
   const firebase = await getFirebase();
   if (!firebase) return;
   const { db, firestoreMod } = firebase;
-  const batch = firestoreMod.writeBatch(db);
   const nowMs = Date.now();
-  unreadPreview.forEach(item => {
-    batch.set(firestoreMod.doc(db, 'users', currentUser.uid, 'notifications', item.id), { readAt: firestoreMod.serverTimestamp(), readAtMs: nowMs, unread: false }, { merge: true });
-  });
-  await batch.commit().catch(() => null);
-  trackWrites(unreadPreview.length);
-  const nextUnread = Math.max(0, unreadCount() - unreadPreview.length);
-  await setUserNotificationSummary(currentUser.uid, { unreadTotal: nextUnread, updatedAtMs: nowMs }).catch(() => null);
-  applySummary({ ...summary, unreadTotal: nextUnread, updatedAtMs: nowMs }, true);
-  previewItems = previewItems.map(item => unreadPreview.some(row => row.id === item.id) ? { ...item, unread: false, readAtMs: nowMs } : item);
+  if (unreadPersonal.length) {
+    const batch = firestoreMod.writeBatch(db);
+    unreadPersonal.forEach(item => {
+      batch.set(firestoreMod.doc(db, 'users', currentUser.uid, 'notifications', item.id), { readAt: firestoreMod.serverTimestamp(), readAtMs: nowMs, unread: false }, { merge: true });
+    });
+    await batch.commit().catch(() => null);
+    trackWrites(unreadPersonal.length);
+  }
+  const nextUnread = Math.max(0, (Number(summary?.unreadTotal) || 0) - unreadPersonal.length);
+  const nextCampaignSeen = unreadCampaigns.reduce((max, item) => Math.max(max, Number(item.createdAtMs) || 0), Number(summary?.campaignSeenAtMs) || 0);
+  await setUserNotificationSummary(currentUser.uid, { unreadTotal: nextUnread, campaignSeenAtMs: nextCampaignSeen, updatedAtMs: nowMs }).catch(() => null);
+  applySummary({ ...summary, unreadTotal: nextUnread, campaignUnreadTotal: 0, campaignSeenAtMs: nextCampaignSeen, updatedAtMs: nowMs }, true);
+  previewItems = previewItems.map(item => unreadPreview.some(row => row.id === item.id && row.source === item.source) ? { ...item, unread: false, readAtMs: nowMs } : item);
+  campaignPreviewItems = campaignPreviewItems.map(item => ({ ...item, unread: false, readAtMs: nowMs }));
   render();
 }
 function closeMenu() {

@@ -1829,4 +1829,9 @@ window.WKD_TRANSLATIONS.zh = {
   'region.errorNicknameDuplicateGuestMessage': '该地区已有使用此昵称的玩家。要修改数据，请在网站注册或联系该地区领事。',
   'region.errorNicknameDuplicateGuestNote': '这可以防止不同设备产生重复记录。',
 
+  'notifications.campaign.registrationOpenedTitle': '报名已开启',
+  'notifications.campaign.registrationOpenedMessage': 'R{region}区域的荒野报名已开启。开启者：{actor}。',
+  'notifications.campaign.registrationClosedTitle': '报名已关闭',
+  'notifications.campaign.registrationClosedMessage': 'R{region}区域的荒野报名已关闭。关闭者：{actor}。',
+
 };

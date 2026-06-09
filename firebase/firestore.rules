@@ -470,6 +470,33 @@ service cloud.firestore {
         && (!('archived' in request.resource.data) || request.resource.data.archived is bool);
     }
 
+
+    function regionCampaignCreateSafe(regionId) {
+      return signedIn()
+        && canManageRegion(regionId)
+        && request.resource.data.region == regionId
+        && request.resource.data.type in ['registration_opened', 'registration_closed']
+        && request.resource.data.source == 'region-campaign'
+        && request.resource.data.cycleId is string
+        && request.resource.data.cycleId.size() <= 120
+        && request.resource.data.titleKey is string
+        && request.resource.data.titleKey.size() <= 160
+        && request.resource.data.messageKey is string
+        && request.resource.data.messageKey.size() <= 160
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.actorName is string
+        && request.resource.data.actorName.size() <= 120
+        && request.resource.data.actorRole in ['admin', 'moderator', 'consul', 'officer', 'player']
+        && request.resource.data.actorRoleText is string
+        && request.resource.data.actorRoleText.size() <= 80
+        && request.resource.data.targetType == 'region'
+        && request.resource.data.targetLabel is string
+        && request.resource.data.targetLabel.size() <= 160
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.createdAtMs is int
+        && request.resource.data.keys().hasOnly(['type','source','region','cycleId','titleKey','messageKey','actorUid','actorName','actorRole','actorRoleText','targetType','targetLabel','createdAt','createdAtMs']);
+    }
+
     function publicWastelandRegistrationSafe(regionId) {
       return wastelandRegistrationFieldsSafe(regionId)
         && request.resource.data.publicLink == true;
@@ -527,7 +554,7 @@ service cloud.firestore {
       return request.resource.data.keys().hasOnly([
           'unreadTotal', 'lastTitle', 'lastMessage', 'lastRegion', 'lastAlliance',
           'lastActorUid', 'lastActorName', 'lastActorRole', 'lastTargetType',
-          'lastNotificationAt', 'lastNotificationAtMs', 'updatedAt', 'updatedAtMs'
+          'lastNotificationAt', 'lastNotificationAtMs', 'campaignSeenAtMs', 'updatedAt', 'updatedAtMs'
         ])
         && (!request.resource.data.keys().hasAny(['unreadTotal']) || (request.resource.data.unreadTotal is int && request.resource.data.unreadTotal >= 0 && request.resource.data.unreadTotal <= 99999))
         && (!request.resource.data.keys().hasAny(['lastTitle']) || (request.resource.data.lastTitle is string && request.resource.data.lastTitle.size() <= 160))
@@ -539,6 +566,7 @@ service cloud.firestore {
         && (!request.resource.data.keys().hasAny(['lastActorRole']) || (request.resource.data.lastActorRole in ['admin', 'moderator', 'consul', 'officer', 'player']))
         && (!request.resource.data.keys().hasAny(['lastTargetType']) || (request.resource.data.lastTargetType in ['system', 'player', 'alliance', 'region', 'consuls', 'officers', 'admins', 'all']))
         && (!request.resource.data.keys().hasAny(['lastNotificationAtMs']) || request.resource.data.lastNotificationAtMs is int)
+        && (!request.resource.data.keys().hasAny(['campaignSeenAtMs']) || request.resource.data.campaignSeenAtMs is int)
         && (!request.resource.data.keys().hasAny(['updatedAtMs']) || request.resource.data.updatedAtMs is int);
     }
 
@@ -651,6 +679,13 @@ service cloud.firestore {
         allow read: if hasRegionAccess(regionId) || canManageRegion(regionId);
         allow create, update: if canManageRegion(regionId);
         allow delete: if canManageRegion(regionId);
+      }
+
+
+      match /notificationCampaigns/{campaignId} {
+        allow read: if signedIn() && (hasRegionAccess(regionId) || canManageRegion(regionId));
+        allow create: if regionCampaignCreateSafe(regionId);
+        allow update, delete: if ownerEmail() || isAdmin() || isModerator();
       }
 
       match /actionLogs/{logId} {

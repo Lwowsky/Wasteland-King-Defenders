@@ -1829,4 +1829,9 @@ window.WKD_TRANSLATIONS.ja = {
   'region.errorNicknameDuplicateGuestMessage': 'この地域には同じニックネームのプレイヤーがすでに登録されています。データを変更するには、サイトに登録するか地域の領事に連絡してください。',
   'region.errorNicknameDuplicateGuestNote': 'これは別の端末からの重複登録を防ぐためです。',
 
+  'notifications.campaign.registrationOpenedTitle': '登録が開始されました',
+  'notifications.campaign.registrationOpenedMessage': '地域R{region}の荒野登録が開始されました。開始者: {actor}。',
+  'notifications.campaign.registrationClosedTitle': '登録が終了しました',
+  'notifications.campaign.registrationClosedMessage': '地域R{region}の荒野登録が終了しました。終了者: {actor}。',
+
 };

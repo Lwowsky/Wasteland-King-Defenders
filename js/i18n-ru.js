@@ -1829,4 +1829,9 @@ window.WKD_TRANSLATIONS.ru = {
   'region.errorNicknameDuplicateGuestMessage': 'Игрок с таким никнеймом уже зарегистрирован в этом регионе. Чтобы изменить данные, зарегистрируйся на сайте или обратись к консулу региона.',
   'region.errorNicknameDuplicateGuestNote': 'Это защищает таблицу от дублей с разных устройств.',
 
+  'notifications.campaign.registrationOpenedTitle': 'Регистрация открыта',
+  'notifications.campaign.registrationOpenedMessage': 'Регистрация на пустошь открыта для региона R{region}. Открыл: {actor}.',
+  'notifications.campaign.registrationClosedTitle': 'Регистрация закрыта',
+  'notifications.campaign.registrationClosedMessage': 'Регистрация на пустошь закрыта для региона R{region}. Закрыл: {actor}.',
+
 };

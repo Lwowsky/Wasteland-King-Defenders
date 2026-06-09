@@ -1829,4 +1829,9 @@ window.WKD_TRANSLATIONS.en = {
   'region.errorNicknameDuplicateGuestMessage': 'A player with this nickname is already registered in this region. To change the data, sign in on the site or contact the region consul.',
   'region.errorNicknameDuplicateGuestNote': 'This protects the table from duplicates from different devices.',
 
+  'notifications.campaign.registrationOpenedTitle': 'Registration is open',
+  'notifications.campaign.registrationOpenedMessage': 'Wasteland registration is open for region R{region}. Opened by: {actor}.',
+  'notifications.campaign.registrationClosedTitle': 'Registration is closed',
+  'notifications.campaign.registrationClosedMessage': 'Wasteland registration is closed for region R{region}. Closed by: {actor}.',
+
 };

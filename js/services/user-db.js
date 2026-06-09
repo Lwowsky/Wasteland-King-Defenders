@@ -199,6 +199,7 @@ function notificationSummaryClean(values = {}, firebase = null) {
   if (Object.hasOwn(values, 'lastActorRole')) out.lastActorRole = normalizeRole(values.lastActorRole || 'player');
   if (Object.hasOwn(values, 'lastTargetType')) out.lastTargetType = normalizeText(values.lastTargetType || 'system').slice(0, 40);
   if (Object.hasOwn(values, 'lastNotificationAtMs')) out.lastNotificationAtMs = Math.max(0, Number(values.lastNotificationAtMs) || 0);
+  if (Object.hasOwn(values, 'campaignSeenAtMs')) out.campaignSeenAtMs = Math.max(0, Number(values.campaignSeenAtMs) || 0);
   out.updatedAtMs = Math.max(0, Number(values.updatedAtMs) || nowMs);
   if (firebase?.firestoreMod?.serverTimestamp) out.updatedAt = firebase.firestoreMod.serverTimestamp();
   return out;
@@ -316,6 +317,73 @@ export async function listUserNotifications(uid, limitCount = 100) {
   );
   const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
   return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+
+export function profileNotificationRegions(profile = {}) {
+  const main = getGameProfile(profile || {});
+  const farms = getUserFarms(profile || {});
+  return buildRegionAccess(main, farms).slice(0, 10);
+}
+
+function campaignClean(values = {}, firebase = null) {
+  const nowMs = Math.max(0, Number(values.createdAtMs) || Date.now());
+  const type = normalizeText(values.type || 'registration_notice').slice(0, 80);
+  const region = normalizeText(values.region || '').replace(/[^0-9]/g, '').slice(0, 20);
+  const actorRole = normalizeRole(values.actorRole || 'player');
+  return {
+    type,
+    source: 'region-campaign',
+    region,
+    cycleId: normalizeText(values.cycleId || '').slice(0, 120),
+    titleKey: normalizeText(values.titleKey || 'notifications.campaign.registrationTitle').slice(0, 160),
+    messageKey: normalizeText(values.messageKey || 'notifications.campaign.registrationMessage').slice(0, 160),
+    actorUid: normalizeText(values.actorUid || '').slice(0, 160),
+    actorName: normalizeText(values.actorName || '').slice(0, 120),
+    actorRole,
+    actorRoleText: normalizeText(values.actorRoleText || roleLabel(actorRole)).slice(0, 80),
+    targetType: 'region',
+    targetLabel: normalizeText(values.targetLabel || (region ? `R${region}` : '')).slice(0, 160),
+    createdAt: firebase?.firestoreMod?.serverTimestamp ? firebase.firestoreMod.serverTimestamp() : null,
+    createdAtMs: nowMs
+  };
+}
+
+export async function createRegionNotificationCampaign(values = {}) {
+  const firebase = await getFirebase();
+  if (!firebase) return null;
+  const payload = campaignClean(values, firebase);
+  if (!payload.region) return null;
+  const id = `${payload.createdAtMs}-${payload.type.replace(/[^a-z0-9_-]/gi, '').slice(0, 50)}-${Math.random().toString(36).slice(2, 8)}`;
+  await firebase.firestoreMod.setDoc(firebase.firestoreMod.doc(firebase.db, 'regions', payload.region, 'notificationCampaigns', id), payload);
+  trackWrites(1);
+  return { id, ...payload };
+}
+
+export async function listRegionNotificationCampaignsForProfile(profile = {}, options = {}) {
+  const firebase = await getFirebase();
+  if (!firebase) return [];
+  const regions = profileNotificationRegions(profile || {});
+  if (!regions.length) return [];
+  const sinceMs = Math.max(0, Number(options.sinceMs) || 0);
+  const perRegionLimit = Math.max(1, Math.min(20, Number(options.perRegionLimit) || 8));
+  const totalLimit = Math.max(1, Math.min(60, Number(options.totalLimit) || 20));
+  const { db, firestoreMod } = firebase;
+  const all = [];
+  for (const region of regions) {
+    const ref = firestoreMod.collection(db, 'regions', region, 'notificationCampaigns');
+    const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(perRegionLimit));
+    const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
+    trackReads(Math.max(1, snap.docs.length));
+    snap.docs.forEach(doc => {
+      const data = doc.data() || {};
+      const createdAtMs = Number(data.createdAtMs) || timestampToMs(data.createdAt) || 0;
+      if (createdAtMs > sinceMs) all.push({ id: doc.id, source: 'campaign', unread: true, ...data, createdAtMs });
+    });
+  }
+  return all
+    .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0))
+    .slice(0, totalLimit);
 }
 
 export function formatUserDate(value) {

@@ -1829,4 +1829,9 @@ window.WKD_TRANSLATIONS.pl = {
   'region.errorNicknameDuplicateGuestMessage': 'Gracz z tym nickiem jest już zarejestrowany w tym regionie. Aby zmienić dane, zaloguj się na stronie albo skontaktuj się z konsulem regionu.',
   'region.errorNicknameDuplicateGuestNote': 'To chroni tabelę przed duplikatami z różnych urządzeń.',
 
+  'notifications.campaign.registrationOpenedTitle': 'Rejestracja otwarta',
+  'notifications.campaign.registrationOpenedMessage': 'Rejestracja na pustkowie jest otwarta dla regionu R{region}. Otworzył(a): {actor}.',
+  'notifications.campaign.registrationClosedTitle': 'Rejestracja zamknięta',
+  'notifications.campaign.registrationClosedMessage': 'Rejestracja na pustkowie jest zamknięta dla regionu R{region}. Zamknął/Zamknęła: {actor}.',
+
 };

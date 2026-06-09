@@ -1,6 +1,6 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
 import { trackReads, trackWrites, trackDeletes } from '../services/usage-tracker.js?v=89';
-import { listRegionCatalog } from '../services/region-db.js?v=102';
+import { listRegionCatalog } from '../services/region-db.js?v=108';
 import {
   canUseAdminPanel,
   createUserNotification,
@@ -8,12 +8,15 @@ import {
   getGameProfile,
   getUserFarms,
   getUserProfile,
+  listRegionNotificationCampaignsForProfile,
+  readUserNotificationSummary,
+  setUserNotificationSummary,
   listPublicPlayers,
   listRegisteredUsers,
   normalizeUserRole,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js';
+} from '../services/user-db.js?v=108';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -25,6 +28,8 @@ const tag = value => Array.from(String(value || '').trim().toUpperCase().replace
 let currentUser = null;
 let currentProfile = null;
 let rows = [];
+let personalRows = [];
+let campaignRows = [];
 let sentRows = [];
 let directory = [];
 let composeReady = false;
@@ -222,6 +227,29 @@ function currentTargetLabel(type = $('#messageTargetType')?.value || 'player', r
   if (['consuls', 'officers'].includes(type)) return `${targetTypeLabel(type)} · R${region || '—'}`;
   return targetTypeLabel(type);
 }
+
+function campaignVars(item = {}) {
+  return {
+    region: regionOf(item.region),
+    actor: item.actorName || t('notifications.fromRegion', 'Від регіону'),
+    target: item.targetLabel || (item.region ? `R${regionOf(item.region)}` : '')
+  };
+}
+function itemTitle(item = {}) {
+  if (item.titleKey) return window.WKD_tv ? window.WKD_tv(item.titleKey, campaignVars(item), item.title || t('notifications.title', 'Сповіщення')) : (item.title || t('notifications.title', 'Сповіщення'));
+  return item.title || t('notifications.title', 'Сповіщення');
+}
+function itemMessage(item = {}) {
+  if (item.messageKey) return window.WKD_tv ? window.WKD_tv(item.messageKey, campaignVars(item), item.message || item.summary || '') : (item.message || item.summary || '');
+  return item.message || item.summary || '';
+}
+function isCampaign(item = {}) {
+  return item.source === 'campaign';
+}
+function mergeNotificationRows() {
+  rows = [...personalRows, ...campaignRows].sort((a, b) => createdMs(b) - createdMs(a));
+  return rows;
+}
 function messageTargetLabel(item = {}) {
   const type = String(item.targetType || '').trim() || (isMessage(item) ? 'player' : 'system');
   if (item.targetLabel) return String(item.targetLabel);
@@ -412,7 +440,7 @@ async function loadSentMessages(firebase, uid) {
 
 async function syncNotificationSummaryFromRows() {
   if (!currentUser) return;
-  await rebuildUserNotificationSummary(currentUser.uid, rows).catch(error => console.warn('[WKD] notification summary sync skipped', error));
+  await rebuildUserNotificationSummary(currentUser.uid, personalRows).catch(error => console.warn('[WKD] notification summary sync skipped', error));
 }
 
 function stopPageNotificationsWatch() {
@@ -428,7 +456,8 @@ function watchPageNotifications(firebase, uid) {
   const ref = firestoreMod.collection(db, 'users', uid, 'notifications');
   const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(NOTIFICATION_QUERY_LIMIT));
   unsubscribePageNotifications = firestoreMod.onSnapshot(q, snap => {
-    rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    personalRows = snap.docs.map(doc => ({ id: doc.id, source: 'account', ...doc.data() }));
+    mergeNotificationRows();
     syncNotificationSummaryFromRows().then(() => window.WKD?.refreshNotifications?.()).catch(() => null);
     render();
   }, error => console.warn('[WKD] notifications page realtime unavailable', error));
@@ -548,7 +577,7 @@ function senderMeta(item = {}) {
 function sourceKind(item = {}, meta = null) {
   const roleValue = normalizeUserRole(item.actorRole || meta?.role || 'player');
   const type = String(item.type || item.source || '').toLowerCase();
-  if (item.source === 'region-status' || type.includes('region') || type.includes('registration')) return 'region';
+  if (item.source === 'campaign' || item.source === 'region-status' || type.includes('region') || type.includes('registration')) return 'region';
   if (roleValue === 'admin' || roleValue === 'moderator') return 'admin';
   if (roleValue === 'consul') return 'consul';
   if (roleValue === 'officer') return 'officer';
@@ -586,17 +615,17 @@ function renderNoticeList() {
     const meta = senderMeta(item);
     return `
     <article class="notify-item ${unread ? 'is-unread' : ''}">
-      <b>${esc(item.title || t('notifications.title', 'Сповіщення'))}</b>
+      <b>${esc(itemTitle(item))}</b>
       <div class="notification-source-row">
         <span class="notification-source">${esc(sourceLabel(item, meta))}</span>
         ${meta.name ? `<span>${esc(meta.name)}</span>` : ''}
       </div>
-      <span>${esc(item.message || item.summary || '')}</span>
+      <span>${esc(itemMessage(item))}</span>
       <small>${esc(item.region ? `R${item.region} · ` : '')}${esc(dateText(item))}</small>
       <div class="notification-card-actions">
         ${unread ? `<button class="btn btn-message-soft" type="button" data-notification-action="read" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.markOneRead', 'Прочитано'))}</button>` : ''}
-        <button class="btn btn-message-soft" type="button" data-notification-action="archive" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.archive', 'Архівувати'))}</button>
-        <button class="btn btn-message-danger" type="button" data-notification-action="delete" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.delete', 'Видалити'))}</button>
+        ${isCampaign(item) ? '' : `<button class="btn btn-message-soft" type="button" data-notification-action="archive" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.archive', 'Архівувати'))}</button>`}
+        ${isCampaign(item) ? '' : `<button class="btn btn-message-danger" type="button" data-notification-action="delete" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.delete', 'Видалити'))}</button>`}
       </div>
     </article>`;
   }).join('') + paginationHtml('notifications', notices.length) : `<div class="notify-empty">${esc(t('notifications.empty', 'Нових сповіщень немає.'))}</div>`;
@@ -756,12 +785,20 @@ async function load(user) {
   const { db, firestoreMod } = firebase;
   const ref = firestoreMod.collection(db, 'users', user.uid, 'notifications');
   const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(NOTIFICATION_QUERY_LIMIT));
-  const [snap, sent] = await Promise.all([
+  const seenSummary = await readUserNotificationSummary(user.uid).catch(() => null);
+  const [snap, campaigns, sent] = await Promise.all([
     firestoreMod.getDocs(q).catch(() => ({ docs: [] })),
+    listRegionNotificationCampaignsForProfile(currentProfile || {}, {
+      sinceMs: Number(seenSummary?.campaignSeenAtMs) || 0,
+      perRegionLimit: 12,
+      totalLimit: 30
+    }).catch(() => []),
     loadSentMessages(firebase, user.uid)
   ]);
   trackReads(Math.max(1, snap.docs.length));
-  rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  personalRows = snap.docs.map(doc => ({ id: doc.id, source: 'account', ...doc.data() }));
+  campaignRows = campaigns;
+  mergeNotificationRows();
   sentRows = sent;
   await syncNotificationSummaryFromRows();
   setStatus(t('notifications.loaded', 'Сповіщення оновлено.'), 'success');
@@ -770,16 +807,31 @@ async function load(user) {
   render();
   watchPageNotifications(firebase, user.uid);
 }
+async function markCampaignsSeen(items = []) {
+  if (!currentUser || !items.length) return;
+  const maxSeen = items.reduce((max, item) => Math.max(max, Number(item.createdAtMs) || 0), 0);
+  if (!maxSeen) return;
+  await setUserNotificationSummary(currentUser.uid, { campaignSeenAtMs: maxSeen, updatedAtMs: Date.now() }).catch(() => null);
+  campaignRows = campaignRows.map(row => items.some(item => item.id === row.id) ? { ...row, unread: false, readAtMs: Date.now() } : row);
+  mergeNotificationRows();
+}
 async function markAll() {
   if (!currentUser) return;
   const firebase = await getFirebase();
   if (!firebase) return;
   const { db, firestoreMod } = firebase;
-  const batch = firestoreMod.writeBatch(db);
-  rows.filter(row => row.id && row.archived !== true && isUnread(row)).forEach(row => batch.set(firestoreMod.doc(db, 'users', currentUser.uid, 'notifications', row.id), { readAt: firestoreMod.serverTimestamp(), readAtMs: Date.now(), unread: false }, { merge: true }));
-  await batch.commit().catch(() => null);
-  trackWrites(rows.filter(row => row.id && row.archived !== true && isUnread(row)).length);
-  rows = rows.map(row => ({ ...row, unread: false, readAtMs: Date.now() }));
+  const unreadPersonal = personalRows.filter(row => row.id && row.archived !== true && isUnread(row));
+  const unreadCampaigns = campaignRows.filter(row => row.id && isUnread(row));
+  if (unreadPersonal.length) {
+    const batch = firestoreMod.writeBatch(db);
+    const nowMs = Date.now();
+    unreadPersonal.forEach(row => batch.set(firestoreMod.doc(db, 'users', currentUser.uid, 'notifications', row.id), { readAt: firestoreMod.serverTimestamp(), readAtMs: nowMs, unread: false }, { merge: true }));
+    await batch.commit().catch(() => null);
+    trackWrites(unreadPersonal.length);
+    personalRows = personalRows.map(row => unreadPersonal.some(item => item.id === row.id) ? { ...row, unread: false, readAtMs: nowMs } : row);
+  }
+  await markCampaignsSeen(unreadCampaigns);
+  mergeNotificationRows();
   await syncNotificationSummaryFromRows();
   render();
   window.WKD?.refreshNotifications?.();
@@ -878,16 +930,26 @@ function startReply(item = {}) {
 }
 async function handleNotificationAction(action = '', id = '') {
   if (!id) return;
+  const current = rows.find(row => row.id === id);
+  if (isCampaign(current)) {
+    if (action === 'read') await markCampaignsSeen([current]);
+    render();
+    window.WKD?.refreshNotifications?.();
+    return;
+  }
   if (action === 'delete' && !window.confirm(t('notifications.deleteConfirm', 'Видалити це повідомлення?'))) return;
   if (action === 'read') {
     await patchNotification(id, { readAtMs: Date.now(), unread: false });
-    rows = rows.map(row => row.id === id ? { ...row, readAtMs: Date.now(), unread: false } : row);
+    personalRows = personalRows.map(row => row.id === id ? { ...row, readAtMs: Date.now(), unread: false } : row);
+    mergeNotificationRows();
   } else if (action === 'archive') {
     await patchNotification(id, { archived: true, readAtMs: Date.now(), unread: false });
-    rows = rows.map(row => row.id === id ? { ...row, archived: true, readAtMs: Date.now(), unread: false } : row);
+    personalRows = personalRows.map(row => row.id === id ? { ...row, archived: true, readAtMs: Date.now(), unread: false } : row);
+    mergeNotificationRows();
   } else if (action === 'delete') {
     await deleteNotificationDoc(id);
-    rows = rows.filter(row => row.id !== id);
+    personalRows = personalRows.filter(row => row.id !== id);
+    mergeNotificationRows();
   }
   await syncNotificationSummaryFromRows();
   render();
@@ -910,7 +972,10 @@ async function clearArchive() {
     ...archivedNotifications.map(row => deleteNotificationDoc(row.id)),
     ...archivedSent.map(row => deleteSentMessageDoc(row.id))
   ]);
-  if (archivedNotifications.length) rows = rows.filter(row => !archivedNotifications.some(item => item.id === row.id));
+  if (archivedNotifications.length) {
+    personalRows = personalRows.filter(row => !archivedNotifications.some(item => item.id === row.id));
+    mergeNotificationRows();
+  }
   if (archivedSent.length) sentRows = sentRows.filter(row => !archivedSent.some(item => item.id === row.id));
   await syncNotificationSummaryFromRows();
   render();

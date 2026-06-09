@@ -1829,4 +1829,9 @@ window.WKD_TRANSLATIONS.uk = {
   'region.errorNicknameDuplicateGuestMessage': 'Гравець з таким нікнеймом уже зареєстрований у цьому регіоні. Щоб змінити дані, зареєструйся на сайті або звернись до консула регіону.',
   'region.errorNicknameDuplicateGuestNote': 'Це захищає таблицю від дублікатів з різних пристроїв.',
 
+  'notifications.campaign.registrationOpenedTitle': 'Реєстрація відкрита',
+  'notifications.campaign.registrationOpenedMessage': 'Реєстрація на пустош відкрита для регіону R{region}. Відкрив: {actor}.',
+  'notifications.campaign.registrationClosedTitle': 'Реєстрація закрита',
+  'notifications.campaign.registrationClosedMessage': 'Реєстрація на пустош закрита для регіону R{region}. Закрив: {actor}.',
+
 };

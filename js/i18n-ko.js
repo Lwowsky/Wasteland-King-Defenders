@@ -1829,4 +1829,9 @@ window.WKD_TRANSLATIONS.ko = {
   'region.errorNicknameDuplicateGuestMessage': '이 지역에는 같은 닉네임의 플레이어가 이미 등록되어 있습니다. 데이터를 변경하려면 사이트에 가입하거나 지역 영사에게 문의하세요.',
   'region.errorNicknameDuplicateGuestNote': '이 기능은 다른 기기에서 발생하는 중복을 방지합니다.',
 
+  'notifications.campaign.registrationOpenedTitle': '등록이 열렸습니다',
+  'notifications.campaign.registrationOpenedMessage': '지역 R{region}의 황무지 등록이 열렸습니다. 연 사람: {actor}.',
+  'notifications.campaign.registrationClosedTitle': '등록이 닫혔습니다',
+  'notifications.campaign.registrationClosedMessage': '지역 R{region}의 황무지 등록이 닫혔습니다. 닫은 사람: {actor}.',
+
 };
