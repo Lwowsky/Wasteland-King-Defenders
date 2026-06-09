@@ -1,4 +1,4 @@
-import { resolveRegionTableShare, troopLabel, shiftLabel } from '../services/region-db.js?v=101';
+import { resolveRegionTableShare, troopLabel, shiftLabel } from '../services/region-db.js?v=102';
 import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=89';
 import { isRegionTableCacheEnabled, readRegionTableShare } from '../services/region-table-cache.js?v=99';
 

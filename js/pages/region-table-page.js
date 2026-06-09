@@ -17,7 +17,7 @@ import {
   listRegionAlliances,
   listRegionCatalog,
   shareRegionTable
-} from '../services/region-db.js?v=101';
+} from '../services/region-db.js?v=102';
 import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot } from '../services/region-table-cache.js?v=99';
 
 const $ = selector => document.querySelector(selector);
@@ -225,9 +225,13 @@ function openRegion(region) {
     setStatus(t('region.openRegionPrompt', 'Enter the region number you want to open.'), 'warn');
     return;
   }
-  const url = new URL('region-table.html', window.location.href);
+  const url = new URL(window.location.href);
+  url.pathname = url.pathname.replace(/\/region-table(?:\.html)?\/?$/, '/region-table.html');
+  if (!/region-table\.html$/i.test(url.pathname)) url.pathname = `${url.pathname.replace(/\/$/, '')}/region-table.html`;
   url.searchParams.set('region', safeRegion);
-  window.location.href = url.toString();
+  url.searchParams.delete('r');
+  url.searchParams.set('t', String(Date.now()));
+  window.location.assign(url.toString());
 }
 
 async function copyRegionFormLink() {
@@ -463,10 +467,11 @@ async function load(user) {
   const profile = await getUserProfile(user.uid).catch(() => null);
   currentProfile = profile;
   const requestedRegion = readRegionFromUrl();
-  if (requestedRegion && !canViewRegion(profile, requestedRegion, user)) {
+  const canUseRequestedRegion = Boolean(requestedRegion && (canViewAnyRegion(profile || {}, user) || canViewRegion(profile || {}, requestedRegion, user)));
+  if (requestedRegion && !canUseRequestedRegion) {
     setStatus(t('region.otherRegionDenied', 'Only an admin, moderator, or a saved player/farm from that region can open another region.'), 'warn');
   }
-  const allowedRegion = canViewRegion(profile, requestedRegion, user) ? requestedRegion : '';
+  const allowedRegion = canUseRequestedRegion ? requestedRegion : '';
   let result = null;
   if (isRegionTableCacheEnabled() && allowedRegion) {
     result = await readRegionTableSnapshot(user, allowedRegion).catch(error => {

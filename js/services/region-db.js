@@ -796,7 +796,8 @@ export async function getMyRegionContext(user, preferredRegion = '') {
   const requestedRegion = normalizeRegion(preferredRegion);
   const fallbackGame = bestRegionGame(profile || {});
   const fallbackRegion = normalizeRegion(fallbackGame.region);
-  const region = requestedRegion && canViewRegion(profile || {}, requestedRegion, user) ? requestedRegion : fallbackRegion;
+  const canUseRequested = Boolean(requestedRegion && (canViewAnyRegion(profile || {}, user) || canViewRegion(profile || {}, requestedRegion, user)));
+  const region = canUseRequested ? requestedRegion : fallbackRegion;
   const game = gameForRegion(profile || {}, region) || fallbackGame;
   if (!profile || !region) throw new Error('profile-region-required');
   return { profile, game, region };
@@ -1812,7 +1813,20 @@ export async function saveWastelandRegistration(user, values, regionOverride = '
 
   await writeRegionActionLog({ db, firestoreMod }, user || { uid: 'guest' }, profile || {}, region, 'registration_submitted', { summary: data.nickname || 'Заявка', alliance: data.alliance, targetName: data.nickname });
   if (user?.uid) {
-    await createUserNotification(user.uid, { type:'registration_submitted', title: serviceT('notifications.registrationSubmitted','Заявку відправлено'), message: `R${region} · ${data.nickname || ''}`, region, alliance: data.alliance }).catch(() => null);
+    const actorGame = gameForRegion(profile || {}, region) || bestRegionGame(profile || {});
+    await createUserNotification(user.uid, {
+      type: 'registration_submitted',
+      title: serviceT('notifications.registrationSubmitted', 'Заявку відправлено'),
+      message: `R${region} · ${data.nickname || ''}`,
+      region,
+      alliance: data.alliance,
+      actorUid: user.uid,
+      actorName: getRegionActorName(profile || {}, region, user) || data.nickname || user.uid,
+      actorRole: roleForRegion(profile || {}, region, user),
+      actorRoleText: roleLabel(roleForRegion(profile || {}, region, user)),
+      targetType: 'region',
+      targetLabel: `R${region}${actorGame?.nickname ? ` · ${actorGame.nickname}` : ''}`
+    }).catch(() => null);
   }
   return data;
 }
