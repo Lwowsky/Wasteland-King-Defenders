@@ -1,4 +1,5 @@
-import { formatUserDate, roleLabel } from '../services/user-db.js';
+import { formatUserDate, getUserProfile, makePublicPlayer, roleLabel } from '../services/user-db.js';
+import { watchAuth } from '../services/firebase-service.js';
 import { troopLabel } from '../services/region-db.js?v=102';
 import { localizedCountry } from '../services/country-utils.js';
 
@@ -11,6 +12,8 @@ let sortState = { key: 'region', dir: 'asc' };
 let statsReady = false;
 let activeModalPlayer = null;
 let activeModalTab = 'profile';
+let currentUser = null;
+let liveStatsPatchReady = false;
 
 function t(key, fallback = '') {
   const value = window.WKD_t ? window.WKD_t(key) : '';
@@ -75,6 +78,48 @@ async function fetchPublicStatsPlayers({ force = false } = {}) {
   return list;
 }
 
+
+function playerIdentityKey(player = {}) {
+  return [player.nickname || player.gameNick || '', player.region || '', player.alliance || '']
+    .map(value => String(value || '').trim().toLowerCase())
+    .join('|');
+}
+
+function mergeLivePublicPlayer(livePlayer = null) {
+  if (!livePlayer?.nickname) return false;
+  const liveKey = playerIdentityKey(livePlayer);
+  const index = players.findIndex(item => {
+    if (item.uid && livePlayer.uid && item.uid === livePlayer.uid) return true;
+    return playerIdentityKey(item) === liveKey;
+  });
+  const merged = index >= 0
+    ? { ...players[index], ...livePlayer, publicKey: players[index].publicKey || players[index].uid || livePlayer.publicKey || livePlayer.uid || liveKey }
+    : { ...livePlayer, publicKey: livePlayer.publicKey || livePlayer.uid || liveKey };
+  if (index >= 0) players[index] = merged;
+  else players.unshift(merged);
+  return true;
+}
+
+async function refreshCurrentUserLiveStats({ rerender = true } = {}) {
+  if (!currentUser?.uid || !detailsLoaded) return;
+  try {
+    const profile = await getUserProfile(currentUser.uid);
+    if (!profile?.profileComplete) return;
+    const livePlayer = makePublicPlayer({ ...profile, uid: currentUser.uid });
+    if (mergeLivePublicPlayer(livePlayer) && rerender) {
+      renderStats();
+      renderPlayers();
+      if (activeModalPlayer) {
+        const activeKey = activeModalPlayer.publicKey || activeModalPlayer.uid || playerIdentityKey(activeModalPlayer);
+        const fresh = players.find(item => (item.publicKey || item.uid || playerIdentityKey(item)) === activeKey) || livePlayer;
+        openPlayerModal(fresh, activeModalTab);
+      }
+    }
+  } catch (error) {
+    console.warn('[WKD] live current user stats patch failed:', error);
+  }
+}
+
 function hasUsableStatsSummary(summary = {}) {
   if (!summary || typeof summary !== 'object') return false;
   const generated = Boolean(summary.generatedAt || summary.updatedAt || summary.lastFullRebuildDate);
@@ -130,6 +175,7 @@ async function loadSummaryOnly(options = {}) {
     statsSummaryCache = hasUsableStatsSummary(summary) ? summary : null;
     players = Array.isArray(publicPlayers) ? publicPlayers : [];
     detailsLoaded = true;
+    await refreshCurrentUserLiveStats({ rerender: false });
     renderStats();
     renderPlayers();
     if (isPublicStatsJsonEmpty(summary, publicPlayers)) {
@@ -502,6 +548,11 @@ async function initStatsPage() {
   if (statsReady || !$('#publicPlayersBody')) return;
   statsReady = true;
   bindControls();
+  await watchAuth(user => {
+    currentUser = user;
+    if (liveStatsPatchReady) refreshCurrentUserLiveStats().catch(console.error);
+  }).catch?.(() => null);
+  liveStatsPatchReady = true;
   await loadSummaryOnly().catch(error => {
     console.error(error);
     setStatus(t('stats.loadFailed', 'Could not load statistics. Try again.'), 'error');

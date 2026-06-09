@@ -21,6 +21,8 @@ import {
 import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot } from '../services/region-table-cache.js?v=99';
 
 const $ = selector => document.querySelector(selector);
+const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
+const SOURCE_MODE_KEY = 'wkd.players.sourceMode';
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 const tv = (key, fallback = '', vars = {}) => {
   let text = t(key, fallback);
@@ -146,6 +148,20 @@ function eventStartText(settings = currentSettings || {}) {
   return ms ? formatUtcAndLocal(ms) : '—';
 }
 
+
+function readStoredActiveRegion() {
+  try { return normalizeRegion(localStorage.getItem(ACTIVE_REGION_KEY) || ''); } catch { return ''; }
+}
+
+function rememberActiveRegion(region = currentRegion) {
+  const safeRegion = normalizeRegion(region);
+  if (!safeRegion) return;
+  try {
+    localStorage.setItem(ACTIVE_REGION_KEY, safeRegion);
+    localStorage.setItem(SOURCE_MODE_KEY, 'region');
+  } catch {}
+}
+
 function profileRegionOptions(profile = currentProfile || {}) {
   const games = [getGameProfile(profile || {}), ...getUserFarms(profile || {})];
   const seen = new Map();
@@ -225,6 +241,7 @@ function openRegion(region) {
     setStatus(t('region.openRegionPrompt', 'Enter the region number you want to open.'), 'warn');
     return;
   }
+  rememberActiveRegion(safeRegion);
   const url = new URL(window.location.href);
   url.pathname = url.pathname.replace(/\/region-table(?:\.html)?\/?$/, '/region-table.html');
   if (!/region-table\.html$/i.test(url.pathname)) url.pathname = `${url.pathname.replace(/\/$/, '')}/region-table.html`;
@@ -466,7 +483,7 @@ async function load(user) {
   await saveSignedInUser(user).catch(() => null);
   const profile = await getUserProfile(user.uid).catch(() => null);
   currentProfile = profile;
-  const requestedRegion = readRegionFromUrl();
+  const requestedRegion = readRegionFromUrl() || readStoredActiveRegion();
   const canUseRequestedRegion = Boolean(requestedRegion && (canViewAnyRegion(profile || {}, user) || canViewRegion(profile || {}, requestedRegion, user)));
   if (requestedRegion && !canUseRequestedRegion) {
     setStatus(t('region.otherRegionDenied', 'Only an admin, moderator, or a saved player/farm from that region can open another region.'), 'warn');
@@ -490,6 +507,7 @@ async function load(user) {
   }
   currentProfile = result.profile || profile;
   currentRegion = result.region;
+  rememberActiveRegion(currentRegion);
   rows = result.rows || [];
   currentSettings = result.settings || {};
   await loadAllianceColors();
