@@ -1,14 +1,10 @@
 name: Update public stats cache
 
 on:
-  workflow_dispatch:
-    inputs:
-      force_full:
-        description: 'Force full rebuild from Firebase users/publicPlayers'
-        required: false
-        default: '1'
+  workflow_dispatch: {}
   schedule:
-    - cron: '*/10 * * * *'
+    # 2 рази на день: 03:00 і 15:00 UTC
+    - cron: '0 3,15 * * *'
 
 permissions:
   contents: write
@@ -36,12 +32,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Generate public stats cache
+      - name: Generate public stats cache from Cloudflare D1
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          STATS_FULL_REBUILD_HOUR_UTC: '3'
-          STATS_MAX_PENDING_CHANGES: '250'
-          STATS_FORCE_FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.force_full || '0' }}
+          PUBLIC_STATS_EXPORT_URL: ${{ vars.PUBLIC_STATS_EXPORT_URL }}
+          PUBLIC_STATS_EXPORT_SECRET: ${{ secrets.PUBLIC_STATS_EXPORT_SECRET }}
         run: node scripts/update-public-stats-cache.mjs
 
       - name: Commit updated cache

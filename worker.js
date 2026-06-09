@@ -10,7 +10,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
   "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, X-WKD-Region-Table-Secret",
+    "Content-Type, Authorization, X-WKD-Region-Table-Secret, X-WKD-Stats-Secret",
   "Access-Control-Max-Age": "86400",
 };
 
@@ -108,6 +108,17 @@ async function ensureRegionTableSchema(db) {
       )`,
       `CREATE INDEX IF NOT EXISTS idx_region_access_uid ON region_access(uid)`,
       `CREATE INDEX IF NOT EXISTS idx_region_table_shares_region ON region_table_shares(region)`,
+      `CREATE TABLE IF NOT EXISTS public_stats_pages (
+        bucket INTEGER PRIMARY KEY,
+        updated_at_ms INTEGER NOT NULL DEFAULT 0,
+        players_json TEXT NOT NULL DEFAULT '[]'
+      )`,
+      `CREATE TABLE IF NOT EXISTS public_stats_meta (
+        id TEXT PRIMARY KEY,
+        version INTEGER NOT NULL DEFAULT 0,
+        updated_at_ms INTEGER NOT NULL DEFAULT 0,
+        source TEXT NOT NULL DEFAULT 'cloudflare-d1'
+      )`,
     ];
     for (const statement of statements) {
       await db.prepare(statement).run();
@@ -695,6 +706,252 @@ async function handleRegionTableShareRead(request, env, codeValue) {
   );
 }
 
+
+const PUBLIC_STATS_BUCKETS = 64;
+
+function statsSecret(env) {
+  return clean(env.STATS_EXPORT_SECRET || '', 240);
+}
+
+function requestStatsSecret(request) {
+  return clean(request.headers.get('X-WKD-Stats-Secret') || '', 240);
+}
+
+function hasValidStatsSecret(request, env) {
+  const secret = statsSecret(env);
+  return Boolean(secret && requestStatsSecret(request) === secret);
+}
+
+function publicStatsBucketForKey(key = '') {
+  const text = clean(key, 240) || 'unknown';
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) % PUBLIC_STATS_BUCKETS;
+}
+
+function hexFromBytes(bytes) {
+  return Array.from(bytes).map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function publicStatsKeyForUid(uid = '') {
+  const safeUid = clean(uid, 180);
+  if (!safeUid) return '';
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(safeUid));
+  return hexFromBytes(new Uint8Array(digest)).slice(0, 24);
+}
+
+function normalizeStatsRole(value = '') {
+  const role = clean(value || 'player', 40).toLowerCase();
+  return ['admin', 'moderator', 'consul', 'officer', 'player'].includes(role) ? role : 'player';
+}
+
+function sanitizePublicStatsWasteland(profile = null) {
+  if (!profile || typeof profile !== 'object') return null;
+  return {
+    lairLevel: clean(profile.lairLevel, 12),
+    troopType: clean(profile.troopType, 24),
+    tier: clean(profile.tier, 12).toUpperCase(),
+    marchSize: clean(profile.marchSize, 24),
+    rallySize: clean(profile.rallySize, 24),
+    captainReady: Boolean(profile.captainReady),
+    readyToJoin: Boolean(profile.readyToJoin),
+    readyToAttack: Boolean(profile.readyToAttack),
+    shift: clean(profile.shift, 24),
+    extraEnabled: Boolean(profile.extraEnabled),
+    extraSquads: Array.isArray(profile.extraSquads) ? profile.extraSquads.slice(0, 6).map(item => ({
+      troopType: clean(item?.troopType, 24),
+      tier: clean(item?.tier, 12).toUpperCase()
+    })).filter(item => item.troopType || item.tier) : [],
+    extraTroopType: clean(profile.extraTroopType, 24),
+    extraTier: clean(profile.extraTier, 12).toUpperCase()
+  };
+}
+
+function sanitizePublicStatsFarm(farm = {}, index = 0, showExtra = false) {
+  return {
+    farmId: clean(farm.farmId || farm.id || `farm-${index + 1}`, 40),
+    nickname: clean(farm.nickname || farm.gameNick || `Farm ${index + 1}`, 80),
+    region: normalizeRegion(farm.region),
+    alliance: clean(farm.alliance, 12),
+    rank: clean(farm.rank || 'p1', 16).toLowerCase(),
+    shk: clean(farm.shk, 12),
+    role: normalizeStatsRole(farm.role || 'player'),
+    roleLabel: clean(farm.roleLabel || farm.role || 'player', 40),
+    wastelandProfile: showExtra ? sanitizePublicStatsWasteland(farm.wastelandProfile || {}) : null
+  };
+}
+
+async function sanitizePublicStatsPlayer(raw = {}, uid = '') {
+  const publicKey = clean(raw.publicKey || await publicStatsKeyForUid(uid || raw.uid || raw.id), 40);
+  const visibility = raw.profileVisibility && typeof raw.profileVisibility === 'object' ? raw.profileVisibility : {};
+  const showExtra = Boolean(visibility.showWastelandInfo);
+  const showFarms = Boolean(visibility.showFarmsInfo);
+  const farms = Array.isArray(raw.farms) ? raw.farms.filter(farm => farm && (farm.nickname || farm.gameNick || farm.region || farm.alliance)) : [];
+  const nickname = clean(raw.nickname || raw.gameNick, 80);
+  const region = normalizeRegion(raw.region);
+  const alliance = clean(raw.alliance, 12);
+  const shk = clean(raw.shk, 12);
+  const complete = Boolean(raw.profileComplete !== false && nickname && region && alliance && shk);
+  if (!complete || !publicKey) return null;
+  return {
+    publicKey,
+    nickname,
+    gameNick: clean(raw.gameNick || nickname, 80),
+    region,
+    alliance,
+    rank: clean(raw.rank || 'p1', 16).toLowerCase(),
+    shk,
+    role: normalizeStatsRole(raw.role || 'player'),
+    roleLabel: clean(raw.roleLabel || raw.role || 'player', 40),
+    country: clean(raw.country, 60),
+    countryCode: clean(raw.countryCode, 8).toUpperCase(),
+    farmCount: Math.max(0, Number(raw.farmCount || farms.length) || 0),
+    profileComplete: true,
+    profileVisibility: { showWastelandInfo: showExtra, showFarmsInfo: showFarms },
+    createdAt: raw.createdAt || null,
+    updatedAt: raw.updatedAt || Date.now(),
+    wastelandProfile: showExtra ? sanitizePublicStatsWasteland(raw.wastelandProfile || {}) : null,
+    farms: showFarms ? farms.map((farm, index) => sanitizePublicStatsFarm(farm, index, showExtra)) : []
+  };
+}
+
+function parseArrayJson(value = '') {
+  const data = parseJson(value, []);
+  return Array.isArray(data) ? data : [];
+}
+
+async function readPublicStatsPage(db, bucket) {
+  await ensureRegionTableSchema(db);
+  const row = await db.prepare(
+    `SELECT bucket, players_json FROM public_stats_pages WHERE bucket = ?1`
+  ).bind(bucket).first();
+  return parseArrayJson(row?.players_json);
+}
+
+async function writePublicStatsPage(db, bucket, players = []) {
+  await ensureRegionTableSchema(db);
+  const cleanPlayers = (Array.isArray(players) ? players : [])
+    .filter(player => player?.publicKey && player?.nickname)
+    .sort((a, b) => String(a.region || '').localeCompare(String(b.region || ''), 'uk', { numeric: true }) || String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk', { numeric: true }));
+  const updatedAtMs = Date.now();
+  await db.batch([
+    db.prepare(
+      `INSERT INTO public_stats_pages (bucket, updated_at_ms, players_json)
+       VALUES (?1, ?2, ?3)
+       ON CONFLICT(bucket) DO UPDATE SET
+         updated_at_ms = excluded.updated_at_ms,
+         players_json = excluded.players_json`
+    ).bind(bucket, updatedAtMs, JSON.stringify(cleanPlayers)),
+    db.prepare(
+      `INSERT INTO public_stats_meta (id, version, updated_at_ms, source)
+       VALUES ('current', ?1, ?2, 'cloudflare-d1')
+       ON CONFLICT(id) DO UPDATE SET
+         version = excluded.version,
+         updated_at_ms = excluded.updated_at_ms,
+         source = excluded.source`
+    ).bind(updatedAtMs, updatedAtMs)
+  ]);
+  return cleanPlayers.length;
+}
+
+async function handlePublicStatsPlayerUpsert(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const uid = clean(body?.uid || body?.player?.uid || user.uid, 180);
+  if (!uid) return json({ ok: false, error: 'uid_required' }, 400);
+  if (uid !== user.uid && !isAdminUid(env, user.uid)) return json({ ok: false, error: 'stats_owner_mismatch' }, 403);
+  const publicKey = await publicStatsKeyForUid(uid);
+  const bucket = publicStatsBucketForKey(uid);
+  const page = await readPublicStatsPage(db, bucket);
+  const next = page.filter(player => clean(player.publicKey, 40) !== publicKey);
+  const active = body?.active !== false;
+  let saved = false;
+  if (active) {
+    const player = await sanitizePublicStatsPlayer({ ...(body?.player || {}), uid, publicKey }, uid);
+    if (player) {
+      next.push(player);
+      saved = true;
+    }
+  }
+  const rowsCount = await writePublicStatsPage(db, bucket, next);
+  return json({ ok: true, bucket, saved, rowsCount });
+}
+
+async function handlePublicStatsImport(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  if (!hasValidStatsSecret(request, env)) return json({ ok: false, error: 'stats_secret_required' }, 403);
+  await ensureRegionTableSchema(db);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const rawPlayers = Array.isArray(body?.players) ? body.players : [];
+  const pages = new Map();
+  for (const raw of rawPlayers.slice(0, 50000)) {
+    const uid = clean(raw.uid || raw.id || raw.publicKey || raw.nickname, 180);
+    const publicKey = clean(raw.publicKey || await publicStatsKeyForUid(uid), 40);
+    const bucket = publicStatsBucketForKey(uid || publicKey);
+    const player = await sanitizePublicStatsPlayer({ ...raw, publicKey }, uid || publicKey);
+    if (!player) continue;
+    if (!pages.has(bucket)) pages.set(bucket, []);
+    pages.get(bucket).push(player);
+  }
+  await ensureRegionTableSchema(db);
+  const statements = [];
+  for (let bucket = 0; bucket < PUBLIC_STATS_BUCKETS; bucket += 1) {
+    const players = pages.get(bucket) || [];
+    statements.push(db.prepare(
+      `INSERT INTO public_stats_pages (bucket, updated_at_ms, players_json)
+       VALUES (?1, ?2, ?3)
+       ON CONFLICT(bucket) DO UPDATE SET
+         updated_at_ms = excluded.updated_at_ms,
+         players_json = excluded.players_json`
+    ).bind(bucket, Date.now(), JSON.stringify(players.sort((a, b) => String(a.region || '').localeCompare(String(b.region || ''), 'uk', { numeric: true }) || String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk', { numeric: true })))));
+  }
+  statements.push(db.prepare(
+    `INSERT INTO public_stats_meta (id, version, updated_at_ms, source)
+     VALUES ('current', ?1, ?2, 'cloudflare-d1-import')
+     ON CONFLICT(id) DO UPDATE SET
+       version = excluded.version,
+       updated_at_ms = excluded.updated_at_ms,
+       source = excluded.source`
+  ).bind(Date.now(), Date.now()));
+  for (let i = 0; i < statements.length; i += 40) {
+    await db.batch(statements.slice(i, i + 40));
+  }
+  return json({ ok: true, buckets: pages.size, players: [...pages.values()].reduce((sum, list) => sum + list.length, 0) });
+}
+
+async function handlePublicStatsExport(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  if (statsSecret(env) && !hasValidStatsSecret(request, env)) return json({ ok: false, error: 'stats_secret_required' }, 403);
+  await ensureRegionTableSchema(db);
+  const rows = await db.prepare(
+    `SELECT bucket, updated_at_ms, players_json FROM public_stats_pages ORDER BY bucket ASC`
+  ).all();
+  const players = [];
+  for (const row of rows?.results || []) {
+    players.push(...parseArrayJson(row.players_json));
+  }
+  players.sort((a, b) => String(a.region || '').localeCompare(String(b.region || ''), 'uk', { numeric: true }) || String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk', { numeric: true }));
+  const meta = await db.prepare(`SELECT version, updated_at_ms, source FROM public_stats_meta WHERE id = 'current'`).first();
+  return json({
+    ok: true,
+    source: 'cloudflare-d1-public-stats',
+    generatedAt: new Date().toISOString(),
+    d1Version: Number(meta?.version || 0),
+    d1UpdatedAtMs: Number(meta?.updated_at_ms || 0),
+    buckets: rows?.results?.length || 0,
+    players
+  }, 200, 'private, no-store');
+}
+
 async function handleContact(request, env) {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -800,6 +1057,18 @@ export default {
     }
 
     try {
+      if (url.pathname === "/api/public-stats/player" && request.method === "POST") {
+        return await handlePublicStatsPlayerUpsert(request, env);
+      }
+
+      if (url.pathname === "/api/public-stats/import" && request.method === "POST") {
+        return await handlePublicStatsImport(request, env);
+      }
+
+      if (url.pathname === "/api/public-stats/export" && request.method === "GET") {
+        return await handlePublicStatsExport(request, env);
+      }
+
       if (url.pathname === "/api/region-table" && request.method === "GET") {
         return await handleRegionTableRead(request, env);
       }

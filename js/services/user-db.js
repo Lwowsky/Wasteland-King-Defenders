@@ -1,6 +1,7 @@
 import { getFirebase } from './firebase-service.js';
 import { readCache, writeCache, removeCache } from './local-cache.js?v=89';
 import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=89';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=104';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -388,6 +389,16 @@ export function makePublicPlayer(data = {}) {
 }
 
 
+async function mirrorPublicStatsFromPublicPlayer(publicPlayer = {}, source = 'profile-save') {
+  try {
+    const firebase = await getFirebase();
+    const actor = firebase?.auth?.currentUser || null;
+    if (!actor || !publicPlayer?.uid) return;
+    await mirrorPublicStatsPlayer(actor, publicPlayer);
+  } catch (error) {
+    console.warn(`[WKD] public stats D1 mirror skipped after ${source}:`, error?.message || error);
+  }
+}
 
 async function markStatsChanged(db, firestoreMod, uid = '', changeType = 'profile_changed', source = 'client') {
   const safeUid = normalizeText(uid);
@@ -423,6 +434,7 @@ async function writePublicPlayerFromProfile(db, firestoreMod, profile = {}) {
   }
   removeCache('publicPlayers.v89');
   await markStatsChanged(db, firestoreMod, profile.uid, 'profile_changed', 'profile-save');
+  await mirrorPublicStatsFromPublicPlayer(publicPlayer, 'profile-save');
   return publicPlayer;
 }
 
@@ -1046,6 +1058,7 @@ export async function updateUserByAdmin(uid, values) {
   }
   await batch.commit();
   await markStatsChanged(db, firestoreMod, uid, 'admin_changed', 'admin-main').catch(() => null);
+  await mirrorPublicStatsFromPublicPlayer(publicPlayer, 'admin-main');
   const changed = [];
   if (oldGame.rank !== clean.rank) changed.push(`${serviceT('account.rank','Ранг')}: ${clean.rank.toUpperCase()}`);
   if (oldProfile?.role !== role) changed.push(`${serviceT('account.role','Роль')}: ${roleLabel(role)}`);
@@ -1101,6 +1114,7 @@ export async function updateFarmByAdmin(uid, farmId, values) {
   if (oldProfile.profileComplete) batch.set(firestoreMod.doc(db, 'publicPlayers', uid), publicPlayer, { merge: true });
   await batch.commit();
   await markStatsChanged(db, firestoreMod, uid, 'admin_changed', 'admin-farm').catch(() => null);
+  await mirrorPublicStatsFromPublicPlayer(publicPlayer, 'admin-farm');
   const oldFarm = farms[index] || {};
   const changed = [];
   if (oldFarm.rank !== nextFarm.rank) changed.push(`${serviceT('account.rank','Ранг')}: ${nextFarm.rank.toUpperCase()}`);
@@ -1167,6 +1181,7 @@ export async function approveRoleRequest(requestId) {
     if (userData.profileComplete) batch.set(firestoreMod.doc(db, 'publicPlayers', uid), updatedPublic, { merge: true });
     await batch.commit();
     await markStatsChanged(db, firestoreMod, uid, 'role_changed', 'role-approve').catch(() => null);
+    await mirrorPublicStatsFromPublicPlayer(updatedPublic, 'role-approve-farm');
     await createUserNotification(uid, { type:'role_approved', title: serviceT('notifications.roleApproved','Роль підтверджено'), message: `${request.farmName || serviceT('account.farm','Ферма')}: ${roleLabel(role)}`, region: request.region, alliance: request.alliance }).catch(() => null);
     return;
   }
@@ -1181,6 +1196,7 @@ export async function approveRoleRequest(requestId) {
   if (region) batch.set(firestoreMod.doc(db, 'regions', region, 'players', uid), updatedPublic, { merge: true });
   await batch.commit();
   await markStatsChanged(db, firestoreMod, uid, 'role_changed', 'role-approve').catch(() => null);
+  await mirrorPublicStatsFromPublicPlayer(updatedPublic, 'role-approve');
   await createUserNotification(uid, { type:'role_approved', title: serviceT('notifications.roleApproved','Роль підтверджено'), message: roleLabel(role), region, alliance: request.alliance }).catch(() => null);
 }
 
@@ -1220,4 +1236,5 @@ export async function declineRoleRequest(requestId) {
   if (userData.profileComplete) batch.set(firestoreMod.doc(db, 'publicPlayers', uid), publicPlayer, { merge: true });
   await batch.commit();
   await markStatsChanged(db, firestoreMod, uid, 'role_changed', 'role-decline').catch(() => null);
+  await mirrorPublicStatsFromPublicPlayer(publicPlayer, 'role-decline');
 }

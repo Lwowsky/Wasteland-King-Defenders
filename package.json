@@ -4,7 +4,8 @@
     "deploy": "wrangler deploy",
     "secret:token": "wrangler secret put TELEGRAM_BOT_TOKEN",
     "secret:chat": "wrangler secret put TELEGRAM_CHAT_ID",
-    "stats:cache": "node scripts/update-public-stats-cache.mjs"
+    "stats:cache": "node scripts/update-public-stats-cache.mjs",
+    "stats:import-d1": "node scripts/import-public-stats-cache-to-d1.mjs"
   },
   "devDependencies": {
     "wrangler": "latest"

@@ -37,3 +37,16 @@ CREATE TABLE IF NOT EXISTS region_table_shares (
 
 CREATE INDEX IF NOT EXISTS idx_region_access_uid ON region_access(uid);
 CREATE INDEX IF NOT EXISTS idx_region_table_shares_region ON region_table_shares(region);
+
+CREATE TABLE IF NOT EXISTS public_stats_pages (
+  bucket INTEGER PRIMARY KEY,
+  updated_at_ms INTEGER NOT NULL DEFAULT 0,
+  players_json TEXT NOT NULL DEFAULT '[]'
+);
+
+CREATE TABLE IF NOT EXISTS public_stats_meta (
+  id TEXT PRIMARY KEY,
+  version INTEGER NOT NULL DEFAULT 0,
+  updated_at_ms INTEGER NOT NULL DEFAULT 0,
+  source TEXT NOT NULL DEFAULT 'cloudflare-d1'
+);

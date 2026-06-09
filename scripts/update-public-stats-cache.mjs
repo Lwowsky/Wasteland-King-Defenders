@@ -9,6 +9,8 @@ const PLAYERS_CACHE_PATH = process.env.STATS_PLAYERS_CACHE_PATH || 'public-cache
 const FULL_REBUILD_HOUR_UTC = Number(process.env.STATS_FULL_REBUILD_HOUR_UTC ?? 3);
 const MAX_PENDING_CHANGES = Number(process.env.STATS_MAX_PENDING_CHANGES ?? 250);
 const CHANGE_RETENTION_DAYS = Number(process.env.STATS_CHANGE_RETENTION_DAYS ?? 30);
+const PUBLIC_STATS_EXPORT_URL = process.env.PUBLIC_STATS_EXPORT_URL || '';
+const PUBLIC_STATS_EXPORT_SECRET = process.env.PUBLIC_STATS_EXPORT_SECRET || '';
 
 function parseServiceAccount() {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -320,6 +322,41 @@ function shouldFullRebuild(existing) {
   return now.getUTCHours() >= FULL_REBUILD_HOUR_UTC && existing.lastFullRebuildDate !== todayUtc();
 }
 
+function buildSummaryFromPublicPlayers(publicPlayers = [], extra = {}) {
+  const summary = emptySummary({ source: 'cloudflare-d1-public-stats', lastFullRebuildDate: todayUtc(), ...extra });
+  const rows = Array.isArray(publicPlayers) ? publicPlayers : [];
+  rows.forEach(player => {
+    const entries = extractEntries(player);
+    const hiddenFarmCount = hiddenFarmCountForPlayer(player, entries);
+    applyEntries(summary, entries, +1);
+    applyHiddenFarmCount(summary, hiddenFarmCount, +1);
+  });
+  return normalizeSummary(summary);
+}
+
+async function fetchPublicStatsFromD1() {
+  if (!PUBLIC_STATS_EXPORT_URL) return null;
+  const response = await fetch(PUBLIC_STATS_EXPORT_URL, {
+    headers: {
+      Accept: 'application/json',
+      ...(PUBLIC_STATS_EXPORT_SECRET ? { 'X-WKD-Stats-Secret': PUBLIC_STATS_EXPORT_SECRET } : {})
+    }
+  });
+  let data = null;
+  try { data = await response.json(); } catch { data = null; }
+  if (!response.ok || data?.ok === false) {
+    throw new Error(data?.error || `public-stats-export-${response.status}`);
+  }
+  const publicPlayers = sortPublicPlayers(Array.isArray(data?.players) ? data.players.filter(player => player && player.profileComplete !== false && player.publicKey && player.nickname) : []);
+  const summary = buildSummaryFromPublicPlayers(publicPlayers, {
+    source: data?.source || 'cloudflare-d1-public-stats',
+    d1Version: data?.d1Version || null,
+    d1UpdatedAtMs: data?.d1UpdatedAtMs || 0,
+    d1Buckets: data?.buckets || 0
+  });
+  return { summary, publicPlayers };
+}
+
 async function commitBatchQueue(db, operations) {
   let batch = db.batch();
   let count = 0;
@@ -472,6 +509,14 @@ async function cleanupOldChanges(db) {
 }
 
 async function main() {
+  if (PUBLIC_STATS_EXPORT_URL) {
+    const result = await fetchPublicStatsFromD1();
+    await writeJson(SUMMARY_CACHE_PATH, result.summary);
+    await writeJson(PLAYERS_CACHE_PATH, result.publicPlayers);
+    console.log(`Stats cache updated from D1: players=${result.summary.totalPlayers}, farms=${result.summary.totalFarms}, publicRows=${result.publicPlayers.length}, buckets=${result.summary.d1Buckets || 0}`);
+    return;
+  }
+
   const db = initFirebase();
   const existing = await readJson(SUMMARY_CACHE_PATH, emptySummary());
   const existingPlayers = await readJson(PLAYERS_CACHE_PATH, []);
