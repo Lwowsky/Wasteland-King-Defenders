@@ -1835,5 +1835,12 @@ window.WKD_TRANSLATIONS.en = {
   'notifications.campaign.registrationOpenedMessage': 'Wasteland registration is open for region R{region}. Opened by: {actor}.',
   'notifications.campaign.registrationClosedTitle': 'Registration is closed',
   'notifications.campaign.registrationClosedMessage': 'Wasteland registration is closed for region R{region}. Closed by: {actor}.',
+  "actionLog.prev": "← Back",
+  "actionLog.next": "Next →",
+  "actionLog.page": "Page {page}",
+  "actionLog.noMore": "No more records.",
+  "actionLog.loadedLastPage": "Last records loaded.",
+  "actionLog.loadedFromCache": "Previous page shown from cache.",
+  "actionLog.paginationLabel": "Action log pagination",
 
 };

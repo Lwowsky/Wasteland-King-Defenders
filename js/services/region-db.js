@@ -867,7 +867,7 @@ async function writeRegionActionLog(firebase, user, profile = {}, region = '', a
     return null;
   }
 }
-export async function listRegionActionLogs(user, regionOverride = '', { limitCount = 120 } = {}) {
+export async function listRegionActionLogs(user, regionOverride = '', { limitCount = 20, cursorMs = 0 } = {}) {
   if (!user) throw new Error('auth-required');
   const { db, firestoreMod } = await getFirebaseParts();
   const { profile, region } = await getMyRegionContext(user, regionOverride);
@@ -875,19 +875,26 @@ export async function listRegionActionLogs(user, regionOverride = '', { limitCou
   const ref = firestoreMod.collection(db, 'regions', region, 'actionLogs');
   const role = roleForRegion(profile || {}, region, user);
   const ownAlliance = actorAllianceForRegion(profile || {}, region);
-  const limitValue = Math.max(20, Math.min(300, Number(limitCount) || 120));
-  let q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(limitValue));
+  const limitValue = Math.max(1, Math.min(20, Number(limitCount) || 20));
+  const safeCursorMs = Number(cursorMs) || 0;
+  const order = firestoreMod.orderBy('createdAtMs', 'desc');
+  const cursor = safeCursorMs > 0 ? [firestoreMod.startAfter(safeCursorMs)] : [];
+  let q = firestoreMod.query(ref, order, ...cursor, firestoreMod.limit(limitValue));
   if (role === 'officer' && ownAlliance) {
-    q = firestoreMod.query(ref, firestoreMod.where('alliance', '==', ownAlliance), firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(limitValue));
+    q = firestoreMod.query(ref, firestoreMod.where('alliance', '==', ownAlliance), order, ...cursor, firestoreMod.limit(limitValue));
   }
   const snap = await firestoreMod.getDocs(q).catch(async () => {
-    if (role === 'officer' && ownAlliance) return firestoreMod.getDocs(firestoreMod.query(ref, firestoreMod.where('alliance', '==', ownAlliance), firestoreMod.limit(limitValue)));
-    return firestoreMod.getDocs(firestoreMod.query(ref, firestoreMod.limit(limitValue)));
+    const fallbackCursor = safeCursorMs > 0 ? [firestoreMod.startAfter(safeCursorMs)] : [];
+    if (role === 'officer' && ownAlliance) {
+      return firestoreMod.getDocs(firestoreMod.query(ref, firestoreMod.where('alliance', '==', ownAlliance), ...fallbackCursor, firestoreMod.limit(limitValue)));
+    }
+    return firestoreMod.getDocs(firestoreMod.query(ref, ...fallbackCursor, firestoreMod.limit(limitValue)));
   });
   const rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
     .filter(row => regionActionVisibleTo(profile || {}, region, user, row))
     .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
-  return { profile, region, rows };
+  const lastRow = rows[rows.length - 1] || null;
+  return { profile, region, rows, limitCount: limitValue, hasMore: rows.length === limitValue, nextCursorMs: Number(lastRow?.createdAtMs) || 0 };
 }
 export async function getSecurityOverview(user) {
   if (!user) throw new Error('auth-required');
@@ -1828,7 +1835,8 @@ export async function saveWastelandRegistration(user, values, regionOverride = '
     await mirrorRegistrationToRegionTableCache(user, region, { ...data, uid: user.uid }, status);
   }
 
-  await writeRegionActionLog({ db, firestoreMod }, user || { uid: 'guest' }, profile || {}, region, 'registration_submitted', { summary: data.nickname || 'Заявка', alliance: data.alliance, targetName: data.nickname });
+  // Ordinary player registrations are intentionally not written to Action Log.
+  // They are visible in the region table, and skipping this log prevents thousands of extra Firebase writes during mass registration.
   if (user?.uid) {
     const actorGame = gameForRegion(profile || {}, region) || bestRegionGame(profile || {});
     await createUserNotification(user.uid, {

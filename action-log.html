@@ -35,9 +35,9 @@
   <script defer src="js/core/state.js"></script>
   <script defer src="js/core/app-boot.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/auth-google.js"></script>
+  <script type="module" src="js/auth-google.js?v=110"></script>
   <script type="module" src="js/notifications.js?v=109"></script>
-  <script type="module" src="js/pages/action-log-page.js?v=96"></script>
+  <script type="module" src="js/pages/action-log-page.js?v=110"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -57,6 +57,11 @@
           <thead><tr><th data-i18n="actionLog.time">Час</th><th data-i18n="actionLog.action">Дія</th><th data-i18n="actionLog.actor">Хто</th><th data-i18n="account.alliance">Альянс</th><th data-i18n="actionLog.details">Деталі</th></tr></thead>
           <tbody id="actionLogBody"><tr><td colspan="5">...</td></tr></tbody>
         </table>
+      </div>
+      <div class="action-log-pager" aria-label="Пагінація журналу дій" data-i18n-aria-label="actionLog.paginationLabel">
+        <button class="btn btn-ghost" id="actionLogPrevBtn" type="button" data-i18n="actionLog.prev">← Назад</button>
+        <span id="actionLogPageText">Сторінка 1</span>
+        <button class="btn btn-ghost" id="actionLogNextBtn" type="button" data-i18n="actionLog.next">Далі →</button>
       </div>
     </section>
   </main>

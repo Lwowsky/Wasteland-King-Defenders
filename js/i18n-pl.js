@@ -1835,5 +1835,12 @@ window.WKD_TRANSLATIONS.pl = {
   'notifications.campaign.registrationOpenedMessage': 'Rejestracja na pustkowie jest otwarta dla regionu R{region}. Otworzył(a): {actor}.',
   'notifications.campaign.registrationClosedTitle': 'Rejestracja zamknięta',
   'notifications.campaign.registrationClosedMessage': 'Rejestracja na pustkowie jest zamknięta dla regionu R{region}. Zamknął/Zamknęła: {actor}.',
+  "actionLog.prev": "← Wstecz",
+  "actionLog.next": "Dalej →",
+  "actionLog.page": "Strona {page}",
+  "actionLog.noMore": "Nie ma więcej wpisów.",
+  "actionLog.loadedLastPage": "Załadowano ostatnie wpisy.",
+  "actionLog.loadedFromCache": "Poprzednią stronę pokazano z pamięci podręcznej.",
+  "actionLog.paginationLabel": "Paginacja dziennika działań",
 
 };

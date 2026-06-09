@@ -1835,5 +1835,12 @@ window.WKD_TRANSLATIONS.uk = {
   'notifications.campaign.registrationOpenedMessage': 'Реєстрація на пустош відкрита для регіону R{region}. Відкрив: {actor}.',
   'notifications.campaign.registrationClosedTitle': 'Реєстрація закрита',
   'notifications.campaign.registrationClosedMessage': 'Реєстрація на пустош закрита для регіону R{region}. Закрив: {actor}.',
+  "actionLog.prev": "← Назад",
+  "actionLog.next": "Далі →",
+  "actionLog.page": "Сторінка {page}",
+  "actionLog.noMore": "Більше записів немає.",
+  "actionLog.loadedLastPage": "Завантажено останні записи.",
+  "actionLog.loadedFromCache": "Попередню сторінку показано з кешу.",
+  "actionLog.paginationLabel": "Пагінація журналу дій",
 
 };

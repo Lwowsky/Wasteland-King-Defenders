@@ -1835,5 +1835,12 @@ window.WKD_TRANSLATIONS.ru = {
   'notifications.campaign.registrationOpenedMessage': 'Регистрация на пустошь открыта для региона R{region}. Открыл: {actor}.',
   'notifications.campaign.registrationClosedTitle': 'Регистрация закрыта',
   'notifications.campaign.registrationClosedMessage': 'Регистрация на пустошь закрыта для региона R{region}. Закрыл: {actor}.',
+  "actionLog.prev": "← Назад",
+  "actionLog.next": "Дальше →",
+  "actionLog.page": "Страница {page}",
+  "actionLog.noMore": "Больше записей нет.",
+  "actionLog.loadedLastPage": "Загружены последние записи.",
+  "actionLog.loadedFromCache": "Предыдущая страница показана из кэша.",
+  "actionLog.paginationLabel": "Пагинация журнала действий",
 
 };
