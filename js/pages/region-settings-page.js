@@ -18,8 +18,6 @@ import {
   saveRegionAlliance,
   saveRegionAllianceColor as saveRegionAllianceColorDb,
   saveRegionSettings,
-  getRegionGoogleFormConfig,
-  saveRegionGoogleFormConfig,
   saveRegionTowerPlan,
   cleanupOldRegionRegistrations,
   computeCloseAtMs,
@@ -28,7 +26,7 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=97';
+} from '../services/region-db.js?v=100';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -39,7 +37,6 @@ let currentProfile = null;
 let currentRegion = '';
 let currentSettings = null;
 let currentAlliances = [];
-let currentGoogleFormConfig = null;
 let currentCanViewAnyRegion = false;
 let currentShareCode = '';
 let customTroopTypes = [];
@@ -567,246 +564,6 @@ function startPreviewTimer() {
   timerId = setInterval(updatePreview, 30000);
 }
 
-function getGoogleFormConnectionMode(config = currentGoogleFormConfig || {}) {
-  const value = trim(config?.connectionMode).toLowerCase();
-  if (value === 'manual' || value === 'auto') return value;
-  return trim(config?.webAppUrl || config?.secret) ? 'manual' : 'auto';
-}
-
-function setGoogleFormConnectionMode(mode = 'auto') {
-  const safeMode = mode === 'manual' ? 'manual' : 'auto';
-  $$('input[name="settingsGoogleFormConnectionMode"]').forEach(input => {
-    input.checked = input.value === safeMode;
-  });
-  updateGoogleFormConnectionModeUi(safeMode);
-}
-
-function getCentralGoogleFormConnector() {
-  const connector = window.WKD?.googleFormConnector || window.WKD_GOOGLE_FORM_CONNECTOR || {};
-  return {
-    enabled: Boolean(connector.enabled || connector.webAppUrl),
-    webAppUrl: trim(connector.webAppUrl),
-    secret: trim(connector.secret)
-  };
-}
-
-function googleFormRuntimeConfig(config = readGoogleFormSettings()) {
-  const mode = getGoogleFormConnectionMode(config);
-  if (mode === 'auto') {
-    const connector = getCentralGoogleFormConnector();
-    return { ...config, connectionMode: 'auto', webAppUrl: connector.webAppUrl, secret: connector.secret, centralConnectorReady: Boolean(connector.webAppUrl) };
-  }
-  return { ...config, connectionMode: 'manual', centralConnectorReady: false };
-}
-
-function updateGoogleFormConnectionModeUi(mode = getGoogleFormConnectionMode()) {
-  const safeMode = mode === 'manual' ? 'manual' : 'auto';
-  const manual = safeMode === 'manual';
-  const manualBox = $('#googleFormManualFields');
-  const autoBox = $('#googleFormAutoInfo');
-  const help = $('#googleFormModeHelp');
-  if (manualBox) manualBox.hidden = !manual;
-  if (autoBox) autoBox.hidden = manual;
-  if (help) {
-    setDynamicText(help, manual
-      ? t('regionSettings.googleFormModeManualHelp', 'Manual mode keeps the old fields: Web App URL, secret, Google Form link and Google Sheet link.')
-      : t('regionSettings.googleFormModeAutoHelp', 'Automatic mode uses one central Apps Script connector for the site. The consul does not need to enter URL and secret.'));
-  }
-  const central = getCentralGoogleFormConnector();
-  if (!manual && !central.webAppUrl) {
-    setDynamicText('#googleFormStatus', t('regionSettings.googleFormCentralMissing', 'Central Google Form connector is not configured yet. Add it once in js/config/google-form.config.js.'));
-  } else if (currentSettings || currentGoogleFormConfig) {
-    setDynamicText('#googleFormStatus', googleFormStatusText({ ...(currentGoogleFormConfig || {}), connectionMode: safeMode }));
-  }
-}
-
-function googleFormStatusText(config = currentGoogleFormConfig || {}) {
-  const connectionMode = getGoogleFormConnectionMode(config);
-  const centralReady = connectionMode !== 'auto' || Boolean(getCentralGoogleFormConnector().webAppUrl);
-  if (!centralReady && !config?.formUrl) return t('regionSettings.googleFormCentralMissing', 'Central Google Form connector is not configured yet. Add it once in js/config/google-form.config.js.');
-  if (connectionMode === 'manual' && !config?.webAppUrl && !config?.formUrl) return t('regionSettings.googleFormNotConfigured', 'Google Form is not configured yet.');
-  if (connectionMode === 'auto' && !config?.formUrl) return t('regionSettings.googleFormStatusDraft', 'Google Form is ready for setup.');
-  const status = String(config.status || '').trim();
-  const statusText = status === 'open'
-    ? t('regionSettings.googleFormStatusOpen', 'Google Form is open.')
-    : status === 'closed'
-      ? t('regionSettings.googleFormStatusClosed', 'Google Form is closed.')
-      : status === 'sent'
-        ? t('regionSettings.googleFormStatusSent', 'Request sent to Apps Script. If the URL is correct, the form will be updated.')
-        : t('regionSettings.googleFormStatusDraft', 'Google Form is ready for setup.');
-  const cycle = config.currentCycleId || currentSettings?.currentCycleId || '';
-  return cycle ? `${statusText} ${tv('regionSettings.googleFormCycle', 'Cycle: {cycle}', { cycle })}` : statusText;
-}
-
-function fillGoogleFormSettings(settings = currentSettings || {}, config = currentGoogleFormConfig || {}) {
-  const merged = { ...(settings.googleForm || {}), ...(config || {}) };
-  const connectionMode = getGoogleFormConnectionMode(merged);
-  $('#settingsGoogleFormEnabled') && ($('#settingsGoogleFormEnabled').checked = Boolean(merged.enabled));
-  $('#settingsGoogleFormWebAppUrl') && ($('#settingsGoogleFormWebAppUrl').value = merged.webAppUrl || '');
-  $('#settingsGoogleFormSecret') && ($('#settingsGoogleFormSecret').value = merged.secret || '');
-  $('#settingsGoogleFormUrl') && ($('#settingsGoogleFormUrl').value = merged.formUrl || '');
-  $('#settingsGoogleSheetUrl') && ($('#settingsGoogleSheetUrl').value = merged.sheetUrl || '');
-  setGoogleFormConnectionMode(connectionMode);
-  setDynamicText('#googleFormStatus', googleFormStatusText({ ...merged, connectionMode }));
-}
-
-function readGoogleFormSettings() {
-  const connectionMode = $$('input[name="settingsGoogleFormConnectionMode"]:checked')[0]?.value === 'manual' ? 'manual' : 'auto';
-  const saved = currentGoogleFormConfig || {};
-  const manual = connectionMode === 'manual';
-  return {
-    enabled: Boolean($('#settingsGoogleFormEnabled')?.checked),
-    mode: 'reserve',
-    connectionMode,
-    webAppUrl: manual ? trim($('#settingsGoogleFormWebAppUrl')?.value) : '',
-    secret: manual ? trim($('#settingsGoogleFormSecret')?.value) : '',
-    formUrl: manual ? trim($('#settingsGoogleFormUrl')?.value) : trim(saved.formUrl || $('#settingsGoogleFormUrl')?.value),
-    sheetUrl: manual ? trim($('#settingsGoogleSheetUrl')?.value) : trim(saved.sheetUrl || $('#settingsGoogleSheetUrl')?.value),
-    editUrl: trim(saved.editUrl),
-    formId: trim(saved.formId),
-    sheetId: trim(saved.sheetId),
-    status: trim(saved.status || '') || 'draft',
-    currentCycleId: currentSettings?.currentCycleId || '',
-    closeAtMs: Number(currentSettings?.closeAtMs) || 0
-  };
-}
-
-async function saveGoogleFormSettings(extra = {}) {
-  const config = { ...readGoogleFormSettings(), ...extra };
-  currentGoogleFormConfig = await saveRegionGoogleFormConfig(currentUser, currentRegion, config);
-  fillGoogleFormSettings(currentSettings || {}, currentGoogleFormConfig);
-  return currentGoogleFormConfig;
-}
-
-function buildGoogleFormPayload(action = 'sync', runtimeConfig = googleFormRuntimeConfig()) {
-  const values = { ...currentSettings, ...read() };
-  const closeAtMs = Number(values.closeAtMs) || Number(currentSettings?.closeAtMs) || 0;
-  const cycleId = currentSettings?.currentCycleId || values.currentCycleId || '';
-  return {
-    action,
-    region: currentRegion,
-    secret: trim(runtimeConfig.secret),
-    cycleId,
-    closeAtMs,
-    settings: {
-      title: values.title || t('region.formTitle', 'Wasteland registration'),
-      description: values.description || '',
-      enabled: Boolean(values.enabled),
-      minTier: values.minTier || 'T10',
-      shifts: values.shifts || [],
-      customShifts: values.customShifts || [],
-      allowExtraTroop: Boolean(values.allowExtraTroop),
-      customTroopTypes: values.customTroopTypes || [],
-      customFields: values.customFields || [],
-      eventStartAtMs: Number(values.eventStartAtMs) || 0,
-      closeAtMs,
-      hostAlliance: values.hostAlliance || '',
-      governor: values.governor || ''
-    },
-    alliances: currentAlliances.map(item => ({ tag: normalizeAllianceTag(item.tag || item.id), name: trim(item.name || '') })).filter(item => item.tag)
-  };
-}
-
-async function callGoogleFormWebApp(action = 'sync') {
-  if (!currentUser || !currentRegion) return;
-  const config = readGoogleFormSettings();
-  const runtimeConfig = googleFormRuntimeConfig(config);
-  if (!runtimeConfig.webAppUrl || (runtimeConfig.connectionMode === 'manual' && !runtimeConfig.secret)) {
-    setDynamicText('#googleFormStatus', runtimeConfig.connectionMode === 'auto'
-      ? t('regionSettings.googleFormCentralMissing', 'Central Google Form connector is not configured yet. Add it once in js/config/google-form.config.js.')
-      : t('regionSettings.googleFormMissingConfig', 'Add Apps Script Web App URL and secret first.'));
-    return;
-  }
-  const payload = buildGoogleFormPayload(action, runtimeConfig);
-  setDynamicText('#googleFormStatus', t('regionSettings.googleFormSending', 'Sending request to Google Apps Script...'));
-  let nextConfig = { ...config, lastAction: action, lastActionAtMs: Date.now(), status: action === 'close' ? 'closed' : 'sent' };
-  try {
-    const response = await fetch(runtimeConfig.webAppUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
-      redirect: 'follow'
-    });
-    const text = await response.text();
-    let data = {};
-    try { data = JSON.parse(text || '{}'); } catch {}
-    if (!response.ok || data.ok === false) throw new Error(data.error || response.statusText || 'apps-script-failed');
-    nextConfig = {
-      ...nextConfig,
-      enabled: config.enabled,
-      formUrl: data.formUrl || config.formUrl,
-      sheetUrl: data.sheetUrl || config.sheetUrl,
-      editUrl: data.editUrl || currentGoogleFormConfig?.editUrl || '',
-      formId: data.formId || currentGoogleFormConfig?.formId || '',
-      sheetId: data.sheetId || currentGoogleFormConfig?.sheetId || '',
-      status: data.status || (action === 'close' ? 'closed' : 'open'),
-      currentCycleId: data.cycleId || currentSettings?.currentCycleId || '',
-      closeAtMs: Number(data.closeAtMs) || Number(currentSettings?.closeAtMs) || 0,
-      lastActionResult: 'ok'
-    };
-  } catch (error) {
-    console.warn('[WKD] Google Form POST response failed, trying JSONP fallback:', error);
-    try {
-      const data = await callGoogleFormJsonp(runtimeConfig.webAppUrl, payload);
-      if (data.ok === false) throw new Error(data.error || 'apps-script-failed');
-      nextConfig = {
-        ...nextConfig,
-        enabled: config.enabled,
-        formUrl: data.formUrl || config.formUrl,
-        sheetUrl: data.sheetUrl || config.sheetUrl,
-        editUrl: data.editUrl || currentGoogleFormConfig?.editUrl || '',
-        formId: data.formId || currentGoogleFormConfig?.formId || '',
-        sheetId: data.sheetId || currentGoogleFormConfig?.sheetId || '',
-        status: data.status || (action === 'close' ? 'closed' : 'open'),
-        currentCycleId: data.cycleId || currentSettings?.currentCycleId || '',
-        closeAtMs: Number(data.closeAtMs) || Number(currentSettings?.closeAtMs) || 0,
-        lastActionResult: 'ok-jsonp'
-      };
-    } catch (fallbackError) {
-      console.warn('[WKD] Google Form JSONP fallback failed, sending no-cors request:', fallbackError);
-      try {
-        await fetch(runtimeConfig.webAppUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
-        nextConfig.lastActionResult = 'sent-no-readable-response';
-        nextConfig.status = action === 'close' ? 'closed' : 'sent';
-      } catch (noCorsError) {
-        console.error(noCorsError);
-        nextConfig.status = 'error';
-        nextConfig.lastActionResult = noCorsError.message || 'request-failed';
-        await saveGoogleFormSettings(nextConfig).catch(() => null);
-        setDynamicText('#googleFormStatus', t('regionSettings.googleFormFailed', 'Could not contact Google Apps Script. Check the Web App URL and access.'));
-        return;
-      }
-    }
-  }
-  await saveGoogleFormSettings(nextConfig);
-  setDynamicText('#googleFormStatus', googleFormStatusText(nextConfig));
-}
-
-function callGoogleFormJsonp(webAppUrl, payload) {
-  return new Promise((resolve, reject) => {
-    const callbackName = `__wkdGoogleForm${Date.now()}${Math.random().toString(16).slice(2)}`.replace(/[^a-zA-Z0-9_]/g, '');
-    const cleanup = () => {
-      delete window[callbackName];
-      script.remove();
-      clearTimeout(timer);
-    };
-    const url = new URL(webAppUrl);
-    url.searchParams.set('callback', callbackName);
-    url.searchParams.set('payload', JSON.stringify(payload));
-    const script = document.createElement('script');
-    const timer = setTimeout(() => { cleanup(); reject(new Error('jsonp-timeout')); }, 30000);
-    window[callbackName] = data => { cleanup(); resolve(data || {}); };
-    script.onerror = () => { cleanup(); reject(new Error('jsonp-load-failed')); };
-    script.src = url.toString();
-    document.head.appendChild(script);
-  });
-}
-
 function fill(settings) {
   currentSettings = settings;
   $('#settingsEnabled').value = String(Boolean(settings.enabled));
@@ -834,7 +591,6 @@ function fill(settings) {
     input.checked = settings.shifts?.includes(input.value);
   });
   updateShareLink();
-  fillGoogleFormSettings(settings, currentGoogleFormConfig || {});
   startPreviewTimer();
 }
 
@@ -897,7 +653,6 @@ async function save(event, overrides = {}) {
       window.WKD?.resetTowerPlannerPlan?.('registration-form-new-cycle');
       document.dispatchEvent(new CustomEvent('wkd:tower-plan-hard-reset', { detail: { source: 'registration-form-new-cycle' } }));
     }
-    await saveGoogleFormSettings({ currentCycleId: currentSettings.currentCycleId || '', closeAtMs: Number(currentSettings.closeAtMs) || 0 }).catch(error => console.warn('[WKD] Google Form config save skipped:', error));
     fill(currentSettings);
     const note = openedNewCycle ? ` ${t('regionSettings.newCycleSavedNote', 'New cycle opened: the table shows a clean list, and old requests remain in the previous cycle.')}` : '';
     const cleanupNote = currentSettings.cleanupDeletedCount
@@ -1233,10 +988,6 @@ async function load(user) {
     console.warn('Short registration link unavailable', error);
     return '';
   });
-  currentGoogleFormConfig = await getRegionGoogleFormConfig(user, region).catch(error => {
-    console.warn('[WKD] Google Form config unavailable:', error);
-    return null;
-  });
   fill(settings);
   $('#regionSettingsForm').hidden = false;
   await refreshAlliances().catch(error => {
@@ -1325,12 +1076,6 @@ function bind() {
   });
   $('#copyRegionShareBtn')?.addEventListener('click', () => copyShareLink('regionShareLink'));
   $('#copyRegionFullShareBtn')?.addEventListener('click', () => copyShareLink('regionShareLinkFull'));
-  $$('input[name="settingsGoogleFormConnectionMode"]').forEach(input => {
-    input.addEventListener('change', event => updateGoogleFormConnectionModeUi(event.currentTarget.value));
-  });
-  $('#syncGoogleFormBtn')?.addEventListener('click', () => callGoogleFormWebApp('sync'));
-  $('#openGoogleFormBtn')?.addEventListener('click', () => callGoogleFormWebApp('open'));
-  $('#closeGoogleFormBtn')?.addEventListener('click', () => callGoogleFormWebApp('close'));
   $('#openRegionTableFromSettingsBtn')?.addEventListener('click', () => { if (currentCanViewAnyRegion) window.location.href = `region-table.html?region=${currentRegion}`; });
   $('#regionAllianceList')?.addEventListener('click', event => {
     const editId = event.target.closest('[data-edit-alliance]')?.dataset.editAlliance;
@@ -1395,7 +1140,6 @@ document.addEventListener('wkd:language-changed', () => {
   renderRegionColorBuilder();
   renderRotationModal();
   updateRotationSummary();
-  updateGoogleFormConnectionModeUi(getGoogleFormConnectionMode());
   updatePreview();
 });
 
