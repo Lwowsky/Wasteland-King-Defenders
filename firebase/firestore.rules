@@ -454,7 +454,7 @@ service cloud.firestore {
         && request.resource.data.targetLabel.size() <= 160
         && request.resource.data.recipientCount is int
         && request.resource.data.recipientCount >= 0
-        && request.resource.data.recipientCount <= 500
+        && request.resource.data.recipientCount <= 50000
         && request.resource.data.recipientPreview is string
         && request.resource.data.recipientPreview.size() <= 300
         && optionalReplyFieldsSafe()
@@ -471,30 +471,54 @@ service cloud.firestore {
     }
 
 
+    function regionCampaignPermissionSafe(regionId) {
+      return ownerEmail() || isAdmin() || isModerator() || canManageRegion(regionId)
+        || (signedIn()
+          && request.resource.data.targetType in ['region', 'consuls', 'officers']
+          && currentRegionRole(regionId) in ['consul', 'officer']
+          && hasRegionAccess(regionId))
+        || (signedIn()
+          && request.resource.data.targetType == 'alliance'
+          && request.resource.data.keys().hasAny(['alliance'])
+          && request.resource.data.alliance is string
+          && request.resource.data.alliance != ''
+          && hasAllianceAccess(regionId, request.resource.data.alliance));
+    }
+
     function regionCampaignCreateSafe(regionId) {
       return signedIn()
-        && canManageRegion(regionId)
+        && regionCampaignPermissionSafe(regionId)
         && request.resource.data.region == regionId
-        && request.resource.data.type in ['registration_opened', 'registration_closed']
+        && request.resource.data.type in ['registration_opened', 'registration_closed', 'site_message_campaign']
         && request.resource.data.source == 'region-campaign'
         && request.resource.data.cycleId is string
         && request.resource.data.cycleId.size() <= 120
-        && request.resource.data.titleKey is string
-        && request.resource.data.titleKey.size() <= 160
-        && request.resource.data.messageKey is string
-        && request.resource.data.messageKey.size() <= 160
+        && (!request.resource.data.keys().hasAny(['titleKey']) || (request.resource.data.titleKey is string && request.resource.data.titleKey.size() <= 160))
+        && (!request.resource.data.keys().hasAny(['messageKey']) || (request.resource.data.messageKey is string && request.resource.data.messageKey.size() <= 160))
+        && (!request.resource.data.keys().hasAny(['title']) || (request.resource.data.title is string && request.resource.data.title.size() <= 160))
+        && (!request.resource.data.keys().hasAny(['message']) || (request.resource.data.message is string && request.resource.data.message.size() <= 600))
         && request.resource.data.actorUid == request.auth.uid
         && request.resource.data.actorName is string
         && request.resource.data.actorName.size() <= 120
         && request.resource.data.actorRole in ['admin', 'moderator', 'consul', 'officer', 'player']
         && request.resource.data.actorRoleText is string
         && request.resource.data.actorRoleText.size() <= 80
-        && request.resource.data.targetType == 'region'
+        && request.resource.data.targetType in ['region', 'alliance', 'consuls', 'officers', 'all']
+        && (!request.resource.data.keys().hasAny(['alliance']) || (request.resource.data.alliance is string && request.resource.data.alliance.size() <= 3))
         && request.resource.data.targetLabel is string
         && request.resource.data.targetLabel.size() <= 160
+        && (!request.resource.data.keys().hasAny(['campaignGroupId']) || (request.resource.data.campaignGroupId is string && request.resource.data.campaignGroupId.size() <= 120))
         && request.resource.data.createdAt == request.time
         && request.resource.data.createdAtMs is int
-        && request.resource.data.keys().hasOnly(['type','source','region','cycleId','titleKey','messageKey','actorUid','actorName','actorRole','actorRoleText','targetType','targetLabel','createdAt','createdAtMs']);
+        && (
+          (request.resource.data.type in ['registration_opened', 'registration_closed']
+            && request.resource.data.keys().hasAny(['titleKey'])
+            && request.resource.data.keys().hasAny(['messageKey']))
+          || (request.resource.data.type == 'site_message_campaign'
+            && request.resource.data.keys().hasAny(['title'])
+            && request.resource.data.keys().hasAny(['message']))
+        )
+        && request.resource.data.keys().hasOnly(['type','source','region','cycleId','titleKey','messageKey','title','message','alliance','campaignGroupId','actorUid','actorName','actorRole','actorRoleText','targetType','targetLabel','createdAt','createdAtMs']);
     }
 
     function publicWastelandRegistrationSafe(regionId) {

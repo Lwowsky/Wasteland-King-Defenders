@@ -1718,6 +1718,8 @@ window.WKD_TRANSLATIONS.pl = {
   'messages.emptyBody': 'Napisz wiadomość.',
   'messages.noRecipients': 'Brak odbiorców dla tego wyboru.',
   'messages.sending': 'Wysyłam...',
+  'messages.campaignSent': 'Wiadomość masowa opublikowana',
+  'messages.campaignRegions': 'Regionów',
   'messages.sent': 'Wiadomość wysłana',
   'messages.sendFailed': 'Nie udało się wysłać wiadomości.',
   'messages.targetAdmins': 'Admini i moderatorzy',

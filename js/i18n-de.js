@@ -1718,6 +1718,8 @@ window.WKD_TRANSLATIONS.de = {
   'messages.emptyBody': 'Schreibe eine Nachricht.',
   'messages.noRecipients': 'Keine Empfänger für diese Auswahl.',
   'messages.sending': 'Sende...',
+  'messages.campaignSent': 'Massenmitteilung veröffentlicht',
+  'messages.campaignRegions': 'Regionen',
   'messages.sent': 'Nachricht gesendet',
   'messages.sendFailed': 'Nachricht konnte nicht gesendet werden.',
   'messages.targetAdmins': 'Admins und Moderatoren',

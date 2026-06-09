@@ -1718,6 +1718,8 @@ window.WKD_TRANSLATIONS.ja = {
   'messages.emptyBody': 'メッセージを書いてください。',
   'messages.noRecipients': 'この選択の受信者はいません。',
   'messages.sending': '送信中...',
+  'messages.campaignSent': '一括メッセージを公開しました',
+  'messages.campaignRegions': '地域数',
   'messages.sent': 'メッセージを送信しました',
   'messages.sendFailed': 'メッセージを送信できませんでした。',
   'messages.targetAdmins': '管理者とモデレーター',

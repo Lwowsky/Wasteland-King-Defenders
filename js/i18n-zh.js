@@ -1718,6 +1718,8 @@ window.WKD_TRANSLATIONS.zh = {
   'messages.emptyBody': '请输入消息。',
   'messages.noRecipients': '没有符合条件的接收者。',
   'messages.sending': '发送中...',
+  'messages.campaignSent': '群发消息已发布',
+  'messages.campaignRegions': '区域',
   'messages.sent': '消息已发送',
   'messages.sendFailed': '无法发送消息。',
   'messages.targetAdmins': '管理员和版主',

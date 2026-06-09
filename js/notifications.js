@@ -6,7 +6,7 @@ import {
   listRegionNotificationCampaignsForProfile,
   readUserNotificationSummary,
   setUserNotificationSummary
-} from './services/user-db.js?v=108';
+} from './services/user-db.js?v=109';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -41,7 +41,7 @@ function itemMessage(item = {}) {
 function sourceKind(item = {}) {
   const role = String(item.actorRole || '').toLowerCase();
   const type = String(item.type || item.source || '').toLowerCase();
-  if (item.source === 'campaign' || item.source === 'region-status' || type.includes('region') || type.includes('registration')) return 'region';
+  if ((item.source === 'campaign' && type !== 'site_message_campaign') || item.source === 'region-status' || type.includes('region') || type.includes('registration')) return 'region';
   if (role === 'admin' || role === 'moderator') return 'admin';
   if (role === 'consul') return 'consul';
   if (role === 'officer') return 'officer';

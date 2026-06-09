@@ -1718,6 +1718,8 @@ window.WKD_TRANSLATIONS.uk = {
   'messages.emptyBody': 'Напиши текст повідомлення.',
   'messages.noRecipients': 'Немає отримувачів для цього вибору.',
   'messages.sending': 'Відправляю...',
+  'messages.campaignSent': 'Масове повідомлення опубліковано',
+  'messages.campaignRegions': 'Регіонів',
   'messages.sent': 'Повідомлення відправлено',
   'messages.sendFailed': 'Не вдалося відправити повідомлення.',
   'messages.targetAdmins': 'Адміни і модератори',

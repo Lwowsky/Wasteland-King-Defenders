@@ -1718,6 +1718,8 @@ window.WKD_TRANSLATIONS.en = {
   'messages.emptyBody': 'Write a message.',
   'messages.noRecipients': 'No recipients for this choice.',
   'messages.sending': 'Sending...',
+  'messages.campaignSent': 'Campaign message published',
+  'messages.campaignRegions': 'Regions',
   'messages.sent': 'Message sent',
   'messages.sendFailed': 'Could not send message.',
   'messages.targetAdmins': 'Admins and moderators',

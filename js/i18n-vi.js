@@ -1718,6 +1718,8 @@ window.WKD_TRANSLATIONS.vi = {
   'messages.emptyBody': 'Hãy viết nội dung.',
   'messages.noRecipients': 'Không có người nhận cho lựa chọn này.',
   'messages.sending': 'Đang gửi...',
+  'messages.campaignSent': 'Đã đăng thông báo hàng loạt',
+  'messages.campaignRegions': 'Khu vực',
   'messages.sent': 'Đã gửi tin nhắn',
   'messages.sendFailed': 'Không thể gửi tin nhắn.',
   'messages.targetAdmins': 'Admin và moderator',

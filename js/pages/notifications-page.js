@@ -1,8 +1,9 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
 import { trackReads, trackWrites, trackDeletes } from '../services/usage-tracker.js?v=89';
-import { listRegionCatalog } from '../services/region-db.js?v=108';
+import { listRegionCatalog } from '../services/region-db.js?v=109';
 import {
   canUseAdminPanel,
+  createSiteMessageCampaign,
   createUserNotification,
   formatUserDate,
   getGameProfile,
@@ -16,7 +17,7 @@ import {
   normalizeUserRole,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=108';
+} from '../services/user-db.js?v=109';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -475,7 +476,7 @@ async function saveSentMessage(firebase, values = {}) {
     alliance: tag(values.alliance || ''),
     targetType: String(values.targetType || 'player').trim().slice(0, 40),
     targetLabel: String(values.targetLabel || '').trim().slice(0, 160),
-    recipientCount: Math.max(0, Math.min(500, Number(values.recipientCount) || 0)),
+    recipientCount: Math.max(0, Math.min(50000, Number(values.recipientCount) || 0)),
     recipientPreview: String(values.recipientPreview || '').trim().slice(0, 300),
     actorUid: currentUser.uid,
     createdAt: firestoreMod.serverTimestamp(),
@@ -539,7 +540,7 @@ function filteredRecipients(type = $('#messageTargetType')?.value || 'player', o
   return options.preview ? list : dedupeAccounts(list);
 }
 function isMessage(item = {}) {
-  return item.type === 'site_message';
+  return item.type === 'site_message' || item.type === 'site_message_campaign';
 }
 function initials(name = '') {
   const clean = String(name || '').trim();
@@ -577,7 +578,7 @@ function senderMeta(item = {}) {
 function sourceKind(item = {}, meta = null) {
   const roleValue = normalizeUserRole(item.actorRole || meta?.role || 'player');
   const type = String(item.type || item.source || '').toLowerCase();
-  if (item.source === 'campaign' || item.source === 'region-status' || type.includes('region') || type.includes('registration')) return 'region';
+  if ((item.source === 'campaign' && type !== 'site_message_campaign') || item.source === 'region-status' || type.includes('region') || type.includes('registration')) return 'region';
   if (roleValue === 'admin' || roleValue === 'moderator') return 'admin';
   if (roleValue === 'consul') return 'consul';
   if (roleValue === 'officer') return 'officer';
@@ -658,8 +659,8 @@ function renderMessageList() {
         <div class="site-message-actions">
           ${meta.uid ? `<button class="btn site-message-reply" type="button" data-reply-id="${esc(item.id || '')}" data-i18n="messages.reply">${esc(t('messages.reply', 'Відповісти'))}</button>` : ''}
           ${unread ? `<button class="btn btn-message-soft" type="button" data-notification-action="read" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.markOneRead', 'Прочитано'))}</button>` : ''}
-          <button class="btn btn-message-soft" type="button" data-notification-action="archive" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.archive', 'Архівувати'))}</button>
-          <button class="btn btn-message-danger" type="button" data-notification-action="delete" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.delete', 'Видалити'))}</button>
+          ${isCampaign(item) ? '' : `<button class="btn btn-message-soft" type="button" data-notification-action="archive" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.archive', 'Архівувати'))}</button>`}
+          ${isCampaign(item) ? '' : `<button class="btn btn-message-danger" type="button" data-notification-action="delete" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.delete', 'Видалити'))}</button>`}
         </div>
       </article>`;
   }).join('') + paginationHtml('inbox', messages.length) : `<div class="notify-empty">${esc(t('notifications.noMessages', 'Отриманих повідомлень немає.'))}</div>`;
@@ -836,6 +837,43 @@ async function markAll() {
   render();
   window.WKD?.refreshNotifications?.();
 }
+function canUseCampaignForTarget(type = 'player') {
+  return ['all', 'region', 'alliance', 'consuls', 'officers'].includes(type) && !directReply?.replyToId;
+}
+function campaignRegionsForTarget(type = 'region', recipients = []) {
+  if (type === 'all') {
+    const fromRecipients = [...new Set((recipients || []).map(p => regionOf(p.region)).filter(Boolean))];
+    return fromRecipients.length ? fromRecipients : regionOptions();
+  }
+  const region = activeRegion();
+  return region ? [region] : [];
+}
+async function sendCampaignMessage(type = 'region', recipients = [], values = {}) {
+  const regions = campaignRegionsForTarget(type, recipients);
+  if (!regions.length) throw new Error('no-campaign-regions');
+  const campaignGroupId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const alliance = type === 'alliance' ? activeAlliance() : '';
+  const results = [];
+  for (const region of regions) {
+    const target = { region, alliance };
+    const senderRole = actorRole(target);
+    const campaign = await createSiteMessageCampaign({
+      title: values.title,
+      message: values.message,
+      region,
+      alliance,
+      targetType: type,
+      targetLabel: values.targetLabel,
+      campaignGroupId,
+      actorUid: currentUser.uid,
+      actorName: actorName(target),
+      actorRole: senderRole,
+      actorRoleText: roleLabel(senderRole)
+    });
+    if (campaign) results.push(campaign);
+  }
+  return results;
+}
 async function sendMessage() {
   if (!currentUser || !currentProfile) return;
   const title = String($('#messageSubjectInput')?.value || t('messages.defaultSubject', 'Повідомлення')).trim().slice(0, 80) || t('messages.defaultSubject', 'Повідомлення');
@@ -861,27 +899,43 @@ async function sendMessage() {
   const firebase = await getFirebase();
   if (!firebase) { setHint(t('messages.sendFailed', 'Не вдалося відправити повідомлення.')); return; }
   setHint(t('messages.sending', 'Відправляю...'));
-  const safeRecipients = recipients.slice(0, 500);
-  const targetLabel = currentTargetLabel(type, safeRecipients);
-  await Promise.all(safeRecipients.map(player => {
-    const target = { region: regionOf(player.region) || activeRegion(), alliance: tag(player.alliance) || activeAlliance() };
-    const senderRole = actorRole(target);
-    return createUserNotification(player.uid, {
-      type: 'site_message',
-      title,
-      message: body,
-      region: target.region,
-      alliance: target.alliance,
-      actorUid: currentUser.uid,
-      actorName: actorName(target),
-      actorRole: senderRole,
-      actorRoleText: roleLabel(senderRole),
-      actorPhotoURL: currentProfile?.photoURL || currentUser?.photoURL || '',
-      targetType: type,
-      targetLabel,
-      ...replyContext
-    }).catch(error => console.warn('[WKD] message skipped', player.uid, error));
-  }));
+  const targetLabel = currentTargetLabel(type, recipients);
+  let sentCount = recipients.length;
+  let recipientPreview = recipients.slice(0, 5).map(playerLabel).join(' • ');
+
+  if (canUseCampaignForTarget(type)) {
+    const campaigns = await sendCampaignMessage(type, recipients, { title, message: body, targetLabel });
+    sentCount = recipients.length;
+    recipientPreview = type === 'all'
+      ? `${t('messages.campaignRegions', 'Регіонів')}: ${campaigns.length}`
+      : recipients.slice(0, 5).map(playerLabel).join(' • ');
+    setHint(`${t('messages.campaignSent', 'Масове повідомлення опубліковано')}: ${sentCount}`);
+  } else {
+    const safeRecipients = recipients.slice(0, 500);
+    await Promise.all(safeRecipients.map(player => {
+      const target = { region: regionOf(player.region) || activeRegion(), alliance: tag(player.alliance) || activeAlliance() };
+      const senderRole = actorRole(target);
+      return createUserNotification(player.uid, {
+        type: 'site_message',
+        title,
+        message: body,
+        region: target.region,
+        alliance: target.alliance,
+        actorUid: currentUser.uid,
+        actorName: actorName(target),
+        actorRole: senderRole,
+        actorRoleText: roleLabel(senderRole),
+        actorPhotoURL: currentProfile?.photoURL || currentUser?.photoURL || '',
+        targetType: type,
+        targetLabel,
+        ...replyContext
+      }).catch(error => console.warn('[WKD] message skipped', player.uid, error));
+    }));
+    sentCount = safeRecipients.length;
+    recipientPreview = safeRecipients.slice(0, 5).map(playerLabel).join(' • ');
+    setHint(`${t('messages.sent', 'Повідомлення відправлено')}: ${safeRecipients.length}`);
+  }
+
   await saveSentMessage(firebase, {
     title,
     message: body,
@@ -889,15 +943,14 @@ async function sendMessage() {
     alliance: activeAlliance(),
     targetType: type,
     targetLabel,
-    recipientCount: safeRecipients.length,
-    recipientPreview: safeRecipients.slice(0, 5).map(playerLabel).join(' • '),
+    recipientCount: sentCount,
+    recipientPreview,
     ...replyContext
   }).catch(error => console.warn('[WKD] sent history skipped', error));
   rememberMessageSend();
   const bodyInput = $('#messageBodyInput');
   if (bodyInput) bodyInput.value = '';
   directReply = null;
-  setHint(`${t('messages.sent', 'Повідомлення відправлено')}: ${recipients.length}`);
   await load(currentUser).catch(() => null);
 }
 function clearDirectReply() {

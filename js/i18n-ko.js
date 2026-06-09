@@ -1718,6 +1718,8 @@ window.WKD_TRANSLATIONS.ko = {
   'messages.emptyBody': '메시지를 입력하세요.',
   'messages.noRecipients': '이 선택에는 수신자가 없습니다.',
   'messages.sending': '보내는 중...',
+  'messages.campaignSent': '단체 메시지가 게시되었습니다',
+  'messages.campaignRegions': '지역',
   'messages.sent': '메시지를 보냈습니다',
   'messages.sendFailed': '메시지를 보낼 수 없습니다.',
   'messages.targetAdmins': '관리자와 모더레이터',

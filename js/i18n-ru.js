@@ -1718,6 +1718,8 @@ window.WKD_TRANSLATIONS.ru = {
   'messages.emptyBody': 'Напиши текст сообщения.',
   'messages.noRecipients': 'Нет получателей для этого выбора.',
   'messages.sending': 'Отправляю...',
+  'messages.campaignSent': 'Массовое сообщение опубликовано',
+  'messages.campaignRegions': 'Регионов',
   'messages.sent': 'Сообщение отправлено',
   'messages.sendFailed': 'Не удалось отправить сообщение.',
   'messages.targetAdmins': 'Админы и модераторы',

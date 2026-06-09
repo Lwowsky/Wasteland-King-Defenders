@@ -1716,6 +1716,8 @@ window.WKD_TRANSLATIONS.ar = {
   'messages.emptyBody': 'اكتب نص الرسالة.',
   'messages.noRecipients': 'لا يوجد مستلمون لهذا الاختيار.',
   'messages.sending': 'جارٍ الإرسال...',
+  'messages.campaignSent': 'تم نشر الرسالة الجماعية',
+  'messages.campaignRegions': 'المناطق',
   'messages.sent': 'تم إرسال الرسالة',
   'messages.sendFailed': 'تعذر إرسال الرسالة.',
   'messages.targetAdmins': 'المشرفون والمديرون',

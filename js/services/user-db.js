@@ -331,22 +331,29 @@ function campaignClean(values = {}, firebase = null) {
   const type = normalizeText(values.type || 'registration_notice').slice(0, 80);
   const region = normalizeText(values.region || '').replace(/[^0-9]/g, '').slice(0, 20);
   const actorRole = normalizeRole(values.actorRole || 'player');
-  return {
+  const targetType = normalizeText(values.targetType || 'region').slice(0, 40);
+  const alliance = normalizeAllianceTag(values.alliance || values.targetAlliance || '');
+  const payload = {
     type,
     source: 'region-campaign',
     region,
     cycleId: normalizeText(values.cycleId || '').slice(0, 120),
-    titleKey: normalizeText(values.titleKey || 'notifications.campaign.registrationTitle').slice(0, 160),
-    messageKey: normalizeText(values.messageKey || 'notifications.campaign.registrationMessage').slice(0, 160),
     actorUid: normalizeText(values.actorUid || '').slice(0, 160),
     actorName: normalizeText(values.actorName || '').slice(0, 120),
     actorRole,
     actorRoleText: normalizeText(values.actorRoleText || roleLabel(actorRole)).slice(0, 80),
-    targetType: 'region',
+    targetType,
     targetLabel: normalizeText(values.targetLabel || (region ? `R${region}` : '')).slice(0, 160),
     createdAt: firebase?.firestoreMod?.serverTimestamp ? firebase.firestoreMod.serverTimestamp() : null,
     createdAtMs: nowMs
   };
+  if (values.titleKey || type.startsWith('registration_')) payload.titleKey = normalizeText(values.titleKey || 'notifications.campaign.registrationOpenedTitle').slice(0, 160);
+  if (values.messageKey || type.startsWith('registration_')) payload.messageKey = normalizeText(values.messageKey || 'notifications.campaign.registrationOpenedMessage').slice(0, 160);
+  if (values.title) payload.title = normalizeText(values.title).slice(0, 160);
+  if (values.message || values.summary) payload.message = normalizeText(values.message || values.summary || '').slice(0, 600);
+  if (alliance) payload.alliance = alliance;
+  if (values.campaignGroupId) payload.campaignGroupId = normalizeText(values.campaignGroupId).slice(0, 120);
+  return payload;
 }
 
 export async function createRegionNotificationCampaign(values = {}) {
@@ -360,14 +367,54 @@ export async function createRegionNotificationCampaign(values = {}) {
   return { id, ...payload };
 }
 
+export async function createSiteMessageCampaign(values = {}) {
+  const firebase = await getFirebase();
+  if (!firebase) return null;
+  const payload = campaignClean({ ...values, type: values.type || 'site_message_campaign' }, firebase);
+  if (!payload.region) return null;
+  if (!['all', 'region', 'alliance', 'consuls', 'officers'].includes(payload.targetType)) return null;
+  if (payload.targetType === 'alliance' && !payload.alliance) return null;
+  if (!payload.title || !payload.message) return null;
+  const id = `${payload.createdAtMs}-${payload.type.replace(/[^a-z0-9_-]/gi, '').slice(0, 50)}-${Math.random().toString(36).slice(2, 8)}`;
+  await firebase.firestoreMod.setDoc(firebase.firestoreMod.doc(firebase.db, 'regions', payload.region, 'notificationCampaigns', id), payload);
+  trackWrites(1);
+  return { id, ...payload };
+}
+
+function profileCampaignGames(profile = {}) {
+  const main = getGameProfile(profile || {});
+  const baseRole = normalizeRole(profile?.role || main.role || 'player');
+  const games = [];
+  if (main.nickname || main.region || main.alliance) games.push({ ...main, role: normalizeRole(main.role || baseRole), accountRole: baseRole });
+  getUserFarms(profile || {}).forEach(farm => {
+    if (farm.nickname || farm.region || farm.alliance) games.push({ ...farm, role: normalizeRole(farm.role || baseRole), accountRole: baseRole });
+  });
+  return games;
+}
+
+function campaignMatchesProfile(profile = {}, campaign = {}) {
+  const targetType = normalizeText(campaign.targetType || 'region');
+  const region = normalizeText(campaign.region || '').replace(/[^0-9]/g, '');
+  const alliance = normalizeAllianceTag(campaign.alliance || campaign.targetAlliance || '');
+  const accountRole = normalizeRole(profile?.role || 'player');
+  if (targetType === 'admins') return ['admin', 'moderator'].includes(accountRole);
+  const games = profileCampaignGames(profile).filter(game => normalizeText(game.region || '').replace(/[^0-9]/g, '') === region);
+  if (!games.length) return false;
+  if (targetType === 'all' || targetType === 'region') return true;
+  if (targetType === 'alliance') return Boolean(alliance) && games.some(game => normalizeAllianceTag(game.alliance || '') === alliance);
+  if (targetType === 'consuls') return games.some(game => normalizeRole(game.role || game.accountRole || accountRole) === 'consul') || accountRole === 'consul';
+  if (targetType === 'officers') return games.some(game => normalizeRole(game.role || game.accountRole || accountRole) === 'officer') || accountRole === 'officer';
+  return false;
+}
+
 export async function listRegionNotificationCampaignsForProfile(profile = {}, options = {}) {
   const firebase = await getFirebase();
   if (!firebase) return [];
   const regions = profileNotificationRegions(profile || {});
   if (!regions.length) return [];
   const sinceMs = Math.max(0, Number(options.sinceMs) || 0);
-  const perRegionLimit = Math.max(1, Math.min(20, Number(options.perRegionLimit) || 8));
-  const totalLimit = Math.max(1, Math.min(60, Number(options.totalLimit) || 20));
+  const perRegionLimit = Math.max(1, Math.min(30, Number(options.perRegionLimit) || 8));
+  const totalLimit = Math.max(1, Math.min(80, Number(options.totalLimit) || 20));
   const { db, firestoreMod } = firebase;
   const all = [];
   for (const region of regions) {
@@ -378,12 +425,20 @@ export async function listRegionNotificationCampaignsForProfile(profile = {}, op
     snap.docs.forEach(doc => {
       const data = doc.data() || {};
       const createdAtMs = Number(data.createdAtMs) || timestampToMs(data.createdAt) || 0;
-      if (createdAtMs > sinceMs) all.push({ id: doc.id, source: 'campaign', unread: true, ...data, createdAtMs });
+      if (createdAtMs <= sinceMs) return;
+      if (!campaignMatchesProfile(profile || {}, data)) return;
+      all.push({ id: doc.id, source: 'campaign', unread: true, ...data, createdAtMs });
     });
   }
-  return all
-    .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0))
-    .slice(0, totalLimit);
+  const deduped = [];
+  const seen = new Set();
+  all.sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0)).forEach(item => {
+    const key = item.campaignGroupId || `${item.region}:${item.id}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    deduped.push(item);
+  });
+  return deduped.slice(0, totalLimit);
 }
 
 export function formatUserDate(value) {
