@@ -800,28 +800,38 @@ export default {
     }
 
     try {
-      if (url.pathname === "/api/region-table" && request.method === "GET")
-        return handleRegionTableRead(request, env);
+      if (url.pathname === "/api/region-table" && request.method === "GET") {
+        return await handleRegionTableRead(request, env);
+      }
+
       if (
         url.pathname === "/api/region-table/registration" &&
         request.method === "POST"
-      )
-        return handleRegionTableRegistration(request, env);
+      ) {
+        return await handleRegionTableRegistration(request, env);
+      }
+
       if (
         url.pathname === "/api/region-table/snapshot" &&
         request.method === "PUT"
-      )
-        return handleRegionTableSnapshot(request, env);
+      ) {
+        return await handleRegionTableSnapshot(request, env);
+      }
+
       if (
         url.pathname === "/api/region-table/share" &&
         request.method === "POST"
-      )
-        return handleRegionTableShareCreate(request, env);
+      ) {
+        return await handleRegionTableShareCreate(request, env);
+      }
+
       const shareMatch = url.pathname.match(
         /^\/api\/region-table\/share\/([A-Za-z0-9_-]{6,140})$/,
       );
-      if (shareMatch && request.method === "GET")
-        return handleRegionTableShareRead(request, env, shareMatch[1]);
+
+      if (shareMatch && request.method === "GET") {
+        return await handleRegionTableShareRead(request, env, shareMatch[1]);
+      }
     } catch (error) {
       console.error("[WKD Worker]", error);
       const message = clean(error?.message || "worker_error", 120);
@@ -860,7 +870,7 @@ export default {
         302,
       );
     }
-    
+
     if (url.pathname.startsWith("/api/")) {
       return json(
         {
