@@ -11,6 +11,7 @@ import {
   listPublicPlayers,
   listRegisteredUsers,
   normalizeUserRole,
+  rebuildUserNotificationSummary,
   roleLabel
 } from '../services/user-db.js';
 
@@ -408,6 +409,12 @@ async function loadSentMessages(firebase, uid) {
   trackReads(Math.max(1, snap.docs.length));
   return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
+
+async function syncNotificationSummaryFromRows() {
+  if (!currentUser) return;
+  await rebuildUserNotificationSummary(currentUser.uid, rows).catch(error => console.warn('[WKD] notification summary sync skipped', error));
+}
+
 function stopPageNotificationsWatch() {
   if (typeof unsubscribePageNotifications === 'function') {
     try { unsubscribePageNotifications(); } catch (_) {}
@@ -422,6 +429,7 @@ function watchPageNotifications(firebase, uid) {
   const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(NOTIFICATION_QUERY_LIMIT));
   unsubscribePageNotifications = firestoreMod.onSnapshot(q, snap => {
     rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    syncNotificationSummaryFromRows().then(() => window.WKD?.refreshNotifications?.()).catch(() => null);
     render();
   }, error => console.warn('[WKD] notifications page realtime unavailable', error));
 }
@@ -755,6 +763,7 @@ async function load(user) {
   trackReads(Math.max(1, snap.docs.length));
   rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   sentRows = sent;
+  await syncNotificationSummaryFromRows();
   setStatus(t('notifications.loaded', 'Сповіщення оновлено.'), 'success');
   renderCompose();
   switchTab(activeTab);
@@ -771,6 +780,7 @@ async function markAll() {
   await batch.commit().catch(() => null);
   trackWrites(rows.filter(row => row.id && row.archived !== true && isUnread(row)).length);
   rows = rows.map(row => ({ ...row, unread: false, readAtMs: Date.now() }));
+  await syncNotificationSummaryFromRows();
   render();
   window.WKD?.refreshNotifications?.();
 }
@@ -879,6 +889,7 @@ async function handleNotificationAction(action = '', id = '') {
     await deleteNotificationDoc(id);
     rows = rows.filter(row => row.id !== id);
   }
+  await syncNotificationSummaryFromRows();
   render();
   window.WKD?.refreshNotifications?.();
 }
@@ -901,6 +912,7 @@ async function clearArchive() {
   ]);
   if (archivedNotifications.length) rows = rows.filter(row => !archivedNotifications.some(item => item.id === row.id));
   if (archivedSent.length) sentRows = sentRows.filter(row => !archivedSent.some(item => item.id === row.id));
+  await syncNotificationSummaryFromRows();
   render();
   setStatus(t('notifications.archiveCleared', 'Архів очищено.'), 'success');
   window.WKD?.refreshNotifications?.();

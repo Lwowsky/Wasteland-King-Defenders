@@ -522,6 +522,38 @@ service cloud.firestore {
         && request.resource.data.ownerUid == '';
     }
 
+
+    function notificationSummaryFieldsSafe() {
+      return request.resource.data.keys().hasOnly([
+          'unreadTotal', 'lastTitle', 'lastMessage', 'lastRegion', 'lastAlliance',
+          'lastActorUid', 'lastActorName', 'lastActorRole', 'lastTargetType',
+          'lastNotificationAt', 'lastNotificationAtMs', 'updatedAt', 'updatedAtMs'
+        ])
+        && (!request.resource.data.keys().hasAny(['unreadTotal']) || (request.resource.data.unreadTotal is int && request.resource.data.unreadTotal >= 0 && request.resource.data.unreadTotal <= 99999))
+        && (!request.resource.data.keys().hasAny(['lastTitle']) || (request.resource.data.lastTitle is string && request.resource.data.lastTitle.size() <= 160))
+        && (!request.resource.data.keys().hasAny(['lastMessage']) || (request.resource.data.lastMessage is string && request.resource.data.lastMessage.size() <= 300))
+        && (!request.resource.data.keys().hasAny(['lastRegion']) || (request.resource.data.lastRegion is string && request.resource.data.lastRegion.size() <= 20))
+        && (!request.resource.data.keys().hasAny(['lastAlliance']) || (request.resource.data.lastAlliance is string && request.resource.data.lastAlliance.size() <= 3))
+        && (!request.resource.data.keys().hasAny(['lastActorUid']) || (request.resource.data.lastActorUid is string && request.resource.data.lastActorUid.size() <= 160))
+        && (!request.resource.data.keys().hasAny(['lastActorName']) || (request.resource.data.lastActorName is string && request.resource.data.lastActorName.size() <= 120))
+        && (!request.resource.data.keys().hasAny(['lastActorRole']) || (request.resource.data.lastActorRole in ['admin', 'moderator', 'consul', 'officer', 'player']))
+        && (!request.resource.data.keys().hasAny(['lastTargetType']) || (request.resource.data.lastTargetType in ['system', 'player', 'alliance', 'region', 'consuls', 'officers', 'admins', 'all']))
+        && (!request.resource.data.keys().hasAny(['lastNotificationAtMs']) || request.resource.data.lastNotificationAtMs is int)
+        && (!request.resource.data.keys().hasAny(['updatedAtMs']) || request.resource.data.updatedAtMs is int);
+    }
+
+    function notificationSummaryWriteSafe(userId) {
+      return notificationSummaryFieldsSafe()
+        && (
+          isOwner(userId)
+          || ownerEmail()
+          || isAdmin()
+          || (signedIn()
+            && request.resource.data.keys().hasAny(['lastActorUid'])
+            && request.resource.data.lastActorUid == request.auth.uid)
+        );
+    }
+
     match /users/{userId} {
       allow create: if ownerEmail() || (isOwner(userId) && roleIsSafeOnCreate());
       allow read: if canReadUser(userId);
@@ -533,6 +565,12 @@ service cloud.firestore {
         allow update: if ownerNotificationUpdateSafe(userId) || ownerEmail() || isAdmin();
         allow delete: if isOwner(userId) || ownerEmail() || isAdmin();
         allow create: if selfNotificationCreateSafe(userId) || canMessageTarget(userId);
+      }
+
+      match /notificationMeta/{metaId} {
+        allow read: if isOwner(userId) || ownerEmail() || isAdmin();
+        allow create, update: if notificationSummaryWriteSafe(userId);
+        allow delete: if ownerEmail() || isAdmin();
       }
 
 

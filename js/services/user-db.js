@@ -183,6 +183,86 @@ export function timestampToMs(value) {
 }
 
 
+function notificationSummaryRef(firebase, uid) {
+  return firebase.firestoreMod.doc(firebase.db, 'users', uid, 'notificationMeta', 'summary');
+}
+function notificationSummaryClean(values = {}, firebase = null) {
+  const nowMs = Date.now();
+  const out = {};
+  if (Object.hasOwn(values, 'unreadTotal')) out.unreadTotal = Math.max(0, Math.min(99999, Number(values.unreadTotal) || 0));
+  if (Object.hasOwn(values, 'lastTitle')) out.lastTitle = normalizeText(values.lastTitle).slice(0, 160);
+  if (Object.hasOwn(values, 'lastMessage')) out.lastMessage = normalizeText(values.lastMessage).slice(0, 300);
+  if (Object.hasOwn(values, 'lastRegion')) out.lastRegion = normalizeText(values.lastRegion).replace(/[^0-9]/g, '').slice(0, 20);
+  if (Object.hasOwn(values, 'lastAlliance')) out.lastAlliance = normalizeAllianceTag(values.lastAlliance);
+  if (Object.hasOwn(values, 'lastActorUid')) out.lastActorUid = normalizeText(values.lastActorUid).slice(0, 160);
+  if (Object.hasOwn(values, 'lastActorName')) out.lastActorName = normalizeText(values.lastActorName).slice(0, 120);
+  if (Object.hasOwn(values, 'lastActorRole')) out.lastActorRole = normalizeRole(values.lastActorRole || 'player');
+  if (Object.hasOwn(values, 'lastTargetType')) out.lastTargetType = normalizeText(values.lastTargetType || 'system').slice(0, 40);
+  if (Object.hasOwn(values, 'lastNotificationAtMs')) out.lastNotificationAtMs = Math.max(0, Number(values.lastNotificationAtMs) || 0);
+  out.updatedAtMs = Math.max(0, Number(values.updatedAtMs) || nowMs);
+  if (firebase?.firestoreMod?.serverTimestamp) out.updatedAt = firebase.firestoreMod.serverTimestamp();
+  return out;
+}
+function notificationSummaryFromNotification(notification = {}, firebase = null) {
+  return notificationSummaryClean({
+    lastTitle: notification.title || serviceT('notifications.title', 'Сповіщення'),
+    lastMessage: notification.message || notification.summary || '',
+    lastRegion: notification.region || '',
+    lastAlliance: notification.alliance || '',
+    lastActorUid: notification.actorUid || '',
+    lastActorName: notification.actorName || '',
+    lastActorRole: notification.actorRole || 'player',
+    lastTargetType: notification.targetType || 'system',
+    lastNotificationAtMs: Number(notification.createdAtMs) || Date.now()
+  }, firebase);
+}
+async function incrementUserNotificationSummary(uid, notification = {}) {
+  const userId = normalizeText(uid);
+  if (!userId) return null;
+  const firebase = await getFirebase();
+  if (!firebase) return null;
+  const { firestoreMod } = firebase;
+  const payload = notificationSummaryFromNotification(notification, firebase);
+  payload.unreadTotal = firestoreMod.increment(1);
+  payload.lastNotificationAt = firestoreMod.serverTimestamp();
+  await firestoreMod.setDoc(notificationSummaryRef(firebase, userId), payload, { merge: true });
+  trackWrites(1);
+  return payload;
+}
+export async function readUserNotificationSummary(uid) {
+  const userId = normalizeText(uid);
+  if (!userId) return null;
+  const firebase = await getFirebase();
+  if (!firebase) return null;
+  const snap = await firebase.firestoreMod.getDoc(notificationSummaryRef(firebase, userId)).catch(() => null);
+  trackReads(1);
+  if (!snap?.exists?.()) return null;
+  return { id: snap.id, ...snap.data() };
+}
+export async function setUserNotificationSummary(uid, values = {}) {
+  const userId = normalizeText(uid);
+  if (!userId) return null;
+  const firebase = await getFirebase();
+  if (!firebase) return null;
+  const payload = notificationSummaryClean(values, firebase);
+  if (!Object.hasOwn(payload, 'unreadTotal') && Object.hasOwn(values, 'unreadTotal')) payload.unreadTotal = Math.max(0, Number(values.unreadTotal) || 0);
+  await firebase.firestoreMod.setDoc(notificationSummaryRef(firebase, userId), payload, { merge: true });
+  trackWrites(1);
+  return payload;
+}
+export async function rebuildUserNotificationSummary(uid, notifications = []) {
+  const list = Array.isArray(notifications) ? notifications : [];
+  const active = list.filter(item => item && item.archived !== true);
+  const unread = active.filter(item => item.unread !== false && !item.readAt && !item.readAtMs);
+  const newest = [...active].sort((a, b) => (Number(b.createdAtMs) || timestampToMs(b.createdAt)) - (Number(a.createdAtMs) || timestampToMs(a.createdAt)))[0] || {};
+  return setUserNotificationSummary(uid, {
+    unreadTotal: unread.length,
+    ...notificationSummaryFromNotification(newest),
+    updatedAtMs: Date.now()
+  });
+}
+
+
 export async function createUserNotification(uid, values = {}) {
   const userId = normalizeText(uid);
   if (!userId) return null;
@@ -219,6 +299,7 @@ export async function createUserNotification(uid, values = {}) {
   if (values.replyToCreatedAtMs) payload.replyToCreatedAtMs = Number(values.replyToCreatedAtMs) || nowMs;
   await firestoreMod.setDoc(firestoreMod.doc(db, 'users', userId, 'notifications', id), payload);
   trackWrites(1);
+  await incrementUserNotificationSummary(userId, payload).catch(error => console.warn('[WKD] notification summary skipped', error));
   return { id, ...payload };
 }
 
