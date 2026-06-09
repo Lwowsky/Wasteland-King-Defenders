@@ -260,6 +260,158 @@ function tableContainsUid(table, uid = '') {
   return table.rows.some(row => clean(row.uid, 160) === uid);
 }
 
+function base64UrlToBytes(value = '') {
+  const normalized = String(value).replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes;
+}
+
+function base64UrlToJson(value = '') {
+  const bytes = base64UrlToBytes(value);
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+async function getFirebaseJwks() {
+  const now = Date.now();
+
+  if (firebaseJwksCache.keys && firebaseJwksCache.expiresAt > now) {
+    return firebaseJwksCache.keys;
+  }
+
+  const response = await fetch(FIREBASE_JWKS_URL, {
+    headers: { Accept: 'application/json' }
+  });
+
+  if (!response.ok) {
+    throw new Error('firebase_jwks_failed');
+  }
+
+  const data = await response.json();
+
+  const keys = Array.isArray(data.keys)
+    ? data.keys
+    : Object.entries(data || {}).map(([kid, jwk]) => ({
+        ...(jwk || {}),
+        kid: jwk?.kid || kid
+      }));
+
+  const cacheControl = response.headers.get('Cache-Control') || '';
+  const maxAgeMatch = cacheControl.match(/max-age=(\d+)/i);
+  const maxAgeMs = maxAgeMatch ? Number(maxAgeMatch[1]) * 1000 : 60 * 60 * 1000;
+
+  firebaseJwksCache = {
+    expiresAt: now + Math.max(5 * 60 * 1000, maxAgeMs),
+    keys
+  };
+
+  return keys;
+}
+
+async function verifyFirebaseToken(request, env) {
+  const authHeader = request.headers.get('Authorization') || '';
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+
+  if (!match) {
+    throw new Error('auth_required');
+  }
+
+  const token = match[1];
+  const parts = token.split('.');
+
+  if (parts.length !== 3) {
+    throw new Error('bad_token');
+  }
+
+  let header;
+  let payload;
+
+  try {
+    header = base64UrlToJson(parts[0]);
+    payload = base64UrlToJson(parts[1]);
+  } catch {
+    throw new Error('bad_token_payload');
+  }
+
+  const projectId = clean(env.FIREBASE_PROJECT_ID || '', 160);
+
+  if (!projectId) {
+    throw new Error('firebase_project_not_configured');
+  }
+
+  if (header?.alg !== 'RS256') {
+    throw new Error('bad_token_alg');
+  }
+
+  if (!header?.kid) {
+    throw new Error('bad_token_kid');
+  }
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+
+  if (!payload?.sub || String(payload.sub).length > 128) {
+    throw new Error('bad_token_subject');
+  }
+
+  if (payload.aud !== projectId) {
+    throw new Error('wrong_firebase_project');
+  }
+
+  if (payload.iss !== `https://securetoken.google.com/${projectId}`) {
+    throw new Error('wrong_firebase_issuer');
+  }
+
+  if (Number(payload.exp || 0) <= nowSeconds) {
+    throw new Error('token_expired');
+  }
+
+  if (payload.iat && Number(payload.iat) > nowSeconds + 300) {
+    throw new Error('token_from_future');
+  }
+
+  const keys = await getFirebaseJwks();
+  const jwk = keys.find(item => item?.kid === header.kid);
+
+  if (!jwk) {
+    firebaseJwksCache = { expiresAt: 0, keys: null };
+    throw new Error('firebase_key_not_found');
+  }
+
+  const publicKey = await crypto.subtle.importKey(
+    'jwk',
+    jwk,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['verify']
+  );
+
+  const signedData = new TextEncoder().encode(`${parts[0]}.${parts[1]}`);
+  const signature = base64UrlToBytes(parts[2]);
+
+  const isValid = await crypto.subtle.verify(
+    { name: 'RSASSA-PKCS1-v1_5' },
+    publicKey,
+    signature,
+    signedData
+  );
+
+  if (!isValid) {
+    throw new Error('token_signature_invalid');
+  }
+
+  return {
+    uid: clean(payload.user_id || payload.sub, 160),
+    email: clean(payload.email || '', 160),
+    name: clean(payload.name || '', 160)
+  };
+}
+
 async function handleRegionTableRead(request, env) {
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
