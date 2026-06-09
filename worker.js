@@ -184,6 +184,7 @@ function sanitizeTableRow(row = {}) {
   return {
     id,
     uid: clean(row.uid || "", 160),
+    publicKey: clean(row.publicKey || "", 160),
     farmId: clean(row.farmId || "", 80),
     nickname: clean(row.nickname || row.name || row.gameNick || "", 80),
     region: normalizeRegion(row.region),
@@ -203,6 +204,11 @@ function sanitizeTableRow(row = {}) {
     readyToAttack: Boolean(row.readyToAttack),
     shift: clean(row.shift || "", 40),
     shiftLabel: clean(row.shiftLabel || "", 80),
+    comment: clean(row.comment || "", 300),
+    extraEnabled: Boolean(row.extraEnabled || (Array.isArray(row.extraSquads) && row.extraSquads.length)),
+    extraSquads: Array.isArray(row.extraSquads) ? row.extraSquads.slice(0, 8) : [],
+    extraTroopType: clean(row.extraTroopType || "", 40),
+    extraTier: clean(row.extraTier || "", 12).toUpperCase(),
     source: clean(row.source || "registration", 40),
     rowType: clean(row.rowType || "", 80),
     updatedAtMs: Number(row.updatedAtMs) || Date.now(),
@@ -491,6 +497,19 @@ async function verifyFirebaseToken(request, env) {
   };
 }
 
+async function optionalFirebaseToken(request, env) {
+  try {
+    return await verifyFirebaseToken(request, env);
+  } catch (error) {
+    if (String(error?.message || '').includes('auth_required')) return null;
+    throw error;
+  }
+}
+
+function normalizedNickname(value = '') {
+  return clean(value, 120).toLowerCase().replace(/\s+/g, '');
+}
+
 async function handleRegionTableRead(request, env) {
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
@@ -513,7 +532,7 @@ async function handleRegionTableRegistration(request, env) {
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
   await ensureRegionTableSchema(db);
-  const user = await verifyFirebaseToken(request, env);
+  const user = await optionalFirebaseToken(request, env);
   let body = null;
   try {
     body = await request.json();
@@ -526,13 +545,17 @@ async function handleRegionTableRegistration(request, env) {
   );
   if (!region) return json({ ok: false, error: "region_required" }, 400);
 
+  const isPublicRegistration = Boolean(body?.publicLink || body?.shareCode || body?.row?.publicKey);
+  if (!user?.uid && !isPublicRegistration) return json({ ok: false, error: "auth_required" }, 401);
+
   const row = sanitizeTableRow({
     ...(body?.row || {}),
     region,
-    uid: body?.row?.uid || user.uid,
+    uid: user?.uid ? (body?.row?.uid || user.uid) : '',
   });
-  const canWrite =
-    isAdminUid(env, user.uid) || row.uid === user.uid || !row.uid;
+  const canWrite = user?.uid
+    ? (isAdminUid(env, user.uid) || row.uid === user.uid || !row.uid)
+    : Boolean(isPublicRegistration && row.nickname && row.publicKey);
   if (!canWrite) return json({ ok: false, error: "row_owner_mismatch" }, 403);
 
   const current = (await readTable(db, region, cycleId)) || {
@@ -545,11 +568,21 @@ async function handleRegionTableRegistration(request, env) {
   const rows = Array.isArray(current.rows)
     ? current.rows.map(sanitizeTableRow)
     : [];
-  const key = row.id || `${row.uid || "guest"}:${row.farmId || "main"}`;
+  const key = row.id || `${row.uid || row.publicKey || "guest"}:${row.farmId || "main"}`;
+  const nicknameKey = normalizedNickname(row.nickname);
+  const duplicate = rows.find(item => {
+    if (!nicknameKey || normalizedNickname(item.nickname) !== nicknameKey) return false;
+    if (item.id && item.id === key) return false;
+    if (row.uid && item.uid === row.uid && item.farmId === row.farmId) return false;
+    if (row.publicKey && item.publicKey === row.publicKey && item.farmId === row.farmId) return false;
+    return true;
+  });
+  if (duplicate) return json({ ok: false, error: "registration-nickname-duplicate-region" }, 409);
   const index = rows.findIndex(
     (item) =>
       (item.id && item.id === key) ||
-      (row.uid && item.uid === row.uid && item.farmId === row.farmId),
+      (row.uid && item.uid === row.uid && item.farmId === row.farmId) ||
+      (row.publicKey && item.publicKey === row.publicKey && item.farmId === row.farmId),
   );
   if (index >= 0)
     rows[index] = {
@@ -571,8 +604,8 @@ async function handleRegionTableRegistration(request, env) {
     },
     rows,
   });
-  await grantRegionAccess(db, region, user.uid, "registration");
-  if (row.uid && row.uid !== user.uid)
+  if (user?.uid) await grantRegionAccess(db, region, user.uid, "registration");
+  if (user?.uid && row.uid && row.uid !== user.uid)
     await grantRegionAccess(db, region, row.uid, "registration-row");
   return json({
     ok: true,

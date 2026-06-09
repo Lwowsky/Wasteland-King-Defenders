@@ -25,7 +25,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=102';
+} from '../services/region-db.js?v=105';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled } from '../services/region-table-cache.js?v=105';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -594,10 +595,32 @@ function validate(values) {
   return errors;
 }
 
+function shouldUseD1FirstRegistration() {
+  return Boolean(isRegionTableCacheEnabled && isRegionTableCacheEnabled());
+}
+
+async function submitRegistrationD1First(values) {
+  const payload = { ...values, region: currentRegion, publicLink: Boolean(!currentUser || shortCodeFromLink) };
+  return saveRegionRegistrationD1First(currentUser, currentRegion, payload, formSettings || {}, {
+    shareCode: shortCodeFromLink || '',
+    publicLink: Boolean(!currentUser || shortCodeFromLink)
+  });
+}
+
 async function submitCurrentRegistration(values, { auto = false } = {}) {
   try {
     setStatus(auto ? t('region.autoSubmitting', 'Автоматично відправляю заявку з профілю...') : t('region.savingRequest', 'Saving request...'), 'muted');
-    const savedRequest = await saveWastelandRegistration(currentUser, values, currentRegion);
+    let savedRequest = null;
+    if (shouldUseD1FirstRegistration()) {
+      try {
+        savedRequest = await submitRegistrationD1First(values);
+      } catch (d1Error) {
+        console.warn('[WKD] D1-first registration failed, using Firebase fallback:', d1Error);
+        savedRequest = await saveWastelandRegistration(currentUser, values, currentRegion);
+      }
+    } else {
+      savedRequest = await saveWastelandRegistration(currentUser, values, currentRegion);
+    }
     if (currentUser) await saveDraft(values).catch(error => console.warn('[WKD] account request draft save skipped:', error));
     clearDraft();
     localStorage.setItem('wkd.players.sourceMode', 'region');

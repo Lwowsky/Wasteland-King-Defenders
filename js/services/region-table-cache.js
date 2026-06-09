@@ -47,6 +47,48 @@ async function getFirebaseToken(user) {
   }
 }
 
+function browserRegistrationKey(region = '', cycleId = 'active') {
+  const safeRegion = cleanRegion(region) || 'region';
+  const safeCycle = cleanText(cycleId || 'active', 80).replace(/[^A-Za-z0-9._:-]/g, '-');
+  const key = `wkd.d1PublicRegistrationKey.${safeRegion}.${safeCycle}`;
+  try {
+    const existing = localStorage.getItem(key);
+    if (existing) return cleanText(existing, 120);
+    const value = `guest-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+    localStorage.setItem(key, value);
+    return value;
+  } catch {
+    return `guest-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  }
+}
+
+function sanitizeRegistrationValues(values = {}) {
+  return {
+    farmId: cleanText(values.farmId || 'main', 80) || 'main',
+    nickname: cleanText(values.nickname || values.gameNick || values.name || '', 80),
+    alliance: cleanText(values.alliance || '', 12).toUpperCase(),
+    rank: cleanText(values.rank || '', 16).toLowerCase(),
+    shk: cleanText(values.shk || '', 12),
+    troopType: cleanText(values.troopType || '', 40),
+    tier: cleanText(values.tier || '', 12).toUpperCase(),
+    lairLevel: numberValue(values.lairLevel),
+    marchSize: numberValue(values.marchSize),
+    rallySize: numberValue(values.rallySize),
+    readyToJoin: values.readyToJoin !== false,
+    readyToAttack: Boolean(values.readyToAttack),
+    captainReady: Boolean(values.captainReady),
+    shift: cleanText(values.shift || '', 40),
+    comment: cleanText(values.comment || '', 300),
+    extraEnabled: Boolean(values.extraEnabled || (Array.isArray(values.extraSquads) && values.extraSquads.length)),
+    extraSquads: Array.isArray(values.extraSquads)
+      ? values.extraSquads.map(item => ({ troopType: cleanText(item?.troopType || '', 40), tier: cleanText(item?.tier || '', 12).toUpperCase() })).filter(item => item.troopType && item.tier).slice(0, 8)
+      : [],
+    extraTroopType: cleanText(values.extraTroopType || '', 40),
+    extraTier: cleanText(values.extraTier || '', 12).toUpperCase(),
+    customFields: values.customFields && typeof values.customFields === 'object' ? values.customFields : {}
+  };
+}
+
 async function requestJson(path, options = {}) {
   const response = await fetch(apiUrl(path), {
     cache: 'no-store',
@@ -138,6 +180,44 @@ export async function readRegionTableShare(code) {
   if (!safeCode) throw new Error('share-code-required');
   const data = await requestJson(`/api/region-table/share/${encodeURIComponent(safeCode)}`);
   return normalizeTableResponse(data);
+}
+
+
+export async function saveRegionRegistrationD1First(user, region, values = {}, settings = {}, options = {}) {
+  if (!isRegionTableCacheEnabled()) throw new Error('region-table-cache-disabled');
+  const safeRegion = cleanRegion(region || values.region);
+  if (!safeRegion) throw new Error('region-required');
+  const cycleId = cleanText(settings?.currentCycleId || values?.cycleId || 'active', 80) || 'active';
+  const token = await getFirebaseToken(user);
+  const farmId = cleanText(values?.farmId || 'main', 80) || 'main';
+  const publicKey = browserRegistrationKey(safeRegion, cycleId);
+  const uid = cleanText(user?.uid || '', 120);
+  const rowKey = uid ? `${uid}_${farmId}_${cycleId}` : `${publicKey}_${farmId}_${cycleId}`;
+  const source = uid ? 'account-d1' : 'public-link-d1';
+  const row = sanitizeTableRow({
+    ...sanitizeRegistrationValues(values),
+    id: rowKey,
+    uid,
+    publicKey: uid ? '' : publicKey,
+    farmId,
+    region: safeRegion,
+    source,
+    rowType: uid ? 'Заявка' : 'Заявка з посилання',
+    updatedAtMs: Date.now()
+  });
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  return requestJson('/api/region-table/registration', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      region: safeRegion,
+      cycleId,
+      publicLink: Boolean(!uid || options?.publicLink || options?.shareCode),
+      shareCode: cleanCode(options?.shareCode || ''),
+      settings: sanitizeSettings(settings),
+      row
+    })
+  }).then(result => ({ ...result, ...row, cycleId, region: safeRegion, d1First: true }));
 }
 
 export async function mirrorRegionRegistration(user, region, row, settings = {}) {
