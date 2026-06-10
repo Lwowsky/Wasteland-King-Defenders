@@ -428,7 +428,7 @@ async function fullRebuild(db) {
     totalRows: summary.totalRows,
     publicPlayers: publicPlayers.length
   }, { merge: true });
-  console.log(`Full rebuild source=${source}; sourceDocs=${sourcePlayers.length}; publicRows=${publicPlayers.length}; totalPlayers=${summary.totalPlayers}; totalFarms=${summary.totalFarms}`);
+  info(`Full rebuild source=${source}; sourceDocs=${sourcePlayers.length}; publicRows=${publicPlayers.length}; totalPlayers=${summary.totalPlayers}; totalFarms=${summary.totalFarms}`);
   return { summary: normalizeSummary(summary), publicPlayers: sortPublicPlayers(publicPlayers) };
 }
 
@@ -513,7 +513,7 @@ async function main() {
     const result = await fetchPublicStatsFromD1();
     await writeJson(SUMMARY_CACHE_PATH, result.summary);
     await writeJson(PLAYERS_CACHE_PATH, result.publicPlayers);
-    console.log(`Stats cache updated from D1: players=${result.summary.totalPlayers}, farms=${result.summary.totalFarms}, publicRows=${result.publicPlayers.length}, buckets=${result.summary.d1Buckets || 0}`);
+    info(`Stats cache updated from D1: players=${result.summary.totalPlayers}, farms=${result.summary.totalFarms}, publicRows=${result.publicPlayers.length}, buckets=${result.summary.d1Buckets || 0}`);
     return;
   }
 
@@ -531,7 +531,7 @@ async function main() {
     const result = await incrementalUpdate(db, existing, existingPlayers);
     if (!result.changed) {
       await cleanupOldChanges(db).catch(() => 0);
-      console.log(`No pending stats changes. Cache unchanged. cachedPlayers=${Array.isArray(existingPlayers) ? existingPlayers.length : 0}, totalPlayers=${Number(existing?.totalPlayers || 0)}`);
+      info(`No pending stats changes. Cache unchanged. cachedPlayers=${Array.isArray(existingPlayers) ? existingPlayers.length : 0}, totalPlayers=${Number(existing?.totalPlayers || 0)}`);
       return;
     }
     summary = result.summary;
@@ -540,7 +540,7 @@ async function main() {
   await writeJson(SUMMARY_CACHE_PATH, summary);
   await writeJson(PLAYERS_CACHE_PATH, publicPlayers);
   const cleaned = await cleanupOldChanges(db).catch(() => 0);
-  console.log(`Stats cache updated: players=${summary.totalPlayers}, farms=${summary.totalFarms}, publicRows=${publicPlayers.length}, cleanedChanges=${cleaned}`);
+  info(`Stats cache updated: players=${summary.totalPlayers}, farms=${summary.totalFarms}, publicRows=${publicPlayers.length}, cleanedChanges=${cleaned}`);
 }
 
 main().catch(error => {

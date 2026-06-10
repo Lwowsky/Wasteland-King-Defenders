@@ -32,9 +32,20 @@ window.WKD_activeLang = () => {
   window.WKD_CURRENT_LANG = next;
   return next;
 };
+window.WKD_humanizeI18nKey = key => {
+  const raw = String(key || '').trim();
+  if (!raw) return '';
+  const last = raw.split('.').filter(Boolean).pop() || raw;
+  return last
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/^./, ch => ch.toUpperCase());
+};
 window.WKD_t = key => {
   const lang = window.WKD_activeLang ? window.WKD_activeLang() : (window.WKD_CURRENT_LANG || 'en');
-  return (window.WKD_TRANSLATIONS[lang] && window.WKD_TRANSLATIONS[lang][key]) || (window.WKD_TRANSLATIONS.en && window.WKD_TRANSLATIONS.en[key]) || (window.WKD_TRANSLATIONS.uk && window.WKD_TRANSLATIONS.uk[key]) || key;
+  const value = (window.WKD_TRANSLATIONS[lang] && window.WKD_TRANSLATIONS[lang][key]) || (window.WKD_TRANSLATIONS.en && window.WKD_TRANSLATIONS.en[key]) || (window.WKD_TRANSLATIONS.uk && window.WKD_TRANSLATIONS.uk[key]);
+  return value || window.WKD_humanizeI18nKey(key);
 };
 window.WKD_tv = (key, vars = {}, fallback = '') => {
   let text = window.WKD_t(key);

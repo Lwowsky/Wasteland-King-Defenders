@@ -30,3 +30,8 @@ Google profile flow:
 - Дані зберігаються у Firestore: users/{uid} і regions/{region}/players/{uid}.
 - Роль за замовчуванням: player / Гравець.
 - Ролі admin, consul, officer треба ставити вручну в Firestore тільки адміну.
+
+v120 final audit:
+- AUDIT_V120_UK.md — що перевірено, готовність, наступні кроки.
+- TECHNICAL_DOCUMENTATION_V120_UK.md — що у Firebase, D1, Cloudflare Worker і GitHub, плюс основні ліміти.
+- i18n.js має безпечний fallback, щоб не показувати сирі технічні ключі при випадковому пропущеному перекладі.

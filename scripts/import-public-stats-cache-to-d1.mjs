@@ -27,7 +27,7 @@ async function main() {
   let data = null;
   try { data = await response.json(); } catch { data = null; }
   if (!response.ok || data?.ok === false) throw new Error(data?.error || `public-stats-import-${response.status}`);
-  console.log(`Imported public stats to D1: players=${data.players}, buckets=${data.buckets}`);
+  info(`Imported public stats to D1: players=${data.players}, buckets=${data.buckets}`);
 }
 
 main().catch(error => {

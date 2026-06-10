@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=89';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=119';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=120';
 import {
   approveRoleRequest,
   declineRoleRequest,
