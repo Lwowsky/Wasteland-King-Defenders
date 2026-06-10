@@ -15,8 +15,10 @@ import {
   listRoleRequests,
   roleLabel,
   updateUserByAdmin,
-  updateFarmByAdmin
-} from '../services/user-db.js';
+  updateFarmByAdmin,
+  scanOldFirebaseArchives,
+  cleanupOldFirebaseArchives
+} from '../services/user-db.js?v=118';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -277,6 +279,66 @@ async function runOldDocsCleanup() {
   } catch (error) {
     console.error(error);
     setStatus(t('admin.cleanupOldDocsFailed', 'Не вдалося очистити старі документи.'), 'error');
+  }
+}
+
+function setFirebaseArchiveStatus(text, type = 'muted') {
+  const box = $('#firebaseArchiveStatus');
+  if (!box) return;
+  box.removeAttribute('data-i18n');
+  box.textContent = text;
+  box.dataset.type = type;
+}
+
+function archiveScopeLabel(scope = 'all') {
+  const labels = {
+    notifications: t('admin.firebaseArchiveScopeNotifications', 'прочитані повідомлення'),
+    actionLogs: t('admin.firebaseArchiveScopeActionLogs', 'журнали дій'),
+    campaigns: t('admin.firebaseArchiveScopeCampaigns', 'системні кампанії'),
+    all: t('admin.firebaseArchiveScopeAll', 'усі архіви')
+  };
+  return labels[scope] || labels.all;
+}
+
+function archiveResultText(result = {}) {
+  return tv('admin.firebaseArchiveResult', 'Знайдено: {found}. Видалено: {deleted}. Перевірено: {scanned}.', {
+    found: Number(result.found || 0),
+    deleted: Number(result.deleted || 0),
+    scanned: Number(result.scanned || 0)
+  });
+}
+
+async function runFirebaseArchiveScan() {
+  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  try {
+    setFirebaseArchiveStatus(t('admin.firebaseArchiveScanning', 'Перевіряю Firebase архіви...'), 'muted');
+    const result = await scanOldFirebaseArchives(currentUser, { retentionDays: 30, maxScan: 500 });
+    setFirebaseArchiveStatus(archiveResultText(result), 'success');
+    renderUsage();
+  } catch (error) {
+    console.error(error);
+    setFirebaseArchiveStatus(t('admin.firebaseArchiveScanFailed', 'Не вдалося перевірити Firebase архіви.'), 'error');
+  }
+}
+
+async function runFirebaseArchiveCleanup(scope) {
+  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  const label = archiveScopeLabel(scope);
+  const ok = await confirmAction({
+    title: tv('admin.firebaseArchiveCleanTitle', 'Очистити {scope}?', { scope: label }),
+    message: tv('admin.firebaseArchiveCleanMessage', 'Буде видалено до 500 старих документів старше 30 днів. Непрочитані приватні повідомлення не видаляються. Продовжити?', { scope: label }),
+    icon: '🧹',
+    acceptText: t('admin.firebaseArchiveCleanAccept', 'Очистити')
+  });
+  if (!ok) return;
+  try {
+    setFirebaseArchiveStatus(tv('admin.firebaseArchiveCleaning', 'Очищаю {scope}...', { scope: label }), 'muted');
+    const result = await cleanupOldFirebaseArchives(currentUser, { scope, retentionDays: 30, maxDeletes: 500 });
+    setFirebaseArchiveStatus(archiveResultText(result), Number(result.deleted || 0) ? 'success' : 'muted');
+    renderUsage();
+  } catch (error) {
+    console.error(error);
+    setFirebaseArchiveStatus(t('admin.firebaseArchiveCleanFailed', 'Не вдалося очистити Firebase архіви.'), 'error');
   }
 }
 
@@ -610,6 +672,10 @@ function bindAdminControls() {
   $('#refreshUsageBtn')?.addEventListener('click', renderUsage);
   $('#resetUsageEstimateBtn')?.addEventListener('click', () => { resetUsageEstimate(); renderUsage(); });
   $('#cleanupOldDocsBtn')?.addEventListener('click', () => runOldDocsCleanup().catch(console.error));
+  $('#scanFirebaseArchiveBtn')?.addEventListener('click', () => runFirebaseArchiveScan().catch(console.error));
+  $('#cleanupFirebaseNotificationsBtn')?.addEventListener('click', () => runFirebaseArchiveCleanup('notifications').catch(console.error));
+  $('#cleanupFirebaseCampaignsBtn')?.addEventListener('click', () => runFirebaseArchiveCleanup('campaigns').catch(console.error));
+  $('#cleanupFirebaseActionLogsBtn')?.addEventListener('click', () => runFirebaseArchiveCleanup('actionLogs').catch(console.error));
   $('#backToProfileBtn')?.addEventListener('click', () => { window.location.href = 'profile.html'; });
   $('#adminRegionForm')?.addEventListener('submit', saveManualRegion);
   $('#adminRegionList')?.addEventListener('click', handleRegionAction);

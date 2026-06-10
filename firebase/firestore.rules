@@ -683,7 +683,7 @@ service cloud.firestore {
       match /notifications/{notificationId} {
         allow read: if isOwner(userId) || ownerEmail() || isAdmin();
         allow update: if ownerNotificationUpdateSafe(userId) || ownerEmail() || isAdmin();
-        allow delete: if isOwner(userId) || ownerEmail() || isAdmin();
+        allow delete: if isOwner(userId) || ownerEmail() || isAdmin() || isModerator();
         allow create: if selfNotificationCreateSafe(userId) || canMessageTarget(userId);
       }
 
@@ -697,7 +697,7 @@ service cloud.firestore {
       match /sentMessages/{messageId} {
         allow read: if isOwner(userId) || ownerEmail() || isAdmin();
         allow update: if ownerSentMessageUpdateSafe(userId) || ownerEmail() || isAdmin();
-        allow delete: if isOwner(userId) || ownerEmail() || isAdmin();
+        allow delete: if isOwner(userId) || ownerEmail() || isAdmin() || isModerator();
         allow create: if sentMessageCreateSafe(userId);
       }
     }

@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=1171';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=1171';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=118';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=118';
 import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=104';
 import {
   createNotificationCampaignD1,
@@ -16,7 +16,7 @@ import {
   patchSentMessageD1,
   readNotificationSummaryD1,
   setNotificationSummaryD1
-} from './notifications-d1.js?v=1171';
+} from './notifications-d1.js?v=118';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -1434,6 +1434,175 @@ export async function listRegisteredUsers() {
     .map(doc => ({ id: doc.id, ...doc.data() }))
     .filter(user => user.profileComplete)
     .sort((a, b) => timestampToMs(b.createdAt) - timestampToMs(a.createdAt));
+}
+
+
+async function requireFirebaseArchiveCleanupAccess(actor) {
+  if (!actor?.uid) throw new Error('auth-required');
+  const firebase = await getFirebase();
+  if (!firebase) throw new Error('firebase-unavailable');
+  const profile = await getUserProfile(actor.uid).catch(() => null);
+  if (!canUseAdminPanel(actor, profile)) throw new Error('admin-only');
+  return { firebase, profile };
+}
+
+function oldArchiveCutoffMs(retentionDays = 30) {
+  return Date.now() - Math.max(1, Number(retentionDays) || 30) * 24 * 60 * 60 * 1000;
+}
+
+function isOldReadFirebaseNotification(data = {}, cutoffMs = 0) {
+  const created = Number(data.createdAtMs || timestampToMs(data.createdAt) || 0);
+  if (!created || created >= cutoffMs) return false;
+  return data.unread === false || Boolean(data.readAtMs) || Boolean(data.readAt);
+}
+
+async function commitDeleteDocs(firebase, docs = []) {
+  const safeDocs = Array.isArray(docs) ? docs.filter(Boolean) : [];
+  if (!safeDocs.length) return 0;
+  const { db, firestoreMod } = firebase;
+  let deleted = 0;
+  for (let i = 0; i < safeDocs.length; i += 450) {
+    const chunk = safeDocs.slice(i, i + 450);
+    const batch = firestoreMod.writeBatch(db);
+    chunk.forEach(docSnap => batch.delete(docSnap.ref));
+    await batch.commit();
+    deleted += chunk.length;
+  }
+  if (deleted) trackDeletes(deleted);
+  return deleted;
+}
+
+async function getOldestDocsFromCollection(firebase, collectionRef, { cutoffMs, limitCount = 500, fallbackFilter = null } = {}) {
+  const { firestoreMod } = firebase;
+  const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
+  const docs = [];
+  try {
+    const q = firestoreMod.query(
+      collectionRef,
+      firestoreMod.where('createdAtMs', '<', Number(cutoffMs) || 0),
+      firestoreMod.orderBy('createdAtMs', 'asc'),
+      firestoreMod.limit(safeLimit)
+    );
+    const snap = await firestoreMod.getDocs(q);
+    trackReads(Math.max(1, snap.docs.length));
+    return snap.docs;
+  } catch (error) {
+    const q = firestoreMod.query(collectionRef, firestoreMod.orderBy('createdAtMs', 'asc'), firestoreMod.limit(safeLimit));
+    const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
+    trackReads(Math.max(1, snap.docs.length));
+    snap.docs.forEach(docSnap => {
+      const data = docSnap.data?.() || {};
+      const created = Number(data.createdAtMs || timestampToMs(data.createdAt) || 0);
+      if (created && created < cutoffMs && (!fallbackFilter || fallbackFilter(data))) docs.push(docSnap);
+    });
+    return docs;
+  }
+}
+
+async function scanOrCleanupOldFirebaseNotifications(firebase, { cutoffMs, maxDeletes = 500, dryRun = false } = {}) {
+  const { db, firestoreMod } = firebase;
+  const safeLimit = Math.max(1, Math.min(500, Number(maxDeletes) || 500));
+  const usersSnap = await firestoreMod.getDocs(firestoreMod.collection(db, 'users'));
+  trackReads(Math.max(1, usersSnap.docs.length));
+  let found = 0;
+  let scanned = usersSnap.docs.length;
+  const deleteDocs = [];
+
+  for (const userDoc of usersSnap.docs) {
+    if (found >= safeLimit) break;
+    const remaining = safeLimit - found;
+    const ref = firestoreMod.collection(db, 'users', userDoc.id, 'notifications');
+    let docs = [];
+    try {
+      const q = firestoreMod.query(
+        ref,
+        firestoreMod.where('unread', '==', false),
+        firestoreMod.where('createdAtMs', '<', cutoffMs),
+        firestoreMod.limit(remaining)
+      );
+      const snap = await firestoreMod.getDocs(q);
+      trackReads(Math.max(0, snap.docs.length));
+      docs = snap.docs;
+      scanned += snap.docs.length;
+    } catch (error) {
+      docs = await getOldestDocsFromCollection(firebase, ref, {
+        cutoffMs,
+        limitCount: Math.min(remaining, 40),
+        fallbackFilter: data => isOldReadFirebaseNotification(data, cutoffMs)
+      });
+      scanned += docs.length;
+      docs = docs.filter(docSnap => isOldReadFirebaseNotification(docSnap.data?.() || {}, cutoffMs));
+    }
+    if (!docs.length) continue;
+    docs.slice(0, remaining).forEach(docSnap => {
+      found += 1;
+      if (!dryRun) deleteDocs.push(docSnap);
+    });
+  }
+  const deleted = dryRun ? 0 : await commitDeleteDocs(firebase, deleteDocs);
+  return { found, deleted, scanned };
+}
+
+async function listRegionsForArchiveCleanup(firebase) {
+  const { db, firestoreMod } = firebase;
+  const snap = await firestoreMod.getDocs(firestoreMod.collection(db, 'regions'));
+  trackReads(Math.max(1, snap.docs.length));
+  return snap.docs.map(doc => doc.id).filter(Boolean);
+}
+
+async function scanOrCleanupOldRegionArchive(firebase, subcollection, { cutoffMs, maxDeletes = 500, dryRun = false } = {}) {
+  const { db, firestoreMod } = firebase;
+  const safeLimit = Math.max(1, Math.min(500, Number(maxDeletes) || 500));
+  const regions = await listRegionsForArchiveCleanup(firebase);
+  let found = 0;
+  let scanned = regions.length;
+  const deleteDocs = [];
+  for (const region of regions) {
+    if (found >= safeLimit) break;
+    const ref = firestoreMod.collection(db, 'regions', region, subcollection);
+    const docs = await getOldestDocsFromCollection(firebase, ref, { cutoffMs, limitCount: safeLimit - found });
+    scanned += docs.length;
+    docs.slice(0, safeLimit - found).forEach(docSnap => {
+      found += 1;
+      if (!dryRun) deleteDocs.push(docSnap);
+    });
+  }
+  const deleted = dryRun ? 0 : await commitDeleteDocs(firebase, deleteDocs);
+  return { found, deleted, scanned };
+}
+
+function sumArchiveResults(results = []) {
+  return results.reduce((acc, item) => ({
+    found: acc.found + Number(item?.found || 0),
+    deleted: acc.deleted + Number(item?.deleted || 0),
+    scanned: acc.scanned + Number(item?.scanned || 0)
+  }), { found: 0, deleted: 0, scanned: 0 });
+}
+
+async function runFirebaseArchiveCleanup(actor, { scope = 'all', retentionDays = 30, maxDeletes = 500, dryRun = false } = {}) {
+  const { firebase } = await requireFirebaseArchiveCleanupAccess(actor);
+  const cutoffMs = oldArchiveCutoffMs(retentionDays);
+  const safeScope = ['notifications', 'actionLogs', 'campaigns', 'all'].includes(scope) ? scope : 'all';
+  const safeLimit = Math.max(1, Math.min(500, Number(maxDeletes) || 500));
+  const results = [];
+  if (safeScope === 'notifications' || safeScope === 'all') {
+    results.push(await scanOrCleanupOldFirebaseNotifications(firebase, { cutoffMs, maxDeletes: safeLimit, dryRun }));
+  }
+  if (safeScope === 'actionLogs' || safeScope === 'all') {
+    results.push(await scanOrCleanupOldRegionArchive(firebase, 'actionLogs', { cutoffMs, maxDeletes: safeLimit, dryRun }));
+  }
+  if (safeScope === 'campaigns' || safeScope === 'all') {
+    results.push(await scanOrCleanupOldRegionArchive(firebase, 'notificationCampaigns', { cutoffMs, maxDeletes: safeLimit, dryRun }));
+  }
+  return { scope: safeScope, retentionDays: Math.max(1, Number(retentionDays) || 30), dryRun: Boolean(dryRun), ...sumArchiveResults(results) };
+}
+
+export async function scanOldFirebaseArchives(actor, options = {}) {
+  return runFirebaseArchiveCleanup(actor, { ...options, scope: options.scope || 'all', maxDeletes: options.maxScan || options.maxDeletes || 500, dryRun: true });
+}
+
+export async function cleanupOldFirebaseArchives(actor, options = {}) {
+  return runFirebaseArchiveCleanup(actor, { ...options, dryRun: false });
 }
 
 export async function listPublicPlayers(options = {}) {

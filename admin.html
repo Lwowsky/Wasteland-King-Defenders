@@ -36,9 +36,9 @@
   <script defer src="js/confirm-modal.js"></script>
   <script defer src="js/core/app-boot.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/auth-google.js?v=1171"></script>
-  <script type="module" src="js/notifications.js?v=1171"></script>
-  <script type="module" src="js/pages/admin-page.js?v=1172"></script>
+  <script type="module" src="js/auth-google.js?v=118"></script>
+  <script type="module" src="js/notifications.js?v=118"></script>
+  <script type="module" src="js/pages/admin-page.js?v=118"></script>
   <script type="module" src="js/pages/security-page.js?v=1171"></script>
 </head>
 <body class="notranslate">
@@ -82,6 +82,22 @@
         </div>
         <div class="admin-usage-grid" id="adminUsageGrid"></div>
         <div class="region-note admin-usage-note" id="adminUsageNote"></div>
+
+        <div class="admin-archive-cleanup" id="firebaseArchivePanel">
+          <div class="admin-archive-cleanup-head">
+            <div>
+              <h4 data-i18n="admin.firebaseArchiveTitle">Очищення Firebase архівів</h4>
+              <p data-i18n="admin.firebaseArchiveLead">Старі Firestore-повідомлення, кампанії та журнали після переносу в D1 можна чистити вручну порціями.</p>
+            </div>
+            <div class="admin-archive-actions">
+              <button class="btn" id="scanFirebaseArchiveBtn" type="button" data-i18n="admin.firebaseArchiveScan">Перевірити архів</button>
+              <button class="btn region-save" id="cleanupFirebaseNotificationsBtn" type="button" data-i18n="admin.firebaseArchiveCleanNotifications">Очистити прочитані повідомлення 30+ днів</button>
+              <button class="btn region-save" id="cleanupFirebaseCampaignsBtn" type="button" data-i18n="admin.firebaseArchiveCleanCampaigns">Очистити системні кампанії 30+ днів</button>
+              <button class="btn admin-decline" id="cleanupFirebaseActionLogsBtn" type="button" data-i18n="admin.firebaseArchiveCleanActionLogs">Очистити старі журнали 30+ днів</button>
+            </div>
+          </div>
+          <div class="region-note admin-usage-note" id="firebaseArchiveStatus" data-i18n="admin.firebaseArchiveNote">Очищення запускається тільки вручну й видаляє максимум 500 документів за раз.</div>
+        </div>
       </section>
 
       <div class="admin-tabs" role="tablist" aria-label="Адмінка">
