@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=89';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=120';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=122';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=122';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -12,21 +12,21 @@ import {
   canUseAdminPanel,
   getUserProfile,
   isOwnerUser,
-  listRegisteredUsers,
+  listRegisteredUsersPage,
   listRoleRequests,
   roleLabel,
   updateUserByAdmin,
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=118';
+} from '../services/user-db.js?v=122';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=1172';
+} from '../services/region-db.js?v=122';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -44,8 +44,15 @@ let currentProfile = null;
 let users = [];
 let requests = [];
 let regionsCatalog = [];
+let adminStatsSummary = null;
+let regionsLoaded = false;
 let sortState = { key: 'createdAt', dir: 'desc' };
 let editUid = null;
+const ADMIN_PLAYERS_PAGE_SIZE = 10;
+let playersPage = 1;
+let playersCursorStack = [null];
+let playersPageMeta = { hasNext: false, reads: 0, queryMode: 'indexed' };
+let playerSearchDebounce = null;
 
 function allianceTag3(value) { return window.WKD?.allianceTag3 ? window.WKD.allianceTag3(value) : Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join(''); }
 function escapeHtml(value) {
@@ -104,30 +111,43 @@ function includeAdminFarmRows() {
   return Boolean($('#adminIncludeFarmsToggle')?.checked);
 }
 
-function adminRows() {
-  return users.flatMap(user => {
-    const main = {
-      rowId: user.uid,
+function mainRowForUser(user = {}) {
+  const game = getGameProfile(user);
+  return {
+    rowId: user.uid,
+    uid: user.uid,
+    user,
+    game,
+    isFarmRow: false,
+    farmId: 'main',
+    mainNickname: game.nickname || '—'
+  };
+}
+
+function farmRowsForUser(user = {}, main = mainRowForUser(user)) {
+  return getUserFarms(user)
+    .filter(farm => farm.nickname || farm.region || farm.alliance)
+    .map((farm, index) => ({
+      rowId: `${user.uid}::${farm.farmId || farm.id || index}`,
       uid: user.uid,
       user,
-      game: getGameProfile(user),
-      isFarmRow: false,
-      farmId: 'main',
-      mainNickname: getGameProfile(user).nickname || '—'
-    };
+      game: farm,
+      isFarmRow: true,
+      farmId: farm.farmId || farm.id || `farm-${index + 1}`,
+      mainNickname: main.mainNickname
+    }));
+}
+
+function allRowsForUser(user = {}) {
+  const main = mainRowForUser(user);
+  return [main, ...farmRowsForUser(user, main)];
+}
+
+function adminRows() {
+  return users.flatMap(user => {
+    const main = mainRowForUser(user);
     if (!includeAdminFarmRows()) return [main];
-    const farms = getUserFarms(user)
-      .filter(farm => farm.nickname || farm.region || farm.alliance)
-      .map((farm, index) => ({
-        rowId: `${user.uid}::${farm.farmId || farm.id || index}`,
-        uid: user.uid,
-        user,
-        game: farm,
-        isFarmRow: true,
-        farmId: farm.farmId || farm.id || `farm-${index + 1}`,
-        mainNickname: main.mainNickname
-      }));
-    return [main, ...farms];
+    return [main, ...farmRowsForUser(user, main)];
   });
 }
 
@@ -158,36 +178,138 @@ function canDisplayRow(row = {}) {
   });
 }
 
+function canUseLimitsPanel(user = currentUser, profile = currentProfile) {
+  return Boolean(user && (isOwnerUser(user, profile) || String(profile?.role || '').toLowerCase() === 'admin'));
+}
+
+function setLimitsAccess(enabled) {
+  document.querySelectorAll('.admin-limits-only').forEach(el => { el.hidden = !enabled; });
+  if (!enabled && window.location.hash.replace('#', '') === 'limits') switchTab('players');
+}
+
 function sortRows(a, b) {
   const dir = sortState.dir === 'asc' ? 1 : -1;
-  const av = sortState.key === 'createdAt' ? (a.user.createdAt?.toMillis?.() || 0) : (a.game[sortState.key] ?? a.user[sortState.key] ?? '');
-  const bv = sortState.key === 'createdAt' ? (b.user.createdAt?.toMillis?.() || 0) : (b.game[sortState.key] ?? b.user[sortState.key] ?? '');
+  const av = sortState.key === 'createdAt' ? (a.user.createdAt?.toMillis?.() || timestampToMsSafe(a.user.createdAt)) : (a.game[sortState.key] ?? a.user[sortState.key] ?? '');
+  const bv = sortState.key === 'createdAt' ? (b.user.createdAt?.toMillis?.() || timestampToMsSafe(b.user.createdAt)) : (b.game[sortState.key] ?? b.user[sortState.key] ?? '');
+  if (sortState.key === 'createdAt') return (Number(av) - Number(bv)) * dir;
   return String(av).localeCompare(String(bv), window.WKD_CURRENT_LANG || 'en', { numeric: true }) * dir;
 }
 
-function filteredUsers() {
-  const nick = String($('#adminNickSearch')?.value || '').trim().toLowerCase();
-  const alliance = String($('#adminAllianceSearch')?.value || '').trim().toLowerCase();
-  const region = String($('#adminRegionSearch')?.value || '').trim().toLowerCase();
-  const role = $('#adminRoleFilter')?.value || 'all';
-  const rows = $('#adminRowsFilter')?.value || '10';
-  const sorted = adminRows()
-    .filter(canDisplayRow)
-    .filter(row => (role === 'all' || rowRole(row) === role))
-    .filter(row => {
-      const game = row.game || {};
-      const userNick = String(game.nickname || '').toLowerCase();
-      const mainNick = String(row.mainNickname || '').toLowerCase();
-      const userAlliance = String(game.alliance || '').toLowerCase();
-      const userRegion = String(game.region || '').toLowerCase();
-      return (!nick || userNick.includes(nick) || mainNick.includes(nick))
-        && (!alliance || userAlliance.includes(alliance))
-        && (!region || userRegion.includes(region));
-    })
-    .sort(sortRows);
+function timestampToMsSafe(value) {
+  if (!value) return 0;
+  if (typeof value.toMillis === 'function') return value.toMillis();
+  if (typeof value.toDate === 'function') return value.toDate().getTime();
+  if (typeof value === 'number') return value;
+  if (typeof value === 'object' && typeof value.seconds === 'number') return value.seconds * 1000;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
-  if (rows === 'all') return sorted;
-  return sorted.slice(0, Number(rows) || 10);
+function filterValues() {
+  return {
+    nick: String($('#adminNickSearch')?.value || '').trim().toLowerCase(),
+    alliance: String($('#adminAllianceSearch')?.value || '').trim().toLowerCase(),
+    region: String($('#adminRegionSearch')?.value || '').trim().toLowerCase(),
+    role: $('#adminRoleFilter')?.value || 'all'
+  };
+}
+
+function adminPlayerQueryFilters() {
+  const values = filterValues();
+  return {
+    nick: values.nick,
+    alliance: values.alliance,
+    region: values.region.replace(/[^0-9]/g, ''),
+    role: values.role
+  };
+}
+
+function filtersAreActive(filters = filterValues()) {
+  return Boolean(filters.nick || filters.alliance || filters.region || (filters.role && filters.role !== 'all'));
+}
+
+function totalFromSummary(includeFarms = includeAdminFarmRows()) {
+  if (!adminStatsSummary) return null;
+  const total = includeFarms ? adminStatsSummary.totalRows : adminStatsSummary.totalPlayers;
+  return Number.isFinite(Number(total)) ? Number(total) : null;
+}
+
+function regionsFromSummary(includeFarms = includeAdminFarmRows()) {
+  if (!adminStatsSummary) return null;
+  const data = includeFarms ? adminStatsSummary.regionsWithFarms : adminStatsSummary.regions;
+  if (!data || typeof data !== 'object') return null;
+  return Object.keys(data).filter(Boolean).length;
+}
+
+function leadersFromSummary(includeFarms = includeAdminFarmRows()) {
+  if (!adminStatsSummary) return null;
+  const total = includeFarms ? adminStatsSummary.leadersWithFarms : adminStatsSummary.leaders;
+  return Number.isFinite(Number(total)) ? Number(total) : null;
+}
+
+async function loadAdminStatsSummary() {
+  try {
+    const response = await fetch(`public-cache/stats-summary.json?v=122&t=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`summary-${response.status}`);
+    const data = await response.json();
+    adminStatsSummary = data && typeof data === 'object' ? data : null;
+  } catch (error) {
+    console.warn('[WKD] admin stats summary unavailable:', error);
+    adminStatsSummary = null;
+  }
+  return adminStatsSummary;
+}
+
+
+function rowMatchesFilters(row, filters = filterValues()) {
+  if (!canDisplayRow(row)) return false;
+  if (filters.role !== 'all' && rowRole(row) !== filters.role) return false;
+  const game = row.game || {};
+  const userNick = String(game.nickname || '').toLowerCase();
+  const mainNick = String(row.mainNickname || '').toLowerCase();
+  const userAlliance = String(game.alliance || '').toLowerCase();
+  const userRegion = String(game.region || '').toLowerCase();
+  return (!filters.nick || userNick.includes(filters.nick) || mainNick.includes(filters.nick))
+    && (!filters.alliance || userAlliance.includes(filters.alliance))
+    && (!filters.region || userRegion.includes(filters.region));
+}
+
+function filteredPlayerGroups() {
+  const filters = filterValues();
+  return users
+    .map(user => {
+      const main = mainRowForUser(user);
+      const farms = farmRowsForUser(user, main).filter(canDisplayRow);
+      const searchable = includeAdminFarmRows() ? [main, ...farms] : [main];
+      return { user, main, farms, matches: searchable.some(row => rowMatchesFilters(row, filters)) };
+    })
+    .filter(group => group.matches && canDisplayRow(group.main))
+    .sort((a, b) => sortRows(a.main, b.main));
+}
+
+function pagedPlayersState() {
+  const groups = filteredPlayerGroups();
+  const rows = groups.flatMap(group => includeAdminFarmRows() ? [group.main, ...group.farms] : [group.main]);
+  const total = totalFromSummary(false);
+  return {
+    groups,
+    rows,
+    page: playersPage,
+    pageCount: null,
+    hasNext: Boolean(playersPageMeta.hasNext),
+    total: filtersAreActive() ? null : total,
+    reads: Number(playersPageMeta.reads || 0),
+    queryMode: playersPageMeta.queryMode || 'indexed'
+  };
+}
+
+function filteredUsers() {
+  return pagedPlayersState().rows;
+}
+
+function resetPlayersPage() {
+  playersPage = 1;
+  playersCursorStack = [null];
 }
 
 function sortUsers(a, b) {
@@ -230,24 +352,49 @@ function usageCardHtml(periodKey, typeKey, row = {}) {
     <div class="admin-usage-bar" aria-hidden="true"><i style="width:${percent}%"></i></div>
   </article>`;
 }
+function staticLimitCardHtml(key, value, detail = '') {
+  return `<article class="admin-usage-card admin-usage-card--static">
+    <span>${escapeHtml(t(`admin.cloudflare.${key}.label`, key))}</span>
+    <b>${escapeHtml(value)}</b>
+    <small>${escapeHtml(t(`admin.cloudflare.${key}.detail`, detail))}</small>
+  </article>`;
+}
 function renderUsage() {
   const grid = $('#adminUsageGrid');
   const note = $('#adminUsageNote');
+  if (grid) {
+    const usage = getUsageEstimate();
+    grid.innerHTML = [
+      usageCardHtml('day', 'reads', usage.day.reads),
+      usageCardHtml('day', 'writes', usage.day.writes),
+      usageCardHtml('day', 'deletes', usage.day.deletes),
+      usageCardHtml('month', 'reads', usage.month.reads),
+      usageCardHtml('month', 'writes', usage.month.writes),
+      usageCardHtml('month', 'deletes', usage.month.deletes),
+      staticLimitCardHtml('firestoreStorage', '1 GiB', 'Firestore storage on Spark'),
+      staticLimitCardHtml('firestoreTraffic', '10 GiB / month', 'Firestore outbound transfer')
+    ].join('');
+  }
+  if (note) note.textContent = t('admin.usageNote', 'Це орієнтовний лічильник сайту, а не офіційні цифри Firebase. Точні ліміти перевіряй у Firebase Console → Usage. Місячні читання/записи/видалення — це оцінка 30 днів, бо офіційна безкоштовна квота Firestore рахується за день.');
+  renderCloudflareUsage();
+}
+function renderCloudflareUsage() {
+  const grid = $('#cloudflareUsageGrid');
   if (!grid) return;
-  const usage = getUsageEstimate();
   grid.innerHTML = [
-    usageCardHtml('day', 'reads', usage.day.reads),
-    usageCardHtml('day', 'writes', usage.day.writes),
-    usageCardHtml('day', 'deletes', usage.day.deletes),
-    usageCardHtml('month', 'reads', usage.month.reads),
-    usageCardHtml('month', 'writes', usage.month.writes),
-    usageCardHtml('month', 'deletes', usage.month.deletes)
+    staticLimitCardHtml('workerRequests', '100 000 / day', 'Workers Free requests'),
+    staticLimitCardHtml('workerCpu', '10 ms / request', 'Workers Free CPU time'),
+    staticLimitCardHtml('workerStaticAssets', 'free', 'Static asset requests'),
+    staticLimitCardHtml('d1RowsRead', '5 000 000 / day', 'D1 Free rows read'),
+    staticLimitCardHtml('d1RowsWritten', '100 000 / day', 'D1 Free rows written'),
+    staticLimitCardHtml('d1Storage', '5 GB total', 'D1 Free storage per account'),
+    staticLimitCardHtml('d1DatabaseSize', '500 MB / DB', 'D1 Free maximum database size'),
+    staticLimitCardHtml('d1QueriesPerInvocation', '50', 'D1 queries per Worker invocation on Free')
   ].join('');
-  if (note) note.textContent = t('admin.usageNote', 'Це орієнтовний лічильник сайту, а не офіційні цифри Firebase. Точні ліміти перевіряй у Firebase Console → Usage.');
 }
 
 async function maybeRunOldDocsCleanup() {
-  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  if (!currentUser || !canUseLimitsPanel()) return;
   const key = `wkd.autoCleanupOldDocs:${currentUser.uid}`;
   const now = Date.now();
   const last = Number(localStorage.getItem(key) || 0);
@@ -264,7 +411,7 @@ async function maybeRunOldDocsCleanup() {
 }
 
 async function runOldDocsCleanup() {
-  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  if (!currentUser || !canUseLimitsPanel()) return;
   const ok = await confirmAction({
     title: t('admin.cleanupOldDocsTitle', 'Очистити старі документи?'),
     message: t('admin.cleanupOldDocsMessage', 'Будуть видалені старі секретні знімки таблиць і фінальних планів старші 45 днів. Активні дані гравців не чіпаються.'),
@@ -310,7 +457,7 @@ function archiveResultText(result = {}) {
 }
 
 async function runFirebaseArchiveScan() {
-  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  if (!currentUser || !canUseLimitsPanel()) return;
   try {
     setFirebaseArchiveStatus(t('admin.firebaseArchiveScanning', 'Перевіряю Firebase архіви...'), 'muted');
     const result = await scanOldFirebaseArchives(currentUser, { retentionDays: 30, maxScan: 500 });
@@ -323,7 +470,7 @@ async function runFirebaseArchiveScan() {
 }
 
 async function runFirebaseArchiveCleanup(scope) {
-  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  if (!currentUser || !canUseLimitsPanel()) return;
   const label = archiveScopeLabel(scope);
   const ok = await confirmAction({
     title: tv('admin.firebaseArchiveCleanTitle', 'Очистити {scope}?', { scope: label }),
@@ -374,7 +521,7 @@ function d1ArchiveResultText(result = {}) {
 }
 
 async function runD1ArchiveScan() {
-  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  if (!currentUser || !canUseLimitsPanel()) return;
   try {
     setD1ArchiveStatus(t('admin.d1ArchiveScanning', 'Перевіряю D1 архів...'), 'muted');
     const result = await scanD1Archives(currentUser, { scope: 'all', retentionDays: 60, maxScan: 500 });
@@ -386,7 +533,7 @@ async function runD1ArchiveScan() {
 }
 
 async function runD1ArchiveCleanup(scope) {
-  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  if (!currentUser || !canUseLimitsPanel()) return;
   const label = d1ArchiveScopeLabel(scope);
   const ok = await confirmAction({
     title: tv('admin.d1ArchiveCleanTitle', 'Очистити {scope}?', { scope: label }),
@@ -408,16 +555,18 @@ async function runD1ArchiveCleanup(scope) {
 function renderStats() {
   setAdminPlayersCounterLabel();
   const rows = adminRows();
-  const regions = new Set([
+  const includeFarms = includeAdminFarmRows();
+  const playersTotal = totalFromSummary(includeFarms) ?? rows.length;
+  const regionTotal = regionsFromSummary(includeFarms) ?? new Set([
     ...users.map(user => getGameProfile(user).region).filter(Boolean),
     ...regionsCatalog.filter(region => region.active !== false).map(region => region.region).filter(Boolean)
-  ]);
-  const leaders = rows.filter(row => ['admin', 'moderator', 'consul', 'officer'].includes(rowRole(row))).length;
+  ]).size;
+  const leaders = leadersFromSummary(includeFarms) ?? rows.filter(row => ['admin', 'moderator', 'consul', 'officer'].includes(rowRole(row))).length;
   const pending = visibleRequests().length;
   const cards = $('#adminStats')?.querySelectorAll('.admin-stat-card b') || [];
-  const values = [rows.length, regions.size, leaders, pending];
-  cards.forEach((card, index) => { card.textContent = values[index] ?? 0; });
-  setSummary(tv('admin.summary', '{players} players • {requests} requests', { players: rows.length, requests: pending }));
+  const values = [playersTotal, regionTotal, leaders, pending];
+  cards.forEach((card, index) => { card.textContent = formatCompactNumber(values[index] ?? 0); });
+  setSummary(tv('admin.summaryOptimized', '{players} гравців у кеші • {shown} показано зараз • {requests} заявок', { players: playersTotal, shown: rows.length, requests: pending }));
 }
 
 function editCell(name, value, type = 'text') {
@@ -471,10 +620,33 @@ function userRow(row) {
   </tr>`;
 }
 
+function renderPlayersPager(state = null) {
+  const pager = $('#adminPlayersPager');
+  if (!pager) return;
+  const data = state || pagedPlayersState();
+  const hasPages = data.page > 1 || data.hasNext || Number(data.total || 0) > ADMIN_PLAYERS_PAGE_SIZE;
+  pager.hidden = !hasPages;
+  const info = $('#adminPlayersPageInfo');
+  if (info) {
+    info.textContent = tv('admin.playersPageInfoOptimized', 'Сторінка {page} · показано основ: {shown} · всього: {total} · Firebase reads≈{reads}', {
+      page: data.page,
+      shown: data.groups.length,
+      total: data.total ?? '—',
+      reads: data.reads || 0
+    });
+  }
+  const prev = $('#adminPlayersPrev');
+  const next = $('#adminPlayersNext');
+  if (prev) prev.disabled = data.page <= 1;
+  if (next) next.disabled = !data.hasNext;
+}
+
 function renderUsers() {
   const body = $('#registeredPlayersBody');
   if (!body) return;
-  const visible = filteredUsers();
+  const state = pagedPlayersState();
+  const visible = state.rows;
+  renderPlayersPager(state);
   if (!visible.length) {
     body.innerHTML = `<tr><td colspan="8">${escapeHtml(t('admin.noPlayers', 'No players found.'))}</td></tr>`;
     return;
@@ -581,7 +753,7 @@ async function saveManualRegion(event) {
     $('#adminRegionName') && ($('#adminRegionName').value = '');
     $('#adminRegionNote') && ($('#adminRegionNote').value = '');
     $('#adminRegionActive') && ($('#adminRegionActive').checked = true);
-    await loadAdminData();
+    await loadRegionsCatalog(true);
     switchTab('regions');
     setStatus(t('admin.regionAdded', 'Region saved.'), 'success');
   } catch (error) {
@@ -611,7 +783,7 @@ async function handleRegionAction(event) {
   try {
     setStatus(nextActive ? t('admin.restoringRegion', 'Restoring region...') : t('admin.archivingRegion', 'Archiving region...'), 'muted');
     await archiveManualRegion(currentUser, region, nextActive);
-    await loadAdminData();
+    await loadRegionsCatalog(true);
     switchTab('regions');
     setStatus(nextActive ? t('admin.regionRestored', 'Region restored.') : t('admin.regionArchived', 'Region archived.'), 'success');
   } catch (error) {
@@ -644,7 +816,7 @@ async function handleRequestAction(event) {
     setStatus(approve ? t('admin.approvingRole', 'Approving role...') : t('admin.decliningRequest', 'Declining request...'), 'muted');
     if (approve) await approveRoleRequest(requestId);
     else await declineRoleRequest(requestId);
-    await loadAdminData();
+    await Promise.all([loadRoleRequests(), loadPlayersPage({ reset: false })]);
     setStatus(approve ? t('admin.roleApproved', 'Role approved.') : t('admin.requestDeclined', 'Request declined.'), approve ? 'success' : 'warn');
   } catch (error) {
     console.error(error);
@@ -686,7 +858,7 @@ async function handleUserAction(event) {
     if (farmId && farmId !== 'main') await updateFarmByAdmin(uid, farmId, values);
     else await updateUserByAdmin(uid, values);
     editUid = null;
-    await loadAdminData();
+    await loadPlayersPage({ reset: false });
     setStatus(t('admin.playerUpdated', 'Player updated.'), 'success');
   } catch (error) {
     console.error(error);
@@ -699,40 +871,130 @@ async function handleUserAction(event) {
   }
 }
 
+function setPlayersLoading() {
+  const body = $('#registeredPlayersBody');
+  if (body) body.innerHTML = `<tr><td colspan="8">${escapeHtml(t('stats.loadingPlayers', 'Завантажую гравців...'))}</td></tr>`;
+}
+
+async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
+  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  if (reset) resetPlayersPage();
+  setPlayersLoading();
+  const cursor = playersCursorStack[playersPage - 1] || null;
+  const result = await listRegisteredUsersPage({
+    pageSize: ADMIN_PLAYERS_PAGE_SIZE,
+    cursor,
+    direction,
+    filters: adminPlayerQueryFilters()
+  });
+  users = Array.isArray(result.users) ? result.users : [];
+  playersPageMeta = {
+    hasNext: Boolean(result.hasNext),
+    reads: Number(result.reads || 0),
+    queryMode: result.queryMode || 'indexed',
+    firstDoc: result.firstDoc || null,
+    lastDoc: result.lastDoc || null
+  };
+  renderStats();
+  renderUsers();
+  const msgKey = filtersAreActive() ? 'admin.playersLoadedFiltered' : 'admin.playersLoadedOptimized';
+  const fallback = filtersAreActive()
+    ? 'Завантажено {count} гравців за фільтром. Firebase reads≈{reads}. Якщо пошук не знайшов старого гравця, очисти фільтр або натисни Вперед.'
+    : 'Завантажено {count} нових гравців. Firebase reads≈{reads}; вся колекція users не читається.';
+  setStatus(tv(msgKey, fallback, { count: users.length, reads: playersPageMeta.reads }), 'success');
+}
+
+async function loadNextPlayersPage() {
+  if (!playersPageMeta.hasNext) return;
+  if (!playersPageMeta.lastDoc) {
+    setStatus(t('admin.playersNextUnavailable', 'Наступна сторінка недоступна: немає курсора Firestore.'), 'warn');
+    return;
+  }
+  playersCursorStack[playersPage] = playersPageMeta.lastDoc;
+  playersPage += 1;
+  editUid = null;
+  await loadPlayersPage({ reset: false, direction: 'next' });
+}
+
+async function loadPreviousPlayersPage() {
+  if (playersPage <= 1) return;
+  playersPage = Math.max(1, playersPage - 1);
+  playersCursorStack = playersCursorStack.slice(0, playersPage);
+  editUid = null;
+  await loadPlayersPage({ reset: false, direction: 'next' });
+}
+
+async function loadRoleRequests() {
+  requests = await listRoleRequests('pending', { limitCount: 50 }).catch(error => {
+    console.warn('[WKD] role requests unavailable:', error);
+    return [];
+  });
+  renderStats();
+  renderRequests();
+}
+
+async function loadRegionsCatalog(force = false) {
+  if (regionsLoaded && !force) {
+    renderRegions();
+    return regionsCatalog;
+  }
+  const list = $('#adminRegionList');
+  if (list) list.innerHTML = `<div class="admin-empty">${escapeHtml(t('admin.loadingRegions', 'Завантажую регіони...'))}</div>`;
+  regionsCatalog = await listRegionCatalog({ includeInactive: true, skipPublicPlayers: true }).catch(error => {
+    console.warn('[WKD] region catalog unavailable:', error);
+    return [];
+  });
+  regionsLoaded = true;
+  renderStats();
+  renderRegions();
+  return regionsCatalog;
+}
+
 async function loadAdminData() {
   if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
-  [users, requests, regionsCatalog] = await Promise.all([
-    listRegisteredUsers(),
-    listRoleRequests('pending'),
-    listRegionCatalog({ includeInactive: true }).catch(error => {
-      console.warn('[WKD] region catalog unavailable:', error);
-      return [];
-    })
+  await Promise.all([
+    loadAdminStatsSummary(),
+    loadRoleRequests(),
+    loadPlayersPage({ reset: true })
   ]);
   renderStats();
   renderUsers();
-  renderRequests();
-  renderRegions();
   renderUsage();
   setStatus(t('admin.dataUpdated', 'Admin data updated.'), 'success');
   maybeRunOldDocsCleanup().catch(() => null);
 }
 
 function switchTab(tab) {
-  const safeTab = tab || 'players';
+  const requested = tab || 'players';
+  const safeTab = requested === 'limits' && !canUseLimitsPanel() ? 'players' : requested;
   document.querySelectorAll('[data-admin-tab]').forEach(button => button.classList.toggle('is-active', button.dataset.adminTab === safeTab));
   document.querySelectorAll('[data-admin-panel]').forEach(panel => panel.classList.toggle('is-active', panel.dataset.adminPanel === safeTab));
+  if (safeTab === 'limits') renderUsage();
+  if (safeTab === 'regions') loadRegionsCatalog().catch(console.error);
+  if (safeTab === 'security') document.dispatchEvent(new CustomEvent('wkd:security-load'));
   if (window.location.hash.replace('#','') !== safeTab && safeTab !== 'players') history.replaceState(null, '', `#${safeTab}`);
+}
+function switchLimitTab(tab = 'firebase') {
+  const safeTab = tab === 'cloudflare' ? 'cloudflare' : 'firebase';
+  document.querySelectorAll('[data-limit-tab]').forEach(button => button.classList.toggle('is-active', button.dataset.limitTab === safeTab));
+  document.querySelectorAll('[data-limit-panel]').forEach(panel => panel.classList.toggle('is-active', panel.dataset.limitPanel === safeTab));
+  renderUsage();
 }
 function openInitialAdminTab() {
   const hash = String(window.location.hash || '').replace('#','');
   if (hash && document.querySelector(`[data-admin-tab="${hash}"]`)) switchTab(hash);
 }
 
+function debouncePlayerSearchReload() {
+  clearTimeout(playerSearchDebounce);
+  playerSearchDebounce = setTimeout(() => loadPlayersPage({ reset: true }).catch(console.error), 650);
+}
+
 function bindAdminControls() {
-  $('#refreshRequestsBtn')?.addEventListener('click', loadAdminData);
-  $('#refreshPlayersBtn')?.addEventListener('click', loadAdminData);
+  $('#refreshRequestsBtn')?.addEventListener('click', () => loadRoleRequests().catch(console.error));
+  $('#refreshPlayersBtn')?.addEventListener('click', () => loadPlayersPage({ reset: true }).catch(console.error));
   $('#refreshUsageBtn')?.addEventListener('click', renderUsage);
+  $('#refreshCloudflareUsageBtn')?.addEventListener('click', renderCloudflareUsage);
   $('#resetUsageEstimateBtn')?.addEventListener('click', () => { resetUsageEstimate(); renderUsage(); });
   $('#cleanupOldDocsBtn')?.addEventListener('click', () => runOldDocsCleanup().catch(console.error));
   $('#scanFirebaseArchiveBtn')?.addEventListener('click', () => runFirebaseArchiveScan().catch(console.error));
@@ -746,12 +1008,14 @@ function bindAdminControls() {
   $('#backToProfileBtn')?.addEventListener('click', () => { window.location.href = 'profile.html'; });
   $('#adminRegionForm')?.addEventListener('submit', saveManualRegion);
   $('#adminRegionList')?.addEventListener('click', handleRegionAction);
-  $('#adminNickSearch')?.addEventListener('input', renderUsers);
-  $('#adminAllianceSearch')?.addEventListener('input', renderUsers);
-  $('#adminRegionSearch')?.addEventListener('input', renderUsers);
-  $('#adminRoleFilter')?.addEventListener('change', renderUsers);
-  $('#adminRowsFilter')?.addEventListener('change', renderUsers);
+  $('#adminNickSearch')?.addEventListener('input', debouncePlayerSearchReload);
+  $('#adminAllianceSearch')?.addEventListener('input', debouncePlayerSearchReload);
+  $('#adminRegionSearch')?.addEventListener('input', debouncePlayerSearchReload);
+  $('#adminRoleFilter')?.addEventListener('change', () => loadPlayersPage({ reset: true }).catch(console.error));
   $('#adminIncludeFarmsToggle')?.addEventListener('change', () => { editUid = null; renderStats(); renderUsers(); });
+  $('#adminPlayersPrev')?.addEventListener('click', () => loadPreviousPlayersPage().catch(console.error));
+  $('#adminPlayersNext')?.addEventListener('click', () => loadNextPlayersPage().catch(console.error));
+  document.querySelectorAll('[data-limit-tab]').forEach(button => button.addEventListener('click', () => switchLimitTab(button.dataset.limitTab)));
   document.querySelectorAll('[data-admin-tab]').forEach(button => button.addEventListener('click', () => switchTab(button.dataset.adminTab)));
   document.querySelectorAll('#registeredPlayersTable [data-sort]').forEach(button => button.addEventListener('click', () => {
     const key = button.dataset.sort;
@@ -777,7 +1041,7 @@ async function initAdminPage() {
 
     currentProfile = await ensureCurrentUserPublished(user).catch(() => getUserProfile(user.uid)).catch(() => null);
     if (!canUseAdminPanel(user, currentProfile)) {
-      $('#adminUsagePanel') && ($('#adminUsagePanel').hidden = true);
+      setLimitsAccess(false);
       document.querySelectorAll('[data-admin-tab], [data-admin-panel]').forEach(el => { el.hidden = true; });
       setSummary(t('admin.noAccessShort', 'No access'));
       setStatus(t('admin.noAccess', 'This page is available only to an admin or moderator.'), 'error');
@@ -787,8 +1051,11 @@ async function initAdminPage() {
       return;
     }
 
-    $('#adminUsagePanel') && ($('#adminUsagePanel').hidden = false);
-    document.querySelectorAll('[data-admin-tab], [data-admin-panel]').forEach(el => { el.hidden = false; });
+    document.querySelectorAll('[data-admin-tab], [data-admin-panel]').forEach(el => {
+      if (!el.classList.contains('admin-limits-only')) el.hidden = false;
+    });
+    setLimitsAccess(canUseLimitsPanel(user, currentProfile));
+    openInitialAdminTab();
     setStatus(t('admin.loadingPanel', 'Loading admin panel...'), 'muted');
     renderUsage();
     await loadAdminData();

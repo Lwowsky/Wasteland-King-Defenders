@@ -1,12 +1,13 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser } from '../services/user-db.js';
-import { getSecurityOverview, cleanupOldEmailFields } from '../services/region-db.js?v=1171';
+import { getSecurityOverview, cleanupOldEmailFields } from '../services/region-db.js?v=122';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 let overview = null;
 let ready = false;
+let loadedOnce = false;
 let currentUser = null;
 function setStatus(text, type = 'muted') {
   const box = $('#securityStatus');
@@ -50,12 +51,18 @@ async function handleCleanupEmails() {
   overview = await getSecurityOverview(currentUser);
   render();
 }
-async function load(user) {
-  currentUser = user || null;
-  if (!user) { setStatus(t('security.authRequired', 'Увійди через Google.'), 'warn'); return; }
-  await saveSignedInUser(user).catch(() => null);
+function shouldLoadImmediately() {
+  const adminPanel = document.querySelector('[data-admin-panel="security"]');
+  return !adminPanel || adminPanel.classList.contains('is-active') || /security\.html$/i.test(location.pathname);
+}
+async function load(user, { force = false } = {}) {
+  currentUser = user || currentUser || null;
+  if (!currentUser) { setStatus(t('security.authRequired', 'Увійди через Google.'), 'warn'); return; }
+  if (loadedOnce && !force) return;
+  loadedOnce = true;
+  await saveSignedInUser(currentUser).catch(() => null);
   try {
-    overview = await getSecurityOverview(user);
+    overview = await getSecurityOverview(currentUser);
     setStatus(t('security.loaded', 'Перевірку завершено.'), 'success');
     render();
   } catch (error) {
@@ -67,8 +74,13 @@ function init() {
   if (ready) return;
   ready = true;
   document.addEventListener('wkd:language-changed', render);
+  document.addEventListener('wkd:security-load', () => load(currentUser).catch(console.error));
   $('#cleanupEmailFieldsBtn')?.addEventListener('click', () => handleCleanupEmails().catch(error => { console.error(error); setStatus(t('security.cleanupFailed', 'Не вдалося очистити email-поля.'), 'error'); }));
-  watchAuth(user => load(user).catch(console.error));
+  watchAuth(user => {
+    currentUser = user || null;
+    if (shouldLoadImmediately()) load(user).catch(console.error);
+    else setStatus(t('security.lazyNote', 'Відкрий вкладку Безпека, щоб запустити перевірку без зайвих Firebase reads.'), 'muted');
+  });
 }
 document.addEventListener('wkd:partials-ready', init);
 document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));

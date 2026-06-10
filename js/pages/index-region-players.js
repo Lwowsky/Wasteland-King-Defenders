@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=1171';
+import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=122';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -162,7 +162,7 @@ async function refreshTowerRegionOptions() {
     const role = normalizeUserRole(currentProfile?.role || 'player');
     let regions = [];
     if (currentUser.email === 'vovapotaychuk@gmail.com' || role === 'admin' || role === 'moderator') {
-      const catalog = await listRegionCatalog({ includeInactive: false }).catch(error => {
+      const catalog = await listRegionCatalog({ includeInactive: false, skipPublicPlayers: true }).catch(error => {
         console.warn('[WKD] tower region catalog skipped:', error);
         return [];
       });

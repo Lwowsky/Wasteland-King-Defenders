@@ -348,9 +348,10 @@ service cloud.firestore {
     }
 
     function canReadUser(userId) {
-      return isOwner(userId)
-        || canUseAdminPanel()
-        || (currentRegionRole(targetUserRegion(userId)) in ['consul', 'officer'] && targetHasRegionAccess(userId, targetUserRegion(userId)));
+      // Private profile documents can contain email.
+      // Only the profile owner, Owner, Admin and Moderator may read users/{uid}.
+      // Consul/Officer must use publicPlayers or regions/{region}/players without email.
+      return isOwner(userId) || canUseAdminPanel();
     }
 
     function notificationTargetTypeSafe() {

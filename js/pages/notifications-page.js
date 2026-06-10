@@ -1,5 +1,5 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
-import { listRegionCatalog } from '../services/region-db.js?v=1171';
+import { listRegionCatalog } from '../services/region-db.js?v=122';
 import {
   canUseAdminPanel,
   createSiteMessageCampaign,
@@ -24,7 +24,7 @@ import {
   patchUserSentMessage,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=1171';
+} from '../services/user-db.js?v=122';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -724,7 +724,7 @@ async function loadDirectory() {
   const [privateUsers, publicUsers, catalog] = await Promise.all([
     isManager() ? listRegisteredUsers().catch(error => { console.warn('[WKD] private user directory unavailable, public fallback used', error); return []; }) : Promise.resolve([]),
     listPublicPlayers().catch(() => []),
-    isGlobalManager() ? listRegionCatalog({ includeInactive: true }).catch(() => []) : Promise.resolve([])
+    isGlobalManager() ? listRegionCatalog({ includeInactive: true, skipPublicPlayers: true }).catch(() => []) : Promise.resolve([])
   ]);
   knownRegionOptions = Array.isArray(catalog) ? catalog : [];
   const byUid = new Map();

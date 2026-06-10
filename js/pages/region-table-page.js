@@ -17,7 +17,7 @@ import {
   listRegionAlliances,
   listRegionCatalog,
   shareRegionTable
-} from '../services/region-db.js?v=1171';
+} from '../services/region-db.js?v=122';
 import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot } from '../services/region-table-cache.js?v=106';
 
 const $ = selector => document.querySelector(selector);
@@ -176,7 +176,7 @@ function profileRegionOptions(profile = currentProfile || {}) {
 
 async function loadRegionOptions() {
   if (canViewAnyRegion(currentProfile || {}, currentUser)) {
-    const catalog = await listRegionCatalog({ includeInactive: true }).catch(() => []);
+    const catalog = await listRegionCatalog({ includeInactive: true, skipPublicPlayers: true }).catch(() => []);
     const own = profileRegionOptions(currentProfile);
     const seen = new Map();
     [...catalog, ...own].forEach(item => {

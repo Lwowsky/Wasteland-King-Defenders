@@ -1480,7 +1480,8 @@ async function handleD1CleanupScan(request, env) {
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
   await ensureRegionTableSchema(db);
-  await verifyFirebaseToken(request, env);
+  const user = await verifyFirebaseToken(request, env);
+  if (!isAdminUid(env, user.uid)) return json({ ok: false, error: 'admin_required' }, 403);
   let body = null;
   try { body = await request.json(); } catch { body = {}; }
   const result = await runD1ArchiveCleanup(db, {
@@ -1497,7 +1498,8 @@ async function handleD1CleanupClear(request, env) {
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
   await ensureRegionTableSchema(db);
-  await verifyFirebaseToken(request, env);
+  const user = await verifyFirebaseToken(request, env);
+  if (!isAdminUid(env, user.uid)) return json({ ok: false, error: 'admin_required' }, 403);
   let body = null;
   try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
   const result = await runD1ArchiveCleanup(db, {

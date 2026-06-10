@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=118';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=118';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=122';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=122';
 import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=104';
 import {
   createNotificationCampaignD1,
@@ -1410,18 +1410,110 @@ export async function deleteFarm(user, farmId) {
   return savedProfile;
 }
 
-export async function listRoleRequests(status = 'pending') {
+export async function listRoleRequests(status = 'pending', options = {}) {
   const firebase = await getFirebase();
   if (!firebase) return [];
   const { db, firestoreMod } = firebase;
-  const queryRef = firestoreMod.query(
+  const limitCount = Math.max(1, Math.min(100, Number(options?.limitCount || options?.limit || 50)));
+  const clauses = [
     firestoreMod.collection(db, 'roleRequests'),
-    firestoreMod.where('status', '==', status)
-  );
+    firestoreMod.where('status', '==', status),
+    firestoreMod.limit(limitCount)
+  ];
+  const queryRef = firestoreMod.query(...clauses);
   const snapshot = await firestoreMod.getDocs(queryRef);
+  trackReads(Math.max(1, snapshot.docs.length));
   return snapshot.docs
     .map(doc => ({ id: doc.id, ...doc.data() }))
-    .sort((a, b) => String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk'));
+    .sort((a, b) => timestampToMs(b.createdAt) - timestampToMs(a.createdAt) || String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk'));
+}
+
+function adminUserFilterValue(value = '') {
+  return normalizeText(value).toLowerCase();
+}
+function adminUserMatchesFilters(user = {}, filters = {}) {
+  const game = getGameProfile(user);
+  const farms = getUserFarms(user);
+  const allGames = [game, ...farms];
+  const nick = adminUserFilterValue(filters.nick);
+  const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
+  const alliance = normalizeAllianceTag(filters.alliance);
+  const role = normalizeRole(filters.role || 'all');
+  if (role && role !== 'all' && normalizeRole(user.role || 'player') !== role && !farms.some(farm => normalizeRole(farm.role || 'player') === role)) return false;
+  if (nick && !allGames.some(item => adminUserFilterValue(item.nickname || item.gameNick).includes(nick))) return false;
+  if (region && !allGames.some(item => gameRegion(item) === region)) return false;
+  if (alliance && !allGames.some(item => normalizeAllianceTag(item.alliance) === alliance)) return false;
+  return true;
+}
+
+function buildAdminUsersQuery(firestoreMod, db, { cursor = null, direction = 'next', pageSize = 10, filters = {}, strictProfileComplete = true, serverFilters = true } = {}) {
+  const clauses = [firestoreMod.collection(db, 'users')];
+  const role = normalizeRole(filters.role || 'all');
+  const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
+  const alliance = normalizeAllianceTag(filters.alliance);
+  if (strictProfileComplete) clauses.push(firestoreMod.where('profileComplete', '==', true));
+  if (serverFilters && role && role !== 'all') clauses.push(firestoreMod.where('role', '==', role));
+  if (serverFilters && region && alliance) clauses.push(firestoreMod.where('allianceAccess', 'array-contains', `${region}:${alliance}`));
+  else if (serverFilters && region) clauses.push(firestoreMod.where('regionAccess', 'array-contains', region));
+  else if (serverFilters && alliance) clauses.push(firestoreMod.where('alliance', '==', alliance));
+  clauses.push(firestoreMod.orderBy('createdAt', 'desc'));
+  if (cursor) {
+    if (direction === 'prev') clauses.push(firestoreMod.endBefore(cursor), firestoreMod.limitToLast(pageSize));
+    else clauses.push(firestoreMod.startAfter(cursor), firestoreMod.limit(pageSize));
+  } else {
+    clauses.push(firestoreMod.limit(pageSize));
+  }
+  return firestoreMod.query(...clauses);
+}
+
+export async function listRegisteredUsersPage(options = {}) {
+  const firebase = await getFirebase();
+  if (!firebase) return { users: [], firstDoc: null, lastDoc: null, hasNext: false, reads: 0, pageSize: 10, filters: {} };
+  const { db, firestoreMod } = firebase;
+  const pageSize = Math.max(1, Math.min(50, Number(options?.pageSize || 10)));
+  const filters = options?.filters || {};
+  const hasClientFilters = Boolean(adminUserFilterValue(filters.nick) || normalizeText(filters.region) || normalizeText(filters.alliance) || (normalizeRole(filters.role || 'all') !== 'all'));
+  const scanLimit = hasClientFilters ? Math.max(pageSize + 1, Math.min(100, Number(options?.scanLimit || pageSize * 10))) : pageSize + 1;
+  const baseOptions = {
+    cursor: options?.cursor || null,
+    direction: options?.direction === 'prev' ? 'prev' : 'next',
+    pageSize: scanLimit,
+    filters,
+    strictProfileComplete: true,
+    serverFilters: true
+  };
+
+  let snapshot = null;
+  let queryMode = 'indexed';
+  try {
+    snapshot = await firestoreMod.getDocs(buildAdminUsersQuery(firestoreMod, db, baseOptions));
+  } catch (error) {
+    console.warn('[WKD] indexed admin users query failed; retrying safe cursor query without compound filters:', error);
+    queryMode = 'safe-fallback';
+    snapshot = await firestoreMod.getDocs(buildAdminUsersQuery(firestoreMod, db, { ...baseOptions, strictProfileComplete: false, serverFilters: false }));
+  }
+
+  const readCount = Math.max(1, snapshot.docs.length);
+  trackReads(readCount);
+  const rawDocs = snapshot.docs || [];
+  const mapped = rawDocs
+    .map(doc => ({ id: doc.id, ...doc.data(), uid: doc.data()?.uid || doc.id, __doc: doc }))
+    .filter(user => user.profileComplete !== false)
+    .filter(user => adminUserMatchesFilters(user, filters));
+  const pageUsers = mapped.slice(0, pageSize).map(({ __doc, ...user }) => user);
+  const rawHasNext = hasClientFilters ? rawDocs.length >= scanLimit : rawDocs.length > pageSize;
+  const pageDocs = mapped.slice(0, pageSize).map(user => user.__doc).filter(Boolean);
+  const cursorDoc = hasClientFilters ? (rawDocs[rawDocs.length - 1] || pageDocs[pageDocs.length - 1] || null) : (pageDocs[pageDocs.length - 1] || rawDocs[Math.min(rawDocs.length, pageSize) - 1] || null);
+  return {
+    users: pageUsers,
+    firstDoc: pageDocs[0] || rawDocs[0] || null,
+    lastDoc: cursorDoc,
+    hasNext: rawHasNext || mapped.length > pageSize,
+    reads: readCount,
+    pageSize,
+    filters,
+    queryMode
+  };
 }
 
 export async function listRegisteredUsers() {
@@ -1442,7 +1534,7 @@ async function requireFirebaseArchiveCleanupAccess(actor) {
   const firebase = await getFirebase();
   if (!firebase) throw new Error('firebase-unavailable');
   const profile = await getUserProfile(actor.uid).catch(() => null);
-  if (!canUseAdminPanel(actor, profile)) throw new Error('admin-only');
+  if (!(isOwnerUser(actor, profile) || normalizeRole(profile?.role || 'player') === 'admin')) throw new Error('admin-only');
   return { firebase, profile };
 }
 

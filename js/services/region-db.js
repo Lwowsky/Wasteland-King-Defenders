@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=89';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=89';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=122';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=122';
 import {
   getUserProfile,
   getFarmById,
@@ -12,7 +12,7 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=1171';
+} from './user-db.js?v=122';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -445,7 +445,7 @@ export function canCreateManualRegion(profile = {}, actor = null) {
   return canViewAnyRegion(profile, actor);
 }
 
-export async function listRegionCatalog({ includeInactive = false } = {}) {
+export async function listRegionCatalog({ includeInactive = false, skipPublicPlayers = false } = {}) {
   const { db, firestoreMod } = await getFirebaseParts();
   const byRegion = new Map();
   const addItem = item => {
@@ -456,24 +456,28 @@ export async function listRegionCatalog({ includeInactive = false } = {}) {
 
   try {
     const regionSnap = await firestoreMod.getDocs(firestoreMod.collection(db, 'regions'));
+    trackReads(Math.max(1, regionSnap.docs.length));
     regionSnap.docs.forEach(doc => addItem(regionCatalogItem(doc.id, doc.data() || {})));
   } catch (error) {
     console.warn('[WKD] region catalog skipped:', error);
   }
 
-  try {
-    const publicSnap = await firestoreMod.getDocs(firestoreMod.collection(db, 'publicPlayers'));
-    publicSnap.docs.forEach(doc => {
-      const data = doc.data() || {};
-      [data.region, ...(Array.isArray(data.farms) ? data.farms.map(farm => farm?.region) : [])]
-        .map(normalizeRegion)
-        .filter(Boolean)
-        .forEach(region => {
-          if (!byRegion.has(region)) addItem(regionCatalogItem(region, { source: 'auto', active: true }));
-        });
-    });
-  } catch (error) {
-    console.warn('[WKD] public region catalog skipped:', error);
+  if (!skipPublicPlayers) {
+    try {
+      const publicSnap = await firestoreMod.getDocs(firestoreMod.collection(db, 'publicPlayers'));
+      trackReads(Math.max(1, publicSnap.docs.length));
+      publicSnap.docs.forEach(doc => {
+        const data = doc.data() || {};
+        [data.region, ...(Array.isArray(data.farms) ? data.farms.map(farm => farm?.region) : [])]
+          .map(normalizeRegion)
+          .filter(Boolean)
+          .forEach(region => {
+            if (!byRegion.has(region)) addItem(regionCatalogItem(region, { source: 'auto', active: true }));
+          });
+      });
+    } catch (error) {
+      console.warn('[WKD] public region catalog skipped:', error);
+    }
   }
 
   return [...byRegion.values()]
@@ -1339,7 +1343,7 @@ export async function cleanupOldPublicDocuments(user, options = {}) {
   if (!user) return { deletedCount: 0, skipped: 'auth-required' };
   const { db, firestoreMod } = await getFirebaseParts();
   const profile = await getUserProfile(user.uid);
-  if (!(isOwnerEmail(user.email) || ['admin', 'moderator'].includes(normalizeUserRole(profile?.role || 'player')))) {
+  if (!(isOwnerEmail(user.email) || normalizeUserRole(profile?.role || 'player') === 'admin')) {
     return { deletedCount: 0, skipped: 'admin-required' };
   }
   const retentionDays = Math.max(30, Math.min(180, Number(options.retentionDays) || 45));
