@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=117';
+import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=1171';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';

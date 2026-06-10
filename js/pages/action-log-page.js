@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { canUseAdminPanel, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=117';
-import { clearRegionActionLogs, deleteRegionActionLog, deleteRegionActionLogs, getManagedRegionOptions, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=117';
+import { canUseAdminPanel, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=1171';
+import { clearRegionActionLogs, deleteRegionActionLog, deleteRegionActionLogs, getManagedRegionOptions, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=1171';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));

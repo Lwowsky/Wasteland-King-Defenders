@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=117';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=117';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=1171';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=1171';
 import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=104';
 import {
   createNotificationCampaignD1,
@@ -16,7 +16,7 @@ import {
   patchSentMessageD1,
   readNotificationSummaryD1,
   setNotificationSummaryD1
-} from './notifications-d1.js?v=117';
+} from './notifications-d1.js?v=1171';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -1628,20 +1628,23 @@ async function commitProfileIndexBatch(firestoreMod, batchRef, state, force = fa
   return firestoreMod.writeBatch(state.db);
 }
 
-async function deleteProfileIndexCollectionGroup(db, firestoreMod, collectionId = '') {
-  if (!collectionId || typeof firestoreMod.collectionGroup !== 'function') return 0;
-  const snapshot = await firestoreMod.getDocs(firestoreMod.collectionGroup(db, collectionId));
-  trackReads(Math.max(1, snapshot.docs.length));
-  let batch = firestoreMod.writeBatch(db);
-  const state = { count: 0, db };
+async function deleteProfileIndexCollectionForRegions(db, firestoreMod, collectionId = '', regions = []) {
+  const regionList = [...new Set((regions || []).map(region => normalizeText(region)).filter(Boolean))];
+  if (!collectionId || !regionList.length) return 0;
   let deleted = 0;
-  for (const docSnap of snapshot.docs) {
-    batch.delete(docSnap.ref);
-    state.count += 1;
-    deleted += 1;
-    batch = await commitProfileIndexBatch(firestoreMod, batch, state);
+  for (const region of regionList) {
+    const snapshot = await firestoreMod.getDocs(firestoreMod.collection(db, 'regions', region, collectionId));
+    trackReads(Math.max(1, snapshot.docs.length));
+    let batch = firestoreMod.writeBatch(db);
+    const state = { count: 0, db };
+    for (const docSnap of snapshot.docs) {
+      batch.delete(docSnap.ref);
+      state.count += 1;
+      deleted += 1;
+      batch = await commitProfileIndexBatch(firestoreMod, batch, state);
+    }
+    await commitProfileIndexBatch(firestoreMod, batch, state, true);
   }
-  await commitProfileIndexBatch(firestoreMod, batch, state, true);
   if (deleted) trackDeletes(deleted);
   return deleted;
 }
@@ -1658,12 +1661,10 @@ export async function rebuildProfileIndexLocks(options = {}) {
     .slice()
     .sort((a, b) => timestampToMs(a.createdAt) - timestampToMs(b.createdAt));
 
-  const deletedNicknameLocks = await deleteProfileIndexCollectionGroup(db, firestoreMod, 'profileNicknameLocks');
-  const deletedRankLocks = await deleteProfileIndexCollectionGroup(db, firestoreMod, 'profileRankLocks');
-
   const firebaseCtx = { firestoreMod };
   const nicknameLocks = new Map();
   const rankLocks = new Map();
+  const rebuildRegions = new Set();
   let gameRecords = 0;
   let duplicateNicknames = 0;
   let p4Locks = 0;
@@ -1676,6 +1677,7 @@ export async function rebuildProfileIndexLocks(options = {}) {
       const farmId = normalizeText(game.farmId || game.id || 'main') || 'main';
       const region = gameRegion(game);
       if (!region) continue;
+      rebuildRegions.add(region);
       gameRecords += 1;
       const nickId = profileNicknameLockId(game);
       if (nickId) {
@@ -1698,6 +1700,9 @@ export async function rebuildProfileIndexLocks(options = {}) {
       }
     }
   }
+
+  const deletedNicknameLocks = await deleteProfileIndexCollectionForRegions(db, firestoreMod, 'profileNicknameLocks', [...rebuildRegions]);
+  const deletedRankLocks = await deleteProfileIndexCollectionForRegions(db, firestoreMod, 'profileRankLocks', [...rebuildRegions]);
 
   let batch = firestoreMod.writeBatch(db);
   const state = { count: 0, db };
