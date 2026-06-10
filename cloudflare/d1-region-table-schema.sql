@@ -190,3 +190,22 @@ CREATE INDEX IF NOT EXISTS idx_notification_directory_region ON notification_dir
 CREATE INDEX IF NOT EXISTS idx_notification_directory_region_alliance ON notification_directory(region, alliance);
 CREATE INDEX IF NOT EXISTS idx_notification_directory_role ON notification_directory(role);
 CREATE INDEX IF NOT EXISTS idx_notification_directory_nick ON notification_directory(nickname_key);
+
+CREATE TABLE IF NOT EXISTS final_plan_shares (
+  code TEXT PRIMARY KEY,
+  region TEXT NOT NULL,
+  cycle_id TEXT NOT NULL DEFAULT 'active',
+  event_start_at_ms INTEGER NOT NULL DEFAULT 0,
+  title TEXT NOT NULL DEFAULT '',
+  shift TEXT NOT NULL DEFAULT '',
+  html TEXT NOT NULL DEFAULT '',
+  text TEXT NOT NULL DEFAULT '',
+  updated_at_ms INTEGER NOT NULL DEFAULT 0,
+  updated_by TEXT NOT NULL DEFAULT '',
+  updated_by_name TEXT NOT NULL DEFAULT '',
+  expires_at_ms INTEGER NOT NULL DEFAULT 0,
+  revoked INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_final_plan_shares_region ON final_plan_shares(region);
+CREATE INDEX IF NOT EXISTS idx_final_plan_shares_updated ON final_plan_shares(updated_at_ms);
+CREATE INDEX IF NOT EXISTS idx_final_plan_shares_expires ON final_plan_shares(expires_at_ms);

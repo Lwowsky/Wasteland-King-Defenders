@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=137';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=137';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=138';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=138';
 import {
   getUserProfile,
   getFarmById,
@@ -12,7 +12,7 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=137';
+} from './user-db.js?v=138';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -1149,7 +1149,9 @@ export async function shareRegionFinalPlan(user, region, payload = {}) {
   const cleanHtml = trim(payload.html).slice(0, 700000);
   const cleanText = trim(payload.text).slice(0, 50000);
   await writeRegionActionLog(firebase, user, profile, safeRegion, 'final_plan_shared', { summary: 'Створено секретне посилання фінального плану', shift: trim(payload.shift || '') });
-  await firestoreMod.setDoc(firestoreMod.doc(db, 'finalPlanShares', code), {
+  const nowMs = Date.now();
+  const updatedByName = getRegionActorName(profile || {}, safeRegion, user);
+  const sharePayload = {
     code,
     region: safeRegion,
     cycleId: settings.currentCycleId || '',
@@ -1159,11 +1161,13 @@ export async function shareRegionFinalPlan(user, region, payload = {}) {
     title: trim(payload.title || 'Final plan').slice(0, 120),
     shift: trim(payload.shift || '').slice(0, 40),
     updatedAt: firestoreMod.serverTimestamp(),
-    updatedAtMs: Date.now(),
+    updatedAtMs: nowMs,
     updatedBy: user.uid,
-    updatedByName: getRegionActorName(profile || {}, safeRegion, user)
-  }, { merge: true });
+    updatedByName
+  };
+  await firestoreMod.setDoc(firestoreMod.doc(db, 'finalPlanShares', code), sharePayload, { merge: true });
   trackWrites(1);
+  await publishFinalPlanToD1Cache(user, sharePayload).catch(() => null);
   return { code, region: safeRegion };
 }
 
@@ -1171,6 +1175,8 @@ export async function resolveRegionFinalPlanShare(codeValue) {
   const { db, firestoreMod } = await getFirebaseParts();
   const code = normalizeShortLinkCode(codeValue);
   if (!code) throw new Error('final-plan-link-required');
+  const cached = await readFinalPlanFromD1Cache(code).catch(() => null);
+  if (cached?.html || cached?.text) return { code, ...cached };
   const snap = await firestoreMod.getDoc(firestoreMod.doc(db, 'finalPlanShares', code));
   trackReads(1);
   if (!snap.exists()) throw new Error('final-plan-link-not-found');
@@ -1181,7 +1187,7 @@ export async function resolveRegionFinalPlanShare(codeValue) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=137');
+    const mod = await import('./region-table-cache.js?v=138');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1191,7 +1197,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=137');
+    const mod = await import('./region-table-cache.js?v=138');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1201,7 +1207,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=137');
+    const mod = await import('./region-table-cache.js?v=138');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1211,11 +1217,33 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=137');
+    const mod = await import('./region-table-cache.js?v=138');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
     console.warn('[WKD] region table D1 snapshot unavailable:', error);
+    return null;
+  }
+}
+
+async function readFinalPlanFromD1Cache(code, options = {}) {
+  try {
+    const mod = await import('./final-plan-cache.js?v=138');
+    if (!mod.isFinalPlanCacheEnabled?.()) return null;
+    return await mod.readFinalPlanShare(code, options);
+  } catch (error) {
+    console.warn('[WKD] final plan D1 read unavailable:', error);
+    return null;
+  }
+}
+
+async function publishFinalPlanToD1Cache(user, payload = {}) {
+  try {
+    const mod = await import('./final-plan-cache.js?v=138');
+    if (!mod.isFinalPlanCacheEnabled?.()) return null;
+    return await mod.publishFinalPlanShare(user, payload);
+  } catch (error) {
+    console.warn('[WKD] final plan D1 publish unavailable:', error);
     return null;
   }
 }
@@ -1955,7 +1983,7 @@ export async function saveWastelandRegistration(user, values, regionOverride = '
     await batch.commit();
     trackWrites(1 + (lock ? 1 : 0));
   }
-  removeCache(`regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v137`);
+  removeCache(`regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v138`);
 
   if (user?.uid) {
     await mirrorRegistrationToRegionTableCache(user, region, { ...data, uid: user.uid }, status);
@@ -2093,7 +2121,7 @@ export async function listRegionRegistrations(user, regionOverride = '', options
     await cleanupOldRegionRegistrations(user, region).catch(error => console.warn('[WKD] old registration cleanup skipped:', error));
   }
 
-  const cacheKey = `regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v137`;
+  const cacheKey = `regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v138`;
   if (!options?.force) {
     const cached = readCache(cacheKey, 60 * 1000);
     if (cached && Array.isArray(cached.rows)) return { profile, region, settings: status, rows: cached.rows, cached: true };
@@ -2158,7 +2186,7 @@ export async function deleteRegionRegistrations(user, region, registrationIds = 
     await batch.commit();
   }
   trackDeletes(ids.length);
-  removeCache(`regionRegistrations.${safeRegion}.no-cycle.v137`);
+  removeCache(`regionRegistrations.${safeRegion}.no-cycle.v138`);
 
   await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), {
     region: safeRegion,
@@ -2227,7 +2255,7 @@ export async function updateRegionRegistration(user, region, registrationId, val
   batch.set(registrationRef, clean, { merge: true });
   await batch.commit();
   trackWrites(1 + (lock ? 1 : 0) + (oldLockRef && (!newLockRef || oldLockRef.path !== newLockRef.path) ? 1 : 0));
-  removeCache(`regionRegistrations.${safeRegion}.no-cycle.v137`);
+  removeCache(`regionRegistrations.${safeRegion}.no-cycle.v138`);
   await mirrorRegistrationToRegionTableCache(user, safeRegion, { id, ...existingData, ...cleanWithCycle, rowType: existingData.rowType || 'Заявка' }, activeSettings).catch(() => null);
 
   await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), {

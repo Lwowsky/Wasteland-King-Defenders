@@ -110,6 +110,24 @@ async function ensureRegionTableSchema(db) {
       `CREATE INDEX IF NOT EXISTS idx_region_table_shares_region ON region_table_shares(region)`,
       `CREATE INDEX IF NOT EXISTS idx_region_tables_updated ON region_tables(updated_at_ms)`,
       `CREATE INDEX IF NOT EXISTS idx_region_table_shares_expires ON region_table_shares(expires_at_ms)`,
+      `CREATE TABLE IF NOT EXISTS final_plan_shares (
+        code TEXT PRIMARY KEY,
+        region TEXT NOT NULL,
+        cycle_id TEXT NOT NULL DEFAULT 'active',
+        event_start_at_ms INTEGER NOT NULL DEFAULT 0,
+        title TEXT NOT NULL DEFAULT '',
+        shift TEXT NOT NULL DEFAULT '',
+        html TEXT NOT NULL DEFAULT '',
+        text TEXT NOT NULL DEFAULT '',
+        updated_at_ms INTEGER NOT NULL DEFAULT 0,
+        updated_by TEXT NOT NULL DEFAULT '',
+        updated_by_name TEXT NOT NULL DEFAULT '',
+        expires_at_ms INTEGER NOT NULL DEFAULT 0,
+        revoked INTEGER NOT NULL DEFAULT 0
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_final_plan_shares_region ON final_plan_shares(region)`,
+      `CREATE INDEX IF NOT EXISTS idx_final_plan_shares_updated ON final_plan_shares(updated_at_ms)`,
+      `CREATE INDEX IF NOT EXISTS idx_final_plan_shares_expires ON final_plan_shares(expires_at_ms)`,
       `CREATE TABLE IF NOT EXISTS public_stats_pages (
         bucket INTEGER PRIMARY KEY,
         updated_at_ms INTEGER NOT NULL DEFAULT 0,
@@ -946,6 +964,107 @@ async function handleRegionTableShareRead(request, env, codeValue) {
     200,
     "private, no-store",
   );
+}
+
+function sanitizeFinalPlanPayload(body = {}, user = {}) {
+  const code = normalizeCode(body?.code);
+  const region = normalizeRegion(body?.region);
+  const cycleId = normalizeCycleId(body?.cycleId || 'active');
+  return {
+    code,
+    region,
+    cycleId,
+    eventStartAtMs: Number(body?.eventStartAtMs) || 0,
+    title: clean(body?.title || 'Final plan', 120),
+    shift: clean(body?.shift || '', 40),
+    html: String(body?.html || '').slice(0, 700000),
+    text: String(body?.text || '').slice(0, 50000),
+    updatedAtMs: Date.now(),
+    updatedBy: clean(user?.uid || body?.updatedBy || '', 160),
+    updatedByName: clean(body?.updatedByName || user?.name || user?.email || '', 160),
+    expiresAtMs: Number(body?.expiresAtMs) || 0,
+  };
+}
+
+function finalPlanRowToPlan(row = {}) {
+  if (!row) return null;
+  return {
+    code: normalizeCode(row.code),
+    region: normalizeRegion(row.region),
+    cycleId: normalizeCycleId(row.cycle_id || 'active'),
+    eventStartAtMs: Number(row.event_start_at_ms) || 0,
+    title: clean(row.title || 'Final plan', 120),
+    shift: clean(row.shift || '', 40),
+    html: String(row.html || '').slice(0, 700000),
+    text: String(row.text || '').slice(0, 50000),
+    updatedAtMs: Number(row.updated_at_ms) || 0,
+    updatedBy: clean(row.updated_by || '', 160),
+    updatedByName: clean(row.updated_by_name || '', 160),
+    expiresAtMs: Number(row.expires_at_ms) || 0,
+  };
+}
+
+async function handleFinalPlanShareCreate(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); }
+  catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const plan = sanitizeFinalPlanPayload(body, user);
+  if (!plan.code || !plan.region) return json({ ok: false, error: 'code_region_required' }, 400);
+  const allowed = isAdminUid(env, user.uid) || await hasSavedRegionAccess(db, user.uid, plan.region);
+  if (!allowed) return json({ ok: false, error: 'region_access_denied' }, 403);
+  await db.prepare(
+    `INSERT INTO final_plan_shares (code, region, cycle_id, event_start_at_ms, title, shift, html, text, updated_at_ms, updated_by, updated_by_name, expires_at_ms, revoked)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 0)
+     ON CONFLICT(code) DO UPDATE SET
+       region = excluded.region,
+       cycle_id = excluded.cycle_id,
+       event_start_at_ms = excluded.event_start_at_ms,
+       title = excluded.title,
+       shift = excluded.shift,
+       html = excluded.html,
+       text = excluded.text,
+       updated_at_ms = excluded.updated_at_ms,
+       updated_by = excluded.updated_by,
+       updated_by_name = excluded.updated_by_name,
+       expires_at_ms = excluded.expires_at_ms,
+       revoked = 0`
+  ).bind(
+    plan.code,
+    plan.region,
+    plan.cycleId,
+    plan.eventStartAtMs,
+    plan.title,
+    plan.shift,
+    plan.html,
+    plan.text,
+    plan.updatedAtMs,
+    plan.updatedBy,
+    plan.updatedByName,
+    plan.expiresAtMs,
+  ).run();
+  await grantRegionAccess(db, plan.region, user.uid, 'final-plan-share');
+  return json({ ok: true, plan, usage: { d1RowsWritten: 1 } });
+}
+
+async function handleFinalPlanShareRead(request, env, codeValue) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const code = normalizeCode(codeValue);
+  if (!code) return json({ ok: false, error: 'final_plan_code_required' }, 400);
+  const row = await db.prepare(
+    `SELECT code, region, cycle_id, event_start_at_ms, title, shift, html, text, updated_at_ms, updated_by, updated_by_name, expires_at_ms, revoked
+       FROM final_plan_shares
+      WHERE code = ?1
+      LIMIT 1`
+  ).bind(code).first();
+  if (!row || Number(row.revoked) === 1) return json({ ok: false, error: 'final_plan_not_found' }, 404);
+  if (Number(row.expires_at_ms) > 0 && Number(row.expires_at_ms) < Date.now()) return json({ ok: false, error: 'final_plan_expired' }, 410);
+  return json({ ok: true, plan: finalPlanRowToPlan(row), usage: { d1RowsRead: 1 } }, 200, 'private, no-store');
 }
 
 
@@ -2695,6 +2814,16 @@ export default {
 
       if (shareMatch && request.method === "GET") {
         return await handleRegionTableShareRead(request, env, shareMatch[1]);
+      }
+
+
+      if (url.pathname === "/api/final-plan/share" && request.method === "POST") {
+        return await handleFinalPlanShareCreate(request, env);
+      }
+
+      const finalPlanShareMatch = url.pathname.match(/^\/api\/final-plan\/share\/([A-Za-z0-9_-]{6,140})$/);
+      if (finalPlanShareMatch && request.method === "GET") {
+        return await handleFinalPlanShareRead(request, env, finalPlanShareMatch[1]);
       }
     } catch (error) {
       console.error("[WKD Worker]", error);
