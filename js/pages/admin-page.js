@@ -14,7 +14,6 @@ import {
   listRegisteredUsers,
   listRoleRequests,
   roleLabel,
-  rebuildProfileIndexLocks,
   updateUserByAdmin,
   updateFarmByAdmin
 } from '../services/user-db.js';
@@ -24,7 +23,7 @@ import {
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=1171';
+} from '../services/region-db.js?v=1172';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -278,33 +277,6 @@ async function runOldDocsCleanup() {
   } catch (error) {
     console.error(error);
     setStatus(t('admin.cleanupOldDocsFailed', 'Не вдалося очистити старі документи.'), 'error');
-  }
-}
-
-async function runProfileIndexesRebuild() {
-  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
-  const ok = await confirmAction({
-    title: t('admin.rebuildProfileIndexesTitle', 'Перебудувати індекси профілів?'),
-    message: t('admin.rebuildProfileIndexesMessage', 'Сайт один раз прочитає старі профілі й створить швидкі locks для перевірки ніків, P4 і P5. Це потрібно після оновлення або великого імпорту.'),
-    icon: '🧩',
-    acceptText: t('admin.rebuildProfileIndexes', 'Перебудувати індекси профілів')
-  });
-  if (!ok) return;
-  try {
-    setStatus(t('admin.rebuildProfileIndexesRunning', 'Перебудовую індекси профілів...'), 'muted');
-    const result = await rebuildProfileIndexLocks();
-    renderUsage();
-    setStatus(tv('admin.rebuildProfileIndexesDone', 'Індекси перебудовано: {users} профілів, {records} гравців/ферм, {writes} записів, {deleted} старих locks видалено, конфліктів ніків: {duplicates}.', {
-      users: result.users || 0,
-      records: result.gameRecords || 0,
-      writes: result.written || 0,
-      deleted: result.deleted || 0,
-      duplicates: result.duplicateNicknames || 0
-    }), 'success');
-    await loadAdminData();
-  } catch (error) {
-    console.error(error);
-    setStatus(t('admin.rebuildProfileIndexesFailed', 'Не вдалося перебудувати індекси профілів.'), 'error');
   }
 }
 
@@ -638,7 +610,6 @@ function bindAdminControls() {
   $('#refreshUsageBtn')?.addEventListener('click', renderUsage);
   $('#resetUsageEstimateBtn')?.addEventListener('click', () => { resetUsageEstimate(); renderUsage(); });
   $('#cleanupOldDocsBtn')?.addEventListener('click', () => runOldDocsCleanup().catch(console.error));
-  $('#rebuildProfileIndexesBtn')?.addEventListener('click', () => runProfileIndexesRebuild().catch(console.error));
   $('#backToProfileBtn')?.addEventListener('click', () => { window.location.href = 'profile.html'; });
   $('#adminRegionForm')?.addEventListener('submit', saveManualRegion);
   $('#adminRegionList')?.addEventListener('click', handleRegionAction);
