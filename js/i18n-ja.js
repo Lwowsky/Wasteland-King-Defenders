@@ -2010,5 +2010,6 @@ window.WKD_TRANSLATIONS.ja = {
   'admin.rebuildIndexFailed': 'プレイヤーインデックスを更新できません。Firestoreルールと権限を確認してください。',
   'admin.playersLoadedOptimized': '最新プレイヤー{count}件を読み込みました。Firebase reads≈{reads}; users全体は読みません。',
   'admin.playersLoadedFiltered': 'インデックスから{count}件を読み込みました。Firebase reads≈{reads}. 検索は更新ボタンまたはEnterで実行します。',
+  'region.d1RegistrationRequired': 'ゲスト登録は Cloudflare D1 経由でのみ動作します。Worker のデプロイを確認するか、秘密リンクをもう一度開いてください。',
 
 };

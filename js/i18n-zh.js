@@ -2010,5 +2010,6 @@ window.WKD_TRANSLATIONS.zh = {
   'admin.rebuildIndexFailed': '无法更新玩家索引。请检查 Firestore 规则和权限。',
   'admin.playersLoadedOptimized': '已加载最新玩家 {count} 个。Firebase reads≈{reads}；不会读取整个 users 集合。',
   'admin.playersLoadedFiltered': '已从索引加载 {count} 个玩家。Firebase reads≈{reads}。搜索只通过刷新按钮或 Enter 执行。',
+  'region.d1RegistrationRequired': '访客注册只能通过 Cloudflare D1 工作。请检查 Worker 部署，或重新打开秘密链接。',
 
 };

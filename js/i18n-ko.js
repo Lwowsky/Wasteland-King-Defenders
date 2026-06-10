@@ -2010,5 +2010,6 @@ window.WKD_TRANSLATIONS.ko = {
   'admin.rebuildIndexFailed': '플레이어 인덱스를 업데이트하지 못했습니다. Firestore 규칙과 권한을 확인하세요.',
   'admin.playersLoadedOptimized': '최신 플레이어 {count}명을 불러왔습니다. Firebase reads≈{reads}; 전체 users 컬렉션은 읽지 않습니다.',
   'admin.playersLoadedFiltered': '인덱스에서 플레이어 {count}명을 불러왔습니다. Firebase reads≈{reads}. 검색은 새로고침 버튼 또는 Enter로 실행됩니다.',
+  'region.d1RegistrationRequired': '게스트 등록은 Cloudflare D1을 통해서만 작동합니다. Worker 배포를 확인하거나 비밀 링크를 다시 여세요.',
 
 };

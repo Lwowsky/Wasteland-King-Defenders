@@ -2010,5 +2010,6 @@ window.WKD_TRANSLATIONS.de = {
   'admin.rebuildIndexFailed': 'Spielerindex konnte nicht aktualisiert werden. Prüfe Firestore-Regeln und Zugriffsrechte.',
   'admin.playersLoadedOptimized': '{count} neueste Spieler geladen. Firebase reads≈{reads}; die vollständige users-Sammlung wird nicht gelesen.',
   'admin.playersLoadedFiltered': '{count} Spieler aus dem Index geladen. Firebase reads≈{reads}. Suche läuft nur über Aktualisieren oder Enter.',
+  'region.d1RegistrationRequired': 'Gastregistrierung funktioniert nur über Cloudflare D1. Prüfe das Worker-Deployment oder öffne den geheimen Link erneut.',
 
 };

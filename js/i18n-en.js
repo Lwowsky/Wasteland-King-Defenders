@@ -2010,5 +2010,6 @@ window.WKD_TRANSLATIONS.en = {
   'admin.rebuildIndexFailed': 'Could not update the player index. Check Firestore rules and access rights.',
   'admin.playersLoadedOptimized': 'Loaded {count} newest players. Firebase reads≈{reads}; the full users collection is not read.',
   'admin.playersLoadedFiltered': 'Loaded {count} players from the index. Firebase reads≈{reads}. Search runs only by Refresh or Enter.',
+  'region.d1RegistrationRequired': 'Guest registration works only through Cloudflare D1. Check the Worker deployment or open the secret link again.',
 
 };

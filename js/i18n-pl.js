@@ -2010,5 +2010,6 @@ window.WKD_TRANSLATIONS.pl = {
   'admin.rebuildIndexFailed': 'Nie udało się odświeżyć indeksu graczy. Sprawdź reguły Firestore i uprawnienia.',
   'admin.playersLoadedOptimized': 'Załadowano {count} najnowszych graczy. Firebase reads≈{reads}; cała kolekcja users nie jest czytana.',
   'admin.playersLoadedFiltered': 'Załadowano {count} graczy z indeksu. Firebase reads≈{reads}. Wyszukiwanie uruchamia przycisk Odśwież lub Enter.',
+  'region.d1RegistrationRequired': 'Rejestracja gości działa tylko przez Cloudflare D1. Sprawdź wdrożenie Workera albo otwórz ponownie tajny link.',
 
 };

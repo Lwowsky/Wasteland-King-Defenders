@@ -2010,5 +2010,6 @@ window.WKD_TRANSLATIONS.vi = {
   'admin.rebuildIndexFailed': 'Không thể cập nhật chỉ mục người chơi. Kiểm tra Firestore rules và quyền truy cập.',
   'admin.playersLoadedOptimized': 'Đã tải {count} người chơi mới nhất. Firebase reads≈{reads}; không đọc toàn bộ collection users.',
   'admin.playersLoadedFiltered': 'Đã tải {count} người chơi từ chỉ mục. Firebase reads≈{reads}. Tìm kiếm chỉ chạy bằng nút Làm mới hoặc Enter.',
+  'region.d1RegistrationRequired': 'Đăng ký khách chỉ hoạt động qua Cloudflare D1. Hãy kiểm tra triển khai Worker hoặc mở lại liên kết bí mật.',
 
 };

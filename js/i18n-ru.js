@@ -2010,5 +2010,6 @@ window.WKD_TRANSLATIONS.ru = {
   'admin.rebuildIndexFailed': 'Не удалось обновить индекс игроков. Проверь правила Firestore и права доступа.',
   'admin.playersLoadedOptimized': 'Загружено {count} последних игроков. Firebase reads≈{reads}; вся коллекция users не читается.',
   'admin.playersLoadedFiltered': 'Загружено {count} игроков из индекса. Firebase reads≈{reads}. Поиск запускается кнопкой Обновить или Enter.',
+  'region.d1RegistrationRequired': 'Гостевая регистрация работает только через Cloudflare D1. Проверь деплой Worker или открой секретную ссылку ещё раз.',
 
 };

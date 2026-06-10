@@ -25,8 +25,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=138';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled } from '../services/region-table-cache.js?v=138';
+} from '../services/region-db.js?v=139';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled } from '../services/region-table-cache.js?v=139';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -599,6 +599,10 @@ function shouldUseD1FirstRegistration() {
   return Boolean(isRegionTableCacheEnabled && isRegionTableCacheEnabled());
 }
 
+function isD1OnlyRegistration() {
+  return Boolean(!currentUser || shortCodeFromLink);
+}
+
 function d1RegistrationErrorCode(error) {
   return String(error?.data?.error || error?.message || '').trim();
 }
@@ -674,11 +678,12 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
       try {
         savedRequest = await submitRegistrationD1First(values, { forceUpdate });
       } catch (d1Error) {
-        if (isHardD1RegistrationError(d1Error)) throw d1Error;
-        console.warn('[WKD] D1-first registration failed, using Firebase fallback:', d1Error);
+        if (isHardD1RegistrationError(d1Error) || isD1OnlyRegistration()) throw d1Error;
+        console.warn('[WKD] D1-first registration failed for signed-in account, using Firebase fallback:', d1Error);
         savedRequest = await saveWastelandRegistration(currentUser, values, currentRegion);
       }
     } else {
+      if (isD1OnlyRegistration()) throw new Error('d1-registration-required');
       savedRequest = await saveWastelandRegistration(currentUser, values, currentRegion);
     }
 
@@ -732,6 +737,10 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
     }
     if (d1RegistrationErrorCode(error) === 'registration-nickname-duplicate-region') {
       await showNicknameDuplicateDialog();
+      return false;
+    }
+    if (isD1OnlyRegistration() && (error?.message === 'd1-registration-required' || !isHardD1RegistrationError(error))) {
+      setStatus(t('region.d1RegistrationRequired', 'Гостьова реєстрація працює тільки через Cloudflare D1. Перевір деплой Worker або відкрий секретне посилання ще раз.'), 'error');
       return false;
     }
     setStatus(t('region.requestSaveFailed', 'Could not save the request. Check access rights or try again.'), 'error');

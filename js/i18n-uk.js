@@ -2010,5 +2010,6 @@ window.WKD_TRANSLATIONS.uk = {
   'admin.rebuildIndexFailed': 'Не вдалося оновити індекс гравців. Перевір правила Firestore і права доступу.',
   'admin.playersLoadedOptimized': 'Завантажено {count} останніх гравців. Firebase reads≈{reads}; вся users-колекція не читається.',
   'admin.playersLoadedFiltered': 'Завантажено {count} гравців за індексом. Firebase reads≈{reads}. Пошук запускається кнопкою Оновити або Enter.',
+  'region.d1RegistrationRequired': 'Гостьова реєстрація працює тільки через Cloudflare D1. Перевір деплой Worker або відкрий секретне посилання ще раз.',
 
 };
