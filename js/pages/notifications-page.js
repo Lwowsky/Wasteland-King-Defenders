@@ -21,12 +21,12 @@ import {
   patchUserSentMessage,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=144';
+} from '../services/user-db.js?v=145';
 import {
   countNotificationDirectoryD1,
   listNotificationDirectoryRegionsD1,
   searchNotificationDirectoryD1
-} from '../services/notifications-d1.js?v=144';
+} from '../services/notifications-d1.js?v=145';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -56,7 +56,7 @@ let recipientSearchLoading = false;
 
 const MESSAGE_SPAM_WINDOW_MS = 10 * 60 * 1000;
 const MESSAGE_SPAM_MAX = 20;
-const MESSAGE_PAGE_SIZE = 20;
+const MESSAGE_PAGE_SIZE = 10;
 const NOTIFICATION_QUERY_LIMIT = 50;
 const SENT_QUERY_LIMIT = 50;
 const SERVER_RETENTION_DAYS = 30;
@@ -502,9 +502,11 @@ function filteredRecipients(type = $('#messageTargetType')?.value || 'player', o
   else if (type === 'officers') list = list.filter(p => regionOf(p.region) === region && normalizeUserRole(p.role || p.accountRole || 'player') === 'officer' && (isGlobalManager() || ownRegions().includes(region)));
   else if (type === 'alliance') list = list.filter(p => regionOf(p.region) === region && tag(p.alliance) === alliance && (isGlobalManager() || ownAlliances(region).includes(alliance) || ['consul', 'officer'].includes(role())));
   else if (type === 'player' && !options.preview) list = list.filter(p => {
-    const label = playerLabel(p).toLowerCase();
-    const nick = String(p.nickname || p.gameNick || '').toLowerCase();
-    return label === selectedPlayer || nick === selectedPlayer || (selectedPlayer && label.includes(selectedPlayer));
+    const nick = String(p.nickname || p.gameNick || '').trim().toLowerCase();
+    const label = playerLabel(p).trim().toLowerCase();
+    const regionOk = !region || regionOf(p.region) === region;
+    const allianceOk = !alliance || tag(p.alliance) === alliance;
+    return Boolean(selectedPlayer) && regionOk && allianceOk && (nick === selectedPlayer || label === selectedPlayer);
   });
   if (!isGlobalManager()) list = list.filter(canReachPlayer);
   return options.preview ? list : dedupeAccounts(list);
@@ -595,8 +597,8 @@ function renderNoticeList() {
       <small>${esc(item.region ? `R${item.region} · ` : '')}${esc(dateText(item))}</small>
       <div class="notification-card-actions">
         ${unread ? `<button class="btn btn-message-soft" type="button" data-notification-action="read" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.markOneRead', 'Прочитано'))}</button>` : ''}
-        ${isCampaign(item) ? '' : `<button class="btn btn-message-soft" type="button" data-notification-action="archive" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.archive', 'Архівувати'))}</button>`}
-        ${isCampaign(item) ? '' : `<button class="btn btn-message-danger" type="button" data-notification-action="delete" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.delete', 'Видалити'))}</button>`}
+        <button class="btn btn-message-soft" type="button" data-notification-action="archive" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.archive', 'Архівувати'))}</button>
+        <button class="btn btn-message-danger" type="button" data-notification-action="delete" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.delete', 'Видалити'))}</button>
       </div>
     </article>`;
   }).join('') + paginationHtml('notifications', notices.length) : `<div class="notify-empty">${esc(t('notifications.empty', 'Нових сповіщень немає.'))}</div>`;
@@ -629,8 +631,8 @@ function renderMessageList() {
         <div class="site-message-actions">
           ${meta.uid ? `<button class="btn site-message-reply" type="button" data-reply-id="${esc(item.id || '')}" data-i18n="messages.reply">${esc(t('messages.reply', 'Відповісти'))}</button>` : ''}
           ${unread ? `<button class="btn btn-message-soft" type="button" data-notification-action="read" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.markOneRead', 'Прочитано'))}</button>` : ''}
-          ${isCampaign(item) ? '' : `<button class="btn btn-message-soft" type="button" data-notification-action="archive" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.archive', 'Архівувати'))}</button>`}
-          ${isCampaign(item) ? '' : `<button class="btn btn-message-danger" type="button" data-notification-action="delete" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.delete', 'Видалити'))}</button>`}
+          <button class="btn btn-message-soft" type="button" data-notification-action="archive" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.archive', 'Архівувати'))}</button>
+          <button class="btn btn-message-danger" type="button" data-notification-action="delete" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.delete', 'Видалити'))}</button>
         </div>
       </article>`;
   }).join('') + paginationHtml('inbox', messages.length) : `<div class="notify-empty">${esc(t('notifications.noMessages', 'Отриманих повідомлень немає.'))}</div>`;
@@ -689,6 +691,7 @@ async function refreshRecipientSearch({ immediate = false } = {}) {
         targetType: 'player',
         q: input,
         region: activeRegion(),
+        alliance: activeAlliance(),
         limit: 10
       }).catch(() => []);
       directory = dedupeAccounts([...(directory || []), ...recipientSearchRows, ...(currentProfile ? [{ ...(currentProfile || {}), uid: currentUser?.uid }] : [])]);
@@ -703,6 +706,7 @@ async function refreshRecipientSearch({ immediate = false } = {}) {
 }
 function renderPlayerList() {
   const datalist = $('#messagePlayerList');
+  const meta = $('#messagePlayerMeta');
   if (!datalist) return;
   const allowed = [
     ...(directReply?.uid ? [directReply] : []),
@@ -710,16 +714,34 @@ function renderPlayerList() {
     ...(currentProfile ? gameRowsFromAccount({ ...(currentProfile || {}), uid: currentUser?.uid }) : [])
   ].filter(canReachPlayer);
   const seen = new Set();
-  datalist.innerHTML = allowed.map(p => playerLabel(p)).filter(label => {
-    if (seen.has(label)) return false;
-    seen.add(label);
+  datalist.innerHTML = allowed.map(p => String(p.nickname || p.gameNick || '').trim()).filter(label => {
+    if (!label || seen.has(label.toLowerCase())) return false;
+    seen.add(label.toLowerCase());
     return true;
   }).map(label => `<option value="${esc(label)}"></option>`).join('');
+
+  if (meta) {
+    const input = String($('#messagePlayerInput')?.value || '').trim();
+    const matches = input ? filteredRecipients('player').filter(p => !directReply?.uid || p.uid === directReply.uid) : [];
+    meta.classList.remove('is-valid', 'is-error');
+    if (!input) {
+      meta.textContent = t('messages.playerSearchHint', 'Введи точний нік і вибери регіон/альянс. Частина ніку не відправляється.');
+    } else if (matches.length === 1) {
+      const player = matches[0];
+      meta.classList.add('is-valid');
+      meta.textContent = `${t('account.region', 'Регіон')}: R${regionOf(player.region) || '—'} · ${t('account.alliance', 'Альянс')}: ${tag(player.alliance) || '—'}`;
+    } else {
+      meta.classList.add('is-error');
+      meta.textContent = t('messages.selectExactPlayer', 'Вибери точного гравця: повний нік + правильний регіон і альянс.');
+    }
+  }
 }
 function updateComposeVisibility() {
   const type = $('#messageTargetType')?.value || 'player';
-  $('#messageRegionWrap') && ($('#messageRegionWrap').hidden = !['region', 'alliance', 'consuls', 'officers'].includes(type));
-  $('#messageAllianceWrap') && ($('#messageAllianceWrap').hidden = type !== 'alliance');
+  const needsRegion = ['player', 'region', 'alliance', 'consuls', 'officers'].includes(type);
+  const needsAlliance = ['player', 'alliance'].includes(type);
+  $('#messageRegionWrap') && ($('#messageRegionWrap').hidden = !needsRegion);
+  $('#messageAllianceWrap') && ($('#messageAllianceWrap').hidden = !needsAlliance);
   $('#messagePlayerWrap') && ($('#messagePlayerWrap').hidden = type !== 'player');
 }
 function switchTab(tab = 'notifications') {
@@ -785,7 +807,7 @@ async function load(user) {
   const [personal, campaigns, sent] = await Promise.all([
     listUserNotifications(user.uid, NOTIFICATION_QUERY_LIMIT).catch(() => []),
     listRegionNotificationCampaignsForProfile(currentProfile || {}, {
-      sinceMs: Number(seenSummary?.campaignSeenAtMs) || 0,
+      sinceMs: 0,
       perRegionLimit: 12,
       totalLimit: 30
     }).catch(() => []),
@@ -795,7 +817,8 @@ async function load(user) {
   personal.forEach(item => personalMap.set(item.id, { source: item.source || 'account', ...item }));
   personalRows = [...personalMap.values()].sort((a, b) => createdMs(b) - createdMs(a));
   saveLocalArchive('notifications', personalRows.filter(isOldReadPrivateMessage));
-  campaignRows = campaigns;
+  const campaignSeenAtMs = Number(seenSummary?.campaignSeenAtMs) || 0;
+  campaignRows = campaigns.map(item => ({ ...item, unread: createdMs(item) > campaignSeenAtMs }));
   mergeNotificationRows();
   saveLocalArchive('sentMessages', sent.filter(isOldSentMessage));
   sentRows = sent;
@@ -908,7 +931,9 @@ async function sendMessage() {
   const estimatedRecipients = canUseCampaignForTarget(type) ? await recipientCountForTarget(type) : recipients.length;
   if (!estimatedRecipients) {
     const region = activeRegion();
-    setHint(region ? `${t('messages.noRecipients', 'Немає отримувачів для цього вибору.')} R${region}` : t('messages.noRegionSelected', 'Вибери регіон або гравця.'));
+    setHint(type === 'player'
+      ? t('messages.selectExactPlayer', 'Вибери точного гравця: повний нік + правильний регіон і альянс.')
+      : (region ? `${t('messages.noRecipients', 'Немає отримувачів для цього вибору.')} R${region}` : t('messages.noRegionSelected', 'Вибери регіон або гравця.')));
     return;
   }
   const firebase = await getFirebase();
@@ -966,6 +991,7 @@ async function sendMessage() {
   if (bodyInput) bodyInput.value = '';
   directReply = null;
   await load(currentUser).catch(() => null);
+  window.WKD?.refreshNotifications?.();
 }
 function clearDirectReply() {
   directReply = null;
@@ -988,8 +1014,13 @@ function startReply(item = {}) {
   const type = $('#messageTargetType');
   if (type) type.value = 'player';
   updateComposeVisibility();
+  const regionSelect = $('#messageRegionSelect');
+  if (regionSelect && meta.region) regionSelect.value = meta.region;
+  const allianceInput = $('#messageAllianceInput');
+  if (allianceInput) allianceInput.value = meta.alliance || '';
   const playerInput = $('#messagePlayerInput');
-  if (playerInput) playerInput.value = meta.label || meta.name;
+  if (playerInput) playerInput.value = meta.name || '';
+  renderPlayerList();
   const subjectInput = $('#messageSubjectInput');
   if (subjectInput && !String(subjectInput.value || '').trim()) subjectInput.value = `Re: ${item.title || t('messages.defaultSubject', 'Повідомлення')}`.slice(0, 80);
   setHint(`${t('messages.replyTo', 'Відповідь для')}: ${meta.name}`);
@@ -999,7 +1030,15 @@ async function handleNotificationAction(action = '', id = '') {
   if (!id) return;
   const current = rows.find(row => row.id === id);
   if (isCampaign(current)) {
-    if (action === 'read') await markCampaignsSeen([current]);
+    if (action === 'delete' && !window.confirm(t('notifications.deleteConfirm', 'Видалити це повідомлення?'))) return;
+    await markCampaignsSeen([current]);
+    if (['archive', 'delete'].includes(action)) {
+      campaignRows = campaignRows.filter(row => row.id !== id);
+      mergeNotificationRows();
+    } else if (action === 'read') {
+      campaignRows = campaignRows.map(row => row.id === id ? { ...row, unread: false, readAtMs: Date.now() } : row);
+      mergeNotificationRows();
+    }
     render();
     window.WKD?.refreshNotifications?.();
     return;

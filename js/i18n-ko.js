@@ -2019,4 +2019,7 @@ window.WKD_TRANSLATIONS.ko = {
   'finalPlan.d1ShareMissing': '최종 계획이 아직 D1에 게시되지 않았습니다. 영사 또는 장교에게 비밀 링크를 다시 생성해 달라고 요청하세요.',
   'region.d1SettingsMissing': '양식 설정이 아직 D1에 게시되지 않았습니다. 영사 또는 장교에게 지역 설정에서 저장/시작을 누르라고 요청하세요.',
 
+  'messages.playerSearchHint': '정확한 닉네임을 입력하고 지역/동맹을 선택하세요. 일부 닉네임으로는 전송되지 않습니다.',
+  'messages.selectExactPlayer': '정확한 플레이어를 선택하세요: 전체 닉네임 + 올바른 지역과 동맹.',
+
 };

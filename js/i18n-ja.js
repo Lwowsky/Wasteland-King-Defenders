@@ -2019,4 +2019,7 @@ window.WKD_TRANSLATIONS.ja = {
   'finalPlan.d1ShareMissing': '最終計画はまだ D1 に公開されていません。領事または役員に秘密リンクをもう一度作成してもらってください。',
   'region.d1SettingsMissing': 'フォーム設定はまだ D1 に公開されていません。領事または役員に地域設定で保存/開始を押してもらってください。',
 
+  'messages.playerSearchHint': '正確なニックネームを入力し、地域/同盟を選んでください。部分一致では送信しません。',
+  'messages.selectExactPlayer': '正確なプレイヤーを選んでください：完全なニックネーム + 正しい地域と同盟。',
+
 };

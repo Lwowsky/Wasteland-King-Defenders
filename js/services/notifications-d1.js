@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=144';
+import { trackCloudflareUsage } from './usage-tracker.js?v=145';
 
 function cleanText(value = '', max = 120) {
   return String(value ?? '')
@@ -9,7 +9,7 @@ function cleanText(value = '', max = 120) {
     .slice(0, max);
 }
 function cleanRegion(value = '') { return cleanText(value, 20).replace(/[^0-9]/g, '').slice(0, 8); }
-function cleanTag(value = '') { return cleanText(value, 40).toUpperCase(); }
+function cleanTag(value = '') { return Array.from(cleanText(value, 40).replace(/[\/\[\]#?]/g, '')).slice(0, 3).join(''); }
 function apiUrl(path = '') {
   const base = cleanText(regionTableCacheConfig?.apiBaseUrl || '', 240).replace(/\/+$/, '');
   const safePath = String(path || '').startsWith('/') ? String(path || '') : `/${path || ''}`;

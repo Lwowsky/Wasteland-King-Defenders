@@ -20,3 +20,17 @@
   .notification-card-actions{display:grid;grid-template-columns:1fr;width:100%;}.site-message-actions .btn,
   .notification-card-actions .btn{width:100%;}}
 .notifications-pagination{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:14px 0 2px;padding:10px;border:1px solid rgba(122,148,230,.16);border-radius:18px;background:rgba(3,10,24,.36);color:#aebce7;font-weight:900;}.notifications-pagination span{min-width:180px;text-align:center;}.notifications-pagination .btn[disabled]{opacity:.45;cursor:not-allowed;filter:grayscale(.25);}@media (max-width:640px){.notifications-pagination{display:grid;grid-template-columns:1fr;}.notifications-pagination span{min-width:0;}.notifications-pagination .btn{width:100%;}}
+
+.message-player-meta {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--text-muted, #aeb8d2);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+.message-player-meta.is-valid {
+  color: #66e3a1;
+}
+.message-player-meta.is-error {
+  color: #ff8f9a;
+}

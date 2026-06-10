@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=144';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=144';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=144';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=145';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=145';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=145';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -22,14 +22,14 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=144';
+} from '../services/user-db.js?v=145';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=144';
+} from '../services/region-db.js?v=145';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -60,7 +60,7 @@ let playerSearchDebounce = null;
 let cloudflareRealUsage = getCachedCloudflareUsage();
 let cloudflareUsageLoading = false;
 const ADMIN_REGION_CACHE_TTL_MS = 5 * 60 * 1000;
-const ADMIN_REGION_CACHE_VERSION = 'v144';
+const ADMIN_REGION_CACHE_VERSION = 'v145';
 
 function adminCacheKey(name) {
   const uid = currentUser?.uid || 'anonymous';

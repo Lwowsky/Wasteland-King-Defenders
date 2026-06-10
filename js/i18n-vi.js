@@ -2019,4 +2019,7 @@ window.WKD_TRANSLATIONS.vi = {
   'finalPlan.d1ShareMissing': 'Kế hoạch cuối chưa được xuất bản lên D1. Hãy nhờ lãnh sự hoặc sĩ quan tạo lại liên kết bí mật.',
   'region.d1SettingsMissing': 'Cài đặt biểu mẫu chưa được xuất bản lên D1. Hãy nhờ lãnh sự hoặc sĩ quan bấm Lưu/Khởi chạy trong cài đặt khu vực.',
 
+  'messages.playerSearchHint': 'Nhập đúng biệt danh và chọn khu vực/liên minh. Tên một phần sẽ không được gửi.',
+  'messages.selectExactPlayer': 'Chọn đúng người chơi: biệt danh đầy đủ + đúng khu vực và liên minh.',
+
 };

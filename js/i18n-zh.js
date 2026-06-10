@@ -2019,4 +2019,7 @@ window.WKD_TRANSLATIONS.zh = {
   'finalPlan.d1ShareMissing': '最终计划尚未发布到 D1。请让领事或军官重新创建秘密链接。',
   'region.d1SettingsMissing': '表单设置尚未发布到 D1。请让领事或军官在区域设置中点击保存/启动。',
 
+  'messages.playerSearchHint': '输入完整昵称并选择地区/联盟。部分昵称不会发送。',
+  'messages.selectExactPlayer': '请选择准确的玩家：完整昵称 + 正确地区和联盟。',
+
 };

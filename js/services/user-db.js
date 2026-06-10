@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=144';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=144';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=144';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=145';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=145';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=145';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -17,7 +17,7 @@ import {
   readNotificationSummaryD1,
   setNotificationSummaryD1,
   upsertNotificationDirectoryD1
-} from './notifications-d1.js?v=144';
+} from './notifications-d1.js?v=145';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -995,7 +995,7 @@ export function makeAdminUserIndex(data = {}) {
     lastLoginAt: data.lastLoginAt || null,
     createdAtMs,
     updatedAtMs: adminIndexMs(data.updatedAt || data.createdAt || data.lastLoginAt),
-    source: 'admin-users-index-v144'
+    source: 'admin-users-index-v145'
   };
 }
 async function writeAdminUserIndexDoc(db, firestoreMod, profile = {}, batch = null) {
@@ -1049,7 +1049,7 @@ function emptyAdminCounters() {
     officerCount: 0,
     playerCount: 0,
     updatedAtMs: Date.now(),
-    source: 'admin-counters-v144'
+    source: 'admin-counters-v145'
   };
 }
 
@@ -1094,7 +1094,7 @@ function buildAdminCountersFromIndexes(indexes = []) {
 }
 
 async function writeAdminCountersDoc(db, firestoreMod, counters = {}) {
-  const payload = { ...emptyAdminCounters(), ...(counters || {}), updatedAt: firestoreMod.serverTimestamp(), updatedAtMs: Date.now(), source: 'admin-counters-v144' };
+  const payload = { ...emptyAdminCounters(), ...(counters || {}), updatedAt: firestoreMod.serverTimestamp(), updatedAtMs: Date.now(), source: 'admin-counters-v145' };
   await firestoreMod.setDoc(firestoreMod.doc(db, ADMIN_COUNTERS_COLLECTION, ADMIN_COUNTERS_DOC_ID), payload);
   trackWrites(1);
   return payload;

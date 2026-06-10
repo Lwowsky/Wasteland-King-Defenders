@@ -7,7 +7,7 @@ import {
   markUserNotificationsRead,
   readUserNotificationSummary,
   setUserNotificationSummary
-} from './services/user-db.js?v=144';
+} from './services/user-db.js?v=145';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -119,11 +119,12 @@ async function userNotificationPreview(uid) {
 async function refreshCampaignPreview(force = false) {
   if (!currentUser || !currentProfile) return [];
   if (campaignPreviewItems.length && !force) return campaignPreviewItems;
+  const seenAtMs = Number(summary?.campaignSeenAtMs) || 0;
   campaignPreviewItems = await listRegionNotificationCampaignsForProfile(currentProfile, {
-    sinceMs: Number(summary?.campaignSeenAtMs) || 0,
+    sinceMs: 0,
     perRegionLimit: 8,
     totalLimit: 12
-  }).catch(() => []);
+  }).then(list => list.map(item => ({ ...item, unread: createdMs(item) > seenAtMs }))).catch(() => []);
   return campaignPreviewItems;
 }
 async function loadPreview(force = false) {
@@ -204,17 +205,17 @@ async function load(user) {
   currentProfile = profile || null;
   const baseSummary = normalizeSummary(remoteSummary || readCachedSummary(user.uid));
   campaignPreviewItems = currentProfile ? await listRegionNotificationCampaignsForProfile(currentProfile, {
-    sinceMs: baseSummary.campaignSeenAtMs,
+    sinceMs: 0,
     perRegionLimit: 8,
     totalLimit: 12
-  }).catch(() => []) : [];
-  applySummary({ ...baseSummary, campaignUnreadTotal: campaignPreviewItems.length }, true);
+  }).then(list => list.map(item => ({ ...item, unread: createdMs(item) > baseSummary.campaignSeenAtMs }))).catch(() => []) : [];
+  applySummary({ ...baseSummary, campaignUnreadTotal: campaignPreviewItems.filter(isUnread).length }, true);
 }
 async function markRead() {
   if (!currentUser) return;
   if (!previewLoaded) await loadPreview();
   const unreadPreview = newPreviewItems();
-  const unreadPersonal = unreadPreview.filter(item => item.source === 'account' && item.id);
+  const unreadPersonal = unreadPreview.filter(item => !isCampaign(item) && item.id);
   const unreadCampaigns = unreadPreview.filter(isCampaign);
   if (!unreadPersonal.length && !unreadCampaigns.length) return;
   const nowMs = Date.now();
@@ -241,7 +242,10 @@ async function toggleMenu() {
   if (!menu) return;
   const opened = menu.classList.toggle('is-open');
   btn?.setAttribute('aria-expanded', opened ? 'true' : 'false');
-  if (opened) await loadPreview();
+  if (opened) {
+    await load(currentUser).catch(() => null);
+    await loadPreview(true);
+  }
 }
 function bind() {
   if (bound || !$('#notifyNav')) return;

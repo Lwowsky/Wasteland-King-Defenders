@@ -2019,4 +2019,7 @@ window.WKD_TRANSLATIONS.pl = {
   'finalPlan.d1ShareMissing': 'Plan finałowy nie został jeszcze opublikowany w D1. Poproś konsula lub oficera o ponowne utworzenie tajnego linku.',
   'region.d1SettingsMissing': 'Ustawienia formularza nie zostały jeszcze opublikowane w D1. Poproś konsula lub oficera, aby nacisnął Zapisz/Uruchom w ustawieniach regionu.',
 
+  'messages.playerSearchHint': 'Wpisz dokładny nick i wybierz region/sojusz. Częściowy nick nie zostanie wysłany.',
+  'messages.selectExactPlayer': 'Wybierz dokładnego gracza: pełny nick + właściwy region i sojusz.',
+
 };

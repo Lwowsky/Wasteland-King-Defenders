@@ -2019,4 +2019,7 @@ window.WKD_TRANSLATIONS.en = {
   'finalPlan.d1ShareMissing': 'The final plan has not been published to D1 yet. Ask the consul or officer to create the secret link again.',
   'region.d1SettingsMissing': 'The form settings have not been published to D1 yet. Ask the consul or officer to press Save/Start in region settings.',
 
+  'messages.playerSearchHint': 'Enter the exact nickname and choose the region/alliance. Partial nicknames are not sent.',
+  'messages.selectExactPlayer': 'Choose the exact player: full nickname + correct region and alliance.',
+
 };

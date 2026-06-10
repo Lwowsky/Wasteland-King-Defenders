@@ -2019,4 +2019,7 @@ window.WKD_TRANSLATIONS.de = {
   'finalPlan.d1ShareMissing': 'Der finale Plan wurde noch nicht in D1 veröffentlicht. Bitte den Konsul oder Offizier, den geheimen Link erneut zu erstellen.',
   'region.d1SettingsMissing': 'Die Formulareinstellungen wurden noch nicht in D1 veröffentlicht. Bitte den Konsul oder Offizier, in den Regionseinstellungen Speichern/Starten zu drücken.',
 
+  'messages.playerSearchHint': 'Gib den exakten Nickname ein und wähle Region/Allianz. Teilnamen werden nicht gesendet.',
+  'messages.selectExactPlayer': 'Wähle den genauen Spieler: vollständiger Nickname + richtige Region und Allianz.',
+
 };
