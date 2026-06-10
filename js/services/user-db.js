@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=132';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=132';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=132';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=133';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=133';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=133';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -16,7 +16,7 @@ import {
   patchSentMessageD1,
   readNotificationSummaryD1,
   setNotificationSummaryD1
-} from './notifications-d1.js?v=132';
+} from './notifications-d1.js?v=133';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -992,16 +992,16 @@ export function makeAdminUserIndex(data = {}) {
     lastLoginAt: data.lastLoginAt || null,
     createdAtMs,
     updatedAtMs: adminIndexMs(data.updatedAt || data.createdAt || data.lastLoginAt),
-    source: 'admin-users-index-v132'
+    source: 'admin-users-index-v133'
   };
 }
 async function writeAdminUserIndexDoc(db, firestoreMod, profile = {}, batch = null) {
   const index = makeAdminUserIndex(profile || {});
   if (!index.uid || !index.profileComplete) return null;
   const ref = firestoreMod.doc(db, ADMIN_USERS_INDEX_COLLECTION, index.uid);
-  if (batch) batch.set(ref, index, { merge: true });
+  if (batch) batch.set(ref, index);
   else {
-    await firestoreMod.setDoc(ref, index, { merge: true });
+    await firestoreMod.setDoc(ref, index);
     trackWrites(1);
   }
   return index;
@@ -1015,7 +1015,7 @@ async function writeAdminUserIndexesForDocs(db, firestoreMod, docs = []) {
     const profile = { id: doc.id, ...(doc.data?.() || {}), uid: doc.data?.()?.uid || doc.id };
     const payload = makeAdminUserIndex(profile);
     if (!payload.uid || !payload.profileComplete) continue;
-    batch.set(firestoreMod.doc(db, ADMIN_USERS_INDEX_COLLECTION, payload.uid), payload, { merge: true });
+    batch.set(firestoreMod.doc(db, ADMIN_USERS_INDEX_COLLECTION, payload.uid), payload);
     count += 1;
     if (count % 400 === 0) {
       await batch.commit();

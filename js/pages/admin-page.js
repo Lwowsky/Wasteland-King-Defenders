@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=132';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=132';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=132';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=133';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=133';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=133';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -21,14 +21,14 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=132';
+} from '../services/user-db.js?v=133';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=132';
+} from '../services/region-db.js?v=133';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -88,6 +88,12 @@ function rankCode(value) {
 function getRankBadge(rank) { return window.WKD?.Badges?.rank ? window.WKD.Badges.rank(rank) : `<span class="rank-badge">${escapeHtml(rankCode(rank))}</span>`; }
 
 function getRegionBadge(region) { return window.WKD?.Badges?.region ? window.WKD.Badges.region(region) : `<span class="region-badge">${escapeHtml(region || '—')}</span>`; }
+
+function getAllianceBadge(alliance, region = '') {
+  return window.WKD?.Badges?.alliance
+    ? window.WKD.Badges.alliance(alliance || '—', { region, preserve: true })
+    : `<span class="alliance-badge"><span class="badge-dot"></span><span>${escapeHtml(alliance || '—')}</span></span>`;
+}
 
 
 function getShkBadge(shk) { return window.WKD?.Badges?.shk ? window.WKD.Badges.shk(shk) : `<span class="shk-badge">${escapeHtml(shk || '—')}</span>`; }
@@ -242,10 +248,11 @@ function rowMatchesFilters(row, filters = filterValues()) {
   const game = row.game || {};
   const userNick = String(game.nickname || '').toLowerCase();
   const mainNick = String(row.mainNickname || '').toLowerCase();
-  const userAlliance = String(game.alliance || '').toLowerCase();
+  const userAlliance = allianceTag3(game.alliance || '');
+  const filterAlliance = allianceTag3(filters.alliance || '');
   const userRegion = String(game.region || '').toLowerCase();
   return (!filters.nick || userNick.includes(filters.nick) || mainNick.includes(filters.nick))
-    && (!filters.alliance || userAlliance.includes(filters.alliance))
+    && (!filterAlliance || userAlliance === filterAlliance)
     && (!filters.region || userRegion.includes(filters.region));
 }
 
@@ -705,7 +712,7 @@ function userRow(row) {
   return `<tr ${rowAttrs} class="${row.isFarmRow ? 'is-farm-row' : 'is-main-row'}">
     <td data-label="${labels.nickname}"><strong>${escapeHtml(game.nickname || '—')}</strong><small>${escapeHtml(sub || '')}</small></td>
     <td data-label="${labels.region}">${getRegionBadge(game.region)}</td>
-    <td data-label="${labels.alliance}"><span class="alliance-badge">${escapeHtml(game.alliance || '—')}</span></td>
+    <td data-label="${labels.alliance}">${getAllianceBadge(game.alliance, game.region)}</td>
     <td data-label="${labels.rank}">${getRankBadge(game.rank)}</td>
     <td data-label="${labels.shk}">${getShkBadge(game.shk)}</td>
     <td data-label="${labels.role}">${getRoleBadge(role)}</td>
@@ -984,7 +991,7 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
     filters: adminPlayerQueryFilters()
   });
   users = Array.isArray(result.users) ? result.users : [];
-  if (!users.length && currentUser?.uid && currentProfile) {
+  if (!users.length && currentUser?.uid && currentProfile && !filtersAreActive()) {
     const fallbackProfile = { id: currentUser.uid, uid: currentUser.uid, email: currentUser.email || currentProfile.email || '', ...currentProfile };
     const fallbackMain = mainRowForUser(fallbackProfile);
     if (canDisplayRow(fallbackMain) && rowMatchesFilters(fallbackMain, filterValues())) users = [fallbackProfile];
