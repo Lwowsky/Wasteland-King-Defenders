@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=133';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=133';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=133';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=134';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=134';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=134';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -16,7 +16,7 @@ import {
   patchSentMessageD1,
   readNotificationSummaryD1,
   setNotificationSummaryD1
-} from './notifications-d1.js?v=133';
+} from './notifications-d1.js?v=134';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -1649,6 +1649,45 @@ function buildAdminUsersQuery(firestoreMod, db, { cursor = null, direction = 'ne
 function buildLegacyAdminUsersQuery(firestoreMod, db, { pageSize = 10 } = {}) {
   return firestoreMod.query(firestoreMod.collection(db, 'users'), firestoreMod.limit(Math.max(1, Math.min(100, Number(pageSize) || 10))));
 }
+
+function buildAdminUsersIndexDirectQuery(firestoreMod, db, { pageSize = 10, filters = {} } = {}) {
+  const nick = adminSearchKey(filters.nick).slice(0, ADMIN_INDEX_PREFIX_LIMIT);
+  const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
+  const alliance = adminAllianceFilterValue(filters.alliance);
+  const role = normalizeRole(filters.role || 'all');
+  const clauses = [firestoreMod.collection(db, ADMIN_USERS_INDEX_COLLECTION)];
+  if (nick) clauses.push(firestoreMod.where('searchPrefixes', 'array-contains', nick));
+  if (region) clauses.push(firestoreMod.where('region', '==', region));
+  if (alliance) clauses.push(firestoreMod.where('allianceExact', '==', alliance));
+  if (role && role !== 'all') clauses.push(firestoreMod.where('role', '==', role));
+  clauses.push(firestoreMod.limit(Math.max(1, Math.min(50, Number(pageSize) || 10))));
+  return firestoreMod.query(...clauses);
+}
+
+function buildPublicPlayersAdminSearchQuery(firestoreMod, db, { pageSize = 10, filters = {} } = {}) {
+  const nick = normalizeText(filters.nick);
+  const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
+  const alliance = adminAllianceFilterValue(filters.alliance);
+  const role = normalizeRole(filters.role || 'all');
+  const clauses = [firestoreMod.collection(db, 'publicPlayers')];
+  if (nick) clauses.push(firestoreMod.where('nickname', '==', nick));
+  if (region) clauses.push(firestoreMod.where('region', '==', region));
+  if (alliance) clauses.push(firestoreMod.where('alliance', '==', alliance));
+  if (role && role !== 'all') clauses.push(firestoreMod.where('role', '==', role));
+  clauses.push(firestoreMod.limit(Math.max(1, Math.min(50, Number(pageSize) || 10))));
+  return firestoreMod.query(...clauses);
+}
+
+async function loadAdminUsersFromPublicPlayers(db, firestoreMod, publicDocs = []) {
+  const refs = (Array.isArray(publicDocs) ? publicDocs : [])
+    .map(doc => normalizeText(doc.data?.()?.uid || doc.id))
+    .filter(Boolean)
+    .slice(0, 50)
+    .map(uid => firestoreMod.doc(db, 'users', uid));
+  if (!refs.length) return [];
+  const docs = await Promise.all(refs.map(ref => firestoreMod.getDoc(ref).catch(() => null)));
+  return docs.filter(doc => doc?.exists?.());
+}
 function mapAdminIndexDocs(rawDocs = [], filters = {}) {
   return rawDocs
     .map(doc => ({ id: doc.id, ...doc.data(), uid: doc.data()?.uid || doc.id, __doc: doc }))
@@ -1694,9 +1733,49 @@ export async function listRegisteredUsersPage(options = {}) {
     indexQueryFailed = true;
   }
 
+  if (!mapped.length && hasFilters && !options?.cursor && !indexQueryFailed) {
+    try {
+      const directSnap = await firestoreMod.getDocs(buildAdminUsersIndexDirectQuery(firestoreMod, db, {
+        pageSize: queryPageSize,
+        filters
+      }));
+      readCount += Math.max(1, directSnap.docs.length);
+      if (directSnap.docs.length) {
+        rawDocs = directSnap.docs || [];
+        mapped = mapAdminIndexDocs(rawDocs, filters);
+        queryMode = 'adminUsersIndex-direct';
+      }
+    } catch (directError) {
+      console.warn('[WKD] adminUsersIndex direct query skipped:', directError?.code || directError?.message || directError);
+    }
+  }
+
+  if (!mapped.length && hasFilters && !options?.cursor) {
+    try {
+      const publicSnap = await firestoreMod.getDocs(buildPublicPlayersAdminSearchQuery(firestoreMod, db, {
+        pageSize: queryPageSize,
+        filters
+      }));
+      readCount += Math.max(1, publicSnap.docs.length);
+      if (publicSnap.docs.length) {
+        const userDocs = await loadAdminUsersFromPublicPlayers(db, firestoreMod, publicSnap.docs);
+        readCount += userDocs.length;
+        rawDocs = userDocs;
+        mapped = mapAdminUserDocs(rawDocs, filters);
+        const indexedCount = await writeAdminUserIndexesForDocs(db, firestoreMod, rawDocs).catch(error => {
+          console.warn('[WKD] admin publicPlayers search index repair skipped:', error?.code || error?.message || error);
+          return 0;
+        });
+        queryMode = indexedCount ? `publicPlayers-repair-${indexedCount}` : 'publicPlayers-search';
+      }
+    } catch (publicError) {
+      console.warn('[WKD] publicPlayers admin search fallback skipped:', publicError?.code || publicError?.message || publicError);
+    }
+  }
+
   // One-time self-healing fallback for old profiles that do not yet have adminUsersIndex docs.
   // Important: for active searches, a zero-result indexed query stays cheap and does NOT scan users.
-  // If the player is old and missing from the index, use the admin button “Оновити індекс”.
+  // If the player is old and missing from the index, publicPlayers search repairs the index without scanning users.
   const shouldTryUsersFallback = !mapped.length && !options?.cursor && (!hasFilters || indexQueryFailed);
   if (shouldTryUsersFallback) {
     try {

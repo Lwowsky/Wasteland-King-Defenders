@@ -1,6 +1,6 @@
 import { formatUserDate, getUserProfile, makePublicPlayer, roleLabel } from '../services/user-db.js';
 import { watchAuth } from '../services/firebase-service.js';
-import { troopLabel } from '../services/region-db.js?v=133';
+import { troopLabel } from '../services/region-db.js?v=134';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -219,7 +219,7 @@ function hashHue(value) {
 function allianceHue(region, alliance) {
   const key = `${normRegion(region)}:${normTag(alliance)}`;
   const custom = allianceColorCache.get(key);
-  return Number.isFinite(custom) ? custom : ((hashHue(`${region}:${alliance}`) % 360) + 360) % 360;
+  return Number.isFinite(custom) ? custom : ((hashHue(alliance) % 360) + 360) % 360;
 }
 function allianceBadge(region, alliance) { const tag = normTag(alliance) || '—'; const hue = allianceHue(region, tag); return window.WKD?.Badges?.alliance ? window.WKD.Badges.alliance(tag, { hue, region }) : `<span class="alliance-badge"><span>${escapeHtml(tag)}</span></span>`; }
 

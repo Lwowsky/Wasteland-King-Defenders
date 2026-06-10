@@ -17,7 +17,7 @@ import {
   listRegionAlliances,
   listRegionCatalog,
   shareRegionTable
-} from '../services/region-db.js?v=133';
+} from '../services/region-db.js?v=134';
 import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot } from '../services/region-table-cache.js?v=106';
 
 const $ = selector => document.querySelector(selector);
@@ -66,7 +66,7 @@ function hashHue(value) { let hash = 2166136261; for (const ch of String(value |
 function allianceHue(tag) {
   const safe = normTag(tag);
   const custom = allianceColorMap.get(safe);
-  return Number.isFinite(custom) ? custom : hashHue(`${currentRegion}:${safe}`);
+  return Number.isFinite(custom) ? custom : hashHue(safe);
 }
 function allianceBadge(tag) {
   const safe = normTag(tag) || '—';

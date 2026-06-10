@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=133';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=133';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=133';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=134';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=134';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=134';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -21,14 +21,14 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=133';
+} from '../services/user-db.js?v=134';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=133';
+} from '../services/region-db.js?v=134';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -89,9 +89,19 @@ function getRankBadge(rank) { return window.WKD?.Badges?.rank ? window.WKD.Badge
 
 function getRegionBadge(region) { return window.WKD?.Badges?.region ? window.WKD.Badges.region(region) : `<span class="region-badge">${escapeHtml(region || '—')}</span>`; }
 
+function adminAllianceHue(value = '') {
+  if (window.WKD?.Badges?.hashHue) return window.WKD.Badges.hashHue(String(value || '—').trim() || '—');
+  let hash = 2166136261;
+  for (const ch of String(value || '—').trim() || '—') {
+    hash ^= ch.codePointAt(0) || 0;
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return ((hash % 360) + 360) % 360;
+}
+
 function getAllianceBadge(alliance, region = '') {
   return window.WKD?.Badges?.alliance
-    ? window.WKD.Badges.alliance(alliance || '—', { region, preserve: true })
+    ? window.WKD.Badges.alliance(alliance || '—', { region, preserve: true, hue: adminAllianceHue(alliance || '—') })
     : `<span class="alliance-badge"><span class="badge-dot"></span><span>${escapeHtml(alliance || '—')}</span></span>`;
 }
 

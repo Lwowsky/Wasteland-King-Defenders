@@ -73,7 +73,7 @@ window.WKD = window.WKD || {};
       const strict = options.strict3 === true;
       const invalid = strict && Boolean(raw) && length !== 3;
       const empty = !raw;
-      const hue = Number.isFinite(Number(options.hue)) ? Number(options.hue) : hashHue(`${options.region || ''}:${label}`);
+      const hue = Number.isFinite(Number(options.hue)) ? Number(options.hue) : hashHue(label);
       const extraClass = normalize(options.className || '');
       const stateClass = strict ? `${invalid ? 'is-invalid' : 'is-valid'} ${empty ? 'is-empty' : ''}` : (empty ? 'is-empty' : '');
       const style = [
