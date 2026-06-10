@@ -1,6 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=122';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=122';
+import { getUsageEstimate, resetUsageEstimate, getCloudflareUsageEstimate, resetCloudflareUsageEstimate } from '../services/usage-tracker.js?v=125';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=125';
+import { fetchRealCloudflareUsage } from '../services/cloudflare-usage.js?v=125';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -19,14 +20,14 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=122';
+} from '../services/user-db.js?v=125';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=122';
+} from '../services/region-db.js?v=125';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -45,6 +46,7 @@ let users = [];
 let requests = [];
 let regionsCatalog = [];
 let adminStatsSummary = null;
+let adminStatsPlayers = [];
 let regionsLoaded = false;
 let sortState = { key: 'createdAt', dir: 'desc' };
 let editUid = null;
@@ -53,6 +55,8 @@ let playersPage = 1;
 let playersCursorStack = [null];
 let playersPageMeta = { hasNext: false, reads: 0, queryMode: 'indexed' };
 let playerSearchDebounce = null;
+let cloudflareRealUsage = null;
+let cloudflareUsageLoading = false;
 
 function allianceTag3(value) { return window.WKD?.allianceTag3 ? window.WKD.allianceTag3(value) : Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join(''); }
 function escapeHtml(value) {
@@ -247,19 +251,142 @@ function leadersFromSummary(includeFarms = includeAdminFarmRows()) {
   return Number.isFinite(Number(total)) ? Number(total) : null;
 }
 
+async function fetchPublicCacheJson(fileName) {
+  const response = await fetch(`public-cache/${fileName}?v=125&t=${Date.now()}`, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`${fileName}-${response.status}`);
+  return response.json();
+}
+
 async function loadAdminStatsSummary() {
   try {
-    const response = await fetch(`public-cache/stats-summary.json?v=122&t=${Date.now()}`, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`summary-${response.status}`);
-    const data = await response.json();
-    adminStatsSummary = data && typeof data === 'object' ? data : null;
+    const [summary, players] = await Promise.all([
+      fetchPublicCacheJson('stats-summary.json'),
+      fetchPublicCacheJson('stats-players.json').catch(error => {
+        console.warn('[WKD] admin stats players cache unavailable:', error);
+        return [];
+      })
+    ]);
+    adminStatsSummary = summary && typeof summary === 'object' ? summary : null;
+    adminStatsPlayers = Array.isArray(players) ? players.filter(Boolean) : [];
   } catch (error) {
     console.warn('[WKD] admin stats summary unavailable:', error);
     adminStatsSummary = null;
+    adminStatsPlayers = [];
   }
   return adminStatsSummary;
 }
 
+function statsMap(key, includeFarms = includeAdminFarmRows()) {
+  const mapKey = includeFarms ? `${key}WithFarms` : key;
+  const value = adminStatsSummary?.[mapKey] || adminStatsSummary?.[key];
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+function sortedCountEntries(map = {}) {
+  return Object.entries(map || {})
+    .filter(([key, value]) => String(key || '').trim() && Number(value) > 0)
+    .sort((a, b) => Number(b[1]) - Number(a[1]) || String(a[0]).localeCompare(String(b[0]), window.WKD_CURRENT_LANG || 'uk', { numeric: true }));
+}
+
+function countChipHtml([key, value]) {
+  return `<span class="admin-cache-chip"><b>${escapeHtml(String(key || '—'))}</b><em>${escapeHtml(formatCompactNumber(value || 0))}</em></span>`;
+}
+
+function countSectionHtml(titleKey, fallback, entries = []) {
+  const rows = Array.isArray(entries) ? entries : [];
+  const content = rows.length ? rows.map(countChipHtml).join('') : `<span class="admin-cache-muted">${escapeHtml(t('admin.cacheNoData', 'Немає даних'))}</span>`;
+  return `<section class="admin-cache-section"><h4>${escapeHtml(t(titleKey, fallback))}</h4><div class="admin-cache-chip-list">${content}</div></section>`;
+}
+
+function publicPlayerRows(includeFarms = includeAdminFarmRows()) {
+  const players = Array.isArray(adminStatsPlayers) ? adminStatsPlayers : [];
+  if (!includeFarms) return players.map(player => ({ ...player, isFarm: false }));
+  return players.flatMap(player => {
+    const farms = Array.isArray(player?.farms) ? player.farms.map(farm => ({ ...farm, isFarm: true, mainNickname: player.nickname || player.gameNick || '' })) : [];
+    return [{ ...player, isFarm: false }, ...farms];
+  });
+}
+
+function countByFromPublicRows(selector, includeFarms = includeAdminFarmRows()) {
+  const counts = {};
+  publicPlayerRows(includeFarms).forEach(row => {
+    const value = selector(row);
+    const key = String(value || '').trim() || '—';
+    counts[key] = (Number(counts[key]) || 0) + 1;
+  });
+  return sortedCountEntries(counts);
+}
+
+function latestPlayersHtml() {
+  const rows = (Array.isArray(adminStatsPlayers) ? adminStatsPlayers : [])
+    .map(player => ({
+      nickname: player.nickname || player.gameNick || '—',
+      region: player.region || '—',
+      alliance: player.alliance || '—',
+      createdAt: timestampToMsSafe(player.createdAt)
+    }))
+    .filter(row => row.createdAt)
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, 8);
+  if (!rows.length) return `<span class="admin-cache-muted">${escapeHtml(t('admin.cacheNoData', 'Немає даних'))}</span>`;
+  return `<div class="admin-cache-latest">${rows.map(row => `
+    <span><b>${escapeHtml(row.nickname)}</b><small>${escapeHtml(row.region)} · ${escapeHtml(row.alliance)} · ${escapeHtml(new Date(row.createdAt).toLocaleDateString(window.WKD_CURRENT_LANG || 'uk'))}</small></span>
+  `).join('')}</div>`;
+}
+
+function renderCacheStatsDetails() {
+  const panel = $('#adminCacheDetails');
+  if (!panel) return;
+  if (!adminStatsSummary) {
+    panel.hidden = true;
+    panel.innerHTML = '';
+    return;
+  }
+  const includeFarms = includeAdminFarmRows();
+  const totalPlayers = Number(adminStatsSummary.totalPlayers || 0);
+  const totalFarms = Number(adminStatsSummary.totalFarms || 0);
+  const totalRows = Number(adminStatsSummary.totalRows || (totalPlayers + totalFarms));
+  const regionEntries = sortedCountEntries(statsMap('regions', includeFarms));
+  const allianceEntries = sortedCountEntries(statsMap('alliances', includeFarms));
+  const rankEntries = sortedCountEntries(statsMap('ranks', includeFarms));
+  const shkEntries = sortedCountEntries(statsMap('shkTiers', includeFarms));
+  const roleEntries = sortedCountEntries(statsMap('roles', includeFarms));
+  const countryEntries = sortedCountEntries(statsMap('countries', includeFarms));
+  const derivedRoles = roleEntries.length ? roleEntries : countByFromPublicRows(row => row.role || 'player', includeFarms);
+  const derivedCountries = countryEntries.length ? countryEntries : countByFromPublicRows(row => row.countryCode || row.country || '—', includeFarms);
+  const cards = [
+    ['admin.cachePlayers', 'Основні', totalPlayers],
+    ['admin.cacheFarms', 'Ферми', totalFarms],
+    ['admin.cacheRows', 'Рядки', totalRows],
+    ['admin.cacheRegions', 'Регіони', regionEntries.length],
+    ['admin.cacheAlliances', 'Альянси', allianceEntries.length],
+    ['admin.cacheLeaders', 'Керівні ролі', includeFarms ? Number(adminStatsSummary.leadersWithFarms || 0) : Number(adminStatsSummary.leaders || 0)],
+    ['admin.cachePublicRows', 'JSON гравців', adminStatsPlayers.length]
+  ];
+  const updatedAt = adminStatsSummary.generatedAt ? new Date(adminStatsSummary.generatedAt).toLocaleString(window.WKD_CURRENT_LANG || 'uk') : '—';
+  panel.hidden = false;
+  panel.innerHTML = `
+    <div class="admin-cache-head">
+      <div>
+        <h3>${escapeHtml(t('admin.cacheDetailsTitle', 'Статистика з JSON-кешу'))}</h3>
+        <p>${escapeHtml(t('admin.cacheNoReads', 'Цей блок читає public-cache/*.json і не витрачає Firestore reads.'))}</p>
+      </div>
+      <small>${escapeHtml(t('admin.cacheSource', 'Джерело'))}: ${escapeHtml(adminStatsSummary.source || 'public-cache')} · ${escapeHtml(t('admin.cacheGeneratedAt', 'Оновлено'))}: ${escapeHtml(updatedAt)}</small>
+    </div>
+    <div class="admin-cache-metrics">${cards.map(([key, fallback, value]) => `
+      <article><span>${escapeHtml(t(key, fallback))}</span><b>${escapeHtml(formatCompactNumber(value || 0))}</b></article>`).join('')}
+    </div>
+    <div class="admin-cache-grid">
+      ${countSectionHtml('admin.cacheTopRegions', 'Регіони', regionEntries)}
+      ${countSectionHtml('admin.cacheTopAlliances', 'Альянси', allianceEntries)}
+      ${countSectionHtml('admin.cacheRanks', 'Ранги', rankEntries)}
+      ${countSectionHtml('admin.cacheShkTiers', 'ШК тири', shkEntries)}
+      ${countSectionHtml('admin.cacheRoles', 'Ролі', derivedRoles)}
+      ${countSectionHtml('admin.cacheCountries', 'Країни', derivedCountries)}
+      <section class="admin-cache-section admin-cache-section--wide"><h4>${escapeHtml(t('admin.cacheLatestPlayers', 'Останні зареєстровані'))}</h4>${latestPlayersHtml()}</section>
+    </div>
+  `;
+}
 
 function rowMatchesFilters(row, filters = filterValues()) {
   if (!canDisplayRow(row)) return false;
@@ -359,6 +486,57 @@ function staticLimitCardHtml(key, value, detail = '') {
     <small>${escapeHtml(t(`admin.cloudflare.${key}.detail`, detail))}</small>
   </article>`;
 }
+
+function cloudflareUsageCardHtml(key, row = {}, detail = '') {
+  const label = t(`admin.cloudflare.${key}.label`, key);
+  const used = formatCompactNumber(row.used);
+  const limit = formatCompactNumber(row.limit);
+  const remaining = formatCompactNumber(row.remaining);
+  const percent = Math.max(0, Math.min(100, Number(row.percent) || 0));
+  return `<article class="admin-usage-card">
+    <span>${escapeHtml(label)}</span>
+    <b>${escapeHtml(remaining)}</b>
+    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(used)} / ${escapeHtml(limit)}</small>
+    <div class="admin-usage-bar" aria-hidden="true"><i style="width:${percent}%"></i></div>
+    <small>${escapeHtml(t(`admin.cloudflare.${key}.detail`, detail))}</small>
+  </article>`;
+}
+
+function formatBytes(value = 0) {
+  const bytes = Math.max(0, Number(value) || 0);
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let size = bytes;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+  const decimals = unitIndex === 0 ? 0 : (size >= 10 ? 1 : 2);
+  return `${size.toLocaleString(window.WKD_CURRENT_LANG || 'uk', { maximumFractionDigits: decimals })} ${units[unitIndex]}`;
+}
+
+function cloudflareBytesCardHtml(key, row = {}, detail = '') {
+  const label = t(`admin.cloudflare.${key}.label`, key);
+  const used = formatBytes(row.used);
+  const limit = formatBytes(row.limit);
+  const remaining = formatBytes(row.remaining);
+  const percent = Math.max(0, Math.min(100, Number(row.percent) || 0));
+  return `<article class="admin-usage-card">
+    <span>${escapeHtml(label)}</span>
+    <b>${escapeHtml(remaining)}</b>
+    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(used)} / ${escapeHtml(limit)}</small>
+    <div class="admin-usage-bar" aria-hidden="true"><i style="width:${percent}%"></i></div>
+    <small>${escapeHtml(t(`admin.cloudflare.${key}.detail`, detail))}</small>
+  </article>`;
+}
+
+function cloudflareValueCardHtml(key, value = 0, detail = '') {
+  return `<article class="admin-usage-card admin-usage-card--static">
+    <span>${escapeHtml(t(`admin.cloudflare.${key}.label`, key))}</span>
+    <b>${escapeHtml(formatCompactNumber(value))}</b>
+    <small>${escapeHtml(t(`admin.cloudflare.${key}.detail`, detail))}</small>
+  </article>`;
+}
 function renderUsage() {
   const grid = $('#adminUsageGrid');
   const note = $('#adminUsageNote');
@@ -381,16 +559,72 @@ function renderUsage() {
 function renderCloudflareUsage() {
   const grid = $('#cloudflareUsageGrid');
   if (!grid) return;
+  if (cloudflareUsageLoading) {
+    grid.innerHTML = `<div class="admin-empty">${escapeHtml(t('admin.cloudflareRealLoading', 'Завантажую реальні дані Cloudflare...'))}</div>`;
+    const note = $('#cloudflareUsageNote');
+    if (note) note.textContent = t('admin.cloudflareRealLoading', 'Завантажую реальні дані Cloudflare...');
+    return;
+  }
+  if (cloudflareRealUsage?.real) {
+    const worker = cloudflareRealUsage.worker || {};
+    const d1 = cloudflareRealUsage.d1 || {};
+    grid.innerHTML = [
+      cloudflareUsageCardHtml('workerRequests', worker.requests, 'Real Workers requests today UTC'),
+      cloudflareValueCardHtml('workerErrors', worker.errors, 'Real Workers errors today UTC'),
+      cloudflareValueCardHtml('workerSubrequests', worker.subrequests, 'Real Workers subrequests today UTC'),
+      cloudflareUsageCardHtml('d1RowsRead', d1.rowsRead, 'Real D1 rows read today UTC'),
+      cloudflareUsageCardHtml('d1RowsWritten', d1.rowsWritten, 'Real D1 rows written today UTC'),
+      cloudflareValueCardHtml('d1ReadQueries', d1.readQueries, 'Real D1 read queries today UTC'),
+      cloudflareValueCardHtml('d1WriteQueries', d1.writeQueries, 'Real D1 write queries today UTC'),
+      cloudflareBytesCardHtml('d1Storage', d1.storageTotal, 'Real D1 total storage'),
+      cloudflareBytesCardHtml('d1DatabaseSize', d1.storageMaxDatabase, 'Largest D1 database size'),
+      staticLimitCardHtml('workerCpu', '10 ms / request', 'Workers Free CPU time'),
+      staticLimitCardHtml('workerStaticAssets', 'free', 'Static asset requests'),
+      staticLimitCardHtml('d1QueriesPerInvocation', '50', 'D1 queries per Worker invocation on Free')
+    ].join('');
+    const note = $('#cloudflareUsageNote');
+    if (note) {
+      const period = cloudflareRealUsage.period || {};
+      const errors = Array.isArray(cloudflareRealUsage.partialErrors) && cloudflareRealUsage.partialErrors.length
+        ? ` ${tv('admin.cloudflarePartialNote', 'Часткові помилки: {errors}', { errors: cloudflareRealUsage.partialErrors.map(item => `${item.source}: ${item.error}`).join('; ') })}`
+        : '';
+      note.textContent = `${tv('admin.cloudflareRealNote', 'Реальні дані Cloudflare за сьогодні UTC: {start} — {end}. Оновлено: {updated}.', {
+        start: period.start || period.dateStart || '—',
+        end: period.end || period.dateEnd || '—',
+        updated: cloudflareRealUsage.generatedAt || '—'
+      })}${errors}`;
+    }
+    return;
+  }
+  const usage = getCloudflareUsageEstimate();
   grid.innerHTML = [
-    staticLimitCardHtml('workerRequests', '100 000 / day', 'Workers Free requests'),
+    cloudflareUsageCardHtml('workerRequests', usage.workerRequests, 'Workers Free requests'),
+    cloudflareUsageCardHtml('d1RowsRead', usage.d1RowsRead, 'D1 Free rows read'),
+    cloudflareUsageCardHtml('d1RowsWritten', usage.d1RowsWritten, 'D1 Free rows written'),
     staticLimitCardHtml('workerCpu', '10 ms / request', 'Workers Free CPU time'),
     staticLimitCardHtml('workerStaticAssets', 'free', 'Static asset requests'),
-    staticLimitCardHtml('d1RowsRead', '5 000 000 / day', 'D1 Free rows read'),
-    staticLimitCardHtml('d1RowsWritten', '100 000 / day', 'D1 Free rows written'),
     staticLimitCardHtml('d1Storage', '5 GB total', 'D1 Free storage per account'),
     staticLimitCardHtml('d1DatabaseSize', '500 MB / DB', 'D1 Free maximum database size'),
     staticLimitCardHtml('d1QueriesPerInvocation', '50', 'D1 queries per Worker invocation on Free')
   ].join('');
+  const note = $('#cloudflareUsageNote');
+  if (note) note.textContent = t('admin.cloudflareUsageNote', 'Це локальна оцінка запитів цього браузера. Натисни Оновити, щоб отримати реальні дані через безпечний Worker secret.');
+}
+
+async function refreshRealCloudflareUsage() {
+  if (!currentUser || !canUseLimitsPanel()) return;
+  cloudflareUsageLoading = true;
+  renderCloudflareUsage();
+  try {
+    cloudflareRealUsage = await fetchRealCloudflareUsage(currentUser);
+    setStatus(t('admin.cloudflareRealLoaded', 'Реальні дані Cloudflare оновлено.'), 'success');
+  } catch (error) {
+    cloudflareRealUsage = null;
+    setStatus(tv('admin.cloudflareRealFailed', 'Не вдалося отримати реальні дані Cloudflare: {error}', { error: error?.message || 'unknown' }), 'error');
+  } finally {
+    cloudflareUsageLoading = false;
+    renderCloudflareUsage();
+  }
 }
 
 async function maybeRunOldDocsCleanup() {
@@ -567,6 +801,7 @@ function renderStats() {
   const values = [playersTotal, regionTotal, leaders, pending];
   cards.forEach((card, index) => { card.textContent = formatCompactNumber(values[index] ?? 0); });
   setSummary(tv('admin.summaryOptimized', '{players} гравців у кеші • {shown} показано зараз • {requests} заявок', { players: playersTotal, shown: rows.length, requests: pending }));
+  renderCacheStatsDetails();
 }
 
 function editCell(name, value, type = 'text') {
@@ -994,8 +1229,9 @@ function bindAdminControls() {
   $('#refreshRequestsBtn')?.addEventListener('click', () => loadRoleRequests().catch(console.error));
   $('#refreshPlayersBtn')?.addEventListener('click', () => loadPlayersPage({ reset: true }).catch(console.error));
   $('#refreshUsageBtn')?.addEventListener('click', renderUsage);
-  $('#refreshCloudflareUsageBtn')?.addEventListener('click', renderCloudflareUsage);
+  $('#refreshCloudflareUsageBtn')?.addEventListener('click', () => refreshRealCloudflareUsage().catch(console.error));
   $('#resetUsageEstimateBtn')?.addEventListener('click', () => { resetUsageEstimate(); renderUsage(); });
+  $('#resetCloudflareUsageBtn')?.addEventListener('click', () => { cloudflareRealUsage = null; resetCloudflareUsageEstimate(); renderCloudflareUsage(); });
   $('#cleanupOldDocsBtn')?.addEventListener('click', () => runOldDocsCleanup().catch(console.error));
   $('#scanFirebaseArchiveBtn')?.addEventListener('click', () => runFirebaseArchiveScan().catch(console.error));
   $('#cleanupFirebaseNotificationsBtn')?.addEventListener('click', () => runFirebaseArchiveCleanup('notifications').catch(console.error));

@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=122';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=122';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=104';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=125';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=125';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=125';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -16,7 +16,7 @@ import {
   patchSentMessageD1,
   readNotificationSummaryD1,
   setNotificationSummaryD1
-} from './notifications-d1.js?v=118';
+} from './notifications-d1.js?v=125';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -1466,6 +1466,17 @@ function buildAdminUsersQuery(firestoreMod, db, { cursor = null, direction = 'ne
   return firestoreMod.query(...clauses);
 }
 
+function buildLegacyAdminUsersQuery(firestoreMod, db, { pageSize = 10 } = {}) {
+  return firestoreMod.query(firestoreMod.collection(db, 'users'), firestoreMod.limit(Math.max(1, Math.min(100, Number(pageSize) || 10))));
+}
+function mapAdminUserDocs(rawDocs = [], filters = {}) {
+  return rawDocs
+    .map(doc => ({ id: doc.id, ...doc.data(), uid: doc.data()?.uid || doc.id, __doc: doc }))
+    .filter(user => user.profileComplete !== false)
+    .filter(user => adminUserMatchesFilters(user, filters))
+    .sort((a, b) => timestampToMs(b.createdAt || b.updatedAt || b.lastLoginAt) - timestampToMs(a.createdAt || a.updatedAt || a.lastLoginAt));
+}
+
 export async function listRegisteredUsersPage(options = {}) {
   const firebase = await getFirebase();
   if (!firebase) return { users: [], firstDoc: null, lastDoc: null, hasNext: false, reads: 0, pageSize: 10, filters: {} };
@@ -1493,13 +1504,26 @@ export async function listRegisteredUsersPage(options = {}) {
     snapshot = await firestoreMod.getDocs(buildAdminUsersQuery(firestoreMod, db, { ...baseOptions, strictProfileComplete: false, serverFilters: false }));
   }
 
-  const readCount = Math.max(1, snapshot.docs.length);
+  let readCount = Math.max(1, snapshot.docs.length);
+  let rawDocs = snapshot.docs || [];
+  let mapped = mapAdminUserDocs(rawDocs, filters);
+
+  if (!mapped.length && !options?.cursor) {
+    try {
+      const legacyLimit = hasClientFilters ? Math.max(pageSize + 1, Math.min(100, Number(options?.scanLimit || pageSize * 10))) : pageSize + 1;
+      const legacySnapshot = await firestoreMod.getDocs(buildLegacyAdminUsersQuery(firestoreMod, db, { pageSize: legacyLimit }));
+      if (legacySnapshot.docs?.length) {
+        queryMode = queryMode === 'indexed' ? 'legacy-empty-fallback' : `${queryMode}+legacy-empty-fallback`;
+        readCount += legacySnapshot.docs.length;
+        rawDocs = legacySnapshot.docs || [];
+        mapped = mapAdminUserDocs(rawDocs, filters);
+      }
+    } catch (legacyError) {
+      console.warn('[WKD] legacy admin users fallback failed:', legacyError);
+    }
+  }
+
   trackReads(readCount);
-  const rawDocs = snapshot.docs || [];
-  const mapped = rawDocs
-    .map(doc => ({ id: doc.id, ...doc.data(), uid: doc.data()?.uid || doc.id, __doc: doc }))
-    .filter(user => user.profileComplete !== false)
-    .filter(user => adminUserMatchesFilters(user, filters));
   const pageUsers = mapped.slice(0, pageSize).map(({ __doc, ...user }) => user);
   const rawHasNext = hasClientFilters ? rawDocs.length >= scanLimit : rawDocs.length > pageSize;
   const pageDocs = mapped.slice(0, pageSize).map(user => user.__doc).filter(Boolean);

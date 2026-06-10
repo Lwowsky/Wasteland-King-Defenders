@@ -1,4 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
+import { trackCloudflareUsage } from './usage-tracker.js?v=125';
 
 function cleanText(value = '', max = 120) {
   return String(value ?? '')
@@ -41,6 +42,13 @@ async function requestJson(path, user, options = {}) {
     error.data = data;
     throw error;
   }
+  const usage = data?.usage || {};
+  const returnedRows = Array.isArray(data?.rows) ? data.rows.length : (data?.summary ? 1 : data?.notification || data?.sent || data?.campaign ? 1 : 0);
+  trackCloudflareUsage({
+    workerRequests: 1,
+    d1RowsRead: Number(usage.d1RowsRead ?? usage.rowsRead ?? returnedRows) || 0,
+    d1RowsWritten: Number(usage.d1RowsWritten ?? usage.rowsWritten ?? (options.method && options.method !== 'GET' ? 1 : 0)) || 0
+  });
   return data || {};
 }
 function normalizeNotification(row = {}) {

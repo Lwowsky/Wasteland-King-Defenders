@@ -213,6 +213,10 @@ function emptySummary(extra = {}) {
     ranksWithFarms: {},
     shkTiers: {},
     shkTiersWithFarms: {},
+    roles: {},
+    rolesWithFarms: {},
+    countries: {},
+    countriesWithFarms: {},
     processedChanges: 0,
     ...extra
   };
@@ -249,22 +253,24 @@ function shkTier(value) {
 function isLeader(role) {
   return ['admin', 'moderator', 'consul', 'officer'].includes(String(role || '').toLowerCase());
 }
-function entryFromPlayer(player = {}, isFarm = false) {
+function entryFromPlayer(player = {}, isFarm = false, inheritedCountry = '') {
   return {
     isFarm: Boolean(isFarm),
     region: String(player.region || '').replace(/[^0-9]/g, '') || '—',
     alliance: String(player.alliance || '').trim() || '—',
     rank: rankCode(player.rank),
     shkTier: shkTier(player.shk),
-    role: String(player.role || 'player').toLowerCase()
+    role: String(player.role || 'player').toLowerCase(),
+    country: String(player.countryCode || player.country || inheritedCountry || '—').trim().toUpperCase() || '—'
   };
 }
 function extractEntries(publicPlayer = {}) {
   if (!publicPlayer || publicPlayer.profileComplete === false) return [];
-  const entries = [entryFromPlayer(publicPlayer, false)];
+  const country = publicPlayer.countryCode || publicPlayer.country || '';
+  const entries = [entryFromPlayer(publicPlayer, false, country)];
   const farms = Array.isArray(publicPlayer.farms) ? publicPlayer.farms : [];
   farms.forEach(farm => {
-    if (farm && (farm.nickname || farm.region || farm.alliance)) entries.push(entryFromPlayer(farm, true));
+    if (farm && (farm.nickname || farm.region || farm.alliance)) entries.push(entryFromPlayer(farm, true, country));
   });
   return entries;
 }
@@ -278,12 +284,16 @@ function applyEntry(summary, entry, delta) {
   inc(summary.alliancesWithFarms, entry.alliance, delta);
   inc(summary.ranksWithFarms, entry.rank, delta);
   inc(summary.shkTiersWithFarms, entry.shkTier, delta);
+  inc(summary.rolesWithFarms, entry.role, delta);
+  inc(summary.countriesWithFarms, entry.country, delta);
   if (isLeader(entry.role)) summary.leadersWithFarms += delta;
   if (!farm) {
     inc(summary.regions, entry.region, delta);
     inc(summary.alliances, entry.alliance, delta);
     inc(summary.ranks, entry.rank, delta);
     inc(summary.shkTiers, entry.shkTier, delta);
+    inc(summary.roles, entry.role, delta);
+    inc(summary.countries, entry.country, delta);
     if (isLeader(entry.role)) summary.leaders += delta;
   }
 }
@@ -305,7 +315,7 @@ function normalizeSummary(summary) {
   for (const key of ['totalPlayers', 'totalFarms', 'totalRows', 'leaders', 'leadersWithFarms', 'processedChanges']) {
     summary[key] = Math.max(0, Number(summary[key] || 0));
   }
-  for (const key of ['regions', 'regionsWithFarms', 'alliances', 'alliancesWithFarms', 'ranks', 'ranksWithFarms', 'shkTiers', 'shkTiersWithFarms']) {
+  for (const key of ['regions', 'regionsWithFarms', 'alliances', 'alliancesWithFarms', 'ranks', 'ranksWithFarms', 'shkTiers', 'shkTiersWithFarms', 'roles', 'rolesWithFarms', 'countries', 'countriesWithFarms']) {
     summary[key] = summary[key] && typeof summary[key] === 'object' ? summary[key] : {};
     for (const item of Object.keys(summary[key])) if (Number(summary[key][item]) <= 0) delete summary[key][item];
   }

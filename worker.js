@@ -1513,6 +1513,222 @@ async function handleD1CleanupClear(request, env) {
 }
 
 
+const CLOUDFLARE_GRAPHQL_URL = 'https://api.cloudflare.com/client/v4/graphql';
+const WORKERS_FREE_REQUESTS_PER_DAY = 100000;
+const D1_FREE_ROWS_READ_PER_DAY = 5000000;
+const D1_FREE_ROWS_WRITTEN_PER_DAY = 100000;
+const D1_FREE_STORAGE_TOTAL_BYTES = 5 * 1024 * 1024 * 1024;
+const D1_FREE_DATABASE_SIZE_BYTES = 500 * 1024 * 1024;
+
+function todayUtcWindow() {
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+  const end = now;
+  const startIso = start.toISOString();
+  const endIso = end.toISOString();
+  return {
+    startIso,
+    endIso,
+    startDate: startIso.slice(0, 10),
+    endDate: endIso.slice(0, 10),
+  };
+}
+
+function numericMetric(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? Math.round(number) : 0;
+}
+
+function sumMetricRows(rows = [], key = '') {
+  return (Array.isArray(rows) ? rows : []).reduce((sum, row) => sum + numericMetric(row?.sum?.[key]), 0);
+}
+
+function maxMetricRows(rows = [], key = '') {
+  return (Array.isArray(rows) ? rows : []).reduce((max, row) => Math.max(max, numericMetric(row?.max?.[key] ?? row?.sum?.[key])), 0);
+}
+
+async function requireAdminUser(request, env) {
+  const user = await verifyFirebaseToken(request, env);
+  if (!isAdminUid(env, user.uid)) {
+    throw new Error('admin_required');
+  }
+  return user;
+}
+
+async function callCloudflareGraphql(env, query, variables = {}) {
+  const token = clean(env.CLOUDFLARE_ANALYTICS_TOKEN || '', 4096);
+  const accountTag = clean(env.CLOUDFLARE_ACCOUNT_ID || '', 200);
+  if (!token) throw new Error('cloudflare_token_missing');
+  if (!accountTag) throw new Error('cloudflare_account_id_missing');
+  const response = await fetch(CLOUDFLARE_GRAPHQL_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query, variables: { accountTag, ...variables } }),
+  });
+  let data = null;
+  try { data = await response.json(); } catch { data = null; }
+  if (!response.ok) {
+    throw new Error(`cloudflare_http_${response.status}`);
+  }
+  if (Array.isArray(data?.errors) && data.errors.length) {
+    const message = clean(data.errors[0]?.message || 'cloudflare_graphql_error', 160);
+    throw new Error(message || 'cloudflare_graphql_error');
+  }
+  return data?.data || {};
+}
+
+async function fetchWorkerUsage(env, period) {
+  const scriptName = clean(env.CLOUDFLARE_WORKER_SCRIPT_NAME || '', 160);
+  const filter = scriptName
+    ? 'filter: { scriptName: $scriptName, datetime_geq: $datetimeStart, datetime_leq: $datetimeEnd }'
+    : 'filter: { datetime_geq: $datetimeStart, datetime_leq: $datetimeEnd }';
+  const variablesLine = scriptName ? ', $scriptName: string' : '';
+  const query = `query WKDWorkersUsage($accountTag: string!, $datetimeStart: string!, $datetimeEnd: string!${variablesLine}) {
+    viewer {
+      accounts(filter: { accountTag: $accountTag }) {
+        workersInvocationsAdaptive(limit: 10000, ${filter}) {
+          sum { requests subrequests errors }
+          quantiles { cpuTimeP50 cpuTimeP99 }
+          dimensions { scriptName status }
+        }
+      }
+    }
+  }`;
+  const variables = {
+    datetimeStart: period.startIso,
+    datetimeEnd: period.endIso,
+  };
+  if (scriptName) variables.scriptName = scriptName;
+  const data = await callCloudflareGraphql(env, query, variables);
+  const rows = data?.viewer?.accounts?.[0]?.workersInvocationsAdaptive || [];
+  const cpuRows = Array.isArray(rows) ? rows.filter(row => row?.quantiles) : [];
+  return {
+    requests: sumMetricRows(rows, 'requests'),
+    subrequests: sumMetricRows(rows, 'subrequests'),
+    errors: sumMetricRows(rows, 'errors'),
+    cpuTimeP50: maxMetricRows(cpuRows.map(row => ({ max: row.quantiles })), 'cpuTimeP50'),
+    cpuTimeP99: maxMetricRows(cpuRows.map(row => ({ max: row.quantiles })), 'cpuTimeP99'),
+    scriptName: scriptName || 'all-workers',
+    rows: Array.isArray(rows) ? rows.length : 0,
+  };
+}
+
+async function fetchD1AnalyticsUsage(env, period) {
+  const query = `query WKDD1AnalyticsUsage($accountTag: string!, $start: Date!, $end: Date!) {
+    viewer {
+      accounts(filter: { accountTag: $accountTag }) {
+        d1AnalyticsAdaptiveGroups(limit: 10000, filter: { date_geq: $start, date_leq: $end }) {
+          sum { readQueries writeQueries rowsRead rowsWritten }
+          dimensions { date databaseId }
+        }
+      }
+    }
+  }`;
+  const data = await callCloudflareGraphql(env, query, { start: period.startDate, end: period.endDate });
+  const rows = data?.viewer?.accounts?.[0]?.d1AnalyticsAdaptiveGroups || [];
+  return {
+    readQueries: sumMetricRows(rows, 'readQueries'),
+    writeQueries: sumMetricRows(rows, 'writeQueries'),
+    rowsRead: sumMetricRows(rows, 'rowsRead'),
+    rowsWritten: sumMetricRows(rows, 'rowsWritten'),
+    rows: Array.isArray(rows) ? rows.length : 0,
+  };
+}
+
+async function fetchD1StorageUsage(env, period) {
+  const query = `query WKDD1StorageUsage($accountTag: string!, $start: Date!, $end: Date!) {
+    viewer {
+      accounts(filter: { accountTag: $accountTag }) {
+        d1StorageAdaptiveGroups(limit: 10000, filter: { date_geq: $start, date_leq: $end }) {
+          max { databaseSizeBytes }
+          dimensions { date databaseId }
+        }
+      }
+    }
+  }`;
+  const data = await callCloudflareGraphql(env, query, { start: period.startDate, end: period.endDate });
+  const rows = data?.viewer?.accounts?.[0]?.d1StorageAdaptiveGroups || [];
+  const byDatabase = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const id = clean(row?.dimensions?.databaseId || 'unknown', 120);
+    const bytes = numericMetric(row?.max?.databaseSizeBytes);
+    byDatabase.set(id, Math.max(byDatabase.get(id) || 0, bytes));
+  }
+  const databaseSizes = [...byDatabase.entries()].map(([databaseId, bytes]) => ({ databaseId, bytes }));
+  return {
+    databaseSizeBytes: databaseSizes.reduce((sum, item) => sum + numericMetric(item.bytes), 0),
+    maxDatabaseSizeBytes: databaseSizes.reduce((max, item) => Math.max(max, numericMetric(item.bytes)), 0),
+    databaseCount: databaseSizes.length,
+    databaseSizes: databaseSizes.slice(0, 20),
+    rows: Array.isArray(rows) ? rows.length : 0,
+  };
+}
+
+async function handleCloudflareUsage(request, env) {
+  await requireAdminUser(request, env);
+  const period = todayUtcWindow();
+  const partialErrors = [];
+  let worker = { requests: 0, subrequests: 0, errors: 0, cpuTimeP50: 0, cpuTimeP99: 0, scriptName: 'unknown', rows: 0 };
+  let d1 = { readQueries: 0, writeQueries: 0, rowsRead: 0, rowsWritten: 0, rows: 0 };
+  let storage = { databaseSizeBytes: 0, maxDatabaseSizeBytes: 0, databaseCount: 0, databaseSizes: [], rows: 0 };
+
+  try {
+    worker = await fetchWorkerUsage(env, period);
+  } catch (error) {
+    partialErrors.push({ source: 'workers', error: clean(error?.message || 'workers_usage_failed', 160) });
+  }
+  try {
+    d1 = await fetchD1AnalyticsUsage(env, period);
+  } catch (error) {
+    partialErrors.push({ source: 'd1-analytics', error: clean(error?.message || 'd1_usage_failed', 160) });
+  }
+  try {
+    storage = await fetchD1StorageUsage(env, period);
+  } catch (error) {
+    partialErrors.push({ source: 'd1-storage', error: clean(error?.message || 'd1_storage_failed', 160) });
+  }
+
+  const hasAnyData = worker.rows > 0 || d1.rows > 0 || storage.rows > 0;
+  if (!hasAnyData && partialErrors.length >= 3) {
+    return json({ ok: false, error: 'cloudflare_usage_unavailable', partialErrors }, 502);
+  }
+
+  return json({
+    ok: true,
+    real: true,
+    source: 'cloudflare-graphql-analytics-api',
+    period: {
+      timezone: 'UTC',
+      start: period.startIso,
+      end: period.endIso,
+      dateStart: period.startDate,
+      dateEnd: period.endDate,
+    },
+    worker,
+    d1: {
+      ...d1,
+      databaseSizeBytes: storage.databaseSizeBytes,
+      maxDatabaseSizeBytes: storage.maxDatabaseSizeBytes,
+      databaseCount: storage.databaseCount,
+      databaseSizes: storage.databaseSizes,
+    },
+    limits: {
+      workerRequestsPerDay: WORKERS_FREE_REQUESTS_PER_DAY,
+      d1RowsReadPerDay: D1_FREE_ROWS_READ_PER_DAY,
+      d1RowsWrittenPerDay: D1_FREE_ROWS_WRITTEN_PER_DAY,
+      d1StorageTotalBytes: D1_FREE_STORAGE_TOTAL_BYTES,
+      d1DatabaseSizeBytes: D1_FREE_DATABASE_SIZE_BYTES,
+    },
+    partialErrors,
+    generatedAt: new Date().toISOString(),
+  }, 200, 'private, no-store');
+}
+
+
 function boolInt(value) {
   return value ? 1 : 0;
 }
@@ -2123,6 +2339,11 @@ export default {
     }
 
     try {
+
+      if (url.pathname === "/api/admin/usage/cloudflare" && request.method === "GET") {
+        return await handleCloudflareUsage(request, env);
+      }
+
       if (url.pathname === "/api/public-stats/player" && request.method === "POST") {
         return await handlePublicStatsPlayerUpsert(request, env);
       }
