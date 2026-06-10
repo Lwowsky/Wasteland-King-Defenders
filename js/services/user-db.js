@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=129';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=129';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=129';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=130';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=130';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=130';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -16,7 +16,7 @@ import {
   patchSentMessageD1,
   readNotificationSummaryD1,
   setNotificationSummaryD1
-} from './notifications-d1.js?v=129';
+} from './notifications-d1.js?v=130';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -1458,7 +1458,8 @@ function buildAdminUsersQuery(firestoreMod, db, { cursor = null, direction = 'ne
   // Do not server-filter by alliance here: older documents may store alliance tags with preserved case (YYY/EVO),
   // while search input can arrive as yyy/evo. We keep Firestore reads low with region + limit, then match alliance
   // case-insensitively on the client so existing players do not disappear from the admin table.
-  if (serverFilters && region) clauses.push(firestoreMod.where('regionAccess', 'array-contains', region));
+  // v130: region/alliance filters are applied on the client after a small Firestore page,
+  // because old user documents may not have regionAccess/allianceAccess yet.
   clauses.push(firestoreMod.orderBy('createdAt', 'desc'));
   if (cursor) {
     if (direction === 'prev') clauses.push(firestoreMod.endBefore(cursor), firestoreMod.limitToLast(pageSize));
@@ -1523,6 +1524,34 @@ export async function listRegisteredUsersPage(options = {}) {
       }
     } catch (legacyError) {
       console.warn('[WKD] legacy admin users fallback failed:', legacyError);
+    }
+  }
+
+  if (!mapped.length && !options?.cursor) {
+    try {
+      const publicLimit = hasClientFilters ? Math.max(pageSize + 1, Math.min(50, Number(options?.scanLimit || pageSize * 5))) : pageSize + 1;
+      const publicSnap = await firestoreMod.getDocs(firestoreMod.query(
+        firestoreMod.collection(db, 'publicPlayers'),
+        firestoreMod.limit(publicLimit)
+      ));
+      readCount += publicSnap.docs.length;
+      const publicRows = publicSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(row => adminUserMatchesFilters(row, filters));
+      const userDocs = [];
+      for (const row of publicRows.slice(0, pageSize + 1)) {
+        const uid = normalizeText(row.uid || row.id);
+        if (!uid) continue;
+        const userSnap = await firestoreMod.getDoc(firestoreMod.doc(db, 'users', uid)).catch(() => null);
+        readCount += 1;
+        if (userSnap?.exists?.()) userDocs.push(userSnap);
+        else userDocs.push({ id: uid, data: () => ({ ...row, uid }) });
+      }
+      if (userDocs.length) {
+        queryMode = `${queryMode}+public-index-fallback`;
+        rawDocs = userDocs;
+        mapped = mapAdminUserDocs(rawDocs, filters);
+      }
+    } catch (publicError) {
+      console.warn('[WKD] public players admin fallback failed:', publicError);
     }
   }
 

@@ -1939,7 +1939,7 @@ window.WKD_TRANSLATIONS.ru = {
   'admin.cloudflare.d1QueriesPerInvocation.label': 'D1 запросов за вызов',
   'admin.cloudflare.d1QueriesPerInvocation.detail': 'Лимит D1 query на Worker invocation',
 
-  'admin.summaryOptimized': '{players} игроков в кэше • {shown} показано сейчас • {requests} заявок',
+  'admin.summaryOptimized': '{players} игроков загружено • {shown} строк показано сейчас • {requests} заявок',
   'admin.playersPageInfoOptimized': 'Страница {page} · основ показано: {shown} · всего: {total} · Firebase reads≈{reads}',
   'admin.playersLoadedOptimized': 'Загружено {count} новых игроков. Firebase reads≈{reads}; вся коллекция users не читается.',
   'admin.playersLoadedFiltered': 'Загружено {count} игроков по фильтру. Firebase reads≈{reads}. Если старый игрок не найден, очисти фильтр или нажми Вперед.',

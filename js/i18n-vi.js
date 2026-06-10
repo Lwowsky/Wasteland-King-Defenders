@@ -1939,7 +1939,7 @@ window.WKD_TRANSLATIONS.vi = {
   'admin.cloudflare.d1QueriesPerInvocation.label': 'Truy vấn D1 mỗi lần gọi',
   'admin.cloudflare.d1QueriesPerInvocation.detail': 'Giới hạn D1 query mỗi Worker invocation',
 
-  'admin.summaryOptimized': '{players} người chơi trong cache • đang hiển thị {shown} • {requests} yêu cầu',
+  'admin.summaryOptimized': 'Đã tải {players} người chơi • đang hiển thị {shown} dòng • {requests} yêu cầu',
   'admin.playersPageInfoOptimized': 'Trang {page} · nhân vật chính hiển thị: {shown} · tổng: {total} · Firebase reads≈{reads}',
   'admin.playersLoadedOptimized': 'Đã tải {count} người chơi mới nhất. Firebase reads≈{reads}; không đọc toàn bộ collection users.',
   'admin.playersLoadedFiltered': 'Đã tải {count} người chơi theo bộ lọc. Firebase reads≈{reads}. Nếu không thấy người chơi cũ, hãy xóa bộ lọc hoặc nhấn Tiếp.',

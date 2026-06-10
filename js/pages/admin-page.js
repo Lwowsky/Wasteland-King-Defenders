@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=129';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=129';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=129';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=130';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=130';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=130';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -20,14 +20,14 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=129';
+} from '../services/user-db.js?v=130';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=129';
+} from '../services/region-db.js?v=130';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -45,8 +45,6 @@ let currentProfile = null;
 let users = [];
 let requests = [];
 let regionsCatalog = [];
-let adminStatsSummary = null;
-let adminStatsPlayers = [];
 let regionsLoaded = false;
 let sortState = { key: 'createdAt', dir: 'desc' };
 let editUid = null;
@@ -232,160 +230,9 @@ function filtersAreActive(filters = filterValues()) {
   return Boolean(filters.nick || filters.alliance || filters.region || (filters.role && filters.role !== 'all'));
 }
 
-function totalFromSummary(includeFarms = includeAdminFarmRows()) {
-  if (!adminStatsSummary) return null;
-  const total = includeFarms ? adminStatsSummary.totalRows : adminStatsSummary.totalPlayers;
-  return Number.isFinite(Number(total)) ? Number(total) : null;
-}
-
-function regionsFromSummary(includeFarms = includeAdminFarmRows()) {
-  if (!adminStatsSummary) return null;
-  const data = includeFarms ? adminStatsSummary.regionsWithFarms : adminStatsSummary.regions;
-  if (!data || typeof data !== 'object') return null;
-  return Object.keys(data).filter(Boolean).length;
-}
-
-function leadersFromSummary(includeFarms = includeAdminFarmRows()) {
-  if (!adminStatsSummary) return null;
-  const total = includeFarms ? adminStatsSummary.leadersWithFarms : adminStatsSummary.leaders;
-  return Number.isFinite(Number(total)) ? Number(total) : null;
-}
-
-async function fetchPublicCacheJson(fileName) {
-  const response = await fetch(`public-cache/${fileName}?v=129&t=${Date.now()}`, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`${fileName}-${response.status}`);
-  return response.json();
-}
-
 async function loadAdminStatsSummary() {
-  try {
-    const [summary, players] = await Promise.all([
-      fetchPublicCacheJson('stats-summary.json'),
-      fetchPublicCacheJson('stats-players.json').catch(error => {
-        console.warn('[WKD] admin stats players cache unavailable:', error);
-        return [];
-      })
-    ]);
-    adminStatsSummary = summary && typeof summary === 'object' ? summary : null;
-    adminStatsPlayers = Array.isArray(players) ? players.filter(Boolean) : [];
-  } catch (error) {
-    console.warn('[WKD] admin stats summary unavailable:', error);
-    adminStatsSummary = null;
-    adminStatsPlayers = [];
-  }
-  return adminStatsSummary;
-}
-
-function statsMap(key, includeFarms = includeAdminFarmRows()) {
-  const mapKey = includeFarms ? `${key}WithFarms` : key;
-  const value = adminStatsSummary?.[mapKey] || adminStatsSummary?.[key];
-  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-}
-
-function sortedCountEntries(map = {}) {
-  return Object.entries(map || {})
-    .filter(([key, value]) => String(key || '').trim() && Number(value) > 0)
-    .sort((a, b) => Number(b[1]) - Number(a[1]) || String(a[0]).localeCompare(String(b[0]), window.WKD_CURRENT_LANG || 'uk', { numeric: true }));
-}
-
-function countChipHtml([key, value]) {
-  return `<span class="admin-cache-chip"><b>${escapeHtml(String(key || '—'))}</b><em>${escapeHtml(formatCompactNumber(value || 0))}</em></span>`;
-}
-
-function countSectionHtml(titleKey, fallback, entries = []) {
-  const rows = Array.isArray(entries) ? entries : [];
-  const content = rows.length ? rows.map(countChipHtml).join('') : `<span class="admin-cache-muted">${escapeHtml(t('admin.cacheNoData', 'Немає даних'))}</span>`;
-  return `<section class="admin-cache-section"><h4>${escapeHtml(t(titleKey, fallback))}</h4><div class="admin-cache-chip-list">${content}</div></section>`;
-}
-
-function publicPlayerRows(includeFarms = includeAdminFarmRows()) {
-  const players = Array.isArray(adminStatsPlayers) ? adminStatsPlayers : [];
-  if (!includeFarms) return players.map(player => ({ ...player, isFarm: false }));
-  return players.flatMap(player => {
-    const farms = Array.isArray(player?.farms) ? player.farms.map(farm => ({ ...farm, isFarm: true, mainNickname: player.nickname || player.gameNick || '' })) : [];
-    return [{ ...player, isFarm: false }, ...farms];
-  });
-}
-
-function countByFromPublicRows(selector, includeFarms = includeAdminFarmRows()) {
-  const counts = {};
-  publicPlayerRows(includeFarms).forEach(row => {
-    const value = selector(row);
-    const key = String(value || '').trim() || '—';
-    counts[key] = (Number(counts[key]) || 0) + 1;
-  });
-  return sortedCountEntries(counts);
-}
-
-function latestPlayersHtml() {
-  const rows = (Array.isArray(adminStatsPlayers) ? adminStatsPlayers : [])
-    .map(player => ({
-      nickname: player.nickname || player.gameNick || '—',
-      region: player.region || '—',
-      alliance: player.alliance || '—',
-      createdAt: timestampToMsSafe(player.createdAt)
-    }))
-    .filter(row => row.createdAt)
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, 8);
-  if (!rows.length) return `<span class="admin-cache-muted">${escapeHtml(t('admin.cacheNoData', 'Немає даних'))}</span>`;
-  return `<div class="admin-cache-latest">${rows.map(row => `
-    <span><b>${escapeHtml(row.nickname)}</b><small>${escapeHtml(row.region)} · ${escapeHtml(row.alliance)} · ${escapeHtml(new Date(row.createdAt).toLocaleDateString(window.WKD_CURRENT_LANG || 'uk'))}</small></span>
-  `).join('')}</div>`;
-}
-
-function renderCacheStatsDetails() {
-  const panel = $('#adminCacheDetails');
-  if (!panel) return;
-  if (!adminStatsSummary) {
-    panel.hidden = true;
-    panel.innerHTML = '';
-    return;
-  }
-  const includeFarms = includeAdminFarmRows();
-  const totalPlayers = Number(adminStatsSummary.totalPlayers || 0);
-  const totalFarms = Number(adminStatsSummary.totalFarms || 0);
-  const totalRows = Number(adminStatsSummary.totalRows || (totalPlayers + totalFarms));
-  const regionEntries = sortedCountEntries(statsMap('regions', includeFarms));
-  const allianceEntries = sortedCountEntries(statsMap('alliances', includeFarms));
-  const rankEntries = sortedCountEntries(statsMap('ranks', includeFarms));
-  const shkEntries = sortedCountEntries(statsMap('shkTiers', includeFarms));
-  const roleEntries = sortedCountEntries(statsMap('roles', includeFarms));
-  const countryEntries = sortedCountEntries(statsMap('countries', includeFarms));
-  const derivedRoles = roleEntries.length ? roleEntries : countByFromPublicRows(row => row.role || 'player', includeFarms);
-  const derivedCountries = countryEntries.length ? countryEntries : countByFromPublicRows(row => row.countryCode || row.country || '—', includeFarms);
-  const cards = [
-    ['admin.cachePlayers', 'Основні', totalPlayers],
-    ['admin.cacheFarms', 'Ферми', totalFarms],
-    ['admin.cacheRows', 'Рядки', totalRows],
-    ['admin.cacheRegions', 'Регіони', regionEntries.length],
-    ['admin.cacheAlliances', 'Альянси', allianceEntries.length],
-    ['admin.cacheLeaders', 'Керівні ролі', includeFarms ? Number(adminStatsSummary.leadersWithFarms || 0) : Number(adminStatsSummary.leaders || 0)],
-    ['admin.cachePublicRows', 'JSON гравців', adminStatsPlayers.length]
-  ];
-  const updatedAt = adminStatsSummary.generatedAt ? new Date(adminStatsSummary.generatedAt).toLocaleString(window.WKD_CURRENT_LANG || 'uk') : '—';
-  panel.hidden = false;
-  panel.innerHTML = `
-    <div class="admin-cache-head">
-      <div>
-        <h3>${escapeHtml(t('admin.cacheDetailsTitle', 'Статистика з JSON-кешу'))}</h3>
-        <p>${escapeHtml(t('admin.cacheNoReads', 'Цей блок читає public-cache/*.json і не витрачає Firestore reads.'))}</p>
-      </div>
-      <small>${escapeHtml(t('admin.cacheSource', 'Джерело'))}: ${escapeHtml(adminStatsSummary.source || 'public-cache')} · ${escapeHtml(t('admin.cacheGeneratedAt', 'Оновлено'))}: ${escapeHtml(updatedAt)}</small>
-    </div>
-    <div class="admin-cache-metrics">${cards.map(([key, fallback, value]) => `
-      <article><span>${escapeHtml(t(key, fallback))}</span><b>${escapeHtml(formatCompactNumber(value || 0))}</b></article>`).join('')}
-    </div>
-    <div class="admin-cache-grid">
-      ${countSectionHtml('admin.cacheTopRegions', 'Регіони', regionEntries)}
-      ${countSectionHtml('admin.cacheTopAlliances', 'Альянси', allianceEntries)}
-      ${countSectionHtml('admin.cacheRanks', 'Ранги', rankEntries)}
-      ${countSectionHtml('admin.cacheShkTiers', 'ШК тири', shkEntries)}
-      ${countSectionHtml('admin.cacheRoles', 'Ролі', derivedRoles)}
-      ${countSectionHtml('admin.cacheCountries', 'Країни', derivedCountries)}
-      <section class="admin-cache-section admin-cache-section--wide"><h4>${escapeHtml(t('admin.cacheLatestPlayers', 'Останні зареєстровані'))}</h4>${latestPlayersHtml()}</section>
-    </div>
-  `;
+  // v130: JSON stats block removed. Admin player table loads from Firestore in small pages.
+  return null;
 }
 
 function rowMatchesFilters(row, filters = filterValues()) {
@@ -417,14 +264,13 @@ function filteredPlayerGroups() {
 function pagedPlayersState() {
   const groups = filteredPlayerGroups();
   const rows = groups.flatMap(group => includeAdminFarmRows() ? [group.main, ...group.farms] : [group.main]);
-  const total = totalFromSummary(false);
   return {
     groups,
     rows,
     page: playersPage,
     pageCount: null,
     hasNext: Boolean(playersPageMeta.hasNext),
-    total: filtersAreActive() ? null : total,
+    total: null,
     reads: Number(playersPageMeta.reads || 0),
     queryMode: playersPageMeta.queryMode || 'indexed'
   };
@@ -804,19 +650,18 @@ async function runD1ArchiveCleanup(scope) {
 function renderStats() {
   setAdminPlayersCounterLabel();
   const rows = adminRows();
-  const includeFarms = includeAdminFarmRows();
-  const playersTotal = totalFromSummary(includeFarms) ?? rows.length;
-  const regionTotal = regionsFromSummary(includeFarms) ?? new Set([
-    ...users.map(user => getGameProfile(user).region).filter(Boolean),
+  const mainCount = users.length;
+  const shownRows = rows.length;
+  const regionTotal = new Set([
+    ...rows.map(row => row.game?.region).filter(Boolean),
     ...regionsCatalog.filter(region => region.active !== false).map(region => region.region).filter(Boolean)
   ]).size;
-  const leaders = leadersFromSummary(includeFarms) ?? rows.filter(row => ['admin', 'moderator', 'consul', 'officer'].includes(rowRole(row))).length;
+  const leaders = rows.filter(row => ['admin', 'moderator', 'consul', 'officer'].includes(rowRole(row))).length;
   const pending = visibleRequests().length;
   const cards = $('#adminStats')?.querySelectorAll('.admin-stat-card b') || [];
-  const values = [playersTotal, regionTotal, leaders, pending];
+  const values = [mainCount, regionTotal, leaders, pending];
   cards.forEach((card, index) => { card.textContent = formatCompactNumber(values[index] ?? 0); });
-  setSummary(tv('admin.summaryOptimized', '{players} гравців у кеші • {shown} показано зараз • {requests} заявок', { players: playersTotal, shown: rows.length, requests: pending }));
-  renderCacheStatsDetails();
+  setSummary(tv('admin.summaryOptimized', '{players} гравців завантажено • {shown} рядків показано зараз • {requests} заявок', { players: mainCount, shown: shownRows, requests: pending }));
 }
 
 function editCell(name, value, type = 'text') {
@@ -1138,6 +983,10 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
     filters: adminPlayerQueryFilters()
   });
   users = Array.isArray(result.users) ? result.users : [];
+  if (!users.length && !filtersAreActive() && currentUser?.uid && currentProfile) {
+    const fallbackProfile = { id: currentUser.uid, uid: currentUser.uid, email: currentUser.email || currentProfile.email || '', ...currentProfile };
+    if (canDisplayRow(mainRowForUser(fallbackProfile))) users = [fallbackProfile];
+  }
   playersPageMeta = {
     hasNext: Boolean(result.hasNext),
     reads: Number(result.reads || 0),
@@ -1203,7 +1052,6 @@ async function loadRegionsCatalog(force = false) {
 async function loadAdminData() {
   if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
   await Promise.all([
-    loadAdminStatsSummary(),
     loadRoleRequests(),
     loadPlayersPage({ reset: true })
   ]);

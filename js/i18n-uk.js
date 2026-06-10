@@ -1939,7 +1939,7 @@ window.WKD_TRANSLATIONS.uk = {
   'admin.cloudflare.d1QueriesPerInvocation.label': 'D1 запитів за виклик',
   'admin.cloudflare.d1QueriesPerInvocation.detail': 'Ліміт D1 query на Worker invocation',
 
-  'admin.summaryOptimized': '{players} гравців у кеші • {shown} показано зараз • {requests} заявок',
+  'admin.summaryOptimized': '{players} гравців завантажено • {shown} рядків показано зараз • {requests} заявок',
   'admin.playersPageInfoOptimized': 'Сторінка {page} · показано основ: {shown} · всього: {total} · Firebase reads≈{reads}',
   'admin.playersLoadedOptimized': 'Завантажено {count} нових гравців. Firebase reads≈{reads}; вся колекція users не читається.',
   'admin.playersLoadedFiltered': 'Завантажено {count} гравців за фільтром. Firebase reads≈{reads}. Якщо пошук не знайшов старого гравця, очисти фільтр або натисни Вперед.',

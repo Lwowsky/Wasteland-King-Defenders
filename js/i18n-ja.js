@@ -1939,7 +1939,7 @@ window.WKD_TRANSLATIONS.ja = {
   'admin.cloudflare.d1QueriesPerInvocation.label': '呼び出しごとのD1クエリ',
   'admin.cloudflare.d1QueriesPerInvocation.detail': 'Worker invocationごとのD1 query制限',
 
-  'admin.summaryOptimized': 'キャッシュ内のプレイヤー {players} 人 • 現在表示 {shown} 件 • 申請 {requests} 件',
+  'admin.summaryOptimized': '読み込まれたプレイヤー {players} 人 • 現在表示 {shown} 行 • 申請 {requests} 件',
   'admin.playersPageInfoOptimized': 'ページ {page} · メイン表示: {shown} · 合計: {total} · Firebase reads≈{reads}',
   'admin.playersLoadedOptimized': '最新プレイヤー {count} 件を読み込みました。Firebase reads≈{reads}; users コレクション全体は読みません。',
   'admin.playersLoadedFiltered': 'フィルターで {count} 件を読み込みました。Firebase reads≈{reads}。古いプレイヤーが見つからない場合はフィルターを消すか「次へ」を押してください。',

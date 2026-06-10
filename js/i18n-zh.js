@@ -1939,7 +1939,7 @@ window.WKD_TRANSLATIONS.zh = {
   'admin.cloudflare.d1QueriesPerInvocation.label': '每次调用 D1 查询',
   'admin.cloudflare.d1QueriesPerInvocation.detail': '每个 Worker invocation 的 D1 query 限制',
 
-  'admin.summaryOptimized': '缓存中 {players} 名玩家 • 当前显示 {shown} 个 • {requests} 个申请',
+  'admin.summaryOptimized': '已加载 {players} 名玩家 • 当前显示 {shown} 行 • {requests} 个申请',
   'admin.playersPageInfoOptimized': '第 {page} 页 · 显示主号: {shown} · 总数: {total} · Firebase reads≈{reads}',
   'admin.playersLoadedOptimized': '已加载 {count} 名最新玩家。Firebase reads≈{reads}；不会读取整个 users 集合。',
   'admin.playersLoadedFiltered': '按筛选加载了 {count} 名玩家。Firebase reads≈{reads}。如果找不到较早的玩家，请清除筛选或点击下一页。',

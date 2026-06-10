@@ -1939,7 +1939,7 @@ window.WKD_TRANSLATIONS.pl = {
   'admin.cloudflare.d1QueriesPerInvocation.label': 'Zapytania D1 na wywołanie',
   'admin.cloudflare.d1QueriesPerInvocation.detail': 'Limit D1 query na Worker invocation',
 
-  'admin.summaryOptimized': '{players} graczy w pamięci cache • {shown} pokazano teraz • {requests} próśb',
+  'admin.summaryOptimized': '{players} graczy załadowano • {shown} wierszy pokazano teraz • {requests} próśb',
   'admin.playersPageInfoOptimized': 'Strona {page} · pokazano głównych: {shown} · razem: {total} · Firebase reads≈{reads}',
   'admin.playersLoadedOptimized': 'Załadowano {count} najnowszych graczy. Firebase reads≈{reads}; cała kolekcja users nie jest czytana.',
   'admin.playersLoadedFiltered': 'Załadowano {count} graczy według filtra. Firebase reads≈{reads}. Jeśli starszego gracza nie znaleziono, wyczyść filtr albo naciśnij Dalej.',

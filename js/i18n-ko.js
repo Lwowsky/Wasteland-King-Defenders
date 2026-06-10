@@ -1939,7 +1939,7 @@ window.WKD_TRANSLATIONS.ko = {
   'admin.cloudflare.d1QueriesPerInvocation.label': '호출당 D1 쿼리',
   'admin.cloudflare.d1QueriesPerInvocation.detail': 'Worker invocation당 D1 query 한도',
 
-  'admin.summaryOptimized': '캐시의 플레이어 {players}명 • 현재 표시 {shown}명 • 요청 {requests}개',
+  'admin.summaryOptimized': '{players}명 플레이어 로드됨 • 현재 {shown}행 표시 • 요청 {requests}개',
   'admin.playersPageInfoOptimized': '페이지 {page} · 표시된 메인: {shown} · 전체: {total} · Firebase reads≈{reads}',
   'admin.playersLoadedOptimized': '최신 플레이어 {count}명을 불러왔습니다. Firebase reads≈{reads}; 전체 users 컬렉션은 읽지 않습니다.',
   'admin.playersLoadedFiltered': '필터로 플레이어 {count}명을 불러왔습니다. Firebase reads≈{reads}. 오래된 플레이어가 없으면 필터를 지우거나 다음을 누르세요.',

@@ -1937,7 +1937,7 @@ window.WKD_TRANSLATIONS.ar = {
   'admin.cloudflare.d1QueriesPerInvocation.label': 'استعلامات D1 لكل استدعاء',
   'admin.cloudflare.d1QueriesPerInvocation.detail': 'حد D1 query لكل Worker invocation',
 
-  'admin.summaryOptimized': '{players} لاعبًا في الذاكرة المؤقتة • المعروض الآن {shown} • {requests} طلبات',
+  'admin.summaryOptimized': 'تم تحميل {players} لاعبًا • يتم عرض {shown} صفًا الآن • {requests} طلبات',
   'admin.playersPageInfoOptimized': 'الصفحة {page} · الحسابات الرئيسية المعروضة: {shown} · الإجمالي: {total} · Firebase reads≈{reads}',
   'admin.playersLoadedOptimized': 'تم تحميل أحدث {count} لاعبين. Firebase reads≈{reads}؛ لا تتم قراءة مجموعة users بالكامل.',
   'admin.playersLoadedFiltered': 'تم تحميل {count} لاعبين حسب الفلتر. Firebase reads≈{reads}. إذا لم يظهر لاعب قديم، امسح الفلتر أو اضغط التالي.',

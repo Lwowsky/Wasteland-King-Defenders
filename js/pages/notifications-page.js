@@ -1,5 +1,5 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
-import { listRegionCatalog } from '../services/region-db.js?v=129';
+import { listRegionCatalog } from '../services/region-db.js?v=130';
 import {
   canUseAdminPanel,
   createSiteMessageCampaign,
@@ -24,7 +24,7 @@ import {
   patchUserSentMessage,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=129';
+} from '../services/user-db.js?v=130';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];

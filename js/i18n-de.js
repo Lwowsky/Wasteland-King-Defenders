@@ -1939,7 +1939,7 @@ window.WKD_TRANSLATIONS.de = {
   'admin.cloudflare.d1QueriesPerInvocation.label': 'D1-Abfragen pro Aufruf',
   'admin.cloudflare.d1QueriesPerInvocation.detail': 'D1-query-Limit pro Worker invocation',
 
-  'admin.summaryOptimized': '{players} Spieler im Cache • {shown} jetzt angezeigt • {requests} Anfragen',
+  'admin.summaryOptimized': '{players} Spieler geladen • {shown} Zeilen jetzt angezeigt • {requests} Anfragen',
   'admin.playersPageInfoOptimized': 'Seite {page} · Hauptspieler gezeigt: {shown} · gesamt: {total} · Firebase reads≈{reads}',
   'admin.playersLoadedOptimized': '{count} neueste Spieler geladen. Firebase reads≈{reads}; die komplette users-Sammlung wird nicht gelesen.',
   'admin.playersLoadedFiltered': '{count} Spieler nach Filter geladen. Firebase reads≈{reads}. Wenn ein älterer Spieler nicht gefunden wird, lösche den Filter oder drücke Weiter.',
