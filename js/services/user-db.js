@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=128';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=128';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=128';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=129';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=129';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=129';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -16,7 +16,7 @@ import {
   patchSentMessageD1,
   readNotificationSummaryD1,
   setNotificationSummaryD1
-} from './notifications-d1.js?v=128';
+} from './notifications-d1.js?v=129';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -1431,18 +1431,21 @@ export async function listRoleRequests(status = 'pending', options = {}) {
 function adminUserFilterValue(value = '') {
   return normalizeText(value).toLowerCase();
 }
+function adminAllianceFilterValue(value = '') {
+  return normalizeAllianceTag(value).toLowerCase();
+}
 function adminUserMatchesFilters(user = {}, filters = {}) {
   const game = getGameProfile(user);
   const farms = getUserFarms(user);
   const allGames = [game, ...farms];
   const nick = adminUserFilterValue(filters.nick);
   const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
-  const alliance = normalizeAllianceTag(filters.alliance);
+  const alliance = adminAllianceFilterValue(filters.alliance);
   const role = normalizeRole(filters.role || 'all');
   if (role && role !== 'all' && normalizeRole(user.role || 'player') !== role && !farms.some(farm => normalizeRole(farm.role || 'player') === role)) return false;
   if (nick && !allGames.some(item => adminUserFilterValue(item.nickname || item.gameNick).includes(nick))) return false;
   if (region && !allGames.some(item => gameRegion(item) === region)) return false;
-  if (alliance && !allGames.some(item => normalizeAllianceTag(item.alliance) === alliance)) return false;
+  if (alliance && !allGames.some(item => adminAllianceFilterValue(item.alliance) === alliance)) return false;
   return true;
 }
 
@@ -1450,12 +1453,12 @@ function buildAdminUsersQuery(firestoreMod, db, { cursor = null, direction = 'ne
   const clauses = [firestoreMod.collection(db, 'users')];
   const role = normalizeRole(filters.role || 'all');
   const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
-  const alliance = normalizeAllianceTag(filters.alliance);
   if (strictProfileComplete) clauses.push(firestoreMod.where('profileComplete', '==', true));
   if (serverFilters && role && role !== 'all') clauses.push(firestoreMod.where('role', '==', role));
-  if (serverFilters && region && alliance) clauses.push(firestoreMod.where('allianceAccess', 'array-contains', `${region}:${alliance}`));
-  else if (serverFilters && region) clauses.push(firestoreMod.where('regionAccess', 'array-contains', region));
-  else if (serverFilters && alliance) clauses.push(firestoreMod.where('alliance', '==', alliance));
+  // Do not server-filter by alliance here: older documents may store alliance tags with preserved case (YYY/EVO),
+  // while search input can arrive as yyy/evo. We keep Firestore reads low with region + limit, then match alliance
+  // case-insensitively on the client so existing players do not disappear from the admin table.
+  if (serverFilters && region) clauses.push(firestoreMod.where('regionAccess', 'array-contains', region));
   clauses.push(firestoreMod.orderBy('createdAt', 'desc'));
   if (cursor) {
     if (direction === 'prev') clauses.push(firestoreMod.endBefore(cursor), firestoreMod.limitToLast(pageSize));

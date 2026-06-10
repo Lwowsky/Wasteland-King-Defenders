@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=128';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=128';
-import { fetchRealFirebaseUsage, getCachedFirebaseUsage, clearCachedFirebaseUsage } from '../services/firebase-usage.js?v=128';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=129';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=129';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=129';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -20,14 +20,14 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=128';
+} from '../services/user-db.js?v=129';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=128';
+} from '../services/region-db.js?v=129';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -57,9 +57,6 @@ let playersPageMeta = { hasNext: false, reads: 0, queryMode: 'indexed' };
 let playerSearchDebounce = null;
 let cloudflareRealUsage = getCachedCloudflareUsage();
 let cloudflareUsageLoading = false;
-let firebaseRealUsage = getCachedFirebaseUsage();
-let firebaseUsageLoading = false;
-let firebaseUsageError = '';
 
 function allianceTag3(value) { return window.WKD?.allianceTag3 ? window.WKD.allianceTag3(value) : Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join(''); }
 function escapeHtml(value) {
@@ -215,7 +212,7 @@ function timestampToMsSafe(value) {
 function filterValues() {
   return {
     nick: String($('#adminNickSearch')?.value || '').trim().toLowerCase(),
-    alliance: String($('#adminAllianceSearch')?.value || '').trim().toLowerCase(),
+    alliance: String($('#adminAllianceSearch')?.value || '').trim(),
     region: String($('#adminRegionSearch')?.value || '').trim().toLowerCase(),
     role: $('#adminRoleFilter')?.value || 'all'
   };
@@ -255,7 +252,7 @@ function leadersFromSummary(includeFarms = includeAdminFarmRows()) {
 }
 
 async function fetchPublicCacheJson(fileName) {
-  const response = await fetch(`public-cache/${fileName}?v=128&t=${Date.now()}`, { cache: 'no-store' });
+  const response = await fetch(`public-cache/${fileName}?v=129&t=${Date.now()}`, { cache: 'no-store' });
   if (!response.ok) throw new Error(`${fileName}-${response.status}`);
   return response.json();
 }
@@ -477,8 +474,8 @@ function usageCardHtml(periodKey, typeKey, row = {}) {
   const percent = Math.max(0, Math.min(100, Number(row.percent) || 0));
   return `<article class="admin-usage-card">
     <span>${escapeHtml(label)}</span>
-    <b>${escapeHtml(remaining)}</b>
-    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(used)} / ${escapeHtml(limit)}</small>
+    <b>${escapeHtml(used)}</b>
+    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(remaining)} / ${escapeHtml(limit)}</small>
     <div class="admin-usage-bar" aria-hidden="true"><i style="width:${percent}%"></i></div>
   </article>`;
 }
@@ -541,44 +538,6 @@ function cloudflareValueCardHtml(key, value = 0, detail = '') {
   </article>`;
 }
 
-function firebaseUsageCardHtml(key, row = {}, detail = '') {
-  const label = t(`admin.firebase.${key}.label`, key);
-  const used = formatCompactNumber(row.used);
-  const limit = formatCompactNumber(row.limit);
-  const remaining = formatCompactNumber(row.remaining);
-  const percent = Math.max(0, Math.min(100, Number(row.percent) || 0));
-  return `<article class="admin-usage-card">
-    <span>${escapeHtml(label)}</span>
-    <b>${escapeHtml(used)}</b>
-    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(remaining)} / ${escapeHtml(limit)}</small>
-    <div class="admin-usage-bar" aria-hidden="true"><i style="width:${percent}%"></i></div>
-    <small>${escapeHtml(t(`admin.firebase.${key}.detail`, detail))}</small>
-  </article>`;
-}
-
-function firebaseBytesCardHtml(key, row = {}, detail = '') {
-  const label = t(`admin.firebase.${key}.label`, key);
-  const used = formatBytes(row.used);
-  const limit = formatBytes(row.limit);
-  const remaining = formatBytes(row.remaining);
-  const percent = Math.max(0, Math.min(100, Number(row.percent) || 0));
-  return `<article class="admin-usage-card">
-    <span>${escapeHtml(label)}</span>
-    <b>${escapeHtml(used)}</b>
-    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(remaining)} / ${escapeHtml(limit)}</small>
-    <div class="admin-usage-bar" aria-hidden="true"><i style="width:${percent}%"></i></div>
-    <small>${escapeHtml(t(`admin.firebase.${key}.detail`, detail))}</small>
-  </article>`;
-}
-
-function firebaseValueCardHtml(key, value = 0, detail = '') {
-  return `<article class="admin-usage-card admin-usage-card--static">
-    <span>${escapeHtml(t(`admin.firebase.${key}.label`, key))}</span>
-    <b>${escapeHtml(formatCompactNumber(value))}</b>
-    <small>${escapeHtml(t(`admin.firebase.${key}.detail`, detail))}</small>
-  </article>`;
-}
-
 function firebaseStaticLimitCardHtml(key, value, detail = '') {
   return `<article class="admin-usage-card admin-usage-card--static">
     <span>${escapeHtml(t(`admin.firebase.${key}.label`, key))}</span>
@@ -587,103 +546,26 @@ function firebaseStaticLimitCardHtml(key, value, detail = '') {
   </article>`;
 }
 
-function firebaseSetupCardHtml() {
-  return `<article class="admin-usage-card admin-usage-card--static admin-usage-card--wide">
-    <span>${escapeHtml(t('admin.firebaseRealSetupTitle', 'Реальні дані ще не завантажені'))}</span>
-    <b>${escapeHtml(t('common.refresh', 'Оновити'))}</b>
-    <small>${escapeHtml(t('admin.firebaseRealSetupHint', 'Натисни Оновити. Після успішного запиту реальні дані збережуться локально і будуть показані при наступному відкритті без нового API-запиту.'))}</small>
-  </article>`;
-}
-
-function firebaseErrorCardHtml(errorText = '') {
-  const safeError = errorText || t('admin.firebaseRealUnknownError', 'Невідома помилка Firebase usage API');
-  return `<article class="admin-usage-card admin-usage-card--static admin-usage-card--wide">
-    <span>${escapeHtml(t('admin.firebaseRealErrorTitle', 'Firebase usage не завантажився'))}</span>
-    <b>${escapeHtml(t('admin.checkWorkerLogs', 'Перевір Worker logs'))}</b>
-    <small>${escapeHtml(safeError)}</small>
-  </article>`;
-}
 
 function renderUsage() {
   const grid = $('#adminUsageGrid');
   const note = $('#adminUsageNote');
-  if (!grid) {
-    renderCloudflareUsage();
-    return;
-  }
-  if (firebaseUsageLoading) {
-    grid.innerHTML = `<div class="admin-empty">${escapeHtml(t('admin.firebaseRealLoading', 'Завантажую реальні дані Firebase...'))}</div>`;
-    if (note) note.textContent = t('admin.firebaseRealLoading', 'Завантажую реальні дані Firebase...');
-    renderCloudflareUsage();
-    return;
-  }
-  if (firebaseRealUsage?.real) {
-    const firestore = firebaseRealUsage.firestore || {};
+  if (grid) {
+    const usage = getUsageEstimate();
     grid.innerHTML = [
-      firebaseUsageCardHtml('reads', firestore.reads, 'Real Firestore document reads today'),
-      firebaseUsageCardHtml('writes', firestore.writes, 'Real Firestore document writes today'),
-      firebaseUsageCardHtml('deletes', firestore.deletes, 'Real Firestore document deletes today'),
-      firebaseBytesCardHtml('storage', firestore.storage, 'Real Firestore storage'),
-      firebaseValueCardHtml('activeConnections', firestore.activeConnections, 'Active Firestore connections'),
-      firebaseValueCardHtml('snapshotListeners', firestore.snapshotListeners, 'Active snapshot listeners'),
-      firebaseValueCardHtml('deniedRules', firestore.deniedRules, 'Denied Security Rules requests'),
-      firebaseStaticLimitCardHtml('authDailyActiveUsers', '3 000 / day', 'Firebase Auth Spark Tier 1 DAU reference'),
-      firebaseStaticLimitCardHtml('outboundTraffic', '10 GiB / month', 'Firestore outbound transfer reference')
+      usageCardHtml('day', 'reads', usage.day.reads),
+      usageCardHtml('day', 'writes', usage.day.writes),
+      usageCardHtml('day', 'deletes', usage.day.deletes),
+      usageCardHtml('month', 'reads', usage.month.reads),
+      usageCardHtml('month', 'writes', usage.month.writes),
+      usageCardHtml('month', 'deletes', usage.month.deletes),
+      firebaseStaticLimitCardHtml('storage', '1 GiB', 'Firestore Spark storage'),
+      firebaseStaticLimitCardHtml('outboundTraffic', '10 GiB / month', 'Firestore outbound transfer'),
+      firebaseStaticLimitCardHtml('authDailyActiveUsers', '3 000 / day', 'Firebase Auth Spark Tier 1 DAU reference')
     ].join('');
-    if (note) {
-      const period = firebaseRealUsage.period || {};
-      const errors = Array.isArray(firebaseRealUsage.partialErrors) && firebaseRealUsage.partialErrors.length
-        ? ` ${tv('admin.firebasePartialNote', 'Часткові помилки: {errors}', { errors: firebaseRealUsage.partialErrors.map(item => `${item.source}: ${item.error}`).join('; ') })}`
-        : '';
-      const noteKey = firebaseRealUsage.fromCache ? 'admin.firebaseCachedNote' : 'admin.firebaseRealNote';
-      const noteFallback = firebaseRealUsage.fromCache
-        ? 'Збережені реальні дані Firebase: {start} — {end}. Останнє оновлення: {updated}. Натисни Оновити, щоб взяти свіжі цифри.'
-        : 'Реальні дані Firebase через Cloud Monitoring: {start} — {end}. Оновлено: {updated}.';
-      note.textContent = `${tv(noteKey, noteFallback, {
-        start: period.start || '—',
-        end: period.end || '—',
-        updated: firebaseRealUsage.generatedAt || firebaseRealUsage.cachedAt || '—'
-      })}${errors}`;
-    }
-    renderCloudflareUsage();
-    return;
   }
-  const cards = [
-    firebaseSetupCardHtml(),
-    firebaseStaticLimitCardHtml('reads', '50 000 / day', 'Firestore Spark document reads'),
-    firebaseStaticLimitCardHtml('writes', '20 000 / day', 'Firestore Spark document writes'),
-    firebaseStaticLimitCardHtml('deletes', '20 000 / day', 'Firestore Spark document deletes'),
-    firebaseStaticLimitCardHtml('storage', '1 GiB', 'Firestore Spark storage'),
-    firebaseStaticLimitCardHtml('outboundTraffic', '10 GiB / month', 'Firestore outbound transfer'),
-    firebaseStaticLimitCardHtml('authDailyActiveUsers', '3 000 / day', 'Firebase Auth Spark Tier 1 DAU reference')
-  ];
-  if (firebaseUsageError) cards.unshift(firebaseErrorCardHtml(firebaseUsageError));
-  grid.innerHTML = cards.join('');
-  if (note) {
-    note.textContent = firebaseUsageError
-      ? tv('admin.firebaseNoCacheErrorNote', 'Реальні Firebase дані не збережені. Остання помилка: {error}. Відкрий npx wrangler tail і натисни Оновити ще раз.', { error: firebaseUsageError })
-      : t('admin.firebaseNoCacheNote', 'Реальних Firebase даних у кеші ще немає. Натисни Оновити, щоб отримати їх через безпечний Worker secret і зберегти локально для економії запитів.');
-  }
+  if (note) note.textContent = t('admin.usageNote', 'Це орієнтовний локальний лічильник сайту, а не офіційні цифри Firebase. Він оновлюється тільки діями цього браузера. Точні цифри дивись вручну у Firebase Console → Firestore → Usage.');
   renderCloudflareUsage();
-}
-async function refreshRealFirebaseUsage() {
-  firebaseUsageLoading = true;
-  firebaseUsageError = '';
-  renderUsage();
-  try {
-    firebaseRealUsage = await fetchRealFirebaseUsage(currentUser);
-    firebaseUsageError = '';
-    setStatus(t('admin.firebaseRealLoaded', 'Реальні дані Firebase оновлено.'), 'success');
-  } catch (error) {
-    const details = error?.data?.partialErrors?.length
-      ? error.data.partialErrors.map(item => `${item.source}: ${item.error}`).join('; ')
-      : '';
-    firebaseUsageError = details || error?.message || 'unknown';
-    setStatus(tv('admin.firebaseRealFailed', 'Не вдалося отримати реальні дані Firebase: {error}', { error: firebaseUsageError }), 'error');
-  } finally {
-    firebaseUsageLoading = false;
-    renderUsage();
-  }
 }
 
 function renderCloudflareUsage() {
@@ -1361,9 +1243,9 @@ function debouncePlayerSearchReload() {
 function bindAdminControls() {
   $('#refreshRequestsBtn')?.addEventListener('click', () => loadRoleRequests().catch(console.error));
   $('#refreshPlayersBtn')?.addEventListener('click', () => loadPlayersPage({ reset: true }).catch(console.error));
-  $('#refreshUsageBtn')?.addEventListener('click', () => refreshRealFirebaseUsage().catch(console.error));
+  $('#refreshUsageBtn')?.addEventListener('click', () => { renderUsage(); setStatus(t('admin.firebaseEstimateRefreshed', 'Оцінку Firebase оновлено локально.'), 'success'); });
   $('#refreshCloudflareUsageBtn')?.addEventListener('click', () => refreshRealCloudflareUsage().catch(console.error));
-  $('#resetUsageEstimateBtn')?.addEventListener('click', () => { firebaseRealUsage = null; firebaseUsageError = ''; clearCachedFirebaseUsage(); renderUsage(); });
+  $('#resetUsageEstimateBtn')?.addEventListener('click', () => { resetUsageEstimate(); renderUsage(); setStatus(t('admin.firebaseEstimateReset', 'Оцінку Firebase скинуто.'), 'success'); });
   $('#resetCloudflareUsageBtn')?.addEventListener('click', () => { cloudflareRealUsage = null; clearCachedCloudflareUsage(); renderCloudflareUsage(); });
   $('#cleanupOldDocsBtn')?.addEventListener('click', () => runOldDocsCleanup().catch(console.error));
   $('#scanFirebaseArchiveBtn')?.addEventListener('click', () => runFirebaseArchiveScan().catch(console.error));
