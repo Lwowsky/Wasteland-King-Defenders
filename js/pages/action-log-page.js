@@ -1,11 +1,13 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { canUseAdminPanel, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=111';
-import { clearRegionActionLogs, deleteRegionActionLog, deleteRegionActionLogs, getManagedRegionOptions, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=111';
+import { canUseAdminPanel, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=112';
+import { clearRegionActionLogs, deleteRegionActionLog, deleteRegionActionLogs, getManagedRegionOptions, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=112';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 const PAGE_SIZE = 20;
+const ACTION_LOG_REGION_KEY = 'wkd.actionLog.activeRegion';
+const GLOBAL_ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
 let currentUser = null;
 let currentRegion = '';
 let rows = [];
@@ -16,6 +18,29 @@ let pageIndex = 0;
 let pageStack = [];
 let hasMore = false;
 let loadingPage = false;
+
+
+function readStoredRegion() {
+  try {
+    return normalizeRegion(localStorage.getItem(ACTION_LOG_REGION_KEY) || localStorage.getItem(GLOBAL_ACTIVE_REGION_KEY) || '');
+  } catch (_) {
+    return '';
+  }
+}
+function rememberRegion(region = '') {
+  const safe = normalizeRegion(region);
+  if (!safe) return;
+  try {
+    localStorage.setItem(ACTION_LOG_REGION_KEY, safe);
+    localStorage.setItem(GLOBAL_ACTIVE_REGION_KEY, safe);
+  } catch (_) {}
+}
+function firstAllowedRegion() {
+  return normalizeRegion(regionOptions[0]?.region || regionOptions[0]?.id || regionOptions[0] || '');
+}
+function resolveTargetRegion(region = '') {
+  return normalizeRegion(region || currentRegion || readRegionFromUrl() || readStoredRegion() || firstAllowedRegion());
+}
 
 function setStatus(text, type = 'muted') {
   const box = $('#actionLogStatus');
@@ -92,7 +117,7 @@ async function loadPage(region = '', direction = 'reset') {
   if (!currentUser || loadingPage) return;
   loadingPage = true;
   renderPager();
-  const targetRegion = normalizeRegion(region || currentRegion || readRegionFromUrl() || regionOptions[0]?.region || regionOptions[0]?.id || '');
+  const targetRegion = resolveTargetRegion(region);
   const cursorMs = direction === 'next' ? Number(pageStack[pageIndex]?.nextCursorMs) || 0 : 0;
   try {
     const result = await listRegionActionLogs(currentUser, targetRegion, { limitCount: PAGE_SIZE, cursorMs });
@@ -102,6 +127,7 @@ async function loadPage(region = '', direction = 'reset') {
       return;
     }
     currentRegion = result.region;
+    rememberRegion(currentRegion);
     rows = result.rows || [];
     currentProfile = result.profile || currentProfile;
     hasMore = Boolean(result.hasMore);
@@ -132,10 +158,9 @@ async function clearVisibleLogs() {
   if (!canDeleteLogs() || !rows.length) return;
   if (!window.confirm(t('actionLog.clearPageConfirm', 'Видалити всі записи на цій сторінці?'))) return;
   const result = await deleteRegionActionLogs(currentUser, currentRegion, rows.map(row => row.id).filter(Boolean));
-  rows = [];
-  pageStack[pageIndex] = { ...(pageStack[pageIndex] || {}), rows };
+  resetPages();
+  await loadPage(currentRegion, 'reset');
   setStatus(t('actionLog.clearDone', 'Журнал очищено.') + ` (${result.deleted || 0})`, 'success');
-  render();
 }
 async function clearOldLogs() {
   if (!canDeleteLogs()) return;
@@ -170,11 +195,11 @@ async function load(user, region = '') {
   } else {
     regionOptions = getManagedRegionOptions(currentProfile || {}, user).map(region => ({ region }));
   }
-  await loadPage(region, 'reset');
+  await loadPage(region || readStoredRegion(), 'reset');
 }
 function bind() {
-  $('#actionLogOpenBtn')?.addEventListener('click', () => load(currentUser, normalizeRegion($('#actionLogRegionInput')?.value || '')).catch(console.error));
-  $('#actionLogRegionInput')?.addEventListener('keydown', event => { if (event.key === 'Enter') load(currentUser, normalizeRegion(event.currentTarget.value)).catch(console.error); });
+  $('#actionLogOpenBtn')?.addEventListener('click', () => { const region = normalizeRegion($('#actionLogRegionInput')?.value || ''); rememberRegion(region); load(currentUser, region).catch(console.error); });
+  $('#actionLogRegionInput')?.addEventListener('keydown', event => { if (event.key === 'Enter') { const region = normalizeRegion(event.currentTarget.value); rememberRegion(region); load(currentUser, region).catch(console.error); } });
   $('#actionLogPrevBtn')?.addEventListener('click', () => {
     if (pageIndex <= 0) return;
     pageIndex -= 1;

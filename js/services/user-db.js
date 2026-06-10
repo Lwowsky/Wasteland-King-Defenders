@@ -440,7 +440,7 @@ export async function listRegionNotificationCampaignsForProfile(profile = {}, op
       if (expiresAtMs > 0 && expiresAtMs <= Date.now()) return;
       if (createdAtMs <= sinceMs) return;
       if (!campaignMatchesProfile(profile || {}, data)) return;
-      all.push({ id: doc.id, source: 'campaign', unread: true, ...data, createdAtMs });
+      all.push({ ...data, id: doc.id, source: 'campaign', unread: true, createdAtMs });
     });
   }
   const deduped = [];

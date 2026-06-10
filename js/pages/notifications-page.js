@@ -1,6 +1,6 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
 import { trackReads, trackWrites, trackDeletes } from '../services/usage-tracker.js?v=89';
-import { listRegionCatalog } from '../services/region-db.js?v=111';
+import { listRegionCatalog } from '../services/region-db.js?v=112';
 import {
   canUseAdminPanel,
   createSiteMessageCampaign,
@@ -17,7 +17,7 @@ import {
   normalizeUserRole,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=111';
+} from '../services/user-db.js?v=112';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -245,7 +245,9 @@ function itemMessage(item = {}) {
   return item.message || item.summary || '';
 }
 function isCampaign(item = {}) {
-  return item.source === 'campaign';
+  const source = String(item.source || '').toLowerCase();
+  const type = String(item.type || '').toLowerCase();
+  return source.includes('campaign') || type === 'site_message_campaign' || type.startsWith('registration_') || type === 'registration_notice' || type === 'region_status';
 }
 function mergeNotificationRows() {
   rows = [...personalRows, ...campaignRows].sort((a, b) => createdMs(b) - createdMs(a));

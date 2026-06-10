@@ -6,7 +6,7 @@ import {
   listRegionNotificationCampaignsForProfile,
   readUserNotificationSummary,
   setUserNotificationSummary
-} from './services/user-db.js?v=111';
+} from './services/user-db.js?v=112';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -46,6 +46,11 @@ function sourceKind(item = {}) {
   if (role === 'consul') return 'consul';
   if (role === 'officer') return 'officer';
   return 'player';
+}
+function isCampaign(item = {}) {
+  const source = String(item.source || '').toLowerCase();
+  const type = String(item.type || '').toLowerCase();
+  return source.includes('campaign') || type === 'site_message_campaign' || type.startsWith('registration_') || type === 'registration_notice' || type === 'region_status';
 }
 function sourceLabel(item = {}) {
   const kind = sourceKind(item);
@@ -220,7 +225,7 @@ async function markRead() {
   if (!previewLoaded) await loadPreview();
   const unreadPreview = newPreviewItems();
   const unreadPersonal = unreadPreview.filter(item => item.source === 'account' && item.id);
-  const unreadCampaigns = unreadPreview.filter(item => item.source === 'campaign');
+  const unreadCampaigns = unreadPreview.filter(isCampaign);
   if (!unreadPersonal.length && !unreadCampaigns.length) return;
   const firebase = await getFirebase();
   if (!firebase) return;
@@ -238,7 +243,7 @@ async function markRead() {
   const nextCampaignSeen = unreadCampaigns.reduce((max, item) => Math.max(max, Number(item.createdAtMs) || 0), Number(summary?.campaignSeenAtMs) || 0);
   await setUserNotificationSummary(currentUser.uid, { unreadTotal: nextUnread, campaignSeenAtMs: nextCampaignSeen, updatedAtMs: nowMs }).catch(() => null);
   applySummary({ ...summary, unreadTotal: nextUnread, campaignUnreadTotal: 0, campaignSeenAtMs: nextCampaignSeen, updatedAtMs: nowMs }, true);
-  previewItems = previewItems.map(item => unreadPreview.some(row => row.id === item.id && row.source === item.source) ? { ...item, unread: false, readAtMs: nowMs } : item);
+  previewItems = previewItems.map(item => unreadPreview.some(row => row.id === item.id && (row.source === item.source || isCampaign(row) === isCampaign(item))) ? { ...item, unread: false, readAtMs: nowMs } : item);
   campaignPreviewItems = campaignPreviewItems.map(item => ({ ...item, unread: false, readAtMs: nowMs }));
   render();
 }
