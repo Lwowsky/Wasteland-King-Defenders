@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=135';
+import { trackCloudflareUsage } from './usage-tracker.js?v=136';
 
 function cleanText(value = '', max = 120) {
   return String(value ?? '')
@@ -139,6 +139,63 @@ function normalizeCampaign(row = {}) {
     expiresAtMs: Number(row.expiresAtMs) || 0,
     unread: row.unread !== false
   };
+}
+
+
+function cleanAllianceExact(value = '') {
+  return Array.from(cleanText(value, 40).replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
+}
+function normalizeDirectory(row = {}) {
+  return {
+    uid: cleanText(row.uid || '', 160),
+    farmId: cleanText(row.farmId || row.farm_id || 'main', 80) || 'main',
+    nickname: cleanText(row.nickname || row.gameNick || row.game_nick || '', 120),
+    gameNick: cleanText(row.gameNick || row.game_nick || row.nickname || '', 120),
+    email: cleanText(row.email || '', 180),
+    displayName: cleanText(row.displayName || row.display_name || '', 160),
+    photoURL: cleanText(row.photoURL || row.photo_url || '', 300),
+    region: cleanRegion(row.region),
+    alliance: cleanAllianceExact(row.alliance),
+    role: cleanText(row.role || 'player', 40).toLowerCase(),
+    accountRole: cleanText(row.accountRole || row.account_role || row.role || 'player', 40).toLowerCase(),
+    rank: cleanText(row.rank || '', 20).toLowerCase(),
+    shk: cleanText(row.shk || '', 20),
+    farmCount: Math.max(0, Number(row.farmCount || row.farm_count) || 0),
+    updatedAtMs: Number(row.updatedAtMs || row.updated_at_ms) || 0,
+    source: row.source || 'cloudflare-d1-directory'
+  };
+}
+function directoryQuery(params = {}) {
+  const query = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    query.set(key, String(value));
+  });
+  const suffix = query.toString();
+  return suffix ? `?${suffix}` : '';
+}
+export async function upsertNotificationDirectoryD1(user, rows = []) {
+  const cleanRows = (Array.isArray(rows) ? rows : []).map(normalizeDirectory).filter(row => row.uid && row.nickname).slice(0, 20);
+  if (!cleanRows.length) return { ok: true, indexed: 0, rowsWritten: 0 };
+  return requestJson('/api/notification-directory/upsert', user, {
+    method: 'POST',
+    body: JSON.stringify({ rows: cleanRows })
+  });
+}
+export async function searchNotificationDirectoryD1(user, params = {}) {
+  const data = await requestJson(`/api/notification-directory${directoryQuery(params)}`, user);
+  return Array.isArray(data.rows) ? data.rows.map(normalizeDirectory) : [];
+}
+export async function countNotificationDirectoryD1(user, params = {}) {
+  const data = await requestJson(`/api/notification-directory/count${directoryQuery(params)}`, user);
+  return Math.max(0, Number(data.count) || 0);
+}
+export async function listNotificationDirectoryRegionsD1(user) {
+  const data = await requestJson('/api/notification-directory/regions', user);
+  return Array.isArray(data.rows) ? data.rows.map(row => ({
+    region: cleanRegion(row.region),
+    count: Math.max(0, Number(row.count) || 0)
+  })).filter(row => row.region) : [];
 }
 
 export async function readNotificationSummaryD1(user) {

@@ -1,5 +1,4 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
-import { listRegionCatalog } from '../services/region-db.js?v=135';
 import {
   canUseAdminPanel,
   createSiteMessageCampaign,
@@ -16,22 +15,25 @@ import {
   listUserSentMessages,
   readUserNotificationSummary,
   setUserNotificationSummary,
-  listPublicPlayers,
-  listRegisteredUsers,
   markUserNotificationsRead,
   normalizeUserRole,
   patchUserNotification,
   patchUserSentMessage,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=135';
+} from '../services/user-db.js?v=136';
+import {
+  countNotificationDirectoryD1,
+  listNotificationDirectoryRegionsD1,
+  searchNotificationDirectoryD1
+} from '../services/notifications-d1.js?v=136';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const regionOf = value => String(value || '').replace(/[^0-9]/g, '');
-const tag = value => Array.from(String(value || '').trim().toUpperCase().replace(/[^A-Z0-9А-ЯІЇЄҐ]/gi, '')).slice(0, 3).join('');
+const tag = value => Array.from(String(value || '').trim().replace(/[^A-Z0-9А-ЯІЇЄҐ]/gi, '')).slice(0, 3).join('');
 
 let currentUser = null;
 let currentProfile = null;
@@ -48,6 +50,9 @@ let directReply = null;
 let notificationsFilter = 'active';
 let unsubscribePageNotifications = null;
 let notificationPages = { notifications: 0, inbox: 0, sent: 0 };
+let recipientSearchRows = [];
+let recipientSearchTimer = null;
+let recipientSearchLoading = false;
 
 const MESSAGE_SPAM_WINDOW_MS = 10 * 60 * 1000;
 const MESSAGE_SPAM_MAX = 20;
@@ -163,8 +168,7 @@ function targetOptions() {
 function regionOptions() {
   if (isGlobalManager()) {
     const fromCatalog = knownRegionOptions.map(item => regionOf(item.region || item.id)).filter(Boolean);
-    const fromDirectory = directoryGames().map(p => regionOf(p.region)).filter(Boolean);
-    return [...new Set([...fromCatalog, ...fromDirectory, ...ownRegions()])].sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
+    return [...new Set([...fromCatalog, ...ownRegions()])].sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
   }
   return ownRegions();
 }
@@ -490,7 +494,7 @@ function filteredRecipients(type = $('#messageTargetType')?.value || 'player', o
   const region = activeRegion();
   const alliance = activeAlliance();
   const selectedPlayer = String($('#messagePlayerInput')?.value || '').trim().toLowerCase();
-  let list = directoryGames();
+  let list = type === 'player' ? [...recipientSearchRows, ...directoryGames()] : directoryGames();
   if (type === 'admins') list = list.filter(p => ['admin', 'moderator'].includes(normalizeUserRole(p.accountRole || p.role || 'player')));
   else if (type === 'all') list = isGlobalManager() ? list : [];
   else if (type === 'region') list = list.filter(p => regionOf(p.region) === region && (isGlobalManager() || ownRegions().includes(region)));
@@ -665,10 +669,46 @@ function render() {
   renderMessageList();
   renderSentList();
 }
+async function refreshRecipientSearch({ immediate = false } = {}) {
+  if (!currentUser || ($('#messageTargetType')?.value || 'player') !== 'player') return;
+  const input = String($('#messagePlayerInput')?.value || '').trim();
+  if (directReply?.uid) {
+    recipientSearchRows = [directReply];
+    renderPlayerList();
+    return;
+  }
+  if (input.length < 2) {
+    recipientSearchRows = [];
+    renderPlayerList();
+    return;
+  }
+  const run = async () => {
+    recipientSearchLoading = true;
+    try {
+      recipientSearchRows = await searchNotificationDirectoryD1(currentUser, {
+        targetType: 'player',
+        q: input,
+        region: activeRegion(),
+        limit: 10
+      }).catch(() => []);
+      directory = dedupeAccounts([...(directory || []), ...recipientSearchRows, ...(currentProfile ? [{ ...(currentProfile || {}), uid: currentUser?.uid }] : [])]);
+      renderPlayerList();
+    } finally {
+      recipientSearchLoading = false;
+    }
+  };
+  if (recipientSearchTimer) window.clearTimeout(recipientSearchTimer);
+  if (immediate) await run();
+  else recipientSearchTimer = window.setTimeout(run, 450);
+}
 function renderPlayerList() {
   const datalist = $('#messagePlayerList');
   if (!datalist) return;
-  const allowed = filteredRecipients('player', { preview: true });
+  const allowed = [
+    ...(directReply?.uid ? [directReply] : []),
+    ...recipientSearchRows,
+    ...(currentProfile ? gameRowsFromAccount({ ...(currentProfile || {}), uid: currentUser?.uid }) : [])
+  ].filter(canReachPlayer);
   const seen = new Set();
   datalist.innerHTML = allowed.map(p => playerLabel(p)).filter(label => {
     if (seen.has(label)) return false;
@@ -721,20 +761,12 @@ function renderCompose() {
   renderPlayerList();
 }
 async function loadDirectory() {
-  const [privateUsers, publicUsers, catalog] = await Promise.all([
-    isManager() ? listRegisteredUsers().catch(error => { console.warn('[WKD] private user directory unavailable, public fallback used', error); return []; }) : Promise.resolve([]),
-    listPublicPlayers().catch(() => []),
-    isGlobalManager() ? listRegionCatalog({ includeInactive: true, skipPublicPlayers: true }).catch(() => []) : Promise.resolve([])
+  const [regions] = await Promise.all([
+    isManager() ? listNotificationDirectoryRegionsD1(currentUser).catch(() => []) : Promise.resolve([])
   ]);
-  knownRegionOptions = Array.isArray(catalog) ? catalog : [];
-  const byUid = new Map();
-  [...(Array.isArray(publicUsers) ? publicUsers : []), ...(Array.isArray(privateUsers) ? privateUsers : [])].forEach(item => {
-    const uid = item.uid || item.id;
-    if (!uid) return;
-    byUid.set(uid, { ...(byUid.get(uid) || {}), ...item, uid });
-  });
-  if (currentUser && currentProfile) byUid.set(currentUser.uid, { ...(byUid.get(currentUser.uid) || {}), ...currentProfile, uid: currentUser.uid });
-  return [...byUid.values()];
+  knownRegionOptions = Array.isArray(regions) ? regions : [];
+  recipientSearchRows = [];
+  return currentUser && currentProfile ? [{ ...(currentProfile || {}), uid: currentUser.uid }] : [];
 }
 async function load(user) {
   currentUser = user || null;
@@ -834,6 +866,28 @@ async function sendCampaignMessage(type = 'region', recipients = [], values = {}
   }
   return results;
 }
+async function recipientCountForTarget(type = 'player') {
+  if (type === 'player') return filteredRecipients('player').length;
+  return countNotificationDirectoryD1(currentUser, {
+    targetType: type,
+    region: ['all'].includes(type) ? '' : activeRegion(),
+    alliance: type === 'alliance' ? activeAlliance() : '',
+    limit: 1
+  }).catch(() => 0);
+}
+async function resolveRecipientsForSend(type = 'player') {
+  if (type === 'player') {
+    await refreshRecipientSearch({ immediate: true });
+    return filteredRecipients('player');
+  }
+  if (type === 'admins') {
+    const rows = await searchNotificationDirectoryD1(currentUser, { targetType: 'admins', limit: 50 }).catch(() => []);
+    recipientSearchRows = rows;
+    directory = dedupeAccounts([...(directory || []), ...rows]);
+    return dedupeAccounts(rows);
+  }
+  return filteredRecipients(type);
+}
 async function sendMessage() {
   if (!currentUser || !currentProfile) return;
   const title = String($('#messageSubjectInput')?.value || t('messages.defaultSubject', 'Повідомлення')).trim().slice(0, 80) || t('messages.defaultSubject', 'Повідомлення');
@@ -850,8 +904,9 @@ async function sendMessage() {
     replyToCreatedAtMs: directReply.replyToCreatedAtMs
   } : {};
   const type = $('#messageTargetType')?.value || 'player';
-  const recipients = filteredRecipients(type);
-  if (!recipients.length) {
+  const recipients = canUseCampaignForTarget(type) ? [] : await resolveRecipientsForSend(type);
+  const estimatedRecipients = canUseCampaignForTarget(type) ? await recipientCountForTarget(type) : recipients.length;
+  if (!estimatedRecipients) {
     const region = activeRegion();
     setHint(region ? `${t('messages.noRecipients', 'Немає отримувачів для цього вибору.')} R${region}` : t('messages.noRegionSelected', 'Вибери регіон або гравця.'));
     return;
@@ -860,15 +915,14 @@ async function sendMessage() {
   if (!firebase) { setHint(t('messages.sendFailed', 'Не вдалося відправити повідомлення.')); return; }
   setHint(t('messages.sending', 'Відправляю...'));
   const targetLabel = currentTargetLabel(type, recipients);
-  let sentCount = recipients.length;
+  let sentCount = estimatedRecipients;
   let recipientPreview = recipients.slice(0, 5).map(playerLabel).join(' • ');
 
   if (canUseCampaignForTarget(type)) {
     const campaigns = await sendCampaignMessage(type, recipients, { title, message: body, targetLabel });
-    sentCount = recipients.length;
     recipientPreview = type === 'all'
       ? `${t('messages.campaignRegions', 'Регіонів')}: ${campaigns.length}`
-      : recipients.slice(0, 5).map(playerLabel).join(' • ');
+      : `${messageTargetLabel({ targetType: type, region: activeRegion(), alliance: activeAlliance(), targetLabel })}`;
     setHint(`${t('messages.campaignSent', 'Масове повідомлення опубліковано')}: ${sentCount}`);
   } else {
     const safeRecipients = recipients.slice(0, 500);
@@ -1006,10 +1060,11 @@ function bindCompose() {
     setStatus(t('notifications.actionFailed', 'Не вдалося виконати дію.'), 'error');
   }));
   $('#sendSiteMessageBtn')?.addEventListener('click', () => sendMessage().catch(error => { console.error(error); setHint(t('messages.sendFailed', 'Не вдалося відправити повідомлення.')); }));
-  $('#messageTargetType')?.addEventListener('change', () => { clearDirectReply(); updateComposeVisibility(); renderPlayerList(); });
-  $('#messageRegionSelect')?.addEventListener('change', () => { clearDirectReply(); const allianceInput = $('#messageAllianceInput'); if (allianceInput) allianceInput.value = ownAlliances(activeRegion())[0] || ''; renderPlayerList(); });
+  $('#messageTargetType')?.addEventListener('change', () => { clearDirectReply(); updateComposeVisibility(); renderPlayerList(); refreshRecipientSearch().catch(() => null); });
+  $('#messageRegionSelect')?.addEventListener('change', () => { clearDirectReply(); const allianceInput = $('#messageAllianceInput'); if (allianceInput && !allianceInput.value) allianceInput.value = ownAlliances(activeRegion())[0] || ''; recipientSearchRows = []; renderPlayerList(); refreshRecipientSearch().catch(() => null); });
   $('#messageAllianceInput')?.addEventListener('input', () => { clearDirectReply(); renderPlayerList(); });
-  $('#messagePlayerInput')?.addEventListener('input', clearDirectReply);
+  $('#messagePlayerInput')?.addEventListener('input', () => { clearDirectReply(); refreshRecipientSearch().catch(() => null); });
+  $('#messagePlayerInput')?.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); refreshRecipientSearch({ immediate: true }).catch(() => null); } });
   document.addEventListener('click', event => {
     const pageBtn = event.target.closest('[data-page-action]');
     if (pageBtn) {

@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=135';
+import { trackCloudflareUsage } from './usage-tracker.js?v=136';
 
 const MAX_ROWS = 1000;
 

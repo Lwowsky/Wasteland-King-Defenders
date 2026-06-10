@@ -163,3 +163,30 @@ CREATE TABLE IF NOT EXISTS notification_campaigns (
 CREATE INDEX IF NOT EXISTS idx_notification_campaigns_region_time ON notification_campaigns(region, created_at_ms DESC);
 CREATE INDEX IF NOT EXISTS idx_notification_campaigns_region_target_time ON notification_campaigns(region, target_type, alliance, created_at_ms DESC);
 CREATE INDEX IF NOT EXISTS idx_notification_campaigns_expires ON notification_campaigns(expires_at_ms);
+
+CREATE TABLE IF NOT EXISTS notification_directory (
+  uid TEXT NOT NULL,
+  farm_id TEXT NOT NULL DEFAULT 'main',
+  nickname TEXT NOT NULL DEFAULT '',
+  nickname_key TEXT NOT NULL DEFAULT '',
+  email TEXT NOT NULL DEFAULT '',
+  email_key TEXT NOT NULL DEFAULT '',
+  display_name TEXT NOT NULL DEFAULT '',
+  display_key TEXT NOT NULL DEFAULT '',
+  photo_url TEXT NOT NULL DEFAULT '',
+  region TEXT NOT NULL DEFAULT '',
+  alliance TEXT NOT NULL DEFAULT '',
+  role TEXT NOT NULL DEFAULT 'player',
+  account_role TEXT NOT NULL DEFAULT 'player',
+  rank TEXT NOT NULL DEFAULT '',
+  shk TEXT NOT NULL DEFAULT '',
+  farm_count INTEGER NOT NULL DEFAULT 0,
+  updated_at_ms INTEGER NOT NULL DEFAULT 0,
+  deleted INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (uid, farm_id)
+);
+CREATE INDEX IF NOT EXISTS idx_notification_directory_uid ON notification_directory(uid);
+CREATE INDEX IF NOT EXISTS idx_notification_directory_region ON notification_directory(region);
+CREATE INDEX IF NOT EXISTS idx_notification_directory_region_alliance ON notification_directory(region, alliance);
+CREATE INDEX IF NOT EXISTS idx_notification_directory_role ON notification_directory(role);
+CREATE INDEX IF NOT EXISTS idx_notification_directory_nick ON notification_directory(nickname_key);

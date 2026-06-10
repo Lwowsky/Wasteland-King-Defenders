@@ -7,7 +7,7 @@ import {
   saveFarmWastelandProfile,
   saveSignedInUser
 } from '../services/user-db.js';
-import { getRegionSettings } from '../services/region-db.js?v=135';
+import { getRegionSettings } from '../services/region-db.js?v=136';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);

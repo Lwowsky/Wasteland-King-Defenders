@@ -1163,7 +1163,7 @@ async function handlePublicStatsImport(request, env) {
        updated_at_ms = excluded.updated_at_ms,
        source = excluded.source`
   ).bind(Date.now(), Date.now()));
-  for (let i = 0; i < statements.length; i += 40) {
+  for (let i = 0; i < statements.length; i += 20) {
     await db.batch(statements.slice(i, i + 40));
   }
   return json({ ok: true, buckets: pages.size, players: [...pages.values()].reduce((sum, list) => sum + list.length, 0) });
@@ -1808,6 +1808,222 @@ function campaignRowToObject(row = {}) {
   };
 }
 
+
+function directoryAlliance(value = '') {
+  return Array.from(clean(value, 40).replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
+}
+function directoryKey(value = '') {
+  return clean(value, 200).toLowerCase();
+}
+function directoryRole(value = '') {
+  const role = clean(value || 'player', 40).toLowerCase();
+  return ['admin', 'moderator', 'consul', 'officer', 'player'].includes(role) ? role : 'player';
+}
+function directoryRowForDb(raw = {}) {
+  const uid = clean(raw.uid || '', 160);
+  const farmId = clean(raw.farmId || raw.farm_id || 'main', 80) || 'main';
+  const nickname = clean(raw.nickname || raw.gameNick || raw.game_nick || '', 120);
+  const displayName = clean(raw.displayName || raw.display_name || '', 160);
+  const email = clean(raw.email || '', 180);
+  const role = directoryRole(raw.role || 'player');
+  const accountRole = directoryRole(raw.accountRole || raw.account_role || role);
+  return {
+    uid,
+    farmId,
+    nickname,
+    nicknameKey: directoryKey(nickname),
+    email,
+    emailKey: directoryKey(email),
+    displayName,
+    displayKey: directoryKey(displayName),
+    photoURL: clean(raw.photoURL || raw.photo_url || '', 300),
+    region: normalizeRegion(raw.region),
+    alliance: directoryAlliance(raw.alliance),
+    role,
+    accountRole,
+    rank: clean(raw.rank || '', 20).toLowerCase(),
+    shk: clean(raw.shk || '', 20),
+    farmCount: Math.max(0, Math.min(200, Number(raw.farmCount || raw.farm_count) || 0)),
+    updatedAtMs: Number(raw.updatedAtMs || raw.updated_at_ms) || Date.now(),
+  };
+}
+function directoryRowToObject(row = {}) {
+  return {
+    uid: clean(row.uid || '', 160),
+    farmId: clean(row.farm_id || 'main', 80) || 'main',
+    nickname: clean(row.nickname || '', 120),
+    gameNick: clean(row.nickname || '', 120),
+    email: clean(row.email || '', 180),
+    displayName: clean(row.display_name || '', 160),
+    photoURL: clean(row.photo_url || '', 300),
+    region: normalizeRegion(row.region),
+    alliance: directoryAlliance(row.alliance),
+    role: directoryRole(row.role || 'player'),
+    accountRole: directoryRole(row.account_role || row.role || 'player'),
+    rank: clean(row.rank || '', 20).toLowerCase(),
+    shk: clean(row.shk || '', 20),
+    farmCount: Math.max(0, Number(row.farm_count) || 0),
+    updatedAtMs: Number(row.updated_at_ms) || 0,
+    source: 'cloudflare-d1-directory'
+  };
+}
+function directoryAccessFromRows(rows = [], env, uid = '') {
+  const roles = new Set();
+  const regions = new Set();
+  const alliances = new Set();
+  (Array.isArray(rows) ? rows : []).forEach(row => {
+    const role = directoryRole(row.account_role || row.role || 'player');
+    roles.add(role);
+    const region = normalizeRegion(row.region);
+    const alliance = directoryAlliance(row.alliance);
+    if (region) regions.add(region);
+    if (region && alliance) alliances.add(`${region}:${alliance}`);
+  });
+  const isGlobal = isAdminUid(env, uid) || roles.has('admin') || roles.has('moderator');
+  return { isGlobal, roles, regions: [...regions], alliances: [...alliances] };
+}
+async function readDirectoryAccess(db, env, user) {
+  const result = await db.prepare(
+    `SELECT region, alliance, role, account_role FROM notification_directory WHERE uid = ?1 AND deleted = 0 LIMIT 80`
+  ).bind(user.uid).all();
+  return directoryAccessFromRows(result?.results || [], env, user.uid);
+}
+function addDirectoryAccessWhere(where, params, access) {
+  if (access.isGlobal) return;
+  if (!access.regions.length) {
+    where.push('1 = 0');
+    return;
+  }
+  const regionPlaceholders = access.regions.map(() => '?').join(',');
+  where.push(`region IN (${regionPlaceholders})`);
+  params.push(...access.regions);
+  const isConsul = access.roles.has('consul');
+  if (!isConsul && access.alliances.length) {
+    const pairs = access.alliances.map(pair => pair.split(':'));
+    const pairSql = pairs.map(() => `(region = ? AND alliance = ?)`).join(' OR ');
+    where.push(`(${pairSql})`);
+    pairs.forEach(([region, alliance]) => params.push(region, alliance));
+  }
+}
+function buildDirectoryWhere(url, access, { count = false } = {}) {
+  const where = ['deleted = 0'];
+  const params = [];
+  const type = clean(url.searchParams.get('targetType') || url.searchParams.get('type') || 'player', 40).toLowerCase();
+  const q = directoryKey(url.searchParams.get('q') || url.searchParams.get('query') || '').slice(0, 80);
+  const region = normalizeRegion(url.searchParams.get('region'));
+  const alliance = directoryAlliance(url.searchParams.get('alliance'));
+  const role = directoryRole(url.searchParams.get('role') || '');
+
+  addDirectoryAccessWhere(where, params, access);
+
+  if (type === 'admins') {
+    where.push(`(account_role IN ('admin','moderator') OR role IN ('admin','moderator'))`);
+  } else if (type === 'consuls') {
+    where.push(`role = 'consul'`);
+  } else if (type === 'officers') {
+    where.push(`role = 'officer'`);
+  } else if (role && role !== 'player') {
+    where.push(`(account_role = ? OR role = ?)`);
+    params.push(role, role);
+  }
+  if (region) {
+    where.push('region = ?');
+    params.push(region);
+  }
+  if (alliance) {
+    where.push('alliance = ?');
+    params.push(alliance);
+  }
+  if (q && !count) {
+    where.push(`(nickname_key LIKE ? OR email_key LIKE ? OR display_key LIKE ?)`);
+    params.push(`${q}%`, `${q}%`, `${q}%`);
+  } else if (q && count) {
+    where.push(`(nickname_key LIKE ? OR email_key LIKE ? OR display_key LIKE ?)`);
+    params.push(`${q}%`, `${q}%`, `${q}%`);
+  }
+  return { where, params, type, q, region, alliance, role };
+}
+async function handleNotificationDirectoryUpsert(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const rows = (Array.isArray(body?.rows) ? body.rows : []).map(directoryRowForDb).filter(row => row.uid && row.nickname).slice(0, 20);
+  if (!rows.length) return json({ ok: true, indexed: 0, rowsWritten: 0, source: 'cloudflare-d1-directory' });
+  const ownsAllRows = rows.every(row => row.uid === user.uid);
+  if (!ownsAllRows && !isAdminUid(env, user.uid)) return json({ ok: false, error: 'admin_only' }, 403);
+  const uids = [...new Set(rows.map(row => row.uid))];
+  const statements = [];
+  for (const uid of uids) {
+    statements.push(db.prepare(`UPDATE notification_directory SET deleted = 1 WHERE uid = ?1`).bind(uid));
+  }
+  for (const row of rows) {
+    statements.push(db.prepare(
+      `INSERT INTO notification_directory (uid, farm_id, nickname, nickname_key, email, email_key, display_name, display_key, photo_url, region, alliance, role, account_role, rank, shk, farm_count, updated_at_ms, deleted)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, 0)
+       ON CONFLICT(uid, farm_id) DO UPDATE SET
+         nickname = excluded.nickname,
+         nickname_key = excluded.nickname_key,
+         email = excluded.email,
+         email_key = excluded.email_key,
+         display_name = excluded.display_name,
+         display_key = excluded.display_key,
+         photo_url = excluded.photo_url,
+         region = excluded.region,
+         alliance = excluded.alliance,
+         role = excluded.role,
+         account_role = excluded.account_role,
+         rank = excluded.rank,
+         shk = excluded.shk,
+         farm_count = excluded.farm_count,
+         updated_at_ms = excluded.updated_at_ms,
+         deleted = 0`
+    ).bind(row.uid, row.farmId, row.nickname, row.nicknameKey, row.email, row.emailKey, row.displayName, row.displayKey, row.photoURL, row.region, row.alliance, row.role, row.accountRole, row.rank, row.shk, row.farmCount, row.updatedAtMs));
+  }
+  await db.batch(statements);
+  return json({ ok: true, indexed: rows.length, rowsWritten: statements.length, source: 'cloudflare-d1-directory' });
+}
+async function handleNotificationDirectoryList(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  const url = new URL(request.url);
+  const access = await readDirectoryAccess(db, env, user);
+  const limitValue = Math.max(1, Math.min(30, Number(url.searchParams.get('limit')) || 10));
+  const built = buildDirectoryWhere(url, access);
+  const sql = `SELECT * FROM notification_directory WHERE ${built.where.join(' AND ')} ORDER BY updated_at_ms DESC, nickname_key ASC LIMIT ?`;
+  const result = await db.prepare(sql).bind(...built.params, limitValue).all();
+  return json({ ok: true, rows: (result?.results || []).map(directoryRowToObject), source: 'cloudflare-d1-directory' });
+}
+async function handleNotificationDirectoryCount(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  const url = new URL(request.url);
+  const access = await readDirectoryAccess(db, env, user);
+  const built = buildDirectoryWhere(url, access, { count: true });
+  const row = await db.prepare(`SELECT COUNT(DISTINCT uid) AS count FROM notification_directory WHERE ${built.where.join(' AND ')}`).bind(...built.params).first();
+  return json({ ok: true, count: Math.max(0, Number(row?.count) || 0), source: 'cloudflare-d1-directory' });
+}
+async function handleNotificationDirectoryRegions(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  const access = await readDirectoryAccess(db, env, user);
+  const where = ['deleted = 0', `region <> ''`];
+  const params = [];
+  addDirectoryAccessWhere(where, params, access);
+  const result = await db.prepare(
+    `SELECT region, COUNT(DISTINCT uid) AS count FROM notification_directory WHERE ${where.join(' AND ')} GROUP BY region ORDER BY CAST(region AS INTEGER) ASC LIMIT 500`
+  ).bind(...params).all();
+  return json({ ok: true, rows: result?.results || [], source: 'cloudflare-d1-directory' });
+}
+
 function summaryRowToObject(row = {}, uid = '') {
   return {
     id: 'summary',
@@ -2359,6 +2575,20 @@ export default {
       }
 
 
+
+
+      if (url.pathname === "/api/notification-directory" && request.method === "GET") {
+        return handleNotificationDirectoryList(request, env);
+      }
+      if (url.pathname === "/api/notification-directory/count" && request.method === "GET") {
+        return handleNotificationDirectoryCount(request, env);
+      }
+      if (url.pathname === "/api/notification-directory/regions" && request.method === "GET") {
+        return handleNotificationDirectoryRegions(request, env);
+      }
+      if (url.pathname === "/api/notification-directory/upsert" && request.method === "POST") {
+        return handleNotificationDirectoryUpsert(request, env);
+      }
 
       if (url.pathname === "/api/notifications/summary" && request.method === "GET") {
         return await handleNotificationSummaryGet(request, env);

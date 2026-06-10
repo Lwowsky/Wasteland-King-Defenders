@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=135';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=135';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=135';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=136';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=136';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=136';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -15,8 +15,9 @@ import {
   patchNotificationD1,
   patchSentMessageD1,
   readNotificationSummaryD1,
-  setNotificationSummaryD1
-} from './notifications-d1.js?v=135';
+  setNotificationSummaryD1,
+  upsertNotificationDirectoryD1
+} from './notifications-d1.js?v=136';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -260,7 +261,7 @@ function notificationSummaryClean(values = {}, firebase = null) {
   if (Object.hasOwn(values, 'lastActorUid')) out.lastActorUid = normalizeText(values.lastActorUid).slice(0, 160);
   if (Object.hasOwn(values, 'lastActorName')) out.lastActorName = normalizeText(values.lastActorName).slice(0, 120);
   if (Object.hasOwn(values, 'lastActorRole')) out.lastActorRole = normalizeRole(values.lastActorRole || 'player');
-  if (Object.hasOwn(values, 'lastTargetType')) out.lastTargetType = normalizeText(values.lastTargetType || 'system').slice(0, 40);
+  if (Object.hasOwn(values, 'lastTargetType')) out.lastTargetType = normalizeText(values.lastTargetType || 'system').slice(0, 20);
   if (Object.hasOwn(values, 'lastNotificationAtMs')) out.lastNotificationAtMs = Math.max(0, Number(values.lastNotificationAtMs) || 0);
   if (Object.hasOwn(values, 'campaignSeenAtMs')) out.campaignSeenAtMs = Math.max(0, Number(values.campaignSeenAtMs) || 0);
   out.updatedAtMs = Math.max(0, Number(values.updatedAtMs) || nowMs);
@@ -587,7 +588,7 @@ function campaignClean(values = {}, firebase = null) {
   const type = normalizeText(values.type || 'registration_notice').slice(0, 80);
   const region = normalizeText(values.region || '').replace(/[^0-9]/g, '').slice(0, 20);
   const actorRole = normalizeRole(values.actorRole || 'player');
-  const targetType = normalizeText(values.targetType || 'region').slice(0, 40);
+  const targetType = normalizeText(values.targetType || 'region').slice(0, 20);
   const alliance = normalizeAllianceTag(values.alliance || values.targetAlliance || '');
   const payload = {
     type,
@@ -992,7 +993,7 @@ export function makeAdminUserIndex(data = {}) {
     lastLoginAt: data.lastLoginAt || null,
     createdAtMs,
     updatedAtMs: adminIndexMs(data.updatedAt || data.createdAt || data.lastLoginAt),
-    source: 'admin-users-index-v135'
+    source: 'admin-users-index-v136'
   };
 }
 async function writeAdminUserIndexDoc(db, firestoreMod, profile = {}, batch = null) {
@@ -1003,6 +1004,7 @@ async function writeAdminUserIndexDoc(db, firestoreMod, profile = {}, batch = nu
   else {
     await firestoreMod.setDoc(ref, index);
     trackWrites(1);
+    await mirrorNotificationDirectoryIndexes([index], 'admin-index-single');
   }
   return index;
 }
@@ -1011,10 +1013,12 @@ async function writeAdminUserIndexesForDocs(db, firestoreMod, docs = []) {
   if (!safeDocs.length) return 0;
   let batch = firestoreMod.writeBatch(db);
   let count = 0;
+  const payloads = [];
   for (const doc of safeDocs) {
     const profile = { id: doc.id, ...(doc.data?.() || {}), uid: doc.data?.()?.uid || doc.id };
     const payload = makeAdminUserIndex(profile);
     if (!payload.uid || !payload.profileComplete) continue;
+    payloads.push(payload);
     batch.set(firestoreMod.doc(db, ADMIN_USERS_INDEX_COLLECTION, payload.uid), payload);
     count += 1;
     if (count % 400 === 0) {
@@ -1024,7 +1028,73 @@ async function writeAdminUserIndexesForDocs(db, firestoreMod, docs = []) {
   }
   if (count % 400 !== 0) await batch.commit();
   if (count) trackWrites(count);
+  await mirrorNotificationDirectoryIndexes(payloads, 'admin-index-batch');
   return count;
+}
+
+
+function notificationDirectoryRowsFromIndex(index = {}) {
+  if (!index?.uid) return [];
+  const base = {
+    uid: index.uid,
+    email: index.email || '',
+    displayName: index.displayName || '',
+    photoURL: index.photoURL || '',
+    accountRole: normalizeRole(index.role || 'player'),
+    farmCount: getFarmCount(index),
+    updatedAtMs: Number(index.updatedAtMs || index.createdAtMs) || Date.now()
+  };
+  const rows = [];
+  const main = index.gameProfile || getGameProfile(index);
+  if (main?.nickname && gameRegion(main)) {
+    rows.push({
+      ...base,
+      farmId: 'main',
+      nickname: main.nickname,
+      gameNick: main.nickname,
+      region: gameRegion(main),
+      alliance: normalizeAllianceTag(main.alliance),
+      role: normalizeRole(index.role || main.role || 'player'),
+      rank: main.rank || index.rank || '',
+      shk: main.shk || index.shk || ''
+    });
+  }
+  (Array.isArray(index.farms) ? index.farms : []).forEach((farm, idx) => {
+    if (!farm?.nickname || !gameRegion(farm)) return;
+    rows.push({
+      ...base,
+      farmId: normalizeText(farm.farmId || farm.id || `farm-${idx + 1}`) || `farm-${idx + 1}`,
+      nickname: farm.nickname,
+      gameNick: farm.nickname,
+      region: gameRegion(farm),
+      alliance: normalizeAllianceTag(farm.alliance),
+      role: normalizeRole(farm.role || 'player'),
+      rank: farm.rank || '',
+      shk: farm.shk || ''
+    });
+  });
+  return rows;
+}
+async function mirrorNotificationDirectoryIndexes(indexes = [], source = 'admin-index') {
+  const firebase = await getFirebase().catch(() => null);
+  const actor = firebase?.auth?.currentUser || null;
+  if (!actor) return { indexed: 0, rowsWritten: 0 };
+  const rows = (Array.isArray(indexes) ? indexes : [])
+    .flatMap(notificationDirectoryRowsFromIndex)
+    .filter(row => row.uid && row.nickname && row.region);
+  if (!rows.length) return { indexed: 0, rowsWritten: 0 };
+  let indexed = 0;
+  let rowsWritten = 0;
+  for (let i = 0; i < rows.length; i += 20) {
+    const chunk = rows.slice(i, i + 20);
+    const result = await upsertNotificationDirectoryD1(actor, chunk).catch(error => {
+      console.warn(`[WKD] notification D1 directory mirror skipped after ${source}:`, error?.message || error);
+      return null;
+    });
+    indexed += Number(result?.indexed || 0);
+    rowsWritten += Number(result?.rowsWritten || 0);
+  }
+  return { indexed, rowsWritten };
 }
 
 async function mirrorPublicStatsFromPublicPlayer(publicPlayer = {}, source = 'profile-save') {
