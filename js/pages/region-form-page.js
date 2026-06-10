@@ -25,8 +25,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=136';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled } from '../services/region-table-cache.js?v=106';
+} from '../services/region-db.js?v=137';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled } from '../services/region-table-cache.js?v=137';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);

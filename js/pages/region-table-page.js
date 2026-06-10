@@ -17,8 +17,8 @@ import {
   listRegionAlliances,
   listRegionCatalog,
   shareRegionTable
-} from '../services/region-db.js?v=136';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot } from '../services/region-table-cache.js?v=106';
+} from '../services/region-db.js?v=137';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot } from '../services/region-table-cache.js?v=137';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
@@ -474,7 +474,7 @@ function render() {
   setStatus(tv('region.tableShownStatus', '{regionLabel} {region}: shown {visible} of {total} records.', { regionLabel: t('account.region', 'Region'), region: currentRegion, visible: visible.length, total: rows.length }), currentSettings?.open ? 'success' : 'warn');
 }
 
-async function load(user) {
+async function load(user, options = {}) {
   currentUser = user;
   if (!user) {
     setStatus(t('region.tableAccessDenied', 'Only registered players of their own region can view the region table.'), 'warn');
@@ -492,13 +492,13 @@ async function load(user) {
   const allowedRegion = canUseRequestedRegion ? requestedRegion : '';
   let result = null;
   if (isRegionTableCacheEnabled() && allowedRegion) {
-    result = await readRegionTableSnapshot(user, allowedRegion).catch(error => {
+    result = await readRegionTableSnapshot(user, allowedRegion, { force: Boolean(options?.forceD1) }).catch(error => {
       console.warn('[WKD] region table JSON cache unavailable, using Firebase:', error);
       return null;
     });
   }
   if (!result) {
-    result = await listRegionRegistrations(user, allowedRegion);
+    result = await listRegionRegistrations(user, allowedRegion, { skipD1: true });
     await publishRegionTableSnapshot(user, {
       region: result.region,
       cycleId: result.settings?.currentCycleId || '',
@@ -579,7 +579,7 @@ function bind() {
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') closeRequestDetails();
   });
-  $('#refreshRegionTableBtn')?.addEventListener('click', () => load(currentUser).catch(error => {
+  $('#refreshRegionTableBtn')?.addEventListener('click', () => load(currentUser, { forceD1: true }).catch(error => {
     console.error(error);
     setStatus(t('region.tableRefreshFailed', 'Could not refresh the region table.'), 'error');
   }));

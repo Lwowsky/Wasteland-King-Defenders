@@ -1,7 +1,9 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=136';
+import { trackCloudflareUsage } from './usage-tracker.js?v=137';
 
 const MAX_ROWS = 1000;
+const REGION_TABLE_CACHE_TTL_MS = 60 * 1000;
+const SHARE_TABLE_CACHE_TTL_MS = 90 * 1000;
 
 function cleanText(value = '', max = 120) {
   return String(value ?? '')
@@ -48,6 +50,33 @@ async function getFirebaseToken(user) {
   }
 }
 
+function localCacheKey(kind, id) {
+  return `wkd.${kind}.d1.v137.${cleanText(id, 160)}`;
+}
+
+function readLocalTableCache(kind, id, ttlMs) {
+  try {
+    const raw = localStorage.getItem(localCacheKey(kind, id));
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || (Date.now() - Number(data.savedAtMs || 0)) > ttlMs) return null;
+    if (!data.table) return null;
+    return normalizeTableResponse({ table: data.table, cached: true, source: 'browser-d1-cache' });
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalTableCache(kind, id, table) {
+  try {
+    localStorage.setItem(localCacheKey(kind, id), JSON.stringify({ savedAtMs: Date.now(), table }));
+  } catch {}
+}
+
+function removeLocalTableCache(kind, id) {
+  try { localStorage.removeItem(localCacheKey(kind, id)); } catch {}
+}
+
 function browserRegistrationKey(region = '', cycleId = 'active') {
   const safeRegion = cleanRegion(region) || 'region';
   const safeCycle = cleanText(cycleId || 'active', 80).replace(/[^A-Za-z0-9._:-]/g, '-');
@@ -67,7 +96,7 @@ function sanitizeRegistrationValues(values = {}) {
   return {
     farmId: cleanText(values.farmId || 'main', 80) || 'main',
     nickname: cleanText(values.nickname || values.gameNick || values.name || '', 80),
-    alliance: cleanText(values.alliance || '', 12).toUpperCase(),
+    alliance: cleanText(values.alliance || '', 12),
     rank: cleanText(values.rank || '', 16).toLowerCase(),
     shk: cleanText(values.shk || '', 12),
     troopType: cleanText(values.troopType || '', 40),
@@ -131,7 +160,7 @@ function sanitizeTableRow(row = {}) {
     farmId: cleanText(row.farmId || '', 80),
     nickname: cleanText(row.nickname || row.name || row.gameNick || '', 80),
     region: cleanRegion(row.region),
-    alliance: cleanText(row.alliance || '', 12).toUpperCase(),
+    alliance: cleanText(row.alliance || '', 12),
     rank: cleanText(row.rank || '', 16).toLowerCase(),
     shk: cleanText(row.shk || '', 12),
     role: cleanText(row.role || 'player', 40).toLowerCase(),
@@ -178,24 +207,36 @@ function sanitizeSettings(settings = {}) {
   };
 }
 
-export async function readRegionTableSnapshot(user, region) {
+export async function readRegionTableSnapshot(user, region, options = {}) {
   if (!isRegionTableCacheEnabled()) throw new Error('region-table-cache-disabled');
   const safeRegion = cleanRegion(region);
   if (!safeRegion) throw new Error('region-required');
+  if (!options?.force) {
+    const cached = readLocalTableCache('regionTableSnapshot', safeRegion, Number(options?.ttlMs) || REGION_TABLE_CACHE_TTL_MS);
+    if (cached) return cached;
+  }
   const token = await getFirebaseToken(user);
   if (!token) throw new Error('auth-token-required');
   const data = await requestJson(`/api/region-table?region=${encodeURIComponent(safeRegion)}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  return normalizeTableResponse(data);
+  const normalized = normalizeTableResponse(data);
+  writeLocalTableCache('regionTableSnapshot', safeRegion, normalized);
+  return normalized;
 }
 
-export async function readRegionTableShare(code) {
+export async function readRegionTableShare(code, options = {}) {
   if (!isRegionTableCacheEnabled()) throw new Error('region-table-cache-disabled');
   const safeCode = cleanCode(code);
   if (!safeCode) throw new Error('share-code-required');
+  if (!options?.force) {
+    const cached = readLocalTableCache('regionTableShare', safeCode, Number(options?.ttlMs) || SHARE_TABLE_CACHE_TTL_MS);
+    if (cached) return cached;
+  }
   const data = await requestJson(`/api/region-table/share/${encodeURIComponent(safeCode)}`);
-  return normalizeTableResponse(data);
+  const normalized = normalizeTableResponse(data);
+  writeLocalTableCache('regionTableShare', safeCode, normalized);
+  return normalized;
 }
 
 
@@ -222,6 +263,7 @@ export async function saveRegionRegistrationD1First(user, region, values = {}, s
     updatedAtMs: Date.now()
   });
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  removeLocalTableCache('regionTableSnapshot', safeRegion);
   return requestJson('/api/region-table/registration', {
     method: 'POST',
     headers,
@@ -234,7 +276,7 @@ export async function saveRegionRegistrationD1First(user, region, values = {}, s
       row,
       forceUpdate: Boolean(options?.forceUpdate)
     })
-  }).then(result => ({ ...result, ...row, cycleId, region: safeRegion, d1First: true }));
+  }).then(result => { removeLocalTableCache('regionTableSnapshot', safeRegion); return { ...result, ...row, cycleId, region: safeRegion, d1First: true }; });
 }
 
 export async function mirrorRegionRegistration(user, region, row, settings = {}) {
@@ -272,6 +314,7 @@ export async function publishRegionTableSnapshot(user, payload = {}) {
     .map(sanitizeTableRow)
     .filter(row => row.nickname)
     .slice(0, MAX_ROWS);
+  removeLocalTableCache('regionTableSnapshot', safeRegion);
   return requestJson('/api/region-table/snapshot', {
     method: 'PUT',
     headers: { Authorization: `Bearer ${token}` },
@@ -281,6 +324,9 @@ export async function publishRegionTableSnapshot(user, payload = {}) {
       settings: sanitizeSettings(payload.settings || {}),
       rows
     })
+  }).then(result => {
+    if (result?.ok !== false) writeLocalTableCache('regionTableSnapshot', safeRegion, { region: safeRegion, settings: sanitizeSettings(payload.settings || {}), rows, version: Date.now() });
+    return result;
   }).catch(error => {
     console.warn('[WKD] region table snapshot publish skipped:', error);
     return { ok: false, skipped: true, error: error.message };
@@ -298,6 +344,7 @@ export async function publishRegionTableShare(user, payload = {}) {
     .map(sanitizeTableRow)
     .filter(row => row.nickname)
     .slice(0, MAX_ROWS);
+  removeLocalTableCache('regionTableShare', safeCode);
   return requestJson('/api/region-table/share', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
