@@ -6,7 +6,7 @@ import {
   listRegionNotificationCampaignsForProfile,
   readUserNotificationSummary,
   setUserNotificationSummary
-} from './services/user-db.js?v=109';
+} from './services/user-db.js?v=111';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -61,6 +61,13 @@ function sourceLabel(item = {}) {
 function isUnread(item = {}) {
   return item.unread !== false && !item.readAtMs && !item.readAt;
 }
+function createdMs(item = {}) {
+  return Number(item.createdAtMs) || item.createdAt?.toMillis?.() || item.createdAt?.toDate?.()?.getTime?.() || 0;
+}
+function isHiddenOldReadMessage(item = {}) {
+  const ms = createdMs(item);
+  return item.type === 'site_message' && ms > 0 && ms < Date.now() - 30 * 24 * 60 * 60 * 1000 && !isUnread(item);
+}
 function cacheKey(uid = '') {
   return `wkd.notify.summary.${uid}`;
 }
@@ -106,7 +113,7 @@ async function userNotificationPreview(firebase, uid) {
   const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(12));
   const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
   trackReads(Math.max(1, snap.docs.length));
-  return snap.docs.map(doc => ({ id: doc.id, source: 'account', ...doc.data() }));
+  return snap.docs.map(doc => ({ id: doc.id, source: 'account', ...doc.data() })).filter(item => !isHiddenOldReadMessage(item));
 }
 async function refreshCampaignPreview(force = false) {
   if (!currentUser || !currentProfile) return [];

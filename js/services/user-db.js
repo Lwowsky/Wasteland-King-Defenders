@@ -183,6 +183,14 @@ export function timestampToMs(value) {
 }
 
 
+const CAMPAIGN_RETENTION_DAYS = 30;
+const CAMPAIGN_RETENTION_MS = CAMPAIGN_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+function isSystemCampaignType(type = '') {
+  const clean = normalizeText(type).toLowerCase();
+  return clean.startsWith('registration_') || clean === 'registration_notice' || clean === 'region_status';
+}
+
+
 function notificationSummaryRef(firebase, uid) {
   return firebase.firestoreMod.doc(firebase.db, 'users', uid, 'notificationMeta', 'summary');
 }
@@ -347,6 +355,9 @@ function campaignClean(values = {}, firebase = null) {
     createdAt: firebase?.firestoreMod?.serverTimestamp ? firebase.firestoreMod.serverTimestamp() : null,
     createdAtMs: nowMs
   };
+  const rawExpiresAtMs = Number(values.expiresAtMs) || 0;
+  if (rawExpiresAtMs > 0) payload.expiresAtMs = rawExpiresAtMs;
+  else if (isSystemCampaignType(type)) payload.expiresAtMs = nowMs + CAMPAIGN_RETENTION_MS;
   if (values.titleKey || type.startsWith('registration_')) payload.titleKey = normalizeText(values.titleKey || 'notifications.campaign.registrationOpenedTitle').slice(0, 160);
   if (values.messageKey || type.startsWith('registration_')) payload.messageKey = normalizeText(values.messageKey || 'notifications.campaign.registrationOpenedMessage').slice(0, 160);
   if (values.title) payload.title = normalizeText(values.title).slice(0, 160);
@@ -425,6 +436,8 @@ export async function listRegionNotificationCampaignsForProfile(profile = {}, op
     snap.docs.forEach(doc => {
       const data = doc.data() || {};
       const createdAtMs = Number(data.createdAtMs) || timestampToMs(data.createdAt) || 0;
+      const expiresAtMs = Number(data.expiresAtMs) || 0;
+      if (expiresAtMs > 0 && expiresAtMs <= Date.now()) return;
       if (createdAtMs <= sinceMs) return;
       if (!campaignMatchesProfile(profile || {}, data)) return;
       all.push({ id: doc.id, source: 'campaign', unread: true, ...data, createdAtMs });

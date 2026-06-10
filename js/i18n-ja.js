@@ -1843,4 +1843,17 @@ window.WKD_TRANSLATIONS.ja = {
   "actionLog.loadedFromCache": "前のページをキャッシュから表示しました。",
   "actionLog.paginationLabel": "アクションログのページ送り",
 
+  "actionLog.actions": '操作',
+  "actionLog.delete": '削除',
+  "actionLog.deleteConfirm": 'この操作ログを削除しますか？',
+  "actionLog.deleted": 'ログを削除しました。',
+  "actionLog.clearPage": 'このページを削除',
+  "actionLog.clearPageConfirm": 'このページのすべてのログを削除しますか？',
+  "actionLog.clearOld": '30日より古いログを削除',
+  "actionLog.clearOldConfirm": '30日より古い操作ログを削除しますか？',
+  "actionLog.clearRegion": '地域ログを削除',
+  "actionLog.clearRegionConfirm": 'この地域の操作ログを削除しますか？元に戻せません。',
+  "actionLog.clearDone": '操作ログを削除しました。',
+  "actionLog.clearMore": '一部のログを削除しました。必要ならもう一度押してください。',
+
 };

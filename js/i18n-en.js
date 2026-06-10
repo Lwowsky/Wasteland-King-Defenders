@@ -1843,4 +1843,17 @@ window.WKD_TRANSLATIONS.en = {
   "actionLog.loadedFromCache": "Previous page shown from cache.",
   "actionLog.paginationLabel": "Action log pagination",
 
+  "actionLog.actions": 'Actions',
+  "actionLog.delete": 'Delete',
+  "actionLog.deleteConfirm": 'Delete this action-log entry?',
+  "actionLog.deleted": 'Entry deleted.',
+  "actionLog.clearPage": 'Clear page',
+  "actionLog.clearPageConfirm": 'Delete all entries on this page?',
+  "actionLog.clearOld": 'Clear older than 30 days',
+  "actionLog.clearOldConfirm": 'Delete action-log entries older than 30 days?',
+  "actionLog.clearRegion": 'Clear region',
+  "actionLog.clearRegionConfirm": 'Delete this region action log? This cannot be undone.',
+  "actionLog.clearDone": 'Action log cleared.',
+  "actionLog.clearMore": 'Part of the log was cleared. Press again to continue if needed.',
+
 };

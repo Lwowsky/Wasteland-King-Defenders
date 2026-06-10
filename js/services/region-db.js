@@ -12,7 +12,7 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=109';
+} from './user-db.js?v=111';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -836,6 +836,10 @@ function regionActionVisibleTo(profile = {}, region = '', actor = null, entry = 
   const ownAlliance = actorAllianceForRegion(profile || {}, safeRegion);
   return Boolean(ownAlliance && normalizeAllianceTag(entry.alliance || entry.actorAlliance || entry.details?.alliance) === ownAlliance);
 }
+function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
+  const role = roleForRegion(profile || {}, normalizeRegion(region), actor);
+  return ['admin', 'moderator', 'consul'].includes(role) || isOwnerEmail(actor?.email || profile?.email);
+}
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
   try {
     const safeRegion = normalizeRegion(region);
@@ -895,6 +899,52 @@ export async function listRegionActionLogs(user, regionOverride = '', { limitCou
     .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
   const lastRow = rows[rows.length - 1] || null;
   return { profile, region, rows, limitCount: limitValue, hasMore: rows.length === limitValue, nextCursorMs: Number(lastRow?.createdAtMs) || 0 };
+}
+
+export async function deleteRegionActionLog(user, regionOverride = '', logId = '') {
+  if (!user) throw new Error('auth-required');
+  const safeLogId = trim(logId).slice(0, 160);
+  if (!safeLogId) throw new Error('log-id-required');
+  const { db, firestoreMod } = await getFirebaseParts();
+  const { profile, region } = await getMyRegionContext(user, regionOverride);
+  if (!canDeleteRegionActionLogs(profile || {}, region, user)) throw new Error('action-log-delete-denied');
+  await firestoreMod.deleteDoc(firestoreMod.doc(db, 'regions', region, 'actionLogs', safeLogId));
+  trackDeletes(1);
+  return { profile, region, deleted: 1 };
+}
+
+export async function deleteRegionActionLogs(user, regionOverride = '', logIds = []) {
+  if (!user) throw new Error('auth-required');
+  const ids = [...new Set((Array.isArray(logIds) ? logIds : []).map(id => trim(id).slice(0, 160)).filter(Boolean))].slice(0, 100);
+  if (!ids.length) return { deleted: 0 };
+  const { db, firestoreMod } = await getFirebaseParts();
+  const { profile, region } = await getMyRegionContext(user, regionOverride);
+  if (!canDeleteRegionActionLogs(profile || {}, region, user)) throw new Error('action-log-delete-denied');
+  const batch = firestoreMod.writeBatch(db);
+  ids.forEach(id => batch.delete(firestoreMod.doc(db, 'regions', region, 'actionLogs', id)));
+  await batch.commit();
+  trackDeletes(ids.length);
+  return { profile, region, deleted: ids.length };
+}
+
+export async function clearRegionActionLogs(user, regionOverride = '', { olderThanMs = 0, limitCount = 500 } = {}) {
+  if (!user) throw new Error('auth-required');
+  const { db, firestoreMod } = await getFirebaseParts();
+  const { profile, region } = await getMyRegionContext(user, regionOverride);
+  if (!canDeleteRegionActionLogs(profile || {}, region, user)) throw new Error('action-log-delete-denied');
+  const ref = firestoreMod.collection(db, 'regions', region, 'actionLogs');
+  const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
+  const conditions = [];
+  if (Number(olderThanMs) > 0) conditions.push(firestoreMod.where('createdAtMs', '<', Number(olderThanMs)), firestoreMod.orderBy('createdAtMs', 'asc'));
+  else conditions.push(firestoreMod.orderBy('createdAtMs', 'asc'));
+  const snap = await firestoreMod.getDocs(firestoreMod.query(ref, ...conditions, firestoreMod.limit(safeLimit))).catch(() => ({ docs: [] }));
+  trackReads(Math.max(1, snap.docs.length));
+  if (!snap.docs.length) return { profile, region, deleted: 0, hasMore: false };
+  const batch = firestoreMod.writeBatch(db);
+  snap.docs.forEach(docSnap => batch.delete(docSnap.ref));
+  await batch.commit();
+  trackDeletes(snap.docs.length);
+  return { profile, region, deleted: snap.docs.length, hasMore: snap.docs.length === safeLimit };
 }
 export async function getSecurityOverview(user) {
   if (!user) throw new Error('auth-required');

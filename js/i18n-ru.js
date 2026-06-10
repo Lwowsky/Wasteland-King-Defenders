@@ -1843,4 +1843,17 @@ window.WKD_TRANSLATIONS.ru = {
   "actionLog.loadedFromCache": "Предыдущая страница показана из кэша.",
   "actionLog.paginationLabel": "Пагинация журнала действий",
 
+  "actionLog.actions": 'Действия',
+  "actionLog.delete": 'Удалить',
+  "actionLog.deleteConfirm": 'Удалить эту запись из журнала?',
+  "actionLog.deleted": 'Запись удалена.',
+  "actionLog.clearPage": 'Очистить страницу',
+  "actionLog.clearPageConfirm": 'Удалить все записи на этой странице?',
+  "actionLog.clearOld": 'Очистить старше 30 дней',
+  "actionLog.clearOldConfirm": 'Удалить записи журнала старше 30 дней?',
+  "actionLog.clearRegion": 'Очистить регион',
+  "actionLog.clearRegionConfirm": 'Удалить журнал действий этого региона? Это нельзя отменить.',
+  "actionLog.clearDone": 'Журнал очищен.',
+  "actionLog.clearMore": 'Удалена часть записей. Нажмите еще раз, чтобы продолжить.',
+
 };

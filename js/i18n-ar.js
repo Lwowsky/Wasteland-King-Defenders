@@ -1841,4 +1841,17 @@ window.WKD_TRANSLATIONS.ar = {
   "actionLog.loadedFromCache": "تم عرض الصفحة السابقة من الذاكرة المؤقتة.",
   "actionLog.paginationLabel": "ترقيم صفحات سجل الإجراءات",
 
+  "actionLog.actions": 'إجراءات',
+  "actionLog.delete": 'حذف',
+  "actionLog.deleteConfirm": 'هل تريد حذف هذا السجل؟',
+  "actionLog.deleted": 'تم حذف السجل.',
+  "actionLog.clearPage": 'مسح الصفحة',
+  "actionLog.clearPageConfirm": 'حذف كل السجلات في هذه الصفحة؟',
+  "actionLog.clearOld": 'مسح أقدم من 30 يومًا',
+  "actionLog.clearOldConfirm": 'حذف سجلات الإجراءات الأقدم من 30 يومًا؟',
+  "actionLog.clearRegion": 'مسح المنطقة',
+  "actionLog.clearRegionConfirm": 'حذف سجل إجراءات هذه المنطقة؟ لا يمكن التراجع.',
+  "actionLog.clearDone": 'تم مسح سجل الإجراءات.',
+  "actionLog.clearMore": 'تم مسح جزء من السجلات. اضغط مرة أخرى للمتابعة إذا لزم الأمر.',
+
 };

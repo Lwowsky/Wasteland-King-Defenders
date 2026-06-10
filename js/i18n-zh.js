@@ -1843,4 +1843,17 @@ window.WKD_TRANSLATIONS.zh = {
   "actionLog.loadedFromCache": "已从缓存显示上一页。",
   "actionLog.paginationLabel": "操作日志分页",
 
+  "actionLog.actions": '操作',
+  "actionLog.delete": '删除',
+  "actionLog.deleteConfirm": '删除这条操作日志吗？',
+  "actionLog.deleted": '条目已删除。',
+  "actionLog.clearPage": '清除此页',
+  "actionLog.clearPageConfirm": '删除此页上的所有条目吗？',
+  "actionLog.clearOld": '清除超过30天',
+  "actionLog.clearOldConfirm": '删除超过30天的操作日志吗？',
+  "actionLog.clearRegion": '清除区域',
+  "actionLog.clearRegionConfirm": '删除此区域的操作日志吗？此操作无法撤销。',
+  "actionLog.clearDone": '操作日志已清除。',
+  "actionLog.clearMore": '已清除部分条目。如需继续请再次点击。',
+
 };

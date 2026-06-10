@@ -1843,4 +1843,17 @@ window.WKD_TRANSLATIONS.uk = {
   "actionLog.loadedFromCache": "Попередню сторінку показано з кешу.",
   "actionLog.paginationLabel": "Пагінація журналу дій",
 
+  "actionLog.actions": 'Дії',
+  "actionLog.delete": 'Видалити',
+  "actionLog.deleteConfirm": 'Видалити цю дію з журналу?',
+  "actionLog.deleted": 'Запис видалено.',
+  "actionLog.clearPage": 'Очистити сторінку',
+  "actionLog.clearPageConfirm": 'Видалити всі записи на цій сторінці?',
+  "actionLog.clearOld": 'Очистити старіше 30 днів',
+  "actionLog.clearOldConfirm": 'Видалити записи журналу старші 30 днів?',
+  "actionLog.clearRegion": 'Очистити регіон',
+  "actionLog.clearRegionConfirm": 'Видалити журнал дій цього регіону? Це не можна скасувати.',
+  "actionLog.clearDone": 'Журнал очищено.',
+  "actionLog.clearMore": 'Очищено частину записів. Натисни ще раз, якщо треба продовжити.',
+
 };

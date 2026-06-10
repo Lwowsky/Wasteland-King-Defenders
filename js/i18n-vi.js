@@ -1843,4 +1843,17 @@ window.WKD_TRANSLATIONS.vi = {
   "actionLog.loadedFromCache": "Trang trước được hiển thị từ bộ nhớ đệm.",
   "actionLog.paginationLabel": "Phân trang nhật ký hành động",
 
+  "actionLog.actions": 'Hành động',
+  "actionLog.delete": 'Xóa',
+  "actionLog.deleteConfirm": 'Xóa mục nhật ký này?',
+  "actionLog.deleted": 'Đã xóa mục.',
+  "actionLog.clearPage": 'Xóa trang này',
+  "actionLog.clearPageConfirm": 'Xóa tất cả mục trên trang này?',
+  "actionLog.clearOld": 'Xóa cũ hơn 30 ngày',
+  "actionLog.clearOldConfirm": 'Xóa các mục nhật ký cũ hơn 30 ngày?',
+  "actionLog.clearRegion": 'Xóa vùng',
+  "actionLog.clearRegionConfirm": 'Xóa nhật ký hành động của vùng này? Không thể hoàn tác.',
+  "actionLog.clearDone": 'Đã xóa nhật ký hành động.',
+  "actionLog.clearMore": 'Đã xóa một phần. Nhấn lại nếu cần tiếp tục.',
+
 };

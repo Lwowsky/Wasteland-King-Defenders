@@ -1843,4 +1843,17 @@ window.WKD_TRANSLATIONS.pl = {
   "actionLog.loadedFromCache": "Poprzednią stronę pokazano z pamięci podręcznej.",
   "actionLog.paginationLabel": "Paginacja dziennika działań",
 
+  "actionLog.actions": 'Akcje',
+  "actionLog.delete": 'Usuń',
+  "actionLog.deleteConfirm": 'Usunąć ten wpis z dziennika?',
+  "actionLog.deleted": 'Wpis usunięty.',
+  "actionLog.clearPage": 'Wyczyść stronę',
+  "actionLog.clearPageConfirm": 'Usunąć wszystkie wpisy na tej stronie?',
+  "actionLog.clearOld": 'Wyczyść starsze niż 30 dni',
+  "actionLog.clearOldConfirm": 'Usunąć wpisy dziennika starsze niż 30 dni?',
+  "actionLog.clearRegion": 'Wyczyść region',
+  "actionLog.clearRegionConfirm": 'Usunąć dziennik działań tego regionu? Tego nie można cofnąć.',
+  "actionLog.clearDone": 'Dziennik wyczyszczony.',
+  "actionLog.clearMore": 'Wyczyszczono część wpisów. Naciśnij ponownie, aby kontynuować.',
+
 };

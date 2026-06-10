@@ -1843,4 +1843,17 @@ window.WKD_TRANSLATIONS.de = {
   "actionLog.loadedFromCache": "Vorherige Seite aus dem Cache angezeigt.",
   "actionLog.paginationLabel": "Seitennavigation des Aktionsprotokolls",
 
+  "actionLog.actions": 'Aktionen',
+  "actionLog.delete": 'Löschen',
+  "actionLog.deleteConfirm": 'Diesen Protokolleintrag löschen?',
+  "actionLog.deleted": 'Eintrag gelöscht.',
+  "actionLog.clearPage": 'Seite leeren',
+  "actionLog.clearPageConfirm": 'Alle Einträge auf dieser Seite löschen?',
+  "actionLog.clearOld": 'Älter als 30 Tage löschen',
+  "actionLog.clearOldConfirm": 'Protokolleinträge älter als 30 Tage löschen?',
+  "actionLog.clearRegion": 'Region leeren',
+  "actionLog.clearRegionConfirm": 'Aktionsprotokoll dieser Region löschen? Das kann nicht rückgängig gemacht werden.',
+  "actionLog.clearDone": 'Aktionsprotokoll geleert.',
+  "actionLog.clearMore": 'Ein Teil wurde gelöscht. Bei Bedarf erneut drücken.',
+
 };

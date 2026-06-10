@@ -1,6 +1,6 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
 import { trackReads, trackWrites, trackDeletes } from '../services/usage-tracker.js?v=89';
-import { listRegionCatalog } from '../services/region-db.js?v=110';
+import { listRegionCatalog } from '../services/region-db.js?v=111';
 import {
   canUseAdminPanel,
   createSiteMessageCampaign,
@@ -17,7 +17,7 @@ import {
   normalizeUserRole,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=109';
+} from '../services/user-db.js?v=111';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -333,6 +333,26 @@ function paginationHtml(key = activePageKey(), total = 0) {
 function retentionCutoffMs() {
   return Date.now() - SERVER_RETENTION_DAYS * 24 * 60 * 60 * 1000;
 }
+function isOlderThanRetention(item = {}) {
+  const ms = createdMs(item);
+  return Boolean(ms && ms < retentionCutoffMs());
+}
+function isOldReadPrivateMessage(item = {}) {
+  return !isCampaign(item) && isMessage(item) && isOlderThanRetention(item) && !isUnread(item);
+}
+function isOldSentMessage(item = {}) {
+  return isOlderThanRetention(item);
+}
+function visibleNotificationRows(list = []) {
+  const hiddenReadMessages = list.filter(isOldReadPrivateMessage);
+  if (hiddenReadMessages.length) saveLocalArchive('notifications', hiddenReadMessages);
+  return list.filter(item => !isOldReadPrivateMessage(item));
+}
+function visibleSentRows(list = []) {
+  const hiddenSent = list.filter(isOldSentMessage);
+  if (hiddenSent.length) saveLocalArchive('sentMessages', hiddenSent);
+  return list.filter(item => !isOldSentMessage(item));
+}
 function localArchiveKey(collectionName = 'notifications') {
   return `wkd-local-message-archive:${currentUser?.uid || 'guest'}:${collectionName}`;
 }
@@ -364,22 +384,9 @@ function saveLocalArchive(collectionName = 'notifications', list = []) {
   } catch (_) {}
 }
 async function cleanupOldMessages(firebase, uid = '') {
-  if (!firebase || !uid) return;
-  const { db, firestoreMod } = firebase;
-  const cutoff = retentionCutoffMs();
-  for (const collectionName of ['notifications', 'sentMessages']) {
-    const ref = firestoreMod.collection(db, 'users', uid, collectionName);
-    const q = firestoreMod.query(ref, firestoreMod.where('createdAtMs', '<', cutoff), firestoreMod.orderBy('createdAtMs', 'asc'), firestoreMod.limit(20));
-    const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
-    trackReads(Math.max(1, snap.docs.length));
-    if (!snap.docs?.length) continue;
-    const oldItems = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    saveLocalArchive(collectionName, oldItems);
-    const batch = firestoreMod.writeBatch(db);
-    snap.docs.forEach(docSnap => batch.delete(docSnap.ref));
-    await batch.commit().catch(() => null);
-    trackDeletes(snap.docs.length);
-  }
+  // v111: do not delete personal messages automatically. Old read private messages
+  // are copied to localStorage and hidden from the page; unread old messages stay visible.
+  return;
 }
 function notificationDoc(firebase, id = '') {
   return firebase.firestoreMod.doc(firebase.db, 'users', currentUser.uid, 'notifications', id);
@@ -458,6 +465,7 @@ function watchPageNotifications(firebase, uid) {
   const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(NOTIFICATION_QUERY_LIMIT));
   unsubscribePageNotifications = firestoreMod.onSnapshot(q, snap => {
     personalRows = snap.docs.map(doc => ({ id: doc.id, source: 'account', ...doc.data() }));
+    saveLocalArchive('notifications', personalRows.filter(isOldReadPrivateMessage));
     mergeNotificationRows();
     syncNotificationSummaryFromRows().then(() => window.WKD?.refreshNotifications?.()).catch(() => null);
     render();
@@ -609,7 +617,7 @@ function renderAvatar(meta = {}) {
 function renderNoticeList() {
   const list = $('#notificationsNoticeList');
   if (!list) return;
-  const notices = applyNotificationFilter(limitBySourceBuckets(rows.filter(item => !isMessage(item))));
+  const notices = applyNotificationFilter(limitBySourceBuckets(visibleNotificationRows(rows).filter(item => !isMessage(item))));
   const pageItems = pageSlice(notices, 'notifications');
   list.innerHTML = notices.length ? pageItems.map(item => {
     const unread = isUnread(item);
@@ -634,7 +642,7 @@ function renderNoticeList() {
 function renderMessageList() {
   const list = $('#notificationsInboxList');
   if (!list) return;
-  const messages = applyNotificationFilter(limitBySourceBuckets(rows.filter(item => isMessage(item))));
+  const messages = applyNotificationFilter(limitBySourceBuckets(visibleNotificationRows(rows).filter(item => isMessage(item))));
   const pageItems = pageSlice(messages, 'inbox');
   list.innerHTML = messages.length ? pageItems.map(item => {
     const meta = senderMeta(item);
@@ -668,7 +676,7 @@ function renderMessageList() {
 function renderSentList() {
   const list = $('#notificationsSentList');
   if (!list) return;
-  const sent = applyNotificationFilter(limitBySourceBuckets(sentRows));
+  const sent = applyNotificationFilter(limitBySourceBuckets(visibleSentRows(sentRows))); 
   const pageItems = pageSlice(sent, 'sent');
   list.innerHTML = sent.length ? pageItems.map(item => `
     <article class="site-message-card sent-message-card">
@@ -785,10 +793,12 @@ async function load(user) {
   directory = await loadDirectory();
   const { db, firestoreMod } = firebase;
   const ref = firestoreMod.collection(db, 'users', user.uid, 'notifications');
-  const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(NOTIFICATION_QUERY_LIMIT));
+  const recentQuery = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(NOTIFICATION_QUERY_LIMIT));
+  const unreadQuery = firestoreMod.query(ref, firestoreMod.where('unread', '==', true), firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(NOTIFICATION_QUERY_LIMIT));
   const seenSummary = await readUserNotificationSummary(user.uid).catch(() => null);
-  const [snap, campaigns, sent] = await Promise.all([
-    firestoreMod.getDocs(q).catch(() => ({ docs: [] })),
+  const [recentSnap, unreadSnap, campaigns, sent] = await Promise.all([
+    firestoreMod.getDocs(recentQuery).catch(() => ({ docs: [] })),
+    firestoreMod.getDocs(unreadQuery).catch(() => ({ docs: [] })),
     listRegionNotificationCampaignsForProfile(currentProfile || {}, {
       sinceMs: Number(seenSummary?.campaignSeenAtMs) || 0,
       perRegionLimit: 12,
@@ -796,10 +806,14 @@ async function load(user) {
     }).catch(() => []),
     loadSentMessages(firebase, user.uid)
   ]);
-  trackReads(Math.max(1, snap.docs.length));
-  personalRows = snap.docs.map(doc => ({ id: doc.id, source: 'account', ...doc.data() }));
+  trackReads(Math.max(1, recentSnap.docs.length) + Math.max(0, unreadSnap.docs.length));
+  const personalMap = new Map();
+  [...recentSnap.docs, ...unreadSnap.docs].forEach(doc => personalMap.set(doc.id, { id: doc.id, source: 'account', ...doc.data() }));
+  personalRows = [...personalMap.values()].sort((a, b) => createdMs(b) - createdMs(a));
+  saveLocalArchive('notifications', personalRows.filter(isOldReadPrivateMessage));
   campaignRows = campaigns;
   mergeNotificationRows();
+  saveLocalArchive('sentMessages', sent.filter(isOldSentMessage));
   sentRows = sent;
   await syncNotificationSummaryFromRows();
   setStatus(t('notifications.loaded', 'Сповіщення оновлено.'), 'success');

@@ -35,9 +35,9 @@
   <script defer src="js/core/state.js"></script>
   <script defer src="js/core/app-boot.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/auth-google.js?v=110"></script>
-  <script type="module" src="js/notifications.js?v=109"></script>
-  <script type="module" src="js/pages/action-log-page.js?v=110"></script>
+  <script type="module" src="js/auth-google.js?v=111"></script>
+  <script type="module" src="js/notifications.js?v=111"></script>
+  <script type="module" src="js/pages/action-log-page.js?v=111"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -52,10 +52,15 @@
         <label class="region-control region-control--region"><span data-i18n="account.region">Регіон</span><input id="actionLogRegionInput" inputmode="numeric" placeholder="987" list="actionLogRegionList" /><datalist id="actionLogRegionList"></datalist></label>
         <button class="btn btn-primary region-open-btn" id="actionLogOpenBtn" type="button" data-i18n="region.openRegion">Відкрити</button>
       </div>
+      <div class="action-log-cleanup" id="actionLogCleanupActions" hidden>
+        <button class="btn btn-ghost" id="actionLogClearPageBtn" type="button" data-i18n="actionLog.clearPage">Очистити сторінку</button>
+        <button class="btn btn-ghost" id="actionLogClearOldBtn" type="button" data-i18n="actionLog.clearOld">Очистити старіше 30 днів</button>
+        <button class="btn btn-danger-soft" id="actionLogClearRegionBtn" type="button" data-i18n="actionLog.clearRegion">Очистити регіон</button>
+      </div>
       <div class="admin-table-wrap">
         <table class="admin-table region-public-table">
-          <thead><tr><th data-i18n="actionLog.time">Час</th><th data-i18n="actionLog.action">Дія</th><th data-i18n="actionLog.actor">Хто</th><th data-i18n="account.alliance">Альянс</th><th data-i18n="actionLog.details">Деталі</th></tr></thead>
-          <tbody id="actionLogBody"><tr><td colspan="5">...</td></tr></tbody>
+          <thead><tr><th data-i18n="actionLog.time">Час</th><th data-i18n="actionLog.action">Дія</th><th data-i18n="actionLog.actor">Хто</th><th data-i18n="account.alliance">Альянс</th><th data-i18n="actionLog.details">Деталі</th><th data-i18n="actionLog.actions">Дії</th></tr></thead>
+          <tbody id="actionLogBody"><tr><td colspan="6">...</td></tr></tbody>
         </table>
       </div>
       <div class="action-log-pager" aria-label="Пагінація журналу дій" data-i18n-aria-label="actionLog.paginationLabel">

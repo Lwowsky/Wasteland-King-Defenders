@@ -1843,4 +1843,17 @@ window.WKD_TRANSLATIONS.ko = {
   "actionLog.loadedFromCache": "이전 페이지를 캐시에서 표시했습니다.",
   "actionLog.paginationLabel": "작업 기록 페이지 이동",
 
+  "actionLog.actions": '작업',
+  "actionLog.delete": '삭제',
+  "actionLog.deleteConfirm": '이 작업 로그를 삭제할까요?',
+  "actionLog.deleted": '항목이 삭제되었습니다.',
+  "actionLog.clearPage": '페이지 비우기',
+  "actionLog.clearPageConfirm": '이 페이지의 모든 항목을 삭제할까요?',
+  "actionLog.clearOld": '30일 지난 항목 삭제',
+  "actionLog.clearOldConfirm": '30일 지난 작업 로그를 삭제할까요?',
+  "actionLog.clearRegion": '지역 로그 비우기',
+  "actionLog.clearRegionConfirm": '이 지역의 작업 로그를 삭제할까요? 되돌릴 수 없습니다.',
+  "actionLog.clearDone": '작업 로그가 정리되었습니다.',
+  "actionLog.clearMore": '일부 항목을 삭제했습니다. 계속하려면 다시 누르세요.',
+
 };
