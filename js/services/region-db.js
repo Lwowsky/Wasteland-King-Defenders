@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=142';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=142';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=143';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=143';
 import {
   getUserProfile,
   getFarmById,
@@ -12,8 +12,8 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=142';
-import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings } from './region-table-cache.js?v=142';
+} from './user-db.js?v=143';
+import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings } from './region-table-cache.js?v=143';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -847,7 +847,7 @@ function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
 }
 
 async function actionLogCacheModule() {
-  return import('./action-log-cache.js?v=142');
+  return import('./action-log-cache.js?v=143');
 }
 
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
@@ -1102,11 +1102,12 @@ export async function getRegionShareLinkCode(user, region) {
   return saveRegionShareLink(firebase, user, safeRegion, settings, false);
 }
 
-export async function resolveRegionShareLink(codeValue) {
+export async function resolveRegionShareLink(codeValue, options = {}) {
   const code = normalizeShortLinkCode(codeValue);
   if (!code) throw new Error('short-link-required');
   const cached = await readRegionFormShareD1(code).catch(() => null);
   if (cached?.region && cached?.settings) return { code, region: cached.region, settings: mergeRegionSettings(cached.settings), source: cached.source || 'cloudflare-d1-form-settings' };
+  if (options?.allowFirebaseFallback !== true) throw new Error('short-link-d1-required');
 
   const { db, firestoreMod } = await getFirebaseParts();
   const snap = await firestoreMod.getDoc(firestoreMod.doc(db, 'shortRegionLinks', code));
@@ -1178,12 +1179,13 @@ export async function shareRegionFinalPlan(user, region, payload = {}) {
   return { code, region: safeRegion };
 }
 
-export async function resolveRegionFinalPlanShare(codeValue) {
+export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
   const { db, firestoreMod } = await getFirebaseParts();
   const code = normalizeShortLinkCode(codeValue);
   if (!code) throw new Error('final-plan-link-required');
   const cached = await readFinalPlanFromD1Cache(code).catch(() => null);
   if (cached?.html || cached?.text) return { code, ...cached };
+  if (options?.allowFirebaseFallback !== true) throw new Error('final-plan-d1-required');
   const snap = await firestoreMod.getDoc(firestoreMod.doc(db, 'finalPlanShares', code));
   trackReads(1);
   if (!snap.exists()) throw new Error('final-plan-link-not-found');
@@ -1194,7 +1196,7 @@ export async function resolveRegionFinalPlanShare(codeValue) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=142');
+    const mod = await import('./region-table-cache.js?v=143');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1204,7 +1206,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=142');
+    const mod = await import('./region-table-cache.js?v=143');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1214,7 +1216,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=142');
+    const mod = await import('./region-table-cache.js?v=143');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1224,7 +1226,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=142');
+    const mod = await import('./region-table-cache.js?v=143');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1235,7 +1237,7 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
 
 async function readFinalPlanFromD1Cache(code, options = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=142');
+    const mod = await import('./final-plan-cache.js?v=143');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.readFinalPlanShare(code, options);
   } catch (error) {
@@ -1246,7 +1248,7 @@ async function readFinalPlanFromD1Cache(code, options = {}) {
 
 async function publishFinalPlanToD1Cache(user, payload = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=142');
+    const mod = await import('./final-plan-cache.js?v=143');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.publishFinalPlanShare(user, payload);
   } catch (error) {
@@ -1308,10 +1310,11 @@ export async function shareRegionTable(user, region) {
   return { code, region: safeRegion };
 }
 
-export async function resolveRegionTableShare(codeValue) {
+export async function resolveRegionTableShare(codeValue, options = {}) {
   const { db, firestoreMod } = await getFirebaseParts();
   const code = normalizeShortLinkCode(codeValue);
   if (!code) throw new Error('region-table-link-required');
+  if (options?.allowFirebaseFallback !== true) throw new Error('region-table-d1-required');
   const snap = await firestoreMod.getDoc(firestoreMod.doc(db, 'regionTableShares', code));
   trackReads(1);
   if (!snap.exists()) throw new Error('region-table-link-not-found');

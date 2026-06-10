@@ -2015,4 +2015,8 @@ window.WKD_TRANSLATIONS.de = {
   "admin.regionsCacheLoaded": "Regionen werden aus dem lokalen Cache angezeigt. Aktualisiere oder speichere, um neue Daten zu laden.",
   "security.cached": "Die Sicherheitsprüfung wird aus dem lokalen Cache angezeigt. Öffne den Tab später erneut oder leere den Browser-Cache, um neu zu prüfen.",
 
+  'region.publicTableD1Missing': 'Die Regionstabelle wurde noch nicht in D1 veröffentlicht. Bitte den Konsul oder Offizier, den geheimen Link erneut zu aktualisieren/erstellen.',
+  'finalPlan.d1ShareMissing': 'Der finale Plan wurde noch nicht in D1 veröffentlicht. Bitte den Konsul oder Offizier, den geheimen Link erneut zu erstellen.',
+  'region.d1SettingsMissing': 'Die Formulareinstellungen wurden noch nicht in D1 veröffentlicht. Bitte den Konsul oder Offizier, in den Regionseinstellungen Speichern/Starten zu drücken.',
+
 };

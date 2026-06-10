@@ -1,4 +1,4 @@
-import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=142';
+import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=143';
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile, saveFarmWastelandProfile } from '../services/user-db.js';
 import {
@@ -25,8 +25,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=142';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=142';
+} from '../services/region-db.js?v=143';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=143';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -96,10 +96,15 @@ let autoSubmitting = false;
 async function loadRegionFormSettings(region) {
   const safeRegion = String(region || '').trim().replace(/[^0-9]/g, '');
   if (!safeRegion) throw new Error('region-required');
+  const publicMode = Boolean(!currentUser || shortCodeFromLink);
   if (isRegionTableCacheEnabled && isRegionTableCacheEnabled()) {
-    const cached = await readRegionFormSettings(safeRegion).catch(() => null);
+    const cached = await readRegionFormSettings(safeRegion).catch(error => {
+      if (publicMode) throw error;
+      return null;
+    });
     if (cached?.settings) return cached.settings;
   }
+  if (publicMode) throw new Error('region-form-d1-settings-required');
   return getRegionSettings(safeRegion);
 }
 
@@ -1106,10 +1111,12 @@ async function init() {
         return;
       }
       (user ? loadSignedInForm(user) : loadPublicForm(regionFromLink)).catch(error => {
-        console.error(error);
+        const d1Missing = ['short-link-d1-required', 'region-form-d1-settings-required', 'region-form-cache-disabled'].includes(error?.message) || /d1|region-form|share/i.test(String(error?.message || ''));
         const message = error?.message === 'short-link-expired' || error?.message === 'short-link-not-found'
           ? t('region.shortLinkInvalid', 'This short link is no longer valid. Ask the consul or officer for a new link.')
-          : t('region.formOpenFailed', 'Could not open the region form. Check the link or access rights.');
+          : d1Missing
+            ? t('region.d1SettingsMissing', 'Налаштування форми ще не опубліковані в D1. Попроси консула або офіцера натиснути Зберегти/Запустити у налаштуваннях регіону.')
+            : t('region.formOpenFailed', 'Could not open the region form. Check the link or access rights.');
         setStatus(message, 'error');
       });
     });

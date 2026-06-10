@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=142';
+import { trackCloudflareUsage } from './usage-tracker.js?v=143';
 
 const FINAL_PLAN_CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -40,7 +40,7 @@ async function getFirebaseToken(user) {
 }
 
 function localKey(code = '') {
-  return `wkd.finalPlan.d1.v140.${cleanCode(code)}`;
+  return `wkd.finalPlan.d1.v143.${cleanCode(code)}`;
 }
 
 function normalizePlan(data = {}) {

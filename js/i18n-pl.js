@@ -2015,4 +2015,8 @@ window.WKD_TRANSLATIONS.pl = {
   "admin.regionsCacheLoaded": "Regiony pokazano z lokalnej pamięci podręcznej. Odśwież lub zapisz, aby pobrać świeże dane.",
   "security.cached": "Kontrola bezpieczeństwa jest pokazana z lokalnej pamięci podręcznej. Otwórz kartę później albo wyczyść cache przeglądarki, aby sprawdzić ponownie.",
 
+  'region.publicTableD1Missing': 'Tabela regionu nie została jeszcze opublikowana w D1. Poproś konsula lub oficera o ponowne odświeżenie/utworzenie tajnego linku.',
+  'finalPlan.d1ShareMissing': 'Plan finałowy nie został jeszcze opublikowany w D1. Poproś konsula lub oficera o ponowne utworzenie tajnego linku.',
+  'region.d1SettingsMissing': 'Ustawienia formularza nie zostały jeszcze opublikowane w D1. Poproś konsula lub oficera, aby nacisnął Zapisz/Uruchom w ustawieniach regionu.',
+
 };

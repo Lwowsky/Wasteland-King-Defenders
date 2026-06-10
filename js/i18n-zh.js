@@ -2015,4 +2015,8 @@ window.WKD_TRANSLATIONS.zh = {
   "admin.regionsCacheLoaded": "区域数据来自本地缓存。点击刷新或保存可获取最新数据。",
   "security.cached": "安全检查来自本地缓存。稍后再次打开此标签或清除浏览器缓存以重新检查。",
 
+  'region.publicTableD1Missing': '区域表尚未发布到 D1。请让领事或军官重新刷新/创建秘密链接。',
+  'finalPlan.d1ShareMissing': '最终计划尚未发布到 D1。请让领事或军官重新创建秘密链接。',
+  'region.d1SettingsMissing': '表单设置尚未发布到 D1。请让领事或军官在区域设置中点击保存/启动。',
+
 };

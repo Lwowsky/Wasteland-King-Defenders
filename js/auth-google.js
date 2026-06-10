@@ -1,6 +1,6 @@
 import { isFirebaseConfigured, getFirebase, watchAuth } from './services/firebase-service.js';
 import { canUseAdminPanel, getUserProfile, isProfileComplete } from './services/user-db.js';
-import { canOpenRegionTools } from './services/region-db.js?v=142';
+import { canOpenRegionTools } from './services/region-db.js?v=143';
 
 const $ = selector => document.querySelector(selector);
 const shellT = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : fallback;

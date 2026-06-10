@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser } from '../services/user-db.js';
-import { getSecurityOverview, cleanupOldEmailFields } from '../services/region-db.js?v=142';
+import { getSecurityOverview, cleanupOldEmailFields } from '../services/region-db.js?v=143';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -10,7 +10,7 @@ let ready = false;
 let loadedOnce = false;
 let currentUser = null;
 const SECURITY_CACHE_TTL_MS = 5 * 60 * 1000;
-const SECURITY_CACHE_VERSION = 'v142';
+const SECURITY_CACHE_VERSION = 'v143';
 
 function securityCacheKey(user) {
   return `wkd.securityOverview.${SECURITY_CACHE_VERSION}:${user?.uid || 'anonymous'}`;

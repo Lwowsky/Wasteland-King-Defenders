@@ -1,5 +1,5 @@
-import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=142';
-import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=142';
+import { isFinalPlanCacheEnabled, readFinalPlanShare } from '../services/final-plan-cache.js?v=143';
+import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=143';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -126,7 +126,8 @@ async function init() {
     return;
   }
   try {
-    const data = await resolveRegionFinalPlanShare(code);
+    if (!isFinalPlanCacheEnabled()) throw new Error('final-plan-d1-disabled');
+    const data = await readFinalPlanShare(code);
     currentShare = data;
     $('#publicPlanRegion') && ($('#publicPlanRegion').textContent = data.region ? `R${data.region}` : 'R—');
     const html = sanitizeFinalHtml(data.html || '');
@@ -141,8 +142,7 @@ async function init() {
     $('#publicPlanActions') && ($('#publicPlanActions').hidden = false);
     setStatus(t('finalPlan.sharedReady', 'Фінальний план відкрито за секретним посиланням.'), 'success');
   } catch (error) {
-    console.error(error);
-    setStatus(t('finalPlan.sharedNotFound', 'Фінальний план не знайдено або посилання вже недійсне.'), 'error');
+    setStatus(t('finalPlan.d1ShareMissing', 'Фінальний план ще не опубліковано в D1. Попроси консула або офіцера створити секретне посилання ще раз.'), 'error');
   }
 }
 

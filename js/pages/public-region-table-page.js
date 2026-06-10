@@ -1,6 +1,6 @@
-import { resolveRegionTableShare, troopLabel, shiftLabel } from '../services/region-db.js?v=142';
-import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=142';
-import { isRegionTableCacheEnabled, readRegionTableShare } from '../services/region-table-cache.js?v=142';
+import { troopLabel, shiftLabel } from '../services/region-db.js?v=143';
+import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=143';
+import { isRegionTableCacheEnabled, readRegionTableShare } from '../services/region-table-cache.js?v=143';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -40,14 +40,11 @@ async function init() {
   keepShareCodeInUrl('regionTable', code);
   if (!code) { setStatus(t('region.publicTableMissing', 'Секретне посилання неправильне або неповне.'), 'error'); return; }
   try {
-    let data = null;
-    if (isRegionTableCacheEnabled()) {
-      data = await readRegionTableShare(code).catch(error => {
-        console.warn('[WKD] public region table JSON cache unavailable, using Firebase share:', error);
-        return null;
-      });
-    }
-    if (!data) data = await resolveRegionTableShare(code);
+    if (!isRegionTableCacheEnabled()) throw new Error('region-table-d1-disabled');
+    const data = await readRegionTableShare(code).catch(error => {
+      error.message = error.message || 'region-table-d1-share-missing';
+      throw error;
+    });
     $('#publicRegionTablePill') && ($('#publicRegionTablePill').textContent = data.region ? `R${data.region}` : 'R—');
     const rows = Array.isArray(data.rows) ? data.rows : [];
     const body = $('#publicRegionTableBody');
@@ -55,8 +52,7 @@ async function init() {
     if (body) body.innerHTML = rows.length ? rows.map(rowHtml).join('') : `<tr><td colspan="8">${esc(t('region.table.emptyCycle', 'У цьому активному наборі ще немає гравців або заявок.'))}</td></tr>`;
     setStatus(t('region.publicTableReady', 'Таблицю регіону відкрито за секретним посиланням.'), 'success');
   } catch (error) {
-    console.error(error);
-    setStatus(t('region.publicTableNotFound', 'Таблицю регіону не знайдено або посилання вже недійсне.'), 'error');
+    setStatus(t('region.publicTableD1Missing', 'Таблицю регіону ще не опубліковано в D1. Попроси консула або офіцера оновити/створити секретне посилання ще раз.'), 'error');
   }
 }
 document.addEventListener('wkd:partials-ready', init);

@@ -2015,4 +2015,8 @@ window.WKD_TRANSLATIONS.vi = {
   "admin.regionsCacheLoaded": "Khu vực đang được hiển thị từ bộ nhớ đệm cục bộ. Nhấn Làm mới hoặc Lưu để lấy dữ liệu mới.",
   "security.cached": "Kiểm tra bảo mật đang được hiển thị từ bộ nhớ đệm cục bộ. Mở lại tab sau hoặc xoá bộ nhớ đệm trình duyệt để kiểm tra lại.",
 
+  'region.publicTableD1Missing': 'Bảng khu vực chưa được xuất bản lên D1. Hãy nhờ lãnh sự hoặc sĩ quan làm mới/tạo lại liên kết bí mật.',
+  'finalPlan.d1ShareMissing': 'Kế hoạch cuối chưa được xuất bản lên D1. Hãy nhờ lãnh sự hoặc sĩ quan tạo lại liên kết bí mật.',
+  'region.d1SettingsMissing': 'Cài đặt biểu mẫu chưa được xuất bản lên D1. Hãy nhờ lãnh sự hoặc sĩ quan bấm Lưu/Khởi chạy trong cài đặt khu vực.',
+
 };

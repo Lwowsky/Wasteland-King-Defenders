@@ -2015,4 +2015,8 @@ window.WKD_TRANSLATIONS.ko = {
   "admin.regionsCacheLoaded": "지역은 로컬 캐시에서 표시됩니다. 새 데이터를 받으려면 새로고침하거나 저장하세요.",
   "security.cached": "보안 검사는 로컬 캐시에서 표시됩니다. 나중에 탭을 다시 열거나 브라우저 캐시를 지운 뒤 다시 확인하세요.",
 
+  'region.publicTableD1Missing': '지역 테이블이 아직 D1에 게시되지 않았습니다. 영사 또는 장교에게 비밀 링크를 다시 새로고침/생성해 달라고 요청하세요.',
+  'finalPlan.d1ShareMissing': '최종 계획이 아직 D1에 게시되지 않았습니다. 영사 또는 장교에게 비밀 링크를 다시 생성해 달라고 요청하세요.',
+  'region.d1SettingsMissing': '양식 설정이 아직 D1에 게시되지 않았습니다. 영사 또는 장교에게 지역 설정에서 저장/시작을 누르라고 요청하세요.',
+
 };

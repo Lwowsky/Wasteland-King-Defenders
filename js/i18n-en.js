@@ -2015,4 +2015,8 @@ window.WKD_TRANSLATIONS.en = {
   "admin.regionsCacheLoaded": "Regions are shown from local cache. Refresh or save to get fresh data.",
   "security.cached": "Security check is shown from local cache. Open the tab later or clear browser cache to check again.",
 
+  'region.publicTableD1Missing': 'The region table has not been published to D1 yet. Ask the consul or officer to refresh/create the secret link again.',
+  'finalPlan.d1ShareMissing': 'The final plan has not been published to D1 yet. Ask the consul or officer to create the secret link again.',
+  'region.d1SettingsMissing': 'The form settings have not been published to D1 yet. Ask the consul or officer to press Save/Start in region settings.',
+
 };
