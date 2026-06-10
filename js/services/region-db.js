@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=143';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=143';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=144';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=144';
 import {
   getUserProfile,
   getFarmById,
@@ -12,8 +12,8 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=143';
-import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings } from './region-table-cache.js?v=143';
+} from './user-db.js?v=144';
+import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings } from './region-table-cache.js?v=144';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -378,8 +378,9 @@ export function getManagedRegionOptions(profile = {}, actor = null) {
   return [...regions].sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
 }
 
-export async function listKnownRegionIds() {
+export async function listKnownRegionIds(options = {}) {
   const { db, firestoreMod } = await getFirebaseParts();
+  const includePublicPlayers = Boolean(options?.includePublicPlayers);
   const regions = new Set();
   const archived = new Set();
   const addRegion = value => {
@@ -388,6 +389,7 @@ export async function listKnownRegionIds() {
   };
   try {
     const regionSnap = await firestoreMod.getDocs(firestoreMod.collection(db, 'regions'));
+    trackReads(Math.max(1, regionSnap.docs.length));
     regionSnap.docs.forEach(doc => {
       const region = normalizeRegion(doc.id);
       const data = doc.data() || {};
@@ -400,18 +402,21 @@ export async function listKnownRegionIds() {
       }
     });
   } catch (error) {
-    console.warn('[WKD] regions list skipped:', error);
+    console.warn('[WKD] regions list skipped:', error?.code || error?.message || error);
   }
-  try {
-    const publicSnap = await firestoreMod.getDocs(firestoreMod.collection(db, 'publicPlayers'));
-    publicSnap.docs.forEach(doc => {
-      const data = doc.data() || {};
-      addRegion(data.region);
-      const farms = Array.isArray(data.farms) ? data.farms : [];
-      farms.forEach(farm => addRegion(farm?.region));
-    });
-  } catch (error) {
-    console.warn('[WKD] public region list skipped:', error);
+  if (includePublicPlayers) {
+    try {
+      const publicSnap = await firestoreMod.getDocs(firestoreMod.collection(db, 'publicPlayers'));
+      trackReads(Math.max(1, publicSnap.docs.length));
+      publicSnap.docs.forEach(doc => {
+        const data = doc.data() || {};
+        addRegion(data.region);
+        const farms = Array.isArray(data.farms) ? data.farms : [];
+        farms.forEach(farm => addRegion(farm?.region));
+      });
+    } catch (error) {
+      console.warn('[WKD] public region list skipped:', error?.code || error?.message || error);
+    }
   }
   return [...regions].sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
 }
@@ -847,7 +852,7 @@ function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
 }
 
 async function actionLogCacheModule() {
-  return import('./action-log-cache.js?v=143');
+  return import('./action-log-cache.js?v=144');
 }
 
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
@@ -1196,7 +1201,7 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=143');
+    const mod = await import('./region-table-cache.js?v=144');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1206,7 +1211,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=143');
+    const mod = await import('./region-table-cache.js?v=144');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1216,7 +1221,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=143');
+    const mod = await import('./region-table-cache.js?v=144');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1226,7 +1231,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=143');
+    const mod = await import('./region-table-cache.js?v=144');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1237,7 +1242,7 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
 
 async function readFinalPlanFromD1Cache(code, options = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=143');
+    const mod = await import('./final-plan-cache.js?v=144');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.readFinalPlanShare(code, options);
   } catch (error) {
@@ -1248,7 +1253,7 @@ async function readFinalPlanFromD1Cache(code, options = {}) {
 
 async function publishFinalPlanToD1Cache(user, payload = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=143');
+    const mod = await import('./final-plan-cache.js?v=144');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.publishFinalPlanShare(user, payload);
   } catch (error) {
