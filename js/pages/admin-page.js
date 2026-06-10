@@ -23,7 +23,7 @@ import {
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=112';
+} from '../services/region-db.js?v=113';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);

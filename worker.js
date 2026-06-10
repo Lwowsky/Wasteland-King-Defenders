@@ -119,6 +119,23 @@ async function ensureRegionTableSchema(db) {
         updated_at_ms INTEGER NOT NULL DEFAULT 0,
         source TEXT NOT NULL DEFAULT 'cloudflare-d1'
       )`,
+      `CREATE TABLE IF NOT EXISTS action_logs (
+        id TEXT PRIMARY KEY,
+        region TEXT NOT NULL,
+        action TEXT NOT NULL DEFAULT '',
+        actor_uid TEXT NOT NULL DEFAULT '',
+        actor_name TEXT NOT NULL DEFAULT '',
+        actor_alliance TEXT NOT NULL DEFAULT '',
+        actor_role TEXT NOT NULL DEFAULT '',
+        alliance TEXT NOT NULL DEFAULT '',
+        target_uid TEXT NOT NULL DEFAULT '',
+        target_name TEXT NOT NULL DEFAULT '',
+        summary TEXT NOT NULL DEFAULT '',
+        details_json TEXT NOT NULL DEFAULT '{}',
+        created_at_ms INTEGER NOT NULL DEFAULT 0
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_action_logs_region_time ON action_logs(region, created_at_ms DESC)`,
+      `CREATE INDEX IF NOT EXISTS idx_action_logs_region_alliance_time ON action_logs(region, alliance, created_at_ms DESC)`,
     ];
     for (const statement of statements) {
       await db.prepare(statement).run();
@@ -1088,6 +1105,159 @@ async function handlePublicStatsExport(request, env) {
   }, 200, 'private, no-store');
 }
 
+
+function sanitizeActionDetails(details = {}) {
+  const safe = {};
+  if (!details || typeof details !== "object" || Array.isArray(details)) return safe;
+  for (const [key, value] of Object.entries(details).slice(0, 30)) {
+    const safeKey = clean(key, 80).replace(/[^A-Za-z0-9_.:-]/g, "_");
+    if (!safeKey) continue;
+    if (value && typeof value === "object") safe[safeKey] = clean(JSON.stringify(value), 500);
+    else safe[safeKey] = clean(value, 500);
+  }
+  return safe;
+}
+
+function actionRowToObject(row = {}) {
+  return {
+    id: clean(row.id || "", 120),
+    region: normalizeRegion(row.region),
+    action: clean(row.action || "", 80),
+    actorUid: clean(row.actor_uid || "", 160),
+    actorName: clean(row.actor_name || "", 160),
+    actorAlliance: clean(row.actor_alliance || "", 40),
+    actorRole: clean(row.actor_role || "", 40),
+    alliance: clean(row.alliance || "", 40),
+    targetUid: clean(row.target_uid || "", 160),
+    targetName: clean(row.target_name || "", 160),
+    summary: clean(row.summary || "", 500),
+    details: parseJson(row.details_json, {}),
+    createdAtMs: Number(row.created_at_ms) || 0,
+  };
+}
+
+async function handleActionLogList(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  const url = new URL(request.url);
+  const region = normalizeRegion(url.searchParams.get("region"));
+  if (!region) return json({ ok: false, error: "region_required" }, 400);
+  const limitValue = Math.max(1, Math.min(20, Number(url.searchParams.get("limit")) || 20));
+  const cursorMs = Number(url.searchParams.get("cursorMs")) || 0;
+  const alliance = clean(url.searchParams.get("alliance") || "", 40).toUpperCase();
+  const params = [region];
+  let where = "region = ?1";
+  if (cursorMs > 0) {
+    params.push(cursorMs);
+    where += ` AND created_at_ms < ?${params.length}`;
+  }
+  if (alliance) {
+    params.push(alliance);
+    where += ` AND alliance = ?${params.length}`;
+  }
+  const sql = `SELECT id, region, action, actor_uid, actor_name, actor_alliance, actor_role, alliance, target_uid, target_name, summary, details_json, created_at_ms
+     FROM action_logs
+    WHERE ${where}
+    ORDER BY created_at_ms DESC
+    LIMIT ${limitValue}`;
+  const result = await db.prepare(sql).bind(...params).all();
+  const rows = (result?.results || []).map(actionRowToObject);
+  const last = rows[rows.length - 1] || null;
+  await grantRegionAccess(db, region, user.uid, "action-log-read").catch(() => null);
+  return json({ ok: true, region, rows, limitCount: limitValue, hasMore: rows.length === limitValue, nextCursorMs: Number(last?.createdAtMs) || 0, source: "cloudflare-d1-action-log" });
+}
+
+async function handleActionLogCreate(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: "bad_json" }, 400); }
+  const region = normalizeRegion(body?.region);
+  if (!region) return json({ ok: false, error: "region_required" }, 400);
+  const createdAtMs = Number(body?.createdAtMs) || Date.now();
+  const id = clean(body?.id || crypto.randomUUID(), 120);
+  const details = sanitizeActionDetails(body?.details || {});
+  const row = {
+    id,
+    region,
+    action: clean(body?.action || "", 80),
+    actorUid: clean(body?.actorUid || user.uid || "", 160),
+    actorName: clean(body?.actorName || user.name || user.email || user.uid || "", 160),
+    actorAlliance: clean(body?.actorAlliance || "", 40).toUpperCase(),
+    actorRole: clean(body?.actorRole || "", 40).toLowerCase(),
+    alliance: clean(body?.alliance || body?.actorAlliance || "", 40).toUpperCase(),
+    targetUid: clean(body?.targetUid || "", 160),
+    targetName: clean(body?.targetName || "", 160),
+    summary: clean(body?.summary || "", 500),
+    details,
+    createdAtMs,
+  };
+  await db.prepare(
+    `INSERT INTO action_logs (id, region, action, actor_uid, actor_name, actor_alliance, actor_role, alliance, target_uid, target_name, summary, details_json, created_at_ms)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+     ON CONFLICT(id) DO UPDATE SET
+       region = excluded.region,
+       action = excluded.action,
+       actor_uid = excluded.actor_uid,
+       actor_name = excluded.actor_name,
+       actor_alliance = excluded.actor_alliance,
+       actor_role = excluded.actor_role,
+       alliance = excluded.alliance,
+       target_uid = excluded.target_uid,
+       target_name = excluded.target_name,
+       summary = excluded.summary,
+       details_json = excluded.details_json,
+       created_at_ms = excluded.created_at_ms`
+  ).bind(row.id, row.region, row.action, row.actorUid, row.actorName, row.actorAlliance, row.actorRole, row.alliance, row.targetUid, row.targetName, row.summary, JSON.stringify(details), row.createdAtMs).run();
+  await grantRegionAccess(db, region, user.uid, "action-log-write").catch(() => null);
+  return json({ ok: true, region, log: row, source: "cloudflare-d1-action-log" });
+}
+
+async function handleActionLogDelete(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
+  await ensureRegionTableSchema(db);
+  await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: "bad_json" }, 400); }
+  const region = normalizeRegion(body?.region);
+  if (!region) return json({ ok: false, error: "region_required" }, 400);
+  const ids = [...new Set((Array.isArray(body?.ids) ? body.ids : [body?.id]).map((item) => clean(item, 120)).filter(Boolean))].slice(0, 100);
+  if (!ids.length) return json({ ok: true, region, deleted: 0 });
+  const placeholders = ids.map((_, index) => `?${index + 2}`).join(",");
+  const result = await db.prepare(`DELETE FROM action_logs WHERE region = ?1 AND id IN (${placeholders})`).bind(region, ...ids).run();
+  return json({ ok: true, region, deleted: Number(result?.meta?.changes) || ids.length, source: "cloudflare-d1-action-log" });
+}
+
+async function handleActionLogClear(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
+  await ensureRegionTableSchema(db);
+  await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: "bad_json" }, 400); }
+  const region = normalizeRegion(body?.region);
+  if (!region) return json({ ok: false, error: "region_required" }, 400);
+  const limitValue = Math.max(1, Math.min(500, Number(body?.limitCount) || 500));
+  const olderThanMs = Number(body?.olderThanMs) || 0;
+  const params = [region];
+  let where = "region = ?1";
+  if (olderThanMs > 0) {
+    params.push(olderThanMs);
+    where += ` AND created_at_ms < ?${params.length}`;
+  }
+  const selected = await db.prepare(`SELECT id FROM action_logs WHERE ${where} ORDER BY created_at_ms ASC LIMIT ${limitValue}`).bind(...params).all();
+  const ids = (selected?.results || []).map((row) => clean(row.id, 120)).filter(Boolean);
+  if (!ids.length) return json({ ok: true, region, deleted: 0, hasMore: false });
+  const placeholders = ids.map((_, index) => `?${index + 2}`).join(",");
+  const result = await db.prepare(`DELETE FROM action_logs WHERE region = ?1 AND id IN (${placeholders})`).bind(region, ...ids).run();
+  return json({ ok: true, region, deleted: Number(result?.meta?.changes) || ids.length, hasMore: ids.length === limitValue, source: "cloudflare-d1-action-log" });
+}
+
 async function handleContact(request, env) {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -1203,6 +1373,23 @@ export default {
 
       if (url.pathname === "/api/public-stats/export" && request.method === "GET") {
         return await handlePublicStatsExport(request, env);
+      }
+
+
+      if (url.pathname === "/api/action-log" && request.method === "GET") {
+        return await handleActionLogList(request, env);
+      }
+
+      if (url.pathname === "/api/action-log" && request.method === "POST") {
+        return await handleActionLogCreate(request, env);
+      }
+
+      if (url.pathname === "/api/action-log/delete" && request.method === "POST") {
+        return await handleActionLogDelete(request, env);
+      }
+
+      if (url.pathname === "/api/action-log/clear" && request.method === "POST") {
+        return await handleActionLogClear(request, env);
       }
 
       if (url.pathname === "/api/region-table" && request.method === "GET") {

@@ -1,6 +1,6 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
 import { trackReads, trackWrites, trackDeletes } from '../services/usage-tracker.js?v=89';
-import { listRegionCatalog } from '../services/region-db.js?v=112';
+import { listRegionCatalog } from '../services/region-db.js?v=113';
 import {
   canUseAdminPanel,
   createSiteMessageCampaign,
@@ -17,7 +17,7 @@ import {
   normalizeUserRole,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=112';
+} from '../services/user-db.js?v=113';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];

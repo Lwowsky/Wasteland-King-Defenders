@@ -12,7 +12,7 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=112';
+} from './user-db.js?v=113';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -840,14 +840,21 @@ function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
   const role = roleForRegion(profile || {}, normalizeRegion(region), actor);
   return ['admin', 'moderator', 'consul'].includes(role) || isOwnerEmail(actor?.email || profile?.email);
 }
+
+async function actionLogCacheModule() {
+  return import('./action-log-cache.js?v=113');
+}
+
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
   try {
     const safeRegion = normalizeRegion(region);
     if (!user?.uid || !safeRegion) return null;
-    const { db, firestoreMod } = firebase || await getFirebaseParts();
     const game = gameForRegion(profile || {}, safeRegion) || bestRegionGame(profile || {});
     const actorName = getRegionActorName(profile || {}, safeRegion, user) || user.uid;
     const actorAlliance = normalizeAllianceTag(game?.alliance || '');
+    const normalizedDetails = Object.fromEntries(Object.entries(details || {})
+      .filter(([, value]) => value !== undefined && value !== null)
+      .map(([key, value]) => [key, typeof value === 'object' ? JSON.stringify(value).slice(0, 400) : trim(value).slice(0, 400)]));
     const payload = {
       region: safeRegion,
       action: trim(action),
@@ -860,27 +867,54 @@ async function writeRegionActionLog(firebase, user, profile = {}, region = '', a
       targetName: trim(details.targetName || ''),
       targetUid: trim(details.targetUid || ''),
       summary: trim(details.summary || ''),
-      details: Object.fromEntries(Object.entries(details || {}).filter(([, value]) => value !== undefined && value !== null).map(([key, value]) => [key, typeof value === 'object' ? JSON.stringify(value).slice(0, 400) : trim(value).slice(0, 400)])),
-      createdAt: firestoreMod.serverTimestamp(),
+      details: normalizedDetails,
       createdAtMs: Date.now()
     };
-    await firestoreMod.addDoc(firestoreMod.collection(db, 'regions', safeRegion, 'actionLogs'), payload);
+    try {
+      const mod = await actionLogCacheModule();
+      if (mod?.isActionLogCacheEnabled?.()) {
+        const result = await mod.createRegionActionLogD1(user, payload);
+        if (result?.ok !== false) return result.log || payload;
+      }
+    } catch (d1Error) {
+      console.warn('[WKD] D1 action log fallback:', d1Error);
+    }
+    const { db, firestoreMod } = firebase || await getFirebaseParts();
+    await firestoreMod.addDoc(firestoreMod.collection(db, 'regions', safeRegion, 'actionLogs'), {
+      ...payload,
+      createdAt: firestoreMod.serverTimestamp()
+    });
+    trackWrites(1);
     return payload;
   } catch (error) {
     console.warn('[WKD] action log skipped:', error);
     return null;
   }
 }
+
 export async function listRegionActionLogs(user, regionOverride = '', { limitCount = 20, cursorMs = 0 } = {}) {
   if (!user) throw new Error('auth-required');
   const { db, firestoreMod } = await getFirebaseParts();
   const { profile, region } = await getMyRegionContext(user, regionOverride);
   if (!canViewRegion(profile || {}, region, user)) throw new Error('region-access-denied');
-  const ref = firestoreMod.collection(db, 'regions', region, 'actionLogs');
   const role = roleForRegion(profile || {}, region, user);
   const ownAlliance = actorAllianceForRegion(profile || {}, region);
   const limitValue = Math.max(1, Math.min(20, Number(limitCount) || 20));
   const safeCursorMs = Number(cursorMs) || 0;
+  try {
+    const mod = await actionLogCacheModule();
+    if (mod?.isActionLogCacheEnabled?.()) {
+      const result = await mod.listRegionActionLogsD1(user, region, { limitCount: limitValue, cursorMs: safeCursorMs, alliance: role === 'officer' ? ownAlliance : '' });
+      const rows = (result.rows || [])
+        .filter(row => regionActionVisibleTo(profile || {}, region, user, row))
+        .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
+      const lastRow = rows[rows.length - 1] || null;
+      return { profile, region, rows, limitCount: limitValue, hasMore: Boolean(result.hasMore), nextCursorMs: Number(result.nextCursorMs || lastRow?.createdAtMs) || 0, source: 'cloudflare-d1-action-log' };
+    }
+  } catch (d1Error) {
+    console.warn('[WKD] D1 action log list fallback:', d1Error);
+  }
+  const ref = firestoreMod.collection(db, 'regions', region, 'actionLogs');
   const order = firestoreMod.orderBy('createdAtMs', 'desc');
   const cursor = safeCursorMs > 0 ? [firestoreMod.startAfter(safeCursorMs)] : [];
   let q = firestoreMod.query(ref, order, ...cursor, firestoreMod.limit(limitValue));
@@ -894,12 +928,14 @@ export async function listRegionActionLogs(user, regionOverride = '', { limitCou
     }
     return firestoreMod.getDocs(firestoreMod.query(ref, ...fallbackCursor, firestoreMod.limit(limitValue)));
   });
+  trackReads(Math.max(1, snap.docs.length));
   const rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
     .filter(row => regionActionVisibleTo(profile || {}, region, user, row))
     .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
   const lastRow = rows[rows.length - 1] || null;
-  return { profile, region, rows, limitCount: limitValue, hasMore: rows.length === limitValue, nextCursorMs: Number(lastRow?.createdAtMs) || 0 };
+  return { profile, region, rows, limitCount: limitValue, hasMore: rows.length === limitValue, nextCursorMs: Number(lastRow?.createdAtMs) || 0, source: 'firebase-action-log-fallback' };
 }
+
 
 export async function deleteRegionActionLog(user, regionOverride = '', logId = '') {
   if (!user) throw new Error('auth-required');
@@ -908,9 +944,17 @@ export async function deleteRegionActionLog(user, regionOverride = '', logId = '
   const { db, firestoreMod } = await getFirebaseParts();
   const { profile, region } = await getMyRegionContext(user, regionOverride);
   if (!canDeleteRegionActionLogs(profile || {}, region, user)) throw new Error('action-log-delete-denied');
+  try {
+    const mod = await actionLogCacheModule();
+    if (mod?.isActionLogCacheEnabled?.()) {
+      return { profile, region, ...(await mod.deleteRegionActionLogD1(user, region, safeLogId)) };
+    }
+  } catch (d1Error) {
+    console.warn('[WKD] D1 action log delete fallback:', d1Error);
+  }
   await firestoreMod.deleteDoc(firestoreMod.doc(db, 'regions', region, 'actionLogs', safeLogId));
   trackDeletes(1);
-  return { profile, region, deleted: 1 };
+  return { profile, region, deleted: 1, source: 'firebase-action-log-fallback' };
 }
 
 export async function deleteRegionActionLogs(user, regionOverride = '', logIds = []) {
@@ -920,11 +964,19 @@ export async function deleteRegionActionLogs(user, regionOverride = '', logIds =
   const { db, firestoreMod } = await getFirebaseParts();
   const { profile, region } = await getMyRegionContext(user, regionOverride);
   if (!canDeleteRegionActionLogs(profile || {}, region, user)) throw new Error('action-log-delete-denied');
+  try {
+    const mod = await actionLogCacheModule();
+    if (mod?.isActionLogCacheEnabled?.()) {
+      return { profile, region, ...(await mod.deleteRegionActionLogsD1(user, region, ids)) };
+    }
+  } catch (d1Error) {
+    console.warn('[WKD] D1 action log batch delete fallback:', d1Error);
+  }
   const batch = firestoreMod.writeBatch(db);
   ids.forEach(id => batch.delete(firestoreMod.doc(db, 'regions', region, 'actionLogs', id)));
   await batch.commit();
   trackDeletes(ids.length);
-  return { profile, region, deleted: ids.length };
+  return { profile, region, deleted: ids.length, source: 'firebase-action-log-fallback' };
 }
 
 export async function clearRegionActionLogs(user, regionOverride = '', { olderThanMs = 0, limitCount = 500 } = {}) {
@@ -932,20 +984,29 @@ export async function clearRegionActionLogs(user, regionOverride = '', { olderTh
   const { db, firestoreMod } = await getFirebaseParts();
   const { profile, region } = await getMyRegionContext(user, regionOverride);
   if (!canDeleteRegionActionLogs(profile || {}, region, user)) throw new Error('action-log-delete-denied');
-  const ref = firestoreMod.collection(db, 'regions', region, 'actionLogs');
   const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
+  try {
+    const mod = await actionLogCacheModule();
+    if (mod?.isActionLogCacheEnabled?.()) {
+      return { profile, region, ...(await mod.clearRegionActionLogsD1(user, region, { olderThanMs: Number(olderThanMs) || 0, limitCount: safeLimit })) };
+    }
+  } catch (d1Error) {
+    console.warn('[WKD] D1 action log clear fallback:', d1Error);
+  }
+  const ref = firestoreMod.collection(db, 'regions', region, 'actionLogs');
   const conditions = [];
   if (Number(olderThanMs) > 0) conditions.push(firestoreMod.where('createdAtMs', '<', Number(olderThanMs)), firestoreMod.orderBy('createdAtMs', 'asc'));
   else conditions.push(firestoreMod.orderBy('createdAtMs', 'asc'));
   const snap = await firestoreMod.getDocs(firestoreMod.query(ref, ...conditions, firestoreMod.limit(safeLimit))).catch(() => ({ docs: [] }));
   trackReads(Math.max(1, snap.docs.length));
-  if (!snap.docs.length) return { profile, region, deleted: 0, hasMore: false };
+  if (!snap.docs.length) return { profile, region, deleted: 0, hasMore: false, source: 'firebase-action-log-fallback' };
   const batch = firestoreMod.writeBatch(db);
   snap.docs.forEach(docSnap => batch.delete(docSnap.ref));
   await batch.commit();
   trackDeletes(snap.docs.length);
-  return { profile, region, deleted: snap.docs.length, hasMore: snap.docs.length === safeLimit };
+  return { profile, region, deleted: snap.docs.length, hasMore: snap.docs.length === safeLimit, source: 'firebase-action-log-fallback' };
 }
+
 export async function getSecurityOverview(user) {
   if (!user) throw new Error('auth-required');
   const { db, firestoreMod } = await getFirebaseParts();

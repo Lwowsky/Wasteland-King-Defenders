@@ -50,3 +50,23 @@ CREATE TABLE IF NOT EXISTS public_stats_meta (
   updated_at_ms INTEGER NOT NULL DEFAULT 0,
   source TEXT NOT NULL DEFAULT 'cloudflare-d1'
 );
+
+
+CREATE TABLE IF NOT EXISTS action_logs (
+  id TEXT PRIMARY KEY,
+  region TEXT NOT NULL,
+  action TEXT NOT NULL DEFAULT '',
+  actor_uid TEXT NOT NULL DEFAULT '',
+  actor_name TEXT NOT NULL DEFAULT '',
+  actor_alliance TEXT NOT NULL DEFAULT '',
+  actor_role TEXT NOT NULL DEFAULT '',
+  alliance TEXT NOT NULL DEFAULT '',
+  target_uid TEXT NOT NULL DEFAULT '',
+  target_name TEXT NOT NULL DEFAULT '',
+  summary TEXT NOT NULL DEFAULT '',
+  details_json TEXT NOT NULL DEFAULT '{}',
+  created_at_ms INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_action_logs_region_time ON action_logs(region, created_at_ms DESC);
+CREATE INDEX IF NOT EXISTS idx_action_logs_region_alliance_time ON action_logs(region, alliance, created_at_ms DESC);
