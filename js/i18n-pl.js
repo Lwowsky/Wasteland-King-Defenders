@@ -2012,4 +2012,7 @@ window.WKD_TRANSLATIONS.pl = {
   'admin.playersLoadedFiltered': 'Załadowano {count} graczy z indeksu. Firebase reads≈{reads}. Wyszukiwanie uruchamia przycisk Odśwież lub Enter.',
   'region.d1RegistrationRequired': 'Rejestracja gości działa tylko przez Cloudflare D1. Sprawdź wdrożenie Workera albo otwórz ponownie tajny link.',
 
+  "admin.regionsCacheLoaded": "Regiony pokazano z lokalnej pamięci podręcznej. Odśwież lub zapisz, aby pobrać świeże dane.",
+  "security.cached": "Kontrola bezpieczeństwa jest pokazana z lokalnej pamięci podręcznej. Otwórz kartę później albo wyczyść cache przeglądarki, aby sprawdzić ponownie.",
+
 };

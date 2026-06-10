@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=140';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=140';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=140';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=141';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=141';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=141';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -21,14 +21,14 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=140';
+} from '../services/user-db.js?v=141';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=140';
+} from '../services/region-db.js?v=141';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -56,6 +56,35 @@ let playersPageMeta = { hasNext: false, reads: 0, queryMode: 'indexed' };
 let playerSearchDebounce = null;
 let cloudflareRealUsage = getCachedCloudflareUsage();
 let cloudflareUsageLoading = false;
+const ADMIN_REGION_CACHE_TTL_MS = 5 * 60 * 1000;
+const ADMIN_REGION_CACHE_VERSION = 'v141';
+
+function adminCacheKey(name) {
+  const uid = currentUser?.uid || 'anonymous';
+  return `wkd.admin.${name}.${ADMIN_REGION_CACHE_VERSION}:${uid}`;
+}
+
+function readAdminJsonCache(name, ttlMs = ADMIN_REGION_CACHE_TTL_MS) {
+  try {
+    const raw = localStorage.getItem(adminCacheKey(name));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.data) || Date.now() - Number(parsed.savedAt || 0) > ttlMs) return null;
+    return parsed.data;
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeAdminJsonCache(name, data) {
+  try {
+    localStorage.setItem(adminCacheKey(name), JSON.stringify({ savedAt: Date.now(), data }));
+  } catch (_) {}
+}
+
+function clearAdminJsonCache(name) {
+  try { localStorage.removeItem(adminCacheKey(name)); } catch (_) {}
+}
 
 function allianceTag3(value) { return window.WKD?.allianceTag3 ? window.WKD.allianceTag3(value) : Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join(''); }
 function escapeHtml(value) {
@@ -503,23 +532,6 @@ async function refreshRealCloudflareUsage() {
   } finally {
     cloudflareUsageLoading = false;
     renderCloudflareUsage();
-  }
-}
-
-async function maybeRunOldDocsCleanup() {
-  if (!currentUser || !canUseLimitsPanel()) return;
-  const key = `wkd.autoCleanupOldDocs:${currentUser.uid}`;
-  const now = Date.now();
-  const last = Number(localStorage.getItem(key) || 0);
-  if (now - last < 12 * 60 * 60 * 1000) return;
-  localStorage.setItem(key, String(now));
-  const result = await cleanupOldPublicDocuments(currentUser, { retentionDays: 45, maxDeletes: 25 }).catch(error => {
-    console.warn('[WKD] old public documents cleanup skipped:', error);
-    return null;
-  });
-  if (result?.deletedCount) {
-    renderUsage();
-    setStatus(tv('admin.cleanupOldDocsDone', 'Очищено старих документів: {count}.', { count: result.deletedCount || 0 }), 'success');
   }
 }
 
@@ -1086,6 +1098,17 @@ async function loadRegionsCatalog(force = false) {
     renderRegions();
     return regionsCatalog;
   }
+  if (!force) {
+    const cached = readAdminJsonCache('regionsCatalog');
+    if (cached) {
+      regionsCatalog = cached;
+      regionsLoaded = true;
+      renderStats();
+      renderRegions();
+      setStatus(t('admin.regionsCacheLoaded', 'Регіони показані з локального кешу. Натисни Оновити/Зберегти, щоб отримати свіжі дані.'), 'muted');
+      return regionsCatalog;
+    }
+  }
   const list = $('#adminRegionList');
   if (list) list.innerHTML = `<div class="admin-empty">${escapeHtml(t('admin.loadingRegions', 'Завантажую регіони...'))}</div>`;
   regionsCatalog = await listRegionCatalog({ includeInactive: true, skipPublicPlayers: true }).catch(error => {
@@ -1093,6 +1116,7 @@ async function loadRegionsCatalog(force = false) {
     return [];
   });
   regionsLoaded = true;
+  writeAdminJsonCache('regionsCatalog', regionsCatalog);
   renderStats();
   renderRegions();
   return regionsCatalog;
@@ -1108,7 +1132,6 @@ async function loadAdminData() {
   renderUsers();
   renderUsage();
   setStatus(t('admin.dataUpdated', 'Admin data updated.'), 'success');
-  maybeRunOldDocsCleanup().catch(() => null);
 }
 
 function switchTab(tab) {
@@ -1161,6 +1184,7 @@ function bindAdminControls() {
   $('#cleanupD1SharesBtn')?.addEventListener('click', () => runD1ArchiveCleanup('shares').catch(console.error));
   $('#cleanupD1AllBtn')?.addEventListener('click', () => runD1ArchiveCleanup('all').catch(console.error));
   $('#backToProfileBtn')?.addEventListener('click', () => { window.location.href = 'profile.html'; });
+  $('#refreshRegionsBtn')?.addEventListener('click', () => { clearAdminJsonCache('regionsCatalog'); loadRegionsCatalog(true).catch(console.error); });
   $('#adminRegionForm')?.addEventListener('submit', saveManualRegion);
   $('#adminRegionList')?.addEventListener('click', handleRegionAction);
   $('#adminNickSearch')?.addEventListener('keydown', handlePlayerSearchKeydown);

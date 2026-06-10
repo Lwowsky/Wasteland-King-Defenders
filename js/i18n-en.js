@@ -2012,4 +2012,7 @@ window.WKD_TRANSLATIONS.en = {
   'admin.playersLoadedFiltered': 'Loaded {count} players from the index. Firebase reads≈{reads}. Search runs only by Refresh or Enter.',
   'region.d1RegistrationRequired': 'Guest registration works only through Cloudflare D1. Check the Worker deployment or open the secret link again.',
 
+  "admin.regionsCacheLoaded": "Regions are shown from local cache. Refresh or save to get fresh data.",
+  "security.cached": "Security check is shown from local cache. Open the tab later or clear browser cache to check again.",
+
 };

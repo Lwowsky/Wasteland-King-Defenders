@@ -2010,4 +2010,7 @@ window.WKD_TRANSLATIONS.ar = {
   'admin.playersLoadedFiltered': 'تم تحميل {count} لاعبين من الفهرس. Firebase reads≈{reads}. يعمل البحث بزر التحديث أو Enter فقط.',
   'region.d1RegistrationRequired': 'تسجيل الضيوف يعمل فقط عبر Cloudflare D1. تحقق من نشر Worker أو افتح الرابط السري مرة أخرى.',
 
+  "admin.regionsCacheLoaded": "يتم عرض المناطق من الذاكرة المؤقتة المحلية. اضغط تحديث أو حفظ للحصول على بيانات جديدة.",
+  "security.cached": "يتم عرض فحص الأمان من الذاكرة المؤقتة المحلية. افتح التبويب لاحقاً أو امسح ذاكرة المتصفح للتحقق من جديد.",
+
 };

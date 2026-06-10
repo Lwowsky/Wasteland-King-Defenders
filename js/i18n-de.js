@@ -2012,4 +2012,7 @@ window.WKD_TRANSLATIONS.de = {
   'admin.playersLoadedFiltered': '{count} Spieler aus dem Index geladen. Firebase reads≈{reads}. Suche läuft nur über Aktualisieren oder Enter.',
   'region.d1RegistrationRequired': 'Gastregistrierung funktioniert nur über Cloudflare D1. Prüfe das Worker-Deployment oder öffne den geheimen Link erneut.',
 
+  "admin.regionsCacheLoaded": "Regionen werden aus dem lokalen Cache angezeigt. Aktualisiere oder speichere, um neue Daten zu laden.",
+  "security.cached": "Die Sicherheitsprüfung wird aus dem lokalen Cache angezeigt. Öffne den Tab später erneut oder leere den Browser-Cache, um neu zu prüfen.",
+
 };

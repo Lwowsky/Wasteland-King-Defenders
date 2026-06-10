@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser } from '../services/user-db.js';
-import { getSecurityOverview, cleanupOldEmailFields } from '../services/region-db.js?v=140';
+import { getSecurityOverview, cleanupOldEmailFields } from '../services/region-db.js?v=141';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -9,6 +9,34 @@ let overview = null;
 let ready = false;
 let loadedOnce = false;
 let currentUser = null;
+const SECURITY_CACHE_TTL_MS = 5 * 60 * 1000;
+const SECURITY_CACHE_VERSION = 'v141';
+
+function securityCacheKey(user) {
+  return `wkd.securityOverview.${SECURITY_CACHE_VERSION}:${user?.uid || 'anonymous'}`;
+}
+
+function readSecurityCache(user) {
+  try {
+    const raw = localStorage.getItem(securityCacheKey(user));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.data || Date.now() - Number(parsed.savedAt || 0) > SECURITY_CACHE_TTL_MS) return null;
+    return parsed.data;
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeSecurityCache(user, data) {
+  try {
+    localStorage.setItem(securityCacheKey(user), JSON.stringify({ savedAt: Date.now(), data }));
+  } catch (_) {}
+}
+
+function clearSecurityCache(user) {
+  try { localStorage.removeItem(securityCacheKey(user)); } catch (_) {}
+}
 function setStatus(text, type = 'muted') {
   const box = $('#securityStatus');
   if (!box) return;
@@ -48,7 +76,9 @@ async function handleCleanupEmails() {
   setStatus(t('security.cleaning', 'Очищаю старі email-поля...'), 'muted');
   const result = await cleanupOldEmailFields(currentUser);
   setStatus(`${t('security.cleaned', 'Очищено регіонів')}: ${result.cleaned || 0}`, 'success');
+  clearSecurityCache(currentUser);
   overview = await getSecurityOverview(currentUser);
+  writeSecurityCache(currentUser, overview);
   render();
 }
 function shouldLoadImmediately() {
@@ -60,9 +90,17 @@ async function load(user, { force = false } = {}) {
   if (!currentUser) { setStatus(t('security.authRequired', 'Увійди через Google.'), 'warn'); return; }
   if (loadedOnce && !force) return;
   loadedOnce = true;
+  const cached = !force ? readSecurityCache(currentUser) : null;
+  if (cached) {
+    overview = cached;
+    setStatus(t('security.cached', 'Показано перевірку з локального кешу. Відкрий вкладку пізніше або очисти кеш браузера, щоб перевірити знову.'), 'muted');
+    render();
+    return;
+  }
   await saveSignedInUser(currentUser).catch(() => null);
   try {
     overview = await getSecurityOverview(currentUser);
+    writeSecurityCache(currentUser, overview);
     setStatus(t('security.loaded', 'Перевірку завершено.'), 'success');
     render();
   } catch (error) {

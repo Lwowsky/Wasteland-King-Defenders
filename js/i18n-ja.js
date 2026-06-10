@@ -2012,4 +2012,7 @@ window.WKD_TRANSLATIONS.ja = {
   'admin.playersLoadedFiltered': 'インデックスから{count}件を読み込みました。Firebase reads≈{reads}. 検索は更新ボタンまたはEnterで実行します。',
   'region.d1RegistrationRequired': 'ゲスト登録は Cloudflare D1 経由でのみ動作します。Worker のデプロイを確認するか、秘密リンクをもう一度開いてください。',
 
+  "admin.regionsCacheLoaded": "地域はローカルキャッシュから表示されています。最新データを取得するには更新または保存してください。",
+  "security.cached": "セキュリティ確認はローカルキャッシュから表示されています。後でタブを開くか、ブラウザのキャッシュを消去して再確認してください。",
+
 };

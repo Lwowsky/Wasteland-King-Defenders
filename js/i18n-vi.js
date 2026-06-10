@@ -2012,4 +2012,7 @@ window.WKD_TRANSLATIONS.vi = {
   'admin.playersLoadedFiltered': 'Đã tải {count} người chơi từ chỉ mục. Firebase reads≈{reads}. Tìm kiếm chỉ chạy bằng nút Làm mới hoặc Enter.',
   'region.d1RegistrationRequired': 'Đăng ký khách chỉ hoạt động qua Cloudflare D1. Hãy kiểm tra triển khai Worker hoặc mở lại liên kết bí mật.',
 
+  "admin.regionsCacheLoaded": "Khu vực đang được hiển thị từ bộ nhớ đệm cục bộ. Nhấn Làm mới hoặc Lưu để lấy dữ liệu mới.",
+  "security.cached": "Kiểm tra bảo mật đang được hiển thị từ bộ nhớ đệm cục bộ. Mở lại tab sau hoặc xoá bộ nhớ đệm trình duyệt để kiểm tra lại.",
+
 };

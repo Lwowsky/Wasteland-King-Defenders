@@ -2012,4 +2012,7 @@ window.WKD_TRANSLATIONS.zh = {
   'admin.playersLoadedFiltered': '已从索引加载 {count} 个玩家。Firebase reads≈{reads}。搜索只通过刷新按钮或 Enter 执行。',
   'region.d1RegistrationRequired': '访客注册只能通过 Cloudflare D1 工作。请检查 Worker 部署，或重新打开秘密链接。',
 
+  "admin.regionsCacheLoaded": "区域数据来自本地缓存。点击刷新或保存可获取最新数据。",
+  "security.cached": "安全检查来自本地缓存。稍后再次打开此标签或清除浏览器缓存以重新检查。",
+
 };

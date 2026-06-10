@@ -2012,4 +2012,7 @@ window.WKD_TRANSLATIONS.ko = {
   'admin.playersLoadedFiltered': '인덱스에서 플레이어 {count}명을 불러왔습니다. Firebase reads≈{reads}. 검색은 새로고침 버튼 또는 Enter로 실행됩니다.',
   'region.d1RegistrationRequired': '게스트 등록은 Cloudflare D1을 통해서만 작동합니다. Worker 배포를 확인하거나 비밀 링크를 다시 여세요.',
 
+  "admin.regionsCacheLoaded": "지역은 로컬 캐시에서 표시됩니다. 새 데이터를 받으려면 새로고침하거나 저장하세요.",
+  "security.cached": "보안 검사는 로컬 캐시에서 표시됩니다. 나중에 탭을 다시 열거나 브라우저 캐시를 지운 뒤 다시 확인하세요.",
+
 };
