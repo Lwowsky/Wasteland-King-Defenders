@@ -1,12 +1,13 @@
-import { getFirebase, watchAuth } from './services/firebase-service.js';
-import { trackReads, trackWrites } from './services/usage-tracker.js?v=89';
+import { watchAuth } from './services/firebase-service.js';
 import {
   formatUserDate,
   getUserProfile,
   listRegionNotificationCampaignsForProfile,
+  listUserNotifications,
+  markUserNotificationsRead,
   readUserNotificationSummary,
   setUserNotificationSummary
-} from './services/user-db.js?v=113';
+} from './services/user-db.js?v=114';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -112,13 +113,8 @@ function unreadCount() {
 function newPreviewItems() {
   return previewItems.filter(isUnread);
 }
-async function userNotificationPreview(firebase, uid) {
-  const { db, firestoreMod } = firebase;
-  const ref = firestoreMod.collection(db, 'users', uid, 'notifications');
-  const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(12));
-  const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
-  trackReads(Math.max(1, snap.docs.length));
-  return snap.docs.map(doc => ({ id: doc.id, source: 'account', ...doc.data() })).filter(item => !isHiddenOldReadMessage(item));
+async function userNotificationPreview(uid) {
+  return listUserNotifications(uid, 12).then(list => list.map(item => ({ source: item.source || 'account', ...item })).filter(item => !isHiddenOldReadMessage(item)));
 }
 async function refreshCampaignPreview(force = false) {
   if (!currentUser || !currentProfile) return [];
@@ -134,14 +130,8 @@ async function loadPreview(force = false) {
   if (!currentUser || previewLoading || (previewLoaded && !force)) return;
   previewLoading = true;
   render();
-  const firebase = await getFirebase();
-  if (!firebase) {
-    previewLoading = false;
-    render();
-    return;
-  }
   const [personal, campaigns] = await Promise.all([
-    userNotificationPreview(firebase, currentUser.uid).catch(() => []),
+    userNotificationPreview(currentUser.uid).catch(() => []),
     refreshCampaignPreview(force).catch(() => [])
   ]);
   previewItems = [...personal, ...campaigns].sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
@@ -227,17 +217,9 @@ async function markRead() {
   const unreadPersonal = unreadPreview.filter(item => item.source === 'account' && item.id);
   const unreadCampaigns = unreadPreview.filter(isCampaign);
   if (!unreadPersonal.length && !unreadCampaigns.length) return;
-  const firebase = await getFirebase();
-  if (!firebase) return;
-  const { db, firestoreMod } = firebase;
   const nowMs = Date.now();
   if (unreadPersonal.length) {
-    const batch = firestoreMod.writeBatch(db);
-    unreadPersonal.forEach(item => {
-      batch.set(firestoreMod.doc(db, 'users', currentUser.uid, 'notifications', item.id), { readAt: firestoreMod.serverTimestamp(), readAtMs: nowMs, unread: false }, { merge: true });
-    });
-    await batch.commit().catch(() => null);
-    trackWrites(unreadPersonal.length);
+    await markUserNotificationsRead(currentUser.uid, unreadPersonal.map(item => item.id)).catch(() => null);
   }
   const nextUnread = Math.max(0, (Number(summary?.unreadTotal) || 0) - unreadPersonal.length);
   const nextCampaignSeen = unreadCampaigns.reduce((max, item) => Math.max(max, Number(item.createdAtMs) || 0), Number(summary?.campaignSeenAtMs) || 0);

@@ -136,6 +136,92 @@ async function ensureRegionTableSchema(db) {
       )`,
       `CREATE INDEX IF NOT EXISTS idx_action_logs_region_time ON action_logs(region, created_at_ms DESC)`,
       `CREATE INDEX IF NOT EXISTS idx_action_logs_region_alliance_time ON action_logs(region, alliance, created_at_ms DESC)`,
+      `CREATE TABLE IF NOT EXISTS user_notifications (
+        id TEXT PRIMARY KEY,
+        uid TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'notice',
+        title TEXT NOT NULL DEFAULT '',
+        message TEXT NOT NULL DEFAULT '',
+        region TEXT NOT NULL DEFAULT '',
+        alliance TEXT NOT NULL DEFAULT '',
+        actor_uid TEXT NOT NULL DEFAULT '',
+        actor_name TEXT NOT NULL DEFAULT '',
+        actor_role TEXT NOT NULL DEFAULT '',
+        actor_role_text TEXT NOT NULL DEFAULT '',
+        actor_photo_url TEXT NOT NULL DEFAULT '',
+        target_type TEXT NOT NULL DEFAULT 'player',
+        target_label TEXT NOT NULL DEFAULT '',
+        reply_to_id TEXT NOT NULL DEFAULT '',
+        reply_to_title TEXT NOT NULL DEFAULT '',
+        reply_to_actor_name TEXT NOT NULL DEFAULT '',
+        reply_to_created_at_ms INTEGER NOT NULL DEFAULT 0,
+        created_at_ms INTEGER NOT NULL DEFAULT 0,
+        read_at_ms INTEGER NOT NULL DEFAULT 0,
+        unread INTEGER NOT NULL DEFAULT 1,
+        archived INTEGER NOT NULL DEFAULT 0,
+        deleted INTEGER NOT NULL DEFAULT 0
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_user_notifications_uid_time ON user_notifications(uid, created_at_ms DESC)`,
+      `CREATE INDEX IF NOT EXISTS idx_user_notifications_uid_unread_time ON user_notifications(uid, unread, created_at_ms DESC)`,
+      `CREATE TABLE IF NOT EXISTS user_notification_summary (
+        uid TEXT PRIMARY KEY,
+        unread_total INTEGER NOT NULL DEFAULT 0,
+        campaign_seen_at_ms INTEGER NOT NULL DEFAULT 0,
+        last_title TEXT NOT NULL DEFAULT '',
+        last_message TEXT NOT NULL DEFAULT '',
+        last_region TEXT NOT NULL DEFAULT '',
+        last_alliance TEXT NOT NULL DEFAULT '',
+        last_actor_uid TEXT NOT NULL DEFAULT '',
+        last_actor_name TEXT NOT NULL DEFAULT '',
+        last_actor_role TEXT NOT NULL DEFAULT '',
+        last_target_type TEXT NOT NULL DEFAULT '',
+        last_notification_at_ms INTEGER NOT NULL DEFAULT 0,
+        updated_at_ms INTEGER NOT NULL DEFAULT 0
+      )`,
+      `CREATE TABLE IF NOT EXISTS user_sent_messages (
+        id TEXT PRIMARY KEY,
+        uid TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'sent_message',
+        title TEXT NOT NULL DEFAULT '',
+        message TEXT NOT NULL DEFAULT '',
+        region TEXT NOT NULL DEFAULT '',
+        alliance TEXT NOT NULL DEFAULT '',
+        target_type TEXT NOT NULL DEFAULT 'player',
+        target_label TEXT NOT NULL DEFAULT '',
+        recipient_count INTEGER NOT NULL DEFAULT 0,
+        recipient_preview TEXT NOT NULL DEFAULT '',
+        reply_to_id TEXT NOT NULL DEFAULT '',
+        reply_to_title TEXT NOT NULL DEFAULT '',
+        reply_to_actor_name TEXT NOT NULL DEFAULT '',
+        reply_to_created_at_ms INTEGER NOT NULL DEFAULT 0,
+        created_at_ms INTEGER NOT NULL DEFAULT 0,
+        archived INTEGER NOT NULL DEFAULT 0,
+        deleted INTEGER NOT NULL DEFAULT 0
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_user_sent_messages_uid_time ON user_sent_messages(uid, created_at_ms DESC)`,
+      `CREATE TABLE IF NOT EXISTS notification_campaigns (
+        id TEXT PRIMARY KEY,
+        region TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'region_campaign',
+        source TEXT NOT NULL DEFAULT 'region-campaign',
+        cycle_id TEXT NOT NULL DEFAULT '',
+        actor_uid TEXT NOT NULL DEFAULT '',
+        actor_name TEXT NOT NULL DEFAULT '',
+        actor_role TEXT NOT NULL DEFAULT '',
+        actor_role_text TEXT NOT NULL DEFAULT '',
+        target_type TEXT NOT NULL DEFAULT 'region',
+        target_label TEXT NOT NULL DEFAULT '',
+        alliance TEXT NOT NULL DEFAULT '',
+        campaign_group_id TEXT NOT NULL DEFAULT '',
+        title TEXT NOT NULL DEFAULT '',
+        message TEXT NOT NULL DEFAULT '',
+        title_key TEXT NOT NULL DEFAULT '',
+        message_key TEXT NOT NULL DEFAULT '',
+        created_at_ms INTEGER NOT NULL DEFAULT 0,
+        expires_at_ms INTEGER NOT NULL DEFAULT 0
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_notification_campaigns_region_time ON notification_campaigns(region, created_at_ms DESC)`,
+      `CREATE INDEX IF NOT EXISTS idx_notification_campaigns_region_target_time ON notification_campaigns(region, target_type, alliance, created_at_ms DESC)`,
     ];
     for (const statement of statements) {
       await db.prepare(statement).run();
@@ -1258,6 +1344,512 @@ async function handleActionLogClear(request, env) {
   return json({ ok: true, region, deleted: Number(result?.meta?.changes) || ids.length, hasMore: ids.length === limitValue, source: "cloudflare-d1-action-log" });
 }
 
+
+function boolInt(value) {
+  return value ? 1 : 0;
+}
+
+function notificationRowToObject(row = {}) {
+  return {
+    id: clean(row.id || '', 140),
+    type: clean(row.type || 'notice', 80),
+    title: clean(row.title || '', 160),
+    message: clean(row.message || '', 800),
+    region: normalizeRegion(row.region),
+    alliance: clean(row.alliance || '', 40).toUpperCase(),
+    actorUid: clean(row.actor_uid || '', 160),
+    actorName: clean(row.actor_name || '', 160),
+    actorRole: clean(row.actor_role || '', 40),
+    actorRoleText: clean(row.actor_role_text || '', 80),
+    actorPhotoURL: clean(row.actor_photo_url || '', 300),
+    targetType: clean(row.target_type || 'player', 40),
+    targetLabel: clean(row.target_label || '', 160),
+    replyToId: clean(row.reply_to_id || '', 140),
+    replyToTitle: clean(row.reply_to_title || '', 160),
+    replyToActorName: clean(row.reply_to_actor_name || '', 160),
+    replyToCreatedAtMs: Number(row.reply_to_created_at_ms) || 0,
+    createdAtMs: Number(row.created_at_ms) || 0,
+    readAtMs: Number(row.read_at_ms) || 0,
+    unread: Number(row.unread) !== 0,
+    archived: Number(row.archived) === 1,
+    source: 'd1-account'
+  };
+}
+
+function sentMessageRowToObject(row = {}) {
+  return {
+    id: clean(row.id || '', 140),
+    type: clean(row.type || 'sent_message', 80),
+    title: clean(row.title || '', 160),
+    message: clean(row.message || '', 800),
+    region: normalizeRegion(row.region),
+    alliance: clean(row.alliance || '', 40).toUpperCase(),
+    targetType: clean(row.target_type || 'player', 40),
+    targetLabel: clean(row.target_label || '', 160),
+    recipientCount: Number(row.recipient_count) || 0,
+    recipientPreview: clean(row.recipient_preview || '', 400),
+    replyToId: clean(row.reply_to_id || '', 140),
+    replyToTitle: clean(row.reply_to_title || '', 160),
+    replyToActorName: clean(row.reply_to_actor_name || '', 160),
+    replyToCreatedAtMs: Number(row.reply_to_created_at_ms) || 0,
+    createdAtMs: Number(row.created_at_ms) || 0,
+    archived: Number(row.archived) === 1,
+    source: 'd1-sent'
+  };
+}
+
+function campaignRowToObject(row = {}) {
+  return {
+    id: clean(row.id || '', 140),
+    type: clean(row.type || 'region_campaign', 80),
+    source: clean(row.source || 'campaign', 80) || 'campaign',
+    region: normalizeRegion(row.region),
+    cycleId: clean(row.cycle_id || '', 120),
+    actorUid: clean(row.actor_uid || '', 160),
+    actorName: clean(row.actor_name || '', 160),
+    actorRole: clean(row.actor_role || '', 40),
+    actorRoleText: clean(row.actor_role_text || '', 80),
+    targetType: clean(row.target_type || 'region', 40),
+    targetLabel: clean(row.target_label || '', 160),
+    alliance: clean(row.alliance || '', 40).toUpperCase(),
+    campaignGroupId: clean(row.campaign_group_id || '', 140),
+    title: clean(row.title || '', 160),
+    message: clean(row.message || '', 800),
+    titleKey: clean(row.title_key || '', 180),
+    messageKey: clean(row.message_key || '', 180),
+    createdAtMs: Number(row.created_at_ms) || 0,
+    expiresAtMs: Number(row.expires_at_ms) || 0,
+    unread: true
+  };
+}
+
+function summaryRowToObject(row = {}, uid = '') {
+  return {
+    id: 'summary',
+    uid: clean(row.uid || uid, 160),
+    unreadTotal: Math.max(0, Number(row.unread_total) || 0),
+    campaignSeenAtMs: Math.max(0, Number(row.campaign_seen_at_ms) || 0),
+    lastTitle: clean(row.last_title || '', 160),
+    lastMessage: clean(row.last_message || '', 500),
+    lastRegion: normalizeRegion(row.last_region),
+    lastAlliance: clean(row.last_alliance || '', 40).toUpperCase(),
+    lastActorUid: clean(row.last_actor_uid || '', 160),
+    lastActorName: clean(row.last_actor_name || '', 160),
+    lastActorRole: clean(row.last_actor_role || '', 40),
+    lastTargetType: clean(row.last_target_type || '', 40),
+    lastNotificationAtMs: Number(row.last_notification_at_ms) || 0,
+    updatedAtMs: Number(row.updated_at_ms) || 0,
+    source: 'cloudflare-d1-notifications'
+  };
+}
+
+function notificationPayloadForDb(raw = {}, targetUid = '', actor = {}) {
+  const nowMs = Number(raw.createdAtMs) || Date.now();
+  return {
+    id: clean(raw.id || `${nowMs}-${crypto.randomUUID()}`, 140),
+    uid: clean(targetUid || raw.uid || raw.targetUid || '', 160),
+    type: clean(raw.type || 'site_message', 80),
+    title: clean(raw.title || 'Повідомлення', 160),
+    message: clean(raw.message || raw.summary || '', 800),
+    region: normalizeRegion(raw.region),
+    alliance: clean(raw.alliance || '', 40).toUpperCase(),
+    actorUid: clean(raw.actorUid || actor.uid || '', 160),
+    actorName: clean(raw.actorName || actor.name || actor.email || actor.uid || '', 160),
+    actorRole: clean(raw.actorRole || 'player', 40).toLowerCase(),
+    actorRoleText: clean(raw.actorRoleText || '', 80),
+    actorPhotoURL: clean(raw.actorPhotoURL || '', 300),
+    targetType: clean(raw.targetType || 'player', 40),
+    targetLabel: clean(raw.targetLabel || '', 160),
+    replyToId: clean(raw.replyToId || '', 140),
+    replyToTitle: clean(raw.replyToTitle || '', 160),
+    replyToActorName: clean(raw.replyToActorName || '', 160),
+    replyToCreatedAtMs: Number(raw.replyToCreatedAtMs) || 0,
+    createdAtMs: nowMs,
+    readAtMs: Number(raw.readAtMs) || 0,
+    unread: raw.unread === false ? 0 : 1,
+    archived: raw.archived === true ? 1 : 0,
+  };
+}
+
+async function upsertNotificationSummaryForNew(db, uid = '', row = {}) {
+  const nowMs = Date.now();
+  await db.prepare(
+    `INSERT INTO user_notification_summary (uid, unread_total, campaign_seen_at_ms, last_title, last_message, last_region, last_alliance, last_actor_uid, last_actor_name, last_actor_role, last_target_type, last_notification_at_ms, updated_at_ms)
+     VALUES (?1, ?2, 0, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+     ON CONFLICT(uid) DO UPDATE SET
+       unread_total = MAX(0, user_notification_summary.unread_total + ?2),
+       last_title = excluded.last_title,
+       last_message = excluded.last_message,
+       last_region = excluded.last_region,
+       last_alliance = excluded.last_alliance,
+       last_actor_uid = excluded.last_actor_uid,
+       last_actor_name = excluded.last_actor_name,
+       last_actor_role = excluded.last_actor_role,
+       last_target_type = excluded.last_target_type,
+       last_notification_at_ms = excluded.last_notification_at_ms,
+       updated_at_ms = excluded.updated_at_ms`
+  ).bind(
+    uid,
+    Number(row.unread) !== 0 ? 1 : 0,
+    row.title,
+    row.message,
+    row.region,
+    row.alliance,
+    row.actorUid,
+    row.actorName,
+    row.actorRole,
+    row.targetType,
+    row.createdAtMs,
+    nowMs
+  ).run();
+}
+
+async function adjustNotificationUnreadTotal(db, uid = '', delta = 0) {
+  const safeUid = clean(uid, 160);
+  if (!safeUid || !delta) return;
+  const nowMs = Date.now();
+  await db.prepare(
+    `INSERT INTO user_notification_summary (uid, unread_total, updated_at_ms)
+     VALUES (?1, MAX(0, ?2), ?3)
+     ON CONFLICT(uid) DO UPDATE SET
+       unread_total = MAX(0, user_notification_summary.unread_total + ?2),
+       updated_at_ms = excluded.updated_at_ms`
+  ).bind(safeUid, Number(delta) || 0, nowMs).run();
+}
+
+async function handleNotificationSummaryGet(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  const row = await db.prepare(`SELECT * FROM user_notification_summary WHERE uid = ?1 LIMIT 1`).bind(user.uid).first();
+  return json({ ok: true, summary: summaryRowToObject(row || {}, user.uid), source: 'cloudflare-d1-notifications' });
+}
+
+async function handleNotificationSummaryPatch(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const uid = user.uid;
+  const nowMs = Date.now();
+  const existing = await db.prepare(`SELECT * FROM user_notification_summary WHERE uid = ?1 LIMIT 1`).bind(uid).first();
+  const next = {
+    unreadTotal: Object.hasOwn(body || {}, 'unreadTotal') ? Math.max(0, Math.min(99999, Number(body.unreadTotal) || 0)) : Math.max(0, Number(existing?.unread_total) || 0),
+    campaignSeenAtMs: Object.hasOwn(body || {}, 'campaignSeenAtMs') ? Math.max(0, Number(body.campaignSeenAtMs) || 0) : Math.max(0, Number(existing?.campaign_seen_at_ms) || 0),
+    lastTitle: Object.hasOwn(body || {}, 'lastTitle') ? clean(body.lastTitle, 160) : clean(existing?.last_title || '', 160),
+    lastMessage: Object.hasOwn(body || {}, 'lastMessage') ? clean(body.lastMessage, 500) : clean(existing?.last_message || '', 500),
+    lastRegion: Object.hasOwn(body || {}, 'lastRegion') ? normalizeRegion(body.lastRegion) : normalizeRegion(existing?.last_region),
+    lastAlliance: Object.hasOwn(body || {}, 'lastAlliance') ? clean(body.lastAlliance, 40).toUpperCase() : clean(existing?.last_alliance || '', 40).toUpperCase(),
+    lastActorUid: Object.hasOwn(body || {}, 'lastActorUid') ? clean(body.lastActorUid, 160) : clean(existing?.last_actor_uid || '', 160),
+    lastActorName: Object.hasOwn(body || {}, 'lastActorName') ? clean(body.lastActorName, 160) : clean(existing?.last_actor_name || '', 160),
+    lastActorRole: Object.hasOwn(body || {}, 'lastActorRole') ? clean(body.lastActorRole, 40) : clean(existing?.last_actor_role || '', 40),
+    lastTargetType: Object.hasOwn(body || {}, 'lastTargetType') ? clean(body.lastTargetType, 40) : clean(existing?.last_target_type || '', 40),
+    lastNotificationAtMs: Object.hasOwn(body || {}, 'lastNotificationAtMs') ? Math.max(0, Number(body.lastNotificationAtMs) || 0) : Math.max(0, Number(existing?.last_notification_at_ms) || 0),
+    updatedAtMs: nowMs,
+  };
+  await db.prepare(
+    `INSERT INTO user_notification_summary (uid, unread_total, campaign_seen_at_ms, last_title, last_message, last_region, last_alliance, last_actor_uid, last_actor_name, last_actor_role, last_target_type, last_notification_at_ms, updated_at_ms)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+     ON CONFLICT(uid) DO UPDATE SET
+       unread_total = excluded.unread_total,
+       campaign_seen_at_ms = excluded.campaign_seen_at_ms,
+       last_title = excluded.last_title,
+       last_message = excluded.last_message,
+       last_region = excluded.last_region,
+       last_alliance = excluded.last_alliance,
+       last_actor_uid = excluded.last_actor_uid,
+       last_actor_name = excluded.last_actor_name,
+       last_actor_role = excluded.last_actor_role,
+       last_target_type = excluded.last_target_type,
+       last_notification_at_ms = excluded.last_notification_at_ms,
+       updated_at_ms = excluded.updated_at_ms`
+  ).bind(uid, next.unreadTotal, next.campaignSeenAtMs, next.lastTitle, next.lastMessage, next.lastRegion, next.lastAlliance, next.lastActorUid, next.lastActorName, next.lastActorRole, next.lastTargetType, next.lastNotificationAtMs, next.updatedAtMs).run();
+  return json({ ok: true, summary: { uid, ...next }, source: 'cloudflare-d1-notifications' });
+}
+
+async function handleNotificationList(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  const url = new URL(request.url);
+  const limitValue = Math.max(1, Math.min(100, Number(url.searchParams.get('limit')) || 50));
+  const includeUnread = url.searchParams.get('includeUnread') !== '0';
+  const recent = await db.prepare(
+    `SELECT * FROM user_notifications WHERE uid = ?1 AND deleted = 0 ORDER BY created_at_ms DESC LIMIT ?2`
+  ).bind(user.uid, limitValue).all();
+  const map = new Map();
+  (recent?.results || []).forEach(row => map.set(row.id, notificationRowToObject(row)));
+  if (includeUnread) {
+    const unread = await db.prepare(
+      `SELECT * FROM user_notifications WHERE uid = ?1 AND deleted = 0 AND archived = 0 AND unread = 1 ORDER BY created_at_ms DESC LIMIT ?2`
+    ).bind(user.uid, limitValue).all();
+    (unread?.results || []).forEach(row => map.set(row.id, notificationRowToObject(row)));
+  }
+  const rows = [...map.values()].sort((a, b) => Number(b.createdAtMs) - Number(a.createdAtMs));
+  return json({ ok: true, rows, source: 'cloudflare-d1-notifications' });
+}
+
+async function handleNotificationCreate(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const targetUid = clean(body?.targetUid || body?.uid || '', 160);
+  if (!targetUid) return json({ ok: false, error: 'target_uid_required' }, 400);
+  const row = notificationPayloadForDb(body || {}, targetUid, user);
+  if (!row.message && !row.title) return json({ ok: false, error: 'message_required' }, 400);
+  const existing = await db.prepare(`SELECT id, unread FROM user_notifications WHERE uid = ?1 AND id = ?2 LIMIT 1`).bind(row.uid, row.id).first();
+  await db.prepare(
+    `INSERT INTO user_notifications (id, uid, type, title, message, region, alliance, actor_uid, actor_name, actor_role, actor_role_text, actor_photo_url, target_type, target_label, reply_to_id, reply_to_title, reply_to_actor_name, reply_to_created_at_ms, created_at_ms, read_at_ms, unread, archived, deleted)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, 0)
+     ON CONFLICT(id) DO UPDATE SET
+       title = excluded.title,
+       message = excluded.message,
+       read_at_ms = excluded.read_at_ms,
+       unread = excluded.unread,
+       archived = excluded.archived,
+       deleted = 0`
+  ).bind(row.id, row.uid, row.type, row.title, row.message, row.region, row.alliance, row.actorUid, row.actorName, row.actorRole, row.actorRoleText, row.actorPhotoURL, row.targetType, row.targetLabel, row.replyToId, row.replyToTitle, row.replyToActorName, row.replyToCreatedAtMs, row.createdAtMs, row.readAtMs, row.unread, row.archived).run();
+  if (!existing) {
+    await upsertNotificationSummaryForNew(db, row.uid, row);
+  }
+  return json({ ok: true, notification: notificationRowToObject({
+    id: row.id, uid: row.uid, type: row.type, title: row.title, message: row.message, region: row.region, alliance: row.alliance,
+    actor_uid: row.actorUid, actor_name: row.actorName, actor_role: row.actorRole, actor_role_text: row.actorRoleText, actor_photo_url: row.actorPhotoURL,
+    target_type: row.targetType, target_label: row.targetLabel, reply_to_id: row.replyToId, reply_to_title: row.replyToTitle, reply_to_actor_name: row.replyToActorName, reply_to_created_at_ms: row.replyToCreatedAtMs,
+    created_at_ms: row.createdAtMs, read_at_ms: row.readAtMs, unread: row.unread, archived: row.archived
+  }), source: 'cloudflare-d1-notifications' });
+}
+
+async function handleNotificationUpdate(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const id = clean(body?.id || '', 140);
+  if (!id) return json({ ok: false, error: 'id_required' }, 400);
+  const old = await db.prepare(`SELECT id, unread FROM user_notifications WHERE uid = ?1 AND id = ?2 AND deleted = 0 LIMIT 1`).bind(user.uid, id).first();
+  if (!old) return json({ ok: false, error: 'notification_not_found' }, 404);
+  const nowMs = Date.now();
+  const readAtMs = body?.unread === false || body?.readAtMs ? (Number(body.readAtMs) || nowMs) : 0;
+  const unread = body?.unread === false || body?.readAtMs ? 0 : (Object.hasOwn(body || {}, 'unread') ? boolInt(body.unread) : Number(old.unread));
+  const archived = Object.hasOwn(body || {}, 'archived') ? boolInt(body.archived) : null;
+  if (archived === null) {
+    await db.prepare(`UPDATE user_notifications SET unread = ?3, read_at_ms = CASE WHEN ?4 > 0 THEN ?4 ELSE read_at_ms END WHERE uid = ?1 AND id = ?2`).bind(user.uid, id, unread, readAtMs).run();
+  } else {
+    await db.prepare(`UPDATE user_notifications SET unread = ?3, read_at_ms = CASE WHEN ?4 > 0 THEN ?4 ELSE read_at_ms END, archived = ?5 WHERE uid = ?1 AND id = ?2`).bind(user.uid, id, unread, readAtMs, archived).run();
+  }
+  if (Number(old.unread) === 1 && unread === 0) await adjustNotificationUnreadTotal(db, user.uid, -1);
+  return json({ ok: true, id, source: 'cloudflare-d1-notifications' });
+}
+
+async function handleNotificationMarkRead(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const ids = [...new Set((Array.isArray(body?.ids) ? body.ids : [body?.id]).map(item => clean(item, 140)).filter(Boolean))].slice(0, 100);
+  if (!ids.length) return json({ ok: true, marked: 0 });
+  const placeholders = ids.map((_, index) => `?${index + 2}`).join(',');
+  const selected = await db.prepare(`SELECT id FROM user_notifications WHERE uid = ?1 AND id IN (${placeholders}) AND unread = 1 AND deleted = 0`).bind(user.uid, ...ids).all();
+  const markedIds = (selected?.results || []).map(row => clean(row.id, 140)).filter(Boolean);
+  if (markedIds.length) {
+    const markedPlaceholders = markedIds.map((_, index) => `?${index + 3}`).join(',');
+    const nowMs = Date.now();
+    await db.prepare(`UPDATE user_notifications SET unread = 0, read_at_ms = ?2 WHERE uid = ?1 AND id IN (${markedPlaceholders})`).bind(user.uid, nowMs, ...markedIds).run();
+    await adjustNotificationUnreadTotal(db, user.uid, -markedIds.length);
+  }
+  return json({ ok: true, marked: markedIds.length, source: 'cloudflare-d1-notifications' });
+}
+
+async function handleNotificationDelete(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const ids = [...new Set((Array.isArray(body?.ids) ? body.ids : [body?.id]).map(item => clean(item, 140)).filter(Boolean))].slice(0, 100);
+  if (!ids.length) return json({ ok: true, deleted: 0 });
+  const placeholders = ids.map((_, index) => `?${index + 2}`).join(',');
+  const selected = await db.prepare(`SELECT id FROM user_notifications WHERE uid = ?1 AND id IN (${placeholders}) AND unread = 1 AND deleted = 0`).bind(user.uid, ...ids).all();
+  const unreadCount = (selected?.results || []).length;
+  await db.prepare(`UPDATE user_notifications SET deleted = 1, unread = 0 WHERE uid = ?1 AND id IN (${placeholders})`).bind(user.uid, ...ids).run();
+  if (unreadCount) await adjustNotificationUnreadTotal(db, user.uid, -unreadCount);
+  return json({ ok: true, deleted: ids.length, source: 'cloudflare-d1-notifications' });
+}
+
+function sentPayloadForDb(raw = {}, uid = '') {
+  const nowMs = Number(raw.createdAtMs) || Date.now();
+  return {
+    id: clean(raw.id || `${nowMs}-${crypto.randomUUID()}`, 140),
+    uid: clean(uid || raw.uid || '', 160),
+    type: clean(raw.type || 'sent_message', 80),
+    title: clean(raw.title || 'Повідомлення', 160),
+    message: clean(raw.message || '', 800),
+    region: normalizeRegion(raw.region),
+    alliance: clean(raw.alliance || '', 40).toUpperCase(),
+    targetType: clean(raw.targetType || 'player', 40),
+    targetLabel: clean(raw.targetLabel || '', 160),
+    recipientCount: Math.max(0, Math.min(50000, Number(raw.recipientCount) || 0)),
+    recipientPreview: clean(raw.recipientPreview || '', 400),
+    replyToId: clean(raw.replyToId || '', 140),
+    replyToTitle: clean(raw.replyToTitle || '', 160),
+    replyToActorName: clean(raw.replyToActorName || '', 160),
+    replyToCreatedAtMs: Number(raw.replyToCreatedAtMs) || 0,
+    createdAtMs: nowMs,
+    archived: raw.archived === true ? 1 : 0,
+  };
+}
+
+async function handleSentMessagesList(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  const url = new URL(request.url);
+  const limitValue = Math.max(1, Math.min(100, Number(url.searchParams.get('limit')) || 50));
+  const result = await db.prepare(`SELECT * FROM user_sent_messages WHERE uid = ?1 AND deleted = 0 ORDER BY created_at_ms DESC LIMIT ?2`).bind(user.uid, limitValue).all();
+  return json({ ok: true, rows: (result?.results || []).map(sentMessageRowToObject), source: 'cloudflare-d1-notifications' });
+}
+
+async function handleSentMessageCreate(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const row = sentPayloadForDb(body || {}, user.uid);
+  await db.prepare(
+    `INSERT INTO user_sent_messages (id, uid, type, title, message, region, alliance, target_type, target_label, recipient_count, recipient_preview, reply_to_id, reply_to_title, reply_to_actor_name, reply_to_created_at_ms, created_at_ms, archived, deleted)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, 0)
+     ON CONFLICT(id) DO UPDATE SET
+       title = excluded.title,
+       message = excluded.message,
+       archived = excluded.archived,
+       deleted = 0`
+  ).bind(row.id, row.uid, row.type, row.title, row.message, row.region, row.alliance, row.targetType, row.targetLabel, row.recipientCount, row.recipientPreview, row.replyToId, row.replyToTitle, row.replyToActorName, row.replyToCreatedAtMs, row.createdAtMs, row.archived).run();
+  return json({ ok: true, sent: sentMessageRowToObject({
+    id: row.id, uid: row.uid, type: row.type, title: row.title, message: row.message, region: row.region, alliance: row.alliance, target_type: row.targetType, target_label: row.targetLabel, recipient_count: row.recipientCount, recipient_preview: row.recipientPreview, reply_to_id: row.replyToId, reply_to_title: row.replyToTitle, reply_to_actor_name: row.replyToActorName, reply_to_created_at_ms: row.replyToCreatedAtMs, created_at_ms: row.createdAtMs, archived: row.archived
+  }), source: 'cloudflare-d1-notifications' });
+}
+
+async function handleSentMessageUpdate(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const id = clean(body?.id || '', 140);
+  if (!id) return json({ ok: false, error: 'id_required' }, 400);
+  if (Object.hasOwn(body || {}, 'archived')) {
+    await db.prepare(`UPDATE user_sent_messages SET archived = ?3 WHERE uid = ?1 AND id = ?2 AND deleted = 0`).bind(user.uid, id, boolInt(body.archived)).run();
+  }
+  return json({ ok: true, id, source: 'cloudflare-d1-notifications' });
+}
+
+async function handleSentMessageDelete(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const ids = [...new Set((Array.isArray(body?.ids) ? body.ids : [body?.id]).map(item => clean(item, 140)).filter(Boolean))].slice(0, 100);
+  if (!ids.length) return json({ ok: true, deleted: 0 });
+  const placeholders = ids.map((_, index) => `?${index + 2}`).join(',');
+  await db.prepare(`UPDATE user_sent_messages SET deleted = 1 WHERE uid = ?1 AND id IN (${placeholders})`).bind(user.uid, ...ids).run();
+  return json({ ok: true, deleted: ids.length, source: 'cloudflare-d1-notifications' });
+}
+
+function campaignPayloadForDb(raw = {}, actor = {}) {
+  const nowMs = Number(raw.createdAtMs) || Date.now();
+  const type = clean(raw.type || 'region_campaign', 80);
+  const region = normalizeRegion(raw.region);
+  const isSystem = isSystemCampaignType(type);
+  return {
+    id: clean(raw.id || `${nowMs}-${type.replace(/[^a-z0-9_-]/gi, '').slice(0, 50)}-${crypto.randomUUID()}`, 140),
+    region,
+    type,
+    source: clean(raw.source || 'region-campaign', 80),
+    cycleId: clean(raw.cycleId || '', 120),
+    actorUid: clean(raw.actorUid || actor.uid || '', 160),
+    actorName: clean(raw.actorName || actor.name || actor.email || actor.uid || '', 160),
+    actorRole: clean(raw.actorRole || 'player', 40).toLowerCase(),
+    actorRoleText: clean(raw.actorRoleText || '', 80),
+    targetType: clean(raw.targetType || 'region', 40),
+    targetLabel: clean(raw.targetLabel || (region ? `R${region}` : ''), 160),
+    alliance: clean(raw.alliance || raw.targetAlliance || '', 40).toUpperCase(),
+    campaignGroupId: clean(raw.campaignGroupId || '', 140),
+    title: clean(raw.title || '', 160),
+    message: clean(raw.message || raw.summary || '', 800),
+    titleKey: clean(raw.titleKey || (type.startsWith('registration_') ? 'notifications.campaign.registrationOpenedTitle' : ''), 180),
+    messageKey: clean(raw.messageKey || (type.startsWith('registration_') ? 'notifications.campaign.registrationOpenedMessage' : ''), 180),
+    createdAtMs: nowMs,
+    expiresAtMs: Number(raw.expiresAtMs) || (isSystem ? nowMs + 30 * 24 * 60 * 60 * 1000 : 0),
+  };
+}
+
+async function handleCampaignCreate(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const row = campaignPayloadForDb(body || {}, user);
+  if (!row.region) return json({ ok: false, error: 'region_required' }, 400);
+  await db.prepare(
+    `INSERT INTO notification_campaigns (id, region, type, source, cycle_id, actor_uid, actor_name, actor_role, actor_role_text, target_type, target_label, alliance, campaign_group_id, title, message, title_key, message_key, created_at_ms, expires_at_ms)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
+     ON CONFLICT(id) DO UPDATE SET
+       title = excluded.title,
+       message = excluded.message,
+       title_key = excluded.title_key,
+       message_key = excluded.message_key,
+       expires_at_ms = excluded.expires_at_ms`
+  ).bind(row.id, row.region, row.type, row.source, row.cycleId, row.actorUid, row.actorName, row.actorRole, row.actorRoleText, row.targetType, row.targetLabel, row.alliance, row.campaignGroupId, row.title, row.message, row.titleKey, row.messageKey, row.createdAtMs, row.expiresAtMs).run();
+  return json({ ok: true, campaign: campaignRowToObject({
+    id: row.id, region: row.region, type: row.type, source: row.source, cycle_id: row.cycleId, actor_uid: row.actorUid, actor_name: row.actorName, actor_role: row.actorRole, actor_role_text: row.actorRoleText, target_type: row.targetType, target_label: row.targetLabel, alliance: row.alliance, campaign_group_id: row.campaignGroupId, title: row.title, message: row.message, title_key: row.titleKey, message_key: row.messageKey, created_at_ms: row.createdAtMs, expires_at_ms: row.expiresAtMs
+  }), source: 'cloudflare-d1-notifications' });
+}
+
+async function handleCampaignList(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  await verifyFirebaseToken(request, env);
+  const url = new URL(request.url);
+  const regions = [...new Set(clean(url.searchParams.get('regions') || '', 300).split(',').map(normalizeRegion).filter(Boolean))].slice(0, 10);
+  if (!regions.length) return json({ ok: true, rows: [] });
+  const sinceMs = Math.max(0, Number(url.searchParams.get('sinceMs')) || 0);
+  const limitValue = Math.max(1, Math.min(80, Number(url.searchParams.get('limit')) || 30));
+  const nowMs = Date.now();
+  const placeholders = regions.map((_, index) => `?${index + 1}`).join(',');
+  const params = [...regions, sinceMs, nowMs, limitValue];
+  const result = await db.prepare(
+    `SELECT * FROM notification_campaigns
+      WHERE region IN (${placeholders})
+        AND created_at_ms > ?${regions.length + 1}
+        AND (expires_at_ms = 0 OR expires_at_ms > ?${regions.length + 2})
+      ORDER BY created_at_ms DESC
+      LIMIT ?${regions.length + 3}`
+  ).bind(...params).all();
+  return json({ ok: true, rows: (result?.results || []).map(campaignRowToObject), source: 'cloudflare-d1-notifications' });
+}
+
 async function handleContact(request, env) {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -1375,6 +1967,59 @@ export default {
         return await handlePublicStatsExport(request, env);
       }
 
+
+
+      if (url.pathname === "/api/notifications/summary" && request.method === "GET") {
+        return await handleNotificationSummaryGet(request, env);
+      }
+
+      if (url.pathname === "/api/notifications/summary" && request.method === "POST") {
+        return await handleNotificationSummaryPatch(request, env);
+      }
+
+      if (url.pathname === "/api/notifications" && request.method === "GET") {
+        return await handleNotificationList(request, env);
+      }
+
+      if (url.pathname === "/api/notifications" && request.method === "POST") {
+        return await handleNotificationCreate(request, env);
+      }
+
+      if (url.pathname === "/api/notifications/update" && request.method === "POST") {
+        return await handleNotificationUpdate(request, env);
+      }
+
+      if (url.pathname === "/api/notifications/mark-read" && request.method === "POST") {
+        return await handleNotificationMarkRead(request, env);
+      }
+
+      if (url.pathname === "/api/notifications/delete" && request.method === "POST") {
+        return await handleNotificationDelete(request, env);
+      }
+
+      if (url.pathname === "/api/notifications/sent" && request.method === "GET") {
+        return await handleSentMessagesList(request, env);
+      }
+
+      if (url.pathname === "/api/notifications/sent" && request.method === "POST") {
+        return await handleSentMessageCreate(request, env);
+      }
+
+      if (url.pathname === "/api/notifications/sent/update" && request.method === "POST") {
+        return await handleSentMessageUpdate(request, env);
+      }
+
+      if (url.pathname === "/api/notifications/sent/delete" && request.method === "POST") {
+        return await handleSentMessageDelete(request, env);
+      }
+
+      if (url.pathname === "/api/notification-campaigns" && request.method === "GET") {
+        return await handleCampaignList(request, env);
+      }
+
+      if (url.pathname === "/api/notification-campaigns" && request.method === "POST") {
+        return await handleCampaignCreate(request, env);
+      }
 
       if (url.pathname === "/api/action-log" && request.method === "GET") {
         return await handleActionLogList(request, env);

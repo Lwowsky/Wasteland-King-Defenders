@@ -1,23 +1,30 @@
 import { getFirebase, watchAuth } from '../services/firebase-service.js';
-import { trackReads, trackWrites, trackDeletes } from '../services/usage-tracker.js?v=89';
-import { listRegionCatalog } from '../services/region-db.js?v=113';
+import { listRegionCatalog } from '../services/region-db.js?v=114';
 import {
   canUseAdminPanel,
   createSiteMessageCampaign,
   createUserNotification,
+  createUserSentMessage,
+  deleteUserNotifications,
+  deleteUserSentMessages,
   formatUserDate,
   getGameProfile,
   getUserFarms,
   getUserProfile,
   listRegionNotificationCampaignsForProfile,
+  listUserNotifications,
+  listUserSentMessages,
   readUserNotificationSummary,
   setUserNotificationSummary,
   listPublicPlayers,
   listRegisteredUsers,
+  markUserNotificationsRead,
   normalizeUserRole,
+  patchUserNotification,
+  patchUserSentMessage,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=113';
+} from '../services/user-db.js?v=114';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -439,13 +446,8 @@ function rememberMessageSend() {
     localStorage.setItem(spamStorageKey(), JSON.stringify(list));
   } catch (_) {}
 }
-async function loadSentMessages(firebase, uid) {
-  const { db, firestoreMod } = firebase;
-  const ref = firestoreMod.collection(db, 'users', uid, 'sentMessages');
-  const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(SENT_QUERY_LIMIT));
-  const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
-  trackReads(Math.max(1, snap.docs.length));
-  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+async function loadSentMessages(_firebase, uid) {
+  return listUserSentMessages(uid, SENT_QUERY_LIMIT);
 }
 
 async function syncNotificationSummaryFromRows() {
@@ -459,75 +461,29 @@ function stopPageNotificationsWatch() {
   }
   unsubscribePageNotifications = null;
 }
-function watchPageNotifications(firebase, uid) {
+function watchPageNotifications(_firebase, _uid) {
   stopPageNotificationsWatch();
-  if (!firebase || !uid) return;
-  const { db, firestoreMod } = firebase;
-  const ref = firestoreMod.collection(db, 'users', uid, 'notifications');
-  const q = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(NOTIFICATION_QUERY_LIMIT));
-  unsubscribePageNotifications = firestoreMod.onSnapshot(q, snap => {
-    personalRows = snap.docs.map(doc => ({ id: doc.id, source: 'account', ...doc.data() }));
-    saveLocalArchive('notifications', personalRows.filter(isOldReadPrivateMessage));
-    mergeNotificationRows();
-    syncNotificationSummaryFromRows().then(() => window.WKD?.refreshNotifications?.()).catch(() => null);
-    render();
-  }, error => console.warn('[WKD] notifications page realtime unavailable', error));
+  // v114: personal messages are D1-first, so the page no longer keeps a Firestore realtime listener.
 }
-async function saveSentMessage(firebase, values = {}) {
+async function saveSentMessage(_firebase, values = {}) {
   if (!currentUser) return null;
-  const { db, firestoreMod } = firebase;
-  const nowMs = Date.now();
-  const id = `${nowMs}-${Math.random().toString(36).slice(2, 8)}`;
-  const payload = {
-    type: 'sent_message',
-    title: String(values.title || t('messages.defaultSubject', 'Повідомлення')).trim().slice(0, 160),
-    message: String(values.message || '').trim().slice(0, 600),
-    region: regionOf(values.region || ''),
-    alliance: tag(values.alliance || ''),
-    targetType: String(values.targetType || 'player').trim().slice(0, 40),
-    targetLabel: String(values.targetLabel || '').trim().slice(0, 160),
-    recipientCount: Math.max(0, Math.min(50000, Number(values.recipientCount) || 0)),
-    recipientPreview: String(values.recipientPreview || '').trim().slice(0, 300),
-    actorUid: currentUser.uid,
-    createdAt: firestoreMod.serverTimestamp(),
-    createdAtMs: nowMs,
-    archived: false
-  };
-  if (values.replyToId) payload.replyToId = String(values.replyToId).trim().slice(0, 120);
-  if (values.replyToTitle) payload.replyToTitle = String(values.replyToTitle).trim().slice(0, 160);
-  if (values.replyToActorName) payload.replyToActorName = String(values.replyToActorName).trim().slice(0, 120);
-  if (values.replyToCreatedAtMs) payload.replyToCreatedAtMs = Number(values.replyToCreatedAtMs) || nowMs;
-  await firestoreMod.setDoc(firestoreMod.doc(db, 'users', currentUser.uid, 'sentMessages', id), payload);
-  trackWrites(1);
-  return { id, ...payload };
+  return createUserSentMessage(currentUser.uid, values);
 }
 async function patchNotification(id = '', values = {}) {
   if (!currentUser || !id) return;
-  const firebase = await getFirebase();
-  if (!firebase) return;
-  await firebase.firestoreMod.setDoc(notificationDoc(firebase, id), values, { merge: true });
-  trackWrites(1);
+  return patchUserNotification(currentUser.uid, id, values);
 }
 async function deleteNotificationDoc(id = '') {
   if (!currentUser || !id) return;
-  const firebase = await getFirebase();
-  if (!firebase) return;
-  await firebase.firestoreMod.deleteDoc(notificationDoc(firebase, id));
-  trackDeletes(1);
+  return deleteUserNotifications(currentUser.uid, [id]);
 }
 async function patchSentMessage(id = '', values = {}) {
   if (!currentUser || !id) return;
-  const firebase = await getFirebase();
-  if (!firebase) return;
-  await firebase.firestoreMod.setDoc(sentMessageDoc(firebase, id), values, { merge: true });
-  trackWrites(1);
+  return patchUserSentMessage(currentUser.uid, id, values);
 }
 async function deleteSentMessageDoc(id = '') {
   if (!currentUser || !id) return;
-  const firebase = await getFirebase();
-  if (!firebase) return;
-  await firebase.firestoreMod.deleteDoc(sentMessageDoc(firebase, id));
-  trackDeletes(1);
+  return deleteUserSentMessages(currentUser.uid, [id]);
 }
 function filteredRecipients(type = $('#messageTargetType')?.value || 'player', options = {}) {
   if (!options.preview && directReply?.uid && type === 'player') return [directReply];
@@ -793,14 +749,9 @@ async function load(user) {
   currentProfile = await getUserProfile(user.uid).catch(() => null);
   cleanupOldMessages(firebase, user.uid).catch(error => console.warn('[WKD] old messages cleanup skipped', error));
   directory = await loadDirectory();
-  const { db, firestoreMod } = firebase;
-  const ref = firestoreMod.collection(db, 'users', user.uid, 'notifications');
-  const recentQuery = firestoreMod.query(ref, firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(NOTIFICATION_QUERY_LIMIT));
-  const unreadQuery = firestoreMod.query(ref, firestoreMod.where('unread', '==', true), firestoreMod.orderBy('createdAtMs', 'desc'), firestoreMod.limit(NOTIFICATION_QUERY_LIMIT));
   const seenSummary = await readUserNotificationSummary(user.uid).catch(() => null);
-  const [recentSnap, unreadSnap, campaigns, sent] = await Promise.all([
-    firestoreMod.getDocs(recentQuery).catch(() => ({ docs: [] })),
-    firestoreMod.getDocs(unreadQuery).catch(() => ({ docs: [] })),
+  const [personal, campaigns, sent] = await Promise.all([
+    listUserNotifications(user.uid, NOTIFICATION_QUERY_LIMIT).catch(() => []),
     listRegionNotificationCampaignsForProfile(currentProfile || {}, {
       sinceMs: Number(seenSummary?.campaignSeenAtMs) || 0,
       perRegionLimit: 12,
@@ -808,9 +759,8 @@ async function load(user) {
     }).catch(() => []),
     loadSentMessages(firebase, user.uid)
   ]);
-  trackReads(Math.max(1, recentSnap.docs.length) + Math.max(0, unreadSnap.docs.length));
   const personalMap = new Map();
-  [...recentSnap.docs, ...unreadSnap.docs].forEach(doc => personalMap.set(doc.id, { id: doc.id, source: 'account', ...doc.data() }));
+  personal.forEach(item => personalMap.set(item.id, { source: item.source || 'account', ...item }));
   personalRows = [...personalMap.values()].sort((a, b) => createdMs(b) - createdMs(a));
   saveLocalArchive('notifications', personalRows.filter(isOldReadPrivateMessage));
   campaignRows = campaigns;
@@ -834,17 +784,11 @@ async function markCampaignsSeen(items = []) {
 }
 async function markAll() {
   if (!currentUser) return;
-  const firebase = await getFirebase();
-  if (!firebase) return;
-  const { db, firestoreMod } = firebase;
   const unreadPersonal = personalRows.filter(row => row.id && row.archived !== true && isUnread(row));
   const unreadCampaigns = campaignRows.filter(row => row.id && isUnread(row));
   if (unreadPersonal.length) {
-    const batch = firestoreMod.writeBatch(db);
     const nowMs = Date.now();
-    unreadPersonal.forEach(row => batch.set(firestoreMod.doc(db, 'users', currentUser.uid, 'notifications', row.id), { readAt: firestoreMod.serverTimestamp(), readAtMs: nowMs, unread: false }, { merge: true }));
-    await batch.commit().catch(() => null);
-    trackWrites(unreadPersonal.length);
+    await markUserNotificationsRead(currentUser.uid, unreadPersonal.map(row => row.id)).catch(() => null);
     personalRows = personalRows.map(row => unreadPersonal.some(item => item.id === row.id) ? { ...row, unread: false, readAtMs: nowMs } : row);
   }
   await markCampaignsSeen(unreadCampaigns);

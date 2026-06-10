@@ -2,6 +2,21 @@ import { getFirebase } from './firebase-service.js';
 import { readCache, writeCache, removeCache } from './local-cache.js?v=89';
 import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=89';
 import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=104';
+import {
+  createNotificationCampaignD1,
+  createNotificationD1,
+  createSentMessageD1,
+  deleteNotificationsD1,
+  deleteSentMessagesD1,
+  listNotificationCampaignsD1,
+  listNotificationsD1,
+  listSentMessagesD1,
+  markNotificationsReadD1,
+  patchNotificationD1,
+  patchSentMessageD1,
+  readNotificationSummaryD1,
+  setNotificationSummaryD1
+} from './notifications-d1.js?v=114';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -243,6 +258,14 @@ export async function readUserNotificationSummary(uid) {
   if (!userId) return null;
   const firebase = await getFirebase();
   if (!firebase) return null;
+  const authUser = firebase.auth?.currentUser || null;
+  if (authUser?.uid === userId) {
+    try {
+      return await readNotificationSummaryD1(authUser);
+    } catch (error) {
+      console.warn('[WKD] D1 notification summary unavailable, Firebase fallback used', error);
+    }
+  }
   const snap = await firebase.firestoreMod.getDoc(notificationSummaryRef(firebase, userId)).catch(() => null);
   trackReads(1);
   if (!snap?.exists?.()) return null;
@@ -253,6 +276,14 @@ export async function setUserNotificationSummary(uid, values = {}) {
   if (!userId) return null;
   const firebase = await getFirebase();
   if (!firebase) return null;
+  const authUser = firebase.auth?.currentUser || null;
+  if (authUser?.uid === userId) {
+    try {
+      return await setNotificationSummaryD1(authUser, values);
+    } catch (error) {
+      console.warn('[WKD] D1 notification summary update unavailable, Firebase fallback used', error);
+    }
+  }
   const payload = notificationSummaryClean(values, firebase);
   if (!Object.hasOwn(payload, 'unreadTotal') && Object.hasOwn(values, 'unreadTotal')) payload.unreadTotal = Math.max(0, Number(values.unreadTotal) || 0);
   await firebase.firestoreMod.setDoc(notificationSummaryRef(firebase, userId), payload, { merge: true });
@@ -306,6 +337,13 @@ export async function createUserNotification(uid, values = {}) {
   if (values.replyToTitle) payload.replyToTitle = normalizeText(values.replyToTitle).slice(0, 160);
   if (values.replyToActorName) payload.replyToActorName = normalizeText(values.replyToActorName).slice(0, 120);
   if (values.replyToCreatedAtMs) payload.replyToCreatedAtMs = Number(values.replyToCreatedAtMs) || nowMs;
+  if (authUser) {
+    try {
+      return await createNotificationD1(authUser, userId, { id, ...payload });
+    } catch (error) {
+      console.warn('[WKD] D1 notification skipped, Firebase fallback used', error);
+    }
+  }
   await firestoreMod.setDoc(firestoreMod.doc(db, 'users', userId, 'notifications', id), payload);
   trackWrites(1);
   await incrementUserNotificationSummary(userId, payload).catch(error => console.warn('[WKD] notification summary skipped', error));
@@ -317,6 +355,15 @@ export async function listUserNotifications(uid, limitCount = 100) {
   if (!userId) return [];
   const firebase = await getFirebase();
   if (!firebase) return [];
+  const authUser = firebase.auth?.currentUser || null;
+  if (authUser?.uid === userId) {
+    try {
+      const rows = await listNotificationsD1(authUser, { limit: Math.max(1, Math.min(200, Number(limitCount) || 100)), includeUnread: true });
+      if (rows.length) return rows;
+    } catch (error) {
+      console.warn('[WKD] D1 notifications unavailable, Firebase fallback used', error);
+    }
+  }
   const { db, firestoreMod } = firebase;
   const q = firestoreMod.query(
     firestoreMod.collection(db, 'users', userId, 'notifications'),
@@ -324,9 +371,170 @@ export async function listUserNotifications(uid, limitCount = 100) {
     firestoreMod.limit(Math.max(1, Math.min(200, Number(limitCount) || 100)))
   );
   const snap = await firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
-  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  if (authUser?.uid === userId && rows.length) {
+    Promise.all(rows.slice(0, 50).map(row => createNotificationD1(authUser, userId, row).catch(() => null))).catch(() => null);
+  }
+  return rows;
 }
 
+
+
+export async function patchUserNotification(uid, id = '', values = {}) {
+  const userId = normalizeText(uid);
+  const notificationId = normalizeText(id);
+  if (!userId || !notificationId) return null;
+  const firebase = await getFirebase();
+  if (!firebase) return null;
+  const authUser = firebase.auth?.currentUser || null;
+  if (authUser?.uid === userId) {
+    try {
+      return await patchNotificationD1(authUser, notificationId, values);
+    } catch (error) {
+      console.warn('[WKD] D1 notification patch unavailable, Firebase fallback used', error);
+    }
+  }
+  await firebase.firestoreMod.setDoc(firebase.firestoreMod.doc(firebase.db, 'users', userId, 'notifications', notificationId), values, { merge: true });
+  trackWrites(1);
+  return { ok: true, id: notificationId };
+}
+
+export async function markUserNotificationsRead(uid, ids = []) {
+  const userId = normalizeText(uid);
+  const safeIds = (Array.isArray(ids) ? ids : [ids]).map(normalizeText).filter(Boolean).slice(0, 100);
+  if (!userId || !safeIds.length) return { ok: true, marked: 0 };
+  const firebase = await getFirebase();
+  if (!firebase) return { ok: false, marked: 0 };
+  const authUser = firebase.auth?.currentUser || null;
+  if (authUser?.uid === userId) {
+    try {
+      return await markNotificationsReadD1(authUser, safeIds);
+    } catch (error) {
+      console.warn('[WKD] D1 mark read unavailable, Firebase fallback used', error);
+    }
+  }
+  const nowMs = Date.now();
+  const batch = firebase.firestoreMod.writeBatch(firebase.db);
+  safeIds.forEach(id => batch.set(firebase.firestoreMod.doc(firebase.db, 'users', userId, 'notifications', id), { readAt: firebase.firestoreMod.serverTimestamp(), readAtMs: nowMs, unread: false }, { merge: true }));
+  await batch.commit();
+  trackWrites(safeIds.length);
+  return { ok: true, marked: safeIds.length };
+}
+
+export async function deleteUserNotifications(uid, ids = []) {
+  const userId = normalizeText(uid);
+  const safeIds = (Array.isArray(ids) ? ids : [ids]).map(normalizeText).filter(Boolean).slice(0, 100);
+  if (!userId || !safeIds.length) return { ok: true, deleted: 0 };
+  const firebase = await getFirebase();
+  if (!firebase) return { ok: false, deleted: 0 };
+  const authUser = firebase.auth?.currentUser || null;
+  if (authUser?.uid === userId) {
+    try {
+      return await deleteNotificationsD1(authUser, safeIds);
+    } catch (error) {
+      console.warn('[WKD] D1 notification delete unavailable, Firebase fallback used', error);
+    }
+  }
+  await Promise.all(safeIds.map(id => firebase.firestoreMod.deleteDoc(firebase.firestoreMod.doc(firebase.db, 'users', userId, 'notifications', id))));
+  trackDeletes(safeIds.length);
+  return { ok: true, deleted: safeIds.length };
+}
+
+export async function listUserSentMessages(uid, limitCount = 50) {
+  const userId = normalizeText(uid);
+  if (!userId) return [];
+  const firebase = await getFirebase();
+  if (!firebase) return [];
+  const authUser = firebase.auth?.currentUser || null;
+  if (authUser?.uid === userId) {
+    try {
+      const rows = await listSentMessagesD1(authUser, { limit: Math.max(1, Math.min(100, Number(limitCount) || 50)) });
+      if (rows.length) return rows;
+    } catch (error) {
+      console.warn('[WKD] D1 sent messages unavailable, Firebase fallback used', error);
+    }
+  }
+  const ref = firebase.firestoreMod.collection(firebase.db, 'users', userId, 'sentMessages');
+  const q = firebase.firestoreMod.query(ref, firebase.firestoreMod.orderBy('createdAtMs', 'desc'), firebase.firestoreMod.limit(Math.max(1, Math.min(100, Number(limitCount) || 50))));
+  const snap = await firebase.firestoreMod.getDocs(q).catch(() => ({ docs: [] }));
+  trackReads(Math.max(1, snap.docs.length));
+  const rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  if (authUser?.uid === userId && rows.length) {
+    Promise.all(rows.slice(0, 50).map(row => createSentMessageD1(authUser, row).catch(() => null))).catch(() => null);
+  }
+  return rows;
+}
+
+export async function createUserSentMessage(uid, values = {}) {
+  const userId = normalizeText(uid);
+  if (!userId) return null;
+  const firebase = await getFirebase();
+  if (!firebase) return null;
+  const authUser = firebase.auth?.currentUser || null;
+  if (authUser?.uid === userId) {
+    try {
+      return await createSentMessageD1(authUser, values);
+    } catch (error) {
+      console.warn('[WKD] D1 sent message save unavailable, Firebase fallback used', error);
+    }
+  }
+  const nowMs = Date.now();
+  const id = `${nowMs}-${Math.random().toString(36).slice(2, 8)}`;
+  const payload = {
+    type: 'sent_message',
+    title: normalizeText(values.title || serviceT('messages.defaultSubject', 'Повідомлення')).slice(0, 160),
+    message: normalizeText(values.message || '').slice(0, 600),
+    region: normalizeText(values.region || '').replace(/[^0-9]/g, ''),
+    alliance: normalizeAllianceTag(values.alliance || ''),
+    targetType: normalizeText(values.targetType || 'player').slice(0, 40),
+    targetLabel: normalizeText(values.targetLabel || '').slice(0, 160),
+    recipientCount: Math.max(0, Math.min(50000, Number(values.recipientCount) || 0)),
+    recipientPreview: normalizeText(values.recipientPreview || '').slice(0, 300),
+    actorUid: userId,
+    createdAt: firebase.firestoreMod.serverTimestamp(),
+    createdAtMs: nowMs,
+    archived: false
+  };
+  if (values.replyToId) payload.replyToId = normalizeText(values.replyToId).slice(0, 120);
+  if (values.replyToTitle) payload.replyToTitle = normalizeText(values.replyToTitle).slice(0, 160);
+  if (values.replyToActorName) payload.replyToActorName = normalizeText(values.replyToActorName).slice(0, 120);
+  if (values.replyToCreatedAtMs) payload.replyToCreatedAtMs = Number(values.replyToCreatedAtMs) || nowMs;
+  await firebase.firestoreMod.setDoc(firebase.firestoreMod.doc(firebase.db, 'users', userId, 'sentMessages', id), payload);
+  trackWrites(1);
+  return { id, ...payload };
+}
+
+export async function patchUserSentMessage(uid, id = '', values = {}) {
+  const userId = normalizeText(uid);
+  const messageId = normalizeText(id);
+  if (!userId || !messageId) return null;
+  const firebase = await getFirebase();
+  if (!firebase) return null;
+  const authUser = firebase.auth?.currentUser || null;
+  if (authUser?.uid === userId) {
+    try { return await patchSentMessageD1(authUser, messageId, values); }
+    catch (error) { console.warn('[WKD] D1 sent patch unavailable, Firebase fallback used', error); }
+  }
+  await firebase.firestoreMod.setDoc(firebase.firestoreMod.doc(firebase.db, 'users', userId, 'sentMessages', messageId), values, { merge: true });
+  trackWrites(1);
+  return { ok: true, id: messageId };
+}
+
+export async function deleteUserSentMessages(uid, ids = []) {
+  const userId = normalizeText(uid);
+  const safeIds = (Array.isArray(ids) ? ids : [ids]).map(normalizeText).filter(Boolean).slice(0, 100);
+  if (!userId || !safeIds.length) return { ok: true, deleted: 0 };
+  const firebase = await getFirebase();
+  if (!firebase) return { ok: false, deleted: 0 };
+  const authUser = firebase.auth?.currentUser || null;
+  if (authUser?.uid === userId) {
+    try { return await deleteSentMessagesD1(authUser, safeIds); }
+    catch (error) { console.warn('[WKD] D1 sent delete unavailable, Firebase fallback used', error); }
+  }
+  await Promise.all(safeIds.map(id => firebase.firestoreMod.deleteDoc(firebase.firestoreMod.doc(firebase.db, 'users', userId, 'sentMessages', id))));
+  trackDeletes(safeIds.length);
+  return { ok: true, deleted: safeIds.length };
+}
 
 export function profileNotificationRegions(profile = {}) {
   const main = getGameProfile(profile || {});
@@ -373,6 +581,14 @@ export async function createRegionNotificationCampaign(values = {}) {
   const payload = campaignClean(values, firebase);
   if (!payload.region) return null;
   const id = `${payload.createdAtMs}-${payload.type.replace(/[^a-z0-9_-]/gi, '').slice(0, 50)}-${Math.random().toString(36).slice(2, 8)}`;
+  const authUser = firebase.auth?.currentUser || null;
+  if (authUser) {
+    try {
+      return await createNotificationCampaignD1(authUser, { id, ...payload });
+    } catch (error) {
+      console.warn('[WKD] D1 region campaign skipped, Firebase fallback used', error);
+    }
+  }
   await firebase.firestoreMod.setDoc(firebase.firestoreMod.doc(firebase.db, 'regions', payload.region, 'notificationCampaigns', id), payload);
   trackWrites(1);
   return { id, ...payload };
@@ -387,6 +603,14 @@ export async function createSiteMessageCampaign(values = {}) {
   if (payload.targetType === 'alliance' && !payload.alliance) return null;
   if (!payload.title || !payload.message) return null;
   const id = `${payload.createdAtMs}-${payload.type.replace(/[^a-z0-9_-]/gi, '').slice(0, 50)}-${Math.random().toString(36).slice(2, 8)}`;
+  const authUser = firebase.auth?.currentUser || null;
+  if (authUser) {
+    try {
+      return await createNotificationCampaignD1(authUser, { id, ...payload });
+    } catch (error) {
+      console.warn('[WKD] D1 message campaign skipped, Firebase fallback used', error);
+    }
+  }
   await firebase.firestoreMod.setDoc(firebase.firestoreMod.doc(firebase.db, 'regions', payload.region, 'notificationCampaigns', id), payload);
   trackWrites(1);
   return { id, ...payload };
@@ -426,6 +650,18 @@ export async function listRegionNotificationCampaignsForProfile(profile = {}, op
   const sinceMs = Math.max(0, Number(options.sinceMs) || 0);
   const perRegionLimit = Math.max(1, Math.min(30, Number(options.perRegionLimit) || 8));
   const totalLimit = Math.max(1, Math.min(80, Number(options.totalLimit) || 20));
+  const authUser = firebase.auth?.currentUser || null;
+  if (authUser) {
+    try {
+      const d1Rows = await listNotificationCampaignsD1(authUser, regions, { sinceMs, limit: Math.min(80, Math.max(totalLimit, regions.length * perRegionLimit)) });
+      const filtered = d1Rows
+        .filter(item => campaignMatchesProfile(profile || {}, item))
+        .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
+      return filtered.slice(0, totalLimit);
+    } catch (error) {
+      console.warn('[WKD] D1 campaigns unavailable, Firebase fallback used', error);
+    }
+  }
   const { db, firestoreMod } = firebase;
   const all = [];
   for (const region of regions) {
