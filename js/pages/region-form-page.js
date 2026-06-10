@@ -25,8 +25,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=139';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled } from '../services/region-table-cache.js?v=139';
+} from '../services/region-db.js?v=140';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=140';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -92,6 +92,16 @@ let countdownId = null;
 let ready = false;
 
 let autoSubmitting = false;
+
+async function loadRegionFormSettings(region) {
+  const safeRegion = String(region || '').trim().replace(/[^0-9]/g, '');
+  if (!safeRegion) throw new Error('region-required');
+  if (isRegionTableCacheEnabled && isRegionTableCacheEnabled()) {
+    const cached = await readRegionFormSettings(safeRegion).catch(() => null);
+    if (cached?.settings) return cached.settings;
+  }
+  return getRegionSettings(safeRegion);
+}
 
 function readStoredActiveRegion() {
   try { return String(localStorage.getItem('wkd.players.activeRegion') || '').trim().replace(/[^0-9]/g, ''); } catch { return ''; }
@@ -843,7 +853,7 @@ async function resolveShortLinkSettings() {
 async function loadPublicForm(region) {
   currentUser = null;
   currentProfile = null;
-  const settings = shortCodeFromLink ? await resolveShortLinkSettings() : await getRegionSettings(region);
+  const settings = shortCodeFromLink ? await resolveShortLinkSettings() : await loadRegionFormSettings(region);
   currentRegion = shortCodeFromLink ? currentRegion : region;
   $('#openRegionTableBtn').hidden = true;
   const open = await prepareForm(settings);
@@ -888,7 +898,7 @@ async function loadSignedInForm(user) {
     const matchFarmId = firstFarmIdForRegion(currentProfile, currentRegion);
     if (matchFarmId) selectedFarmId = matchFarmId;
   }
-  const settings = await getRegionSettings(currentRegion);
+  const settings = await loadRegionFormSettings(currentRegion);
   $('#openRegionTableBtn').hidden = !canViewRegion(currentProfile, currentRegion, currentUser);
   const open = await prepareForm(settings);
   renderSavedFarmTools(currentProfile);
@@ -923,7 +933,7 @@ async function switchSavedFarm(farmId = selectedFarmId, { copyProfile = true } =
     if (!regionOptions.includes(currentRegion)) {
       regionOptions = [...new Set([...regionOptions, currentRegion])].sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
     }
-    const settings = await getRegionSettings(currentRegion);
+    const settings = await loadRegionFormSettings(currentRegion);
     isOpen = await prepareForm(settings);
     renderSavedFarmTools(currentProfile);
     $('#openRegionTableBtn').hidden = !canViewRegion(currentProfile, currentRegion, currentUser);
@@ -955,7 +965,7 @@ async function switchRegion(region = currentRegion, { copyProfile = true } = {})
   }
   const matchingFarmId = firstFarmIdForRegion(currentProfile || {}, currentRegion);
   if (matchingFarmId) selectedFarmId = matchingFarmId;
-  const settings = await getRegionSettings(currentRegion);
+  const settings = await loadRegionFormSettings(currentRegion);
   const isOpen = await prepareForm(settings);
   renderSavedFarmTools(currentProfile);
   $('#openRegionTableBtn').hidden = !canViewRegion(currentProfile, currentRegion, currentUser);

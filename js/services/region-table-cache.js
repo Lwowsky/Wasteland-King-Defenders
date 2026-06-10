@@ -1,9 +1,10 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=139';
+import { trackCloudflareUsage } from './usage-tracker.js?v=140';
 
 const MAX_ROWS = 1000;
 const REGION_TABLE_CACHE_TTL_MS = 60 * 1000;
 const SHARE_TABLE_CACHE_TTL_MS = 90 * 1000;
+const REGION_FORM_SETTINGS_TTL_MS = 5 * 60 * 1000;
 
 function cleanText(value = '', max = 120) {
   return String(value ?? '')
@@ -51,7 +52,7 @@ async function getFirebaseToken(user) {
 }
 
 function localCacheKey(kind, id) {
-  return `wkd.${kind}.d1.v139.${cleanText(id, 160)}`;
+  return `wkd.${kind}.d1.v140.${cleanText(id, 160)}`;
 }
 
 function readLocalTableCache(kind, id, ttlMs) {
@@ -74,6 +75,25 @@ function writeLocalTableCache(kind, id, table) {
 }
 
 function removeLocalTableCache(kind, id) {
+  try { localStorage.removeItem(localCacheKey(kind, id)); } catch {}
+}
+
+
+function readLocalJsonCache(kind, id, ttlMs) {
+  try {
+    const raw = localStorage.getItem(localCacheKey(kind, id));
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || (Date.now() - Number(data.savedAtMs || 0)) > ttlMs) return null;
+    return data.value || null;
+  } catch {
+    return null;
+  }
+}
+function writeLocalJsonCache(kind, id, value) {
+  try { localStorage.setItem(localCacheKey(kind, id), JSON.stringify({ savedAtMs: Date.now(), value })); } catch {}
+}
+function removeLocalJsonCache(kind, id) {
   try { localStorage.removeItem(localCacheKey(kind, id)); } catch {}
 }
 
@@ -190,20 +210,65 @@ function sanitizeTableRow(row = {}) {
   };
 }
 
+function sanitizeCustomShifts(items = []) {
+  return Array.isArray(items)
+    ? items.map(item => ({ id: cleanText(item?.id || item?.value || '', 40), label: cleanText(item?.label || item?.name || item?.id || '', 80) })).filter(item => item.id).slice(0, 20)
+    : [];
+}
+function sanitizeCustomTroops(items = []) {
+  return Array.isArray(items)
+    ? items.map(item => ({ id: cleanText(item?.id || item?.value || '', 40), label: cleanText(item?.label || item?.name || item?.id || '', 80) })).filter(item => item.id).slice(0, 20)
+    : [];
+}
+function sanitizeCustomFields(fields = []) {
+  return Array.isArray(fields)
+    ? fields.map(item => ({ id: cleanText(item?.id || '', 50), label: cleanText(item?.label || item?.id || '', 120), type: cleanText(item?.type || 'text', 20) })).filter(item => item.id).slice(0, 20)
+    : [];
+}
+function sanitizeRotationAlliances(items = []) {
+  return Array.isArray(items)
+    ? items.map(item => ({ tag: cleanText(item?.tag || item?.alliance || item?.name || '', 12), name: cleanText(item?.name || item?.label || item?.tag || '', 80) })).filter(item => item.tag).slice(0, 80)
+    : [];
+}
 function sanitizeSettings(settings = {}) {
+  const customShifts = sanitizeCustomShifts(settings.customShifts || []);
+  const customTroopTypes = sanitizeCustomTroops(settings.customTroopTypes || []);
   return {
     open: Boolean(settings.open),
     enabled: Boolean(settings.enabled),
+    title: cleanText(settings.title || '', 160),
+    description: cleanText(settings.description || '', 500),
+    hostAlliance: cleanText(settings.hostAlliance || '', 12),
+    governor: cleanText(settings.governor || '', 120),
     currentCycleId: cleanText(settings.currentCycleId || '', 80),
     closeAtMs: Number(settings.closeAtMs) || 0,
     eventStartAtMs: Number(settings.eventStartAtMs || settings.startAtMs) || 0,
+    startAtMs: Number(settings.startAtMs || settings.eventStartAtMs) || 0,
+    openAtMs: Number(settings.openAtMs) || 0,
     openedAtMs: Number(settings.openedAtMs || settings.startedAtMs) || 0,
+    closedAtMs: Number(settings.closedAtMs) || 0,
     openedByName: cleanText(settings.openedByName || settings.startedByName || '', 120),
     openedByEmail: cleanText(settings.openedByEmail || settings.startedByEmail || '', 160),
     openedByUid: cleanText(settings.openedByUid || settings.startedByUid || '', 160),
+    closedByName: cleanText(settings.closedByName || '', 120),
+    closedByUid: cleanText(settings.closedByUid || '', 160),
     shifts: Array.isArray(settings.shifts) ? settings.shifts.map(item => cleanText(item, 40)).filter(Boolean).slice(0, 12) : [],
-    customShifts: Array.isArray(settings.customShifts) ? settings.customShifts.slice(0, 20) : [],
-    customTroopTypes: Array.isArray(settings.customTroopTypes) ? settings.customTroopTypes.slice(0, 20) : []
+    customShifts,
+    customTroopTypes,
+    customFields: sanitizeCustomFields(settings.customFields || []),
+    allowExtraTroop: Boolean(settings.allowExtraTroop),
+    minTier: cleanText(settings.minTier || '', 12).toUpperCase(),
+    closeRule: cleanText(settings.closeRule || '', 40),
+    closeHours: Number(settings.closeHours) || 0,
+    autoOpenEnabled: Boolean(settings.autoOpenEnabled),
+    autoOpenDay: Number(settings.autoOpenDay) || 0,
+    autoOpenTime: cleanText(settings.autoOpenTime || '', 10),
+    rotationEnabled: Boolean(settings.rotationEnabled),
+    rotationLoop: Boolean(settings.rotationLoop),
+    rotationActiveIndex: Number(settings.rotationActiveIndex) || 0,
+    rotationAlliances: sanitizeRotationAlliances(settings.rotationAlliances || []),
+    updatedAtMs: Number(settings.updatedAtMs) || 0,
+    updatedByName: cleanText(settings.updatedByName || '', 120)
   };
 }
 
@@ -237,6 +302,75 @@ export async function readRegionTableShare(code, options = {}) {
   const normalized = normalizeTableResponse(data);
   writeLocalTableCache('regionTableShare', safeCode, normalized);
   return normalized;
+}
+
+
+function normalizeRegionFormResponse(data = {}) {
+  const item = data.form || data;
+  const settings = sanitizeSettings(item.settings || data.settings || {});
+  return {
+    ok: data.ok !== false,
+    region: cleanRegion(item.region || data.region),
+    code: cleanCode(item.code || data.code || ''),
+    settings,
+    version: Number(item.version || item.updatedAtMs || data.version || 0) || 0,
+    updatedAtMs: Number(item.updatedAtMs || data.updatedAtMs || 0) || 0,
+    cached: true,
+    source: data.source || 'cloudflare-d1-form-settings'
+  };
+}
+
+export async function readRegionFormSettings(region, options = {}) {
+  if (!isRegionTableCacheEnabled()) throw new Error('region-form-cache-disabled');
+  const safeRegion = cleanRegion(region);
+  if (!safeRegion) throw new Error('region-required');
+  if (!options?.force) {
+    const cached = readLocalJsonCache('regionFormSettings', safeRegion, Number(options?.ttlMs) || REGION_FORM_SETTINGS_TTL_MS);
+    if (cached?.settings) return cached;
+  }
+  const data = await requestJson(`/api/region-form/settings?region=${encodeURIComponent(safeRegion)}`);
+  const normalized = normalizeRegionFormResponse(data);
+  writeLocalJsonCache('regionFormSettings', safeRegion, normalized);
+  return normalized;
+}
+
+export async function readRegionFormShare(code, options = {}) {
+  if (!isRegionTableCacheEnabled()) throw new Error('region-form-cache-disabled');
+  const safeCode = cleanCode(code);
+  if (!safeCode) throw new Error('share-code-required');
+  if (!options?.force) {
+    const cached = readLocalJsonCache('regionFormShare', safeCode, Number(options?.ttlMs) || REGION_FORM_SETTINGS_TTL_MS);
+    if (cached?.settings) return cached;
+  }
+  const data = await requestJson(`/api/region-form/share/${encodeURIComponent(safeCode)}`);
+  const normalized = normalizeRegionFormResponse(data);
+  writeLocalJsonCache('regionFormShare', safeCode, normalized);
+  if (normalized.region) writeLocalJsonCache('regionFormSettings', normalized.region, normalized);
+  return normalized;
+}
+
+export async function publishRegionFormSettings(user, payload = {}) {
+  if (!isRegionTableCacheEnabled()) return { skipped: true };
+  const safeRegion = cleanRegion(payload.region);
+  if (!safeRegion) return { skipped: true };
+  const token = await getFirebaseToken(user);
+  if (!token) return { skipped: true };
+  const code = cleanCode(payload.code || payload.shortCode || '');
+  removeLocalJsonCache('regionFormSettings', safeRegion);
+  if (code) removeLocalJsonCache('regionFormShare', code);
+  return requestJson('/api/region-form/settings', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      region: safeRegion,
+      code,
+      settings: sanitizeSettings(payload.settings || {}),
+      updatedAtMs: Number(payload.updatedAtMs) || Date.now()
+    })
+  }).catch(error => {
+    console.warn('[WKD] region form settings D1 publish skipped:', error);
+    return { ok: false, skipped: true, error: error.message };
+  });
 }
 
 

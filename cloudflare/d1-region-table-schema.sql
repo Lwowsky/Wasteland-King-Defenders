@@ -40,6 +40,16 @@ CREATE INDEX IF NOT EXISTS idx_region_table_shares_region ON region_table_shares
 CREATE INDEX IF NOT EXISTS idx_region_tables_updated ON region_tables(updated_at_ms);
 CREATE INDEX IF NOT EXISTS idx_region_table_shares_expires ON region_table_shares(expires_at_ms);
 
+CREATE TABLE IF NOT EXISTS region_form_settings (
+  region TEXT PRIMARY KEY,
+  short_code TEXT NOT NULL DEFAULT '',
+  cycle_id TEXT NOT NULL DEFAULT 'active',
+  version INTEGER NOT NULL DEFAULT 0,
+  updated_at_ms INTEGER NOT NULL DEFAULT 0,
+  settings_json TEXT NOT NULL DEFAULT '{}'
+);
+CREATE INDEX IF NOT EXISTS idx_region_form_settings_short_code ON region_form_settings(short_code);
+
 CREATE TABLE IF NOT EXISTS public_stats_pages (
   bucket INTEGER PRIMARY KEY,
   updated_at_ms INTEGER NOT NULL DEFAULT 0,

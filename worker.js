@@ -110,6 +110,15 @@ async function ensureRegionTableSchema(db) {
       `CREATE INDEX IF NOT EXISTS idx_region_table_shares_region ON region_table_shares(region)`,
       `CREATE INDEX IF NOT EXISTS idx_region_tables_updated ON region_tables(updated_at_ms)`,
       `CREATE INDEX IF NOT EXISTS idx_region_table_shares_expires ON region_table_shares(expires_at_ms)`,
+      `CREATE TABLE IF NOT EXISTS region_form_settings (
+        region TEXT PRIMARY KEY,
+        short_code TEXT NOT NULL DEFAULT '',
+        cycle_id TEXT NOT NULL DEFAULT 'active',
+        version INTEGER NOT NULL DEFAULT 0,
+        updated_at_ms INTEGER NOT NULL DEFAULT 0,
+        settings_json TEXT NOT NULL DEFAULT '{}'
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_region_form_settings_short_code ON region_form_settings(short_code)`,
       `CREATE TABLE IF NOT EXISTS final_plan_shares (
         code TEXT PRIMARY KEY,
         region TEXT NOT NULL,
@@ -243,6 +252,32 @@ async function ensureRegionTableSchema(db) {
       `CREATE INDEX IF NOT EXISTS idx_notification_campaigns_region_time ON notification_campaigns(region, created_at_ms DESC)`,
       `CREATE INDEX IF NOT EXISTS idx_notification_campaigns_region_target_time ON notification_campaigns(region, target_type, alliance, created_at_ms DESC)`,
       `CREATE INDEX IF NOT EXISTS idx_notification_campaigns_expires ON notification_campaigns(expires_at_ms)`,
+      `CREATE TABLE IF NOT EXISTS notification_directory (
+        uid TEXT NOT NULL,
+        farm_id TEXT NOT NULL DEFAULT 'main',
+        nickname TEXT NOT NULL DEFAULT '',
+        nickname_key TEXT NOT NULL DEFAULT '',
+        email TEXT NOT NULL DEFAULT '',
+        email_key TEXT NOT NULL DEFAULT '',
+        display_name TEXT NOT NULL DEFAULT '',
+        display_key TEXT NOT NULL DEFAULT '',
+        photo_url TEXT NOT NULL DEFAULT '',
+        region TEXT NOT NULL DEFAULT '',
+        alliance TEXT NOT NULL DEFAULT '',
+        role TEXT NOT NULL DEFAULT 'player',
+        account_role TEXT NOT NULL DEFAULT 'player',
+        rank TEXT NOT NULL DEFAULT '',
+        shk TEXT NOT NULL DEFAULT '',
+        farm_count INTEGER NOT NULL DEFAULT 0,
+        updated_at_ms INTEGER NOT NULL DEFAULT 0,
+        deleted INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (uid, farm_id)
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_notification_directory_uid ON notification_directory(uid)`,
+      `CREATE INDEX IF NOT EXISTS idx_notification_directory_region ON notification_directory(region)`,
+      `CREATE INDEX IF NOT EXISTS idx_notification_directory_region_alliance ON notification_directory(region, alliance)`,
+      `CREATE INDEX IF NOT EXISTS idx_notification_directory_role ON notification_directory(role)`,
+      `CREATE INDEX IF NOT EXISTS idx_notification_directory_nick ON notification_directory(nickname_key)`,
     ];
     for (const statement of statements) {
       await db.prepare(statement).run();
@@ -265,38 +300,91 @@ function isAdminUid(env, uid = "") {
   return Boolean(uid && admins.has(uid));
 }
 
+function sanitizeCustomShifts(items = []) {
+  return Array.isArray(items)
+    ? items
+        .map((item) => ({
+          id: clean(item?.id || item?.value || '', 40),
+          label: clean(item?.label || item?.name || item?.id || '', 80),
+        }))
+        .filter((item) => item.id)
+        .slice(0, 20)
+    : [];
+}
+function sanitizeCustomTroops(items = []) {
+  return Array.isArray(items)
+    ? items
+        .map((item) => ({
+          id: clean(item?.id || item?.value || '', 40),
+          label: clean(item?.label || item?.name || item?.id || '', 80),
+        }))
+        .filter((item) => item.id)
+        .slice(0, 20)
+    : [];
+}
+function sanitizeCustomFields(items = []) {
+  return Array.isArray(items)
+    ? items
+        .map((item) => ({
+          id: clean(item?.id || '', 50),
+          label: clean(item?.label || item?.id || '', 120),
+          type: clean(item?.type || 'text', 20),
+        }))
+        .filter((item) => item.id)
+        .slice(0, 20)
+    : [];
+}
+function sanitizeRotationAlliances(items = []) {
+  return Array.isArray(items)
+    ? items
+        .map((item) => ({
+          tag: clean(item?.tag || item?.alliance || item?.name || '', 12),
+          name: clean(item?.name || item?.label || item?.tag || '', 80),
+        }))
+        .filter((item) => item.tag)
+        .slice(0, 80)
+    : [];
+}
 function sanitizeSettings(settings = {}) {
+  const customShifts = sanitizeCustomShifts(settings.customShifts || []);
   return {
     open: Boolean(settings.open),
     enabled: Boolean(settings.enabled),
+    title: clean(settings.title || '', 160),
+    description: clean(settings.description || '', 500),
+    hostAlliance: clean(settings.hostAlliance || '', 12),
+    governor: clean(settings.governor || '', 120),
     currentCycleId: normalizeCycleId(settings.currentCycleId || "active"),
     closeAtMs: Number(settings.closeAtMs) || 0,
     eventStartAtMs: Number(settings.eventStartAtMs || settings.startAtMs) || 0,
+    startAtMs: Number(settings.startAtMs || settings.eventStartAtMs) || 0,
+    openAtMs: Number(settings.openAtMs) || 0,
     openedAtMs: Number(settings.openedAtMs || settings.startedAtMs) || 0,
-    openedByName: clean(
-      settings.openedByName || settings.startedByName || "",
-      120,
-    ),
-    openedByEmail: clean(
-      settings.openedByEmail || settings.startedByEmail || "",
-      160,
-    ),
-    openedByUid: clean(
-      settings.openedByUid || settings.startedByUid || "",
-      160,
-    ),
+    closedAtMs: Number(settings.closedAtMs) || 0,
+    openedByName: clean(settings.openedByName || settings.startedByName || "", 120),
+    openedByEmail: clean(settings.openedByEmail || settings.startedByEmail || "", 160),
+    openedByUid: clean(settings.openedByUid || settings.startedByUid || "", 160),
+    closedByName: clean(settings.closedByName || "", 120),
+    closedByUid: clean(settings.closedByUid || "", 160),
     shifts: Array.isArray(settings.shifts)
-      ? settings.shifts
-          .map((item) => clean(item, 40))
-          .filter(Boolean)
-          .slice(0, 12)
+      ? settings.shifts.map((item) => clean(item, 40)).filter(Boolean).slice(0, 12)
       : [],
-    customShifts: Array.isArray(settings.customShifts)
-      ? settings.customShifts.slice(0, 20)
-      : [],
-    customTroopTypes: Array.isArray(settings.customTroopTypes)
-      ? settings.customTroopTypes.slice(0, 20)
-      : [],
+    customShifts,
+    customTroopTypes: sanitizeCustomTroops(settings.customTroopTypes || []),
+    customFields: sanitizeCustomFields(settings.customFields || []),
+    allowExtraTroop: Boolean(settings.allowExtraTroop),
+    minTier: clean(settings.minTier || '', 12).toUpperCase(),
+    closeRule: clean(settings.closeRule || '', 40),
+    closeHours: Number(settings.closeHours) || 0,
+    autoOpenEnabled: Boolean(settings.autoOpenEnabled),
+    autoOpenDay: Number(settings.autoOpenDay) || 0,
+    autoOpenTime: clean(settings.autoOpenTime || '', 10),
+    rotationEnabled: Boolean(settings.rotationEnabled),
+    rotationLoop: Boolean(settings.rotationLoop),
+    rotationActiveIndex: Number(settings.rotationActiveIndex) || 0,
+    rotationAlliances: sanitizeRotationAlliances(settings.rotationAlliances || []),
+    updatedAtMs: Number(settings.updatedAtMs) || 0,
+    updatedByName: clean(settings.updatedByName || '', 120),
   };
 }
 
@@ -439,6 +527,108 @@ async function saveTable(db, table) {
   ]);
 
   return { region, cycleId, version, updatedAtMs, settings, rows };
+}
+
+
+function formSettingsRowToObject(row = {}) {
+  if (!row) return null;
+  const settings = parseJson(row.settings_json, {});
+  return {
+    region: normalizeRegion(row.region),
+    code: normalizeCode(row.short_code || ''),
+    cycleId: normalizeCycleId(row.cycle_id || settings.currentCycleId || 'active'),
+    version: Number(row.version) || 0,
+    updatedAtMs: Number(row.updated_at_ms) || 0,
+    settings: sanitizeSettings(settings),
+  };
+}
+
+async function readRegionFormSettingsD1(db, region) {
+  await ensureRegionTableSchema(db);
+  const safeRegion = normalizeRegion(region);
+  if (!safeRegion) return null;
+  const row = await db
+    .prepare(`SELECT region, short_code, cycle_id, version, updated_at_ms, settings_json FROM region_form_settings WHERE region = ?1 LIMIT 1`)
+    .bind(safeRegion)
+    .first();
+  return formSettingsRowToObject(row);
+}
+
+async function readRegionFormShareD1(db, codeValue = '') {
+  await ensureRegionTableSchema(db);
+  const code = normalizeCode(codeValue);
+  if (!code) return null;
+  const row = await db
+    .prepare(`SELECT region, short_code, cycle_id, version, updated_at_ms, settings_json FROM region_form_settings WHERE short_code = ?1 LIMIT 1`)
+    .bind(code)
+    .first();
+  return formSettingsRowToObject(row);
+}
+
+async function saveRegionFormSettingsD1(db, payload = {}) {
+  await ensureRegionTableSchema(db);
+  const region = normalizeRegion(payload.region);
+  if (!region) throw new Error('region_required');
+  const settings = sanitizeSettings(payload.settings || {});
+  const cycleId = normalizeCycleId(payload.cycleId || settings.currentCycleId || 'active');
+  const code = normalizeCode(payload.code || payload.shortCode || '');
+  const nowMs = Number(payload.updatedAtMs) || Date.now();
+  await db.prepare(
+    `INSERT INTO region_form_settings (region, short_code, cycle_id, version, updated_at_ms, settings_json)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+     ON CONFLICT(region) DO UPDATE SET
+       short_code = CASE WHEN excluded.short_code <> '' THEN excluded.short_code ELSE region_form_settings.short_code END,
+       cycle_id = excluded.cycle_id,
+       version = excluded.version,
+       updated_at_ms = excluded.updated_at_ms,
+       settings_json = excluded.settings_json`
+  ).bind(region, code, cycleId, nowMs, nowMs, JSON.stringify({ ...settings, currentCycleId: cycleId })).run();
+  return { region, code, cycleId, version: nowMs, updatedAtMs: nowMs, settings: { ...settings, currentCycleId: cycleId } };
+}
+
+async function handleRegionFormSettingsRead(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const url = new URL(request.url);
+  const region = normalizeRegion(url.searchParams.get('region'));
+  if (!region) return json({ ok: false, error: 'region_required' }, 400);
+  const form = await readRegionFormSettingsD1(db, region);
+  if (!form) return json({ ok: false, error: 'form_settings_not_found' }, 404);
+  return json({ ok: true, form, usage: { d1RowsRead: 1 }, source: 'cloudflare-d1-form-settings' }, 200, 'public, max-age=60');
+}
+
+async function handleRegionFormShareRead(request, env, codeValue) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const code = normalizeCode(codeValue);
+  if (!code) return json({ ok: false, error: 'share_code_required' }, 400);
+  const form = await readRegionFormShareD1(db, code);
+  if (!form) return json({ ok: false, error: 'share_not_found' }, 404);
+  return json({ ok: true, form, usage: { d1RowsRead: 1 }, source: 'cloudflare-d1-form-settings' }, 200, 'public, max-age=60');
+}
+
+async function handleRegionFormSettingsPut(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const region = normalizeRegion(body?.region || body?.settings?.region);
+  if (!region) return json({ ok: false, error: 'region_required' }, 400);
+  const allowed = isAdminUid(env, user.uid) || await hasSavedRegionAccess(db, user.uid, region);
+  if (!allowed) return json({ ok: false, error: 'region_access_denied' }, 403);
+  const form = await saveRegionFormSettingsD1(db, {
+    region,
+    code: body?.code || body?.shortCode || '',
+    cycleId: body?.cycleId || body?.settings?.currentCycleId || 'active',
+    updatedAtMs: body?.updatedAtMs,
+    settings: body?.settings || {},
+  });
+  await grantRegionAccess(db, region, user.uid, 'form-settings');
+  return json({ ok: true, form, usage: { d1RowsWritten: 1 }, source: 'cloudflare-d1-form-settings' });
 }
 
 async function hasSavedRegionAccess(db, uid, region) {
@@ -2781,6 +2971,19 @@ export default {
 
       if (url.pathname === "/api/action-log/clear" && request.method === "POST") {
         return await handleActionLogClear(request, env);
+      }
+
+      if (url.pathname === "/api/region-form/settings" && request.method === "GET") {
+        return await handleRegionFormSettingsRead(request, env);
+      }
+
+      if (url.pathname === "/api/region-form/settings" && request.method === "PUT") {
+        return await handleRegionFormSettingsPut(request, env);
+      }
+
+      const regionFormShareMatch = url.pathname.match(/^\/api\/region-form\/share\/([A-Za-z0-9_-]{6,140})$/);
+      if (regionFormShareMatch && request.method === "GET") {
+        return await handleRegionFormShareRead(request, env, regionFormShareMatch[1]);
       }
 
       if (url.pathname === "/api/region-table" && request.method === "GET") {
