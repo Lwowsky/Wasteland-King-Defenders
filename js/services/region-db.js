@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=126';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=126';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=127';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=127';
 import {
   getUserProfile,
   getFarmById,
@@ -12,7 +12,7 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=126';
+} from './user-db.js?v=127';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();

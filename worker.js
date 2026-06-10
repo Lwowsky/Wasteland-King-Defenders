@@ -5,6 +5,7 @@ const FIREBASE_JWKS_URL =
   "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
 
 let firebaseJwksCache = { expiresAt: 0, keys: null };
+let googleAccessTokenCache = { expiresAt: 0, token: "" };
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -1729,6 +1730,281 @@ async function handleCloudflareUsage(request, env) {
 }
 
 
+const GOOGLE_OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+const GOOGLE_MONITORING_API = 'https://monitoring.googleapis.com/v3';
+const GOOGLE_MONITORING_SCOPE = 'https://www.googleapis.com/auth/monitoring.read';
+const FIRESTORE_FREE_READS_PER_DAY = 50000;
+const FIRESTORE_FREE_WRITES_PER_DAY = 20000;
+const FIRESTORE_FREE_DELETES_PER_DAY = 20000;
+const FIRESTORE_FREE_STORAGE_BYTES = 1024 * 1024 * 1024;
+const FIREBASE_AUTH_FREE_DAU = 3000;
+
+function base64UrlEncodeBytes(bytes) {
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.slice(index, index + chunkSize));
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function base64UrlEncodeJson(value) {
+  return base64UrlEncodeBytes(new TextEncoder().encode(JSON.stringify(value)));
+}
+
+function pemToArrayBuffer(pem = '') {
+  const body = String(pem || '')
+    .replace(/\\n/g, '\n')
+    .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+    .replace(/-----END PRIVATE KEY-----/g, '')
+    .replace(/\s+/g, '');
+  return base64UrlToBytes(body.replace(/\+/g, '-').replace(/\//g, '_'));
+}
+
+function googleServiceAccount(env) {
+  const raw = String(env.GOOGLE_SERVICE_ACCOUNT_JSON || env.FIREBASE_MONITORING_SERVICE_ACCOUNT_JSON || '').trim();
+  if (!raw) throw new Error('google_service_account_missing');
+  let data = null;
+  try { data = JSON.parse(raw); } catch { throw new Error('google_service_account_bad_json'); }
+  const clientEmail = clean(data?.client_email || '', 240);
+  const privateKey = String(data?.private_key || '').replace(/\\n/g, '\n');
+  if (!clientEmail || !privateKey) throw new Error('google_service_account_incomplete');
+  return { clientEmail, privateKey };
+}
+
+function googleProjectId(env) {
+  const projectId = clean(env.GOOGLE_PROJECT_ID || env.FIREBASE_PROJECT_ID || '', 160);
+  if (!projectId) throw new Error('google_project_id_missing');
+  return projectId;
+}
+
+async function signGoogleJwt(env) {
+  const serviceAccount = googleServiceAccount(env);
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const claim = {
+    iss: serviceAccount.clientEmail,
+    scope: GOOGLE_MONITORING_SCOPE,
+    aud: GOOGLE_OAUTH_TOKEN_URL,
+    iat: nowSeconds,
+    exp: nowSeconds + 3600,
+  };
+  const signingInput = `${base64UrlEncodeJson(header)}.${base64UrlEncodeJson(claim)}`;
+  const privateKey = await crypto.subtle.importKey(
+    'pkcs8',
+    pemToArrayBuffer(serviceAccount.privateKey),
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const signature = await crypto.subtle.sign(
+    { name: 'RSASSA-PKCS1-v1_5' },
+    privateKey,
+    new TextEncoder().encode(signingInput),
+  );
+  return `${signingInput}.${base64UrlEncodeBytes(new Uint8Array(signature))}`;
+}
+
+async function getGoogleAccessToken(env) {
+  const now = Date.now();
+  if (googleAccessTokenCache.token && googleAccessTokenCache.expiresAt > now + 60 * 1000) {
+    return googleAccessTokenCache.token;
+  }
+  const assertion = await signGoogleJwt(env);
+  const response = await fetch(GOOGLE_OAUTH_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion,
+    }).toString(),
+  });
+  let data = null;
+  try { data = await response.json(); } catch { data = null; }
+  if (!response.ok || !data?.access_token) {
+    throw new Error(clean(data?.error_description || data?.error || `google_oauth_${response.status}`, 180));
+  }
+  googleAccessTokenCache = {
+    token: String(data.access_token),
+    expiresAt: now + Math.max(60, Number(data.expires_in) || 3600) * 1000,
+  };
+  return googleAccessTokenCache.token;
+}
+
+function zonedParts(date, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+  const out = {};
+  for (const part of parts) {
+    if (part.type !== 'literal') out[part.type] = Number(part.value);
+  }
+  if (out.hour === 24) out.hour = 0;
+  return out;
+}
+
+function timeZoneOffsetMs(date, timeZone) {
+  const part = zonedParts(date, timeZone);
+  const asUtc = Date.UTC(part.year, part.month - 1, part.day, part.hour, part.minute, part.second || 0);
+  return asUtc - date.getTime();
+}
+
+function zonedMidnightUtc(year, month, day, timeZone) {
+  const utcGuess = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+  const offset = timeZoneOffsetMs(utcGuess, timeZone);
+  return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - offset);
+}
+
+function todayPacificWindow() {
+  const timeZone = 'America/Los_Angeles';
+  const now = new Date();
+  const part = zonedParts(now, timeZone);
+  const start = zonedMidnightUtc(part.year, part.month, part.day, timeZone);
+  return {
+    timezone: timeZone,
+    startIso: start.toISOString(),
+    endIso: now.toISOString(),
+  };
+}
+
+function monitoringPointValue(point = {}) {
+  const value = point?.value || {};
+  const raw = value.int64Value ?? value.doubleValue ?? value.distributionValue?.count ?? 0;
+  return numericMetric(raw);
+}
+
+async function fetchMonitoringSeries(env, accessToken, metricType, period) {
+  const projectId = googleProjectId(env);
+  const url = new URL(`${GOOGLE_MONITORING_API}/projects/${encodeURIComponent(projectId)}/timeSeries`);
+  url.searchParams.set('filter', `metric.type = "${metricType}"`);
+  url.searchParams.set('interval.startTime', period.startIso);
+  url.searchParams.set('interval.endTime', period.endIso);
+  url.searchParams.set('view', 'FULL');
+  url.searchParams.set('pageSize', '100000');
+  const response = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+  });
+  let data = null;
+  try { data = await response.json(); } catch { data = null; }
+  if (!response.ok) {
+    const message = clean(data?.error?.message || `monitoring_${response.status}`, 180);
+    throw new Error(message || `monitoring_${response.status}`);
+  }
+  return Array.isArray(data?.timeSeries) ? data.timeSeries : [];
+}
+
+function sumMonitoringPoints(series = []) {
+  let sum = 0;
+  let points = 0;
+  for (const item of series) {
+    for (const point of Array.isArray(item?.points) ? item.points : []) {
+      sum += monitoringPointValue(point);
+      points += 1;
+    }
+  }
+  return { value: sum, rows: Array.isArray(series) ? series.length : 0, points };
+}
+
+function maxMonitoringPoints(series = []) {
+  let max = 0;
+  let points = 0;
+  for (const item of series) {
+    for (const point of Array.isArray(item?.points) ? item.points : []) {
+      max = Math.max(max, monitoringPointValue(point));
+      points += 1;
+    }
+  }
+  return { value: max, rows: Array.isArray(series) ? series.length : 0, points };
+}
+
+async function readFirestoreMetric(env, accessToken, metricType, period, mode = 'sum') {
+  const series = await fetchMonitoringSeries(env, accessToken, metricType, period);
+  return mode === 'max' ? maxMonitoringPoints(series) : sumMonitoringPoints(series);
+}
+
+async function handleFirebaseUsage(request, env) {
+  await requireAdminUser(request, env);
+  const period = todayPacificWindow();
+  const partialErrors = [];
+  const firestore = {
+    reads: 0,
+    writes: 0,
+    deletes: 0,
+    storageBytes: 0,
+    activeConnections: 0,
+    snapshotListeners: 0,
+    deniedRules: 0,
+    rows: 0,
+    points: 0,
+  };
+
+  let accessToken = '';
+  try {
+    accessToken = await getGoogleAccessToken(env);
+  } catch (error) {
+    return json({ ok: false, error: clean(error?.message || 'google_auth_failed', 180) }, 500);
+  }
+
+  const metrics = [
+    ['reads', 'firestore.googleapis.com/document/read_count', 'sum'],
+    ['writes', 'firestore.googleapis.com/document/write_count', 'sum'],
+    ['deletes', 'firestore.googleapis.com/document/delete_count', 'sum'],
+    ['storageBytes', 'firestore.googleapis.com/storage/data_and_index_storage_bytes', 'max'],
+    ['activeConnections', 'firestore.googleapis.com/network/active_connections', 'max'],
+    ['snapshotListeners', 'firestore.googleapis.com/network/snapshot_listeners', 'max'],
+    ['deniedRules', 'firestore.googleapis.com/rules/denied_request_count', 'sum'],
+  ];
+
+  for (const [key, metricType, mode] of metrics) {
+    try {
+      const result = await readFirestoreMetric(env, accessToken, metricType, period, mode);
+      firestore[key] = result.value;
+      firestore.rows += result.rows;
+      firestore.points += result.points;
+    } catch (error) {
+      partialErrors.push({ source: key, error: clean(error?.message || `${key}_failed`, 160) });
+    }
+  }
+
+  const hasAnyData = firestore.rows > 0 || firestore.reads || firestore.writes || firestore.deletes || firestore.storageBytes;
+  if (!hasAnyData && partialErrors.length >= metrics.length) {
+    return json({ ok: false, error: 'firebase_usage_unavailable', partialErrors }, 502);
+  }
+
+  return json({
+    ok: true,
+    real: true,
+    source: 'google-cloud-monitoring-api',
+    period: {
+      timezone: period.timezone,
+      start: period.startIso,
+      end: period.endIso,
+    },
+    firestore,
+    auth: {
+      dailyActiveUsers: 0,
+      source: 'limit-reference-only',
+    },
+    limits: {
+      firestoreReadsPerDay: FIRESTORE_FREE_READS_PER_DAY,
+      firestoreWritesPerDay: FIRESTORE_FREE_WRITES_PER_DAY,
+      firestoreDeletesPerDay: FIRESTORE_FREE_DELETES_PER_DAY,
+      firestoreStorageBytes: FIRESTORE_FREE_STORAGE_BYTES,
+      authDailyActiveUsers: FIREBASE_AUTH_FREE_DAU,
+    },
+    partialErrors,
+    generatedAt: new Date().toISOString(),
+  }, 200, 'private, no-store');
+}
+
+
 function boolInt(value) {
   return value ? 1 : 0;
 }
@@ -2342,6 +2618,10 @@ export default {
 
       if (url.pathname === "/api/admin/usage/cloudflare" && request.method === "GET") {
         return await handleCloudflareUsage(request, env);
+      }
+
+      if (url.pathname === "/api/admin/usage/firebase" && request.method === "GET") {
+        return await handleFirebaseUsage(request, env);
       }
 
       if (url.pathname === "/api/public-stats/player" && request.method === "POST") {

@@ -17,7 +17,7 @@ import {
   listRegionAlliances,
   listRegionCatalog,
   shareRegionTable
-} from '../services/region-db.js?v=126';
+} from '../services/region-db.js?v=127';
 import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot } from '../services/region-table-cache.js?v=106';
 
 const $ = selector => document.querySelector(selector);

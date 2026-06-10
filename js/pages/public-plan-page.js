@@ -1,4 +1,4 @@
-import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=126';
+import { resolveRegionFinalPlanShare } from '../services/region-db.js?v=127';
 import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=89';
 
 const $ = selector => document.querySelector(selector);

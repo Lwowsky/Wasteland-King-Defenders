@@ -1,7 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=126';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=126';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=126';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=127';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=127';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=127';
+import { fetchRealFirebaseUsage, getCachedFirebaseUsage, clearCachedFirebaseUsage } from '../services/firebase-usage.js?v=127';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -20,14 +21,14 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=126';
+} from '../services/user-db.js?v=127';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=126';
+} from '../services/region-db.js?v=127';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -57,6 +58,8 @@ let playersPageMeta = { hasNext: false, reads: 0, queryMode: 'indexed' };
 let playerSearchDebounce = null;
 let cloudflareRealUsage = getCachedCloudflareUsage();
 let cloudflareUsageLoading = false;
+let firebaseRealUsage = getCachedFirebaseUsage();
+let firebaseUsageLoading = false;
 
 function allianceTag3(value) { return window.WKD?.allianceTag3 ? window.WKD.allianceTag3(value) : Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join(''); }
 function escapeHtml(value) {
@@ -252,7 +255,7 @@ function leadersFromSummary(includeFarms = includeAdminFarmRows()) {
 }
 
 async function fetchPublicCacheJson(fileName) {
-  const response = await fetch(`public-cache/${fileName}?v=126&t=${Date.now()}`, { cache: 'no-store' });
+  const response = await fetch(`public-cache/${fileName}?v=127&t=${Date.now()}`, { cache: 'no-store' });
   if (!response.ok) throw new Error(`${fileName}-${response.status}`);
   return response.json();
 }
@@ -537,25 +540,122 @@ function cloudflareValueCardHtml(key, value = 0, detail = '') {
     <small>${escapeHtml(t(`admin.cloudflare.${key}.detail`, detail))}</small>
   </article>`;
 }
+
+function firebaseUsageCardHtml(key, row = {}, detail = '') {
+  const label = t(`admin.firebase.${key}.label`, key);
+  const used = formatCompactNumber(row.used);
+  const limit = formatCompactNumber(row.limit);
+  const remaining = formatCompactNumber(row.remaining);
+  const percent = Math.max(0, Math.min(100, Number(row.percent) || 0));
+  return `<article class="admin-usage-card">
+    <span>${escapeHtml(label)}</span>
+    <b>${escapeHtml(used)}</b>
+    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(remaining)} / ${escapeHtml(limit)}</small>
+    <div class="admin-usage-bar" aria-hidden="true"><i style="width:${percent}%"></i></div>
+    <small>${escapeHtml(t(`admin.firebase.${key}.detail`, detail))}</small>
+  </article>`;
+}
+
+function firebaseBytesCardHtml(key, row = {}, detail = '') {
+  const label = t(`admin.firebase.${key}.label`, key);
+  const used = formatBytes(row.used);
+  const limit = formatBytes(row.limit);
+  const remaining = formatBytes(row.remaining);
+  const percent = Math.max(0, Math.min(100, Number(row.percent) || 0));
+  return `<article class="admin-usage-card">
+    <span>${escapeHtml(label)}</span>
+    <b>${escapeHtml(used)}</b>
+    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(remaining)} / ${escapeHtml(limit)}</small>
+    <div class="admin-usage-bar" aria-hidden="true"><i style="width:${percent}%"></i></div>
+    <small>${escapeHtml(t(`admin.firebase.${key}.detail`, detail))}</small>
+  </article>`;
+}
+
+function firebaseValueCardHtml(key, value = 0, detail = '') {
+  return `<article class="admin-usage-card admin-usage-card--static">
+    <span>${escapeHtml(t(`admin.firebase.${key}.label`, key))}</span>
+    <b>${escapeHtml(formatCompactNumber(value))}</b>
+    <small>${escapeHtml(t(`admin.firebase.${key}.detail`, detail))}</small>
+  </article>`;
+}
+
+function firebaseStaticLimitCardHtml(key, value, detail = '') {
+  return `<article class="admin-usage-card admin-usage-card--static">
+    <span>${escapeHtml(t(`admin.firebase.${key}.label`, key))}</span>
+    <b>${escapeHtml(value)}</b>
+    <small>${escapeHtml(t(`admin.firebase.${key}.detail`, detail))}</small>
+  </article>`;
+}
+
 function renderUsage() {
   const grid = $('#adminUsageGrid');
   const note = $('#adminUsageNote');
-  if (grid) {
-    const usage = getUsageEstimate();
-    grid.innerHTML = [
-      usageCardHtml('day', 'reads', usage.day.reads),
-      usageCardHtml('day', 'writes', usage.day.writes),
-      usageCardHtml('day', 'deletes', usage.day.deletes),
-      usageCardHtml('month', 'reads', usage.month.reads),
-      usageCardHtml('month', 'writes', usage.month.writes),
-      usageCardHtml('month', 'deletes', usage.month.deletes),
-      staticLimitCardHtml('firestoreStorage', '1 GiB', 'Firestore storage on Spark'),
-      staticLimitCardHtml('firestoreTraffic', '10 GiB / month', 'Firestore outbound transfer')
-    ].join('');
+  if (!grid) {
+    renderCloudflareUsage();
+    return;
   }
-  if (note) note.textContent = t('admin.usageNote', 'Це орієнтовний лічильник сайту, а не офіційні цифри Firebase. Точні ліміти перевіряй у Firebase Console → Usage. Місячні читання/записи/видалення — це оцінка 30 днів, бо офіційна безкоштовна квота Firestore рахується за день.');
+  if (firebaseUsageLoading) {
+    grid.innerHTML = `<div class="admin-empty">${escapeHtml(t('admin.firebaseRealLoading', 'Завантажую реальні дані Firebase...'))}</div>`;
+    if (note) note.textContent = t('admin.firebaseRealLoading', 'Завантажую реальні дані Firebase...');
+    renderCloudflareUsage();
+    return;
+  }
+  if (firebaseRealUsage?.real) {
+    const firestore = firebaseRealUsage.firestore || {};
+    grid.innerHTML = [
+      firebaseUsageCardHtml('reads', firestore.reads, 'Real Firestore document reads today'),
+      firebaseUsageCardHtml('writes', firestore.writes, 'Real Firestore document writes today'),
+      firebaseUsageCardHtml('deletes', firestore.deletes, 'Real Firestore document deletes today'),
+      firebaseBytesCardHtml('storage', firestore.storage, 'Real Firestore storage'),
+      firebaseValueCardHtml('activeConnections', firestore.activeConnections, 'Active Firestore connections'),
+      firebaseValueCardHtml('snapshotListeners', firestore.snapshotListeners, 'Active snapshot listeners'),
+      firebaseValueCardHtml('deniedRules', firestore.deniedRules, 'Denied Security Rules requests'),
+      firebaseStaticLimitCardHtml('authDailyActiveUsers', '3 000 / day', 'Firebase Auth Spark Tier 1 DAU reference'),
+      firebaseStaticLimitCardHtml('outboundTraffic', '10 GiB / month', 'Firestore outbound transfer reference')
+    ].join('');
+    if (note) {
+      const period = firebaseRealUsage.period || {};
+      const errors = Array.isArray(firebaseRealUsage.partialErrors) && firebaseRealUsage.partialErrors.length
+        ? ` ${tv('admin.firebasePartialNote', 'Часткові помилки: {errors}', { errors: firebaseRealUsage.partialErrors.map(item => `${item.source}: ${item.error}`).join('; ') })}`
+        : '';
+      const noteKey = firebaseRealUsage.fromCache ? 'admin.firebaseCachedNote' : 'admin.firebaseRealNote';
+      const noteFallback = firebaseRealUsage.fromCache
+        ? 'Збережені реальні дані Firebase: {start} — {end}. Останнє оновлення: {updated}. Натисни Оновити, щоб взяти свіжі цифри.'
+        : 'Реальні дані Firebase через Cloud Monitoring: {start} — {end}. Оновлено: {updated}.';
+      note.textContent = `${tv(noteKey, noteFallback, {
+        start: period.start || '—',
+        end: period.end || '—',
+        updated: firebaseRealUsage.generatedAt || firebaseRealUsage.cachedAt || '—'
+      })}${errors}`;
+    }
+    renderCloudflareUsage();
+    return;
+  }
+  grid.innerHTML = [
+    firebaseStaticLimitCardHtml('reads', '50 000 / day', 'Firestore Spark document reads'),
+    firebaseStaticLimitCardHtml('writes', '20 000 / day', 'Firestore Spark document writes'),
+    firebaseStaticLimitCardHtml('deletes', '20 000 / day', 'Firestore Spark document deletes'),
+    firebaseStaticLimitCardHtml('storage', '1 GiB', 'Firestore Spark storage'),
+    firebaseStaticLimitCardHtml('outboundTraffic', '10 GiB / month', 'Firestore outbound transfer'),
+    firebaseStaticLimitCardHtml('authDailyActiveUsers', '3 000 / day', 'Firebase Auth Spark Tier 1 DAU reference')
+  ].join('');
+  if (note) note.textContent = t('admin.firebaseNoCacheNote', 'Показані довідкові ліміти Firebase. Натисни Оновити, щоб отримати реальні Firestore дані через безпечний Worker secret і зберегти їх локально для економії запитів.');
   renderCloudflareUsage();
 }
+async function refreshRealFirebaseUsage() {
+  firebaseUsageLoading = true;
+  renderUsage();
+  try {
+    firebaseRealUsage = await fetchRealFirebaseUsage(currentUser);
+    setStatus(t('admin.firebaseRealLoaded', 'Реальні дані Firebase оновлено.'), 'success');
+  } catch (error) {
+    setStatus(tv('admin.firebaseRealFailed', 'Не вдалося отримати реальні дані Firebase: {error}', { error: error?.message || 'unknown' }), 'error');
+  } finally {
+    firebaseUsageLoading = false;
+    renderUsage();
+  }
+}
+
 function renderCloudflareUsage() {
   const grid = $('#cloudflareUsageGrid');
   if (!grid) return;
@@ -1231,9 +1331,9 @@ function debouncePlayerSearchReload() {
 function bindAdminControls() {
   $('#refreshRequestsBtn')?.addEventListener('click', () => loadRoleRequests().catch(console.error));
   $('#refreshPlayersBtn')?.addEventListener('click', () => loadPlayersPage({ reset: true }).catch(console.error));
-  $('#refreshUsageBtn')?.addEventListener('click', renderUsage);
+  $('#refreshUsageBtn')?.addEventListener('click', () => refreshRealFirebaseUsage().catch(console.error));
   $('#refreshCloudflareUsageBtn')?.addEventListener('click', () => refreshRealCloudflareUsage().catch(console.error));
-  $('#resetUsageEstimateBtn')?.addEventListener('click', () => { resetUsageEstimate(); renderUsage(); });
+  $('#resetUsageEstimateBtn')?.addEventListener('click', () => { firebaseRealUsage = null; clearCachedFirebaseUsage(); resetUsageEstimate(); renderUsage(); });
   $('#resetCloudflareUsageBtn')?.addEventListener('click', () => { cloudflareRealUsage = null; clearCachedCloudflareUsage(); renderCloudflareUsage(); });
   $('#cleanupOldDocsBtn')?.addEventListener('click', () => runOldDocsCleanup().catch(console.error));
   $('#scanFirebaseArchiveBtn')?.addEventListener('click', () => runFirebaseArchiveScan().catch(console.error));

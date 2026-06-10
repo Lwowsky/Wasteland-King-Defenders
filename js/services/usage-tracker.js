@@ -3,7 +3,6 @@ const MONTH_LIMITS = Object.freeze({ reads: 1500000, writes: 600000, deletes: 60
 const STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024;
 const TRAFFIC_LIMIT_BYTES = 10 * 1024 * 1024 * 1024;
 const PREFIX = 'wkd.firebaseUsageEstimate';
-const CF_PREFIX = 'wkd.cloudflareUsageEstimate';
 const CLOUDFLARE_DAY_LIMITS = Object.freeze({ workerRequests: 100000, d1RowsRead: 5000000, d1RowsWritten: 100000 });
 
 function ymd(date = new Date()) {
@@ -69,43 +68,11 @@ function quotaRow(label, used, limit) {
   return { label, used: safeUsed, limit: safeLimit, remaining, percent };
 }
 
-function cfBucket() {
-  const id = ymd();
-  const key = `${CF_PREFIX}.day`;
-  const current = readJson(key, { id, workerRequests: 0, d1RowsRead: 0, d1RowsWritten: 0, updatedAt: Date.now() });
-  if (!current || current.id !== id) {
-    const fresh = { id, workerRequests: 0, d1RowsRead: 0, d1RowsWritten: 0, updatedAt: Date.now() };
-    writeJson(key, fresh);
-    return fresh;
-  }
-  return { id, workerRequests: 0, d1RowsRead: 0, d1RowsWritten: 0, updatedAt: Date.now(), ...current };
-}
-function saveCfBucket(value) {
-  writeJson(`${CF_PREFIX}.day`, { ...value, updatedAt: Date.now() });
-}
-export function trackCloudflareUsage({ workerRequests = 0, d1RowsRead = 0, d1RowsWritten = 0 } = {}) {
-  const data = cfBucket();
-  data.workerRequests = numberValue(data.workerRequests) + numberValue(workerRequests);
-  data.d1RowsRead = numberValue(data.d1RowsRead) + numberValue(d1RowsRead);
-  data.d1RowsWritten = numberValue(data.d1RowsWritten) + numberValue(d1RowsWritten);
-  saveCfBucket(data);
-}
-export function trackWorkerRequest(amount = 1) { trackCloudflareUsage({ workerRequests: amount }); }
-export function trackD1RowsRead(amount = 1) { trackCloudflareUsage({ d1RowsRead: amount }); }
-export function trackD1RowsWritten(amount = 1) { trackCloudflareUsage({ d1RowsWritten: amount }); }
-export function resetCloudflareUsageEstimate() {
-  saveCfBucket({ id: ymd(), workerRequests: 0, d1RowsRead: 0, d1RowsWritten: 0, updatedAt: Date.now() });
-}
-export function getCloudflareUsageEstimate() {
-  const day = cfBucket();
-  return {
-    dayId: day.id,
-    workerRequests: quotaRow('workerRequests', day.workerRequests, CLOUDFLARE_DAY_LIMITS.workerRequests),
-    d1RowsRead: quotaRow('d1RowsRead', day.d1RowsRead, CLOUDFLARE_DAY_LIMITS.d1RowsRead),
-    d1RowsWritten: quotaRow('d1RowsWritten', day.d1RowsWritten, CLOUDFLARE_DAY_LIMITS.d1RowsWritten),
-    updatedAt: Number(day.updatedAt) || 0
-  };
-}
+
+export function trackCloudflareUsage() {}
+export function trackWorkerRequest() {}
+export function trackD1RowsRead() {}
+export function trackD1RowsWritten() {}
 
 export function getUsageEstimate() {
   const day = bucket('day');
