@@ -1856,4 +1856,8 @@ window.WKD_TRANSLATIONS.pl = {
   "actionLog.clearDone": 'Dziennik wyczyszczony.',
   "actionLog.clearMore": 'Wyczyszczono część wpisów. Naciśnij ponownie, aby kontynuować.',
 
+  'account.rankP5Limit': 'Ten sojusz ma już P5. Dozwolony jest tylko jeden P5.',
+  'account.rankP4Limit': 'Ten sojusz ma już 20 graczy P4. Limit P4 jest pełny.',
+  'account.profileIndexOptimized': 'Sprawdzanie nicku i rangi jest zoptymalizowane przez indeksy regionu.',
+
 };

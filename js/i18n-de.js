@@ -1856,4 +1856,8 @@ window.WKD_TRANSLATIONS.de = {
   "actionLog.clearDone": 'Aktionsprotokoll geleert.',
   "actionLog.clearMore": 'Ein Teil wurde gelöscht. Bei Bedarf erneut drücken.',
 
+  'account.rankP5Limit': 'Diese Allianz hat bereits einen P5. Es ist nur ein P5 erlaubt.',
+  'account.rankP4Limit': 'Diese Allianz hat bereits 20 P4-Spieler. Das P4-Limit ist voll.',
+  'account.profileIndexOptimized': 'Nickname- und Rangprüfung sind über Regionsindizes optimiert.',
+
 };

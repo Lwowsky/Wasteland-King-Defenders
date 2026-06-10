@@ -579,6 +579,69 @@ service cloud.firestore {
     }
 
 
+    function profileIndexText(value, maxSize) {
+      return value is string && value.size() <= maxSize;
+    }
+
+    function profileIndexLockFieldsSafe(regionId) {
+      return request.resource.data.keys().hasOnly([
+          'uid', 'farmId', 'ownerKey', 'nickname', 'nicknameKey', 'region', 'alliance', 'rank',
+          'updatedAt', 'updatedAtMs', 'source'
+        ])
+        && request.resource.data.region == regionId
+        && profileIndexText(request.resource.data.uid, 160)
+        && profileIndexText(request.resource.data.farmId, 120)
+        && profileIndexText(request.resource.data.ownerKey, 260)
+        && profileIndexText(request.resource.data.nickname, 120)
+        && profileIndexText(request.resource.data.nicknameKey, 140)
+        && profileIndexText(request.resource.data.alliance, 3)
+        && request.resource.data.rank in ['p1', 'p2', 'p3', 'p4', 'p5']
+        && request.resource.data.source == 'profile-index'
+        && (!request.resource.data.keys().hasAny(['updatedAtMs']) || request.resource.data.updatedAtMs is int);
+    }
+
+    function profileRankLockFieldsSafe(regionId) {
+      return request.resource.data.keys().hasOnly([
+          'uid', 'farmId', 'ownerKey', 'nickname', 'region', 'alliance', 'rank',
+          'updatedAt', 'updatedAtMs', 'source'
+        ])
+        && request.resource.data.region == regionId
+        && profileIndexText(request.resource.data.uid, 160)
+        && profileIndexText(request.resource.data.farmId, 120)
+        && profileIndexText(request.resource.data.ownerKey, 260)
+        && profileIndexText(request.resource.data.nickname, 120)
+        && profileIndexText(request.resource.data.alliance, 3)
+        && request.resource.data.rank in ['p4', 'p5']
+        && request.resource.data.source == 'profile-index'
+        && (!request.resource.data.keys().hasAny(['updatedAtMs']) || request.resource.data.updatedAtMs is int);
+    }
+
+    function profileIndexOwnerCreateSafe(regionId) {
+      return signedIn()
+        && profileIndexLockFieldsSafe(regionId)
+        && request.resource.data.uid == request.auth.uid;
+    }
+
+    function profileRankOwnerCreateSafe(regionId) {
+      return signedIn()
+        && profileRankLockFieldsSafe(regionId)
+        && request.resource.data.uid == request.auth.uid;
+    }
+
+    function profileIndexOwnerUpdateSafe(regionId) {
+      return signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && profileIndexLockFieldsSafe(regionId);
+    }
+
+    function profileRankOwnerUpdateSafe(regionId) {
+      return signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && profileRankLockFieldsSafe(regionId);
+    }
+
     function notificationSummaryFieldsSafe() {
       return request.resource.data.keys().hasOnly([
           'unreadTotal', 'lastTitle', 'lastMessage', 'lastRegion', 'lastAlliance',
@@ -702,6 +765,21 @@ service cloud.firestore {
         allow create: if ownerEmail() || canManageRegion(regionId) || signedNicknameLockCreateSafe(regionId) || publicNicknameLockCreateSafe(regionId);
         allow update: if ownerEmail() || canManageRegion(regionId);
         allow delete: if canDeleteWastelandRegistration(regionId);
+      }
+
+      match /profileNicknameLocks/{lockId} {
+        allow get: if true;
+        allow list: if ownerEmail() || isAdmin() || isModerator() || canManageRegion(regionId);
+        allow create: if ownerEmail() || canManageRegion(regionId) || profileIndexOwnerCreateSafe(regionId);
+        allow update: if ownerEmail() || canManageRegion(regionId) || profileIndexOwnerUpdateSafe(regionId);
+        allow delete: if ownerEmail() || canManageRegion(regionId) || (signedIn() && resource.data.uid == request.auth.uid);
+      }
+
+      match /profileRankLocks/{lockId} {
+        allow get, list: if signedIn();
+        allow create: if ownerEmail() || canManageRegion(regionId) || profileRankOwnerCreateSafe(regionId);
+        allow update: if ownerEmail() || canManageRegion(regionId) || profileRankOwnerUpdateSafe(regionId);
+        allow delete: if ownerEmail() || canManageRegion(regionId) || (signedIn() && resource.data.uid == request.auth.uid);
       }
 
       match /wastelandTowerPlans/{planId} {

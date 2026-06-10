@@ -1856,4 +1856,8 @@ window.WKD_TRANSLATIONS.vi = {
   "actionLog.clearDone": 'Đã xóa nhật ký hành động.',
   "actionLog.clearMore": 'Đã xóa một phần. Nhấn lại nếu cần tiếp tục.',
 
+  'account.rankP5Limit': 'Liên minh này đã có P5. Chỉ được phép có một P5.',
+  'account.rankP4Limit': 'Liên minh này đã có 20 người chơi P4. Giới hạn P4 đã đầy.',
+  'account.profileIndexOptimized': 'Kiểm tra biệt danh và cấp bậc đã được tối ưu bằng chỉ mục khu vực.',
+
 };

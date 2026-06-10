@@ -1856,4 +1856,8 @@ window.WKD_TRANSLATIONS.ja = {
   "actionLog.clearDone": '操作ログを削除しました。',
   "actionLog.clearMore": '一部のログを削除しました。必要ならもう一度押してください。',
 
+  'account.rankP5Limit': 'この同盟にはすでにP5がいます。P5は1人だけ登録できます。',
+  'account.rankP4Limit': 'この同盟にはすでに20人のP4がいます。P4の上限に達しています。',
+  'account.profileIndexOptimized': 'ニックネームとランクの確認は地域インデックスで最適化されています。',
+
 };

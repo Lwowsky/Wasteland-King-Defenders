@@ -1856,4 +1856,8 @@ window.WKD_TRANSLATIONS.zh = {
   "actionLog.clearDone": '操作日志已清除。',
   "actionLog.clearMore": '已清除部分条目。如需继续请再次点击。',
 
+  'account.rankP5Limit': '该联盟已经有一名 P5。只允许一名 P5。',
+  'account.rankP4Limit': '该联盟已经有 20 名 P4 玩家。P4 名额已满。',
+  'account.profileIndexOptimized': '昵称和等级检查已通过地区索引优化。',
+
 };

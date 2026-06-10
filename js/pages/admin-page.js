@@ -23,7 +23,7 @@ import {
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=115';
+} from '../services/region-db.js?v=116';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -565,9 +565,11 @@ async function handleUserAction(event) {
     setStatus(t('admin.playerUpdated', 'Player updated.'), 'success');
   } catch (error) {
     console.error(error);
-    const message = error?.message === 'role-not-allowed'
-      ? t('admin.roleNotAllowed', 'You cannot assign this role with your permissions.')
-      : t('admin.saveFailed', 'Could not save player. Check access rights.');
+    let message = t('admin.saveFailed', 'Could not save player. Check access rights.');
+    if (error?.message === 'role-not-allowed') message = t('admin.roleNotAllowed', 'You cannot assign this role with your permissions.');
+    if (error?.message === 'nickname-duplicate-region') message = t('account.nicknameDuplicateRegion', 'У цьому регіоні вже є гравець з таким нікнеймом.');
+    if (error?.message === 'rank-p5-limit') message = t('account.rankP5Limit', 'У цьому альянсі вже є P5. Можна мати тільки одного P5.');
+    if (error?.message === 'rank-p4-limit') message = t('account.rankP4Limit', 'У цьому альянсі вже є 20 гравців P4. Ліміт P4 заповнений.');
     setStatus(message, 'error');
   }
 }

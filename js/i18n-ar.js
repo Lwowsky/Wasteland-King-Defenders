@@ -1854,4 +1854,8 @@ window.WKD_TRANSLATIONS.ar = {
   "actionLog.clearDone": 'تم مسح سجل الإجراءات.',
   "actionLog.clearMore": 'تم مسح جزء من السجلات. اضغط مرة أخرى للمتابعة إذا لزم الأمر.',
 
+  'account.rankP5Limit': 'يوجد بالفعل لاعب P5 في هذا التحالف. يُسمح بلاعب P5 واحد فقط.',
+  'account.rankP4Limit': 'يوجد بالفعل 20 لاعبًا من رتبة P4 في هذا التحالف. حد P4 ممتلئ.',
+  'account.profileIndexOptimized': 'تم تحسين فحص الاسم والرتبة باستخدام فهارس المنطقة.',
+
 };

@@ -1856,4 +1856,8 @@ window.WKD_TRANSLATIONS.ko = {
   "actionLog.clearDone": '작업 로그가 정리되었습니다.',
   "actionLog.clearMore": '일부 항목을 삭제했습니다. 계속하려면 다시 누르세요.',
 
+  'account.rankP5Limit': '이 동맹에는 이미 P5가 있습니다. P5는 한 명만 허용됩니다.',
+  'account.rankP4Limit': '이 동맹에는 이미 P4 플레이어가 20명 있습니다. P4 한도가 가득 찼습니다.',
+  'account.profileIndexOptimized': '닉네임과 랭크 확인이 지역 인덱스로 최적화되었습니다.',
+
 };

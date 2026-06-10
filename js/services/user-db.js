@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=115';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=115';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=116';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=116';
 import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=104';
 import {
   createNotificationCampaignD1,
@@ -16,7 +16,7 @@ import {
   patchSentMessageD1,
   readNotificationSummaryD1,
   setNotificationSummaryD1
-} from './notifications-d1.js?v=115';
+} from './notifications-d1.js?v=116';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -1030,6 +1030,10 @@ export async function saveSignedInUser(user) {
   }
 
   if (isProfileComplete(profile)) {
+    const beforeProfile = snapshot.exists() ? { id: snapshot.id, ...snapshot.data(), uid: snapshot.data()?.uid || snapshot.id } : {};
+    await syncProfileIndexLocks(db, firestoreMod, user.uid, beforeProfile, profile).catch(error => {
+      console.warn('Profile index sync failed after sign-in', error);
+    });
     await writePublicPlayerFromProfile(db, firestoreMod, profile).catch(error => {
       console.warn('Public profile sync failed', error);
     });
@@ -1131,6 +1135,7 @@ export async function saveGameRegistration(user, values) {
   }
 
   await assertNicknameRegionUnique(db, firestoreMod, uid, farmId, clean);
+  await assertAllianceRankLimit(db, firestoreMod, uid, farmId, clean);
 
   const regionChangedByLeader = farmId === 'main'
     && ['consul', 'officer'].includes(currentRole)
@@ -1202,6 +1207,7 @@ export async function saveGameRegistration(user, values) {
 
   removeUserProfileCache(uid);
   const savedProfile = await getUserProfile(uid, { forceRefresh: true });
+  await syncProfileIndexLocks(db, firestoreMod, uid, oldProfile || {}, savedProfile || {}).catch(error => console.warn('Profile index sync failed after profile save', error));
   if (regionChangedByLeader && oldMain.region) {
     await firestoreMod.deleteDoc(firestoreMod.doc(db, 'regions', oldMain.region, 'players', uid)).catch(() => null);
   }
@@ -1242,6 +1248,7 @@ export async function saveFarmWastelandProfile(user, farmId = 'main', values = {
   }, safeFarmId);
 
   await assertNicknameRegionUnique(db, firestoreMod, user.uid, safeFarmId, updatedFarm);
+  await assertAllianceRankLimit(db, firestoreMod, user.uid, safeFarmId, updatedFarm);
 
   let nextMain = oldMain;
   let nextFarms = oldFarms;
@@ -1271,6 +1278,7 @@ export async function saveFarmWastelandProfile(user, farmId = 'main', values = {
 
   removeUserProfileCache(user.uid);
   const savedProfile = await getUserProfile(user.uid, { forceRefresh: true });
+  await syncProfileIndexLocks(db, firestoreMod, user.uid, oldProfile || {}, savedProfile || {}).catch(error => console.warn('Profile index sync failed after Wasteland profile save', error));
   if (isProfileComplete(savedProfile)) {
     await writePublicPlayerFromProfile(db, firestoreMod, savedProfile).catch(error => {
       console.warn('Public player sync failed after saved Wasteland data', error);
@@ -1368,6 +1376,7 @@ export async function makeFarmPrimary(user, farmId) {
   await batch.commit();
   removeUserProfileCache(user.uid);
   const savedProfile = await getUserProfile(user.uid, { forceRefresh: true });
+  await syncProfileIndexLocks(db, firestoreMod, user.uid, oldProfile || {}, savedProfile || {}).catch(error => console.warn('Profile index sync failed after primary farm change', error));
   if (isProfileComplete(savedProfile)) {
     await writePublicPlayerFromProfile(db, firestoreMod, savedProfile).catch(error => {
       console.warn('Public player sync failed after primary farm change', error);
@@ -1396,6 +1405,7 @@ export async function deleteFarm(user, farmId) {
   }, { merge: true });
   removeUserProfileCache(user.uid);
   const savedProfile = await getUserProfile(user.uid, { forceRefresh: true });
+  await syncProfileIndexLocks(db, firestoreMod, user.uid, oldProfile || {}, savedProfile || {}).catch(error => console.warn('Profile index sync failed after farm delete', error));
   await writePublicPlayerFromProfile(db, firestoreMod, savedProfile).catch(() => null);
   return savedProfile;
 }
@@ -1473,21 +1483,74 @@ export async function syncPublicPlayersFromUsers() {
   return count;
 }
 
-async function assertNicknameRegionUnique(db, firestoreMod, uid = '', farmId = 'main', target = {}) {
-  const nickname = normalizeText(target.nickname || target.gameNick);
+function profileLockSegment(value = '') {
+  const clean = normalizeText(value).toLowerCase();
+  if (!clean) return '';
+  try { return encodeURIComponent(clean).replace(/%/g, '~').slice(0, 180); }
+  catch { return clean.replace(/[^a-z0-9_-]+/g, '-').slice(0, 180); }
+}
+function profileOwnerKey(uid = '', farmId = 'main') {
+  return `${profileCacheUid(uid)}:${profileLockSegment(farmId || 'main') || 'main'}`;
+}
+function profileNicknameLockId(target = {}) {
+  const nick = profileLockSegment(target.nickname || target.gameNick);
+  return nick ? `nick_${nick}` : '';
+}
+function profileRankLockId(uid = '', farmId = 'main', target = {}) {
   const region = gameRegion(target);
-  if (!nickname || !region) return;
-  const snap = await firestoreMod.getDocs(firestoreMod.collection(db, 'users'));
-  const duplicate = snap.docs.some(doc => {
-    const data = { id: doc.id, ...doc.data() };
-    const games = [{ ...getGameProfile(data), farmId: 'main' }, ...getUserFarms(data)];
-    return games.some(game => {
-      const gameFarmId = normalizeText(game.farmId || game.id || 'main') || 'main';
-      if (doc.id === uid && gameFarmId === (farmId || 'main')) return false;
-      return gameRegion(game) === region && normalizeText(game.nickname).toLowerCase() === nickname.toLowerCase();
-    });
-  });
-  if (duplicate) throw new Error('nickname-duplicate-region');
+  const alliance = profileLockSegment(normalizeAllianceTag(target.alliance));
+  const rank = `p${rankNum(target.rank || 'p1')}`;
+  const owner = profileLockSegment(profileOwnerKey(uid, farmId));
+  return region && alliance && owner ? `rank_${alliance}_${rank}_${owner}` : '';
+}
+function profileGameRecords(profile = {}) {
+  const main = getGameProfile(profile || {});
+  return [
+    { ...main, farmId: 'main' },
+    ...getUserFarms(profile || {}).map(farm => ({ ...farm, farmId: normalizeText(farm.farmId || farm.id || 'main') || 'main' }))
+  ].filter(game => normalizeText(game.nickname) && gameRegion(game));
+}
+function profileNicknameLockPayload(uid = '', farmId = 'main', target = {}, firebase = null) {
+  const region = gameRegion(target);
+  const nickname = normalizeText(target.nickname || target.gameNick);
+  return {
+    uid: profileCacheUid(uid),
+    farmId: normalizeText(farmId || 'main') || 'main',
+    ownerKey: profileOwnerKey(uid, farmId),
+    nickname,
+    nicknameKey: nickname.toLowerCase(),
+    region,
+    alliance: normalizeAllianceTag(target.alliance),
+    rank: `p${rankNum(target.rank || 'p1')}`,
+    updatedAtMs: Date.now(),
+    updatedAt: firebase?.firestoreMod?.serverTimestamp ? firebase.firestoreMod.serverTimestamp() : Date.now(),
+    source: 'profile-index'
+  };
+}
+function profileRankLockPayload(uid = '', farmId = 'main', target = {}, firebase = null) {
+  return {
+    uid: profileCacheUid(uid),
+    farmId: normalizeText(farmId || 'main') || 'main',
+    ownerKey: profileOwnerKey(uid, farmId),
+    region: gameRegion(target),
+    alliance: normalizeAllianceTag(target.alliance),
+    rank: `p${rankNum(target.rank || 'p1')}`,
+    nickname: normalizeText(target.nickname || target.gameNick),
+    updatedAtMs: Date.now(),
+    updatedAt: firebase?.firestoreMod?.serverTimestamp ? firebase.firestoreMod.serverTimestamp() : Date.now(),
+    source: 'profile-index'
+  };
+}
+async function assertNicknameRegionUnique(db, firestoreMod, uid = '', farmId = 'main', target = {}) {
+  const region = gameRegion(target);
+  const lockId = profileNicknameLockId(target);
+  if (!region || !lockId) return;
+  const ref = firestoreMod.doc(db, 'regions', region, 'profileNicknameLocks', lockId);
+  const snap = await firestoreMod.getDoc(ref);
+  trackReads(1);
+  if (!snap.exists()) return;
+  const data = snap.data() || {};
+  if (data.ownerKey && data.ownerKey !== profileOwnerKey(uid, farmId)) throw new Error('nickname-duplicate-region');
 }
 
 async function assertAllianceRankLimit(db, firestoreMod, uid = '', farmId = 'main', target = {}) {
@@ -1496,19 +1559,65 @@ async function assertAllianceRankLimit(db, firestoreMod, uid = '', farmId = 'mai
   const region = gameRegion(target);
   const alliance = normalizeAllianceTag(target.alliance);
   if (!region || !alliance) return;
-  const snap = await firestoreMod.getDocs(firestoreMod.collection(db, 'users'));
-  let count = 0;
-  snap.docs.forEach(doc => {
-    const data = { id: doc.id, ...doc.data() };
-    const games = [{ ...getGameProfile(data), farmId: 'main' }, ...getUserFarms(data)];
-    games.forEach(game => {
-      const gameFarmId = normalizeText(game.farmId || game.id || 'main') || 'main';
-      if (doc.id === uid && gameFarmId === (farmId || 'main')) return;
-      if (gameRegion(game) === region && normalizeAllianceTag(game.alliance) === alliance && rankNum(game.rank) === rank) count += 1;
-    });
-  });
+  const queryRef = firestoreMod.query(
+    firestoreMod.collection(db, 'regions', region, 'profileRankLocks'),
+    firestoreMod.where('alliance', '==', alliance),
+    firestoreMod.where('rank', '==', `p${rank}`),
+    firestoreMod.limit(rank === 5 ? 2 : 21)
+  );
+  const snap = await firestoreMod.getDocs(queryRef);
+  trackReads(Math.max(1, snap.docs.length));
+  const ownerKey = profileOwnerKey(uid, farmId);
+  const count = snap.docs.filter(doc => (doc.data()?.ownerKey || '') !== ownerKey).length;
   if (rank === 5 && count >= 1) throw new Error('rank-p5-limit');
   if (rank === 4 && count >= 20) throw new Error('rank-p4-limit');
+}
+
+async function syncProfileIndexLocks(db, firestoreMod, uid = '', beforeProfile = {}, afterProfile = {}) {
+  const userId = profileCacheUid(uid || afterProfile?.uid || beforeProfile?.uid || '');
+  if (!userId) return;
+  const firebase = { firestoreMod };
+  const beforeGames = profileGameRecords(beforeProfile || {});
+  const afterGames = profileGameRecords(afterProfile || {});
+  const beforeNick = new Map();
+  const afterNick = new Map();
+  const beforeRank = new Map();
+  const afterRank = new Map();
+  const collect = (games, nickMap, rankMap) => games.forEach(game => {
+    const farmId = normalizeText(game.farmId || game.id || 'main') || 'main';
+    const region = gameRegion(game);
+    const nickId = profileNicknameLockId(game);
+    if (region && nickId) nickMap.set(`${region}/${nickId}`, { region, id: nickId, farmId, game });
+    const r = rankNum(game.rank || 'p1');
+    const rankId = [4, 5].includes(r) ? profileRankLockId(userId, farmId, game) : '';
+    if (region && rankId) rankMap.set(`${region}/${rankId}`, { region, id: rankId, farmId, game });
+  });
+  collect(beforeGames, beforeNick, beforeRank);
+  collect(afterGames, afterNick, afterRank);
+  const batch = firestoreMod.writeBatch(db);
+  let writes = 0;
+  const del = (path, map, nextMap, collectionName) => {
+    map.forEach((item, key) => {
+      if (!nextMap.has(key)) {
+        batch.delete(firestoreMod.doc(db, 'regions', item.region, collectionName, item.id));
+        writes += 1;
+      }
+    });
+  };
+  del('nick', beforeNick, afterNick, 'profileNicknameLocks');
+  del('rank', beforeRank, afterRank, 'profileRankLocks');
+  afterNick.forEach(item => {
+    batch.set(firestoreMod.doc(db, 'regions', item.region, 'profileNicknameLocks', item.id), profileNicknameLockPayload(userId, item.farmId, item.game, firebase), { merge: true });
+    writes += 1;
+  });
+  afterRank.forEach(item => {
+    batch.set(firestoreMod.doc(db, 'regions', item.region, 'profileRankLocks', item.id), profileRankLockPayload(userId, item.farmId, item.game, firebase), { merge: true });
+    writes += 1;
+  });
+  if (writes) {
+    await batch.commit();
+    trackWrites(writes);
+  }
 }
 
 export async function updateUserByAdmin(uid, values) {
@@ -1537,6 +1646,7 @@ export async function updateUserByAdmin(uid, values) {
   if (!canAssignRole(actor, actorProfile, role) || !canRegionalEditTarget(actor, actorProfile, requestedTarget, { ...oldGame, role: oldProfile.role || 'player' })) {
     throw new Error('role-not-allowed');
   }
+  await assertNicknameRegionUnique(db, firestoreMod, uid, 'main', clean);
   await assertAllianceRankLimit(db, firestoreMod, uid, 'main', clean);
   const fullUser = {
     uid,
@@ -1577,7 +1687,9 @@ export async function updateUserByAdmin(uid, values) {
   if (oldGame.rank !== clean.rank) changed.push(`${serviceT('account.rank','Ранг')}: ${clean.rank.toUpperCase()}`);
   if (oldProfile?.role !== role) changed.push(`${serviceT('account.role','Роль')}: ${roleLabel(role)}`);
   if (changed.length) await createUserNotification(uid, { type:'profile_changed', title: serviceT('notifications.profileChanged','Профіль оновлено'), message: changed.join(' · '), region: clean.region, alliance: clean.alliance }).catch(() => null);
-  return getUserProfile(uid, { forceRefresh: true });
+  const savedProfile = await getUserProfile(uid, { forceRefresh: true });
+  await syncProfileIndexLocks(db, firestoreMod, uid, oldProfile || {}, savedProfile || {}).catch(error => console.warn('Profile index sync failed after admin main update', error));
+  return savedProfile;
 }
 
 export async function updateFarmByAdmin(uid, farmId, values) {
@@ -1596,6 +1708,7 @@ export async function updateFarmByAdmin(uid, farmId, values) {
   const role = normalizeRole(values.role || farms[index].role || 'player');
   const targetPreview = { ...farms[index], ...values, role, region: normalizeText(values.region || farms[index].region).replace(/[^0-9]/g, ''), alliance: normalizeAllianceTag(values.alliance || farms[index].alliance), rank: normalizeText(values.rank || farms[index].rank || 'p1').toLowerCase() };
   if (!canAssignRole(actor, actorProfile, role) || !canRegionalEditTarget(actor, actorProfile, targetPreview, farms[index])) throw new Error('role-not-allowed');
+  await assertNicknameRegionUnique(db, firestoreMod, uid, farmId, targetPreview);
   await assertAllianceRankLimit(db, firestoreMod, uid, farmId, targetPreview);
 
   const now = firestoreMod.serverTimestamp();
@@ -1635,7 +1748,9 @@ export async function updateFarmByAdmin(uid, farmId, values) {
   if (oldFarm.rank !== nextFarm.rank) changed.push(`${serviceT('account.rank','Ранг')}: ${nextFarm.rank.toUpperCase()}`);
   if (oldFarm.role !== nextFarm.role) changed.push(`${serviceT('account.role','Роль')}: ${roleLabel(nextFarm.role)}`);
   if (changed.length) await createUserNotification(uid, { type:'farm_profile_changed', title: serviceT('notifications.profileChanged','Профіль оновлено'), message: `${nextFarm.nickname || serviceT('account.farm','Ферма')}: ${changed.join(' · ')}`, region: nextFarm.region, alliance: nextFarm.alliance }).catch(() => null);
-  return getUserProfile(uid, { forceRefresh: true });
+  const savedProfile = await getUserProfile(uid, { forceRefresh: true });
+  await syncProfileIndexLocks(db, firestoreMod, uid, oldProfile || {}, savedProfile || {}).catch(error => console.warn('Profile index sync failed after admin farm update', error));
+  return savedProfile;
 }
 
 export async function approveRoleRequest(requestId) {

@@ -1856,4 +1856,8 @@ window.WKD_TRANSLATIONS.en = {
   "actionLog.clearDone": 'Action log cleared.',
   "actionLog.clearMore": 'Part of the log was cleared. Press again to continue if needed.',
 
+  'account.rankP5Limit': 'This alliance already has a P5. Only one P5 is allowed.',
+  'account.rankP4Limit': 'This alliance already has 20 P4 players. The P4 limit is full.',
+  'account.profileIndexOptimized': 'Nickname and rank checks are optimized with region indexes.',
+
 };

@@ -1856,4 +1856,8 @@ window.WKD_TRANSLATIONS.uk = {
   "actionLog.clearDone": 'Журнал очищено.',
   "actionLog.clearMore": 'Очищено частину записів. Натисни ще раз, якщо треба продовжити.',
 
+  'account.rankP5Limit': 'У цьому альянсі вже є P5. Можна мати тільки одного P5.',
+  'account.rankP4Limit': 'У цьому альянсі вже є 20 гравців P4. Ліміт P4 заповнений.',
+  'account.profileIndexOptimized': 'Перевірка ніку і рангу оптимізована через індекси регіону.',
+
 };

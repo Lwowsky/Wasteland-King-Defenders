@@ -1856,4 +1856,8 @@ window.WKD_TRANSLATIONS.ru = {
   "actionLog.clearDone": 'Журнал очищен.',
   "actionLog.clearMore": 'Удалена часть записей. Нажмите еще раз, чтобы продолжить.',
 
+  'account.rankP5Limit': 'В этом альянсе уже есть P5. Разрешён только один P5.',
+  'account.rankP4Limit': 'В этом альянсе уже есть 20 игроков P4. Лимит P4 заполнен.',
+  'account.profileIndexOptimized': 'Проверка ника и ранга оптимизирована через индексы региона.',
+
 };

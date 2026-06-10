@@ -343,6 +343,14 @@ async function handleSave(event) {
       setStatus(t('account.nicknameDuplicateRegion', 'У цьому регіоні вже є гравець з таким нікнеймом.'), 'error');
       return;
     }
+    if (error?.message === 'rank-p5-limit') {
+      setStatus(t('account.rankP5Limit', 'У цьому альянсі вже є P5. Можна мати тільки одного P5.'), 'error');
+      return;
+    }
+    if (error?.message === 'rank-p4-limit') {
+      setStatus(t('account.rankP4Limit', 'У цьому альянсі вже є 20 гравців P4. Ліміт P4 заповнений.'), 'error');
+      return;
+    }
     setStatus(t('account.saveFailed', 'Could not save the profile. Check access rights and Google sign-in.'), 'error');
   }
 }
