@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=134';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=134';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=134';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=135';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=135';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=135';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -21,14 +21,14 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=134';
+} from '../services/user-db.js?v=135';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=134';
+} from '../services/region-db.js?v=135';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -1001,7 +1001,8 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
     filters: adminPlayerQueryFilters()
   });
   users = Array.isArray(result.users) ? result.users : [];
-  if (!users.length && currentUser?.uid && currentProfile && !filtersAreActive()) {
+  if (!users.length && currentUser?.uid && currentProfile) {
+    // Free self-fallback: does not read Firestore. Useful while a freshly edited admin profile is being re-indexed.
     const fallbackProfile = { id: currentUser.uid, uid: currentUser.uid, email: currentUser.email || currentProfile.email || '', ...currentProfile };
     const fallbackMain = mainRowForUser(fallbackProfile);
     if (canDisplayRow(fallbackMain) && rowMatchesFilters(fallbackMain, filterValues())) users = [fallbackProfile];

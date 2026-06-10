@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=134';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=134';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=134';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=135';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=135';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=135';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -16,7 +16,7 @@ import {
   patchSentMessageD1,
   readNotificationSummaryD1,
   setNotificationSummaryD1
-} from './notifications-d1.js?v=134';
+} from './notifications-d1.js?v=135';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -992,7 +992,7 @@ export function makeAdminUserIndex(data = {}) {
     lastLoginAt: data.lastLoginAt || null,
     createdAtMs,
     updatedAtMs: adminIndexMs(data.updatedAt || data.createdAt || data.lastLoginAt),
-    source: 'admin-users-index-v133'
+    source: 'admin-users-index-v135'
   };
 }
 async function writeAdminUserIndexDoc(db, firestoreMod, profile = {}, batch = null) {
@@ -1678,6 +1678,47 @@ function buildPublicPlayersAdminSearchQuery(firestoreMod, db, { pageSize = 10, f
   return firestoreMod.query(...clauses);
 }
 
+function buildUsersAdminExactSearchQueries(firestoreMod, db, { pageSize = 10, filters = {} } = {}) {
+  const limitCount = Math.max(1, Math.min(50, Number(pageSize) || 10));
+  const nick = normalizeText(filters.nick);
+  const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
+  const alliance = adminAllianceFilterValue(filters.alliance);
+  const role = normalizeRole(filters.role || 'all');
+  const makeQuery = (field, value) => {
+    const clauses = [firestoreMod.collection(db, 'users'), firestoreMod.where(field, '==', value)];
+    if (role && role !== 'all') clauses.push(firestoreMod.where('role', '==', role));
+    clauses.push(firestoreMod.limit(limitCount));
+    return firestoreMod.query(...clauses);
+  };
+  const queries = [];
+  // These are exact, cheap repair queries for old profiles that do not yet have adminUsersIndex docs.
+  // They never scan the whole users collection. Alliance is case-sensitive by design.
+  if (alliance) {
+    queries.push(makeQuery('gameProfile.alliance', alliance));
+    queries.push(makeQuery('alliance', alliance));
+  } else if (nick) {
+    queries.push(makeQuery('gameProfile.nickname', nick));
+    queries.push(makeQuery('nickname', nick));
+    queries.push(makeQuery('gameNick', nick));
+  } else if (region) {
+    queries.push(makeQuery('gameProfile.region', region));
+    queries.push(makeQuery('region', region));
+  } else if (role && role !== 'all') {
+    queries.push(makeQuery('role', role));
+  }
+  return queries;
+}
+
+function mergeUniqueDocs(target = [], docs = []) {
+  const seen = new Set(target.map(doc => doc?.id).filter(Boolean));
+  (Array.isArray(docs) ? docs : []).forEach(doc => {
+    if (!doc?.id || seen.has(doc.id)) return;
+    seen.add(doc.id);
+    target.push(doc);
+  });
+  return target;
+}
+
 async function loadAdminUsersFromPublicPlayers(db, firestoreMod, publicDocs = []) {
   const refs = (Array.isArray(publicDocs) ? publicDocs : [])
     .map(doc => normalizeText(doc.data?.()?.uid || doc.id))
@@ -1770,6 +1811,32 @@ export async function listRegisteredUsersPage(options = {}) {
       }
     } catch (publicError) {
       console.warn('[WKD] publicPlayers admin search fallback skipped:', publicError?.code || publicError?.message || publicError);
+    }
+  }
+
+  if (!mapped.length && hasFilters && !options?.cursor) {
+    const exactQueries = buildUsersAdminExactSearchQueries(firestoreMod, db, { pageSize: queryPageSize, filters });
+    if (exactQueries.length) {
+      try {
+        const exactDocs = [];
+        for (const q of exactQueries) {
+          const snap = await firestoreMod.getDocs(q);
+          readCount += Math.max(1, snap.docs.length);
+          mergeUniqueDocs(exactDocs, snap.docs || []);
+          if (exactDocs.length >= queryPageSize) break;
+        }
+        if (exactDocs.length) {
+          rawDocs = exactDocs;
+          mapped = mapAdminUserDocs(rawDocs, filters);
+          const indexedCount = await writeAdminUserIndexesForDocs(db, firestoreMod, rawDocs).catch(error => {
+            console.warn('[WKD] admin exact users search index repair skipped:', error?.code || error?.message || error);
+            return 0;
+          });
+          queryMode = indexedCount ? `users-exact-repair-${indexedCount}` : 'users-exact-search';
+        }
+      } catch (exactError) {
+        console.warn('[WKD] exact users admin search fallback skipped:', exactError?.code || exactError?.message || exactError);
+      }
     }
   }
 

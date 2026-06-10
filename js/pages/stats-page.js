@@ -1,6 +1,6 @@
 import { formatUserDate, getUserProfile, makePublicPlayer, roleLabel } from '../services/user-db.js';
 import { watchAuth } from '../services/firebase-service.js';
-import { troopLabel } from '../services/region-db.js?v=134';
+import { troopLabel } from '../services/region-db.js?v=135';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -308,7 +308,7 @@ function sortPlayers(a, b) {
 
 function filteredPlayers() {
   const nick = String($('#statsNickSearch')?.value || '').trim().toLowerCase();
-  const alliance = String($('#statsAllianceSearch')?.value || '').trim().toLowerCase();
+  const alliance = String($('#statsAllianceSearch')?.value || '').trim();
   const region = String($('#statsRegionSearch')?.value || '').trim().toLowerCase();
   const role = $('#statsRoleFilter')?.value || 'all';
   const rows = $('#statsRowsFilter')?.value || '10';
@@ -317,8 +317,9 @@ function filteredPlayers() {
     .filter(player => {
       const userNick = String(player.nickname || player.gameNick || '').toLowerCase();
       const main = String(player.mainNickname || '').toLowerCase();
-      const userAlliance = String(player.alliance || '').toLowerCase();
+      const userAlliance = String(player.alliance || '').trim();
       const userRegion = String(player.region || '').toLowerCase();
+      // Nick search is case-insensitive. Alliance filter is case-sensitive: WWW, www and WwW are different alliances.
       return (!nick || userNick.includes(nick) || main.includes(nick))
         && (!alliance || userAlliance.includes(alliance))
         && (!region || userRegion.includes(region));

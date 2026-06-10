@@ -17,7 +17,7 @@ import {
   listRegionAlliances,
   listRegionCatalog,
   shareRegionTable
-} from '../services/region-db.js?v=134';
+} from '../services/region-db.js?v=135';
 import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot } from '../services/region-table-cache.js?v=106';
 
 const $ = selector => document.querySelector(selector);
@@ -328,13 +328,14 @@ function compareRows(a, b) {
 
 function filteredRows() {
   const nick = String($('#regionNickSearch')?.value || '').trim().toLowerCase();
-  const alliance = String($('#regionAllianceSearch')?.value || '').trim().toLowerCase();
+  const alliance = String($('#regionAllianceSearch')?.value || '').trim();
   const troop = $('#regionTroopFilter')?.value || 'all';
   const tier = $('#regionTierFilter')?.value || 'all';
   const shift = $('#regionShiftFilter')?.value || 'all';
   const list = rows.filter(row => {
     if (nick && !String(row.nickname || '').toLowerCase().includes(nick)) return false;
-    if (alliance && !String(row.alliance || '').toLowerCase().includes(alliance)) return false;
+    // Alliance tags are case-sensitive: YYY, yyy and YyY are different alliances.
+    if (alliance && !String(row.alliance || '').trim().includes(alliance)) return false;
     if (troop !== 'all' && row.troopType !== troop) return false;
     if (tier !== 'all' && String(row.tier || '').trim().toUpperCase() !== tier) return false;
     if (shift !== 'all' && row.shift !== shift) return false;

@@ -209,15 +209,18 @@ function renderTable() {
 
 function filteredPlayers() {
   const { $, state } = WKD;
-  const query = $('#searchFilter').value.trim().toLowerCase();
+  const rawQuery = $('#searchFilter').value.trim();
+  const query = rawQuery.toLowerCase();
   const role = $('#roleFilter').value;
   const shift = $('#shiftFilter').value;
   const status = $('#statusFilter').value;
   const tier = $('#tierFilter').value;
 
   let list = state.players.filter(player => {
-    const haystack = `${player.name} ${player.alliance}`.toLowerCase();
-    if (query && !haystack.includes(query)) return false;
+    const nickText = String(player.name || '').toLowerCase();
+    const allianceText = String(player.alliance || '').trim();
+    // Nick search is case-insensitive. Alliance search is case-sensitive, so YYY, yyy and YyY are different alliances.
+    if (rawQuery && !nickText.includes(query) && !allianceText.includes(rawQuery)) return false;
     if (role !== 'all' && player.role !== role) return false;
     if (shift !== 'all' && player.shift !== shift) return false;
     if (tier !== 'all' && player.tier !== tier) return false;
@@ -269,14 +272,12 @@ function placementTemplate(player = {}) {
 }
 
 function allianceBadge(alliance) {
-  if (typeof WKD.renderPlayerManagerAllianceBadge === 'function') {
-    return WKD.renderPlayerManagerAllianceBadge(alliance || '—', hashHue(alliance || 'empty'));
-  }
-  const hue = hashHue(alliance || 'empty');
+  const safe = String(alliance || '—').trim() || '—';
+  const hue = window.WKD?.Badges?.hashHue ? window.WKD.Badges.hashHue(safe) : hashHue(safe);
   if (window.WKD?.Badges?.alliance) {
-    return window.WKD.Badges.alliance(alliance || '—', { preserve: true, hue });
+    return window.WKD.Badges.alliance(safe, { preserve: true, hue });
   }
-  const text = WKD.escapeHtml(alliance || '—');
+  const text = WKD.escapeHtml(safe);
   return `<span class="alliance-badge" style="--ally-hue:${hue}"><span class="badge-dot"></span><span>${text}</span></span>`;
 }
 
