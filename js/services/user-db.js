@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=145';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=145';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=145';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=146';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=146';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=146';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -17,7 +17,7 @@ import {
   readNotificationSummaryD1,
   setNotificationSummaryD1,
   upsertNotificationDirectoryD1
-} from './notifications-d1.js?v=145';
+} from './notifications-d1.js?v=146';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -616,45 +616,50 @@ function campaignClean(values = {}, firebase = null) {
   return payload;
 }
 
-export async function createRegionNotificationCampaign(values = {}) {
+function campaignId(payload = {}) {
+  return `${payload.createdAtMs}-${String(payload.type || 'campaign').replace(/[^a-z0-9_-]/gi, '').slice(0, 50)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+async function writeCampaignFirestoreBackup(firebase, id = '', payload = {}) {
+  if (!firebase || !id || !payload?.region) return null;
+  await firebase.firestoreMod.setDoc(firebase.firestoreMod.doc(firebase.db, 'regions', payload.region, 'notificationCampaigns', id), payload);
+  trackWrites(1);
+  return { id, ...payload, source: payload.source || 'region-campaign' };
+}
+
+async function createCampaignWithFallback(values = {}, options = {}) {
   const firebase = await getFirebase();
   if (!firebase) return null;
   const payload = campaignClean(values, firebase);
   if (!payload.region) return null;
-  const id = `${payload.createdAtMs}-${payload.type.replace(/[^a-z0-9_-]/gi, '').slice(0, 50)}-${Math.random().toString(36).slice(2, 8)}`;
+  if (options.siteMessage) {
+    if (!['all', 'region', 'alliance', 'consuls', 'officers'].includes(payload.targetType)) return null;
+    if (payload.targetType === 'alliance' && !payload.alliance) return null;
+    if (!payload.title || !payload.message) return null;
+  }
+  const id = campaignId(payload);
   const authUser = firebase.auth?.currentUser || null;
+  let d1Campaign = null;
   if (authUser) {
     try {
-      return await createNotificationCampaignD1(authUser, { id, ...payload });
+      d1Campaign = await createNotificationCampaignD1(authUser, { id, ...payload });
     } catch (error) {
-      console.warn('[WKD] D1 region campaign skipped, Firebase fallback used', error);
+      console.warn(`[WKD] D1 ${options.siteMessage ? 'message' : 'region'} campaign skipped, Firebase fallback used`, error);
     }
   }
-  await firebase.firestoreMod.setDoc(firebase.firestoreMod.doc(firebase.db, 'regions', payload.region, 'notificationCampaigns', id), payload);
-  trackWrites(1);
-  return { id, ...payload };
+  const firestoreBackup = await writeCampaignFirestoreBackup(firebase, id, payload).catch(error => {
+    console.warn(`[WKD] Firestore ${options.siteMessage ? 'message' : 'region'} campaign backup skipped`, error);
+    return null;
+  });
+  return d1Campaign || firestoreBackup;
+}
+
+export async function createRegionNotificationCampaign(values = {}) {
+  return createCampaignWithFallback(values, { siteMessage: false });
 }
 
 export async function createSiteMessageCampaign(values = {}) {
-  const firebase = await getFirebase();
-  if (!firebase) return null;
-  const payload = campaignClean({ ...values, type: values.type || 'site_message_campaign' }, firebase);
-  if (!payload.region) return null;
-  if (!['all', 'region', 'alliance', 'consuls', 'officers'].includes(payload.targetType)) return null;
-  if (payload.targetType === 'alliance' && !payload.alliance) return null;
-  if (!payload.title || !payload.message) return null;
-  const id = `${payload.createdAtMs}-${payload.type.replace(/[^a-z0-9_-]/gi, '').slice(0, 50)}-${Math.random().toString(36).slice(2, 8)}`;
-  const authUser = firebase.auth?.currentUser || null;
-  if (authUser) {
-    try {
-      return await createNotificationCampaignD1(authUser, { id, ...payload });
-    } catch (error) {
-      console.warn('[WKD] D1 message campaign skipped, Firebase fallback used', error);
-    }
-  }
-  await firebase.firestoreMod.setDoc(firebase.firestoreMod.doc(firebase.db, 'regions', payload.region, 'notificationCampaigns', id), payload);
-  trackWrites(1);
-  return { id, ...payload };
+  return createCampaignWithFallback({ ...values, type: values.type || 'site_message_campaign' }, { siteMessage: true });
 }
 
 function profileCampaignGames(profile = {}) {
@@ -683,26 +688,9 @@ function campaignMatchesProfile(profile = {}, campaign = {}) {
   return false;
 }
 
-export async function listRegionNotificationCampaignsForProfile(profile = {}, options = {}) {
-  const firebase = await getFirebase();
-  if (!firebase) return [];
-  const regions = profileNotificationRegions(profile || {});
-  if (!regions.length) return [];
+async function listFirestoreCampaignsForProfile(firebase, profile = {}, regions = [], options = {}) {
   const sinceMs = Math.max(0, Number(options.sinceMs) || 0);
   const perRegionLimit = Math.max(1, Math.min(30, Number(options.perRegionLimit) || 8));
-  const totalLimit = Math.max(1, Math.min(80, Number(options.totalLimit) || 20));
-  const authUser = firebase.auth?.currentUser || null;
-  if (authUser) {
-    try {
-      const d1Rows = await listNotificationCampaignsD1(authUser, regions, { sinceMs, limit: Math.min(80, Math.max(totalLimit, regions.length * perRegionLimit)) });
-      const filtered = d1Rows
-        .filter(item => campaignMatchesProfile(profile || {}, item))
-        .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
-      return filtered.slice(0, totalLimit);
-    } catch (error) {
-      console.warn('[WKD] D1 campaigns unavailable, Firebase fallback used', error);
-    }
-  }
   const { db, firestoreMod } = firebase;
   const all = [];
   for (const region of regions) {
@@ -720,15 +708,42 @@ export async function listRegionNotificationCampaignsForProfile(profile = {}, op
       all.push({ ...data, id: doc.id, source: 'campaign', unread: true, createdAtMs });
     });
   }
+  return all;
+}
+
+function dedupeCampaigns(list = [], totalLimit = 20) {
   const deduped = [];
   const seen = new Set();
-  all.sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0)).forEach(item => {
+  list.sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0)).forEach(item => {
     const key = item.campaignGroupId || `${item.region}:${item.id}`;
     if (seen.has(key)) return;
     seen.add(key);
     deduped.push(item);
   });
   return deduped.slice(0, totalLimit);
+}
+
+export async function listRegionNotificationCampaignsForProfile(profile = {}, options = {}) {
+  const firebase = await getFirebase();
+  if (!firebase) return [];
+  const regions = profileNotificationRegions(profile || {});
+  if (!regions.length) return [];
+  const sinceMs = Math.max(0, Number(options.sinceMs) || 0);
+  const perRegionLimit = Math.max(1, Math.min(30, Number(options.perRegionLimit) || 8));
+  const totalLimit = Math.max(1, Math.min(80, Number(options.totalLimit) || 20));
+  const authUser = firebase.auth?.currentUser || null;
+  if (authUser) {
+    try {
+      const d1Rows = await listNotificationCampaignsD1(authUser, regions, { sinceMs, limit: Math.min(80, Math.max(totalLimit, regions.length * perRegionLimit)) });
+      const filtered = d1Rows
+        .filter(item => campaignMatchesProfile(profile || {}, item))
+        .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
+      if (filtered.length) return dedupeCampaigns(filtered, totalLimit);
+    } catch (error) {
+      console.warn('[WKD] D1 campaigns unavailable, Firebase fallback used', error);
+    }
+  }
+  return dedupeCampaigns(await listFirestoreCampaignsForProfile(firebase, profile, regions, { sinceMs, perRegionLimit }), totalLimit);
 }
 
 export function formatUserDate(value) {

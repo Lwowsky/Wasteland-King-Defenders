@@ -21,12 +21,12 @@ import {
   patchUserSentMessage,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=145';
+} from '../services/user-db.js?v=146';
 import {
   countNotificationDirectoryD1,
   listNotificationDirectoryRegionsD1,
   searchNotificationDirectoryD1
-} from '../services/notifications-d1.js?v=145';
+} from '../services/notifications-d1.js?v=146';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -885,7 +885,8 @@ async function sendCampaignMessage(type = 'region', recipients = [], values = {}
       actorRole: senderRole,
       actorRoleText: roleLabel(senderRole)
     });
-    if (campaign) results.push(campaign);
+    if (!campaign?.id) throw new Error('campaign-write-failed');
+    results.push(campaign);
   }
   return results;
 }
@@ -945,6 +946,7 @@ async function sendMessage() {
 
   if (canUseCampaignForTarget(type)) {
     const campaigns = await sendCampaignMessage(type, recipients, { title, message: body, targetLabel });
+    if (!campaigns.length) throw new Error('campaign-write-failed');
     recipientPreview = type === 'all'
       ? `${t('messages.campaignRegions', 'Регіонів')}: ${campaigns.length}`
       : `${messageTargetLabel({ targetType: type, region: activeRegion(), alliance: activeAlliance(), targetLabel })}`;

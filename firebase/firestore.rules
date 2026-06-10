@@ -514,6 +514,7 @@ service cloud.firestore {
         && request.resource.data.targetLabel is string
         && request.resource.data.targetLabel.size() <= 160
         && (!request.resource.data.keys().hasAny(['campaignGroupId']) || (request.resource.data.campaignGroupId is string && request.resource.data.campaignGroupId.size() <= 120))
+        && (!request.resource.data.keys().hasAny(['expiresAtMs']) || request.resource.data.expiresAtMs is int)
         && request.resource.data.createdAt == request.time
         && request.resource.data.createdAtMs is int
         && (
@@ -524,7 +525,7 @@ service cloud.firestore {
             && request.resource.data.keys().hasAny(['title'])
             && request.resource.data.keys().hasAny(['message']))
         )
-        && request.resource.data.keys().hasOnly(['type','source','region','cycleId','titleKey','messageKey','title','message','alliance','campaignGroupId','actorUid','actorName','actorRole','actorRoleText','targetType','targetLabel','createdAt','createdAtMs']);
+        && request.resource.data.keys().hasOnly(['type','source','region','cycleId','titleKey','messageKey','title','message','alliance','campaignGroupId','expiresAtMs','actorUid','actorName','actorRole','actorRoleText','targetType','targetLabel','createdAt','createdAtMs']);
     }
 
     function publicWastelandRegistrationSafe(regionId) {
