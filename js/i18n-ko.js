@@ -1986,4 +1986,9 @@ window.WKD_TRANSLATIONS.ko = {
 
   'admin.cloudflareLimitsLead': 'Worker secret을 통한 Cloudflare 실제 데이터와 Workers Free / D1 Free 참고 제한입니다.',
 
+  'admin.cloudflareClearCache': '캐시 지우기',
+  'admin.cloudflareNoCacheNote': 'Cloudflare 참고 한도가 표시됩니다. 새로고침을 누르면 실제 데이터를 가져와 요청 절약을 위해 로컬에 저장합니다.',
+  'admin.cloudflareCachedNote': '저장된 Cloudflare 실제 데이터: {start} — {end}. 마지막 업데이트: {updated}. 새로고침을 눌러 최신 수치를 가져오세요.',
+  'admin.cloudflareUsageNote': 'Cloudflare 참고 한도가 표시됩니다. 새로고침을 누르면 실제 데이터를 가져와 요청 절약을 위해 로컬에 저장합니다.',
+
 };

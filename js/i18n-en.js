@@ -1919,7 +1919,7 @@ window.WKD_TRANSLATIONS.en = {
   'admin.firebaseLimitsLead': 'Estimated Firestore counter for the free plan. Check exact numbers in Firebase Console.',
   'admin.cloudflareLimitsTitle': 'Cloudflare limits',
   'admin.cloudflareLimitsLead': 'Estimated Workers Free and D1 Free limits. Check exact numbers in Cloudflare Dashboard.',
-  'admin.cloudflareUsageNote': 'This is a local usage estimate from this browser. Real Cloudflare usage can be connected only through a secure Worker with the API token stored as a secret, not directly in the frontend.',
+  'admin.cloudflareUsageNote': 'Reference Cloudflare limits are shown. Press Refresh to load real data and save it locally to reduce requests.',
   'admin.playersPageInfo': 'Page {page} / {pages} · players {total}',
   'admin.cloudflare.firestoreStorage.label': 'Firestore storage',
   'admin.cloudflare.firestoreStorage.detail': 'Free Spark plan',
@@ -1982,8 +1982,13 @@ window.WKD_TRANSLATIONS.en = {
   'admin.cloudflare.d1ReadQueries.detail': 'Real D1 read queries today UTC',
   'admin.cloudflare.d1WriteQueries.label': 'D1 write queries',
   'admin.cloudflare.d1WriteQueries.detail': 'Real D1 write queries today UTC',
-  'admin.cloudflareUsageNote': 'This is a local estimate from this browser. Press Refresh to load real data through the secure Worker secret.',
+  'admin.cloudflareUsageNote': 'Reference Cloudflare limits are shown. Press Refresh to load real data and save it locally to reduce requests.',
 
   'admin.cloudflareLimitsLead': 'Real Cloudflare data through the Worker secret plus Workers Free and D1 Free reference limits.',
+
+  'admin.cloudflareClearCache': 'Clear cache',
+  'admin.cloudflareNoCacheNote': 'Reference Cloudflare limits are shown. Press Refresh to load real data and save it locally to reduce requests.',
+  'admin.cloudflareCachedNote': 'Saved real Cloudflare data: {start} — {end}. Last update: {updated}. Press Refresh to fetch fresh numbers.',
+  'admin.cloudflareUsageNote': 'Reference Cloudflare limits are shown. Press Refresh to load real data and save it locally to reduce requests.',
 
 };

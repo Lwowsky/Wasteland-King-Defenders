@@ -1986,4 +1986,9 @@ window.WKD_TRANSLATIONS.vi = {
 
   'admin.cloudflareLimitsLead': 'Dữ liệu Cloudflare thật qua Worker secret và giới hạn tham khảo Workers Free / D1 Free.',
 
+  'admin.cloudflareClearCache': 'Xóa bộ nhớ đệm',
+  'admin.cloudflareNoCacheNote': 'Đang hiển thị giới hạn tham khảo của Cloudflare. Nhấn Làm mới để lấy dữ liệu thật và lưu cục bộ nhằm tiết kiệm yêu cầu.',
+  'admin.cloudflareCachedNote': 'Dữ liệu Cloudflare thật đã lưu: {start} — {end}. Cập nhật lần cuối: {updated}. Nhấn Làm mới để lấy số mới.',
+  'admin.cloudflareUsageNote': 'Đang hiển thị giới hạn tham khảo của Cloudflare. Nhấn Làm mới để lấy dữ liệu thật và lưu cục bộ nhằm tiết kiệm yêu cầu.',
+
 };

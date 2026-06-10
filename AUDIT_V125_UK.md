@@ -11,7 +11,7 @@
 - Якщо реальні дані недоступні, адмінка не падає і показує локальну оцінку.
 - Додано окремий frontend service `js/services/cloudflare-usage.js`.
 - Оновлено переклади для UA, EN, RU, PL, DE, JA, ZH, KO, VI, AR.
-- Оновлено cache-busting до `v=125`.
+- Оновлено cache-busting до `v=126`.
 
 ## Які реальні метрики підтягуються
 

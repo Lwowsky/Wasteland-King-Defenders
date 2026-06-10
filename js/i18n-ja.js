@@ -1986,4 +1986,9 @@ window.WKD_TRANSLATIONS.ja = {
 
   'admin.cloudflareLimitsLead': 'Worker secret 経由の Cloudflare 実データと Workers Free / D1 Free の参考制限。',
 
+  'admin.cloudflareClearCache': 'キャッシュを削除',
+  'admin.cloudflareNoCacheNote': 'Cloudflare の参考上限を表示しています。更新を押すと実データを取得し、リクエスト節約のためローカルに保存します。',
+  'admin.cloudflareCachedNote': '保存済みの Cloudflare 実データ: {start} — {end}。最終更新: {updated}。更新を押すと最新の数値を取得します。',
+  'admin.cloudflareUsageNote': 'Cloudflare の参考上限を表示しています。更新を押すと実データを取得し、リクエスト節約のためローカルに保存します。',
+
 };

@@ -1986,4 +1986,9 @@ window.WKD_TRANSLATIONS.pl = {
 
   'admin.cloudflareLimitsLead': 'Rzeczywiste dane Cloudflare przez Worker secret oraz limity referencyjne Workers Free i D1 Free.',
 
+  'admin.cloudflareClearCache': 'Wyczyść cache',
+  'admin.cloudflareNoCacheNote': 'Pokazano referencyjne limity Cloudflare. Kliknij Odśwież, aby pobrać rzeczywiste dane i zapisać je lokalnie, żeby oszczędzać zapytania.',
+  'admin.cloudflareCachedNote': 'Zapisane rzeczywiste dane Cloudflare: {start} — {end}. Ostatnia aktualizacja: {updated}. Kliknij Odśwież, aby pobrać świeże liczby.',
+  'admin.cloudflareUsageNote': 'Pokazano referencyjne limity Cloudflare. Kliknij Odśwież, aby pobrać rzeczywiste dane i zapisać je lokalnie, żeby oszczędzać zapytania.',
+
 };

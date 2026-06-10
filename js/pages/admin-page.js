@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getUsageEstimate, resetUsageEstimate, getCloudflareUsageEstimate, resetCloudflareUsageEstimate } from '../services/usage-tracker.js?v=125';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=125';
-import { fetchRealCloudflareUsage } from '../services/cloudflare-usage.js?v=125';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=126';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=126';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=126';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -20,14 +20,14 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=125';
+} from '../services/user-db.js?v=126';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=125';
+} from '../services/region-db.js?v=126';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -55,7 +55,7 @@ let playersPage = 1;
 let playersCursorStack = [null];
 let playersPageMeta = { hasNext: false, reads: 0, queryMode: 'indexed' };
 let playerSearchDebounce = null;
-let cloudflareRealUsage = null;
+let cloudflareRealUsage = getCachedCloudflareUsage();
 let cloudflareUsageLoading = false;
 
 function allianceTag3(value) { return window.WKD?.allianceTag3 ? window.WKD.allianceTag3(value) : Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join(''); }
@@ -252,7 +252,7 @@ function leadersFromSummary(includeFarms = includeAdminFarmRows()) {
 }
 
 async function fetchPublicCacheJson(fileName) {
-  const response = await fetch(`public-cache/${fileName}?v=125&t=${Date.now()}`, { cache: 'no-store' });
+  const response = await fetch(`public-cache/${fileName}?v=126&t=${Date.now()}`, { cache: 'no-store' });
   if (!response.ok) throw new Error(`${fileName}-${response.status}`);
   return response.json();
 }
@@ -495,8 +495,8 @@ function cloudflareUsageCardHtml(key, row = {}, detail = '') {
   const percent = Math.max(0, Math.min(100, Number(row.percent) || 0));
   return `<article class="admin-usage-card">
     <span>${escapeHtml(label)}</span>
-    <b>${escapeHtml(remaining)}</b>
-    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(used)} / ${escapeHtml(limit)}</small>
+    <b>${escapeHtml(used)}</b>
+    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(remaining)} / ${escapeHtml(limit)}</small>
     <div class="admin-usage-bar" aria-hidden="true"><i style="width:${percent}%"></i></div>
     <small>${escapeHtml(t(`admin.cloudflare.${key}.detail`, detail))}</small>
   </article>`;
@@ -523,8 +523,8 @@ function cloudflareBytesCardHtml(key, row = {}, detail = '') {
   const percent = Math.max(0, Math.min(100, Number(row.percent) || 0));
   return `<article class="admin-usage-card">
     <span>${escapeHtml(label)}</span>
-    <b>${escapeHtml(remaining)}</b>
-    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(used)} / ${escapeHtml(limit)}</small>
+    <b>${escapeHtml(used)}</b>
+    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(remaining)} / ${escapeHtml(limit)}</small>
     <div class="admin-usage-bar" aria-hidden="true"><i style="width:${percent}%"></i></div>
     <small>${escapeHtml(t(`admin.cloudflare.${key}.detail`, detail))}</small>
   </article>`;
@@ -588,27 +588,30 @@ function renderCloudflareUsage() {
       const errors = Array.isArray(cloudflareRealUsage.partialErrors) && cloudflareRealUsage.partialErrors.length
         ? ` ${tv('admin.cloudflarePartialNote', 'Часткові помилки: {errors}', { errors: cloudflareRealUsage.partialErrors.map(item => `${item.source}: ${item.error}`).join('; ') })}`
         : '';
-      note.textContent = `${tv('admin.cloudflareRealNote', 'Реальні дані Cloudflare за сьогодні UTC: {start} — {end}. Оновлено: {updated}.', {
+      const noteKey = cloudflareRealUsage.fromCache ? 'admin.cloudflareCachedNote' : 'admin.cloudflareRealNote';
+      const noteFallback = cloudflareRealUsage.fromCache
+        ? 'Збережені реальні дані Cloudflare: {start} — {end}. Останнє оновлення: {updated}. Натисни Оновити, щоб взяти свіжі цифри.'
+        : 'Реальні дані Cloudflare за сьогодні UTC: {start} — {end}. Оновлено: {updated}.';
+      note.textContent = `${tv(noteKey, noteFallback, {
         start: period.start || period.dateStart || '—',
         end: period.end || period.dateEnd || '—',
-        updated: cloudflareRealUsage.generatedAt || '—'
+        updated: cloudflareRealUsage.generatedAt || cloudflareRealUsage.cachedAt || '—'
       })}${errors}`;
     }
     return;
   }
-  const usage = getCloudflareUsageEstimate();
   grid.innerHTML = [
-    cloudflareUsageCardHtml('workerRequests', usage.workerRequests, 'Workers Free requests'),
-    cloudflareUsageCardHtml('d1RowsRead', usage.d1RowsRead, 'D1 Free rows read'),
-    cloudflareUsageCardHtml('d1RowsWritten', usage.d1RowsWritten, 'D1 Free rows written'),
-    staticLimitCardHtml('workerCpu', '10 ms / request', 'Workers Free CPU time'),
-    staticLimitCardHtml('workerStaticAssets', 'free', 'Static asset requests'),
+    staticLimitCardHtml('workerRequests', '100 000 / day', 'Workers Free requests'),
+    staticLimitCardHtml('d1RowsRead', '5 000 000 / day', 'D1 Free rows read'),
+    staticLimitCardHtml('d1RowsWritten', '100 000 / day', 'D1 Free rows written'),
     staticLimitCardHtml('d1Storage', '5 GB total', 'D1 Free storage per account'),
     staticLimitCardHtml('d1DatabaseSize', '500 MB / DB', 'D1 Free maximum database size'),
+    staticLimitCardHtml('workerCpu', '10 ms / request', 'Workers Free CPU time'),
+    staticLimitCardHtml('workerStaticAssets', 'free', 'Static asset requests'),
     staticLimitCardHtml('d1QueriesPerInvocation', '50', 'D1 queries per Worker invocation on Free')
   ].join('');
   const note = $('#cloudflareUsageNote');
-  if (note) note.textContent = t('admin.cloudflareUsageNote', 'Це локальна оцінка запитів цього браузера. Натисни Оновити, щоб отримати реальні дані через безпечний Worker secret.');
+  if (note) note.textContent = t('admin.cloudflareNoCacheNote', 'Показані довідкові ліміти Cloudflare. Натисни Оновити, щоб отримати реальні дані й зберегти їх локально для економії запитів.');
 }
 
 async function refreshRealCloudflareUsage() {
@@ -1231,7 +1234,7 @@ function bindAdminControls() {
   $('#refreshUsageBtn')?.addEventListener('click', renderUsage);
   $('#refreshCloudflareUsageBtn')?.addEventListener('click', () => refreshRealCloudflareUsage().catch(console.error));
   $('#resetUsageEstimateBtn')?.addEventListener('click', () => { resetUsageEstimate(); renderUsage(); });
-  $('#resetCloudflareUsageBtn')?.addEventListener('click', () => { cloudflareRealUsage = null; resetCloudflareUsageEstimate(); renderCloudflareUsage(); });
+  $('#resetCloudflareUsageBtn')?.addEventListener('click', () => { cloudflareRealUsage = null; clearCachedCloudflareUsage(); renderCloudflareUsage(); });
   $('#cleanupOldDocsBtn')?.addEventListener('click', () => runOldDocsCleanup().catch(console.error));
   $('#scanFirebaseArchiveBtn')?.addEventListener('click', () => runFirebaseArchiveScan().catch(console.error));
   $('#cleanupFirebaseNotificationsBtn')?.addEventListener('click', () => runFirebaseArchiveCleanup('notifications').catch(console.error));

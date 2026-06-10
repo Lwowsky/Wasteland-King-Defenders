@@ -1986,4 +1986,9 @@ window.WKD_TRANSLATIONS.ru = {
 
   'admin.cloudflareLimitsLead': 'Реальные данные Cloudflare через Worker secret + справочные лимиты Workers Free и D1 Free.',
 
+  'admin.cloudflareClearCache': 'Очистить кеш',
+  'admin.cloudflareNoCacheNote': 'Показаны справочные лимиты Cloudflare. Нажми Обновить, чтобы получить реальные данные и сохранить их локально для экономии запросов.',
+  'admin.cloudflareCachedNote': 'Сохранённые реальные данные Cloudflare: {start} — {end}. Последнее обновление: {updated}. Нажми Обновить, чтобы получить свежие цифры.',
+  'admin.cloudflareUsageNote': 'Показаны справочные лимиты Cloudflare. Нажми Обновить, чтобы получить реальные данные и сохранить их локально для экономии запросов.',
+
 };

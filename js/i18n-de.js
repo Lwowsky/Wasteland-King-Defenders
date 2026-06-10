@@ -1986,4 +1986,9 @@ window.WKD_TRANSLATIONS.de = {
 
   'admin.cloudflareLimitsLead': 'Echte Cloudflare-Daten über das Worker Secret plus Referenzlimits für Workers Free und D1 Free.',
 
+  'admin.cloudflareClearCache': 'Cache leeren',
+  'admin.cloudflareNoCacheNote': 'Referenzlimits von Cloudflare werden angezeigt. Klicke Aktualisieren, um echte Daten zu laden und lokal zu speichern, damit weniger Anfragen entstehen.',
+  'admin.cloudflareCachedNote': 'Gespeicherte echte Cloudflare-Daten: {start} — {end}. Letzte Aktualisierung: {updated}. Klicke Aktualisieren, um neue Zahlen zu holen.',
+  'admin.cloudflareUsageNote': 'Referenzlimits von Cloudflare werden angezeigt. Klicke Aktualisieren, um echte Daten zu laden und lokal zu speichern, damit weniger Anfragen entstehen.',
+
 };

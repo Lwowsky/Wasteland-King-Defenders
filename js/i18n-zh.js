@@ -1986,4 +1986,9 @@ window.WKD_TRANSLATIONS.zh = {
 
   'admin.cloudflareLimitsLead': '通过 Worker secret 获取 Cloudflare 实际数据，并显示 Workers Free 和 D1 Free 参考限制。',
 
+  'admin.cloudflareClearCache': '清除缓存',
+  'admin.cloudflareNoCacheNote': '正在显示 Cloudflare 参考限制。点击刷新可获取真实数据，并在本地保存以减少请求。',
+  'admin.cloudflareCachedNote': '已保存的 Cloudflare 真实数据：{start} — {end}。最后更新：{updated}。点击刷新可获取最新数字。',
+  'admin.cloudflareUsageNote': '正在显示 Cloudflare 参考限制。点击刷新可获取真实数据，并在本地保存以减少请求。',
+
 };

@@ -1919,7 +1919,7 @@ window.WKD_TRANSLATIONS.uk = {
   'admin.firebaseLimitsLead': 'Орієнтовний лічильник Firestore для безкоштовного плану. Точні цифри дивись у Firebase Console.',
   'admin.cloudflareLimitsTitle': 'Ліміти Cloudflare',
   'admin.cloudflareLimitsLead': 'Орієнтовні ліміти Workers Free і D1 Free. Точні цифри дивись у Cloudflare Dashboard.',
-  'admin.cloudflareUsageNote': 'Це локальна оцінка використання з цього браузера. Реальні дані Cloudflare можна підключити тільки через безпечний Worker з API Token у secret, не напряму у фронтенд.',
+  'admin.cloudflareUsageNote': 'Показані довідкові ліміти Cloudflare. Натисни Оновити, щоб отримати реальні дані й зберегти їх локально для економії запитів.',
   'admin.playersPageInfo': 'Сторінка {page} / {pages} · гравців {total}',
   'admin.cloudflare.firestoreStorage.label': 'Firestore зберігання',
   'admin.cloudflare.firestoreStorage.detail': 'Безкоштовний Spark план',
@@ -1982,8 +1982,13 @@ window.WKD_TRANSLATIONS.uk = {
   'admin.cloudflare.d1ReadQueries.detail': 'Реальні read queries D1 за сьогодні UTC',
   'admin.cloudflare.d1WriteQueries.label': 'D1 write queries',
   'admin.cloudflare.d1WriteQueries.detail': 'Реальні write queries D1 за сьогодні UTC',
-  'admin.cloudflareUsageNote': 'Це локальна оцінка з цього браузера. Натисни Оновити, щоб отримати реальні дані через безпечний Worker secret.',
+  'admin.cloudflareUsageNote': 'Показані довідкові ліміти Cloudflare. Натисни Оновити, щоб отримати реальні дані й зберегти їх локально для економії запитів.',
 
   'admin.cloudflareLimitsLead': 'Реальні дані Cloudflare через Worker secret + довідкові ліміти Workers Free і D1 Free.',
+
+  'admin.cloudflareClearCache': 'Очистити кеш',
+  'admin.cloudflareNoCacheNote': 'Показані довідкові ліміти Cloudflare. Натисни Оновити, щоб отримати реальні дані й зберегти їх локально для економії запитів.',
+  'admin.cloudflareCachedNote': 'Збережені реальні дані Cloudflare: {start} — {end}. Останнє оновлення: {updated}. Натисни Оновити, щоб взяти свіжі цифри.',
+  'admin.cloudflareUsageNote': 'Показані довідкові ліміти Cloudflare. Натисни Оновити, щоб отримати реальні дані й зберегти їх локально для економії запитів.',
 
 };

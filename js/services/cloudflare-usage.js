@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=125';
+import { trackCloudflareUsage } from './usage-tracker.js?v=126';
 
 function cleanText(value = '', max = 160) {
   return String(value ?? '')
@@ -29,6 +29,32 @@ function numberValue(value = 0) {
   return Number.isFinite(number) && number > 0 ? Math.round(number) : 0;
 }
 
+const REAL_USAGE_CACHE_KEY = 'wkd.cloudflareRealUsageCache.v126';
+
+function readCache() {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    const raw = localStorage.getItem(REAL_USAGE_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(value) {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(REAL_USAGE_CACHE_KEY, JSON.stringify(value));
+  } catch {}
+}
+
+function removeCache() {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.removeItem(REAL_USAGE_CACHE_KEY);
+  } catch {}
+}
+
 function percent(used = 0, limit = 0) {
   const safeLimit = numberValue(limit);
   if (!safeLimit) return 0;
@@ -55,6 +81,8 @@ function normalizeCloudflareUsage(data = {}) {
     real: Boolean(data?.real),
     source: cleanText(data?.source || 'cloudflare-graphql-analytics-api', 100),
     generatedAt: cleanText(data?.generatedAt || new Date().toISOString(), 80),
+    cachedAt: cleanText(data?.cachedAt || '', 80),
+    fromCache: Boolean(data?.fromCache),
     period: {
       timezone: cleanText(data?.period?.timezone || 'UTC', 40),
       start: cleanText(data?.period?.start || '', 80),
@@ -92,6 +120,25 @@ function normalizeCloudflareUsage(data = {}) {
   };
 }
 
+export function getCachedCloudflareUsage() {
+  const cached = readCache();
+  if (!cached || cached.real !== true) return null;
+  const normalized = normalizeCloudflareUsage({ ...cached, fromCache: true });
+  return normalized.real ? normalized : null;
+}
+
+export function saveCachedCloudflareUsage(data) {
+  const normalized = normalizeCloudflareUsage(data || {});
+  if (!normalized.real) return normalized;
+  const value = { ...normalized, fromCache: false, cachedAt: new Date().toISOString() };
+  writeCache(value);
+  return value;
+}
+
+export function clearCachedCloudflareUsage() {
+  removeCache();
+}
+
 export async function fetchRealCloudflareUsage(user) {
   const token = await getFirebaseToken(user);
   if (!token) throw new Error('auth-token-required');
@@ -112,5 +159,5 @@ export async function fetchRealCloudflareUsage(user) {
     error.data = data;
     throw error;
   }
-  return normalizeCloudflareUsage(data || {});
+  return saveCachedCloudflareUsage(data || {});
 }

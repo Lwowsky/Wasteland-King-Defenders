@@ -1984,4 +1984,9 @@ window.WKD_TRANSLATIONS.ar = {
 
   'admin.cloudflareLimitsLead': 'بيانات Cloudflare الحقيقية عبر Worker secret مع حدود مرجعية لـ Workers Free و D1 Free.',
 
+  'admin.cloudflareClearCache': 'مسح التخزين المؤقت',
+  'admin.cloudflareNoCacheNote': 'تظهر حدود Cloudflare المرجعية. اضغط تحديث لجلب البيانات الحقيقية وحفظها محلياً لتقليل الطلبات.',
+  'admin.cloudflareCachedNote': 'بيانات Cloudflare الحقيقية المحفوظة: {start} — {end}. آخر تحديث: {updated}. اضغط تحديث لجلب أرقام جديدة.',
+  'admin.cloudflareUsageNote': 'تظهر حدود Cloudflare المرجعية. اضغط تحديث لجلب البيانات الحقيقية وحفظها محلياً لتقليل الطلبات.',
+
 };
