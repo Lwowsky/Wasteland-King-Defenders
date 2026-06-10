@@ -1941,8 +1941,6 @@ window.WKD_TRANSLATIONS.en = {
 
   'admin.summaryOptimized': '{players} players loaded • {shown} rows shown now • {requests} requests',
   'admin.playersPageInfoOptimized': 'Page {page} · main shown: {shown} · total: {total} · Firebase reads≈{reads}',
-  'admin.playersLoadedOptimized': 'Loaded {count} newest players. Firebase reads≈{reads}; the full users collection is not read.',
-  'admin.playersLoadedFiltered': 'Loaded {count} players by filter. Firebase reads≈{reads}. If an older player is not found, clear the filter or press Next.',
   'admin.playersNextUnavailable': 'Next page is unavailable: missing Firestore cursor.',
   'security.lazyNote': 'Open the Security tab to run the check without extra Firebase reads.',
 
@@ -2002,4 +2000,15 @@ window.WKD_TRANSLATIONS.en = {
   "admin.firebase.outboundTraffic.detail": "Spark outbound transfer reference limit",
   "admin.firebase.authDailyActiveUsers.label": "Auth DAU",
   "admin.firebase.authDailyActiveUsers.detail": "Firebase Auth Spark Tier 1 reference limit",
+  'admin.rebuildIndexBtn': 'Update index',
+  'admin.rebuildIndexTitle': 'Update player index?',
+  'admin.rebuildIndexMessage': 'The site will read up to 500 profiles once and create a lightweight index for cheap search. Use this after old versions or when search cannot find a player.',
+  'admin.rebuildIndexAccept': 'Update index',
+  'admin.rebuildIndexRunning': 'Updating player index...',
+  'admin.rebuildIndexDone': 'Index updated: scanned {scanned}, indexed {indexed}. Firebase reads≈{reads}, writes≈{writes}.',
+  'admin.rebuildIndexDenied': 'Only Admin or Moderator can update the index.',
+  'admin.rebuildIndexFailed': 'Could not update the player index. Check Firestore rules and access rights.',
+  'admin.playersLoadedOptimized': 'Loaded {count} newest players from adminUsersIndex. Firebase reads≈{reads}; the full users collection is not read.',
+  'admin.playersLoadedFiltered': 'Loaded {count} players from the index. Firebase reads≈{reads}. Search runs only by Refresh or Enter.',
+
 };

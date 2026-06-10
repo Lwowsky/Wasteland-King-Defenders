@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=130';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=130';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=130';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=131';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=131';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=131';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -16,7 +16,7 @@ import {
   patchSentMessageD1,
   readNotificationSummaryD1,
   setNotificationSummaryD1
-} from './notifications-d1.js?v=130';
+} from './notifications-d1.js?v=131';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -878,9 +878,126 @@ export function makePublicPlayer(data = {}) {
       ? getUserFarms(data).filter(farm => farm.nickname || farm.region || farm.alliance).map((farm, index) => makePublicFarm(farm, index, visibility.showWastelandInfo))
       : []
   };
+
   return publicPlayer;
 }
 
+const ADMIN_USERS_INDEX_COLLECTION = 'adminUsersIndex';
+const ADMIN_INDEX_PREFIX_LIMIT = 32;
+function adminSearchKey(value = '') {
+  return normalizeText(value).toLowerCase();
+}
+function adminPrefixTerms(value = '') {
+  const text = adminSearchKey(value).replace(/\s+/g, ' ').trim();
+  if (!text) return [];
+  const parts = text.split(' ').filter(Boolean).slice(0, 6);
+  const terms = new Set();
+  [text, ...parts].forEach(part => {
+    const safe = part.slice(0, ADMIN_INDEX_PREFIX_LIMIT);
+    for (let i = 1; i <= safe.length; i += 1) terms.add(safe.slice(0, i));
+  });
+  return [...terms].slice(0, 120);
+}
+function adminIndexMs(value) {
+  return timestampToMs(value) || Date.now();
+}
+function adminIndexFarmPayload(farm = {}, index = 0) {
+  const normalized = normalizeFarm(farm, farm.farmId || farm.id || `farm-${index + 1}`);
+  return {
+    farmId: normalized.farmId,
+    id: normalized.id || normalized.farmId,
+    nickname: normalized.nickname,
+    region: gameRegion(normalized),
+    alliance: normalizeAllianceTag(normalized.alliance),
+    allianceKey: adminSearchKey(normalized.alliance),
+    rank: normalized.rank,
+    shk: normalized.shk,
+    role: normalizeRole(normalized.role || 'player'),
+    roleLabel: roleLabel(normalized.role || 'player'),
+    createdAt: normalized.createdAt || null,
+    updatedAt: normalized.updatedAt || null
+  };
+}
+export function makeAdminUserIndex(data = {}) {
+  const uid = normalizeText(data.uid || data.id || '');
+  const main = getGameProfile(data);
+  const farms = getUserFarms(data).map(adminIndexFarmPayload);
+  const role = normalizeRole(data.role || 'player');
+  const allGames = [
+    { ...main, role, farmId: 'main' },
+    ...farms
+  ];
+  const regionKeys = [...new Set(allGames.map(game => gameRegion(game)).filter(Boolean))];
+  const allianceKeys = [...new Set(allGames.map(game => adminSearchKey(game.alliance)).filter(Boolean))];
+  const roleKeys = [...new Set([role, ...farms.map(farm => normalizeRole(farm.role || 'player'))].filter(Boolean))];
+  const searchPrefixes = [...new Set([
+    ...adminPrefixTerms(main.nickname),
+    ...adminPrefixTerms(data.email),
+    ...adminPrefixTerms(data.displayName),
+    ...farms.flatMap(farm => adminPrefixTerms(farm.nickname))
+  ])].slice(0, 240);
+  const createdAtMs = adminIndexMs(data.createdAt || data.updatedAt || data.lastLoginAt);
+  return {
+    uid,
+    email: normalizeText(data.email).slice(0, 180),
+    displayName: normalizeText(data.displayName).slice(0, 160),
+    photoURL: normalizeText(data.photoURL).slice(0, 300),
+    nickname: main.nickname,
+    gameNick: main.nickname,
+    region: gameRegion(main),
+    alliance: normalizeAllianceTag(main.alliance),
+    allianceKey: adminSearchKey(main.alliance),
+    rank: main.rank,
+    shk: main.shk,
+    role,
+    roleLabel: roleLabel(role),
+    gameProfile: main,
+    farms,
+    farmCount: farms.filter(farm => farm.nickname && farm.region).length,
+    profileComplete: Boolean(isProfileComplete(data) || (main.nickname && main.region && main.alliance && main.rank && main.shk)),
+    regionKeys,
+    allianceKeys,
+    roleKeys,
+    searchPrefixes,
+    createdAt: data.createdAt || data.updatedAt || data.lastLoginAt || null,
+    updatedAt: data.updatedAt || null,
+    lastLoginAt: data.lastLoginAt || null,
+    createdAtMs,
+    updatedAtMs: adminIndexMs(data.updatedAt || data.createdAt || data.lastLoginAt),
+    source: 'admin-users-index-v131'
+  };
+}
+async function writeAdminUserIndexDoc(db, firestoreMod, profile = {}, batch = null) {
+  const index = makeAdminUserIndex(profile || {});
+  if (!index.uid || !index.profileComplete) return null;
+  const ref = firestoreMod.doc(db, ADMIN_USERS_INDEX_COLLECTION, index.uid);
+  if (batch) batch.set(ref, index, { merge: true });
+  else {
+    await firestoreMod.setDoc(ref, index, { merge: true });
+    trackWrites(1);
+  }
+  return index;
+}
+async function writeAdminUserIndexesForDocs(db, firestoreMod, docs = []) {
+  const safeDocs = (Array.isArray(docs) ? docs : []).filter(Boolean);
+  if (!safeDocs.length) return 0;
+  let batch = firestoreMod.writeBatch(db);
+  let count = 0;
+  for (const doc of safeDocs) {
+    const profile = { id: doc.id, ...(doc.data?.() || {}), uid: doc.data?.()?.uid || doc.id };
+    const payload = makeAdminUserIndex(profile);
+    if (!payload.uid || !payload.profileComplete) continue;
+    batch.set(firestoreMod.doc(db, ADMIN_USERS_INDEX_COLLECTION, payload.uid), payload, { merge: true });
+    count += 1;
+    if (count % 400 === 0) {
+      await batch.commit();
+      batch = firestoreMod.writeBatch(db);
+    }
+  }
+  if (count % 400 !== 0) await batch.commit();
+  if (count) trackWrites(count);
+  return count;
+}
 
 async function mirrorPublicStatsFromPublicPlayer(publicPlayer = {}, source = 'profile-save') {
   try {
@@ -1443,23 +1560,48 @@ function adminUserMatchesFilters(user = {}, filters = {}) {
   const alliance = adminAllianceFilterValue(filters.alliance);
   const role = normalizeRole(filters.role || 'all');
   if (role && role !== 'all' && normalizeRole(user.role || 'player') !== role && !farms.some(farm => normalizeRole(farm.role || 'player') === role)) return false;
-  if (nick && !allGames.some(item => adminUserFilterValue(item.nickname || item.gameNick).includes(nick))) return false;
+  if (nick && !allGames.some(item => adminUserFilterValue(item.nickname || item.gameNick).includes(nick)) && !adminUserFilterValue(user.email).includes(nick) && !adminUserFilterValue(user.displayName).includes(nick)) return false;
   if (region && !allGames.some(item => gameRegion(item) === region)) return false;
   if (alliance && !allGames.some(item => adminAllianceFilterValue(item.alliance) === alliance)) return false;
   return true;
 }
 
+function buildAdminUsersIndexQuery(firestoreMod, db, { cursor = null, direction = 'next', pageSize = 10, filters = {} } = {}) {
+  const clauses = [firestoreMod.collection(db, ADMIN_USERS_INDEX_COLLECTION)];
+  const nick = adminSearchKey(filters.nick).slice(0, ADMIN_INDEX_PREFIX_LIMIT);
+  const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
+  const alliance = adminAllianceFilterValue(filters.alliance);
+  const role = normalizeRole(filters.role || 'all');
+  const hasFilters = Boolean(nick || region || alliance || (role && role !== 'all'));
+
+  // Keep Firestore reads cheap by using one indexed query with limit(10).
+  // No-filter view is newest first. Filtered view prefers server-side equality / prefix queries.
+  if (nick) clauses.push(firestoreMod.where('searchPrefixes', 'array-contains', nick));
+  if (!nick && region && alliance) {
+    clauses.push(firestoreMod.where('region', '==', region));
+    clauses.push(firestoreMod.where('allianceKey', '==', alliance));
+  } else if (!nick && region) {
+    clauses.push(firestoreMod.where('regionKeys', 'array-contains', region));
+  } else if (!nick && alliance) {
+    clauses.push(firestoreMod.where('allianceKeys', 'array-contains', alliance));
+  }
+  if (role && role !== 'all') clauses.push(firestoreMod.where('role', '==', role));
+  if (!hasFilters) clauses.push(firestoreMod.orderBy('createdAtMs', 'desc'));
+
+  if (cursor) {
+    if (!hasFilters && direction === 'prev') clauses.push(firestoreMod.endBefore(cursor), firestoreMod.limitToLast(pageSize));
+    else clauses.push(firestoreMod.startAfter(cursor), firestoreMod.limit(pageSize));
+  } else {
+    clauses.push(firestoreMod.limit(pageSize));
+  }
+  return firestoreMod.query(...clauses);
+}
+
 function buildAdminUsersQuery(firestoreMod, db, { cursor = null, direction = 'next', pageSize = 10, filters = {}, strictProfileComplete = true, serverFilters = true } = {}) {
   const clauses = [firestoreMod.collection(db, 'users')];
   const role = normalizeRole(filters.role || 'all');
-  const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
   if (strictProfileComplete) clauses.push(firestoreMod.where('profileComplete', '==', true));
   if (serverFilters && role && role !== 'all') clauses.push(firestoreMod.where('role', '==', role));
-  // Do not server-filter by alliance here: older documents may store alliance tags with preserved case (YYY/EVO),
-  // while search input can arrive as yyy/evo. We keep Firestore reads low with region + limit, then match alliance
-  // case-insensitively on the client so existing players do not disappear from the admin table.
-  // v130: region/alliance filters are applied on the client after a small Firestore page,
-  // because old user documents may not have regionAccess/allianceAccess yet.
   clauses.push(firestoreMod.orderBy('createdAt', 'desc'));
   if (cursor) {
     if (direction === 'prev') clauses.push(firestoreMod.endBefore(cursor), firestoreMod.limitToLast(pageSize));
@@ -1472,6 +1614,13 @@ function buildAdminUsersQuery(firestoreMod, db, { cursor = null, direction = 'ne
 
 function buildLegacyAdminUsersQuery(firestoreMod, db, { pageSize = 10 } = {}) {
   return firestoreMod.query(firestoreMod.collection(db, 'users'), firestoreMod.limit(Math.max(1, Math.min(100, Number(pageSize) || 10))));
+}
+function mapAdminIndexDocs(rawDocs = [], filters = {}) {
+  return rawDocs
+    .map(doc => ({ id: doc.id, ...doc.data(), uid: doc.data()?.uid || doc.id, __doc: doc }))
+    .filter(user => user.profileComplete !== false)
+    .filter(user => adminUserMatchesFilters(user, filters))
+    .sort((a, b) => Number(b.createdAtMs || timestampToMs(b.createdAt || b.updatedAt || b.lastLoginAt)) - Number(a.createdAtMs || timestampToMs(a.createdAt || a.updatedAt || a.lastLoginAt)));
 }
 function mapAdminUserDocs(rawDocs = [], filters = {}) {
   return rawDocs
@@ -1487,89 +1636,96 @@ export async function listRegisteredUsersPage(options = {}) {
   const { db, firestoreMod } = firebase;
   const pageSize = Math.max(1, Math.min(50, Number(options?.pageSize || 10)));
   const filters = options?.filters || {};
-  const hasClientFilters = Boolean(adminUserFilterValue(filters.nick) || normalizeText(filters.region) || normalizeText(filters.alliance) || (normalizeRole(filters.role || 'all') !== 'all'));
-  const scanLimit = hasClientFilters ? Math.max(pageSize + 1, Math.min(100, Number(options?.scanLimit || pageSize * 10))) : pageSize + 1;
-  const baseOptions = {
-    cursor: options?.cursor || null,
-    direction: options?.direction === 'prev' ? 'prev' : 'next',
-    pageSize: scanLimit,
-    filters,
-    strictProfileComplete: true,
-    serverFilters: true
-  };
+  const hasFilters = Boolean(adminUserFilterValue(filters.nick) || normalizeText(filters.region) || normalizeText(filters.alliance) || (normalizeRole(filters.role || 'all') !== 'all'));
+  const queryPageSize = pageSize + 1;
 
-  let snapshot = null;
-  let queryMode = 'indexed';
+  let readCount = 0;
+  let rawDocs = [];
+  let mapped = [];
+  let queryMode = 'adminUsersIndex';
   try {
-    snapshot = await firestoreMod.getDocs(buildAdminUsersQuery(firestoreMod, db, baseOptions));
+    const indexSnap = await firestoreMod.getDocs(buildAdminUsersIndexQuery(firestoreMod, db, {
+      cursor: options?.cursor || null,
+      direction: options?.direction === 'prev' ? 'prev' : 'next',
+      pageSize: queryPageSize,
+      filters
+    }));
+    readCount += Math.max(1, indexSnap.docs.length);
+    rawDocs = indexSnap.docs || [];
+    mapped = mapAdminIndexDocs(rawDocs, filters);
   } catch (error) {
-    console.warn('[WKD] indexed admin users query failed; retrying safe cursor query without compound filters:', error);
-    queryMode = 'safe-fallback';
-    snapshot = await firestoreMod.getDocs(buildAdminUsersQuery(firestoreMod, db, { ...baseOptions, strictProfileComplete: false, serverFilters: false }));
+    console.warn('[WKD] adminUsersIndex query failed; using small users fallback:', error?.code || error?.message || error);
+    queryMode = 'users-small-fallback';
   }
 
-  let readCount = Math.max(1, snapshot.docs.length);
-  let rawDocs = snapshot.docs || [];
-  let mapped = mapAdminUserDocs(rawDocs, filters);
+  // One-time self-healing fallback for old profiles that do not yet have adminUsersIndex docs.
+  // It keeps the scan small (max 100 reads) and writes index docs only for the scanned profiles.
+  if (!mapped.length && !options?.cursor) {
+    try {
+      const fallbackLimit = hasFilters ? Math.max(pageSize + 1, Math.min(100, Number(options?.scanLimit || 50))) : pageSize + 1;
+      const userSnap = await firestoreMod.getDocs(buildAdminUsersQuery(firestoreMod, db, {
+        pageSize: fallbackLimit,
+        filters,
+        strictProfileComplete: true,
+        serverFilters: true
+      }));
+      readCount += Math.max(1, userSnap.docs.length);
+      rawDocs = userSnap.docs || [];
+      mapped = mapAdminUserDocs(rawDocs, filters);
+      const indexedCount = await writeAdminUserIndexesForDocs(db, firestoreMod, rawDocs).catch(error => {
+        console.warn('[WKD] admin users index self-heal skipped:', error?.code || error?.message || error);
+        return 0;
+      });
+      queryMode = indexedCount ? `${queryMode}+self-healed-${indexedCount}` : `${queryMode}+users-fallback`;
+    } catch (fallbackError) {
+      console.warn('[WKD] admin users small fallback failed:', fallbackError?.code || fallbackError?.message || fallbackError);
+    }
+  }
 
   if (!mapped.length && !options?.cursor) {
     try {
-      const legacyLimit = hasClientFilters ? Math.max(pageSize + 1, Math.min(100, Number(options?.scanLimit || pageSize * 10))) : pageSize + 1;
+      const legacyLimit = hasFilters ? Math.max(pageSize + 1, Math.min(100, Number(options?.scanLimit || 50))) : pageSize + 1;
       const legacySnapshot = await firestoreMod.getDocs(buildLegacyAdminUsersQuery(firestoreMod, db, { pageSize: legacyLimit }));
-      if (legacySnapshot.docs?.length) {
-        queryMode = queryMode === 'indexed' ? 'legacy-empty-fallback' : `${queryMode}+legacy-empty-fallback`;
-        readCount += legacySnapshot.docs.length;
-        rawDocs = legacySnapshot.docs || [];
-        mapped = mapAdminUserDocs(rawDocs, filters);
-      }
+      readCount += Math.max(1, legacySnapshot.docs.length);
+      rawDocs = legacySnapshot.docs || [];
+      mapped = mapAdminUserDocs(rawDocs, filters);
+      const indexedCount = await writeAdminUserIndexesForDocs(db, firestoreMod, rawDocs).catch(() => 0);
+      queryMode = indexedCount ? `${queryMode}+legacy-self-healed-${indexedCount}` : `${queryMode}+legacy-fallback`;
     } catch (legacyError) {
-      console.warn('[WKD] legacy admin users fallback failed:', legacyError);
+      console.warn('[WKD] legacy admin users fallback failed:', legacyError?.code || legacyError?.message || legacyError);
     }
   }
 
-  if (!mapped.length && !options?.cursor) {
-    try {
-      const publicLimit = hasClientFilters ? Math.max(pageSize + 1, Math.min(50, Number(options?.scanLimit || pageSize * 5))) : pageSize + 1;
-      const publicSnap = await firestoreMod.getDocs(firestoreMod.query(
-        firestoreMod.collection(db, 'publicPlayers'),
-        firestoreMod.limit(publicLimit)
-      ));
-      readCount += publicSnap.docs.length;
-      const publicRows = publicSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(row => adminUserMatchesFilters(row, filters));
-      const userDocs = [];
-      for (const row of publicRows.slice(0, pageSize + 1)) {
-        const uid = normalizeText(row.uid || row.id);
-        if (!uid) continue;
-        const userSnap = await firestoreMod.getDoc(firestoreMod.doc(db, 'users', uid)).catch(() => null);
-        readCount += 1;
-        if (userSnap?.exists?.()) userDocs.push(userSnap);
-        else userDocs.push({ id: uid, data: () => ({ ...row, uid }) });
-      }
-      if (userDocs.length) {
-        queryMode = `${queryMode}+public-index-fallback`;
-        rawDocs = userDocs;
-        mapped = mapAdminUserDocs(rawDocs, filters);
-      }
-    } catch (publicError) {
-      console.warn('[WKD] public players admin fallback failed:', publicError);
-    }
-  }
-
-  trackReads(readCount);
+  trackReads(readCount || 1);
   const pageUsers = mapped.slice(0, pageSize).map(({ __doc, ...user }) => user);
-  const rawHasNext = hasClientFilters ? rawDocs.length >= scanLimit : rawDocs.length > pageSize;
   const pageDocs = mapped.slice(0, pageSize).map(user => user.__doc).filter(Boolean);
-  const cursorDoc = hasClientFilters ? (rawDocs[rawDocs.length - 1] || pageDocs[pageDocs.length - 1] || null) : (pageDocs[pageDocs.length - 1] || rawDocs[Math.min(rawDocs.length, pageSize) - 1] || null);
+  const hasNext = rawDocs.length > pageSize || mapped.length > pageSize;
   return {
     users: pageUsers,
     firstDoc: pageDocs[0] || rawDocs[0] || null,
-    lastDoc: cursorDoc,
-    hasNext: rawHasNext || mapped.length > pageSize,
-    reads: readCount,
+    lastDoc: pageDocs[pageDocs.length - 1] || rawDocs[Math.min(rawDocs.length, pageSize) - 1] || null,
+    hasNext,
+    reads: readCount || 1,
     pageSize,
     filters,
     queryMode
   };
+}
+
+export async function rebuildAdminUsersIndex(options = {}) {
+  const firebase = await getFirebase();
+  if (!firebase) return { scanned: 0, indexed: 0, reads: 0, writes: 0 };
+  const { db, firestoreMod, auth } = firebase;
+  const actor = auth?.currentUser || null;
+  if (!actor?.uid) throw new Error('auth-required');
+  const actorProfile = await getUserProfile(actor.uid, { forceRefresh: true });
+  if (!(isOwnerUser(actor, actorProfile) || ['admin', 'moderator'].includes(normalizeRole(actorProfile?.role || 'player')))) throw new Error('admin-only');
+  const limitCount = Math.max(1, Math.min(500, Number(options?.limitCount || options?.limit || 500)));
+  const snap = await firestoreMod.getDocs(firestoreMod.query(firestoreMod.collection(db, 'users'), firestoreMod.limit(limitCount)));
+  const scanned = snap.docs.length;
+  trackReads(Math.max(1, scanned));
+  const indexed = await writeAdminUserIndexesForDocs(db, firestoreMod, snap.docs);
+  return { scanned, indexed, reads: Math.max(1, scanned), writes: indexed };
 }
 
 export async function listRegisteredUsers() {
@@ -2109,6 +2265,7 @@ export async function updateUserByAdmin(uid, values) {
 
   const batch = firestoreMod.writeBatch(db);
   batch.set(firestoreMod.doc(db, 'users', uid), fullUser, { merge: true });
+  await writeAdminUserIndexDoc(db, firestoreMod, { ...oldProfile, ...fullUser, uid, createdAt: oldProfile.createdAt || now, updatedAt: now }, batch);
   batch.set(firestoreMod.doc(db, 'publicPlayers', uid), publicPlayer, { merge: true });
   batch.set(firestoreMod.doc(db, 'regions', clean.region, 'players', uid), publicPlayer, { merge: true });
   if (oldGame.region && oldGame.region !== clean.region) {
@@ -2173,6 +2330,7 @@ export async function updateFarmByAdmin(uid, farmId, values) {
   publicPlayer.createdAt = oldProfile.createdAt || now;
   const batch = firestoreMod.writeBatch(db);
   batch.set(firestoreMod.doc(db, 'users', uid), userPatch, { merge: true });
+  if (oldProfile.profileComplete) await writeAdminUserIndexDoc(db, firestoreMod, { ...oldProfile, ...userPatch, uid, updatedAt: now }, batch);
   if (oldProfile.profileComplete) batch.set(firestoreMod.doc(db, 'publicPlayers', uid), publicPlayer, { merge: true });
   await batch.commit();
   removeUserProfileCache(uid);
@@ -2243,6 +2401,7 @@ export async function approveRoleRequest(requestId) {
       updatedAt: now
     }, { merge: true });
     batch.set(requestRef, { status: 'approved', approvedBy, approvedAt: now, updatedAt: now }, { merge: true });
+    if (userData.profileComplete) await writeAdminUserIndexDoc(db, firestoreMod, { ...userData, farms: nextFarms, roleRequest, uid, updatedAt: now }, batch);
     if (userData.profileComplete) batch.set(firestoreMod.doc(db, 'publicPlayers', uid), updatedPublic, { merge: true });
     await batch.commit();
     await markStatsChanged(db, firestoreMod, uid, 'role_changed', 'role-approve').catch(() => null);
@@ -2257,6 +2416,7 @@ export async function approveRoleRequest(requestId) {
   updatedPublic.createdAt = userData.createdAt || request.requestedAt || now;
   batch.set(userRef, { role, roleLabel: roleLabel(role), roleRequest, regionAccess: buildRegionAccess(getGameProfile(userData), getUserFarms(userData)), allianceAccess: buildAllianceAccess(getGameProfile(userData), getUserFarms(userData)), regionRoles: buildRegionRoles(getGameProfile(userData), getUserFarms(userData)), updatedAt: now }, { merge: true });
   batch.set(requestRef, { status: 'approved', approvedBy, approvedAt: now, updatedAt: now }, { merge: true });
+  await writeAdminUserIndexDoc(db, firestoreMod, { ...userData, uid, role, roleRequest, updatedAt: now }, batch);
   batch.set(firestoreMod.doc(db, 'publicPlayers', uid), updatedPublic, { merge: true });
   if (region) batch.set(firestoreMod.doc(db, 'regions', region, 'players', uid), updatedPublic, { merge: true });
   await batch.commit();

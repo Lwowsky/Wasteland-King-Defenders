@@ -1941,8 +1941,6 @@ window.WKD_TRANSLATIONS.pl = {
 
   'admin.summaryOptimized': '{players} graczy załadowano • {shown} wierszy pokazano teraz • {requests} próśb',
   'admin.playersPageInfoOptimized': 'Strona {page} · pokazano głównych: {shown} · razem: {total} · Firebase reads≈{reads}',
-  'admin.playersLoadedOptimized': 'Załadowano {count} najnowszych graczy. Firebase reads≈{reads}; cała kolekcja users nie jest czytana.',
-  'admin.playersLoadedFiltered': 'Załadowano {count} graczy według filtra. Firebase reads≈{reads}. Jeśli starszego gracza nie znaleziono, wyczyść filtr albo naciśnij Dalej.',
   'admin.playersNextUnavailable': 'Następna strona jest niedostępna: brak kursora Firestore.',
   'security.lazyNote': 'Otwórz kartę Bezpieczeństwo, aby uruchomić sprawdzanie bez dodatkowych Firebase reads.',
 
@@ -2002,4 +2000,15 @@ window.WKD_TRANSLATIONS.pl = {
   "admin.firebase.outboundTraffic.detail": "Referencyjny transfer outbound na Spark",
   "admin.firebase.authDailyActiveUsers.label": "Auth DAU",
   "admin.firebase.authDailyActiveUsers.detail": "Referencyjny limit Firebase Auth Spark Tier 1",
+  'admin.rebuildIndexBtn': 'Odśwież indeks',
+  'admin.rebuildIndexTitle': 'Odświeżyć indeks graczy?',
+  'admin.rebuildIndexMessage': 'Strona jednorazowo odczyta do 500 profili i utworzy lekki indeks do taniego wyszukiwania. Użyj po starszych wersjach albo gdy wyszukiwanie nie znajduje gracza.',
+  'admin.rebuildIndexAccept': 'Odśwież indeks',
+  'admin.rebuildIndexRunning': 'Odświeżam indeks graczy...',
+  'admin.rebuildIndexDone': 'Indeks zaktualizowany: sprawdzono {scanned}, zapisano {indexed}. Firebase reads≈{reads}, writes≈{writes}.',
+  'admin.rebuildIndexDenied': 'Indeks może odświeżyć tylko Admin lub Moderator.',
+  'admin.rebuildIndexFailed': 'Nie udało się odświeżyć indeksu graczy. Sprawdź reguły Firestore i uprawnienia.',
+  'admin.playersLoadedOptimized': 'Załadowano {count} najnowszych graczy z adminUsersIndex. Firebase reads≈{reads}; cała kolekcja users nie jest czytana.',
+  'admin.playersLoadedFiltered': 'Załadowano {count} graczy z indeksu. Firebase reads≈{reads}. Wyszukiwanie uruchamia przycisk Odśwież lub Enter.',
+
 };

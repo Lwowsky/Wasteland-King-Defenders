@@ -1941,8 +1941,6 @@ window.WKD_TRANSLATIONS.ru = {
 
   'admin.summaryOptimized': '{players} игроков загружено • {shown} строк показано сейчас • {requests} заявок',
   'admin.playersPageInfoOptimized': 'Страница {page} · основ показано: {shown} · всего: {total} · Firebase reads≈{reads}',
-  'admin.playersLoadedOptimized': 'Загружено {count} новых игроков. Firebase reads≈{reads}; вся коллекция users не читается.',
-  'admin.playersLoadedFiltered': 'Загружено {count} игроков по фильтру. Firebase reads≈{reads}. Если старый игрок не найден, очисти фильтр или нажми Вперед.',
   'admin.playersNextUnavailable': 'Следующая страница недоступна: нет курсора Firestore.',
   'security.lazyNote': 'Открой вкладку Безопасность, чтобы запустить проверку без лишних Firebase reads.',
 
@@ -2002,4 +2000,15 @@ window.WKD_TRANSLATIONS.ru = {
   "admin.firebase.outboundTraffic.detail": "Справочный outbound transfer на Spark",
   "admin.firebase.authDailyActiveUsers.label": "Auth DAU",
   "admin.firebase.authDailyActiveUsers.detail": "Справочный лимит Firebase Auth Spark Tier 1",
+  'admin.rebuildIndexBtn': 'Обновить индекс',
+  'admin.rebuildIndexTitle': 'Обновить индекс игроков?',
+  'admin.rebuildIndexMessage': 'Сайт один раз прочитает до 500 профилей и создаст лёгкий индекс для дешёвого поиска. Это нужно после старых версий или если поиск не находит игрока.',
+  'admin.rebuildIndexAccept': 'Обновить индекс',
+  'admin.rebuildIndexRunning': 'Обновляю индекс игроков...',
+  'admin.rebuildIndexDone': 'Индекс обновлён: проверено {scanned}, записано {indexed}. Firebase reads≈{reads}, writes≈{writes}.',
+  'admin.rebuildIndexDenied': 'Обновить индекс может только Admin или Moderator.',
+  'admin.rebuildIndexFailed': 'Не удалось обновить индекс игроков. Проверь правила Firestore и права доступа.',
+  'admin.playersLoadedOptimized': 'Загружено {count} новых игроков из adminUsersIndex. Firebase reads≈{reads}; вся коллекция users не читается.',
+  'admin.playersLoadedFiltered': 'Загружено {count} игроков из индекса. Firebase reads≈{reads}. Поиск запускается кнопкой Обновить или Enter.',
+
 };

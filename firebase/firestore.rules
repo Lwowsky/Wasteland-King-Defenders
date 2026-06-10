@@ -703,6 +703,12 @@ service cloud.firestore {
       }
     }
 
+    match /adminUsersIndex/{userId} {
+      // Lightweight private search index for admin player table.
+      // Contains email, so only Owner/Admin/Moderator may read or write it.
+      allow read, create, update, delete: if canUseAdminPanel();
+    }
+
     match /publicPlayers/{userId} {
       allow read: if true;
       allow create, update: if ownerEmail() || managerPublicPlayerSafe() || publicPlayerSafe(userId);

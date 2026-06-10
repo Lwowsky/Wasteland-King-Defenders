@@ -1941,8 +1941,6 @@ window.WKD_TRANSLATIONS.ko = {
 
   'admin.summaryOptimized': '{players}명 플레이어 로드됨 • 현재 {shown}행 표시 • 요청 {requests}개',
   'admin.playersPageInfoOptimized': '페이지 {page} · 표시된 메인: {shown} · 전체: {total} · Firebase reads≈{reads}',
-  'admin.playersLoadedOptimized': '최신 플레이어 {count}명을 불러왔습니다. Firebase reads≈{reads}; 전체 users 컬렉션은 읽지 않습니다.',
-  'admin.playersLoadedFiltered': '필터로 플레이어 {count}명을 불러왔습니다. Firebase reads≈{reads}. 오래된 플레이어가 없으면 필터를 지우거나 다음을 누르세요.',
   'admin.playersNextUnavailable': '다음 페이지를 사용할 수 없습니다: Firestore 커서가 없습니다.',
   'security.lazyNote': '추가 Firebase reads 없이 검사하려면 보안 탭을 여세요.',
 
@@ -2002,4 +2000,15 @@ window.WKD_TRANSLATIONS.ko = {
   "admin.firebase.outboundTraffic.detail": "Spark outbound transfer 참고 한도",
   "admin.firebase.authDailyActiveUsers.label": "Auth DAU",
   "admin.firebase.authDailyActiveUsers.detail": "Firebase Auth Spark Tier 1 참고 한도",
+  'admin.rebuildIndexBtn': '인덱스 업데이트',
+  'admin.rebuildIndexTitle': '플레이어 인덱스를 업데이트할까요?',
+  'admin.rebuildIndexMessage': '사이트가 한 번만 최대 500개 프로필을 읽고 저렴한 검색용 경량 인덱스를 만듭니다. 이전 버전 이후 또는 검색이 플레이어를 찾지 못할 때 사용합니다.',
+  'admin.rebuildIndexAccept': '인덱스 업데이트',
+  'admin.rebuildIndexRunning': '플레이어 인덱스 업데이트 중...',
+  'admin.rebuildIndexDone': '인덱스 업데이트 완료: 확인 {scanned}, 기록 {indexed}. Firebase reads≈{reads}, writes≈{writes}.',
+  'admin.rebuildIndexDenied': '인덱스 업데이트는 Admin 또는 Moderator만 가능합니다.',
+  'admin.rebuildIndexFailed': '플레이어 인덱스를 업데이트하지 못했습니다. Firestore 규칙과 권한을 확인하세요.',
+  'admin.playersLoadedOptimized': 'adminUsersIndex에서 최신 플레이어 {count}명을 불러왔습니다. Firebase reads≈{reads}; 전체 users 컬렉션은 읽지 않습니다.',
+  'admin.playersLoadedFiltered': '인덱스에서 플레이어 {count}명을 불러왔습니다. Firebase reads≈{reads}. 검색은 새로고침 버튼 또는 Enter로 실행됩니다.',
+
 };

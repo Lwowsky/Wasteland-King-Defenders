@@ -1941,8 +1941,6 @@ window.WKD_TRANSLATIONS.zh = {
 
   'admin.summaryOptimized': '已加载 {players} 名玩家 • 当前显示 {shown} 行 • {requests} 个申请',
   'admin.playersPageInfoOptimized': '第 {page} 页 · 显示主号: {shown} · 总数: {total} · Firebase reads≈{reads}',
-  'admin.playersLoadedOptimized': '已加载 {count} 名最新玩家。Firebase reads≈{reads}；不会读取整个 users 集合。',
-  'admin.playersLoadedFiltered': '按筛选加载了 {count} 名玩家。Firebase reads≈{reads}。如果找不到较早的玩家，请清除筛选或点击下一页。',
   'admin.playersNextUnavailable': '下一页不可用：缺少 Firestore 游标。',
   'security.lazyNote': '打开“安全”标签页即可在不产生额外 Firebase reads 的情况下运行检查。',
 
@@ -2002,4 +2000,15 @@ window.WKD_TRANSLATIONS.zh = {
   "admin.firebase.outboundTraffic.detail": "Spark outbound transfer 参考限制",
   "admin.firebase.authDailyActiveUsers.label": "Auth DAU",
   "admin.firebase.authDailyActiveUsers.detail": "Firebase Auth Spark Tier 1 参考限制",
+  'admin.rebuildIndexBtn': '更新索引',
+  'admin.rebuildIndexTitle': '更新玩家索引？',
+  'admin.rebuildIndexMessage': '网站将一次读取最多500个资料，并创建轻量索引用于低成本搜索。旧版本后或搜索不到玩家时使用。',
+  'admin.rebuildIndexAccept': '更新索引',
+  'admin.rebuildIndexRunning': '正在更新玩家索引...',
+  'admin.rebuildIndexDone': '索引已更新：扫描 {scanned}，写入 {indexed}。Firebase reads≈{reads}, writes≈{writes}.',
+  'admin.rebuildIndexDenied': '只有 Admin 或 Moderator 可以更新索引。',
+  'admin.rebuildIndexFailed': '无法更新玩家索引。请检查 Firestore 规则和权限。',
+  'admin.playersLoadedOptimized': '已从 adminUsersIndex 加载最新玩家 {count} 个。Firebase reads≈{reads}；不会读取整个 users 集合。',
+  'admin.playersLoadedFiltered': '已从索引加载 {count} 个玩家。Firebase reads≈{reads}。搜索只通过刷新按钮或 Enter 执行。',
+
 };

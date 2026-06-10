@@ -1941,8 +1941,6 @@ window.WKD_TRANSLATIONS.uk = {
 
   'admin.summaryOptimized': '{players} гравців завантажено • {shown} рядків показано зараз • {requests} заявок',
   'admin.playersPageInfoOptimized': 'Сторінка {page} · показано основ: {shown} · всього: {total} · Firebase reads≈{reads}',
-  'admin.playersLoadedOptimized': 'Завантажено {count} нових гравців. Firebase reads≈{reads}; вся колекція users не читається.',
-  'admin.playersLoadedFiltered': 'Завантажено {count} гравців за фільтром. Firebase reads≈{reads}. Якщо пошук не знайшов старого гравця, очисти фільтр або натисни Вперед.',
   'admin.playersNextUnavailable': 'Наступна сторінка недоступна: немає курсора Firestore.',
   'security.lazyNote': 'Відкрий вкладку Безпека, щоб запустити перевірку без зайвих Firebase reads.',
 
@@ -2002,4 +2000,15 @@ window.WKD_TRANSLATIONS.uk = {
   "admin.firebase.outboundTraffic.detail": "Довідковий outbound transfer на Spark",
   "admin.firebase.authDailyActiveUsers.label": "Auth DAU",
   "admin.firebase.authDailyActiveUsers.detail": "Довідковий ліміт Firebase Auth Spark Tier 1",
+  'admin.rebuildIndexBtn': 'Оновити індекс',
+  'admin.rebuildIndexTitle': 'Оновити індекс гравців?',
+  'admin.rebuildIndexMessage': 'Сайт один раз прочитає до 500 профілів і створить легкий індекс для дешевого пошуку. Це потрібно після старих версій або якщо пошук не знаходить гравця.',
+  'admin.rebuildIndexAccept': 'Оновити індекс',
+  'admin.rebuildIndexRunning': 'Оновлюю індекс гравців...',
+  'admin.rebuildIndexDone': 'Індекс оновлено: перевірено {scanned}, записано {indexed}. Firebase reads≈{reads}, writes≈{writes}.',
+  'admin.rebuildIndexDenied': 'Оновити індекс може тільки Admin або Moderator.',
+  'admin.rebuildIndexFailed': 'Не вдалося оновити індекс гравців. Перевір правила Firestore і права доступу.',
+  'admin.playersLoadedOptimized': 'Завантажено {count} нових гравців з adminUsersIndex. Firebase reads≈{reads}; вся users-колекція не читається.',
+  'admin.playersLoadedFiltered': 'Завантажено {count} гравців за індексом. Firebase reads≈{reads}. Пошук запускається кнопкою Оновити або Enter.',
+
 };

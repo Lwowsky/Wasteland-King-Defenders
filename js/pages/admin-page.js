@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=130';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=130';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=130';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=131';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=131';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=131';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -14,20 +14,21 @@ import {
   getUserProfile,
   isOwnerUser,
   listRegisteredUsersPage,
+  rebuildAdminUsersIndex,
   listRoleRequests,
   roleLabel,
   updateUserByAdmin,
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=130';
+} from '../services/user-db.js?v=131';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=130';
+} from '../services/region-db.js?v=131';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -983,9 +984,10 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
     filters: adminPlayerQueryFilters()
   });
   users = Array.isArray(result.users) ? result.users : [];
-  if (!users.length && !filtersAreActive() && currentUser?.uid && currentProfile) {
+  if (!users.length && currentUser?.uid && currentProfile) {
     const fallbackProfile = { id: currentUser.uid, uid: currentUser.uid, email: currentUser.email || currentProfile.email || '', ...currentProfile };
-    if (canDisplayRow(mainRowForUser(fallbackProfile))) users = [fallbackProfile];
+    const fallbackMain = mainRowForUser(fallbackProfile);
+    if (canDisplayRow(fallbackMain) && rowMatchesFilters(fallbackMain, filterValues())) users = [fallbackProfile];
   }
   playersPageMeta = {
     hasNext: Boolean(result.hasNext),
@@ -998,9 +1000,38 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
   renderUsers();
   const msgKey = filtersAreActive() ? 'admin.playersLoadedFiltered' : 'admin.playersLoadedOptimized';
   const fallback = filtersAreActive()
-    ? 'Завантажено {count} гравців за фільтром. Firebase reads≈{reads}. Якщо пошук не знайшов старого гравця, очисти фільтр або натисни Вперед.'
-    : 'Завантажено {count} нових гравців. Firebase reads≈{reads}; вся колекція users не читається.';
+    ? 'Завантажено {count} гравців за індексом. Firebase reads≈{reads}. Пошук запускається кнопкою Оновити або Enter.'
+    : 'Завантажено {count} нових гравців з adminUsersIndex. Firebase reads≈{reads}; вся users-колекція не читається.';
   setStatus(tv(msgKey, fallback, { count: users.length, reads: playersPageMeta.reads }), 'success');
+}
+
+async function rebuildPlayersIndex() {
+  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  const ok = await confirmAction({
+    title: t('admin.rebuildIndexTitle', 'Оновити індекс гравців?'),
+    message: t('admin.rebuildIndexMessage', 'Сайт один раз прочитає до 500 профілів і створить легкий індекс для дешевого пошуку. Це потрібно після старих версій або якщо пошук не знаходить гравця.'),
+    icon: '⚡',
+    acceptText: t('admin.rebuildIndexAccept', 'Оновити індекс')
+  });
+  if (!ok) return;
+  try {
+    setStatus(t('admin.rebuildIndexRunning', 'Оновлюю індекс гравців...'), 'muted');
+    const result = await rebuildAdminUsersIndex({ limitCount: 500 });
+    resetPlayersPage();
+    await loadPlayersPage({ reset: true });
+    setStatus(tv('admin.rebuildIndexDone', 'Індекс оновлено: перевірено {scanned}, записано {indexed}. Firebase reads≈{reads}, writes≈{writes}.', {
+      scanned: result.scanned || 0,
+      indexed: result.indexed || 0,
+      reads: result.reads || 0,
+      writes: result.writes || 0
+    }), 'success');
+  } catch (error) {
+    console.error(error);
+    const msg = error?.message === 'admin-only'
+      ? t('admin.rebuildIndexDenied', 'Оновити індекс може тільки Admin або Moderator.')
+      : t('admin.rebuildIndexFailed', 'Не вдалося оновити індекс гравців. Перевір правила Firestore і права доступу.');
+    setStatus(msg, 'error');
+  }
 }
 
 async function loadNextPlayersPage() {
@@ -1083,14 +1114,21 @@ function openInitialAdminTab() {
   if (hash && document.querySelector(`[data-admin-tab="${hash}"]`)) switchTab(hash);
 }
 
-function debouncePlayerSearchReload() {
+function runPlayerSearchNow() {
   clearTimeout(playerSearchDebounce);
-  playerSearchDebounce = setTimeout(() => loadPlayersPage({ reset: true }).catch(console.error), 650);
+  editUid = null;
+  return loadPlayersPage({ reset: true }).catch(console.error);
+}
+function handlePlayerSearchKeydown(event) {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  runPlayerSearchNow();
 }
 
 function bindAdminControls() {
   $('#refreshRequestsBtn')?.addEventListener('click', () => loadRoleRequests().catch(console.error));
-  $('#refreshPlayersBtn')?.addEventListener('click', () => loadPlayersPage({ reset: true }).catch(console.error));
+  $('#refreshPlayersBtn')?.addEventListener('click', () => runPlayerSearchNow());
+  $('#rebuildAdminIndexBtn')?.addEventListener('click', () => rebuildPlayersIndex().catch(console.error));
   $('#refreshUsageBtn')?.addEventListener('click', () => { renderUsage(); setStatus(t('admin.firebaseEstimateRefreshed', 'Оцінку Firebase оновлено локально.'), 'success'); });
   $('#refreshCloudflareUsageBtn')?.addEventListener('click', () => refreshRealCloudflareUsage().catch(console.error));
   $('#resetUsageEstimateBtn')?.addEventListener('click', () => { resetUsageEstimate(); renderUsage(); setStatus(t('admin.firebaseEstimateReset', 'Оцінку Firebase скинуто.'), 'success'); });
@@ -1107,9 +1145,9 @@ function bindAdminControls() {
   $('#backToProfileBtn')?.addEventListener('click', () => { window.location.href = 'profile.html'; });
   $('#adminRegionForm')?.addEventListener('submit', saveManualRegion);
   $('#adminRegionList')?.addEventListener('click', handleRegionAction);
-  $('#adminNickSearch')?.addEventListener('input', debouncePlayerSearchReload);
-  $('#adminAllianceSearch')?.addEventListener('input', debouncePlayerSearchReload);
-  $('#adminRegionSearch')?.addEventListener('input', debouncePlayerSearchReload);
+  $('#adminNickSearch')?.addEventListener('keydown', handlePlayerSearchKeydown);
+  $('#adminAllianceSearch')?.addEventListener('keydown', handlePlayerSearchKeydown);
+  $('#adminRegionSearch')?.addEventListener('keydown', handlePlayerSearchKeydown);
   $('#adminRoleFilter')?.addEventListener('change', () => loadPlayersPage({ reset: true }).catch(console.error));
   $('#adminIncludeFarmsToggle')?.addEventListener('change', () => { editUid = null; renderStats(); renderUsers(); });
   $('#adminPlayersPrev')?.addEventListener('click', () => loadPreviousPlayersPage().catch(console.error));

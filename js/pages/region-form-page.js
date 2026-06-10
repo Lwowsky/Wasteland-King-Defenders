@@ -25,7 +25,7 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=130';
+} from '../services/region-db.js?v=131';
 import { saveRegionRegistrationD1First, isRegionTableCacheEnabled } from '../services/region-table-cache.js?v=106';
 
 const $ = selector => document.querySelector(selector);
