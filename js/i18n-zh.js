@@ -1860,4 +1860,11 @@ window.WKD_TRANSLATIONS.zh = {
   'account.rankP4Limit': '该联盟已经有 20 名 P4 玩家。P4 名额已满。',
   'account.profileIndexOptimized': '昵称和等级检查已通过地区索引优化。',
 
+  'admin.rebuildProfileIndexes': '重建资料索引',
+  'admin.rebuildProfileIndexesTitle': '要重建资料索引吗？',
+  'admin.rebuildProfileIndexesMessage': '网站会一次性读取旧资料，并创建用于昵称、P4 和 P5 检查的快速锁。更新或大量导入后使用。',
+  'admin.rebuildProfileIndexesRunning': '正在重建资料索引...',
+  'admin.rebuildProfileIndexesDone': '索引已重建：{users} 个资料，{records} 个玩家/农场，{writes} 次写入，删除 {deleted} 个旧锁，昵称冲突：{duplicates}。',
+  'admin.rebuildProfileIndexesFailed': '无法重建资料索引。',
+
 };

@@ -1860,4 +1860,11 @@ window.WKD_TRANSLATIONS.en = {
   'account.rankP4Limit': 'This alliance already has 20 P4 players. The P4 limit is full.',
   'account.profileIndexOptimized': 'Nickname and rank checks are optimized with region indexes.',
 
+  'admin.rebuildProfileIndexes': 'Rebuild profile indexes',
+  'admin.rebuildProfileIndexesTitle': 'Rebuild profile indexes?',
+  'admin.rebuildProfileIndexesMessage': 'The site will read old profiles once and create fast locks for nickname, P4 and P5 checks. Use this after an update or a large import.',
+  'admin.rebuildProfileIndexesRunning': 'Rebuilding profile indexes...',
+  'admin.rebuildProfileIndexesDone': 'Indexes rebuilt: {users} profiles, {records} players/farms, {writes} writes, {deleted} old locks deleted, nickname conflicts: {duplicates}.',
+  'admin.rebuildProfileIndexesFailed': 'Could not rebuild profile indexes.',
+
 };

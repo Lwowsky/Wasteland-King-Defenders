@@ -1860,4 +1860,11 @@ window.WKD_TRANSLATIONS.vi = {
   'account.rankP4Limit': 'Liên minh này đã có 20 người chơi P4. Giới hạn P4 đã đầy.',
   'account.profileIndexOptimized': 'Kiểm tra biệt danh và cấp bậc đã được tối ưu bằng chỉ mục khu vực.',
 
+  'admin.rebuildProfileIndexes': 'Tạo lại chỉ mục hồ sơ',
+  'admin.rebuildProfileIndexesTitle': 'Tạo lại chỉ mục hồ sơ?',
+  'admin.rebuildProfileIndexesMessage': 'Trang sẽ đọc hồ sơ cũ một lần và tạo khóa nhanh để kiểm tra nickname, P4 và P5. Dùng sau khi cập nhật hoặc nhập dữ liệu lớn.',
+  'admin.rebuildProfileIndexesRunning': 'Đang tạo lại chỉ mục hồ sơ...',
+  'admin.rebuildProfileIndexesDone': 'Đã tạo lại chỉ mục: {users} hồ sơ, {records} người chơi/farm, {writes} lần ghi, đã xóa {deleted} khóa cũ, xung đột nickname: {duplicates}.',
+  'admin.rebuildProfileIndexesFailed': 'Không thể tạo lại chỉ mục hồ sơ.',
+
 };

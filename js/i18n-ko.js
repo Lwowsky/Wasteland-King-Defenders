@@ -1860,4 +1860,11 @@ window.WKD_TRANSLATIONS.ko = {
   'account.rankP4Limit': '이 동맹에는 이미 P4 플레이어가 20명 있습니다. P4 한도가 가득 찼습니다.',
   'account.profileIndexOptimized': '닉네임과 랭크 확인이 지역 인덱스로 최적화되었습니다.',
 
+  'admin.rebuildProfileIndexes': '프로필 인덱스 재구성',
+  'admin.rebuildProfileIndexesTitle': '프로필 인덱스를 재구성할까요?',
+  'admin.rebuildProfileIndexesMessage': '기존 프로필을 한 번 읽고 닉네임, P4, P5 확인을 위한 빠른 잠금을 만듭니다. 업데이트 또는 대량 가져오기 후 사용하세요.',
+  'admin.rebuildProfileIndexesRunning': '프로필 인덱스 재구성 중...',
+  'admin.rebuildProfileIndexesDone': '인덱스 재구성 완료: 프로필 {users}개, 플레이어/농장 {records}개, 쓰기 {writes}개, 오래된 잠금 삭제 {deleted}개, 닉네임 충돌 {duplicates}개.',
+  'admin.rebuildProfileIndexesFailed': '프로필 인덱스를 재구성하지 못했습니다.',
+
 };

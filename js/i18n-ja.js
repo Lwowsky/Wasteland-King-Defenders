@@ -1860,4 +1860,11 @@ window.WKD_TRANSLATIONS.ja = {
   'account.rankP4Limit': 'この同盟にはすでに20人のP4がいます。P4の上限に達しています。',
   'account.profileIndexOptimized': 'ニックネームとランクの確認は地域インデックスで最適化されています。',
 
+  'admin.rebuildProfileIndexes': 'プロフィールインデックスを再構築',
+  'admin.rebuildProfileIndexesTitle': 'プロフィールインデックスを再構築しますか？',
+  'admin.rebuildProfileIndexesMessage': '古いプロフィールを一度だけ読み込み、ニックネーム、P4、P5確認用の高速ロックを作成します。更新後や大量インポート後に使用します。',
+  'admin.rebuildProfileIndexesRunning': 'プロフィールインデックスを再構築中...',
+  'admin.rebuildProfileIndexesDone': 'インデックスを再構築しました: プロフィール {users} 件、プレイヤー/ファーム {records} 件、書き込み {writes} 件、削除した古いロック {deleted} 件、ニックネーム競合 {duplicates} 件。',
+  'admin.rebuildProfileIndexesFailed': 'プロフィールインデックスを再構築できませんでした。',
+
 };

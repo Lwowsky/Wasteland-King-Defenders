@@ -1860,4 +1860,11 @@ window.WKD_TRANSLATIONS.uk = {
   'account.rankP4Limit': 'У цьому альянсі вже є 20 гравців P4. Ліміт P4 заповнений.',
   'account.profileIndexOptimized': 'Перевірка ніку і рангу оптимізована через індекси регіону.',
 
+  'admin.rebuildProfileIndexes': 'Перебудувати індекси профілів',
+  'admin.rebuildProfileIndexesTitle': 'Перебудувати індекси профілів?',
+  'admin.rebuildProfileIndexesMessage': 'Сайт один раз прочитає старі профілі й створить швидкі locks для перевірки ніків, P4 і P5. Це потрібно після оновлення або великого імпорту.',
+  'admin.rebuildProfileIndexesRunning': 'Перебудовую індекси профілів...',
+  'admin.rebuildProfileIndexesDone': 'Індекси перебудовано: {users} профілів, {records} гравців/ферм, {writes} записів, {deleted} старих locks видалено, конфліктів ніків: {duplicates}.',
+  'admin.rebuildProfileIndexesFailed': 'Не вдалося перебудувати індекси профілів.',
+
 };

@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=116';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=116';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=117';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=117';
 import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=104';
 import {
   createNotificationCampaignD1,
@@ -16,7 +16,7 @@ import {
   patchSentMessageD1,
   readNotificationSummaryD1,
   setNotificationSummaryD1
-} from './notifications-d1.js?v=116';
+} from './notifications-d1.js?v=117';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -1619,6 +1619,119 @@ async function syncProfileIndexLocks(db, firestoreMod, uid = '', beforeProfile =
     trackWrites(writes);
   }
 }
+
+async function commitProfileIndexBatch(firestoreMod, batchRef, state, force = false) {
+  if (!state.count) return batchRef;
+  if (!force && state.count < 400) return batchRef;
+  await batchRef.commit();
+  state.count = 0;
+  return firestoreMod.writeBatch(state.db);
+}
+
+async function deleteProfileIndexCollectionGroup(db, firestoreMod, collectionId = '') {
+  if (!collectionId || typeof firestoreMod.collectionGroup !== 'function') return 0;
+  const snapshot = await firestoreMod.getDocs(firestoreMod.collectionGroup(db, collectionId));
+  trackReads(Math.max(1, snapshot.docs.length));
+  let batch = firestoreMod.writeBatch(db);
+  const state = { count: 0, db };
+  let deleted = 0;
+  for (const docSnap of snapshot.docs) {
+    batch.delete(docSnap.ref);
+    state.count += 1;
+    deleted += 1;
+    batch = await commitProfileIndexBatch(firestoreMod, batch, state);
+  }
+  await commitProfileIndexBatch(firestoreMod, batch, state, true);
+  if (deleted) trackDeletes(deleted);
+  return deleted;
+}
+
+export async function rebuildProfileIndexLocks(options = {}) {
+  const firebase = await getFirebase();
+  if (!firebase) throw new Error('firebase-not-configured');
+  const { auth, db, firestoreMod } = firebase;
+  const actor = auth?.currentUser || null;
+  const actorProfile = actor ? await getUserProfile(actor.uid) : null;
+  if (!canUseAdminPanel(actor, actorProfile)) throw new Error('admin-only');
+
+  const allUsers = (await listRegisteredUsers())
+    .slice()
+    .sort((a, b) => timestampToMs(a.createdAt) - timestampToMs(b.createdAt));
+
+  const deletedNicknameLocks = await deleteProfileIndexCollectionGroup(db, firestoreMod, 'profileNicknameLocks');
+  const deletedRankLocks = await deleteProfileIndexCollectionGroup(db, firestoreMod, 'profileRankLocks');
+
+  const firebaseCtx = { firestoreMod };
+  const nicknameLocks = new Map();
+  const rankLocks = new Map();
+  let gameRecords = 0;
+  let duplicateNicknames = 0;
+  let p4Locks = 0;
+  let p5Locks = 0;
+
+  for (const profile of allUsers) {
+    const uid = profileCacheUid(profile.uid || profile.id || '');
+    if (!uid) continue;
+    for (const game of profileGameRecords(profile || {})) {
+      const farmId = normalizeText(game.farmId || game.id || 'main') || 'main';
+      const region = gameRegion(game);
+      if (!region) continue;
+      gameRecords += 1;
+      const nickId = profileNicknameLockId(game);
+      if (nickId) {
+        const key = `${region}/${nickId}`;
+        const payload = profileNicknameLockPayload(uid, farmId, game, firebaseCtx);
+        if (nicknameLocks.has(key) && nicknameLocks.get(key)?.ownerKey !== payload.ownerKey) {
+          duplicateNicknames += 1;
+        } else {
+          nicknameLocks.set(key, { region, id: nickId, payload });
+        }
+      }
+      const rank = rankNum(game.rank || 'p1');
+      if ([4, 5].includes(rank)) {
+        const rankId = profileRankLockId(uid, farmId, game);
+        if (rankId) {
+          rankLocks.set(`${region}/${rankId}`, { region, id: rankId, payload: profileRankLockPayload(uid, farmId, game, firebaseCtx) });
+          if (rank === 4) p4Locks += 1;
+          if (rank === 5) p5Locks += 1;
+        }
+      }
+    }
+  }
+
+  let batch = firestoreMod.writeBatch(db);
+  const state = { count: 0, db };
+  let written = 0;
+  for (const item of nicknameLocks.values()) {
+    batch.set(firestoreMod.doc(db, 'regions', item.region, 'profileNicknameLocks', item.id), item.payload, { merge: true });
+    state.count += 1;
+    written += 1;
+    batch = await commitProfileIndexBatch(firestoreMod, batch, state);
+  }
+  for (const item of rankLocks.values()) {
+    batch.set(firestoreMod.doc(db, 'regions', item.region, 'profileRankLocks', item.id), item.payload, { merge: true });
+    state.count += 1;
+    written += 1;
+    batch = await commitProfileIndexBatch(firestoreMod, batch, state);
+  }
+  await commitProfileIndexBatch(firestoreMod, batch, state, true);
+  if (written) trackWrites(written);
+
+  return {
+    users: allUsers.length,
+    gameRecords,
+    nicknameLocks: nicknameLocks.size,
+    rankLocks: rankLocks.size,
+    p4Locks,
+    p5Locks,
+    duplicateNicknames,
+    written,
+    deleted: deletedNicknameLocks + deletedRankLocks,
+    deletedNicknameLocks,
+    deletedRankLocks
+  };
+}
+
 
 export async function updateUserByAdmin(uid, values) {
   if (!uid) throw new Error('missing-user-id');

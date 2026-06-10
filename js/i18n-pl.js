@@ -1860,4 +1860,11 @@ window.WKD_TRANSLATIONS.pl = {
   'account.rankP4Limit': 'Ten sojusz ma już 20 graczy P4. Limit P4 jest pełny.',
   'account.profileIndexOptimized': 'Sprawdzanie nicku i rangi jest zoptymalizowane przez indeksy regionu.',
 
+  'admin.rebuildProfileIndexes': 'Przebuduj indeksy profili',
+  'admin.rebuildProfileIndexesTitle': 'Przebudować indeksy profili?',
+  'admin.rebuildProfileIndexesMessage': 'Strona jednorazowo odczyta stare profile i utworzy szybkie blokady do sprawdzania nicków, P4 i P5. Użyj tego po aktualizacji lub dużym imporcie.',
+  'admin.rebuildProfileIndexesRunning': 'Przebudowuję indeksy profili...',
+  'admin.rebuildProfileIndexesDone': 'Indeksy przebudowane: {users} profili, {records} graczy/farm, {writes} zapisów, {deleted} starych blokad usunięto, konflikty nicków: {duplicates}.',
+  'admin.rebuildProfileIndexesFailed': 'Nie udało się przebudować indeksów profili.',
+
 };

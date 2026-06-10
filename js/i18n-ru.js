@@ -1860,4 +1860,11 @@ window.WKD_TRANSLATIONS.ru = {
   'account.rankP4Limit': 'В этом альянсе уже есть 20 игроков P4. Лимит P4 заполнен.',
   'account.profileIndexOptimized': 'Проверка ника и ранга оптимизирована через индексы региона.',
 
+  'admin.rebuildProfileIndexes': 'Перестроить индексы профилей',
+  'admin.rebuildProfileIndexesTitle': 'Перестроить индексы профилей?',
+  'admin.rebuildProfileIndexesMessage': 'Сайт один раз прочитает старые профили и создаст быстрые locks для проверки ников, P4 и P5. Это нужно после обновления или большого импорта.',
+  'admin.rebuildProfileIndexesRunning': 'Перестраиваю индексы профилей...',
+  'admin.rebuildProfileIndexesDone': 'Индексы перестроены: {users} профилей, {records} игроков/ферм, {writes} записей, {deleted} старых locks удалено, конфликтов ников: {duplicates}.',
+  'admin.rebuildProfileIndexesFailed': 'Не удалось перестроить индексы профилей.',
+
 };

@@ -1858,4 +1858,11 @@ window.WKD_TRANSLATIONS.ar = {
   'account.rankP4Limit': 'يوجد بالفعل 20 لاعبًا من رتبة P4 في هذا التحالف. حد P4 ممتلئ.',
   'account.profileIndexOptimized': 'تم تحسين فحص الاسم والرتبة باستخدام فهارس المنطقة.',
 
+  'admin.rebuildProfileIndexes': 'إعادة بناء فهارس الملفات الشخصية',
+  'admin.rebuildProfileIndexesTitle': 'هل تريد إعادة بناء فهارس الملفات الشخصية؟',
+  'admin.rebuildProfileIndexesMessage': 'سيقرأ الموقع الملفات الشخصية القديمة مرة واحدة وينشئ أقفالًا سريعة لفحص الاسم و P4 و P5. استخدم هذا بعد التحديث أو الاستيراد الكبير.',
+  'admin.rebuildProfileIndexesRunning': 'جارٍ إعادة بناء فهارس الملفات الشخصية...',
+  'admin.rebuildProfileIndexesDone': 'تمت إعادة بناء الفهارس: {users} ملفًا، {records} لاعب/مزرعة، {writes} عمليات كتابة، تم حذف {deleted} أقفال قديمة، تعارضات الأسماء: {duplicates}.',
+  'admin.rebuildProfileIndexesFailed': 'تعذرت إعادة بناء فهارس الملفات الشخصية.',
+
 };
