@@ -38,7 +38,7 @@
   <script defer src="js/app-login-shell.js"></script>
   <script type="module" src="js/auth-google.js?v=118"></script>
   <script type="module" src="js/notifications.js?v=118"></script>
-  <script type="module" src="js/pages/admin-page.js?v=118"></script>
+  <script type="module" src="js/pages/admin-page.js?v=119"></script>
   <script type="module" src="js/pages/security-page.js?v=1171"></script>
 </head>
 <body class="notranslate">
@@ -97,6 +97,22 @@
             </div>
           </div>
           <div class="region-note admin-usage-note" id="firebaseArchiveStatus" data-i18n="admin.firebaseArchiveNote">Очищення запускається тільки вручну й видаляє максимум 500 документів за раз.</div>
+        </div>
+
+        <div class="admin-archive-cleanup" id="d1ArchivePanel">
+          <div class="admin-archive-cleanup-head">
+            <div>
+              <h4 data-i18n="admin.d1ArchiveTitle">Очищення Cloudflare D1</h4>
+              <p data-i18n="admin.d1ArchiveLead">Старі цикли реєстрації, старі заявки та прострочені секретні посилання можна чистити вручну порціями.</p>
+            </div>
+            <div class="admin-archive-actions">
+              <button class="btn" id="scanD1ArchiveBtn" type="button" data-i18n="admin.d1ArchiveScan">Перевірити D1 архів</button>
+              <button class="btn region-save" id="cleanupD1CyclesBtn" type="button" data-i18n="admin.d1ArchiveCleanCycles">Очистити старі цикли 60+ днів</button>
+              <button class="btn region-save" id="cleanupD1SharesBtn" type="button" data-i18n="admin.d1ArchiveCleanShares">Очистити прострочені секретні посилання</button>
+              <button class="btn admin-decline" id="cleanupD1AllBtn" type="button" data-i18n="admin.d1ArchiveCleanAll">Очистити D1 архів 60+ днів</button>
+            </div>
+          </div>
+          <div class="region-note admin-usage-note" id="d1ArchiveStatus" data-i18n="admin.d1ArchiveNote">Очищення запускається тільки вручну й видаляє максимум 500 D1 рядків за раз.</div>
         </div>
       </section>
 

@@ -37,6 +37,8 @@ CREATE TABLE IF NOT EXISTS region_table_shares (
 
 CREATE INDEX IF NOT EXISTS idx_region_access_uid ON region_access(uid);
 CREATE INDEX IF NOT EXISTS idx_region_table_shares_region ON region_table_shares(region);
+CREATE INDEX IF NOT EXISTS idx_region_tables_updated ON region_tables(updated_at_ms);
+CREATE INDEX IF NOT EXISTS idx_region_table_shares_expires ON region_table_shares(expires_at_ms);
 
 CREATE TABLE IF NOT EXISTS public_stats_pages (
   bucket INTEGER PRIMARY KEY,
@@ -160,3 +162,4 @@ CREATE TABLE IF NOT EXISTS notification_campaigns (
 );
 CREATE INDEX IF NOT EXISTS idx_notification_campaigns_region_time ON notification_campaigns(region, created_at_ms DESC);
 CREATE INDEX IF NOT EXISTS idx_notification_campaigns_region_target_time ON notification_campaigns(region, target_type, alliance, created_at_ms DESC);
+CREATE INDEX IF NOT EXISTS idx_notification_campaigns_expires ON notification_campaigns(expires_at_ms);

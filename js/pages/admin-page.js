@@ -1,5 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=89';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=119';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -342,6 +343,68 @@ async function runFirebaseArchiveCleanup(scope) {
   }
 }
 
+
+function setD1ArchiveStatus(text, type = 'muted') {
+  const box = $('#d1ArchiveStatus');
+  if (!box) return;
+  box.removeAttribute('data-i18n');
+  box.textContent = text;
+  box.dataset.type = type;
+}
+
+function d1ArchiveScopeLabel(scope = 'all') {
+  const labels = {
+    cycles: t('admin.d1ArchiveScopeCycles', 'старі цикли'),
+    shares: t('admin.d1ArchiveScopeShares', 'секретні посилання'),
+    campaigns: t('admin.d1ArchiveScopeCampaigns', 'D1 кампанії'),
+    all: t('admin.d1ArchiveScopeAll', 'D1 архів')
+  };
+  return labels[scope] || labels.all;
+}
+
+function d1ArchiveResultText(result = {}) {
+  return tv('admin.d1ArchiveResult', 'Знайдено: {found}. Видалено: {deleted}. Перевірено: {scanned}. Цикли: {cycles}. Посилання: {shares}. Кампанії: {campaigns}.', {
+    found: Number(result.found || 0),
+    deleted: Number(result.deleted || 0),
+    scanned: Number(result.scanned || 0),
+    cycles: Number(result.cycles || 0),
+    shares: Number(result.shares || 0),
+    campaigns: Number(result.campaigns || 0)
+  }) + (result.hasMore ? ` ${t('admin.d1ArchiveHasMore', 'Є ще записи — можна натиснути ще раз.')}` : '');
+}
+
+async function runD1ArchiveScan() {
+  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  try {
+    setD1ArchiveStatus(t('admin.d1ArchiveScanning', 'Перевіряю D1 архів...'), 'muted');
+    const result = await scanD1Archives(currentUser, { scope: 'all', retentionDays: 60, maxScan: 500 });
+    setD1ArchiveStatus(d1ArchiveResultText(result), 'success');
+  } catch (error) {
+    console.error(error);
+    setD1ArchiveStatus(t('admin.d1ArchiveScanFailed', 'Не вдалося перевірити D1 архів.'), 'error');
+  }
+}
+
+async function runD1ArchiveCleanup(scope) {
+  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  const label = d1ArchiveScopeLabel(scope);
+  const ok = await confirmAction({
+    title: tv('admin.d1ArchiveCleanTitle', 'Очистити {scope}?', { scope: label }),
+    message: tv('admin.d1ArchiveCleanMessage', 'Буде видалено до 500 старих D1 рядків. Активний цикл регіону не видаляється. Продовжити?', { scope: label }),
+    icon: '🧹',
+    acceptText: t('admin.d1ArchiveCleanAccept', 'Очистити')
+  });
+  if (!ok) return;
+  try {
+    setD1ArchiveStatus(tv('admin.d1ArchiveCleaning', 'Очищаю {scope}...', { scope: label }), 'muted');
+    const result = await cleanupD1Archives(currentUser, { scope, retentionDays: 60, maxDeletes: 500 });
+    setD1ArchiveStatus(d1ArchiveResultText(result), Number(result.deleted || 0) ? 'success' : 'muted');
+  } catch (error) {
+    console.error(error);
+    setD1ArchiveStatus(t('admin.d1ArchiveCleanFailed', 'Не вдалося очистити D1 архів.'), 'error');
+  }
+}
+
 function renderStats() {
   setAdminPlayersCounterLabel();
   const rows = adminRows();
@@ -676,6 +739,10 @@ function bindAdminControls() {
   $('#cleanupFirebaseNotificationsBtn')?.addEventListener('click', () => runFirebaseArchiveCleanup('notifications').catch(console.error));
   $('#cleanupFirebaseCampaignsBtn')?.addEventListener('click', () => runFirebaseArchiveCleanup('campaigns').catch(console.error));
   $('#cleanupFirebaseActionLogsBtn')?.addEventListener('click', () => runFirebaseArchiveCleanup('actionLogs').catch(console.error));
+  $('#scanD1ArchiveBtn')?.addEventListener('click', () => runD1ArchiveScan().catch(console.error));
+  $('#cleanupD1CyclesBtn')?.addEventListener('click', () => runD1ArchiveCleanup('cycles').catch(console.error));
+  $('#cleanupD1SharesBtn')?.addEventListener('click', () => runD1ArchiveCleanup('shares').catch(console.error));
+  $('#cleanupD1AllBtn')?.addEventListener('click', () => runD1ArchiveCleanup('all').catch(console.error));
   $('#backToProfileBtn')?.addEventListener('click', () => { window.location.href = 'profile.html'; });
   $('#adminRegionForm')?.addEventListener('submit', saveManualRegion);
   $('#adminRegionList')?.addEventListener('click', handleRegionAction);

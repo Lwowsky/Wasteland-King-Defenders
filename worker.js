@@ -108,6 +108,8 @@ async function ensureRegionTableSchema(db) {
       )`,
       `CREATE INDEX IF NOT EXISTS idx_region_access_uid ON region_access(uid)`,
       `CREATE INDEX IF NOT EXISTS idx_region_table_shares_region ON region_table_shares(region)`,
+      `CREATE INDEX IF NOT EXISTS idx_region_tables_updated ON region_tables(updated_at_ms)`,
+      `CREATE INDEX IF NOT EXISTS idx_region_table_shares_expires ON region_table_shares(expires_at_ms)`,
       `CREATE TABLE IF NOT EXISTS public_stats_pages (
         bucket INTEGER PRIMARY KEY,
         updated_at_ms INTEGER NOT NULL DEFAULT 0,
@@ -222,6 +224,7 @@ async function ensureRegionTableSchema(db) {
       )`,
       `CREATE INDEX IF NOT EXISTS idx_notification_campaigns_region_time ON notification_campaigns(region, created_at_ms DESC)`,
       `CREATE INDEX IF NOT EXISTS idx_notification_campaigns_region_target_time ON notification_campaigns(region, target_type, alliance, created_at_ms DESC)`,
+      `CREATE INDEX IF NOT EXISTS idx_notification_campaigns_expires ON notification_campaigns(expires_at_ms)`,
     ];
     for (const statement of statements) {
       await db.prepare(statement).run();
@@ -1345,6 +1348,169 @@ async function handleActionLogClear(request, env) {
 }
 
 
+function d1CleanupScope(value = 'all') {
+  const scope = clean(value || 'all', 40).toLowerCase();
+  return ['cycles', 'shares', 'campaigns', 'all'].includes(scope) ? scope : 'all';
+}
+
+function d1CleanupCutoffMs(retentionDays = 60) {
+  return Date.now() - Math.max(1, Math.min(3650, Number(retentionDays) || 60)) * 24 * 60 * 60 * 1000;
+}
+
+async function selectOldD1CycleIds(db, { cutoffMs = 0, region = '', limitCount = 500 } = {}) {
+  const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
+  const params = [Number(cutoffMs) || 0];
+  let where = `rt.updated_at_ms > 0 AND rt.updated_at_ms < ?1 AND rt.cycle_id != COALESCE(ra.cycle_id, 'active')`;
+  if (region) {
+    params.push(region);
+    where += ` AND rt.region = ?${params.length}`;
+  }
+  const result = await db.prepare(
+    `SELECT rt.region AS region, rt.cycle_id AS cycle_id
+       FROM region_tables rt
+       LEFT JOIN region_active ra ON ra.region = rt.region
+      WHERE ${where}
+      ORDER BY rt.updated_at_ms ASC
+      LIMIT ${safeLimit}`
+  ).bind(...params).all();
+  return (result?.results || []).map(row => ({ region: normalizeRegion(row.region), cycleId: normalizeCycleId(row.cycle_id) })).filter(row => row.region && row.cycleId);
+}
+
+async function selectOldD1ShareCodes(db, { cutoffMs = 0, region = '', limitCount = 500 } = {}) {
+  const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
+  const nowMs = Date.now();
+  const params = [nowMs, Number(cutoffMs) || 0];
+  let where = `((expires_at_ms > 0 AND expires_at_ms < ?1) OR (revoked = 1 AND created_at_ms > 0 AND created_at_ms < ?2))`;
+  if (region) {
+    params.push(region);
+    where += ` AND region = ?${params.length}`;
+  }
+  const result = await db.prepare(
+    `SELECT code FROM region_table_shares WHERE ${where} ORDER BY created_at_ms ASC LIMIT ${safeLimit}`
+  ).bind(...params).all();
+  return (result?.results || []).map(row => normalizeCode(row.code)).filter(Boolean);
+}
+
+async function selectOldD1CampaignIds(db, { cutoffMs = 0, region = '', limitCount = 500 } = {}) {
+  const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
+  const nowMs = Date.now();
+  const params = [nowMs, Number(cutoffMs) || 0];
+  let where = `((expires_at_ms > 0 AND expires_at_ms < ?1) OR (created_at_ms > 0 AND created_at_ms < ?2))`;
+  if (region) {
+    params.push(region);
+    where += ` AND region = ?${params.length}`;
+  }
+  const result = await db.prepare(
+    `SELECT id FROM notification_campaigns WHERE ${where} ORDER BY created_at_ms ASC LIMIT ${safeLimit}`
+  ).bind(...params).all();
+  return (result?.results || []).map(row => clean(row.id, 140)).filter(Boolean);
+}
+
+async function runD1ArchiveCleanup(db, { scope = 'all', region = '', retentionDays = 60, limitCount = 500, dryRun = false } = {}) {
+  const safeScope = d1CleanupScope(scope);
+  const safeRegion = normalizeRegion(region);
+  const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
+  const cutoffMs = d1CleanupCutoffMs(retentionDays);
+  let remaining = safeLimit;
+  let cycles = 0;
+  let shares = 0;
+  let campaigns = 0;
+  let deleted = 0;
+  let scanned = 0;
+  let hasMore = false;
+
+  if ((safeScope === 'cycles' || safeScope === 'all') && remaining > 0) {
+    const rows = await selectOldD1CycleIds(db, { cutoffMs, region: safeRegion, limitCount: remaining });
+    cycles = rows.length;
+    scanned += rows.length;
+    if (!dryRun && rows.length) {
+      for (const row of rows) {
+        const result = await db.prepare(`DELETE FROM region_tables WHERE region = ?1 AND cycle_id = ?2`).bind(row.region, row.cycleId).run();
+        deleted += Number(result?.meta?.changes) || 0;
+      }
+    }
+    remaining -= rows.length;
+    if (rows.length === safeLimit) hasMore = true;
+  }
+
+  if ((safeScope === 'shares' || safeScope === 'all') && remaining > 0) {
+    const codes = await selectOldD1ShareCodes(db, { cutoffMs, region: safeRegion, limitCount: remaining });
+    shares = codes.length;
+    scanned += codes.length;
+    if (!dryRun && codes.length) {
+      const placeholders = codes.map((_, index) => `?${index + 1}`).join(',');
+      const result = await db.prepare(`DELETE FROM region_table_shares WHERE code IN (${placeholders})`).bind(...codes).run();
+      deleted += Number(result?.meta?.changes) || 0;
+    }
+    remaining -= codes.length;
+    if (codes.length === safeLimit) hasMore = true;
+  }
+
+  if ((safeScope === 'campaigns' || safeScope === 'all') && remaining > 0) {
+    const ids = await selectOldD1CampaignIds(db, { cutoffMs, region: safeRegion, limitCount: remaining });
+    campaigns = ids.length;
+    scanned += ids.length;
+    if (!dryRun && ids.length) {
+      const placeholders = ids.map((_, index) => `?${index + 1}`).join(',');
+      const result = await db.prepare(`DELETE FROM notification_campaigns WHERE id IN (${placeholders})`).bind(...ids).run();
+      deleted += Number(result?.meta?.changes) || 0;
+    }
+    remaining -= ids.length;
+    if (ids.length === safeLimit) hasMore = true;
+  }
+
+  const found = cycles + shares + campaigns;
+  return {
+    ok: true,
+    scope: safeScope,
+    region: safeRegion,
+    retentionDays: Math.max(1, Number(retentionDays) || 60),
+    found,
+    deleted: dryRun ? 0 : deleted,
+    scanned,
+    cycles,
+    shares,
+    campaigns,
+    hasMore: hasMore || found >= safeLimit,
+    source: 'cloudflare-d1-cleanup'
+  };
+}
+
+async function handleD1CleanupScan(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { body = {}; }
+  const result = await runD1ArchiveCleanup(db, {
+    scope: body?.scope || 'all',
+    region: body?.region || '',
+    retentionDays: Number(body?.retentionDays) || 60,
+    limitCount: Number(body?.limitCount) || 500,
+    dryRun: true
+  });
+  return json(result);
+}
+
+async function handleD1CleanupClear(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const result = await runD1ArchiveCleanup(db, {
+    scope: body?.scope || 'all',
+    region: body?.region || '',
+    retentionDays: Number(body?.retentionDays) || 60,
+    limitCount: Number(body?.limitCount) || 500,
+    dryRun: false
+  });
+  return json(result);
+}
+
+
 function boolInt(value) {
   return value ? 1 : 0;
 }
@@ -2021,6 +2187,12 @@ export default {
         return await handleCampaignCreate(request, env);
       }
 
+      if (url.pathname === "/api/d1-cleanup/scan" && request.method === "POST") {
+        return await handleD1CleanupScan(request, env);
+      }
+      if (url.pathname === "/api/d1-cleanup/clear" && request.method === "POST") {
+        return await handleD1CleanupClear(request, env);
+      }
       if (url.pathname === "/api/action-log" && request.method === "GET") {
         return await handleActionLogList(request, env);
       }
