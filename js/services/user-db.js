@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=141';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=141';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=141';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=142';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=142';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=142';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -17,7 +17,7 @@ import {
   readNotificationSummaryD1,
   setNotificationSummaryD1,
   upsertNotificationDirectoryD1
-} from './notifications-d1.js?v=141';
+} from './notifications-d1.js?v=142';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -884,6 +884,8 @@ export function makePublicPlayer(data = {}) {
 }
 
 const ADMIN_USERS_INDEX_COLLECTION = 'adminUsersIndex';
+const ADMIN_COUNTERS_COLLECTION = 'adminCounters';
+const ADMIN_COUNTERS_DOC_ID = 'global';
 const ADMIN_INDEX_PREFIX_LIMIT = 32;
 function adminSearchKey(value = '') {
   return normalizeText(value).toLowerCase();
@@ -993,7 +995,7 @@ export function makeAdminUserIndex(data = {}) {
     lastLoginAt: data.lastLoginAt || null,
     createdAtMs,
     updatedAtMs: adminIndexMs(data.updatedAt || data.createdAt || data.lastLoginAt),
-    source: 'admin-users-index-v136'
+    source: 'admin-users-index-v142'
   };
 }
 async function writeAdminUserIndexDoc(db, firestoreMod, profile = {}, batch = null) {
@@ -1030,6 +1032,82 @@ async function writeAdminUserIndexesForDocs(db, firestoreMod, docs = []) {
   if (count) trackWrites(count);
   await mirrorNotificationDirectoryIndexes(payloads, 'admin-index-batch');
   return count;
+}
+
+function emptyAdminCounters() {
+  return {
+    playersTotal: 0,
+    farmsTotal: 0,
+    rowsTotal: 0,
+    regionsTotal: 0,
+    alliancesTotal: 0,
+    leadershipRolesTotal: 0,
+    pendingRequestsTotal: 0,
+    adminCount: 0,
+    moderatorCount: 0,
+    consulCount: 0,
+    officerCount: 0,
+    playerCount: 0,
+    updatedAtMs: Date.now(),
+    source: 'admin-counters-v142'
+  };
+}
+
+function adminCounterRoleIsLeader(role = 'player') {
+  return ['admin', 'moderator', 'consul', 'officer'].includes(normalizeRole(role));
+}
+
+function buildAdminCountersFromIndexes(indexes = []) {
+  const counters = emptyAdminCounters();
+  const regions = new Set();
+  const alliances = new Set();
+  const safeIndexes = (Array.isArray(indexes) ? indexes : []).filter(index => index?.uid && index.profileComplete !== false);
+  counters.playersTotal = safeIndexes.length;
+  safeIndexes.forEach(index => {
+    const role = normalizeRole(index.role || 'player');
+    counters[`${role}Count`] = Number(counters[`${role}Count`] || 0) + 1;
+    if (adminCounterRoleIsLeader(role)) counters.leadershipRolesTotal += 1;
+    const farms = Array.isArray(index.farms) ? index.farms.filter(farm => farm?.nickname || farm?.region || farm?.alliance) : [];
+    counters.farmsTotal += farms.length;
+    (Array.isArray(index.regionKeys) ? index.regionKeys : [index.region]).forEach(region => {
+      const safeRegion = normalizeText(region).replace(/[^0-9]/g, '');
+      if (safeRegion) regions.add(safeRegion);
+    });
+    (Array.isArray(index.allianceKeys) ? index.allianceKeys : [index.alliance]).forEach(alliance => {
+      const safeAlliance = adminAllianceExactKey(alliance);
+      if (safeAlliance) alliances.add(safeAlliance);
+    });
+    farms.forEach(farm => {
+      const farmRole = normalizeRole(farm.role || 'player');
+      if (adminCounterRoleIsLeader(farmRole)) counters.leadershipRolesTotal += 1;
+      const farmRegion = gameRegion(farm);
+      const farmAlliance = adminAllianceExactKey(farm.alliance);
+      if (farmRegion) regions.add(farmRegion);
+      if (farmAlliance) alliances.add(farmAlliance);
+    });
+  });
+  counters.rowsTotal = counters.playersTotal + counters.farmsTotal;
+  counters.regionsTotal = regions.size;
+  counters.alliancesTotal = alliances.size;
+  counters.updatedAtMs = Date.now();
+  return counters;
+}
+
+async function writeAdminCountersDoc(db, firestoreMod, counters = {}) {
+  const payload = { ...emptyAdminCounters(), ...(counters || {}), updatedAt: firestoreMod.serverTimestamp(), updatedAtMs: Date.now(), source: 'admin-counters-v142' };
+  await firestoreMod.setDoc(firestoreMod.doc(db, ADMIN_COUNTERS_COLLECTION, ADMIN_COUNTERS_DOC_ID), payload);
+  trackWrites(1);
+  return payload;
+}
+
+export async function getAdminCounters() {
+  const firebase = await getFirebase();
+  if (!firebase) return null;
+  const { db, firestoreMod } = firebase;
+  const snapshot = await firestoreMod.getDoc(firestoreMod.doc(db, ADMIN_COUNTERS_COLLECTION, ADMIN_COUNTERS_DOC_ID));
+  trackReads(1);
+  if (!snapshot.exists()) return null;
+  return { id: snapshot.id, ...snapshot.data() };
 }
 
 
@@ -1977,9 +2055,27 @@ export async function rebuildAdminUsersIndex(options = {}) {
   const limitCount = Math.max(1, Math.min(5000, Number(options?.limitCount || options?.limit || 5000)));
   const snap = await firestoreMod.getDocs(firestoreMod.query(firestoreMod.collection(db, 'users'), firestoreMod.limit(limitCount)));
   const scanned = snap.docs.length;
-  trackReads(Math.max(1, scanned));
+  let readCount = Math.max(1, scanned);
+  trackReads(readCount);
+  const indexPayloads = snap.docs
+    .map(doc => makeAdminUserIndex({ id: doc.id, ...(doc.data?.() || {}), uid: doc.data?.()?.uid || doc.id }))
+    .filter(index => index.uid && index.profileComplete);
   const indexed = await writeAdminUserIndexesForDocs(db, firestoreMod, snap.docs);
-  return { scanned, indexed, reads: Math.max(1, scanned), writes: indexed };
+  const countersPayload = buildAdminCountersFromIndexes(indexPayloads);
+  try {
+    const pendingSnap = await firestoreMod.getDocs(firestoreMod.query(
+      firestoreMod.collection(db, 'roleRequests'),
+      firestoreMod.where('status', '==', 'pending'),
+      firestoreMod.limit(500)
+    ));
+    readCount += Math.max(1, pendingSnap.docs.length);
+    trackReads(Math.max(1, pendingSnap.docs.length));
+    countersPayload.pendingRequestsTotal = pendingSnap.docs.length;
+  } catch (error) {
+    console.warn('[WKD] admin pending request counter skipped:', error?.code || error?.message || error);
+  }
+  const counters = await writeAdminCountersDoc(db, firestoreMod, countersPayload);
+  return { scanned, indexed, reads: readCount, writes: indexed + 1, counters };
 }
 
 export async function listRegisteredUsers() {

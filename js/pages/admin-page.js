@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=141';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=141';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=141';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=142';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=142';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=142';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -12,6 +12,7 @@ import {
   assignableRolesForActor,
   canUseAdminPanel,
   getUserProfile,
+  getAdminCounters,
   isOwnerUser,
   listRegisteredUsersPage,
   rebuildAdminUsersIndex,
@@ -21,14 +22,14 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=141';
+} from '../services/user-db.js?v=142';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=141';
+} from '../services/region-db.js?v=142';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -45,6 +46,8 @@ let currentUser = null;
 let currentProfile = null;
 let users = [];
 let requests = [];
+let requestsLoaded = false;
+let adminCounters = null;
 let regionsCatalog = [];
 let regionsLoaded = false;
 let sortState = { key: 'createdAt', dir: 'desc' };
@@ -57,7 +60,7 @@ let playerSearchDebounce = null;
 let cloudflareRealUsage = getCachedCloudflareUsage();
 let cloudflareUsageLoading = false;
 const ADMIN_REGION_CACHE_TTL_MS = 5 * 60 * 1000;
-const ADMIN_REGION_CACHE_VERSION = 'v141';
+const ADMIN_REGION_CACHE_VERSION = 'v142';
 
 function adminCacheKey(name) {
   const uid = currentUser?.uid || 'anonymous';
@@ -84,6 +87,22 @@ function writeAdminJsonCache(name, data) {
 
 function clearAdminJsonCache(name) {
   try { localStorage.removeItem(adminCacheKey(name)); } catch (_) {}
+}
+
+function readAdminObjectCache(name, ttlMs = ADMIN_REGION_CACHE_TTL_MS) {
+  try {
+    const raw = localStorage.getItem(adminCacheKey(name));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.data || Date.now() - Number(parsed.savedAt || 0) > ttlMs) return null;
+    return parsed.data;
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeAdminObjectCache(name, data) {
+  try { localStorage.setItem(adminCacheKey(name), JSON.stringify({ savedAt: Date.now(), data })); } catch (_) {}
 }
 
 function allianceTag3(value) { return window.WKD?.allianceTag3 ? window.WKD.allianceTag3(value) : Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join(''); }
@@ -276,9 +295,22 @@ function filtersAreActive(filters = filterValues()) {
   return Boolean(filters.nick || filters.alliance || filters.region || (filters.role && filters.role !== 'all'));
 }
 
-async function loadAdminStatsSummary() {
-  // v130: JSON stats block removed. Admin player table loads from Firestore in small pages.
-  return null;
+async function loadAdminCounters(force = false) {
+  if (!force) {
+    const cached = readAdminObjectCache('adminCounters');
+    if (cached) {
+      adminCounters = cached;
+      renderStats();
+      return adminCounters;
+    }
+  }
+  adminCounters = await getAdminCounters().catch(error => {
+    console.warn('[WKD] admin counters unavailable:', error?.code || error?.message || error);
+    return null;
+  });
+  if (adminCounters) writeAdminObjectCache('adminCounters', adminCounters);
+  renderStats();
+  return adminCounters;
 }
 
 function rowMatchesFilters(row, filters = filterValues()) {
@@ -677,22 +709,36 @@ async function runD1ArchiveCleanup(scope) {
   }
 }
 
+function counterValue(key, fallback = 0) {
+  const value = adminCounters?.[key];
+  return Number.isFinite(Number(value)) ? Number(value) : fallback;
+}
+
 function renderStats() {
   setAdminPlayersCounterLabel();
   const rows = adminRows();
-  const mainCount = users.length;
+  const pageMainCount = users.length;
   const shownRows = rows.length;
-  const regionTotal = new Set([
+  const pageRegionTotal = new Set([
     ...rows.map(row => row.game?.region).filter(Boolean),
     ...regionsCatalog.filter(region => region.active !== false).map(region => region.region).filter(Boolean)
   ]).size;
-  const leaders = rows.filter(row => ['admin', 'moderator', 'consul', 'officer'].includes(rowRole(row))).length;
-  const pending = visibleRequests().length;
+  const pageLeaders = rows.filter(row => ['admin', 'moderator', 'consul', 'officer'].includes(rowRole(row))).length;
+  const pending = requestsLoaded ? visibleRequests().length : counterValue('pendingRequestsTotal', 0);
+  const mainCount = counterValue('playersTotal', pageMainCount);
+  const rowCount = includeAdminFarmRows() ? counterValue('rowsTotal', shownRows) : mainCount;
+  const regionTotal = counterValue('regionsTotal', pageRegionTotal);
+  const leaders = counterValue('leadershipRolesTotal', pageLeaders);
   const cards = $('#adminStats')?.querySelectorAll('.admin-stat-card b') || [];
-  const values = [mainCount, regionTotal, leaders, pending];
+  const values = [includeAdminFarmRows() ? rowCount : mainCount, regionTotal, leaders, pending];
   cards.forEach((card, index) => { card.textContent = formatCompactNumber(values[index] ?? 0); });
-  setSummary(tv('admin.summaryOptimized', '{players} гравців завантажено • {shown} рядків показано зараз • {requests} заявок', { players: mainCount, shown: shownRows, requests: pending }));
+  setSummary(tv('admin.summaryOptimized', '{players} гравців завантажено • {shown} рядків показано зараз • {requests} заявок', {
+    players: pageMainCount,
+    shown: shownRows,
+    requests: requestsLoaded ? pending : '—'
+  }));
 }
+
 
 function editCell(name, value, type = 'text') {
   const extra = name === 'alliance' ? ' maxlength="3"' : '';
@@ -1047,6 +1093,12 @@ async function rebuildPlayersIndex() {
   try {
     setStatus(t('admin.rebuildIndexRunning', 'Оновлюю індекс гравців...'), 'muted');
     const result = await rebuildAdminUsersIndex({ limitCount: 5000 });
+    if (result?.counters) {
+      adminCounters = result.counters;
+      writeAdminObjectCache('adminCounters', adminCounters);
+    } else {
+      await loadAdminCounters(true);
+    }
     resetPlayersPage();
     await loadPlayersPage({ reset: true });
     setStatus(tv('admin.rebuildIndexDone', 'Індекс оновлено: перевірено {scanned}, записано {indexed}. Firebase reads≈{reads}, writes≈{writes}.', {
@@ -1089,6 +1141,7 @@ async function loadRoleRequests() {
     console.warn('[WKD] role requests unavailable:', error);
     return [];
   });
+  requestsLoaded = true;
   renderStats();
   renderRequests();
 }
@@ -1125,7 +1178,7 @@ async function loadRegionsCatalog(force = false) {
 async function loadAdminData() {
   if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
   await Promise.all([
-    loadRoleRequests(),
+    loadAdminCounters(),
     loadPlayersPage({ reset: true })
   ]);
   renderStats();
@@ -1140,6 +1193,7 @@ function switchTab(tab) {
   document.querySelectorAll('[data-admin-tab]').forEach(button => button.classList.toggle('is-active', button.dataset.adminTab === safeTab));
   document.querySelectorAll('[data-admin-panel]').forEach(panel => panel.classList.toggle('is-active', panel.dataset.adminPanel === safeTab));
   if (safeTab === 'limits') renderUsage();
+  if (safeTab === 'requests' && !requestsLoaded) loadRoleRequests().catch(console.error);
   if (safeTab === 'regions') loadRegionsCatalog().catch(console.error);
   if (safeTab === 'security') document.dispatchEvent(new CustomEvent('wkd:security-load'));
   if (window.location.hash.replace('#','') !== safeTab && safeTab !== 'players') history.replaceState(null, '', `#${safeTab}`);

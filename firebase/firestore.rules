@@ -709,6 +709,11 @@ service cloud.firestore {
       allow read, create, update, delete: if canUseAdminPanel();
     }
 
+    match /adminCounters/{docId} {
+      // Private cached counters for the admin dashboard.
+      allow read, create, update, delete: if canUseAdminPanel();
+    }
+
     match /publicPlayers/{userId} {
       allow read: if true;
       allow create, update: if ownerEmail() || managerPublicPlayerSafe() || publicPlayerSafe(userId);
