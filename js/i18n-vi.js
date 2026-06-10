@@ -2002,13 +2002,13 @@ window.WKD_TRANSLATIONS.vi = {
   "admin.firebase.authDailyActiveUsers.detail": "Giới hạn tham khảo Firebase Auth Spark Tier 1",
   'admin.rebuildIndexBtn': 'Cập nhật chỉ mục',
   'admin.rebuildIndexTitle': 'Cập nhật chỉ mục người chơi?',
-  'admin.rebuildIndexMessage': 'Trang sẽ đọc tối đa 500 hồ sơ một lần và tạo chỉ mục nhẹ để tìm kiếm tiết kiệm. Dùng sau phiên bản cũ hoặc khi tìm kiếm không thấy người chơi.',
+  'admin.rebuildIndexMessage': 'Trang sẽ đọc tối đa 5000 hồ sơ một lần và tạo chỉ mục nhẹ để tìm kiếm tiết kiệm. Dùng sau phiên bản cũ hoặc khi tìm kiếm không thấy người chơi.',
   'admin.rebuildIndexAccept': 'Cập nhật chỉ mục',
   'admin.rebuildIndexRunning': 'Đang cập nhật chỉ mục người chơi...',
   'admin.rebuildIndexDone': 'Đã cập nhật chỉ mục: quét {scanned}, ghi {indexed}. Firebase reads≈{reads}, writes≈{writes}.',
   'admin.rebuildIndexDenied': 'Chỉ Admin hoặc Moderator mới có thể cập nhật chỉ mục.',
   'admin.rebuildIndexFailed': 'Không thể cập nhật chỉ mục người chơi. Kiểm tra Firestore rules và quyền truy cập.',
-  'admin.playersLoadedOptimized': 'Đã tải {count} người chơi mới nhất từ adminUsersIndex. Firebase reads≈{reads}; không đọc toàn bộ collection users.',
+  'admin.playersLoadedOptimized': 'Đã tải {count} người chơi mới nhất. Firebase reads≈{reads}; không đọc toàn bộ collection users.',
   'admin.playersLoadedFiltered': 'Đã tải {count} người chơi từ chỉ mục. Firebase reads≈{reads}. Tìm kiếm chỉ chạy bằng nút Làm mới hoặc Enter.',
 
 };

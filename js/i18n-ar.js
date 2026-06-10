@@ -2000,13 +2000,13 @@ window.WKD_TRANSLATIONS.ar = {
   "admin.firebase.authDailyActiveUsers.detail": "حد Firebase Auth Spark Tier 1 المرجعي",
   'admin.rebuildIndexBtn': 'تحديث الفهرس',
   'admin.rebuildIndexTitle': 'تحديث فهرس اللاعبين؟',
-  'admin.rebuildIndexMessage': 'سيقرأ الموقع حتى 500 ملف مرة واحدة وينشئ فهرسًا خفيفًا للبحث بتكلفة أقل. استخدمه بعد الإصدارات القديمة أو إذا لم يجد البحث اللاعب.',
+  'admin.rebuildIndexMessage': 'سيقرأ الموقع حتى 5000 ملف مرة واحدة وينشئ فهرسًا خفيفًا للبحث بتكلفة أقل. استخدمه بعد الإصدارات القديمة أو إذا لم يجد البحث اللاعب.',
   'admin.rebuildIndexAccept': 'تحديث الفهرس',
   'admin.rebuildIndexRunning': 'جارٍ تحديث فهرس اللاعبين...',
   'admin.rebuildIndexDone': 'تم تحديث الفهرس: تم فحص {scanned}، وتمت كتابة {indexed}. Firebase reads≈{reads}, writes≈{writes}.',
   'admin.rebuildIndexDenied': 'يمكن لـ Admin أو Moderator فقط تحديث الفهرس.',
   'admin.rebuildIndexFailed': 'تعذر تحديث فهرس اللاعبين. تحقق من قواعد Firestore والصلاحيات.',
-  'admin.playersLoadedOptimized': 'تم تحميل أحدث {count} لاعبين من adminUsersIndex. Firebase reads≈{reads}؛ لا تتم قراءة مجموعة users بالكامل.',
+  'admin.playersLoadedOptimized': 'تم تحميل أحدث {count} لاعبين. Firebase reads≈{reads}؛ لا تتم قراءة مجموعة users بالكامل.',
   'admin.playersLoadedFiltered': 'تم تحميل {count} لاعبين من الفهرس. Firebase reads≈{reads}. يعمل البحث بزر التحديث أو Enter فقط.',
 
 };

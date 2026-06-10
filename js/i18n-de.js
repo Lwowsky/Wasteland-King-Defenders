@@ -2002,13 +2002,13 @@ window.WKD_TRANSLATIONS.de = {
   "admin.firebase.authDailyActiveUsers.detail": "Firebase Auth Spark Tier 1 Referenzlimit",
   'admin.rebuildIndexBtn': 'Index aktualisieren',
   'admin.rebuildIndexTitle': 'Spielerindex aktualisieren?',
-  'admin.rebuildIndexMessage': 'Die Seite liest einmalig bis zu 500 Profile und erstellt einen leichten Index für günstige Suche. Nutze dies nach alten Versionen oder wenn die Suche keinen Spieler findet.',
+  'admin.rebuildIndexMessage': 'Die Seite liest einmalig bis zu 5000 Profile und erstellt einen leichten Index für günstige Suche. Nutze dies nach alten Versionen oder wenn die Suche keinen Spieler findet.',
   'admin.rebuildIndexAccept': 'Index aktualisieren',
   'admin.rebuildIndexRunning': 'Spielerindex wird aktualisiert...',
   'admin.rebuildIndexDone': 'Index aktualisiert: geprüft {scanned}, geschrieben {indexed}. Firebase reads≈{reads}, writes≈{writes}.',
   'admin.rebuildIndexDenied': 'Nur Admin oder Moderator kann den Index aktualisieren.',
   'admin.rebuildIndexFailed': 'Spielerindex konnte nicht aktualisiert werden. Prüfe Firestore-Regeln und Zugriffsrechte.',
-  'admin.playersLoadedOptimized': '{count} neueste Spieler aus adminUsersIndex geladen. Firebase reads≈{reads}; die vollständige users-Sammlung wird nicht gelesen.',
+  'admin.playersLoadedOptimized': '{count} neueste Spieler geladen. Firebase reads≈{reads}; die vollständige users-Sammlung wird nicht gelesen.',
   'admin.playersLoadedFiltered': '{count} Spieler aus dem Index geladen. Firebase reads≈{reads}. Suche läuft nur über Aktualisieren oder Enter.',
 
 };

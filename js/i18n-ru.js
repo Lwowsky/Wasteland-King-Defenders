@@ -2002,13 +2002,13 @@ window.WKD_TRANSLATIONS.ru = {
   "admin.firebase.authDailyActiveUsers.detail": "Справочный лимит Firebase Auth Spark Tier 1",
   'admin.rebuildIndexBtn': 'Обновить индекс',
   'admin.rebuildIndexTitle': 'Обновить индекс игроков?',
-  'admin.rebuildIndexMessage': 'Сайт один раз прочитает до 500 профилей и создаст лёгкий индекс для дешёвого поиска. Это нужно после старых версий или если поиск не находит игрока.',
+  'admin.rebuildIndexMessage': 'Сайт один раз прочитает до 5000 профилей и создаст лёгкий индекс для дешёвого поиска. Это нужно после старых версий или если поиск не находит игрока.',
   'admin.rebuildIndexAccept': 'Обновить индекс',
   'admin.rebuildIndexRunning': 'Обновляю индекс игроков...',
   'admin.rebuildIndexDone': 'Индекс обновлён: проверено {scanned}, записано {indexed}. Firebase reads≈{reads}, writes≈{writes}.',
   'admin.rebuildIndexDenied': 'Обновить индекс может только Admin или Moderator.',
   'admin.rebuildIndexFailed': 'Не удалось обновить индекс игроков. Проверь правила Firestore и права доступа.',
-  'admin.playersLoadedOptimized': 'Загружено {count} новых игроков из adminUsersIndex. Firebase reads≈{reads}; вся коллекция users не читается.',
+  'admin.playersLoadedOptimized': 'Загружено {count} последних игроков. Firebase reads≈{reads}; вся коллекция users не читается.',
   'admin.playersLoadedFiltered': 'Загружено {count} игроков из индекса. Firebase reads≈{reads}. Поиск запускается кнопкой Обновить или Enter.',
 
 };

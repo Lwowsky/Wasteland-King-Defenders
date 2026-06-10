@@ -2002,13 +2002,13 @@ window.WKD_TRANSLATIONS.ja = {
   "admin.firebase.authDailyActiveUsers.detail": "Firebase Auth Spark Tier 1 の参考上限",
   'admin.rebuildIndexBtn': 'インデックス更新',
   'admin.rebuildIndexTitle': 'プレイヤーインデックスを更新しますか？',
-  'admin.rebuildIndexMessage': 'サイトは最大500件のプロフィールを一度だけ読み、低コスト検索用の軽量インデックスを作成します。古いバージョン後や検索で見つからない時に使います。',
+  'admin.rebuildIndexMessage': 'サイトは最大5000件のプロフィールを一度だけ読み、低コスト検索用の軽量インデックスを作成します。古いバージョン後や検索で見つからない時に使います。',
   'admin.rebuildIndexAccept': 'インデックス更新',
   'admin.rebuildIndexRunning': 'プレイヤーインデックスを更新中...',
   'admin.rebuildIndexDone': 'インデックス更新完了: 確認 {scanned}, 書き込み {indexed}. Firebase reads≈{reads}, writes≈{writes}.',
   'admin.rebuildIndexDenied': 'インデックス更新はAdminまたはModeratorのみ可能です。',
   'admin.rebuildIndexFailed': 'プレイヤーインデックスを更新できません。Firestoreルールと権限を確認してください。',
-  'admin.playersLoadedOptimized': 'adminUsersIndexから最新プレイヤー{count}件を読み込みました。Firebase reads≈{reads}; users全体は読みません。',
+  'admin.playersLoadedOptimized': '最新プレイヤー{count}件を読み込みました。Firebase reads≈{reads}; users全体は読みません。',
   'admin.playersLoadedFiltered': 'インデックスから{count}件を読み込みました。Firebase reads≈{reads}. 検索は更新ボタンまたはEnterで実行します。',
 
 };

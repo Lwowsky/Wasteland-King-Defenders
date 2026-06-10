@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=131';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=131';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=131';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=132';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=132';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=132';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -16,7 +16,7 @@ import {
   patchSentMessageD1,
   readNotificationSummaryD1,
   setNotificationSummaryD1
-} from './notifications-d1.js?v=131';
+} from './notifications-d1.js?v=132';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -887,6 +887,10 @@ const ADMIN_INDEX_PREFIX_LIMIT = 32;
 function adminSearchKey(value = '') {
   return normalizeText(value).toLowerCase();
 }
+function adminAllianceExactKey(value = '') {
+  // Alliance search is intentionally case-sensitive: EVO, evo, Evo and eVo are different alliances.
+  return normalizeAllianceTag(value);
+}
 function adminPrefixTerms(value = '') {
   const text = adminSearchKey(value).replace(/\s+/g, ' ').trim();
   if (!text) return [];
@@ -901,6 +905,24 @@ function adminPrefixTerms(value = '') {
 function adminIndexMs(value) {
   return timestampToMs(value) || Date.now();
 }
+function adminFilterToken(kind = '', ...parts) {
+  const cleanParts = parts.map(part => normalizeText(part)).filter(Boolean);
+  return cleanParts.length ? `${kind}:${cleanParts.join('::')}` : '';
+}
+function adminGameFilterTokens(game = {}, fallbackRole = 'player') {
+  const region = gameRegion(game);
+  const alliance = adminAllianceExactKey(game.alliance);
+  const role = normalizeRole(game.role || fallbackRole || 'player');
+  return [
+    adminFilterToken('region', region),
+    adminFilterToken('alliance', alliance),
+    adminFilterToken('role', role),
+    adminFilterToken('regionAlliance', region, alliance),
+    adminFilterToken('regionRole', region, role),
+    adminFilterToken('allianceRole', alliance, role),
+    adminFilterToken('regionAllianceRole', region, alliance, role)
+  ].filter(Boolean);
+}
 function adminIndexFarmPayload(farm = {}, index = 0) {
   const normalized = normalizeFarm(farm, farm.farmId || farm.id || `farm-${index + 1}`);
   return {
@@ -909,6 +931,7 @@ function adminIndexFarmPayload(farm = {}, index = 0) {
     nickname: normalized.nickname,
     region: gameRegion(normalized),
     alliance: normalizeAllianceTag(normalized.alliance),
+    allianceExact: adminAllianceExactKey(normalized.alliance),
     allianceKey: adminSearchKey(normalized.alliance),
     rank: normalized.rank,
     shk: normalized.shk,
@@ -928,8 +951,10 @@ export function makeAdminUserIndex(data = {}) {
     ...farms
   ];
   const regionKeys = [...new Set(allGames.map(game => gameRegion(game)).filter(Boolean))];
-  const allianceKeys = [...new Set(allGames.map(game => adminSearchKey(game.alliance)).filter(Boolean))];
+  const allianceKeys = [...new Set(allGames.map(game => adminAllianceExactKey(game.alliance)).filter(Boolean))];
+  const allianceFoldedKeys = [...new Set(allGames.map(game => adminSearchKey(game.alliance)).filter(Boolean))];
   const roleKeys = [...new Set([role, ...farms.map(farm => normalizeRole(farm.role || 'player'))].filter(Boolean))];
+  const adminFilterTokens = [...new Set(allGames.flatMap(game => adminGameFilterTokens(game, role)))].slice(0, 240);
   const searchPrefixes = [...new Set([
     ...adminPrefixTerms(main.nickname),
     ...adminPrefixTerms(data.email),
@@ -946,6 +971,7 @@ export function makeAdminUserIndex(data = {}) {
     gameNick: main.nickname,
     region: gameRegion(main),
     alliance: normalizeAllianceTag(main.alliance),
+    allianceExact: adminAllianceExactKey(main.alliance),
     allianceKey: adminSearchKey(main.alliance),
     rank: main.rank,
     shk: main.shk,
@@ -957,14 +983,16 @@ export function makeAdminUserIndex(data = {}) {
     profileComplete: Boolean(isProfileComplete(data) || (main.nickname && main.region && main.alliance && main.rank && main.shk)),
     regionKeys,
     allianceKeys,
+    allianceFoldedKeys,
     roleKeys,
+    adminFilterTokens,
     searchPrefixes,
     createdAt: data.createdAt || data.updatedAt || data.lastLoginAt || null,
     updatedAt: data.updatedAt || null,
     lastLoginAt: data.lastLoginAt || null,
     createdAtMs,
     updatedAtMs: adminIndexMs(data.updatedAt || data.createdAt || data.lastLoginAt),
-    source: 'admin-users-index-v131'
+    source: 'admin-users-index-v132'
   };
 }
 async function writeAdminUserIndexDoc(db, firestoreMod, profile = {}, batch = null) {
@@ -1549,7 +1577,8 @@ function adminUserFilterValue(value = '') {
   return normalizeText(value).toLowerCase();
 }
 function adminAllianceFilterValue(value = '') {
-  return normalizeAllianceTag(value).toLowerCase();
+  // Keep alliance filters case-sensitive: EVO, evo, Evo and eVo are different alliances.
+  return adminAllianceExactKey(value);
 }
 function adminUserMatchesFilters(user = {}, filters = {}) {
   const game = getGameProfile(user);
@@ -1572,20 +1601,25 @@ function buildAdminUsersIndexQuery(firestoreMod, db, { cursor = null, direction 
   const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
   const alliance = adminAllianceFilterValue(filters.alliance);
   const role = normalizeRole(filters.role || 'all');
-  const hasFilters = Boolean(nick || region || alliance || (role && role !== 'all'));
+  const hasRole = Boolean(role && role !== 'all');
+  const hasFilters = Boolean(nick || region || alliance || hasRole);
 
-  // Keep Firestore reads cheap by using one indexed query with limit(10).
-  // No-filter view is newest first. Filtered view prefers server-side equality / prefix queries.
-  if (nick) clauses.push(firestoreMod.where('searchPrefixes', 'array-contains', nick));
-  if (!nick && region && alliance) {
-    clauses.push(firestoreMod.where('region', '==', region));
-    clauses.push(firestoreMod.where('allianceKey', '==', alliance));
-  } else if (!nick && region) {
-    clauses.push(firestoreMod.where('regionKeys', 'array-contains', region));
-  } else if (!nick && alliance) {
-    clauses.push(firestoreMod.where('allianceKeys', 'array-contains', alliance));
+  // Keep reads cheap: one indexed query, limit(pageSize + 1), no full users scan.
+  // Alliance filter is exact and case-sensitive.
+  if (nick) {
+    clauses.push(firestoreMod.where('searchPrefixes', 'array-contains', nick));
+  } else {
+    let token = '';
+    if (region && alliance && hasRole) token = adminFilterToken('regionAllianceRole', region, alliance, role);
+    else if (region && alliance) token = adminFilterToken('regionAlliance', region, alliance);
+    else if (region && hasRole) token = adminFilterToken('regionRole', region, role);
+    else if (alliance && hasRole) token = adminFilterToken('allianceRole', alliance, role);
+    else if (region) token = adminFilterToken('region', region);
+    else if (alliance) token = adminFilterToken('alliance', alliance);
+    else if (hasRole) token = adminFilterToken('role', role);
+    if (token) clauses.push(firestoreMod.where('adminFilterTokens', 'array-contains', token));
   }
-  if (role && role !== 'all') clauses.push(firestoreMod.where('role', '==', role));
+
   if (!hasFilters) clauses.push(firestoreMod.orderBy('createdAtMs', 'desc'));
 
   if (cursor) {
@@ -1643,6 +1677,7 @@ export async function listRegisteredUsersPage(options = {}) {
   let rawDocs = [];
   let mapped = [];
   let queryMode = 'adminUsersIndex';
+  let indexQueryFailed = false;
   try {
     const indexSnap = await firestoreMod.getDocs(buildAdminUsersIndexQuery(firestoreMod, db, {
       cursor: options?.cursor || null,
@@ -1656,11 +1691,14 @@ export async function listRegisteredUsersPage(options = {}) {
   } catch (error) {
     console.warn('[WKD] adminUsersIndex query failed; using small users fallback:', error?.code || error?.message || error);
     queryMode = 'users-small-fallback';
+    indexQueryFailed = true;
   }
 
   // One-time self-healing fallback for old profiles that do not yet have adminUsersIndex docs.
-  // It keeps the scan small (max 100 reads) and writes index docs only for the scanned profiles.
-  if (!mapped.length && !options?.cursor) {
+  // Important: for active searches, a zero-result indexed query stays cheap and does NOT scan users.
+  // If the player is old and missing from the index, use the admin button “Оновити індекс”.
+  const shouldTryUsersFallback = !mapped.length && !options?.cursor && (!hasFilters || indexQueryFailed);
+  if (shouldTryUsersFallback) {
     try {
       const fallbackLimit = hasFilters ? Math.max(pageSize + 1, Math.min(100, Number(options?.scanLimit || 50))) : pageSize + 1;
       const userSnap = await firestoreMod.getDocs(buildAdminUsersQuery(firestoreMod, db, {
@@ -1682,7 +1720,7 @@ export async function listRegisteredUsersPage(options = {}) {
     }
   }
 
-  if (!mapped.length && !options?.cursor) {
+  if (shouldTryUsersFallback && !mapped.length) {
     try {
       const legacyLimit = hasFilters ? Math.max(pageSize + 1, Math.min(100, Number(options?.scanLimit || 50))) : pageSize + 1;
       const legacySnapshot = await firestoreMod.getDocs(buildLegacyAdminUsersQuery(firestoreMod, db, { pageSize: legacyLimit }));
@@ -1720,7 +1758,7 @@ export async function rebuildAdminUsersIndex(options = {}) {
   if (!actor?.uid) throw new Error('auth-required');
   const actorProfile = await getUserProfile(actor.uid, { forceRefresh: true });
   if (!(isOwnerUser(actor, actorProfile) || ['admin', 'moderator'].includes(normalizeRole(actorProfile?.role || 'player')))) throw new Error('admin-only');
-  const limitCount = Math.max(1, Math.min(500, Number(options?.limitCount || options?.limit || 500)));
+  const limitCount = Math.max(1, Math.min(5000, Number(options?.limitCount || options?.limit || 5000)));
   const snap = await firestoreMod.getDocs(firestoreMod.query(firestoreMod.collection(db, 'users'), firestoreMod.limit(limitCount)));
   const scanned = snap.docs.length;
   trackReads(Math.max(1, scanned));

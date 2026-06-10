@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=131';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=131';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=131';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=132';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=132';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=132';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -21,14 +21,14 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=131';
+} from '../services/user-db.js?v=132';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=131';
+} from '../services/region-db.js?v=132';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -1001,7 +1001,7 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
   const msgKey = filtersAreActive() ? 'admin.playersLoadedFiltered' : 'admin.playersLoadedOptimized';
   const fallback = filtersAreActive()
     ? 'Завантажено {count} гравців за індексом. Firebase reads≈{reads}. Пошук запускається кнопкою Оновити або Enter.'
-    : 'Завантажено {count} нових гравців з adminUsersIndex. Firebase reads≈{reads}; вся users-колекція не читається.';
+    : 'Завантажено {count} останніх гравців. Firebase reads≈{reads}; вся users-колекція не читається.';
   setStatus(tv(msgKey, fallback, { count: users.length, reads: playersPageMeta.reads }), 'success');
 }
 
@@ -1009,14 +1009,14 @@ async function rebuildPlayersIndex() {
   if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
   const ok = await confirmAction({
     title: t('admin.rebuildIndexTitle', 'Оновити індекс гравців?'),
-    message: t('admin.rebuildIndexMessage', 'Сайт один раз прочитає до 500 профілів і створить легкий індекс для дешевого пошуку. Це потрібно після старих версій або якщо пошук не знаходить гравця.'),
+    message: t('admin.rebuildIndexMessage', 'Сайт один раз прочитає до 5000 профілів і створить легкий індекс для дешевого пошуку. Це потрібно після старих версій або якщо пошук не знаходить гравця.'),
     icon: '⚡',
     acceptText: t('admin.rebuildIndexAccept', 'Оновити індекс')
   });
   if (!ok) return;
   try {
     setStatus(t('admin.rebuildIndexRunning', 'Оновлюю індекс гравців...'), 'muted');
-    const result = await rebuildAdminUsersIndex({ limitCount: 500 });
+    const result = await rebuildAdminUsersIndex({ limitCount: 5000 });
     resetPlayersPage();
     await loadPlayersPage({ reset: true });
     setStatus(tv('admin.rebuildIndexDone', 'Індекс оновлено: перевірено {scanned}, записано {indexed}. Firebase reads≈{reads}, writes≈{writes}.', {
