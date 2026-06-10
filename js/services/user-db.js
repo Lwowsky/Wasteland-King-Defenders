@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=89';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=89';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=115';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=115';
 import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=104';
 import {
   createNotificationCampaignD1,
@@ -16,7 +16,7 @@ import {
   patchSentMessageD1,
   readNotificationSummaryD1,
   setNotificationSummaryD1
-} from './notifications-d1.js?v=114';
+} from './notifications-d1.js?v=115';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -73,6 +73,46 @@ function serviceLocale() {
   const lang = globalThis.window?.WKD_CURRENT_LANG || globalThis.document?.documentElement?.lang || globalThis.navigator?.language || 'en';
   const map = { uk: 'uk-UA', en: 'en-US', ru: 'ru-RU', pl: 'pl-PL', de: 'de-DE', ja: 'ja-JP', zh: 'zh-CN', ko: 'ko-KR', vi: 'vi-VN', ar: 'ar' };
   return map[String(lang).toLowerCase()] || lang || 'en-US';
+}
+
+
+const PROFILE_CACHE_VERSION = 'v115';
+const PROFILE_CACHE_TTL_MS = 5 * 60 * 1000;
+function profileCacheUid(uid = '') {
+  return normalizeText(uid).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 160);
+}
+function profileCacheKey(uid = '') {
+  const userId = profileCacheUid(uid);
+  return userId ? `userProfile.${PROFILE_CACHE_VERSION}.${userId}` : '';
+}
+function profileCachePayload(profile = {}) {
+  if (!profile || typeof profile !== 'object') return null;
+  const uid = profileCacheUid(profile.uid || profile.id || '');
+  if (!uid) return null;
+  return {
+    ...profile,
+    uid,
+    id: profile.id || uid,
+    cachedAtMs: Date.now(),
+    cacheVersion: PROFILE_CACHE_VERSION
+  };
+}
+export function readCachedUserProfile(uid, ttlMs = PROFILE_CACHE_TTL_MS) {
+  const key = profileCacheKey(uid);
+  if (!key) return null;
+  const cached = readCache(key, Math.max(0, Number(ttlMs) || PROFILE_CACHE_TTL_MS));
+  if (!cached || cached.cacheVersion !== PROFILE_CACHE_VERSION) return null;
+  return cached;
+}
+export function writeUserProfileCache(uid, profile) {
+  const key = profileCacheKey(uid);
+  const payload = profileCachePayload({ ...(profile || {}), uid: uid || profile?.uid || profile?.id });
+  if (!key || !payload) return null;
+  return writeCache(key, payload);
+}
+export function removeUserProfileCache(uid) {
+  const key = profileCacheKey(uid);
+  if (key) removeCache(key);
 }
 
 export function normalizeWastelandProfile(raw = {}) {
@@ -891,16 +931,30 @@ async function writePublicPlayerFromProfile(db, firestoreMod, profile = {}) {
   return publicPlayer;
 }
 
-export async function getUserProfile(uid) {
-  if (!uid) return null;
+export async function getUserProfile(uid, options = {}) {
+  const userId = profileCacheUid(uid);
+  if (!userId) return null;
+  const forceRefresh = Boolean(options?.force || options?.forceRefresh || options?.skipCache);
+  const ttlMs = Math.max(0, Number(options?.cacheTtlMs) || PROFILE_CACHE_TTL_MS);
+  if (!forceRefresh) {
+    const cached = readCachedUserProfile(userId, ttlMs);
+    if (cached) return cached;
+  }
+
   const firebase = await getFirebase();
   if (!firebase) return null;
 
   const { db, firestoreMod } = firebase;
-  const ref = firestoreMod.doc(db, 'users', uid);
+  const ref = firestoreMod.doc(db, 'users', userId);
   const snapshot = await firestoreMod.getDoc(ref);
   trackReads(1);
-  return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
+  if (!snapshot.exists()) {
+    removeUserProfileCache(userId);
+    return null;
+  }
+  const profile = { id: snapshot.id, ...snapshot.data(), uid: snapshot.data()?.uid || snapshot.id };
+  writeUserProfileCache(userId, profile);
+  return profile;
 }
 
 export async function saveSignedInUser(user) {
@@ -958,7 +1012,8 @@ export async function saveSignedInUser(user) {
     }, { merge: true });
   }
 
-  let profile = await getUserProfile(user.uid);
+  removeUserProfileCache(user.uid);
+  let profile = await getUserProfile(user.uid, { forceRefresh: true });
 
   if (isAdminUser(user, profile) && profile?.role !== 'admin') {
     try {
@@ -967,7 +1022,8 @@ export async function saveSignedInUser(user) {
         roleLabel: roleLabel('admin'),
         updatedAt: now
       }, { merge: true });
-      profile = await getUserProfile(user.uid);
+      removeUserProfileCache(user.uid);
+      profile = await getUserProfile(user.uid, { forceRefresh: true });
     } catch (error) {
       console.warn('Admin role sync failed', error);
     }
@@ -993,7 +1049,7 @@ export async function ensureCurrentUserPublished(user) {
       console.warn('Public profile sync failed', error);
     });
   }
-  return getUserProfile(user.uid);
+  return getUserProfile(user.uid, { forceRefresh: true });
 }
 
 function makeRoleRequestPayload({ user, oldProfile, clean, requestedRole, farmId = 'main', now }) {
@@ -1144,7 +1200,8 @@ export async function saveGameRegistration(user, values) {
 
   await Promise.all(roleRequestWrites.map(write => write()));
 
-  const savedProfile = await getUserProfile(uid);
+  removeUserProfileCache(uid);
+  const savedProfile = await getUserProfile(uid, { forceRefresh: true });
   if (regionChangedByLeader && oldMain.region) {
     await firestoreMod.deleteDoc(firestoreMod.doc(db, 'regions', oldMain.region, 'players', uid)).catch(() => null);
   }
@@ -1154,7 +1211,7 @@ export async function saveGameRegistration(user, values) {
     });
   }
 
-  return getUserProfile(uid);
+  return getUserProfile(uid, { forceRefresh: true });
 }
 
 export async function saveFarmWastelandProfile(user, farmId = 'main', values = {}) {
@@ -1212,7 +1269,8 @@ export async function saveFarmWastelandProfile(user, farmId = 'main', values = {
     updatedAt: now
   }, { merge: true });
 
-  const savedProfile = await getUserProfile(user.uid);
+  removeUserProfileCache(user.uid);
+  const savedProfile = await getUserProfile(user.uid, { forceRefresh: true });
   if (isProfileComplete(savedProfile)) {
     await writePublicPlayerFromProfile(db, firestoreMod, savedProfile).catch(error => {
       console.warn('Public player sync failed after saved Wasteland data', error);
@@ -1308,13 +1366,14 @@ export async function makeFarmPrimary(user, farmId) {
   }
 
   await batch.commit();
-  const savedProfile = await getUserProfile(user.uid);
+  removeUserProfileCache(user.uid);
+  const savedProfile = await getUserProfile(user.uid, { forceRefresh: true });
   if (isProfileComplete(savedProfile)) {
     await writePublicPlayerFromProfile(db, firestoreMod, savedProfile).catch(error => {
       console.warn('Public player sync failed after primary farm change', error);
     });
   }
-  return getUserProfile(user.uid);
+  return getUserProfile(user.uid, { forceRefresh: true });
 }
 
 export async function deleteFarm(user, farmId) {
@@ -1335,7 +1394,8 @@ export async function deleteFarm(user, farmId) {
     activeFarmId: 'main',
     updatedAt: now
   }, { merge: true });
-  const savedProfile = await getUserProfile(user.uid);
+  removeUserProfileCache(user.uid);
+  const savedProfile = await getUserProfile(user.uid, { forceRefresh: true });
   await writePublicPlayerFromProfile(db, firestoreMod, savedProfile).catch(() => null);
   return savedProfile;
 }
@@ -1510,13 +1570,14 @@ export async function updateUserByAdmin(uid, values) {
     batch.delete(firestoreMod.doc(db, 'regions', oldGame.region, 'players', uid));
   }
   await batch.commit();
+  removeUserProfileCache(uid);
   await markStatsChanged(db, firestoreMod, uid, 'admin_changed', 'admin-main').catch(() => null);
   await mirrorPublicStatsFromPublicPlayer(publicPlayer, 'admin-main');
   const changed = [];
   if (oldGame.rank !== clean.rank) changed.push(`${serviceT('account.rank','Ранг')}: ${clean.rank.toUpperCase()}`);
   if (oldProfile?.role !== role) changed.push(`${serviceT('account.role','Роль')}: ${roleLabel(role)}`);
   if (changed.length) await createUserNotification(uid, { type:'profile_changed', title: serviceT('notifications.profileChanged','Профіль оновлено'), message: changed.join(' · '), region: clean.region, alliance: clean.alliance }).catch(() => null);
-  return getUserProfile(uid);
+  return getUserProfile(uid, { forceRefresh: true });
 }
 
 export async function updateFarmByAdmin(uid, farmId, values) {
@@ -1566,6 +1627,7 @@ export async function updateFarmByAdmin(uid, farmId, values) {
   batch.set(firestoreMod.doc(db, 'users', uid), userPatch, { merge: true });
   if (oldProfile.profileComplete) batch.set(firestoreMod.doc(db, 'publicPlayers', uid), publicPlayer, { merge: true });
   await batch.commit();
+  removeUserProfileCache(uid);
   await markStatsChanged(db, firestoreMod, uid, 'admin_changed', 'admin-farm').catch(() => null);
   await mirrorPublicStatsFromPublicPlayer(publicPlayer, 'admin-farm');
   const oldFarm = farms[index] || {};
@@ -1573,7 +1635,7 @@ export async function updateFarmByAdmin(uid, farmId, values) {
   if (oldFarm.rank !== nextFarm.rank) changed.push(`${serviceT('account.rank','Ранг')}: ${nextFarm.rank.toUpperCase()}`);
   if (oldFarm.role !== nextFarm.role) changed.push(`${serviceT('account.role','Роль')}: ${roleLabel(nextFarm.role)}`);
   if (changed.length) await createUserNotification(uid, { type:'farm_profile_changed', title: serviceT('notifications.profileChanged','Профіль оновлено'), message: `${nextFarm.nickname || serviceT('account.farm','Ферма')}: ${changed.join(' · ')}`, region: nextFarm.region, alliance: nextFarm.alliance }).catch(() => null);
-  return getUserProfile(uid);
+  return getUserProfile(uid, { forceRefresh: true });
 }
 
 export async function approveRoleRequest(requestId) {
@@ -1648,6 +1710,7 @@ export async function approveRoleRequest(requestId) {
   batch.set(firestoreMod.doc(db, 'publicPlayers', uid), updatedPublic, { merge: true });
   if (region) batch.set(firestoreMod.doc(db, 'regions', region, 'players', uid), updatedPublic, { merge: true });
   await batch.commit();
+  removeUserProfileCache(uid);
   await markStatsChanged(db, firestoreMod, uid, 'role_changed', 'role-approve').catch(() => null);
   await mirrorPublicStatsFromPublicPlayer(updatedPublic, 'role-approve');
   await createUserNotification(uid, { type:'role_approved', title: serviceT('notifications.roleApproved','Роль підтверджено'), message: roleLabel(role), region, alliance: request.alliance }).catch(() => null);
@@ -1688,6 +1751,7 @@ export async function declineRoleRequest(requestId) {
   batch.set(requestRef, { status: 'declined', declinedBy, declinedAt: now, updatedAt: now }, { merge: true });
   if (userData.profileComplete) batch.set(firestoreMod.doc(db, 'publicPlayers', uid), publicPlayer, { merge: true });
   await batch.commit();
+  removeUserProfileCache(uid);
   await markStatsChanged(db, firestoreMod, uid, 'role_changed', 'role-decline').catch(() => null);
   await mirrorPublicStatsFromPublicPlayer(publicPlayer, 'role-decline');
 }
