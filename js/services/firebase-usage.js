@@ -28,7 +28,7 @@ function numberValue(value = 0) {
   return Number.isFinite(number) && number > 0 ? Math.round(number) : 0;
 }
 
-const REAL_FIREBASE_CACHE_KEY = 'wkd.firebaseRealUsageCache.v127';
+const REAL_FIREBASE_CACHE_KEY = 'wkd.firebaseRealUsageCache.v128';
 
 function readCache() {
   try {

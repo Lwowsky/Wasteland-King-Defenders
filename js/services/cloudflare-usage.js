@@ -28,7 +28,7 @@ function numberValue(value = 0) {
   return Number.isFinite(number) && number > 0 ? Math.round(number) : 0;
 }
 
-const REAL_USAGE_CACHE_KEY = 'wkd.cloudflareRealUsageCache.v127';
+const REAL_USAGE_CACHE_KEY = 'wkd.cloudflareRealUsageCache.v128';
 
 function readCache() {
   try {

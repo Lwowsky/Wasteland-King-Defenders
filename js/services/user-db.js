@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=127';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=127';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=127';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=128';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=128';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=128';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -16,7 +16,7 @@ import {
   patchSentMessageD1,
   readNotificationSummaryD1,
   setNotificationSummaryD1
-} from './notifications-d1.js?v=127';
+} from './notifications-d1.js?v=128';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;

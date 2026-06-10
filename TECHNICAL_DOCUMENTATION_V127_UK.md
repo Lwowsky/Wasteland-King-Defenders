@@ -28,8 +28,8 @@ firestore.googleapis.com/rules/denied_request_count
 ## Cache
 
 ```text
-wkd.firebaseRealUsageCache.v127
-wkd.cloudflareRealUsageCache.v127
+wkd.firebaseRealUsageCache.v128
+wkd.cloudflareRealUsageCache.v128
 ```
 
 ## Access

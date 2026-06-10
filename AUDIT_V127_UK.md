@@ -5,7 +5,7 @@
   - `/api/admin/usage/firebase`
   - `js/services/firebase-usage.js`
   - вкладка `Адмінка → Ліміти → Firebase → Оновити`
-- Дані кешуються у браузері в `wkd.firebaseRealUsageCache.v127`.
+- Дані кешуються у браузері в `wkd.firebaseRealUsageCache.v128`.
 - Firebase API secrets не потрапляють у frontend.
 - Оновлення Firebase usage доступне тільки Admin UID через Firebase ID token + `REGION_TABLE_ADMIN_UIDS`.
 - Прибрано стару Cloudflare local estimate логіку з відображення. `usage-tracker.js` більше не тримає локальні Cloudflare квоти як UI-джерело.

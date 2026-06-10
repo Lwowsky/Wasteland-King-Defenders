@@ -1880,21 +1880,33 @@ function monitoringPointValue(point = {}) {
   return numericMetric(raw);
 }
 
-async function fetchMonitoringSeries(env, accessToken, metricType, period) {
+async function fetchMonitoringSeries(env, accessToken, metricType, period, options = {}) {
   const projectId = googleProjectId(env);
   const url = new URL(`${GOOGLE_MONITORING_API}/projects/${encodeURIComponent(projectId)}/timeSeries`);
-  url.searchParams.set('filter', `metric.type = "${metricType}"`);
+  const extraFilter = clean(options.extraFilter || '', 500);
+  const filterParts = [`metric.type = "${metricType}"`];
+  if (extraFilter) filterParts.push(extraFilter);
+  url.searchParams.set('filter', filterParts.join(' AND '));
   url.searchParams.set('interval.startTime', period.startIso);
   url.searchParams.set('interval.endTime', period.endIso);
   url.searchParams.set('view', 'FULL');
   url.searchParams.set('pageSize', '100000');
+  if (options.align === 'max') {
+    url.searchParams.set('aggregation.alignmentPeriod', '86400s');
+    url.searchParams.set('aggregation.perSeriesAligner', 'ALIGN_MAX');
+    url.searchParams.set('aggregation.crossSeriesReducer', 'REDUCE_MAX');
+  } else if (options.align === 'sum') {
+    url.searchParams.set('aggregation.alignmentPeriod', '86400s');
+    url.searchParams.set('aggregation.perSeriesAligner', 'ALIGN_SUM');
+    url.searchParams.set('aggregation.crossSeriesReducer', 'REDUCE_SUM');
+  }
   const response = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
   });
   let data = null;
   try { data = await response.json(); } catch { data = null; }
   if (!response.ok) {
-    const message = clean(data?.error?.message || `monitoring_${response.status}`, 180);
+    const message = clean(data?.error?.message || `monitoring_${response.status}`, 240);
     throw new Error(message || `monitoring_${response.status}`);
   }
   return Array.isArray(data?.timeSeries) ? data.timeSeries : [];
@@ -1924,9 +1936,29 @@ function maxMonitoringPoints(series = []) {
   return { value: max, rows: Array.isArray(series) ? series.length : 0, points };
 }
 
-async function readFirestoreMetric(env, accessToken, metricType, period, mode = 'sum') {
-  const series = await fetchMonitoringSeries(env, accessToken, metricType, period);
+async function readFirestoreMetric(env, accessToken, metricType, period, mode = 'sum', options = {}) {
+  const align = mode === 'max' ? 'max' : 'sum';
+  const series = await fetchMonitoringSeries(env, accessToken, metricType, period, { ...options, align });
   return mode === 'max' ? maxMonitoringPoints(series) : sumMonitoringPoints(series);
+}
+
+async function readFirestoreMetricAny(env, accessToken, candidates = [], period, mode = 'sum', options = {}) {
+  const errors = [];
+  let empty = null;
+  for (const metricType of candidates) {
+    try {
+      const result = await readFirestoreMetric(env, accessToken, metricType, period, mode, options);
+      if (result.points > 0 || result.rows > 0 || result.value > 0) {
+        return { ...result, metricType };
+      }
+      empty = { ...result, metricType };
+    } catch (error) {
+      errors.push(`${metricType}: ${clean(error?.message || 'failed', 180)}`);
+    }
+  }
+  if (empty) return empty;
+  if (errors.length) throw new Error(errors.join(' | '));
+  return { value: 0, rows: 0, points: 0, metricType: candidates[0] || '' };
 }
 
 async function handleFirebaseUsage(request, env) {
@@ -1953,23 +1985,24 @@ async function handleFirebaseUsage(request, env) {
   }
 
   const metrics = [
-    ['reads', 'firestore.googleapis.com/document/read_count', 'sum'],
-    ['writes', 'firestore.googleapis.com/document/write_count', 'sum'],
-    ['deletes', 'firestore.googleapis.com/document/delete_count', 'sum'],
-    ['storageBytes', 'firestore.googleapis.com/storage/data_and_index_storage_bytes', 'max'],
-    ['activeConnections', 'firestore.googleapis.com/network/active_connections', 'max'],
-    ['snapshotListeners', 'firestore.googleapis.com/network/snapshot_listeners', 'max'],
-    ['deniedRules', 'firestore.googleapis.com/rules/denied_request_count', 'sum'],
+    ['reads', ['firestore.googleapis.com/document/read_ops_count', 'firestore.googleapis.com/document/read_count'], 'sum'],
+    ['writes', ['firestore.googleapis.com/document/write_ops_count', 'firestore.googleapis.com/document/write_count'], 'sum'],
+    ['deletes', ['firestore.googleapis.com/document/delete_ops_count', 'firestore.googleapis.com/document/delete_count'], 'sum'],
+    ['storageBytes', ['firestore.googleapis.com/storage/data_and_index_storage_bytes'], 'max'],
+    ['activeConnections', ['firestore.googleapis.com/network/active_connections'], 'max'],
+    ['snapshotListeners', ['firestore.googleapis.com/network/snapshot_listeners'], 'max'],
+    ['deniedRules', ['firestore.googleapis.com/rules/evaluation_count'], 'sum', { extraFilter: 'metric.labels.result = "DENY"' }],
   ];
 
-  for (const [key, metricType, mode] of metrics) {
+  for (const [key, metricTypes, mode, options = {}] of metrics) {
     try {
-      const result = await readFirestoreMetric(env, accessToken, metricType, period, mode);
+      const result = await readFirestoreMetricAny(env, accessToken, metricTypes, period, mode, options);
       firestore[key] = result.value;
       firestore.rows += result.rows;
       firestore.points += result.points;
+      firestore[`${key}Metric`] = result.metricType;
     } catch (error) {
-      partialErrors.push({ source: key, error: clean(error?.message || `${key}_failed`, 160) });
+      partialErrors.push({ source: key, error: clean(error?.message || `${key}_failed`, 220) });
     }
   }
 
