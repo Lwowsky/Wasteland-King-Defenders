@@ -1,6 +1,6 @@
 import { formatUserDate, getUserProfile, makePublicPlayer, roleLabel } from '../services/user-db.js';
 import { watchAuth } from '../services/firebase-service.js';
-import { troopLabel } from '../services/region-db.js?v=154';
+import { troopLabel } from '../services/region-db.js?v=155';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -31,14 +31,30 @@ function locale() {
 }
 
 
+
 const PUBLIC_STATS_CACHE_URL = 'public-cache/stats-summary.json';
 const PUBLIC_STATS_PLAYERS_URL = 'public-cache/stats-players.json';
-const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v154';
-const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.v154';
-const STATS_REGION_PLAYERS_CACHE_PREFIX = 'wkd.publicStatsPlayers.region.v154.';
+const PUBLIC_STATS_INDEX_URL = 'public-cache/stats-players-index.json';
+const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v155';
+const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.full.v155';
+const STATS_PLAYERS_INDEX_CACHE_KEY = 'wkd.publicStatsPlayers.index.v155';
+const STATS_CHUNK_CACHE_PREFIX = 'wkd.publicStatsPlayers.chunk.v155.';
+const STATS_REGION_PLAYERS_CACHE_PREFIX = 'wkd.publicStatsPlayers.regionFull.v155.';
 const STATS_CACHE_TTL_MS = 10 * 60 * 1000;
+const STATS_CHUNK_SIZE = 50;
 let loadedPlayersScope = 'all';
 let regionFetchTimer = null;
+let statsIndexCache = null;
+let statsPageState = {
+  scope: 'all',
+  region: '',
+  chunkPage: 1,
+  uiPage: 1,
+  chunkSize: STATS_CHUNK_SIZE,
+  totalRows: 0,
+  totalChunks: 1,
+  mode: 'chunk'
+};
 
 function readStatsCache(key = '') {
   try {
@@ -57,25 +73,75 @@ function writeSummaryCache(data) { writeStatsCache(STATS_SUMMARY_CACHE_KEY, data
 function readPlayersCache() { return readStatsCache(STATS_PLAYERS_CACHE_KEY); }
 function writePlayersCache(data) { writeStatsCache(STATS_PLAYERS_CACHE_KEY, data); }
 function cleanStatsRegion(value = '') { return String(value || '').replace(/[^0-9]/g, '').slice(0, 8); }
-function activeStatsRegionScope() {
-  const fromInput = cleanStatsRegion($('#statsRegionSearch')?.value || '');
-  if (fromInput) return fromInput;
-  return cleanStatsRegion(localStorage.getItem('wkd.players.activeRegion') || localStorage.getItem('wkd.activeRegion') || '');
-}
+function activeStatsRegionScope() { return cleanStatsRegion($('#statsRegionSearch')?.value || ''); }
 function readRegionPlayersCache(region = '') { return readStatsCache(`${STATS_REGION_PLAYERS_CACHE_PREFIX}${cleanStatsRegion(region)}`); }
 function writeRegionPlayersCache(region = '', data) { writeStatsCache(`${STATS_REGION_PLAYERS_CACHE_PREFIX}${cleanStatsRegion(region)}`, data); }
 function regionPlayersUrl(region = '') { return `public-cache/stats-players-R${cleanStatsRegion(region)}.json`; }
-function mapSize(value) {
-  return value && typeof value === 'object' ? Object.keys(value).filter(key => Number(value[key]) > 0).length : 0;
+function pageNumber(value = 1) { return String(Math.max(1, Number(value || 1))).padStart(3, '0'); }
+function scopeKey(scope = 'all', region = '') { return scope === 'region' && cleanStatsRegion(region) ? `R${cleanStatsRegion(region)}` : 'all'; }
+function chunkCacheKey(scope = 'all', region = '', page = 1) { return `${STATS_CHUNK_CACHE_PREFIX}${scopeKey(scope, region)}.${pageNumber(page)}`; }
+function allChunkUrl(page = 1) { return `public-cache/stats-players-all-page-${pageNumber(page)}.json`; }
+function regionChunkUrl(region = '', page = 1) { return `public-cache/stats-players-R${cleanStatsRegion(region)}-page-${pageNumber(page)}.json`; }
+function normalizeIndex(data = null) {
+  if (!data || typeof data !== 'object') return null;
+  const chunkSize = Math.max(1, Number(data.chunkSize || STATS_CHUNK_SIZE));
+  const allPages = Array.isArray(data.all?.pages) ? data.all.pages : [];
+  const regions = Array.isArray(data.regions) ? data.regions : [];
+  return {
+    ...data,
+    chunkSize,
+    all: { rows: Number(data.all?.rows ?? data.totalRows ?? 0), pages: allPages },
+    regions
+  };
 }
-function summaryNumber(value) {
-  const number = Number(value);
-  return Number.isFinite(number) && number >= 0 ? number : 0;
+function pageMetaFor(scope = 'all', region = '', page = 1) {
+  const safePage = Math.max(1, Number(page || 1));
+  const index = statsIndexCache || {};
+  if (scope === 'region') {
+    const safeRegion = cleanStatsRegion(region);
+    const bucket = (Array.isArray(index.regions) ? index.regions : []).find(item => String(item.region) === safeRegion);
+    const pages = Array.isArray(bucket?.pages) ? bucket.pages : [];
+    return pages.find(item => Number(item.page) === safePage) || { page: safePage, file: `stats-players-R${safeRegion}-page-${pageNumber(safePage)}.json`, rows: 0 };
+  }
+  const pages = Array.isArray(index.all?.pages) ? index.all.pages : [];
+  return pages.find(item => Number(item.page) === safePage) || { page: safePage, file: `stats-players-all-page-${pageNumber(safePage)}.json`, rows: 0 };
 }
-function formatSummaryUpdatedAt(value) {
-  if (!value) return t('common.unknown', 'Unknown');
-  const date = new Date(value);
-  return Number.isFinite(date.getTime()) ? date.toLocaleString(locale()) : String(value);
+function scopeMeta(scope = 'all', region = '') {
+  const index = statsIndexCache || {};
+  if (scope === 'region') {
+    const safeRegion = cleanStatsRegion(region);
+    const bucket = (Array.isArray(index.regions) ? index.regions : []).find(item => String(item.region) === safeRegion);
+    const totalRows = Number(bucket?.rows || 0);
+    const totalChunks = Math.max(1, Array.isArray(bucket?.pages) ? bucket.pages.length : Math.ceil(totalRows / (index.chunkSize || STATS_CHUNK_SIZE)) || 1);
+    return { totalRows, totalChunks, chunkSize: Number(index.chunkSize || STATS_CHUNK_SIZE) };
+  }
+  const totalRows = Number(index.all?.rows ?? index.totalRows ?? 0);
+  const totalChunks = Math.max(1, Array.isArray(index.all?.pages) ? index.all.pages.length : Math.ceil(totalRows / (index.chunkSize || STATS_CHUNK_SIZE)) || 1);
+  return { totalRows, totalChunks, chunkSize: Number(index.chunkSize || STATS_CHUNK_SIZE) };
+}
+function filtersNeedAllLoaded() {
+  return Boolean(String($('#statsNickSearch')?.value || '').trim()
+    || String($('#statsAllianceSearch')?.value || '').trim()
+    || (($('#statsRoleFilter')?.value || 'all') !== 'all')
+    || sortState.key !== 'region'
+    || sortState.dir !== 'asc');
+}
+async function fetchPublicStatsIndex({ force = false } = {}) {
+  if (!force) {
+    const cached = readStatsCache(STATS_PLAYERS_INDEX_CACHE_KEY);
+    if (cached) {
+      statsIndexCache = normalizeIndex(cached);
+      if (statsIndexCache) return statsIndexCache;
+    }
+  }
+  const url = `${PUBLIC_STATS_INDEX_URL}${force ? `?t=${Date.now()}` : ''}`;
+  const response = await fetch(url, { cache: force ? 'no-store' : 'no-cache' });
+  if (!response.ok) throw new Error(`stats-index-${response.status}`);
+  const data = normalizeIndex(await response.json());
+  if (!data) throw new Error('stats-index-invalid');
+  statsIndexCache = data;
+  writeStatsCache(STATS_PLAYERS_INDEX_CACHE_KEY, data);
+  return data;
 }
 async function fetchPublicStatsSummary({ force = false } = {}) {
   if (!force) {
@@ -89,36 +155,83 @@ async function fetchPublicStatsSummary({ force = false } = {}) {
   writeSummaryCache(data);
   return data;
 }
-async function fetchPublicStatsPlayers({ force = false, region = '' } = {}) {
+async function fetchLegacyStatsPlayers({ force = false, region = '' } = {}) {
   const safeRegion = cleanStatsRegion(region);
   if (safeRegion) {
     if (!force) {
       const cached = readRegionPlayersCache(safeRegion);
       if (cached) return cached;
     }
-    const url = `${regionPlayersUrl(safeRegion)}${force ? `?t=${Date.now()}` : ''}`;
-    const response = await fetch(url, { cache: force ? 'no-store' : 'no-cache' });
+    const response = await fetch(`${regionPlayersUrl(safeRegion)}${force ? `?t=${Date.now()}` : ''}`, { cache: force ? 'no-store' : 'no-cache' });
     if (response.ok) {
       const data = await response.json();
       const list = Array.isArray(data) ? data : [];
       writeRegionPlayersCache(safeRegion, list);
-      loadedPlayersScope = safeRegion;
       return list;
     }
-    // Old deployments may not have split region JSON yet, so safely fall back to the full file.
   }
   if (!force) {
     const cached = readPlayersCache();
     if (cached) return cached;
   }
-  const url = `${PUBLIC_STATS_PLAYERS_URL}${force ? `?t=${Date.now()}` : ''}`;
-  const response = await fetch(url, { cache: force ? 'no-store' : 'no-cache' });
+  const response = await fetch(`${PUBLIC_STATS_PLAYERS_URL}${force ? `?t=${Date.now()}` : ''}`, { cache: force ? 'no-store' : 'no-cache' });
   if (!response.ok) throw new Error(`stats-players-${response.status}`);
   const data = await response.json();
   const list = Array.isArray(data) ? data : [];
   writePlayersCache(list);
-  loadedPlayersScope = 'all';
   return list;
+}
+async function fetchPlayersChunk({ force = false, scope = 'all', region = '', page = 1 } = {}) {
+  const safePage = Math.max(1, Number(page || 1));
+  const safeRegion = cleanStatsRegion(region);
+  const cacheKey = chunkCacheKey(scope, safeRegion, safePage);
+  if (!force) {
+    const cached = readStatsCache(cacheKey);
+    if (cached) return Array.isArray(cached) ? cached : [];
+  }
+  const meta = pageMetaFor(scope, safeRegion, safePage);
+  const fallbackFile = scope === 'region' ? regionChunkUrl(safeRegion, safePage) : allChunkUrl(safePage);
+  const file = String(meta.file || fallbackFile).replace(/^public-cache\//, '');
+  const url = `public-cache/${file}${force ? `?t=${Date.now()}` : ''}`;
+  const response = await fetch(url, { cache: force ? 'no-store' : 'no-cache' });
+  if (!response.ok) throw new Error(`stats-chunk-${response.status}`);
+  const list = await response.json();
+  const rows = Array.isArray(list) ? list : [];
+  writeStatsCache(cacheKey, rows);
+  return rows;
+}
+async function fetchPublicStatsPlayers({ force = false, region = '', page = 1, allForFilter = false } = {}) {
+  const safeRegion = cleanStatsRegion(region);
+  const scope = safeRegion ? 'region' : 'all';
+  try {
+    await fetchPublicStatsIndex({ force });
+    const meta = scopeMeta(scope, safeRegion);
+    statsPageState = {
+      scope,
+      region: safeRegion,
+      chunkPage: Math.min(Math.max(1, Number(page || 1)), meta.totalChunks),
+      uiPage: 1,
+      chunkSize: meta.chunkSize,
+      totalRows: meta.totalRows,
+      totalChunks: meta.totalChunks,
+      mode: allForFilter ? 'allLoaded' : 'chunk'
+    };
+    if (allForFilter) {
+      const pages = Array.from({ length: meta.totalChunks }, (_, index) => index + 1);
+      const chunks = await Promise.all(pages.map(item => fetchPlayersChunk({ force, scope, region: safeRegion, page: item }).catch(() => [])));
+      loadedPlayersScope = safeRegion || 'all';
+      return chunks.flat();
+    }
+    const rows = await fetchPlayersChunk({ force, scope, region: safeRegion, page: statsPageState.chunkPage });
+    loadedPlayersScope = safeRegion || 'all';
+    return rows;
+  } catch (error) {
+    console.warn('[WKD] paged stats cache failed, using legacy JSON:', error);
+    const list = await fetchLegacyStatsPlayers({ force, region: safeRegion });
+    statsPageState = { scope, region: safeRegion, chunkPage: 1, uiPage: 1, chunkSize: list.length || STATS_CHUNK_SIZE, totalRows: list.length, totalChunks: 1, mode: 'allLoaded' };
+    loadedPlayersScope = safeRegion || 'all';
+    return list;
+  }
 }
 
 
@@ -209,12 +322,13 @@ function renderListNotLoaded() {
 }
 async function loadSummaryOnly(options = {}) {
   const force = Boolean(options?.force);
+  const regionScope = cleanStatsRegion(options?.playersRegion ?? activeStatsRegionScope());
+  const allForFilter = Boolean(options?.allForFilter ?? filtersNeedAllLoaded());
   setStatus(t('stats.loadingSummary', 'Loading public statistics cache...'), 'muted');
   try {
-    const regionScope = cleanStatsRegion(options?.playersRegion || activeStatsRegionScope());
     const [summary, publicPlayers] = await Promise.all([
       fetchPublicStatsSummary({ force }),
-      fetchPublicStatsPlayers({ force, region: regionScope })
+      fetchPublicStatsPlayers({ force, region: regionScope, page: options?.page || statsPageState.chunkPage || 1, allForFilter })
     ]);
     statsSummaryCache = hasUsableStatsSummary(summary) ? summary : null;
     players = Array.isArray(publicPlayers) ? publicPlayers : [];
@@ -227,12 +341,21 @@ async function loadSummaryOnly(options = {}) {
       setStatus(t('stats.cacheEmpty', 'Public JSON cache is empty. Check or replace public-cache/stats-players.json.'), 'warning');
       return;
     }
-    if (isPublicPlayersJsonMissing(summary, publicPlayers)) {
+    if (isPublicPlayersJsonMissing(summary, publicPlayers) && !statsPageState.totalRows) {
       renderListNotLoaded();
       setStatus(t('stats.playersJsonMismatch', 'stats-summary.json has numbers, but stats-players.json is empty. Replace the local public-cache with the latest generated JSON files.'), 'warning');
       return;
     }
-    setStatus(loadedPlayersScope !== 'all' ? `${t('stats.cacheUpdated', 'Statistics loaded from public JSON cache.')} R${loadedPlayersScope}` : t('stats.cacheUpdated', 'Statistics loaded from public JSON cache.'), 'success');
+    const scopeLabel = loadedPlayersScope !== 'all' ? `R${loadedPlayersScope}` : t('common.all', 'All');
+    const chunkLabel = statsPageState.mode === 'chunk'
+      ? tv('stats.chunkLoaded', 'Loaded {count} players from {scope}. Page chunk {page}/{pages}.', {
+          count: players.length,
+          scope: scopeLabel,
+          page: statsPageState.chunkPage,
+          pages: statsPageState.totalChunks
+        })
+      : tv('stats.cacheUpdatedScope', 'Statistics loaded from public JSON cache. Scope: {scope}.', { scope: scopeLabel });
+    setStatus(chunkLabel || t('stats.cacheUpdated', 'Statistics loaded from public JSON cache.'), 'success');
   } catch (error) {
     console.warn('[WKD] public stats JSON failed:', error);
     statsSummaryCache = null;
@@ -240,6 +363,7 @@ async function loadSummaryOnly(options = {}) {
     players = [];
     renderStats();
     renderListNotLoaded();
+    renderPagination(0, 0);
     setStatus(t('stats.cacheFailed', 'Public statistics JSON files are not available. Check public-cache/stats-summary.json and stats-players.json.'), 'error');
   }
 }
@@ -350,12 +474,17 @@ function sortPlayers(a, b) {
   return String(sortValue(a, sortState.key)).localeCompare(String(sortValue(b, sortState.key)), locale(), { numeric: true }) * dir;
 }
 
-function filteredPlayers() {
+function selectedRowsLimit() {
+  const value = $('#statsRowsFilter')?.value || '10';
+  if (value === 'all') return Math.max(10, statsPageState.chunkSize || STATS_CHUNK_SIZE);
+  return Math.max(1, Number(value) || 10);
+}
+function filteredPlayers({ paginate = true } = {}) {
   const nick = String($('#statsNickSearch')?.value || '').trim().toLowerCase();
   const alliance = String($('#statsAllianceSearch')?.value || '').trim();
   const region = String($('#statsRegionSearch')?.value || '').trim().toLowerCase();
   const role = $('#statsRoleFilter')?.value || 'all';
-  const rows = $('#statsRowsFilter')?.value || '10';
+  const pageSize = selectedRowsLimit();
   const visible = displayRows()
     .filter(player => role === 'all' || (player.role || 'player') === role)
     .filter(player => {
@@ -369,8 +498,57 @@ function filteredPlayers() {
         && (!region || userRegion.includes(region));
     })
     .sort(sortPlayers);
-  if (rows === 'all') return visible;
-  return visible.slice(0, Number(rows) || 10);
+  if (!paginate) return visible;
+  if (statsPageState.mode === 'chunk' && !filtersNeedAllLoaded()) {
+    const start = (Math.max(1, statsPageState.uiPage || 1) - 1) * pageSize;
+    return visible.slice(start, start + pageSize);
+  }
+  const totalUiPages = Math.max(1, Math.ceil(visible.length / pageSize));
+  statsPageState.uiPage = Math.min(Math.max(1, statsPageState.uiPage || 1), totalUiPages);
+  const start = (statsPageState.uiPage - 1) * pageSize;
+  return visible.slice(start, start + pageSize);
+}
+function renderPagination(totalFiltered = 0, currentVisible = 0) {
+  const box = $('#statsPagination');
+  if (!box) return;
+  const pageSize = selectedRowsLimit();
+  const isChunkMode = statsPageState.mode === 'chunk' && !filtersNeedAllLoaded();
+  const totalRows = isChunkMode ? Math.max(0, Number(statsPageState.totalRows || 0)) : totalFiltered;
+  const totalUiPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const chunkUiPages = Math.max(1, Math.ceil((statsPageState.chunkSize || STATS_CHUNK_SIZE) / pageSize));
+  const globalPage = isChunkMode
+    ? Math.min(totalUiPages, ((Math.max(1, statsPageState.chunkPage || 1) - 1) * chunkUiPages) + Math.max(1, statsPageState.uiPage || 1))
+    : Math.min(totalUiPages, Math.max(1, statsPageState.uiPage || 1));
+  const from = totalRows ? ((globalPage - 1) * pageSize) + 1 : 0;
+  const to = Math.min(totalRows, from + Math.max(0, currentVisible) - 1);
+  box.innerHTML = `<div class="stats-pagination__info">${escapeHtml(tv('stats.paginationInfo', 'Showing {from}-{to} of {total}', { from, to, total: totalRows }))}</div>
+    <div class="stats-pagination__buttons">
+      <button class="btn" type="button" data-stats-page="prev" ${globalPage <= 1 ? 'disabled' : ''}>${escapeHtml(t('common.back', 'Back'))}</button>
+      <span>${escapeHtml(tv('stats.paginationPage', 'Page {page} / {pages}', { page: globalPage, pages: totalUiPages }))}</span>
+      <button class="btn" type="button" data-stats-page="next" ${globalPage >= totalUiPages ? 'disabled' : ''}>${escapeHtml(t('common.next', 'Next'))}</button>
+    </div>`;
+}
+async function moveStatsPage(direction = 1) {
+  const pageSize = selectedRowsLimit();
+  const chunkUiPages = Math.max(1, Math.ceil((statsPageState.chunkSize || STATS_CHUNK_SIZE) / pageSize));
+  if (statsPageState.mode === 'chunk' && !filtersNeedAllLoaded()) {
+    const globalPage = ((Math.max(1, statsPageState.chunkPage || 1) - 1) * chunkUiPages) + Math.max(1, statsPageState.uiPage || 1) + direction;
+    const totalUiPages = Math.max(1, Math.ceil(Number(statsPageState.totalRows || 0) / pageSize));
+    const nextGlobal = Math.min(Math.max(1, globalPage), totalUiPages);
+    const nextChunk = Math.floor((nextGlobal - 1) / chunkUiPages) + 1;
+    const nextUi = ((nextGlobal - 1) % chunkUiPages) + 1;
+    statsPageState.uiPage = nextUi;
+    if (nextChunk !== statsPageState.chunkPage) {
+      await loadSummaryOnly({ playersRegion: statsPageState.region, page: nextChunk, allForFilter: false });
+    } else {
+      renderPlayers();
+    }
+    return;
+  }
+  const totalFiltered = filteredPlayers({ paginate: false }).length;
+  const totalUiPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  statsPageState.uiPage = Math.min(Math.max(1, (statsPageState.uiPage || 1) + direction), totalUiPages);
+  renderPlayers();
 }
 
 function setPlayersCounterLabel() {
@@ -427,14 +605,19 @@ function renderPlayers() {
   if (!body) return;
   if (!detailsLoaded) {
     renderListNotLoaded();
+    renderPagination(0, 0);
     return;
   }
-  const visible = filteredPlayers();
+  const allFiltered = filteredPlayers({ paginate: false });
+  const visible = filteredPlayers({ paginate: true });
   if (!visible.length) {
     body.innerHTML = `<tr><td colspan="8">${escapeHtml(t('stats.noPlayersFound', 'No players found.'))}</td></tr>`;
+    renderPagination(allFiltered.length, 0);
     return;
   }
   body.innerHTML = visible.map(rowTemplate).join('');
+  const totalFiltered = (statsPageState.mode === 'chunk' && !filtersNeedAllLoaded()) ? Number(statsPageState.totalRows || allFiltered.length) : allFiltered.length;
+  renderPagination(totalFiltered, visible.length);
 }
 
 function textLine(label, value) {
@@ -566,30 +749,50 @@ function closePlayerModal() {
 function scheduleRegionScopedStatsLoad() {
   window.clearTimeout(regionFetchTimer);
   regionFetchTimer = window.setTimeout(() => {
-    const region = cleanStatsRegion($('#statsRegionSearch')?.value || '');
-    if (region && region !== loadedPlayersScope) loadSummaryOnly({ playersRegion: region }).catch(console.error);
-    else renderPlayers();
+    statsPageState.uiPage = 1;
+    loadSummaryOnly({ playersRegion: activeStatsRegionScope(), page: 1, allForFilter: filtersNeedAllLoaded() }).catch(console.error);
   }, 350);
+}
+function scheduleFilteredStatsRender() {
+  window.clearTimeout(regionFetchTimer);
+  regionFetchTimer = window.setTimeout(() => {
+    statsPageState.uiPage = 1;
+    if (filtersNeedAllLoaded() && statsPageState.mode !== 'allLoaded') {
+      loadSummaryOnly({ playersRegion: activeStatsRegionScope(), page: 1, allForFilter: true }).catch(console.error);
+    } else {
+      renderPlayers();
+    }
+  }, 250);
 }
 
 function bindControls() {
-  $('#refreshStatsBtn')?.addEventListener('click', () => loadSummaryOnly({ force: true }));
-  $('#statsNickSearch')?.addEventListener('input', renderPlayers);
-  $('#statsAllianceSearch')?.addEventListener('input', renderPlayers);
+  $('#refreshStatsBtn')?.addEventListener('click', () => loadSummaryOnly({ force: true, playersRegion: activeStatsRegionScope(), page: 1, allForFilter: filtersNeedAllLoaded() }));
+  $('#statsNickSearch')?.addEventListener('input', scheduleFilteredStatsRender);
+  $('#statsAllianceSearch')?.addEventListener('input', scheduleFilteredStatsRender);
   $('#statsRegionSearch')?.addEventListener('input', scheduleRegionScopedStatsLoad);
-  $('#statsRoleFilter')?.addEventListener('change', renderPlayers);
-  $('#statsRowsFilter')?.addEventListener('change', renderPlayers);
-  $('#statsIncludeFarmsToggle')?.addEventListener('change', () => { renderStats(); renderPlayers(); });
+  $('#statsRoleFilter')?.addEventListener('change', scheduleFilteredStatsRender);
+  $('#statsRowsFilter')?.addEventListener('change', () => { statsPageState.uiPage = 1; renderPlayers(); });
+  $('#statsIncludeFarmsToggle')?.addEventListener('change', () => { statsPageState.uiPage = 1; renderStats(); renderPlayers(); });
   $('#publicPlayersBody')?.addEventListener('click', event => {
     const button = event.target.closest('[data-player-id]');
     if (!button) return;
     const player = players.find(item => (item.publicKey || item.uid || item.id || '') === button.dataset.playerId);
     if (player) openPlayerModal(player, button.dataset.farmRow === '1' ? 'farms' : 'profile', button.dataset.farmIndex || -1);
   });
+  $('#statsPagination')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-stats-page]');
+    if (!button || button.disabled) return;
+    moveStatsPage(button.dataset.statsPage === 'next' ? 1 : -1).catch(console.error);
+  });
   document.querySelectorAll('#publicPlayersTable [data-sort]').forEach(button => button.addEventListener('click', () => {
     const key = button.dataset.sort;
     sortState = { key, dir: sortState.key === key && sortState.dir === 'asc' ? 'desc' : 'asc' };
-    renderPlayers();
+    statsPageState.uiPage = 1;
+    if (filtersNeedAllLoaded() && statsPageState.mode !== 'allLoaded') {
+      loadSummaryOnly({ playersRegion: activeStatsRegionScope(), page: 1, allForFilter: true }).catch(console.error);
+    } else {
+      renderPlayers();
+    }
   }));
   document.querySelectorAll('[data-close-stats-modal]').forEach(button => button.addEventListener('click', closePlayerModal));
   document.querySelectorAll('.stats-modal-tab').forEach(button => button.addEventListener('click', () => activateModalTab(button.dataset.statsTab)));
@@ -602,9 +805,6 @@ async function initStatsPage() {
   if (statsReady || !$('#publicPlayersBody')) return;
   statsReady = true;
   bindControls();
-  const regionInput = $('#statsRegionSearch');
-  const initialRegion = activeStatsRegionScope();
-  if (regionInput && initialRegion && !regionInput.value) regionInput.value = initialRegion;
   await watchAuth(user => {
     currentUser = user;
     if (liveStatsPatchReady) refreshCurrentUserLiveStats().catch(console.error);

@@ -1,0 +1,44 @@
+{
+  "version": 2,
+  "generatedAt": "local-preview",
+  "chunkSize": 50,
+  "totalRows": 1,
+  "all": {
+    "rows": 1,
+    "pages": [
+      {
+        "page": 1,
+        "file": "stats-players-all-page-001.json",
+        "rows": 1
+      }
+    ]
+  },
+  "regions": [
+    {
+      "region": "982",
+      "file": "stats-players-R982.json",
+      "rows": 1,
+      "chunkSize": 50,
+      "pages": [
+        {
+          "page": 1,
+          "file": "stats-players-R982-page-001.json",
+          "rows": 1
+        }
+      ]
+    },
+    {
+      "region": "987",
+      "file": "stats-players-R987.json",
+      "rows": 1,
+      "chunkSize": 50,
+      "pages": [
+        {
+          "page": 1,
+          "file": "stats-players-R987-page-001.json",
+          "rows": 1
+        }
+      ]
+    }
+  ]
+}

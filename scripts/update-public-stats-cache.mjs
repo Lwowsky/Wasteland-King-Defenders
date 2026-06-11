@@ -8,6 +8,8 @@ const SUMMARY_CACHE_PATH = process.env.STATS_CACHE_PATH || 'public-cache/stats-s
 const PLAYERS_CACHE_PATH = process.env.STATS_PLAYERS_CACHE_PATH || 'public-cache/stats-players.json';
 const REGION_PLAYERS_DIR = process.env.STATS_REGION_PLAYERS_DIR || path.dirname(PLAYERS_CACHE_PATH);
 const REGION_INDEX_CACHE_PATH = process.env.STATS_REGION_INDEX_CACHE_PATH || path.join(path.dirname(PLAYERS_CACHE_PATH), 'stats-regions.json');
+const STATS_PLAYERS_INDEX_PATH = process.env.STATS_PLAYERS_INDEX_PATH || path.join(path.dirname(PLAYERS_CACHE_PATH), 'stats-players-index.json');
+const STATS_PLAYER_CHUNK_SIZE = Math.max(10, Number(process.env.STATS_PLAYER_CHUNK_SIZE || 50));
 const FULL_REBUILD_HOUR_UTC = Number(process.env.STATS_FULL_REBUILD_HOUR_UTC ?? 3);
 const MAX_PENDING_CHANGES = Number(process.env.STATS_MAX_PENDING_CHANGES ?? 250);
 const CHANGE_RETENTION_DAYS = Number(process.env.STATS_CHANGE_RETENTION_DAYS ?? 30);
@@ -40,14 +42,31 @@ async function writeJson(filePath, data) {
   await fs.writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
 }
 
+function pageNumber(value = 1) {
+  const number = Math.max(1, Number(value || 1));
+  return String(number).padStart(3, '0');
+}
 function statsRegionFilePath(region = '') {
   const safe = String(region || '').replace(/[^0-9]/g, '').slice(0, 8);
   return path.join(REGION_PLAYERS_DIR, `stats-players-R${safe}.json`);
 }
-
-async function writeRegionPlayerFiles(publicPlayers = []) {
+function statsAllChunkFilePath(page = 1) {
+  return path.join(REGION_PLAYERS_DIR, `stats-players-all-page-${pageNumber(page)}.json`);
+}
+function statsRegionChunkFilePath(region = '', page = 1) {
+  const safe = String(region || '').replace(/[^0-9]/g, '').slice(0, 8);
+  return path.join(REGION_PLAYERS_DIR, `stats-players-R${safe}-page-${pageNumber(page)}.json`);
+}
+function chunkRows(rows = [], size = STATS_PLAYER_CHUNK_SIZE) {
+  const list = Array.isArray(rows) ? rows : [];
+  const chunks = [];
+  for (let index = 0; index < list.length; index += size) chunks.push(list.slice(index, index + size));
+  return chunks.length ? chunks : [[]];
+}
+async function writePlayerChunkFiles(publicPlayers = []) {
+  const sortedPlayers = sortPublicPlayers(Array.isArray(publicPlayers) ? publicPlayers : []);
   const buckets = new Map();
-  (Array.isArray(publicPlayers) ? publicPlayers : []).forEach(player => {
+  sortedPlayers.forEach(player => {
     const regions = new Set();
     const mainRegion = String(player?.region || '').replace(/[^0-9]/g, '').slice(0, 8);
     if (mainRegion) regions.add(mainRegion);
@@ -60,12 +79,51 @@ async function writeRegionPlayerFiles(publicPlayers = []) {
       buckets.get(region).push(player);
     });
   });
-  const index = [...buckets.entries()]
-    .sort(([a], [b]) => Number(a) - Number(b) || a.localeCompare(b))
-    .map(([region, rows]) => ({ region, file: `stats-players-R${region}.json`, rows: rows.length }));
-  await writeJson(REGION_INDEX_CACHE_PATH, index);
-  await Promise.all(index.map(item => writeJson(statsRegionFilePath(item.region), buckets.get(item.region) || [])));
-  return index.length;
+
+  const allChunks = chunkRows(sortedPlayers);
+  const allPages = allChunks.map((rows, index) => ({
+    page: index + 1,
+    file: `stats-players-all-page-${pageNumber(index + 1)}.json`,
+    rows: rows.length
+  }));
+  await Promise.all(allChunks.map((rows, index) => writeJson(statsAllChunkFilePath(index + 1), rows)));
+
+  const regions = [];
+  const writes = [];
+  for (const [region, rows] of [...buckets.entries()].sort(([a], [b]) => Number(a) - Number(b) || a.localeCompare(b))) {
+    const sortedRows = sortPublicPlayers(rows);
+    const chunks = chunkRows(sortedRows);
+    const pages = chunks.map((chunk, index) => ({
+      page: index + 1,
+      file: `stats-players-R${region}-page-${pageNumber(index + 1)}.json`,
+      rows: chunk.length
+    }));
+    regions.push({
+      region,
+      file: `stats-players-R${region}.json`,
+      rows: sortedRows.length,
+      chunkSize: STATS_PLAYER_CHUNK_SIZE,
+      pages
+    });
+    writes.push(writeJson(statsRegionFilePath(region), sortedRows));
+    chunks.forEach((chunk, index) => writes.push(writeJson(statsRegionChunkFilePath(region, index + 1), chunk)));
+  }
+  await Promise.all(writes);
+  await writeJson(REGION_INDEX_CACHE_PATH, regions.map(({ region, file, rows, pages }) => ({ region, file, rows, pages: pages.length })));
+  await writeJson(STATS_PLAYERS_INDEX_PATH, {
+    version: 2,
+    generatedAt: new Date().toISOString(),
+    chunkSize: STATS_PLAYER_CHUNK_SIZE,
+    totalRows: sortedPlayers.length,
+    all: { rows: sortedPlayers.length, pages: allPages },
+    regions
+  });
+  return { allPages: allPages.length, regionFiles: regions.length, regionPages: regions.reduce((sum, item) => sum + item.pages.length, 0) };
+}
+
+async function writeRegionPlayerFiles(publicPlayers = []) {
+  const result = await writePlayerChunkFiles(publicPlayers);
+  return result.regionFiles;
 }
 
 function timestampToIso(value) {
@@ -553,8 +611,8 @@ async function main() {
     const result = await fetchPublicStatsFromD1();
     await writeJson(SUMMARY_CACHE_PATH, result.summary);
     await writeJson(PLAYERS_CACHE_PATH, result.publicPlayers);
-    const regionFiles = await writeRegionPlayerFiles(result.publicPlayers);
-    info(`Stats cache updated from D1: players=${result.summary.totalPlayers}, farms=${result.summary.totalFarms}, publicRows=${result.publicPlayers.length}, regionFiles=${regionFiles}, buckets=${result.summary.d1Buckets || 0}`);
+    const chunkResult = await writePlayerChunkFiles(result.publicPlayers);
+    info(`Stats cache updated from D1: players=${result.summary.totalPlayers}, farms=${result.summary.totalFarms}, publicRows=${result.publicPlayers.length}, allPages=${chunkResult.allPages}, regionFiles=${chunkResult.regionFiles}, regionPages=${chunkResult.regionPages}, buckets=${result.summary.d1Buckets || 0}`);
     return;
   }
 
@@ -580,9 +638,9 @@ async function main() {
   }
   await writeJson(SUMMARY_CACHE_PATH, summary);
   await writeJson(PLAYERS_CACHE_PATH, publicPlayers);
-  const regionFiles = await writeRegionPlayerFiles(publicPlayers);
+  const chunkResult = await writePlayerChunkFiles(publicPlayers);
   const cleaned = await cleanupOldChanges(db).catch(() => 0);
-  info(`Stats cache updated: players=${summary.totalPlayers}, farms=${summary.totalFarms}, publicRows=${publicPlayers.length}, regionFiles=${regionFiles}, cleanedChanges=${cleaned}`);
+  info(`Stats cache updated: players=${summary.totalPlayers}, farms=${summary.totalFarms}, publicRows=${publicPlayers.length}, allPages=${chunkResult.allPages}, regionFiles=${chunkResult.regionFiles}, regionPages=${chunkResult.regionPages}, cleanedChanges=${cleaned}`);
 }
 
 main().catch(error => {

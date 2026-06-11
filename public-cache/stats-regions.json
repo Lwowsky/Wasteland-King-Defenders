@@ -2,11 +2,13 @@
   {
     "region": "982",
     "file": "stats-players-R982.json",
-    "rows": 1
+    "rows": 1,
+    "pages": 1
   },
   {
     "region": "987",
     "file": "stats-players-R987.json",
-    "rows": 1
+    "rows": 1,
+    "pages": 1
   }
 ]

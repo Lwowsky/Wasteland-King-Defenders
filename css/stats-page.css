@@ -17,3 +17,9 @@
 .stats-profile-badges .stats-shk-badge.shk-tier-14 small,
 .stats-profile-badges .stats-rank-badge.rank-p5 small{color:rgba(36,21,0,.75)}.stats-farm-short-grid.is-single{grid-template-columns:1fr}.stats-farm-short-grid .stats-info-line{min-width:0}@media (max-width:700px){.stats-profile-badges{align-items:flex-start}.stats-profile-badges .stats-rank-badge,
   .stats-profile-badges .stats-shk-badge{min-width:96px}}
+.stats-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:16px 0 0;padding:12px;border:1px solid rgba(120,150,230,.18);border-radius:18px;background:rgba(7,16,31,.68)}
+.stats-pagination__info{color:#aeb9d3;font-weight:900;line-height:1.35}
+.stats-pagination__buttons{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:#eaf0ff;font-weight:950}
+.stats-pagination__buttons .btn{min-height:38px;padding:0 14px;border-radius:12px}
+.stats-pagination__buttons .btn:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.45)}
+@media (max-width:620px){.stats-pagination{display:grid;grid-template-columns:1fr}.stats-pagination__buttons{justify-content:space-between}.stats-pagination__buttons .btn{flex:1}}
