@@ -6,6 +6,8 @@ import admin from 'firebase-admin';
 
 const SUMMARY_CACHE_PATH = process.env.STATS_CACHE_PATH || 'public-cache/stats-summary.json';
 const PLAYERS_CACHE_PATH = process.env.STATS_PLAYERS_CACHE_PATH || 'public-cache/stats-players.json';
+const FARMS_CACHE_PATH = process.env.STATS_FARMS_CACHE_PATH || 'public-cache/stats-farms.json';
+const VERSION_CACHE_PATH = process.env.STATS_VERSION_CACHE_PATH || 'public-cache/stats-version.json';
 const REGION_PLAYERS_DIR = process.env.STATS_REGION_PLAYERS_DIR || path.dirname(PLAYERS_CACHE_PATH);
 const REGION_INDEX_CACHE_PATH = process.env.STATS_REGION_INDEX_CACHE_PATH || path.join(path.dirname(PLAYERS_CACHE_PATH), 'stats-regions.json');
 const STATS_PLAYERS_INDEX_PATH = process.env.STATS_PLAYERS_INDEX_PATH || path.join(path.dirname(PLAYERS_CACHE_PATH), 'stats-players-index.json');
@@ -319,6 +321,108 @@ function sortPublicPlayers(players = []) {
     || String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk', { numeric: true }));
 }
 
+
+
+function compactPublicPlayerForStats(player = {}) {
+  const sameNick = cleanString(player.gameNick || '', 80) === cleanString(player.nickname || '', 80);
+  const row = {
+    publicKey: cleanString(player.publicKey || player.uid || player.id, 80),
+    nickname: cleanString(player.nickname || player.gameNick || '—', 80),
+    region: String(player.region || '').replace(/[^0-9]/g, '').slice(0, 8),
+    alliance: cleanString(player.alliance, 12),
+    rank: rankCode(player.rank).toUpperCase(),
+    shk: cleanString(player.shk, 12),
+    role: normalizeRole(player.role || 'player'),
+    countryCode: normalizeCountryCode(player.countryCode || player.country),
+    farmCount: Math.max(0, Number(player.farmCount || (Array.isArray(player.farms) ? player.farms.length : 0)) || 0),
+    createdAt: timestampToIso(player.createdAt) || null,
+    updatedAt: timestampToIso(player.updatedAt) || null,
+    profileVisibility: {
+      showWastelandInfo: false,
+      showFarmsInfo: Boolean(player.profileVisibility?.showFarmsInfo)
+    }
+  };
+  if (!sameNick && player.gameNick) row.gameNick = cleanString(player.gameNick, 80);
+  return row;
+}
+
+function compactFarmForStats(owner = {}, farm = {}, index = 0) {
+  return {
+    ownerPublicKey: cleanString(owner.publicKey || owner.uid || owner.id, 80),
+    ownerNickname: cleanString(owner.nickname || owner.gameNick || '—', 80),
+    farmKey: cleanString(farm.farmKey || farm.farmId || farm.id || `farm-${index + 1}`, 40),
+    nickname: cleanString(farm.nickname || `Farm ${index + 1}`, 80),
+    region: String(farm.region || '').replace(/[^0-9]/g, '').slice(0, 8),
+    alliance: cleanString(farm.alliance, 12),
+    rank: rankCode(farm.rank).toUpperCase(),
+    shk: cleanString(farm.shk, 12),
+    role: normalizeRole(farm.role || owner.role || 'player'),
+    createdAt: timestampToIso(owner.createdAt) || null,
+    updatedAt: timestampToIso(owner.updatedAt) || null
+  };
+}
+
+function splitPublicStatsFiles(publicPlayers = []) {
+  const sourcePlayers = dedupePublicPlayers(publicPlayers);
+  const players = sourcePlayers.map(compactPublicPlayerForStats).filter(row => row.publicKey && row.nickname);
+  const farms = [];
+  sourcePlayers.forEach(owner => {
+    if (!owner?.profileVisibility?.showFarmsInfo) return;
+    (Array.isArray(owner.farms) ? owner.farms : [])
+      .filter(farm => farm && (farm.nickname || farm.region || farm.alliance))
+      .forEach((farm, index) => farms.push(compactFarmForStats(owner, farm, index)));
+  });
+  return { players: sortPublicPlayers(players), farms: farms.sort((a, b) => String(a.region || '').localeCompare(String(b.region || ''), 'uk', { numeric: true }) || String(a.ownerNickname || '').localeCompare(String(b.ownerNickname || ''), 'uk', { numeric: true }) || String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk', { numeric: true })) };
+}
+
+function statsVersionToken(summary = {}, files = {}) {
+  return String(summary.d1Version || summary.d1UpdatedAtMs || Date.parse(summary.generatedAt || '') || Date.now());
+}
+
+function buildStatsVersion(summary = {}, files = {}) {
+  return {
+    version: statsVersionToken(summary, files),
+    generatedAt: summary.generatedAt || new Date().toISOString(),
+    updatedAt: summary.generatedAt || new Date().toISOString(),
+    source: summary.source || 'public-cache',
+    playersFile: path.basename(PLAYERS_CACHE_PATH),
+    farmsFile: path.basename(FARMS_CACHE_PATH),
+    summaryFile: path.basename(SUMMARY_CACHE_PATH),
+    totalPlayers: Math.max(0, Number(summary.totalPlayers || 0)),
+    totalFarms: Math.max(0, Number(summary.totalFarms || 0)),
+    totalRows: Math.max(0, Number(summary.totalRows || 0)),
+    playersRows: Array.isArray(files.players) ? files.players.length : 0,
+    farmRows: Array.isArray(files.farms) ? files.farms.length : 0
+  };
+}
+
+async function cleanupObsoleteStatsFiles() {
+  const dir = path.dirname(PLAYERS_CACHE_PATH);
+  let entries = [];
+  try { entries = await fs.readdir(dir); } catch { return 0; }
+  const obsolete = entries.filter(name => /^stats-players-(?:all-page|R\d+(?:-page)?|index)\b.*\.json$/i.test(name) || name === 'stats-regions.json');
+  await Promise.all(obsolete.map(name => fs.unlink(path.join(dir, name)).catch(() => null)));
+  return obsolete.length;
+}
+
+async function writePublicStatsFiles(summary = {}, publicPlayers = []) {
+  const cleanSource = dedupePublicPlayers(publicPlayers);
+  const files = splitPublicStatsFiles(cleanSource);
+  const finalSummary = buildSummaryFromPublicPlayers(cleanSource, {
+    source: summary?.source || 'github-actions',
+    lastFullRebuildDate: summary?.lastFullRebuildDate || todayUtc(),
+    processedChanges: summary?.processedChanges || 0,
+    d1Version: summary?.d1Version || null,
+    d1UpdatedAtMs: summary?.d1UpdatedAtMs || 0,
+    d1Buckets: summary?.d1Buckets || 0
+  });
+  await cleanupObsoleteStatsFiles();
+  await writeJson(SUMMARY_CACHE_PATH, finalSummary);
+  await writeJson(PLAYERS_CACHE_PATH, files.players);
+  await writeJson(FARMS_CACHE_PATH, files.farms);
+  await writeJson(VERSION_CACHE_PATH, buildStatsVersion(finalSummary, files));
+  return { summary: finalSummary, publicPlayers: files.players, publicFarms: files.farms };
+}
 
 function emptySummary(extra = {}) {
   return {
@@ -647,9 +751,8 @@ async function cleanupOldChanges(db) {
 async function main() {
   if (PUBLIC_STATS_EXPORT_URL) {
     const result = await fetchPublicStatsFromD1();
-    await writeJson(SUMMARY_CACHE_PATH, result.summary);
-    await writeJson(PLAYERS_CACHE_PATH, result.publicPlayers);
-    info(`Stats cache updated from D1: players=${result.summary.totalPlayers}, farms=${result.summary.totalFarms}, publicRows=${result.publicPlayers.length}, buckets=${result.summary.d1Buckets || 0}`);
+    const saved = await writePublicStatsFiles(result.summary, result.publicPlayers);
+    info(`Stats cache updated from D1: players=${saved.summary.totalPlayers}, farms=${saved.summary.totalFarms}, publicRows=${saved.publicPlayers.length}, farmRows=${saved.publicFarms.length}, buckets=${saved.summary.d1Buckets || 0}`);
     return;
   }
 
@@ -674,11 +777,9 @@ async function main() {
     publicPlayers = result.publicPlayers;
   }
   publicPlayers = dedupePublicPlayers(publicPlayers);
-  summary = buildSummaryFromPublicPlayers(publicPlayers, { source: summary?.source || 'github-actions', lastFullRebuildDate: summary?.lastFullRebuildDate || null, processedChanges: summary?.processedChanges || 0 });
-  await writeJson(SUMMARY_CACHE_PATH, summary);
-  await writeJson(PLAYERS_CACHE_PATH, publicPlayers);
+  const saved = await writePublicStatsFiles(summary, publicPlayers);
   const cleaned = await cleanupOldChanges(db).catch(() => 0);
-  info(`Stats cache updated: players=${summary.totalPlayers}, farms=${summary.totalFarms}, publicRows=${publicPlayers.length}, cleanedChanges=${cleaned}`);
+  info(`Stats cache updated: players=${saved.summary.totalPlayers}, farms=${saved.summary.totalFarms}, publicRows=${saved.publicPlayers.length}, farmRows=${saved.publicFarms.length}, cleanedChanges=${cleaned}`);
 }
 
 main().catch(error => {

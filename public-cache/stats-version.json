@@ -1,0 +1,14 @@
+{
+  "version": "1781173919663",
+  "generatedAt": "2026-06-10T06:15:10.041Z",
+  "updatedAt": "2026-06-10T06:15:10.041Z",
+  "source": "github-actions-full",
+  "summaryFile": "stats-summary.json",
+  "playersFile": "stats-players.json",
+  "farmsFile": "stats-farms.json",
+  "totalPlayers": 1,
+  "totalFarms": 3,
+  "totalRows": 4,
+  "playersRows": 1,
+  "farmRows": 3
+}
