@@ -42,6 +42,10 @@ async function writeJson(filePath, data) {
   await fs.writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
 }
 
+function info(message) {
+  console.log(`[stats-cache] ${message}`);
+}
+
 function pageNumber(value = 1) {
   const number = Math.max(1, Number(value || 1));
   return String(number).padStart(3, '0');

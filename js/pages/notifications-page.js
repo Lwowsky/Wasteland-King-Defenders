@@ -21,12 +21,12 @@ import {
   patchUserSentMessage,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=155';
+} from '../services/user-db.js?v=156';
 import {
   countNotificationDirectoryD1,
   listNotificationDirectoryRegionsD1,
   searchNotificationDirectoryD1
-} from '../services/notifications-d1.js?v=155';
+} from '../services/notifications-d1.js?v=156';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];

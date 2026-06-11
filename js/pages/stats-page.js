@@ -1,6 +1,6 @@
 import { formatUserDate, getUserProfile, makePublicPlayer, roleLabel } from '../services/user-db.js';
 import { watchAuth } from '../services/firebase-service.js';
-import { troopLabel } from '../services/region-db.js?v=155';
+import { troopLabel } from '../services/region-db.js?v=156';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -35,11 +35,11 @@ function locale() {
 const PUBLIC_STATS_CACHE_URL = 'public-cache/stats-summary.json';
 const PUBLIC_STATS_PLAYERS_URL = 'public-cache/stats-players.json';
 const PUBLIC_STATS_INDEX_URL = 'public-cache/stats-players-index.json';
-const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v155';
-const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.full.v155';
-const STATS_PLAYERS_INDEX_CACHE_KEY = 'wkd.publicStatsPlayers.index.v155';
-const STATS_CHUNK_CACHE_PREFIX = 'wkd.publicStatsPlayers.chunk.v155.';
-const STATS_REGION_PLAYERS_CACHE_PREFIX = 'wkd.publicStatsPlayers.regionFull.v155.';
+const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v156';
+const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.full.v156';
+const STATS_PLAYERS_INDEX_CACHE_KEY = 'wkd.publicStatsPlayers.index.v156';
+const STATS_CHUNK_CACHE_PREFIX = 'wkd.publicStatsPlayers.chunk.v156.';
+const STATS_REGION_PLAYERS_CACHE_PREFIX = 'wkd.publicStatsPlayers.regionFull.v156.';
 const STATS_CACHE_TTL_MS = 10 * 60 * 1000;
 const STATS_CHUNK_SIZE = 50;
 let loadedPlayersScope = 'all';
