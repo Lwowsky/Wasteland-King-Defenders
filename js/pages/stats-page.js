@@ -1,6 +1,6 @@
 import { formatUserDate, getUserProfile, makePublicPlayer, roleLabel } from '../services/user-db.js';
 import { watchAuth } from '../services/firebase-service.js';
-import { troopLabel } from '../services/region-db.js?v=158';
+import { troopLabel } from '../services/region-db.js?v=159';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -35,11 +35,11 @@ function locale() {
 const PUBLIC_STATS_CACHE_URL = 'public-cache/stats-summary.json';
 const PUBLIC_STATS_PLAYERS_URL = 'public-cache/stats-players.json';
 const PUBLIC_STATS_INDEX_URL = 'public-cache/stats-players-index.json';
-const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v158';
-const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.full.v158';
-const STATS_PLAYERS_INDEX_CACHE_KEY = 'wkd.publicStatsPlayers.index.v158';
-const STATS_CHUNK_CACHE_PREFIX = 'wkd.publicStatsPlayers.chunk.v158.';
-const STATS_REGION_PLAYERS_CACHE_PREFIX = 'wkd.publicStatsPlayers.regionFull.v158.';
+const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v159';
+const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.full.v159';
+const STATS_PLAYERS_INDEX_CACHE_KEY = 'wkd.publicStatsPlayers.index.v159';
+const STATS_CHUNK_CACHE_PREFIX = 'wkd.publicStatsPlayers.chunk.v159.';
+const STATS_REGION_PLAYERS_CACHE_PREFIX = 'wkd.publicStatsPlayers.regionFull.v159.';
 const STATS_CACHE_TTL_MS = 10 * 60 * 1000;
 const STATS_CHUNK_SIZE = 50;
 
@@ -55,11 +55,45 @@ function appBasePath() {
   }
   return '/';
 }
-function publicCacheUrl(path = '', { force = false } = {}) {
+function publicCacheCandidates(path = '', { force = false } = {}) {
   const clean = String(path || '').replace(/^\/+/, '');
-  const url = new URL(`${appBasePath()}${clean}`, window.location.origin);
-  if (force) url.searchParams.set('t', String(Date.now()));
-  return url.toString();
+  const candidates = [];
+  const add = value => {
+    try {
+      const url = new URL(value, window.location.href);
+      if (force) url.searchParams.set('t', String(Date.now()));
+      const text = url.toString();
+      if (!candidates.includes(text)) candidates.push(text);
+    } catch (_) {}
+  };
+
+  // 1) Main production path for custom domains and GitHub Pages custom domain.
+  add(`/${clean}`);
+  // 2) GitHub Pages project path fallback, if the site is opened as /repo/page.html.
+  add(`${appBasePath()}${clean}`);
+  // 3) Relative fallback for local preview or unusual routing.
+  add(clean);
+  return candidates;
+}
+function publicCacheUrl(path = '', { force = false } = {}) {
+  return publicCacheCandidates(path, { force })[0] || String(path || '');
+}
+async function fetchPublicCacheJson(path = '', { force = false, label = 'public-cache' } = {}) {
+  const urls = publicCacheCandidates(path, { force });
+  const errors = [];
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, { cache: force ? 'no-store' : 'reload' });
+      if (!response.ok) {
+        errors.push(`${url} -> HTTP ${response.status}`);
+        continue;
+      }
+      return await response.json();
+    } catch (error) {
+      errors.push(`${url} -> ${error?.message || error}`);
+    }
+  }
+  throw new Error(`${label}: ${errors.join(' | ') || 'no public-cache urls tried'}`);
 }
 function clearPublicStatsCaches() {
   try {
@@ -160,10 +194,7 @@ async function fetchPublicStatsIndex({ force = false } = {}) {
       if (statsIndexCache) return statsIndexCache;
     }
   }
-  const url = publicCacheUrl(PUBLIC_STATS_INDEX_URL, { force });
-  const response = await fetch(url, { cache: force ? 'no-store' : 'no-cache' });
-  if (!response.ok) throw new Error(`stats-index-${response.status}`);
-  const data = normalizeIndex(await response.json());
+  const data = normalizeIndex(await fetchPublicCacheJson(PUBLIC_STATS_INDEX_URL, { force, label: 'stats-index' }));
   if (!data) throw new Error('stats-index-invalid');
   statsIndexCache = data;
   writeStatsCache(STATS_PLAYERS_INDEX_CACHE_KEY, data);
@@ -174,10 +205,7 @@ async function fetchPublicStatsSummary({ force = false } = {}) {
     const cached = readSummaryCache();
     if (cached) return cached;
   }
-  const url = publicCacheUrl(PUBLIC_STATS_CACHE_URL, { force });
-  const response = await fetch(url, { cache: force ? 'no-store' : 'no-cache' });
-  if (!response.ok) throw new Error(`stats-summary-${response.status}`);
-  const data = await response.json();
+  const data = await fetchPublicCacheJson(PUBLIC_STATS_CACHE_URL, { force, label: 'stats-summary' });
   writeSummaryCache(data);
   return data;
 }
@@ -188,21 +216,20 @@ async function fetchLegacyStatsPlayers({ force = false, region = '' } = {}) {
       const cached = readRegionPlayersCache(safeRegion);
       if (cached) return cached;
     }
-    const response = await fetch(publicCacheUrl(regionPlayersUrl(safeRegion), { force }), { cache: force ? 'no-store' : 'no-cache' });
-    if (response.ok) {
-      const data = await response.json();
+    try {
+      const data = await fetchPublicCacheJson(regionPlayersUrl(safeRegion), { force, label: `stats-region-${safeRegion}` });
       const list = Array.isArray(data) ? data : [];
       writeRegionPlayersCache(safeRegion, list);
       return list;
+    } catch (error) {
+      console.warn('[WKD] regional stats JSON failed:', error);
     }
   }
   if (!force) {
     const cached = readPlayersCache();
     if (cached) return cached;
   }
-  const response = await fetch(publicCacheUrl(PUBLIC_STATS_PLAYERS_URL, { force }), { cache: force ? 'no-store' : 'no-cache' });
-  if (!response.ok) throw new Error(`stats-players-${response.status}`);
-  const data = await response.json();
+  const data = await fetchPublicCacheJson(PUBLIC_STATS_PLAYERS_URL, { force, label: 'stats-players' });
   const list = Array.isArray(data) ? data : [];
   writePlayersCache(list);
   return list;
@@ -218,10 +245,7 @@ async function fetchPlayersChunk({ force = false, scope = 'all', region = '', pa
   const meta = pageMetaFor(scope, safeRegion, safePage);
   const fallbackFile = scope === 'region' ? regionChunkUrl(safeRegion, safePage) : allChunkUrl(safePage);
   const file = String(meta.file || fallbackFile).replace(/^public-cache\//, '');
-  const url = publicCacheUrl(`public-cache/${file}`, { force });
-  const response = await fetch(url, { cache: force ? 'no-store' : 'no-cache' });
-  if (!response.ok) throw new Error(`stats-chunk-${response.status}`);
-  const list = await response.json();
+  const list = await fetchPublicCacheJson(`public-cache/${file}`, { force, label: `stats-chunk-${file}` });
   const rows = Array.isArray(list) ? list : [];
   writeStatsCache(cacheKey, rows);
   return rows;
@@ -390,7 +414,9 @@ async function loadSummaryOnly(options = {}) {
     renderStats();
     renderListNotLoaded();
     renderPagination(0, 0);
-    setStatus(t('stats.cacheFailed', 'Public statistics JSON files are not available. Check public-cache/stats-summary.json and stats-players.json.'), 'error');
+    const details = String(error?.message || '').slice(0, 260);
+    const baseMessage = t('stats.cacheFailed', 'Public statistics JSON files are not available. Check public-cache/stats-summary.json and stats-players.json.');
+    setStatus(details ? `${baseMessage} ${details}` : baseMessage, 'error');
   }
 }
 

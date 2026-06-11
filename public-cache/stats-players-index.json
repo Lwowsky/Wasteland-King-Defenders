@@ -1,15 +1,15 @@
 {
   "version": 2,
-  "generatedAt": "2026-06-11T08:24:49.317Z",
+  "generatedAt": "local-preview",
   "chunkSize": 50,
-  "totalRows": 2,
+  "totalRows": 1,
   "all": {
-    "rows": 2,
+    "rows": 1,
     "pages": [
       {
         "page": 1,
         "file": "stats-players-all-page-001.json",
-        "rows": 2
+        "rows": 1
       }
     ]
   },
@@ -17,26 +17,26 @@
     {
       "region": "982",
       "file": "stats-players-R982.json",
-      "rows": 2,
+      "rows": 1,
       "chunkSize": 50,
       "pages": [
         {
           "page": 1,
           "file": "stats-players-R982-page-001.json",
-          "rows": 2
+          "rows": 1
         }
       ]
     },
     {
       "region": "987",
       "file": "stats-players-R987.json",
-      "rows": 2,
+      "rows": 1,
       "chunkSize": 50,
       "pages": [
         {
           "page": 1,
           "file": "stats-players-R987-page-001.json",
-          "rows": 2
+          "rows": 1
         }
       ]
     }
