@@ -7,7 +7,7 @@ import {
   markUserNotificationsRead,
   readUserNotificationSummary,
   setUserNotificationSummary
-} from './services/user-db.js?v=149';
+} from './services/user-db.js?v=150';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -159,12 +159,15 @@ async function userNotificationPreview(uid) {
 }
 async function refreshCampaignPreview(force = false) {
   if (!currentUser || !currentProfile) return [];
+  const hasCampaignBadge = Math.max(0, Number(summary?.campaignUnreadTotal) || 0) > 0;
   if (campaignPreviewItems.length && !force && campaignPreviewSavedAtMs > 0 && Date.now() - campaignPreviewSavedAtMs < NOTIFY_REMOTE_CACHE_TTL_MS) return campaignPreviewItems;
   const seenAtMs = Number(summary?.campaignSeenAtMs) || 0;
   const scope = profileCampaignCacheScope(currentProfile);
   if (!force) {
     const cached = readCachedCampaignPreview(currentUser.uid, seenAtMs, scope);
-    if (cached) {
+    // If the badge says there are unread campaign notifications but an old preview cache is empty,
+    // do one fresh read instead of showing "no notifications" until the next page refresh.
+    if (cached && (cached.length || !hasCampaignBadge)) {
       campaignPreviewItems = cached;
       campaignPreviewSavedAtMs = Date.now();
       return campaignPreviewItems;
@@ -173,7 +176,8 @@ async function refreshCampaignPreview(force = false) {
   campaignPreviewItems = await listRegionNotificationCampaignsForProfile(currentProfile, {
     sinceMs: seenAtMs,
     perRegionLimit: 5,
-    totalLimit: 5
+    totalLimit: 5,
+    allowFirestoreBackupOnEmpty: false
   }).then(list => list.map(item => ({ ...item, unread: createdMs(item) > seenAtMs }))).catch(() => []);
   campaignPreviewSavedAtMs = Date.now();
   writeCachedCampaignPreview(currentUser.uid, seenAtMs, scope, campaignPreviewItems);
@@ -184,11 +188,27 @@ async function loadPreview(force = false) {
   if (!currentUser || previewLoading || (previewFresh && !force)) return;
   previewLoading = true;
   render();
-  const [personal, campaigns] = await Promise.all([
+  let [personal, campaigns] = await Promise.all([
     userNotificationPreview(currentUser.uid).catch(() => []),
     refreshCampaignPreview(force).catch(() => [])
   ]);
   previewItems = [...personal, ...campaigns].sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
+
+  // Safety refresh: if the badge already shows unread items, the menu must not show "empty"
+  // because of a stale preview cache. This costs one extra read only in that mismatch case.
+  if (!force && unreadCount() > 0 && !previewItems.some(isUnread)) {
+    clearCachedCampaignPreview(currentUser.uid);
+    campaignPreviewItems = [];
+    campaignPreviewSavedAtMs = 0;
+    const [freshPersonal, freshCampaigns] = await Promise.all([
+      userNotificationPreview(currentUser.uid).catch(() => personal),
+      refreshCampaignPreview(true).catch(() => campaigns)
+    ]);
+    personal = freshPersonal;
+    campaigns = freshCampaigns;
+    previewItems = [...personal, ...campaigns].sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
+  }
+
   previewLoaded = true;
   previewLoadedAtMs = Date.now();
   previewLoading = false;
@@ -228,7 +248,13 @@ function render() {
 
   const unreadPreview = newPreviewItems();
   if (!unreadPreview.length) {
-    list.innerHTML = `<div class="notify-empty">${esc(t('notifications.empty', 'Нових сповіщень немає.'))}</div>`;
+    if (unread) {
+      const title = summary.lastTitle || t('notifications.title', 'Сповіщення');
+      const message = summary.lastMessage || t('notifications.openPage', 'Відкрити всі сповіщення');
+      list.innerHTML = `<div class="notify-item is-unread"><b>${esc(title)}</b><span>${esc(message)}</span></div>`;
+    } else {
+      list.innerHTML = `<div class="notify-empty">${esc(t('notifications.empty', 'Нових сповіщень немає.'))}</div>`;
+    }
     return;
   }
   list.innerHTML = unreadPreview.slice(0, 5).map(item => `

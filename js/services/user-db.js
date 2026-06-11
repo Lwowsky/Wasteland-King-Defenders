@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=149';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=149';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=149';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=150';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=150';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=150';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -17,7 +17,7 @@ import {
   readNotificationSummaryD1,
   setNotificationSummaryD1,
   upsertNotificationDirectoryD1
-} from './notifications-d1.js?v=149';
+} from './notifications-d1.js?v=150';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -671,21 +671,21 @@ async function createCampaignWithFallback(values = {}, options = {}) {
   }
   const id = campaignId(payload);
   const authUser = firebase.auth?.currentUser || null;
-  let d1Campaign = null;
   if (authUser) {
     try {
-      d1Campaign = await createNotificationCampaignD1(authUser, { id, ...payload });
-      // Temporary safety mode while testing v149: write one Firestore backup for mass campaigns too.
-      // After D1 delivery is confirmed stable, this can be switched back to backup-on-error only.
-      await writeCampaignFirestoreBackup(firebase, id, payload).catch(error => {
-        console.warn(`[WKD] Firestore ${options.siteMessage ? 'message' : 'region'} campaign backup skipped`, error);
-        return null;
-      });
-      return d1Campaign;
+      const d1Campaign = await createNotificationCampaignD1(authUser, { id, ...payload });
+      if (d1Campaign?.id) return d1Campaign;
+      throw new Error('campaign-d1-empty-response');
     } catch (error) {
-      console.warn(`[WKD] D1 ${options.siteMessage ? 'message' : 'region'} campaign skipped, Firebase fallback used`, error);
+      console.warn(`[WKD] D1 ${options.siteMessage ? 'message' : 'region'} campaign write failed`, error);
+      if (options.siteMessage) {
+        // Site messages must not show a fake "sent" state. If D1 did not create the
+        // campaign, stop here and let the UI show an error instead of using Firestore backup.
+        throw error;
+      }
     }
   }
+  // Non-message system campaigns keep a last-resort backup only when D1 is unavailable.
   const firestoreBackup = await writeCampaignFirestoreBackup(firebase, id, payload).catch(error => {
     console.warn(`[WKD] Firestore ${options.siteMessage ? 'message' : 'region'} campaign backup skipped`, error);
     return null;
@@ -770,7 +770,7 @@ export async function listRegionNotificationCampaignsForProfile(profile = {}, op
   const sinceMs = Math.max(0, Number(options.sinceMs) || 0);
   const perRegionLimit = Math.max(1, Math.min(30, Number(options.perRegionLimit) || 8));
   const totalLimit = Math.max(1, Math.min(80, Number(options.totalLimit) || 20));
-  const allowBackupOnEmpty = options.allowFirestoreBackupOnEmpty !== false;
+  const allowBackupOnEmpty = options.allowFirestoreBackupOnEmpty === true;
   const authUser = firebase.auth?.currentUser || null;
   if (authUser) {
     try {
@@ -780,8 +780,7 @@ export async function listRegionNotificationCampaignsForProfile(profile = {}, op
         .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
       const d1Result = dedupeCampaigns(filtered, totalLimit);
       if (d1Result.length || !allowBackupOnEmpty) return d1Result;
-      // Temporary safety mode while testing: if D1 returns no matching campaigns, check Firestore backup.
-      // The header/page cache keeps this from repeating on every click.
+      // Firestore backup on empty is disabled by default. Use it only for temporary migration/testing.
       const backupRows = await listFirestoreCampaignsForProfile(firebase, profile, regions, { sinceMs, perRegionLimit }).catch(error => {
         console.warn('[WKD] Firestore campaign backup read skipped', error);
         return [];
