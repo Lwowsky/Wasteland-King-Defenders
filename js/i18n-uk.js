@@ -2006,7 +2006,7 @@ window.WKD_TRANSLATIONS.uk = {
   'admin.rebuildIndexAccept': 'Оновити індекс',
   'admin.rebuildIndexRunning': 'Оновлюю індекс гравців...',
   'admin.rebuildIndexDone': 'Індекс оновлено: перевірено {scanned}, записано {indexed}. Firebase reads≈{reads}, writes≈{writes}.',
-  'admin.rebuildIndexDenied': 'Оновити індекс може тільки Admin або Moderator.',
+  'admin.rebuildIndexDenied': 'Оновити індекс може тільки Admin.',
   'admin.rebuildIndexFailed': 'Не вдалося оновити індекс гравців. Перевір правила Firestore і права доступу.',
   'admin.playersLoadedOptimized': 'Завантажено {count} останніх гравців. Firebase reads≈{reads}; вся users-колекція не читається.',
   'admin.playersLoadedFiltered': 'Завантажено {count} гравців за індексом. Firebase reads≈{reads}. Пошук запускається кнопкою Оновити або Enter.',

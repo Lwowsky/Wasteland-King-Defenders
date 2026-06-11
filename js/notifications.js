@@ -7,7 +7,7 @@ import {
   markUserNotificationsRead,
   readUserNotificationSummary,
   setUserNotificationSummary
-} from './services/user-db.js?v=147';
+} from './services/user-db.js?v=148';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -21,6 +21,8 @@ let previewItems = [];
 let campaignPreviewItems = [];
 let previewLoaded = false;
 let previewLoading = false;
+let previewLoadedAtMs = 0;
+let campaignPreviewSavedAtMs = 0;
 let bound = false;
 let authStarted = false;
 const NOTIFY_REMOTE_CACHE_TTL_MS = 60 * 1000;
@@ -138,6 +140,7 @@ function writeCachedCampaignPreview(uid = '', seenAtMs = 0, scope = '', rows = [
   } catch (_) {}
 }
 function clearCachedCampaignPreview(uid = '') {
+  campaignPreviewSavedAtMs = 0;
   try { if (uid) localStorage.removeItem(campaignCacheKey(uid)); } catch (_) {}
 }
 function applySummary(value = {}, cache = true) {
@@ -156,13 +159,14 @@ async function userNotificationPreview(uid) {
 }
 async function refreshCampaignPreview(force = false) {
   if (!currentUser || !currentProfile) return [];
-  if (campaignPreviewItems.length && !force) return campaignPreviewItems;
+  if (campaignPreviewItems.length && !force && campaignPreviewSavedAtMs > 0 && Date.now() - campaignPreviewSavedAtMs < NOTIFY_REMOTE_CACHE_TTL_MS) return campaignPreviewItems;
   const seenAtMs = Number(summary?.campaignSeenAtMs) || 0;
   const scope = profileCampaignCacheScope(currentProfile);
   if (!force) {
     const cached = readCachedCampaignPreview(currentUser.uid, seenAtMs, scope);
     if (cached) {
       campaignPreviewItems = cached;
+      campaignPreviewSavedAtMs = Date.now();
       return campaignPreviewItems;
     }
   }
@@ -171,11 +175,13 @@ async function refreshCampaignPreview(force = false) {
     perRegionLimit: 8,
     totalLimit: 12
   }).then(list => list.map(item => ({ ...item, unread: createdMs(item) > seenAtMs }))).catch(() => []);
+  campaignPreviewSavedAtMs = Date.now();
   writeCachedCampaignPreview(currentUser.uid, seenAtMs, scope, campaignPreviewItems);
   return campaignPreviewItems;
 }
 async function loadPreview(force = false) {
-  if (!currentUser || previewLoading || (previewLoaded && !force)) return;
+  const previewFresh = previewLoaded && previewLoadedAtMs > 0 && Date.now() - previewLoadedAtMs < NOTIFY_REMOTE_CACHE_TTL_MS;
+  if (!currentUser || previewLoading || (previewFresh && !force)) return;
   previewLoading = true;
   render();
   const [personal, campaigns] = await Promise.all([
@@ -184,6 +190,7 @@ async function loadPreview(force = false) {
   ]);
   previewItems = [...personal, ...campaigns].sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
   previewLoaded = true;
+  previewLoadedAtMs = Date.now();
   previewLoading = false;
   render();
 }
@@ -232,12 +239,18 @@ function render() {
     </div>`).join('');
 }
 async function load(user, options = {}) {
+  const sameUser = Boolean(currentUser?.uid && user?.uid && currentUser.uid === user.uid);
+  const shouldResetPreview = !sameUser || Boolean(options?.forceRemote);
   currentUser = user || null;
   currentProfile = null;
-  previewItems = [];
-  campaignPreviewItems = [];
-  previewLoaded = false;
-  previewLoading = false;
+  if (shouldResetPreview) {
+    previewItems = [];
+    campaignPreviewItems = [];
+    previewLoaded = false;
+    previewLoading = false;
+    previewLoadedAtMs = 0;
+    campaignPreviewSavedAtMs = 0;
+  }
   if (!user) {
     summary = { unreadTotal: 0, campaignUnreadTotal: 0, campaignSeenAtMs: 0 };
     render();
@@ -290,7 +303,7 @@ async function toggleMenu() {
   const opened = menu.classList.toggle('is-open');
   btn?.setAttribute('aria-expanded', opened ? 'true' : 'false');
   if (opened) {
-    await load(currentUser, { forceRemote: true }).catch(() => null);
+    await load(currentUser).catch(() => null);
     await loadPreview(false);
   }
 }

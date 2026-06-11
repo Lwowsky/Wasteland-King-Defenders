@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=147';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=147';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=147';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=148';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=148';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=148';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -17,7 +17,7 @@ import {
   readNotificationSummaryD1,
   setNotificationSummaryD1,
   upsertNotificationDirectoryD1
-} from './notifications-d1.js?v=147';
+} from './notifications-d1.js?v=148';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -432,7 +432,7 @@ export async function listUserNotifications(uid, limitCount = 100) {
   if (authUser?.uid === userId) {
     try {
       const rows = await listNotificationsD1(authUser, { limit: Math.max(1, Math.min(200, Number(limitCount) || 100)), includeUnread: true });
-      if (rows.length) return rows;
+      return rows;
     } catch (error) {
       console.warn('[WKD] D1 notifications unavailable, Firebase fallback used', error);
     }
@@ -522,7 +522,7 @@ export async function listUserSentMessages(uid, limitCount = 50) {
   if (authUser?.uid === userId) {
     try {
       const rows = await listSentMessagesD1(authUser, { limit: Math.max(1, Math.min(100, Number(limitCount) || 50)) });
-      if (rows.length) return rows;
+      return rows;
     } catch (error) {
       console.warn('[WKD] D1 sent messages unavailable, Firebase fallback used', error);
     }
@@ -675,6 +675,7 @@ async function createCampaignWithFallback(values = {}, options = {}) {
   if (authUser) {
     try {
       d1Campaign = await createNotificationCampaignD1(authUser, { id, ...payload });
+      return d1Campaign;
     } catch (error) {
       console.warn(`[WKD] D1 ${options.siteMessage ? 'message' : 'region'} campaign skipped, Firebase fallback used`, error);
     }
@@ -683,7 +684,7 @@ async function createCampaignWithFallback(values = {}, options = {}) {
     console.warn(`[WKD] Firestore ${options.siteMessage ? 'message' : 'region'} campaign backup skipped`, error);
     return null;
   });
-  return d1Campaign || firestoreBackup;
+  return firestoreBackup;
 }
 
 export async function createRegionNotificationCampaign(values = {}) {
@@ -770,7 +771,7 @@ export async function listRegionNotificationCampaignsForProfile(profile = {}, op
       const filtered = d1Rows
         .filter(item => campaignMatchesProfile(profile || {}, item))
         .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
-      if (filtered.length) return dedupeCampaigns(filtered, totalLimit);
+      return dedupeCampaigns(filtered, totalLimit);
     } catch (error) {
       console.warn('[WKD] D1 campaigns unavailable, Firebase fallback used', error);
     }

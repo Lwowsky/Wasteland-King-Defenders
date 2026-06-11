@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=147';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=147';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=147';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=148';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=148';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=148';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -22,14 +22,14 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=147';
+} from '../services/user-db.js?v=148';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=147';
+} from '../services/region-db.js?v=148';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -247,6 +247,15 @@ function canDisplayRow(row = {}) {
 
 function canUseLimitsPanel(user = currentUser, profile = currentProfile) {
   return Boolean(user && (isOwnerUser(user, profile) || String(profile?.role || '').toLowerCase() === 'admin'));
+}
+
+function canRebuildAdminIndex(user = currentUser, profile = currentProfile) {
+  return Boolean(user && (isOwnerUser(user, profile) || String(profile?.role || '').toLowerCase() === 'admin'));
+}
+
+function updateRebuildIndexAccess() {
+  const btn = $('#rebuildAdminIndexBtn');
+  if (btn) btn.hidden = !canRebuildAdminIndex();
 }
 
 function setLimitsAccess(enabled) {
@@ -1082,7 +1091,10 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
 }
 
 async function rebuildPlayersIndex() {
-  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  if (!currentUser || !canRebuildAdminIndex(currentUser, currentProfile)) {
+    setStatus(t('admin.rebuildIndexDenied', 'Оновити індекс може тільки Admin.'), 'error');
+    return;
+  }
   const ok = await confirmAction({
     title: t('admin.rebuildIndexTitle', 'Оновити індекс гравців?'),
     message: t('admin.rebuildIndexMessage', 'Сайт один раз прочитає до 5000 профілів і створить легкий індекс для дешевого пошуку. Це потрібно після старих версій або якщо пошук не знаходить гравця.'),
@@ -1110,7 +1122,7 @@ async function rebuildPlayersIndex() {
   } catch (error) {
     console.error(error);
     const msg = error?.message === 'admin-only'
-      ? t('admin.rebuildIndexDenied', 'Оновити індекс може тільки Admin або Moderator.')
+      ? t('admin.rebuildIndexDenied', 'Оновити індекс може тільки Admin.')
       : t('admin.rebuildIndexFailed', 'Не вдалося оновити індекс гравців. Перевір правила Firestore і права доступу.');
     setStatus(msg, 'error');
   }
@@ -1288,6 +1300,7 @@ async function initAdminPage() {
       if (!el.classList.contains('admin-limits-only')) el.hidden = false;
     });
     setLimitsAccess(canUseLimitsPanel(user, currentProfile));
+    updateRebuildIndexAccess();
     openInitialAdminTab();
     setStatus(t('admin.loadingPanel', 'Loading admin panel...'), 'muted');
     renderUsage();
@@ -1305,6 +1318,7 @@ document.addEventListener('wkd:language-changed', () => {
   renderRequests();
   renderRegions();
   renderUsage();
+  updateRebuildIndexAccess();
   if (currentUser && currentProfile && canUseAdminPanel(currentUser, currentProfile)) {
     setStatus(t('admin.statusUpdated', 'Admin data updated.'), 'success');
   }

@@ -21,12 +21,12 @@ import {
   patchUserSentMessage,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=147';
+} from '../services/user-db.js?v=148';
 import {
   countNotificationDirectoryD1,
   listNotificationDirectoryRegionsD1,
   searchNotificationDirectoryD1
-} from '../services/notifications-d1.js?v=147';
+} from '../services/notifications-d1.js?v=148';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -41,6 +41,8 @@ let rows = [];
 let personalRows = [];
 let campaignRows = [];
 let sentRows = [];
+let sentRowsLoaded = false;
+let sentRowsLoading = false;
 let directory = [];
 let composeReady = false;
 let pageReady = false;
@@ -454,6 +456,23 @@ async function loadSentMessages(_firebase, uid) {
   return listUserSentMessages(uid, SENT_QUERY_LIMIT);
 }
 
+async function loadSentMessagesIfNeeded({ force = false } = {}) {
+  if (!currentUser) return;
+  if (sentRowsLoaded && !force) return;
+  if (sentRowsLoading) return;
+  sentRowsLoading = true;
+  renderSentList();
+  try {
+    const sent = await loadSentMessages(null, currentUser.uid).catch(() => []);
+    saveLocalArchive('sentMessages', sent.filter(isOldSentMessage));
+    sentRows = sent;
+    sentRowsLoaded = true;
+  } finally {
+    sentRowsLoading = false;
+    renderSentList();
+  }
+}
+
 async function syncNotificationSummaryFromRows() {
   if (!currentUser) return;
   await rebuildUserNotificationSummary(currentUser.uid, personalRows).catch(error => console.warn('[WKD] notification summary sync skipped', error));
@@ -640,6 +659,12 @@ function renderMessageList() {
 function renderSentList() {
   const list = $('#notificationsSentList');
   if (!list) return;
+  if (!sentRowsLoaded) {
+    list.innerHTML = sentRowsLoading
+      ? `<div class="notify-empty">${esc(t('notifications.loading', 'Завантажую сповіщення...'))}</div>`
+      : `<div class="notify-empty">${esc(t('messages.openSentTabToLoad', 'Надіслані повідомлення завантажаться після відкриття цієї вкладки.'))}</div>`;
+    return;
+  }
   const sent = applyNotificationFilter(limitBySourceBuckets(visibleSentRows(sentRows))); 
   const pageItems = pageSlice(sent, 'sent');
   list.innerHTML = sent.length ? pageItems.map(item => `
@@ -753,6 +778,7 @@ function switchTab(tab = 'notifications') {
   $$('[data-notifications-tab]').forEach(btn => btn.classList.toggle('is-active', btn.dataset.notificationsTab === activeTab));
   resetPage(activePageKey());
   render();
+  if (activeTab === 'sent') loadSentMessagesIfNeeded().catch(error => console.warn('[WKD] sent messages lazy load skipped', error));
 }
 function setNotificationsFilter(filter = 'active') {
   notificationsFilter = ['active', 'unread', 'archived'].includes(filter) ? filter : 'active';
@@ -804,14 +830,16 @@ async function load(user) {
   cleanupOldMessages(firebase, user.uid).catch(error => console.warn('[WKD] old messages cleanup skipped', error));
   directory = await loadDirectory();
   const seenSummary = await readUserNotificationSummary(user.uid).catch(() => null);
-  const [personal, campaigns, sent] = await Promise.all([
+  sentRows = [];
+  sentRowsLoaded = false;
+  sentRowsLoading = false;
+  const [personal, campaigns] = await Promise.all([
     listUserNotifications(user.uid, NOTIFICATION_QUERY_LIMIT).catch(() => []),
     listRegionNotificationCampaignsForProfile(currentProfile || {}, {
       sinceMs: 0,
       perRegionLimit: 12,
       totalLimit: 30
-    }).catch(() => []),
-    loadSentMessages(firebase, user.uid)
+    }).catch(() => [])
   ]);
   const personalMap = new Map();
   personal.forEach(item => personalMap.set(item.id, { source: item.source || 'account', ...item }));
@@ -820,12 +848,10 @@ async function load(user) {
   const campaignSeenAtMs = Number(seenSummary?.campaignSeenAtMs) || 0;
   campaignRows = campaigns.map(item => ({ ...item, unread: createdMs(item) > campaignSeenAtMs }));
   mergeNotificationRows();
-  saveLocalArchive('sentMessages', sent.filter(isOldSentMessage));
-  sentRows = sent;
-  await syncNotificationSummaryFromRows();
   setStatus(t('notifications.loaded', 'Сповіщення оновлено.'), 'success');
   renderCompose();
   switchTab(activeTab);
+  if (activeTab === 'sent') await loadSentMessagesIfNeeded();
   render();
   watchPageNotifications(firebase, user.uid);
 }
@@ -992,7 +1018,8 @@ async function sendMessage() {
   const bodyInput = $('#messageBodyInput');
   if (bodyInput) bodyInput.value = '';
   directReply = null;
-  await load(currentUser).catch(() => null);
+  if (sentRowsLoaded || activeTab === 'sent') await loadSentMessagesIfNeeded({ force: true }).catch(() => null);
+  render();
   window.WKD?.refreshNotifications?.();
 }
 function clearDirectReply() {
