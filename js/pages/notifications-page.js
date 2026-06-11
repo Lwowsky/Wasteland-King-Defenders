@@ -21,12 +21,12 @@ import {
   patchUserSentMessage,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=152';
+} from '../services/user-db.js?v=153';
 import {
   countNotificationDirectoryD1,
   listNotificationDirectoryRegionsD1,
   searchNotificationDirectoryD1
-} from '../services/notifications-d1.js?v=152';
+} from '../services/notifications-d1.js?v=153';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -59,7 +59,7 @@ let recipientSearchLoading = false;
 const MESSAGE_SPAM_WINDOW_MS = 10 * 60 * 1000;
 const MESSAGE_SPAM_MAX = 20;
 const MESSAGE_PAGE_SIZE = 10;
-const NOTIFICATION_QUERY_LIMIT = 50;
+const NOTIFICATION_QUERY_LIMIT = 10;
 const SENT_QUERY_LIMIT = 50;
 const SERVER_RETENTION_DAYS = 30;
 const LOCAL_ARCHIVE_LIMIT = 180;
@@ -837,8 +837,8 @@ async function load(user) {
     listUserNotifications(user.uid, NOTIFICATION_QUERY_LIMIT).catch(() => []),
     listRegionNotificationCampaignsForProfile(currentProfile || {}, {
       sinceMs: 0,
-      perRegionLimit: 12,
-      totalLimit: 30
+      perRegionLimit: 5,
+      totalLimit: 10
     }).catch(() => [])
   ]);
   const personalMap = new Map();

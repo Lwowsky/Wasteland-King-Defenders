@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=152';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=152';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=153';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=153';
 import {
   getUserProfile,
   getFarmById,
@@ -12,8 +12,8 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=152';
-import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings } from './region-table-cache.js?v=152';
+} from './user-db.js?v=153';
+import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings } from './region-table-cache.js?v=153';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -852,7 +852,7 @@ function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
 }
 
 async function actionLogCacheModule() {
-  return import('./action-log-cache.js?v=152');
+  return import('./action-log-cache.js?v=153');
 }
 
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
@@ -1201,7 +1201,7 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=152');
+    const mod = await import('./region-table-cache.js?v=153');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1211,7 +1211,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=152');
+    const mod = await import('./region-table-cache.js?v=153');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1221,7 +1221,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=152');
+    const mod = await import('./region-table-cache.js?v=153');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1231,7 +1231,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=152');
+    const mod = await import('./region-table-cache.js?v=153');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1240,9 +1240,20 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   }
 }
 
+async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', options = {}) {
+  try {
+    const mod = await import('./region-table-cache.js?v=153');
+    if (!mod.isRegionTableCacheEnabled?.()) return null;
+    return await mod.readMyRegionRegistrationD1(user, region, farmId, options);
+  } catch (error) {
+    console.warn('[WKD] my D1 registration unavailable, Firebase fallback used:', error?.message || error);
+    return null;
+  }
+}
+
 async function readFinalPlanFromD1Cache(code, options = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=152');
+    const mod = await import('./final-plan-cache.js?v=153');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.readFinalPlanShare(code, options);
   } catch (error) {
@@ -1253,7 +1264,7 @@ async function readFinalPlanFromD1Cache(code, options = {}) {
 
 async function publishFinalPlanToD1Cache(user, payload = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=152');
+    const mod = await import('./final-plan-cache.js?v=153');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.publishFinalPlanShare(user, payload);
   } catch (error) {
@@ -2030,17 +2041,24 @@ export async function saveWastelandRegistration(user, values, regionOverride = '
 
 export async function getMyWastelandRegistration(user, regionOverride = '', farmId = 'main') {
   if (!user) return null;
-  const { db, firestoreMod } = await getFirebaseParts();
   const safeRegion = normalizeRegion(regionOverride);
   const region = safeRegion || (await getMyRegionContext(user)).region;
   const settings = await getRegionSettings(region);
   const activeCycle = settings.currentCycleId;
   const safeFarmId = trim(farmId || 'main') || 'main';
+
+  // v153: D1 table snapshot is the source for active wasteland requests.
+  // Firebase is used only as a fallback for older cycles / old deployments.
+  const d1Saved = await readMyRegistrationFromD1Cache(user, region, safeFarmId, { cycleId: activeCycle }).catch(() => null);
+  if (d1Saved) return d1Saved;
+
+  const { db, firestoreMod } = await getFirebaseParts();
   const docId = userRegistrationDocId(user.uid, safeFarmId, activeCycle);
   const legacyDocId = legacyUserRegistrationDocId(user.uid, safeFarmId);
   const refs = [docId, legacyDocId].filter((id, index, arr) => id && arr.indexOf(id) === index);
   for (const id of refs) {
     const snap = await firestoreMod.getDoc(firestoreMod.doc(db, 'regions', region, 'wastelandRegistrations', id));
+    trackReads(1);
     if (!snap.exists()) continue;
     const data = { id: snap.id, ...snap.data() };
     if (!activeCycle || data.cycleId === activeCycle) return data;

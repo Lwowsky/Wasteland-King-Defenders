@@ -1,4 +1,4 @@
-import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=152';
+import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=153';
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile, saveFarmWastelandProfile } from '../services/user-db.js';
 import {
@@ -25,8 +25,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=152';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=152';
+} from '../services/region-db.js?v=153';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=153';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -713,7 +713,9 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
       return submitCurrentRegistration(values, { auto, forceUpdate: true });
     }
 
-    if (currentUser) await saveDraft(values).catch(error => console.warn('[WKD] account request draft save skipped:', error));
+    // D1 registration is the submitted request. Do not also save the same data into
+    // the account draft automatically; that Firestore write is only needed when the
+    // player explicitly presses “Зберегти заявку” or changes auto-profile settings.
     clearDraft();
     localStorage.setItem('wkd.players.sourceMode', 'region');
     if (currentRegion) localStorage.setItem('wkd.players.activeRegion', currentRegion);

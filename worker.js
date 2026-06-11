@@ -1100,6 +1100,28 @@ async function handleRegionTableRegistration(request, env) {
   });
 }
 
+
+async function handleMyRegionTableRegistration(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  const url = new URL(request.url);
+  const region = normalizeRegion(url.searchParams.get("region"));
+  const farmId = clean(url.searchParams.get("farmId") || "main", 80) || "main";
+  const requestedCycleId = normalizeCycleId(url.searchParams.get("cycleId") || "");
+  if (!region) return json({ ok: false, error: "region_required" }, 400);
+  const table = requestedCycleId ? await readTable(db, region, requestedCycleId) : await getActiveTable(db, region);
+  if (!table) return json({ ok: true, registration: null, source: "cloudflare-d1-region-table" });
+  const rows = Array.isArray(table.rows) ? table.rows.map(sanitizeTableRow) : [];
+  const registration = rows.find(row => row.uid === user.uid && (row.farmId || "main") === farmId) || null;
+  return json({
+    ok: true,
+    registration: registration ? { ...registration, cycleId: table.cycleId || requestedCycleId || "active", region } : null,
+    source: "cloudflare-d1-region-table"
+  }, 200, "private, no-store");
+}
+
 async function handleRegionTableSnapshot(request, env) {
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
@@ -2841,6 +2863,42 @@ async function handleCampaignList(request, env) {
   return json({ ok: true, rows: (result?.results || []).map(campaignRowToObject), source: 'cloudflare-d1-notifications' });
 }
 
+
+async function handleNotificationsBell(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  const url = new URL(request.url);
+  const regions = [...new Set(clean(url.searchParams.get('regions') || '', 300).split(',').map(normalizeRegion).filter(Boolean))].slice(0, 10);
+  const sinceMs = Math.max(0, Number(url.searchParams.get('sinceMs')) || 0);
+  const limitValue = Math.max(1, Math.min(20, Number(url.searchParams.get('limit')) || 5));
+  const nowMs = Date.now();
+  const summaryRow = await db.prepare(`SELECT * FROM user_notification_summary WHERE uid = ?1 LIMIT 1`).bind(user.uid).first();
+  let campaignRows = [];
+  if (regions.length) {
+    const placeholders = regions.map((_, index) => `?${index + 1}`).join(',');
+    const params = [...regions, sinceMs, nowMs, limitValue];
+    const result = await db.prepare(
+      `SELECT * FROM notification_campaigns
+        WHERE region IN (${placeholders})
+          AND created_at_ms > ?${regions.length + 1}
+          AND (expires_at_ms = 0 OR expires_at_ms > ?${regions.length + 2})
+        ORDER BY created_at_ms DESC
+        LIMIT ?${regions.length + 3}`
+    ).bind(...params).all();
+    campaignRows = (result?.results || []).map(campaignRowToObject);
+  }
+  return json({
+    ok: true,
+    summary: summaryRowToObject(summaryRow || {}, user.uid),
+    rows: campaignRows,
+    hasCampaignUnread: campaignRows.length > 0,
+    usage: { d1RowsRead: 1 + campaignRows.length, d1RowsWritten: 0 },
+    source: 'cloudflare-d1-notifications-bell'
+  }, 200, 'private, no-store');
+}
+
 async function handleContact(request, env) {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -2980,6 +3038,10 @@ export default {
         return handleNotificationDirectoryUpsert(request, env);
       }
 
+      if (url.pathname === "/api/notifications/bell" && request.method === "GET") {
+        return await handleNotificationsBell(request, env);
+      }
+
       if (url.pathname === "/api/notifications/summary" && request.method === "GET") {
         return await handleNotificationSummaryGet(request, env);
       }
@@ -3069,6 +3131,10 @@ export default {
 
       if (url.pathname === "/api/region-table" && request.method === "GET") {
         return await handleRegionTableRead(request, env);
+      }
+
+      if (url.pathname === "/api/region-table/my-registration" && request.method === "GET") {
+        return await handleMyRegionTableRegistration(request, env);
       }
 
       if (

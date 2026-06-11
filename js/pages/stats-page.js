@@ -1,6 +1,6 @@
 import { formatUserDate, getUserProfile, makePublicPlayer, roleLabel } from '../services/user-db.js';
 import { watchAuth } from '../services/firebase-service.js';
-import { troopLabel } from '../services/region-db.js?v=152';
+import { troopLabel } from '../services/region-db.js?v=153';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -33,13 +33,26 @@ function locale() {
 
 const PUBLIC_STATS_CACHE_URL = 'public-cache/stats-summary.json';
 const PUBLIC_STATS_PLAYERS_URL = 'public-cache/stats-players.json';
-const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v96.disabled';
-const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.v96.disabled';
+const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v153';
+const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.v153';
+const STATS_CACHE_TTL_MS = 10 * 60 * 1000;
 
-function readSummaryCache() { return null; }
-function writeSummaryCache(_data) {}
-function readPlayersCache() { return null; }
-function writePlayersCache(_data) {}
+function readStatsCache(key = '') {
+  try {
+    const raw = JSON.parse(localStorage.getItem(key) || 'null');
+    if (!raw || (Date.now() - Number(raw.savedAtMs || 0)) > STATS_CACHE_TTL_MS) return null;
+    return raw.data ?? null;
+  } catch (_) {
+    return null;
+  }
+}
+function writeStatsCache(key = '', data = null) {
+  try { localStorage.setItem(key, JSON.stringify({ savedAtMs: Date.now(), data })); } catch (_) {}
+}
+function readSummaryCache() { return readStatsCache(STATS_SUMMARY_CACHE_KEY); }
+function writeSummaryCache(data) { writeStatsCache(STATS_SUMMARY_CACHE_KEY, data); }
+function readPlayersCache() { return readStatsCache(STATS_PLAYERS_CACHE_KEY); }
+function writePlayersCache(data) { writeStatsCache(STATS_PLAYERS_CACHE_KEY, data); }
 function mapSize(value) {
   return value && typeof value === 'object' ? Object.keys(value).filter(key => Number(value[key]) > 0).length : 0;
 }

@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=152';
+import { trackCloudflareUsage } from './usage-tracker.js?v=153';
 
 function cleanText(value = '', max = 120) {
   return String(value ?? '')
@@ -196,6 +196,20 @@ export async function listNotificationDirectoryRegionsD1(user) {
     region: cleanRegion(row.region),
     count: Math.max(0, Number(row.count) || 0)
   })).filter(row => row.region) : [];
+}
+
+export async function readNotificationBellD1(user, regions = [], { sinceMs = 0, limit = 5 } = {}) {
+  const safeRegions = [...new Set((Array.isArray(regions) ? regions : []).map(cleanRegion).filter(Boolean))].slice(0, 10);
+  const params = new URLSearchParams();
+  if (safeRegions.length) params.set('regions', safeRegions.join(','));
+  params.set('sinceMs', String(Math.max(0, Number(sinceMs) || 0)));
+  params.set('limit', String(Math.max(1, Math.min(20, Number(limit) || 5))));
+  const data = await requestJson(`/api/notifications/bell?${params.toString()}`, user);
+  return {
+    summary: normalizeSummary(data.summary || {}),
+    rows: Array.isArray(data.rows) ? data.rows.map(normalizeCampaign) : [],
+    hasCampaignUnread: Boolean(data.hasCampaignUnread)
+  };
 }
 
 export async function readNotificationSummaryD1(user) {

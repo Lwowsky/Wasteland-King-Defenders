@@ -5,9 +5,9 @@ import {
   listRegionNotificationCampaignsForProfile,
   listUserNotifications,
   markUserNotificationsRead,
-  readUserNotificationSummary,
+  readNotificationBellForProfile,
   setUserNotificationSummary
-} from './services/user-db.js?v=152';
+} from './services/user-db.js?v=153';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -26,6 +26,7 @@ let campaignPreviewSavedAtMs = 0;
 let bound = false;
 let authStarted = false;
 const NOTIFY_REMOTE_CACHE_TTL_MS = 60 * 1000;
+const NOTIFY_PAGE_OPEN_CACHE_TTL_MS = 5 * 60 * 1000;
 
 function campaignVars(item = {}) {
   return {
@@ -106,9 +107,9 @@ function writeCachedSummary(uid = '', value = {}) {
   if (!uid) return;
   try { localStorage.setItem(cacheKey(uid), JSON.stringify({ ...normalizeSummary(value), cachedAtMs: Date.now() })); } catch (_) {}
 }
-function isFreshCachedSummary(value = {}) {
+function isFreshCachedSummary(value = {}, ttlMs = NOTIFY_REMOTE_CACHE_TTL_MS) {
   const cachedAtMs = Number(value?.cachedAtMs) || 0;
-  return cachedAtMs > 0 && (Date.now() - cachedAtMs) < NOTIFY_REMOTE_CACHE_TTL_MS;
+  return cachedAtMs > 0 && (Date.now() - cachedAtMs) < Math.max(1000, Number(ttlMs) || NOTIFY_REMOTE_CACHE_TTL_MS);
 }
 function campaignCacheKey(uid = '') {
   return `wkd.notify.campaignPreview.${uid}`;
@@ -285,15 +286,30 @@ async function load(user, options = {}) {
 
   const cachedSummary = readCachedSummary(user.uid);
   applySummary(cachedSummary, false);
-  const shouldUseCachedSummary = !options?.forceRemote && isFreshCachedSummary(cachedSummary);
-  const [remoteSummary, profile] = await Promise.all([
-    shouldUseCachedSummary ? Promise.resolve(cachedSummary) : readUserNotificationSummary(user.uid).catch(() => null),
-    getUserProfile(user.uid).catch(() => null)
-  ]);
+  const cacheTtlMs = Number(options?.cacheTtlMs) || (options?.interactive ? NOTIFY_REMOTE_CACHE_TTL_MS : NOTIFY_PAGE_OPEN_CACHE_TTL_MS);
+  const shouldUseCachedSummary = !options?.forceRemote && isFreshCachedSummary(cachedSummary, cacheTtlMs);
+  const profile = await getUserProfile(user.uid).catch(() => null);
   currentProfile = profile || null;
-  const baseSummary = normalizeSummary(remoteSummary || cachedSummary);
-  applySummary(baseSummary, !shouldUseCachedSummary);
-  campaignPreviewItems = currentProfile ? await refreshCampaignPreview(Boolean(options?.forceRemote)) : [];
+
+  if (shouldUseCachedSummary) {
+    const seenAtMs = Number(cachedSummary?.campaignSeenAtMs) || 0;
+    const scope = currentProfile ? profileCampaignCacheScope(currentProfile) : '';
+    const cachedCampaigns = currentProfile ? readCachedCampaignPreview(user.uid, seenAtMs, scope) : null;
+    if (cachedCampaigns) {
+      campaignPreviewItems = cachedCampaigns;
+      campaignPreviewSavedAtMs = Date.now();
+      applySummary({ ...cachedSummary, campaignUnreadTotal: cachedCampaigns.filter(isUnread).length }, false);
+    }
+    return;
+  }
+
+  const bell = currentProfile
+    ? await readNotificationBellForProfile(currentProfile, { sinceMs: Number(cachedSummary?.campaignSeenAtMs) || 0, totalLimit: 5 }).catch(() => null)
+    : null;
+  const baseSummary = normalizeSummary(bell?.summary || cachedSummary);
+  campaignPreviewItems = (Array.isArray(bell?.campaigns) ? bell.campaigns : []).map(item => ({ ...item, unread: createdMs(item) > Number(baseSummary?.campaignSeenAtMs || 0) }));
+  campaignPreviewSavedAtMs = Date.now();
+  if (currentProfile) writeCachedCampaignPreview(user.uid, Number(baseSummary?.campaignSeenAtMs) || 0, profileCampaignCacheScope(currentProfile), campaignPreviewItems);
   applySummary({ ...baseSummary, campaignUnreadTotal: campaignPreviewItems.filter(isUnread).length }, true);
 }
 async function markRead() {
@@ -329,7 +345,7 @@ async function toggleMenu() {
   const opened = menu.classList.toggle('is-open');
   btn?.setAttribute('aria-expanded', opened ? 'true' : 'false');
   if (opened) {
-    await load(currentUser).catch(() => null);
+    await load(currentUser, { interactive: true, cacheTtlMs: NOTIFY_REMOTE_CACHE_TTL_MS }).catch(() => null);
     await loadPreview(false);
   }
 }

@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=152';
+import { trackCloudflareUsage } from './usage-tracker.js?v=153';
 
 const MAX_ROWS = 2000;
 const REGION_TABLE_CACHE_TTL_MS = 60 * 1000;
@@ -373,6 +373,23 @@ export async function publishRegionFormSettings(user, payload = {}) {
   });
 }
 
+
+
+export async function readMyRegionRegistrationD1(user, region, farmId = 'main', options = {}) {
+  if (!isRegionTableCacheEnabled()) throw new Error('region-table-cache-disabled');
+  const safeRegion = cleanRegion(region);
+  if (!safeRegion) throw new Error('region-required');
+  const token = await getFirebaseToken(user);
+  if (!token) throw new Error('auth-token-required');
+  const params = new URLSearchParams();
+  params.set('region', safeRegion);
+  params.set('farmId', cleanText(farmId || 'main', 80) || 'main');
+  if (options?.cycleId) params.set('cycleId', cleanText(options.cycleId, 80));
+  const data = await requestJson(`/api/region-table/my-registration?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return data?.registration || null;
+}
 
 export async function saveRegionRegistrationD1First(user, region, values = {}, settings = {}, options = {}) {
   if (!isRegionTableCacheEnabled()) throw new Error('region-table-cache-disabled');
