@@ -2759,6 +2759,12 @@ async function handleSentMessageDelete(request, env) {
   return json({ ok: true, deleted: ids.length, source: 'cloudflare-d1-notifications' });
 }
 
+
+function isSystemCampaignType(type = '') {
+  const value = clean(type, 80).toLowerCase();
+  return value.startsWith('registration_') || value === 'registration_notice' || value === 'region_status';
+}
+
 function campaignPayloadForDb(raw = {}, actor = {}) {
   const nowMs = Number(raw.createdAtMs) || Date.now();
   const type = clean(raw.type || 'region_campaign', 80);
