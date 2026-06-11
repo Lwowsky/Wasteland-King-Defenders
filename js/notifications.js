@@ -7,7 +7,7 @@ import {
   markUserNotificationsRead,
   readUserNotificationSummary,
   setUserNotificationSummary
-} from './services/user-db.js?v=148';
+} from './services/user-db.js?v=149';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -136,7 +136,7 @@ function readCachedCampaignPreview(uid = '', seenAtMs = 0, scope = '') {
 function writeCachedCampaignPreview(uid = '', seenAtMs = 0, scope = '', rows = []) {
   if (!uid) return;
   try {
-    localStorage.setItem(campaignCacheKey(uid), JSON.stringify({ savedAtMs: Date.now(), seenAtMs: Number(seenAtMs) || 0, scope: String(scope || ''), rows: Array.isArray(rows) ? rows.slice(0, 12) : [] }));
+    localStorage.setItem(campaignCacheKey(uid), JSON.stringify({ savedAtMs: Date.now(), seenAtMs: Number(seenAtMs) || 0, scope: String(scope || ''), rows: Array.isArray(rows) ? rows.slice(0, 5) : [] }));
   } catch (_) {}
 }
 function clearCachedCampaignPreview(uid = '') {
@@ -172,8 +172,8 @@ async function refreshCampaignPreview(force = false) {
   }
   campaignPreviewItems = await listRegionNotificationCampaignsForProfile(currentProfile, {
     sinceMs: seenAtMs,
-    perRegionLimit: 8,
-    totalLimit: 12
+    perRegionLimit: 5,
+    totalLimit: 5
   }).then(list => list.map(item => ({ ...item, unread: createdMs(item) > seenAtMs }))).catch(() => []);
   campaignPreviewSavedAtMs = Date.now();
   writeCachedCampaignPreview(currentUser.uid, seenAtMs, scope, campaignPreviewItems);
@@ -231,7 +231,7 @@ function render() {
     list.innerHTML = `<div class="notify-empty">${esc(t('notifications.empty', 'Нових сповіщень немає.'))}</div>`;
     return;
   }
-  list.innerHTML = unreadPreview.slice(0, 8).map(item => `
+  list.innerHTML = unreadPreview.slice(0, 5).map(item => `
     <div class="notify-item is-unread">
       <b>${esc(itemTitle(item))}</b>
       <span>${esc(itemMessage(item))}</span>

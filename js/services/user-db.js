@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=148';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=148';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=148';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=149';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=149';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=149';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -17,7 +17,7 @@ import {
   readNotificationSummaryD1,
   setNotificationSummaryD1,
   upsertNotificationDirectoryD1
-} from './notifications-d1.js?v=148';
+} from './notifications-d1.js?v=149';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -675,6 +675,12 @@ async function createCampaignWithFallback(values = {}, options = {}) {
   if (authUser) {
     try {
       d1Campaign = await createNotificationCampaignD1(authUser, { id, ...payload });
+      // Temporary safety mode while testing v149: write one Firestore backup for mass campaigns too.
+      // After D1 delivery is confirmed stable, this can be switched back to backup-on-error only.
+      await writeCampaignFirestoreBackup(firebase, id, payload).catch(error => {
+        console.warn(`[WKD] Firestore ${options.siteMessage ? 'message' : 'region'} campaign backup skipped`, error);
+        return null;
+      });
       return d1Campaign;
     } catch (error) {
       console.warn(`[WKD] D1 ${options.siteMessage ? 'message' : 'region'} campaign skipped, Firebase fallback used`, error);
@@ -764,6 +770,7 @@ export async function listRegionNotificationCampaignsForProfile(profile = {}, op
   const sinceMs = Math.max(0, Number(options.sinceMs) || 0);
   const perRegionLimit = Math.max(1, Math.min(30, Number(options.perRegionLimit) || 8));
   const totalLimit = Math.max(1, Math.min(80, Number(options.totalLimit) || 20));
+  const allowBackupOnEmpty = options.allowFirestoreBackupOnEmpty !== false;
   const authUser = firebase.auth?.currentUser || null;
   if (authUser) {
     try {
@@ -771,7 +778,15 @@ export async function listRegionNotificationCampaignsForProfile(profile = {}, op
       const filtered = d1Rows
         .filter(item => campaignMatchesProfile(profile || {}, item))
         .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
-      return dedupeCampaigns(filtered, totalLimit);
+      const d1Result = dedupeCampaigns(filtered, totalLimit);
+      if (d1Result.length || !allowBackupOnEmpty) return d1Result;
+      // Temporary safety mode while testing: if D1 returns no matching campaigns, check Firestore backup.
+      // The header/page cache keeps this from repeating on every click.
+      const backupRows = await listFirestoreCampaignsForProfile(firebase, profile, regions, { sinceMs, perRegionLimit }).catch(error => {
+        console.warn('[WKD] Firestore campaign backup read skipped', error);
+        return [];
+      });
+      return dedupeCampaigns(backupRows, totalLimit);
     } catch (error) {
       console.warn('[WKD] D1 campaigns unavailable, Firebase fallback used', error);
     }
