@@ -1,9 +1,9 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=162';
+import { trackCloudflareUsage } from './usage-tracker.js?v=163';
 
 const MAX_ROWS = 2000;
-const REGION_TABLE_CACHE_TTL_MS = 60 * 1000;
-const SHARE_TABLE_CACHE_TTL_MS = 90 * 1000;
+const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
+const SHARE_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
 const REGION_FORM_SETTINGS_TTL_MS = 5 * 60 * 1000;
 
 function cleanText(value = '', max = 120) {
@@ -52,7 +52,7 @@ async function getFirebaseToken(user) {
 }
 
 function localCacheKey(kind, id) {
-  return `wkd.${kind}.d1.v147.${cleanText(id, 160)}`;
+  return `wkd.${kind}.d1.v163.${cleanText(id, 160)}`;
 }
 
 function readLocalTableCache(kind, id, ttlMs) {

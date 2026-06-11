@@ -21,12 +21,12 @@ import {
   patchUserSentMessage,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=162';
+} from '../services/user-db.js?v=163';
 import {
   countNotificationDirectoryD1,
   listNotificationDirectoryRegionsD1,
   searchNotificationDirectoryD1
-} from '../services/notifications-d1.js?v=162';
+} from '../services/notifications-d1.js?v=163';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -63,7 +63,9 @@ const MESSAGE_PAGE_SIZE = 10;
 const NOTIFICATION_QUERY_LIMIT = 10;
 const NOTIFICATION_QUERY_LIMIT_MAX = 50;
 const SENT_QUERY_LIMIT = 50;
-const NOTIFICATIONS_PAGE_CACHE_TTL_MS = 10 * 60 * 1000;
+const NOTIFICATIONS_PAGE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const NOTIFICATIONS_REFRESH_WINDOW_MS = 10 * 60 * 1000;
+const NOTIFICATIONS_REFRESH_LIMIT = 3;
 const SERVER_RETENTION_DAYS = 30;
 const LOCAL_ARCHIVE_LIMIT = 180;
 
@@ -886,7 +888,7 @@ async function load(user, options = {}) {
     personalRows = cached.personalRows;
     campaignRows = cached.campaignRows;
     mergeNotificationRows();
-    setStatus(t('notifications.loadedFromCache', 'Сповіщення показані з кешу. Натисни “Показати ще” або онови сторінку для свіжих даних.'), 'success');
+    setStatus(t('notifications.loadedFromCache', 'Сповіщення показані з локального кешу. Натисни “Оновити” для свіжих даних або “Показати ще”.'), 'success');
     renderCompose();
     switchTab(activeTab);
     if (activeTab === 'sent') await loadSentMessagesIfNeeded();
@@ -919,6 +921,40 @@ async function load(user, options = {}) {
   render();
   watchPageNotifications(firebase, user.uid);
 }
+function notificationsRefreshHistoryKey() {
+  return `wkd.notificationsRefreshHistory.v163.${currentUser?.uid || 'guest'}`;
+}
+function notificationsManualRefreshAllowed() {
+  const now = Date.now();
+  try {
+    const raw = JSON.parse(localStorage.getItem(notificationsRefreshHistoryKey()) || '[]');
+    const fresh = (Array.isArray(raw) ? raw : []).map(Number).filter(ms => Number.isFinite(ms) && now - ms < NOTIFICATIONS_REFRESH_WINDOW_MS);
+    if (fresh.length >= NOTIFICATIONS_REFRESH_LIMIT) {
+      const waitMs = NOTIFICATIONS_REFRESH_WINDOW_MS - (now - fresh[0]);
+      const waitMin = Math.max(1, Math.ceil(waitMs / 60000));
+      setStatus(t('notifications.refreshLimited', `Оновлення тимчасово обмежено. Спробуй через ${waitMin} хв.`), 'warn');
+      return false;
+    }
+    fresh.push(now);
+    localStorage.setItem(notificationsRefreshHistoryKey(), JSON.stringify(fresh));
+    return true;
+  } catch (_) {
+    return true;
+  }
+}
+
+function clearCachedPageRows() {
+  try { if (currentUser) localStorage.removeItem(pageRowsCacheKey()); } catch (_) {}
+}
+async function manualRefreshNotificationsPage() {
+  if (!currentUser) return;
+  if (!notificationsManualRefreshAllowed()) return;
+  clearCachedPageRows();
+  notificationRemoteLimit = NOTIFICATION_QUERY_LIMIT;
+  await load(currentUser, { force: true });
+  window.WKD?.refreshNotifications?.({ forceRemote: true });
+}
+
 async function markCampaignsSeen(items = []) {
   if (!currentUser || !items.length) return;
   const maxSeen = items.reduce((max, item) => Math.max(max, Number(item.createdAtMs) || 0), 0);
@@ -1209,6 +1245,7 @@ function bindCompose() {
   composeReady = true;
   $$('[data-notifications-tab]').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.notificationsTab || 'notifications')));
   $$('[data-notifications-filter]').forEach(btn => btn.addEventListener('click', () => setNotificationsFilter(btn.dataset.notificationsFilter || 'active')));
+  $('#notificationsRefreshBtn')?.addEventListener('click', () => manualRefreshNotificationsPage().catch(console.error));
   $('#notificationsMarkAllBtn')?.addEventListener('click', () => markAll().catch(console.error));
   $('#notificationsClearArchiveBtn')?.addEventListener('click', () => clearArchive().catch(error => {
     console.error(error);

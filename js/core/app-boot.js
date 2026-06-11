@@ -21,6 +21,15 @@ WKD.bootAppShell = async function bootAppShell(options = {}) {
 
   document.dispatchEvent(new CustomEvent('wkd:partials-ready'));
 
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    try {
+      navigator.serviceWorker.register('/sw.js?v=163').catch(error => console.warn('[WKD] service worker registration skipped:', error));
+    } catch (error) {
+      console.warn('[WKD] service worker registration failed:', error);
+    }
+  }
+
+
   try {
     if (typeof window.WKD_applyI18n === 'function') window.WKD_applyI18n();
   } catch (error) {

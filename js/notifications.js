@@ -7,7 +7,7 @@ import {
   markUserNotificationsRead,
   readNotificationBellForProfile,
   setUserNotificationSummary
-} from './services/user-db.js?v=162';
+} from './services/user-db.js?v=163';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -26,7 +26,7 @@ let campaignPreviewSavedAtMs = 0;
 let bound = false;
 let authStarted = false;
 const NOTIFY_REMOTE_CACHE_TTL_MS = 60 * 1000;
-const NOTIFY_PAGE_OPEN_CACHE_TTL_MS = 5 * 60 * 1000;
+const NOTIFY_PAGE_OPEN_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 function campaignVars(item = {}) {
   return {
@@ -294,8 +294,10 @@ async function load(user, options = {}) {
 
   // v154: if a red notification is already cached, keep it locally on normal page refreshes.
   // A fresh remote read is done when the user opens the bell or the cache has no unread state.
-  const cachedUnread = Math.max(0, Number(cachedSummary?.unreadTotal) || 0) + Math.max(0, Number(cachedSummary?.campaignUnreadTotal) || 0);
-  if (!options?.forceRemote && !options?.interactive && cachedUnread > 0) return;
+  // v163: normal page refresh is local-only. The header keeps the last known
+  // red badge from localStorage and goes remote only when the player opens the bell
+  // or another action explicitly requests a refresh.
+  if (!options?.forceRemote && !options?.interactive) return;
 
   const cacheTtlMs = Number(options?.cacheTtlMs) || (options?.interactive ? NOTIFY_REMOTE_CACHE_TTL_MS : NOTIFY_PAGE_OPEN_CACHE_TTL_MS);
   const shouldUseCachedSummary = !options?.forceRemote && isFreshCachedSummary(cachedSummary, cacheTtlMs);
@@ -398,4 +400,4 @@ document.addEventListener('wkd:partials-ready', init);
 if (document.readyState !== 'loading') window.setTimeout(init, 0);
 window.WKD = window.WKD || {};
 window.WKD.initNotifications = init;
-window.WKD.refreshNotifications = () => load(currentUser).catch(console.error);
+window.WKD.refreshNotifications = (options = {}) => load(currentUser, { interactive: true, forceRemote: true, ...options }).catch(console.error);
