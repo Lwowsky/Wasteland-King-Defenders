@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=153';
+import { trackCloudflareUsage } from './usage-tracker.js?v=154';
 
 function cleanText(value = '', max = 120) {
   return String(value ?? '')
@@ -198,17 +198,26 @@ export async function listNotificationDirectoryRegionsD1(user) {
   })).filter(row => row.region) : [];
 }
 
-export async function readNotificationBellD1(user, regions = [], { sinceMs = 0, limit = 5 } = {}) {
+export async function readNotificationBellD1(user, regions = [], { sinceMs = 0, limit = 5, games = [], mode = 'dot' } = {}) {
   const safeRegions = [...new Set((Array.isArray(regions) ? regions : []).map(cleanRegion).filter(Boolean))].slice(0, 10);
+  const safeGames = (Array.isArray(games) ? games : []).map(game => ({
+    region: cleanRegion(game?.region),
+    alliance: cleanTag(game?.alliance),
+    role: cleanText(game?.role || 'player', 40).toLowerCase(),
+    accountRole: cleanText(game?.accountRole || game?.role || 'player', 40).toLowerCase()
+  })).filter(game => game.region).slice(0, 20);
   const params = new URLSearchParams();
   if (safeRegions.length) params.set('regions', safeRegions.join(','));
+  if (safeGames.length) params.set('games', JSON.stringify(safeGames));
   params.set('sinceMs', String(Math.max(0, Number(sinceMs) || 0)));
   params.set('limit', String(Math.max(1, Math.min(20, Number(limit) || 5))));
+  params.set('mode', mode === 'preview' ? 'preview' : 'dot');
   const data = await requestJson(`/api/notifications/bell?${params.toString()}`, user);
   return {
     summary: normalizeSummary(data.summary || {}),
     rows: Array.isArray(data.rows) ? data.rows.map(normalizeCampaign) : [],
-    hasCampaignUnread: Boolean(data.hasCampaignUnread)
+    hasCampaignUnread: Boolean(data.hasCampaignUnread),
+    mode: data.mode || mode || 'dot'
   };
 }
 

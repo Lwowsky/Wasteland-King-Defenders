@@ -21,12 +21,12 @@ import {
   patchUserSentMessage,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=153';
+} from '../services/user-db.js?v=154';
 import {
   countNotificationDirectoryD1,
   listNotificationDirectoryRegionsD1,
   searchNotificationDirectoryD1
-} from '../services/notifications-d1.js?v=153';
+} from '../services/notifications-d1.js?v=154';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -55,12 +55,15 @@ let notificationPages = { notifications: 0, inbox: 0, sent: 0 };
 let recipientSearchRows = [];
 let recipientSearchTimer = null;
 let recipientSearchLoading = false;
+let notificationRemoteLimit = 10;
 
 const MESSAGE_SPAM_WINDOW_MS = 10 * 60 * 1000;
 const MESSAGE_SPAM_MAX = 20;
 const MESSAGE_PAGE_SIZE = 10;
 const NOTIFICATION_QUERY_LIMIT = 10;
+const NOTIFICATION_QUERY_LIMIT_MAX = 50;
 const SENT_QUERY_LIMIT = 50;
+const NOTIFICATIONS_PAGE_CACHE_TTL_MS = 10 * 60 * 1000;
 const SERVER_RETENTION_DAYS = 30;
 const LOCAL_ARCHIVE_LIMIT = 180;
 
@@ -398,6 +401,50 @@ function saveLocalArchive(collectionName = 'notifications', list = []) {
     localStorage.setItem(key, JSON.stringify(next));
   } catch (_) {}
 }
+function pageRowsCacheKey(uid = currentUser?.uid || '') {
+  return `wkd.notifications.pageRows.v154.${uid || 'guest'}`;
+}
+function readBellSummaryCache(uid = currentUser?.uid || '') {
+  try { return JSON.parse(localStorage.getItem(`wkd.notify.summary.${uid}`) || 'null') || null; } catch (_) { return null; }
+}
+function pageRowsScope() {
+  const games = playerGames().map(game => `${regionOf(game.region)}:${tag(game.alliance)}:${normalizeUserRole(game.role || currentProfile?.role || 'player')}`).filter(Boolean).sort();
+  return `${normalizeUserRole(currentProfile?.role || 'player')}:${games.join('|')}`;
+}
+function readCachedPageRows() {
+  if (!currentUser) return null;
+  try {
+    const raw = JSON.parse(localStorage.getItem(pageRowsCacheKey()) || 'null');
+    if (!raw || (Date.now() - Number(raw.savedAtMs || 0)) > NOTIFICATIONS_PAGE_CACHE_TTL_MS) return null;
+    if (String(raw.scope || '') !== pageRowsScope()) return null;
+    const bell = readBellSummaryCache();
+    const newestLocal = Number(bell?.lastNotificationAtMs || bell?.updatedAtMs || 0) || 0;
+    if (newestLocal && Number(raw.savedAtMs || 0) < newestLocal) return null;
+    return {
+      personalRows: Array.isArray(raw.personalRows) ? raw.personalRows : [],
+      campaignRows: Array.isArray(raw.campaignRows) ? raw.campaignRows : [],
+      savedAtMs: Number(raw.savedAtMs) || 0,
+      remoteLimit: Math.max(NOTIFICATION_QUERY_LIMIT, Number(raw.remoteLimit) || NOTIFICATION_QUERY_LIMIT)
+    };
+  } catch (_) { return null; }
+}
+function writeCachedPageRows() {
+  if (!currentUser) return;
+  try {
+    localStorage.setItem(pageRowsCacheKey(), JSON.stringify({
+      savedAtMs: Date.now(),
+      scope: pageRowsScope(),
+      remoteLimit: notificationRemoteLimit,
+      personalRows: personalRows.slice(0, NOTIFICATION_QUERY_LIMIT_MAX),
+      campaignRows: campaignRows.slice(0, 30)
+    }));
+  } catch (_) {}
+}
+function moreButtonHtml(kind = 'notifications', loaded = 0) {
+  if (notificationRemoteLimit >= NOTIFICATION_QUERY_LIMIT_MAX || loaded < notificationRemoteLimit) return '';
+  return `<div class="notifications-load-more"><button class="btn btn-message-soft" type="button" data-load-more-notifications="${esc(kind)}">${esc(t('notifications.showMore', 'Показати ще'))}</button></div>`;
+}
+
 async function cleanupOldMessages(firebase, uid = '') {
   // v111: do not delete personal messages automatically. Old read private messages
   // are copied to localStorage and hidden from the page; unread old messages stay visible.
@@ -620,7 +667,7 @@ function renderNoticeList() {
         <button class="btn btn-message-danger" type="button" data-notification-action="delete" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.delete', 'Видалити'))}</button>
       </div>
     </article>`;
-  }).join('') + paginationHtml('notifications', notices.length) : `<div class="notify-empty">${esc(t('notifications.empty', 'Нових сповіщень немає.'))}</div>`;
+  }).join('') + paginationHtml('notifications', notices.length) + moreButtonHtml('notifications', notices.length) : `<div class="notify-empty">${esc(t('notifications.empty', 'Нових сповіщень немає.'))}</div>`;
 }
 function renderMessageList() {
   const list = $('#notificationsInboxList');
@@ -654,7 +701,7 @@ function renderMessageList() {
           <button class="btn btn-message-danger" type="button" data-notification-action="delete" data-notification-id="${esc(item.id || '')}">${esc(t('notifications.delete', 'Видалити'))}</button>
         </div>
       </article>`;
-  }).join('') + paginationHtml('inbox', messages.length) : `<div class="notify-empty">${esc(t('notifications.noMessages', 'Отриманих повідомлень немає.'))}</div>`;
+  }).join('') + paginationHtml('inbox', messages.length) + moreButtonHtml('inbox', messages.length) : `<div class="notify-empty">${esc(t('notifications.noMessages', 'Отриманих повідомлень немає.'))}</div>`;
 }
 function renderSentList() {
   const list = $('#notificationsSentList');
@@ -816,7 +863,7 @@ async function loadDirectory() {
   recipientSearchRows = [];
   return currentUser && currentProfile ? [{ ...(currentProfile || {}), uid: currentUser.uid }] : [];
 }
-async function load(user) {
+async function load(user, options = {}) {
   currentUser = user || null;
   if (!user) {
     stopPageNotificationsWatch();
@@ -829,16 +876,32 @@ async function load(user) {
   currentProfile = await getUserProfile(user.uid).catch(() => null);
   cleanupOldMessages(firebase, user.uid).catch(error => console.warn('[WKD] old messages cleanup skipped', error));
   directory = await loadDirectory();
-  const seenSummary = await readUserNotificationSummary(user.uid).catch(() => null);
   sentRows = [];
   sentRowsLoaded = false;
   sentRowsLoading = false;
+
+  const cached = !options?.force ? readCachedPageRows() : null;
+  if (cached) {
+    notificationRemoteLimit = Math.max(notificationRemoteLimit, cached.remoteLimit || NOTIFICATION_QUERY_LIMIT);
+    personalRows = cached.personalRows;
+    campaignRows = cached.campaignRows;
+    mergeNotificationRows();
+    setStatus(t('notifications.loadedFromCache', 'Сповіщення показані з кешу. Натисни “Показати ще” або онови сторінку для свіжих даних.'), 'success');
+    renderCompose();
+    switchTab(activeTab);
+    if (activeTab === 'sent') await loadSentMessagesIfNeeded();
+    render();
+    watchPageNotifications(firebase, user.uid);
+    return;
+  }
+
+  const seenSummary = await readUserNotificationSummary(user.uid).catch(() => null);
   const [personal, campaigns] = await Promise.all([
-    listUserNotifications(user.uid, NOTIFICATION_QUERY_LIMIT).catch(() => []),
+    listUserNotifications(user.uid, notificationRemoteLimit).catch(() => []),
     listRegionNotificationCampaignsForProfile(currentProfile || {}, {
-      sinceMs: 0,
+      sinceMs: Number(seenSummary?.campaignSeenAtMs) || 0,
       perRegionLimit: 5,
-      totalLimit: 10
+      totalLimit: Math.min(30, notificationRemoteLimit)
     }).catch(() => [])
   ]);
   const personalMap = new Map();
@@ -848,6 +911,7 @@ async function load(user) {
   const campaignSeenAtMs = Number(seenSummary?.campaignSeenAtMs) || 0;
   campaignRows = campaigns.map(item => ({ ...item, unread: createdMs(item) > campaignSeenAtMs }));
   mergeNotificationRows();
+  writeCachedPageRows();
   setStatus(t('notifications.loaded', 'Сповіщення оновлено.'), 'success');
   renderCompose();
   switchTab(activeTab);
@@ -875,6 +939,7 @@ async function markAll() {
   await markCampaignsSeen(unreadCampaigns);
   mergeNotificationRows();
   await syncNotificationSummaryFromRows();
+  writeCachedPageRows();
   render();
   window.WKD?.refreshNotifications?.();
 }
@@ -1088,6 +1153,7 @@ async function handleNotificationAction(action = '', id = '') {
       campaignRows = campaignRows.map(row => row.id === id ? { ...row, unread: false, readAtMs: Date.now() } : row);
       mergeNotificationRows();
     }
+    writeCachedPageRows();
     render();
     window.WKD?.refreshNotifications?.();
     return;
@@ -1107,6 +1173,7 @@ async function handleNotificationAction(action = '', id = '') {
     mergeNotificationRows();
   }
   await syncNotificationSummaryFromRows();
+  writeCachedPageRows();
   render();
   window.WKD?.refreshNotifications?.();
 }
@@ -1160,6 +1227,16 @@ function bindCompose() {
       const key = ['notifications', 'inbox', 'sent'].includes(pageBtn.dataset.pageKey) ? pageBtn.dataset.pageKey : activePageKey();
       notificationPages[key] = Math.max(0, (Number(notificationPages[key]) || 0) + (pageBtn.dataset.pageAction === 'next' ? 1 : -1));
       render();
+      return;
+    }
+    const moreBtn = event.target.closest('[data-load-more-notifications]');
+    if (moreBtn) {
+      event.preventDefault();
+      notificationRemoteLimit = Math.min(NOTIFICATION_QUERY_LIMIT_MAX, notificationRemoteLimit + MESSAGE_PAGE_SIZE);
+      load(currentUser, { force: true }).catch(error => {
+        console.error(error);
+        setStatus(t('notifications.loadFailed', 'Не вдалося завантажити сповіщення.'), 'error');
+      });
       return;
     }
     const actionBtn = event.target.closest('[data-notification-action]');

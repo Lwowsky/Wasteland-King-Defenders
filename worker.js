@@ -2864,37 +2864,120 @@ async function handleCampaignList(request, env) {
 }
 
 
+function normalizeBellRole(value = '') {
+  const role = clean(value || 'player', 40).toLowerCase();
+  return ['admin', 'moderator', 'consul', 'officer', 'player'].includes(role) ? role : 'player';
+}
+
+function normalizeBellAlliance(value = '') {
+  return Array.from(clean(value || '', 40).replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
+}
+
+function parseBellGames(url) {
+  const out = [];
+  try {
+    const raw = JSON.parse(url.searchParams.get('games') || '[]');
+    (Array.isArray(raw) ? raw : []).forEach(game => {
+      const region = normalizeRegion(game?.region);
+      if (!region) return;
+      out.push({
+        region,
+        alliance: normalizeBellAlliance(game?.alliance || ''),
+        role: normalizeBellRole(game?.role || game?.accountRole || 'player'),
+        accountRole: normalizeBellRole(game?.accountRole || game?.role || 'player')
+      });
+    });
+  } catch (_) {}
+  if (!out.length) {
+    clean(url.searchParams.get('regions') || '', 300).split(',').map(normalizeRegion).filter(Boolean).forEach(region => {
+      out.push({ region, alliance: '', role: 'player', accountRole: 'player' });
+    });
+  }
+  const seen = new Set();
+  return out.filter(game => {
+    const key = `${game.region}:${game.alliance}:${game.role}:${game.accountRole}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 20);
+}
+
+function buildBellCampaignQuery(games = [], sinceMs = 0, nowMs = Date.now(), limitValue = 1) {
+  const params = [];
+  const add = value => { params.push(value); return `?${params.length}`; };
+  const regions = [...new Set(games.map(game => normalizeRegion(game.region)).filter(Boolean))].slice(0, 10);
+  if (!regions.length) return null;
+
+  const clauses = [];
+  const regionIn = list => list.length ? `region IN (${list.map(region => add(region)).join(',')})` : '';
+  clauses.push(`(target_type IN ('all','region') AND ${regionIn(regions)})`);
+
+  const alliancePairs = [];
+  games.forEach(game => {
+    const region = normalizeRegion(game.region);
+    const alliance = normalizeBellAlliance(game.alliance);
+    if (region && alliance) alliancePairs.push([region, alliance]);
+  });
+  const seenAlliance = new Set();
+  const allianceParts = alliancePairs.filter(([region, alliance]) => {
+    const key = `${region}:${alliance}`;
+    if (seenAlliance.has(key)) return false;
+    seenAlliance.add(key);
+    return true;
+  }).slice(0, 20).map(([region, alliance]) => `(region = ${add(region)} AND alliance = ${add(alliance)})`);
+  if (allianceParts.length) clauses.push(`(target_type = 'alliance' AND (${allianceParts.join(' OR ')}))`);
+
+  const consulRegions = [...new Set(games.filter(game => ['consul'].includes(normalizeBellRole(game.role)) || ['consul'].includes(normalizeBellRole(game.accountRole))).map(game => normalizeRegion(game.region)).filter(Boolean))];
+  if (consulRegions.length) clauses.push(`(target_type = 'consuls' AND ${regionIn(consulRegions)})`);
+
+  const officerRegions = [...new Set(games.filter(game => ['officer'].includes(normalizeBellRole(game.role)) || ['officer'].includes(normalizeBellRole(game.accountRole))).map(game => normalizeRegion(game.region)).filter(Boolean))];
+  if (officerRegions.length) clauses.push(`(target_type = 'officers' AND ${regionIn(officerRegions)})`);
+
+  const where = `created_at_ms > ${add(Math.max(0, Number(sinceMs) || 0))}
+    AND (expires_at_ms = 0 OR expires_at_ms > ${add(nowMs)})
+    AND (${clauses.join(' OR ')})`;
+  const sql = `SELECT * FROM notification_campaigns WHERE ${where} ORDER BY created_at_ms DESC LIMIT ${add(Math.max(1, Math.min(20, Number(limitValue) || 1)))}`;
+  return { sql, params };
+}
+
 async function handleNotificationsBell(request, env) {
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
   await ensureRegionTableSchema(db);
   const user = await verifyFirebaseToken(request, env);
   const url = new URL(request.url);
-  const regions = [...new Set(clean(url.searchParams.get('regions') || '', 300).split(',').map(normalizeRegion).filter(Boolean))].slice(0, 10);
+  const games = parseBellGames(url);
   const sinceMs = Math.max(0, Number(url.searchParams.get('sinceMs')) || 0);
-  const limitValue = Math.max(1, Math.min(20, Number(url.searchParams.get('limit')) || 5));
+  const mode = clean(url.searchParams.get('mode') || 'dot', 20) === 'preview' ? 'preview' : 'dot';
+  const limitValue = mode === 'preview' ? Math.max(1, Math.min(5, Number(url.searchParams.get('limit')) || 5)) : 1;
   const nowMs = Date.now();
   const summaryRow = await db.prepare(`SELECT * FROM user_notification_summary WHERE uid = ?1 LIMIT 1`).bind(user.uid).first();
   let campaignRows = [];
-  if (regions.length) {
-    const placeholders = regions.map((_, index) => `?${index + 1}`).join(',');
-    const params = [...regions, sinceMs, nowMs, limitValue];
-    const result = await db.prepare(
-      `SELECT * FROM notification_campaigns
-        WHERE region IN (${placeholders})
-          AND created_at_ms > ?${regions.length + 1}
-          AND (expires_at_ms = 0 OR expires_at_ms > ?${regions.length + 2})
-        ORDER BY created_at_ms DESC
-        LIMIT ?${regions.length + 3}`
-    ).bind(...params).all();
-    campaignRows = (result?.results || []).map(campaignRowToObject);
+  if (games.length) {
+    const query = buildBellCampaignQuery(games, sinceMs, nowMs, limitValue);
+    if (query) {
+      const result = await db.prepare(query.sql).bind(...query.params).all();
+      const rows = (result?.results || []).map(campaignRowToObject);
+      campaignRows = mode === 'preview' ? rows : [];
+      if (mode !== 'preview' && rows.length) campaignRows = [];
+      return json({
+        ok: true,
+        summary: summaryRowToObject(summaryRow || {}, user.uid),
+        rows: campaignRows,
+        hasCampaignUnread: rows.length > 0,
+        mode,
+        usage: { d1RowsRead: 1 + rows.length, d1RowsWritten: 0 },
+        source: 'cloudflare-d1-notifications-bell'
+      }, 200, 'private, no-store');
+    }
   }
   return json({
     ok: true,
     summary: summaryRowToObject(summaryRow || {}, user.uid),
-    rows: campaignRows,
-    hasCampaignUnread: campaignRows.length > 0,
-    usage: { d1RowsRead: 1 + campaignRows.length, d1RowsWritten: 0 },
+    rows: [],
+    hasCampaignUnread: false,
+    mode,
+    usage: { d1RowsRead: 1, d1RowsWritten: 0 },
     source: 'cloudflare-d1-notifications-bell'
   }, 200, 'private, no-store');
 }

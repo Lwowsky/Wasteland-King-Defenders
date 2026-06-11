@@ -1,6 +1,6 @@
 import { formatUserDate, getUserProfile, makePublicPlayer, roleLabel } from '../services/user-db.js';
 import { watchAuth } from '../services/firebase-service.js';
-import { troopLabel } from '../services/region-db.js?v=153';
+import { troopLabel } from '../services/region-db.js?v=154';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -33,9 +33,12 @@ function locale() {
 
 const PUBLIC_STATS_CACHE_URL = 'public-cache/stats-summary.json';
 const PUBLIC_STATS_PLAYERS_URL = 'public-cache/stats-players.json';
-const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v153';
-const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.v153';
+const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v154';
+const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.v154';
+const STATS_REGION_PLAYERS_CACHE_PREFIX = 'wkd.publicStatsPlayers.region.v154.';
 const STATS_CACHE_TTL_MS = 10 * 60 * 1000;
+let loadedPlayersScope = 'all';
+let regionFetchTimer = null;
 
 function readStatsCache(key = '') {
   try {
@@ -53,6 +56,15 @@ function readSummaryCache() { return readStatsCache(STATS_SUMMARY_CACHE_KEY); }
 function writeSummaryCache(data) { writeStatsCache(STATS_SUMMARY_CACHE_KEY, data); }
 function readPlayersCache() { return readStatsCache(STATS_PLAYERS_CACHE_KEY); }
 function writePlayersCache(data) { writeStatsCache(STATS_PLAYERS_CACHE_KEY, data); }
+function cleanStatsRegion(value = '') { return String(value || '').replace(/[^0-9]/g, '').slice(0, 8); }
+function activeStatsRegionScope() {
+  const fromInput = cleanStatsRegion($('#statsRegionSearch')?.value || '');
+  if (fromInput) return fromInput;
+  return cleanStatsRegion(localStorage.getItem('wkd.players.activeRegion') || localStorage.getItem('wkd.activeRegion') || '');
+}
+function readRegionPlayersCache(region = '') { return readStatsCache(`${STATS_REGION_PLAYERS_CACHE_PREFIX}${cleanStatsRegion(region)}`); }
+function writeRegionPlayersCache(region = '', data) { writeStatsCache(`${STATS_REGION_PLAYERS_CACHE_PREFIX}${cleanStatsRegion(region)}`, data); }
+function regionPlayersUrl(region = '') { return `public-cache/stats-players-R${cleanStatsRegion(region)}.json`; }
 function mapSize(value) {
   return value && typeof value === 'object' ? Object.keys(value).filter(key => Number(value[key]) > 0).length : 0;
 }
@@ -77,7 +89,24 @@ async function fetchPublicStatsSummary({ force = false } = {}) {
   writeSummaryCache(data);
   return data;
 }
-async function fetchPublicStatsPlayers({ force = false } = {}) {
+async function fetchPublicStatsPlayers({ force = false, region = '' } = {}) {
+  const safeRegion = cleanStatsRegion(region);
+  if (safeRegion) {
+    if (!force) {
+      const cached = readRegionPlayersCache(safeRegion);
+      if (cached) return cached;
+    }
+    const url = `${regionPlayersUrl(safeRegion)}${force ? `?t=${Date.now()}` : ''}`;
+    const response = await fetch(url, { cache: force ? 'no-store' : 'no-cache' });
+    if (response.ok) {
+      const data = await response.json();
+      const list = Array.isArray(data) ? data : [];
+      writeRegionPlayersCache(safeRegion, list);
+      loadedPlayersScope = safeRegion;
+      return list;
+    }
+    // Old deployments may not have split region JSON yet, so safely fall back to the full file.
+  }
   if (!force) {
     const cached = readPlayersCache();
     if (cached) return cached;
@@ -88,6 +117,7 @@ async function fetchPublicStatsPlayers({ force = false } = {}) {
   const data = await response.json();
   const list = Array.isArray(data) ? data : [];
   writePlayersCache(list);
+  loadedPlayersScope = 'all';
   return list;
 }
 
@@ -181,9 +211,10 @@ async function loadSummaryOnly(options = {}) {
   const force = Boolean(options?.force);
   setStatus(t('stats.loadingSummary', 'Loading public statistics cache...'), 'muted');
   try {
+    const regionScope = cleanStatsRegion(options?.playersRegion || activeStatsRegionScope());
     const [summary, publicPlayers] = await Promise.all([
       fetchPublicStatsSummary({ force }),
-      fetchPublicStatsPlayers({ force })
+      fetchPublicStatsPlayers({ force, region: regionScope })
     ]);
     statsSummaryCache = hasUsableStatsSummary(summary) ? summary : null;
     players = Array.isArray(publicPlayers) ? publicPlayers : [];
@@ -201,7 +232,7 @@ async function loadSummaryOnly(options = {}) {
       setStatus(t('stats.playersJsonMismatch', 'stats-summary.json has numbers, but stats-players.json is empty. Replace the local public-cache with the latest generated JSON files.'), 'warning');
       return;
     }
-    setStatus(t('stats.cacheUpdated', 'Statistics loaded from public JSON cache.'), 'success');
+    setStatus(loadedPlayersScope !== 'all' ? `${t('stats.cacheUpdated', 'Statistics loaded from public JSON cache.')} R${loadedPlayersScope}` : t('stats.cacheUpdated', 'Statistics loaded from public JSON cache.'), 'success');
   } catch (error) {
     console.warn('[WKD] public stats JSON failed:', error);
     statsSummaryCache = null;
@@ -532,11 +563,20 @@ function closePlayerModal() {
   activeModalPlayer = null;
 }
 
+function scheduleRegionScopedStatsLoad() {
+  window.clearTimeout(regionFetchTimer);
+  regionFetchTimer = window.setTimeout(() => {
+    const region = cleanStatsRegion($('#statsRegionSearch')?.value || '');
+    if (region && region !== loadedPlayersScope) loadSummaryOnly({ playersRegion: region }).catch(console.error);
+    else renderPlayers();
+  }, 350);
+}
+
 function bindControls() {
   $('#refreshStatsBtn')?.addEventListener('click', () => loadSummaryOnly({ force: true }));
   $('#statsNickSearch')?.addEventListener('input', renderPlayers);
   $('#statsAllianceSearch')?.addEventListener('input', renderPlayers);
-  $('#statsRegionSearch')?.addEventListener('input', renderPlayers);
+  $('#statsRegionSearch')?.addEventListener('input', scheduleRegionScopedStatsLoad);
   $('#statsRoleFilter')?.addEventListener('change', renderPlayers);
   $('#statsRowsFilter')?.addEventListener('change', renderPlayers);
   $('#statsIncludeFarmsToggle')?.addEventListener('change', () => { renderStats(); renderPlayers(); });
@@ -562,6 +602,9 @@ async function initStatsPage() {
   if (statsReady || !$('#publicPlayersBody')) return;
   statsReady = true;
   bindControls();
+  const regionInput = $('#statsRegionSearch');
+  const initialRegion = activeStatsRegionScope();
+  if (regionInput && initialRegion && !regionInput.value) regionInput.value = initialRegion;
   await watchAuth(user => {
     currentUser = user;
     if (liveStatsPatchReady) refreshCurrentUserLiveStats().catch(console.error);

@@ -7,7 +7,7 @@ import {
   markUserNotificationsRead,
   readNotificationBellForProfile,
   setUserNotificationSummary
-} from './services/user-db.js?v=153';
+} from './services/user-db.js?v=154';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -156,7 +156,7 @@ function newPreviewItems() {
   return previewItems.filter(isUnread);
 }
 async function userNotificationPreview(uid) {
-  return listUserNotifications(uid, 12).then(list => list.map(item => ({ source: item.source || 'account', ...item })).filter(item => !isHiddenOldReadMessage(item)));
+  return listUserNotifications(uid, 5).then(list => list.map(item => ({ source: item.source || 'account', ...item })).filter(item => !isHiddenOldReadMessage(item)));
 }
 async function refreshCampaignPreview(force = false) {
   if (!currentUser || !currentProfile) return [];
@@ -227,8 +227,13 @@ function render() {
 
   const unread = unreadCount();
   if (count) {
+    const personalUnread = Math.max(0, Number(summary?.unreadTotal) || 0);
+    const campaignUnread = Math.max(0, Number(summary?.campaignUnreadTotal) || 0);
     count.hidden = !unread;
-    count.textContent = unread > 99 ? '99+' : String(unread);
+    count.textContent = personalUnread > 0
+      ? (personalUnread > 99 ? '99+' : `${personalUnread}${campaignUnread ? '+' : ''}`)
+      : (campaignUnread ? '•' : '');
+    count.title = campaignUnread && !personalUnread ? t('notifications.hasNewCampaigns', 'Є нові сповіщення') : '';
   }
   if (markBtn) markBtn.hidden = !signed || !unread || !previewLoaded || !newPreviewItems().length;
   if (!list) return;
@@ -286,8 +291,16 @@ async function load(user, options = {}) {
 
   const cachedSummary = readCachedSummary(user.uid);
   applySummary(cachedSummary, false);
+
+  // v154: if a red notification is already cached, keep it locally on normal page refreshes.
+  // A fresh remote read is done when the user opens the bell or the cache has no unread state.
+  const cachedUnread = Math.max(0, Number(cachedSummary?.unreadTotal) || 0) + Math.max(0, Number(cachedSummary?.campaignUnreadTotal) || 0);
+  if (!options?.forceRemote && !options?.interactive && cachedUnread > 0) return;
+
   const cacheTtlMs = Number(options?.cacheTtlMs) || (options?.interactive ? NOTIFY_REMOTE_CACHE_TTL_MS : NOTIFY_PAGE_OPEN_CACHE_TTL_MS);
   const shouldUseCachedSummary = !options?.forceRemote && isFreshCachedSummary(cachedSummary, cacheTtlMs);
+  if (shouldUseCachedSummary && !options?.interactive) return;
+
   const profile = await getUserProfile(user.uid).catch(() => null);
   currentProfile = profile || null;
 
@@ -300,17 +313,18 @@ async function load(user, options = {}) {
       campaignPreviewSavedAtMs = Date.now();
       applySummary({ ...cachedSummary, campaignUnreadTotal: cachedCampaigns.filter(isUnread).length }, false);
     }
-    return;
+    if (!options?.interactive || cachedCampaigns) return;
   }
 
   const bell = currentProfile
-    ? await readNotificationBellForProfile(currentProfile, { sinceMs: Number(cachedSummary?.campaignSeenAtMs) || 0, totalLimit: 5 }).catch(() => null)
+    ? await readNotificationBellForProfile(currentProfile, { sinceMs: Number(cachedSummary?.campaignSeenAtMs) || 0, totalLimit: 5, preview: Boolean(options?.interactive) }).catch(() => null)
     : null;
   const baseSummary = normalizeSummary(bell?.summary || cachedSummary);
   campaignPreviewItems = (Array.isArray(bell?.campaigns) ? bell.campaigns : []).map(item => ({ ...item, unread: createdMs(item) > Number(baseSummary?.campaignSeenAtMs || 0) }));
   campaignPreviewSavedAtMs = Date.now();
-  if (currentProfile) writeCachedCampaignPreview(user.uid, Number(baseSummary?.campaignSeenAtMs) || 0, profileCampaignCacheScope(currentProfile), campaignPreviewItems);
-  applySummary({ ...baseSummary, campaignUnreadTotal: campaignPreviewItems.filter(isUnread).length }, true);
+  if (currentProfile && campaignPreviewItems.length) writeCachedCampaignPreview(user.uid, Number(baseSummary?.campaignSeenAtMs) || 0, profileCampaignCacheScope(currentProfile), campaignPreviewItems);
+  const hasCampaignDot = Boolean(bell?.hasCampaignUnread) || campaignPreviewItems.some(isUnread);
+  applySummary({ ...baseSummary, campaignUnreadTotal: campaignPreviewItems.filter(isUnread).length || (hasCampaignDot ? 1 : 0) }, true);
 }
 async function markRead() {
   if (!currentUser) return;

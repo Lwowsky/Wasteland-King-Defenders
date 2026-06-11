@@ -6,6 +6,8 @@ import admin from 'firebase-admin';
 
 const SUMMARY_CACHE_PATH = process.env.STATS_CACHE_PATH || 'public-cache/stats-summary.json';
 const PLAYERS_CACHE_PATH = process.env.STATS_PLAYERS_CACHE_PATH || 'public-cache/stats-players.json';
+const REGION_PLAYERS_DIR = process.env.STATS_REGION_PLAYERS_DIR || path.dirname(PLAYERS_CACHE_PATH);
+const REGION_INDEX_CACHE_PATH = process.env.STATS_REGION_INDEX_CACHE_PATH || path.join(path.dirname(PLAYERS_CACHE_PATH), 'stats-regions.json');
 const FULL_REBUILD_HOUR_UTC = Number(process.env.STATS_FULL_REBUILD_HOUR_UTC ?? 3);
 const MAX_PENDING_CHANGES = Number(process.env.STATS_MAX_PENDING_CHANGES ?? 250);
 const CHANGE_RETENTION_DAYS = Number(process.env.STATS_CHANGE_RETENTION_DAYS ?? 30);
@@ -36,6 +38,34 @@ async function readJson(filePath, fallback = null) {
 async function writeJson(filePath, data) {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+}
+
+function statsRegionFilePath(region = '') {
+  const safe = String(region || '').replace(/[^0-9]/g, '').slice(0, 8);
+  return path.join(REGION_PLAYERS_DIR, `stats-players-R${safe}.json`);
+}
+
+async function writeRegionPlayerFiles(publicPlayers = []) {
+  const buckets = new Map();
+  (Array.isArray(publicPlayers) ? publicPlayers : []).forEach(player => {
+    const regions = new Set();
+    const mainRegion = String(player?.region || '').replace(/[^0-9]/g, '').slice(0, 8);
+    if (mainRegion) regions.add(mainRegion);
+    (Array.isArray(player?.farms) ? player.farms : []).forEach(farm => {
+      const farmRegion = String(farm?.region || '').replace(/[^0-9]/g, '').slice(0, 8);
+      if (farmRegion) regions.add(farmRegion);
+    });
+    regions.forEach(region => {
+      if (!buckets.has(region)) buckets.set(region, []);
+      buckets.get(region).push(player);
+    });
+  });
+  const index = [...buckets.entries()]
+    .sort(([a], [b]) => Number(a) - Number(b) || a.localeCompare(b))
+    .map(([region, rows]) => ({ region, file: `stats-players-R${region}.json`, rows: rows.length }));
+  await writeJson(REGION_INDEX_CACHE_PATH, index);
+  await Promise.all(index.map(item => writeJson(statsRegionFilePath(item.region), buckets.get(item.region) || [])));
+  return index.length;
 }
 
 function timestampToIso(value) {
@@ -523,7 +553,8 @@ async function main() {
     const result = await fetchPublicStatsFromD1();
     await writeJson(SUMMARY_CACHE_PATH, result.summary);
     await writeJson(PLAYERS_CACHE_PATH, result.publicPlayers);
-    info(`Stats cache updated from D1: players=${result.summary.totalPlayers}, farms=${result.summary.totalFarms}, publicRows=${result.publicPlayers.length}, buckets=${result.summary.d1Buckets || 0}`);
+    const regionFiles = await writeRegionPlayerFiles(result.publicPlayers);
+    info(`Stats cache updated from D1: players=${result.summary.totalPlayers}, farms=${result.summary.totalFarms}, publicRows=${result.publicPlayers.length}, regionFiles=${regionFiles}, buckets=${result.summary.d1Buckets || 0}`);
     return;
   }
 
@@ -549,8 +580,9 @@ async function main() {
   }
   await writeJson(SUMMARY_CACHE_PATH, summary);
   await writeJson(PLAYERS_CACHE_PATH, publicPlayers);
+  const regionFiles = await writeRegionPlayerFiles(publicPlayers);
   const cleaned = await cleanupOldChanges(db).catch(() => 0);
-  info(`Stats cache updated: players=${summary.totalPlayers}, farms=${summary.totalFarms}, publicRows=${publicPlayers.length}, cleanedChanges=${cleaned}`);
+  info(`Stats cache updated: players=${summary.totalPlayers}, farms=${summary.totalFarms}, publicRows=${publicPlayers.length}, regionFiles=${regionFiles}, cleanedChanges=${cleaned}`);
 }
 
 main().catch(error => {

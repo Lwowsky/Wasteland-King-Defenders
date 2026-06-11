@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=153';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=153';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=153';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=154';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=154';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=154';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -18,7 +18,7 @@ import {
   readNotificationBellD1,
   setNotificationSummaryD1,
   upsertNotificationDirectoryD1
-} from './notifications-d1.js?v=153';
+} from './notifications-d1.js?v=154';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -765,20 +765,35 @@ function dedupeCampaigns(list = [], totalLimit = 20) {
 
 export async function readNotificationBellForProfile(profile = {}, options = {}) {
   const firebase = await getFirebase();
-  if (!firebase) return { summary: null, campaigns: [] };
+  if (!firebase) return { summary: null, campaigns: [], hasCampaignUnread: false };
   const authUser = firebase.auth?.currentUser || null;
   const regions = profileNotificationRegions(profile || {});
   const sinceMs = Math.max(0, Number(options.sinceMs) || 0);
   const totalLimit = Math.max(1, Math.min(20, Number(options.totalLimit || options.limit) || 5));
+  const preview = options.preview === true;
+  const accountRole = normalizeRole(profile?.role || 'player');
+  const games = profileCampaignGames(profile || {}).map(game => ({
+    region: normalizeText(game.region || '').replace(/[^0-9]/g, ''),
+    alliance: normalizeAllianceTag(game.alliance || ''),
+    role: normalizeRole(game.role || game.accountRole || accountRole),
+    accountRole
+  })).filter(game => game.region);
   if (authUser) {
     try {
-      const bell = await readNotificationBellD1(authUser, regions, { sinceMs, limit: Math.max(totalLimit, regions.length || 1) });
+      const bell = await readNotificationBellD1(authUser, regions, {
+        sinceMs,
+        limit: preview ? totalLimit : 1,
+        mode: preview ? 'preview' : 'dot',
+        games
+      });
       const filtered = (Array.isArray(bell.rows) ? bell.rows : [])
         .filter(item => campaignMatchesProfile(profile || {}, item))
         .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
+      const campaigns = preview ? dedupeCampaigns(filtered, totalLimit) : [];
       return {
         summary: bell.summary || null,
-        campaigns: dedupeCampaigns(filtered, totalLimit),
+        campaigns,
+        hasCampaignUnread: Boolean(bell.hasCampaignUnread || campaigns.length),
         source: 'cloudflare-d1-notifications-bell'
       };
     } catch (error) {
@@ -787,9 +802,9 @@ export async function readNotificationBellForProfile(profile = {}, options = {})
   }
   const [summary, campaigns] = await Promise.all([
     authUser ? readUserNotificationSummary(authUser.uid).catch(() => null) : Promise.resolve(null),
-    listRegionNotificationCampaignsForProfile(profile, { sinceMs, perRegionLimit: 5, totalLimit, allowFirestoreBackupOnEmpty: false }).catch(() => [])
+    preview ? listRegionNotificationCampaignsForProfile(profile, { sinceMs, perRegionLimit: 5, totalLimit, allowFirestoreBackupOnEmpty: false }).catch(() => []) : Promise.resolve([])
   ]);
-  return { summary, campaigns, source: 'fallback' };
+  return { summary, campaigns, hasCampaignUnread: campaigns.length > 0, source: 'fallback' };
 }
 
 export async function listRegionNotificationCampaignsForProfile(profile = {}, options = {}) {
@@ -1345,7 +1360,7 @@ export async function getUserProfile(uid, options = {}) {
 export async function saveSignedInUser(user) {
   if (!user) return null;
 
-  // v153: when the browser already has a fresh profile, a page refresh should not
+  // v154: when the browser already has a fresh profile, a page refresh should not
   // spend a Firestore read just to discover that nothing changed. A Firestore touch
   // is still allowed when auth fields changed, the profile is missing/stale, or the
   // 24-hour lastLoginAt window is due.
