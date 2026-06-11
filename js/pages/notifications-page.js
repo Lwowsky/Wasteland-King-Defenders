@@ -21,12 +21,12 @@ import {
   patchUserSentMessage,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=163';
+} from '../services/user-db.js?v=164';
 import {
   countNotificationDirectoryD1,
   listNotificationDirectoryRegionsD1,
   searchNotificationDirectoryD1
-} from '../services/notifications-d1.js?v=163';
+} from '../services/notifications-d1.js?v=164';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -922,7 +922,7 @@ async function load(user, options = {}) {
   watchPageNotifications(firebase, user.uid);
 }
 function notificationsRefreshHistoryKey() {
-  return `wkd.notificationsRefreshHistory.v163.${currentUser?.uid || 'guest'}`;
+  return `wkd.notificationsRefreshHistory.v164.${currentUser?.uid || 'guest'}`;
 }
 function notificationsManualRefreshAllowed() {
   const now = Date.now();

@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=163';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=163';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=163';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=164';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=164';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=164';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -18,7 +18,7 @@ import {
   readNotificationBellD1,
   setNotificationSummaryD1,
   upsertNotificationDirectoryD1
-} from './notifications-d1.js?v=163';
+} from './notifications-d1.js?v=164';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -78,7 +78,7 @@ function serviceLocale() {
 }
 
 
-const PROFILE_CACHE_VERSION = 'v163';
+const PROFILE_CACHE_VERSION = 'v164';
 const PROFILE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const SIGN_IN_TOUCH_TTL_MS = 24 * 60 * 60 * 1000;
 function sameJsonValue(a, b) {

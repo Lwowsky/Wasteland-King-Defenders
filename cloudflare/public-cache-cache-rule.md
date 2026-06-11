@@ -23,5 +23,5 @@ Why: `stats-summary.json`, `stats-players.json`, `stats-farms.json`, and `stats-
 After running `Update public stats cache`, wait for GitHub Pages deployment and use the site button `Оновити кеш` only when you need fresh data immediately.
 
 
-## v163 note
+## v164 note
 Service Worker also caches public-cache JSON and static files in the browser. Cloudflare Cache Rule is still recommended for reducing GitHub Pages bandwidth.

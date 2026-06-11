@@ -7,7 +7,7 @@ import {
   markUserNotificationsRead,
   readNotificationBellForProfile,
   setUserNotificationSummary
-} from './services/user-db.js?v=163';
+} from './services/user-db.js?v=164';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -294,7 +294,7 @@ async function load(user, options = {}) {
 
   // v154: if a red notification is already cached, keep it locally on normal page refreshes.
   // A fresh remote read is done when the user opens the bell or the cache has no unread state.
-  // v163: normal page refresh is local-only. The header keeps the last known
+  // v164: normal page refresh is local-only. The header keeps the last known
   // red badge from localStorage and goes remote only when the player opens the bell
   // or another action explicitly requests a refresh.
   if (!options?.forceRemote && !options?.interactive) return;

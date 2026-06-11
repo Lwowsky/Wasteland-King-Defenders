@@ -1,4 +1,4 @@
-import { makePublicShareUrl, rememberShareCode } from '../core/share-links.js?v=163';
+import { makePublicShareUrl, rememberShareCode } from '../core/share-links.js?v=164';
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, saveSignedInUser } from '../services/user-db.js';
 import {
@@ -17,8 +17,8 @@ import {
   listRegionAlliances,
   listRegionCatalog,
   shareRegionTable
-} from '../services/region-db.js?v=163';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot } from '../services/region-table-cache.js?v=163';
+} from '../services/region-db.js?v=164';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot } from '../services/region-table-cache.js?v=164';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';

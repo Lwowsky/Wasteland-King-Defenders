@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=163';
+import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=164';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -114,13 +114,17 @@ function canUseRegionSource() {
 }
 
 function canMoveLocalToRegion() {
-  const region = getGameProfile(currentProfile || {}).region;
+  const region = targetRegion();
   const role = normalizeUserRole(currentProfile?.role || 'player');
-  return Boolean(currentUser && canUseRegionSource() && ['admin', 'moderator', 'consul', 'officer'].includes(role) && canManageRegion(currentProfile, region, currentUser));
+  return Boolean(currentUser && region && canUseRegionSource() && ['admin', 'moderator', 'consul', 'officer'].includes(role) && canManageRegion(currentProfile, region, currentUser));
+}
+
+function targetRegion() {
+  return String(loadedRegion || activeProfileRegion() || getGameProfile(currentProfile || {}).region || '').replace(/[^0-9]/g, '');
 }
 
 function currentRegionLabel() {
-  const region = loadedRegion || getGameProfile(currentProfile || {}).region;
+  const region = targetRegion();
   return region ? `R${region}` : t('region.ownRegion', 'your region');
 }
 
@@ -263,7 +267,7 @@ async function loadRegionRows(force = false, regionOverride = '') {
   if (requestedRegion) loadedRegion = requestedRegion;
   setNote(tv('players.loadingRegionTable', 'Loading region table {region}...', { region: currentRegionLabel() }), 'muted');
   try {
-    const result = await listRegionRegistrations(currentUser, requestedRegion);
+    const result = await listRegionRegistrations(currentUser, requestedRegion, { force: Boolean(force) });
     currentProfile = result.profile || currentProfile;
     loadedRegion = result.region || loadedRegion || requestedRegion;
     loadedRegionRows = result.rows.map(row => ({ ...regionRegistrationToPlayer(row), source: REGION_SOURCE }));
@@ -299,9 +303,13 @@ async function copyLocalToRegion() {
     return;
   }
   try {
+    const regionToImport = targetRegion();
+    if (!regionToImport) throw new Error('region-required');
+    loadedRegion = regionToImport;
+    localStorage.setItem(REGION_KEY, regionToImport);
     setNote(tv('players.movingToRegion', 'Moving {count} players into {region}...', { count: localRows.length, region: currentRegionLabel() }), 'muted');
-    const result = await importLocalPlayersToRegion(currentUser, localRows);
-    const region = result.region || loadedRegion || getGameProfile(currentProfile || {}).region;
+    const result = await importLocalPlayersToRegion(currentUser, localRows, regionToImport);
+    const region = result.region || regionToImport;
     await saveRegionTowerPlan(currentUser, region, { version: 1, updatedAtMs: Date.now(), regions: { home: {}, region2: {}, region3: {} } }).catch(error => console.warn('tower plan reset skipped', error));
     document.dispatchEvent(new CustomEvent('wkd:tower-plan-hard-reset', { detail: { source: 'local-to-region' } }));
     loadedRegionRows = [];
