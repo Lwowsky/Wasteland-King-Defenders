@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=164';
+import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=165';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -107,6 +107,35 @@ function getLocalPlayers() {
   } catch {
     return [];
   }
+}
+
+
+function normalizeLocalRowsForRegionImport(rawRows = []) {
+  const currentRows = Array.isArray(window.WKD?.state?.players) ? window.WKD.state.players : [];
+  // When the Local list is visible, WKD.state.players already contains the normalized rows
+  // that the user sees in the table (tier, march, rally, troop type). Use that instead of
+  // older/raw localStorage rows so the region import does not lose mapped Excel columns.
+  if (currentMode === 'local' && currentRows.length) {
+    return currentRows.map(row => ({ ...row }));
+  }
+  if (window.WKD?.setPlayers && Array.isArray(rawRows) && rawRows.length) {
+    const previous = Array.isArray(window.WKD?.state?.players) ? window.WKD.state.players.slice() : [];
+    try {
+      window.WKD.setPlayers(rawRows, {
+        persist: false,
+        normalized: false,
+        eventSource: 'prepare-local-to-region',
+        clearStorage: false
+      });
+      const normalized = Array.isArray(window.WKD?.state?.players) ? window.WKD.state.players.map(row => ({ ...row })) : [];
+      if (normalized.length) return normalized;
+    } catch (error) {
+      console.warn('[WKD] local import normalization skipped:', error);
+    } finally {
+      if (previous.length && window.WKD?.state) window.WKD.state.players = previous;
+    }
+  }
+  return Array.isArray(rawRows) ? rawRows.map(row => ({ ...row })) : [];
 }
 
 function canUseRegionSource() {
@@ -293,7 +322,8 @@ async function applyMode(mode, options = {}) {
 }
 
 async function copyLocalToRegion() {
-  const localRows = getLocalPlayers();
+  const storedLocalRows = getLocalPlayers();
+  const localRows = normalizeLocalRowsForRegionImport(storedLocalRows);
   if (!canMoveLocalToRegion()) {
     setNote(t('players.localToRegionAccess', 'Only the consul, officer, moderator, or admin of the current region can move the local list to the region.'), 'warn');
     return;
