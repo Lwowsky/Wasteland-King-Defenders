@@ -43,7 +43,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add public-cache/stats-summary.json public-cache/stats-players.json
+          git add public-cache/*.json
+
+          echo "Generated public-cache files:"
+          ls -la public-cache || true
 
           if git diff --cached --quiet; then
             echo "Stats cache did not change."
