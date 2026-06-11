@@ -5,19 +5,26 @@
     "gameNick": "Lwowsky",
     "region": "987",
     "alliance": "YYY",
-    "rank": "P4",
+    "rank": "p4",
     "shk": "39",
     "role": "admin",
     "roleLabel": "Адмін",
     "country": "Україна",
     "countryCode": "UA",
     "farmCount": 3,
+    "profileComplete": true,
     "profileVisibility": {
       "showWastelandInfo": true,
       "showFarmsInfo": true
     },
-    "createdAt": "2026-05-27T13:51:55.337Z",
-    "updatedAt": "2026-06-09T08:32:55.414Z",
+    "createdAt": {
+      "seconds": 1779889915,
+      "nanoseconds": 337000000
+    },
+    "updatedAt": {
+      "seconds": 1781130302,
+      "nanoseconds": 178000000
+    },
     "wastelandProfile": {
       "lairLevel": "50",
       "troopType": "fighter",
@@ -48,11 +55,11 @@
     },
     "farms": [
       {
-        "farmKey": "farm-1",
+        "farmId": "farm-1780412538097",
         "nickname": "炎Shɪsuɪ숬Uchiha炎",
         "region": "982",
         "alliance": "DIO",
-        "rank": "P3",
+        "rank": "p3",
         "shk": "24",
         "role": "admin",
         "roleLabel": "Адмін",
@@ -73,11 +80,11 @@
         }
       },
       {
-        "farmKey": "farm-2",
+        "farmId": "farm-main-1780723884170",
         "nickname": "廾عά_dS廾όナ",
         "region": "987",
         "alliance": "YYY",
-        "rank": "P2",
+        "rank": "p2",
         "shk": "24",
         "role": "admin",
         "roleLabel": "Адмін",
@@ -98,11 +105,11 @@
         }
       },
       {
-        "farmKey": "farm-3",
+        "farmId": "farm-1780412494763",
         "nickname": "TheKidsCallMeBoss",
         "region": "987",
         "alliance": "YYY",
-        "rank": "P2",
+        "rank": "p2",
         "shk": "24",
         "role": "admin",
         "roleLabel": "Адмін",
