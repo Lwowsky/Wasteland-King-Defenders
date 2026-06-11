@@ -615,8 +615,7 @@ async function main() {
     const result = await fetchPublicStatsFromD1();
     await writeJson(SUMMARY_CACHE_PATH, result.summary);
     await writeJson(PLAYERS_CACHE_PATH, result.publicPlayers);
-    const chunkResult = await writePlayerChunkFiles(result.publicPlayers);
-    info(`Stats cache updated from D1: players=${result.summary.totalPlayers}, farms=${result.summary.totalFarms}, publicRows=${result.publicPlayers.length}, allPages=${chunkResult.allPages}, regionFiles=${chunkResult.regionFiles}, regionPages=${chunkResult.regionPages}, buckets=${result.summary.d1Buckets || 0}`);
+    info(`Stats cache updated from D1: players=${result.summary.totalPlayers}, farms=${result.summary.totalFarms}, publicRows=${result.publicPlayers.length}, buckets=${result.summary.d1Buckets || 0}`);
     return;
   }
 
@@ -642,9 +641,8 @@ async function main() {
   }
   await writeJson(SUMMARY_CACHE_PATH, summary);
   await writeJson(PLAYERS_CACHE_PATH, publicPlayers);
-  const chunkResult = await writePlayerChunkFiles(publicPlayers);
   const cleaned = await cleanupOldChanges(db).catch(() => 0);
-  info(`Stats cache updated: players=${summary.totalPlayers}, farms=${summary.totalFarms}, publicRows=${publicPlayers.length}, allPages=${chunkResult.allPages}, regionFiles=${chunkResult.regionFiles}, regionPages=${chunkResult.regionPages}, cleanedChanges=${cleaned}`);
+  info(`Stats cache updated: players=${summary.totalPlayers}, farms=${summary.totalFarms}, publicRows=${publicPlayers.length}, cleanedChanges=${cleaned}`);
 }
 
 main().catch(error => {
