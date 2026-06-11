@@ -1,53 +1,56 @@
 {
-  "version": 2,
-  "source": "github-actions-full",
-  "generatedAt": "2026-06-10T06:15:10.041Z",
-  "lastFullRebuildDate": "2026-06-09",
-  "totalPlayers": 1,
-  "totalFarms": 3,
-  "totalRows": 4,
-  "leaders": 1,
-  "leadersWithFarms": 4,
+  "version": 1,
+  "source": "cloudflare-d1-public-stats",
+  "generatedAt": "2026-06-11T08:46:37.571Z",
+  "lastFullRebuildDate": "2026-06-11",
+  "totalPlayers": 2,
+  "totalFarms": 6,
+  "totalRows": 8,
+  "leaders": 2,
+  "leadersWithFarms": 8,
   "regions": {
-    "987": 1
+    "987": 2
   },
   "regionsWithFarms": {
-    "982": 1,
-    "987": 3
+    "982": 2,
+    "987": 6
   },
   "alliances": {
-    "YYY": 1
+    "YYY": 2
   },
   "alliancesWithFarms": {
-    "YYY": 3,
-    "DIO": 1
+    "YYY": 6,
+    "DIO": 2
   },
   "ranks": {
-    "p4": 1
+    "p4": 2
   },
   "ranksWithFarms": {
-    "p4": 1,
-    "p3": 1,
-    "p2": 2
+    "p4": 2,
+    "p3": 2,
+    "p2": 4
   },
   "shkTiers": {
-    "t12": 1
+    "t12": 2
   },
   "shkTiersWithFarms": {
-    "t12": 1,
-    "t8": 3
+    "t12": 2,
+    "t8": 6
   },
-  "processedChanges": 0,
   "roles": {
-    "admin": 1
+    "admin": 2
   },
   "rolesWithFarms": {
-    "admin": 4
+    "admin": 8
   },
   "countries": {
-    "UA": 1
+    "UA": 2
   },
   "countriesWithFarms": {
-    "UA": 4
-  }
+    "UA": 8
+  },
+  "processedChanges": 0,
+  "d1Version": 1781130303328,
+  "d1UpdatedAtMs": 1781130303328,
+  "d1Buckets": 64
 }
