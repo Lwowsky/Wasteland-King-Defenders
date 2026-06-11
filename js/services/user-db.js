@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=146';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=146';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=146';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=147';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=147';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=147';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -17,7 +17,7 @@ import {
   readNotificationSummaryD1,
   setNotificationSummaryD1,
   upsertNotificationDirectoryD1
-} from './notifications-d1.js?v=146';
+} from './notifications-d1.js?v=147';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -79,6 +79,38 @@ function serviceLocale() {
 
 const PROFILE_CACHE_VERSION = 'v115';
 const PROFILE_CACHE_TTL_MS = 5 * 60 * 1000;
+const SIGN_IN_TOUCH_TTL_MS = 24 * 60 * 60 * 1000;
+function sameJsonValue(a, b) {
+  try { return JSON.stringify(a ?? null) === JSON.stringify(b ?? null); } catch { return false; }
+}
+function compactAuthValue(value = '') {
+  return normalizeText(value).slice(0, 300);
+}
+function isSignInTouchDue(profile = {}) {
+  const lastLoginMs = timestampToMs(profile?.lastLoginAt || profile?.lastLoginAtMs || profile?.updatedAt);
+  return !lastLoginMs || (Date.now() - lastLoginMs) >= SIGN_IN_TOUCH_TTL_MS;
+}
+function buildSignInProfilePatch(user, profile = {}, main = {}, farms = [], now = null) {
+  const patch = {};
+  const displayName = compactAuthValue(user?.displayName || profile?.displayName || '');
+  const photoURL = compactAuthValue(user?.photoURL || profile?.photoURL || '');
+  const email = compactAuthValue(user?.email || profile?.email || '').slice(0, 180);
+  const providerId = compactAuthValue(user?.providerData?.[0]?.providerId || profile?.providerId || 'google.com').slice(0, 80);
+  const regionAccess = buildRegionAccess(main, farms);
+  const allianceAccess = buildAllianceAccess(main, farms);
+  const regionRoles = buildRegionRoles(main, farms);
+
+  if (displayName !== compactAuthValue(profile?.displayName || '')) patch.displayName = displayName;
+  if (photoURL !== compactAuthValue(profile?.photoURL || '')) patch.photoURL = photoURL;
+  if (email && email !== compactAuthValue(profile?.email || '').slice(0, 180)) patch.email = email;
+  if (providerId && providerId !== compactAuthValue(profile?.providerId || 'google.com').slice(0, 80)) patch.providerId = providerId;
+  if (!sameJsonValue(regionAccess, Array.isArray(profile?.regionAccess) ? profile.regionAccess : [])) patch.regionAccess = regionAccess;
+  if (!sameJsonValue(allianceAccess, Array.isArray(profile?.allianceAccess) ? profile.allianceAccess : [])) patch.allianceAccess = allianceAccess;
+  if (!sameJsonValue(regionRoles, profile?.regionRoles || {})) patch.regionRoles = regionRoles;
+  if (isSignInTouchDue(profile)) patch.lastLoginAt = now;
+  if (Object.keys(patch).length) patch.updatedAt = now;
+  return patch;
+}
 function profileCacheUid(uid = '') {
   return normalizeText(uid).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 160);
 }
@@ -1273,10 +1305,13 @@ export async function saveSignedInUser(user) {
   const { db, firestoreMod } = firebase;
   const ref = firestoreMod.doc(db, 'users', user.uid);
   const snapshot = await firestoreMod.getDoc(ref);
+  trackReads(1);
   const now = firestoreMod.serverTimestamp();
+  let profile = null;
+  let touched = false;
 
   if (!snapshot.exists()) {
-    await firestoreMod.setDoc(ref, {
+    const initialProfile = {
       uid: user.uid,
       displayName: user.displayName || '',
       email: user.email || '',
@@ -1304,24 +1339,25 @@ export async function saveSignedInUser(user) {
       regionRoles: {},
       activeFarmId: 'main',
       profileVisibility: { showWastelandInfo: false, showFarmsInfo: false }
-    }, { merge: true });
+    };
+    await firestoreMod.setDoc(ref, initialProfile, { merge: true });
+    trackWrites(1);
+    touched = true;
   } else {
-    const old = snapshot.data();
-    const oldMain = getGameProfile(old || {});
-    const oldFarms = getUserFarms(old || {});
-    await firestoreMod.setDoc(ref, {
-      displayName: user.displayName || old.displayName || '',
-      photoURL: user.photoURL || old.photoURL || '',
-      regionAccess: buildRegionAccess(oldMain, oldFarms),
-      allianceAccess: buildAllianceAccess(oldMain, oldFarms),
-      regionRoles: buildRegionRoles(oldMain, oldFarms),
-      lastLoginAt: now,
-      updatedAt: now
-    }, { merge: true });
+    const old = { id: snapshot.id, ...snapshot.data(), uid: snapshot.data()?.uid || snapshot.id };
+    const patch = buildSignInProfilePatch(user, old, getGameProfile(old), getUserFarms(old), now);
+    if (Object.keys(patch).length) {
+      await firestoreMod.setDoc(ref, patch, { merge: true });
+      trackWrites(1);
+      touched = true;
+    } else {
+      profile = old;
+      writeUserProfileCache(user.uid, profile);
+    }
   }
 
-  removeUserProfileCache(user.uid);
-  let profile = await getUserProfile(user.uid, { forceRefresh: true });
+  if (touched) removeUserProfileCache(user.uid);
+  if (!profile) profile = await getUserProfile(user.uid, { forceRefresh: true });
 
   if (isAdminUser(user, profile) && profile?.role !== 'admin') {
     try {
@@ -1330,6 +1366,7 @@ export async function saveSignedInUser(user) {
         roleLabel: roleLabel('admin'),
         updatedAt: now
       }, { merge: true });
+      trackWrites(1);
       removeUserProfileCache(user.uid);
       profile = await getUserProfile(user.uid, { forceRefresh: true });
     } catch (error) {
@@ -1337,31 +1374,14 @@ export async function saveSignedInUser(user) {
     }
   }
 
-  if (isProfileComplete(profile)) {
-    const beforeProfile = snapshot.exists() ? { id: snapshot.id, ...snapshot.data(), uid: snapshot.data()?.uid || snapshot.id } : {};
-    await syncProfileIndexLocks(db, firestoreMod, user.uid, beforeProfile, profile).catch(error => {
-      console.warn('Profile index sync failed after sign-in', error);
-    });
-    await writePublicPlayerFromProfile(db, firestoreMod, profile).catch(error => {
-      console.warn('Public profile sync failed', error);
-    });
-  }
-
   return profile;
 }
 
 export async function ensureCurrentUserPublished(user) {
   if (!user) return null;
-  const firebase = await getFirebase();
-  if (!firebase) return null;
-  const { db, firestoreMod } = firebase;
-  const profile = await saveSignedInUser(user);
-  if (isProfileComplete(profile)) {
-    await writePublicPlayerFromProfile(db, firestoreMod, profile).catch(error => {
-      console.warn('Public profile sync failed', error);
-    });
-  }
-  return getUserProfile(user.uid, { forceRefresh: true });
+  const profile = await getUserProfile(user.uid).catch(() => null);
+  if (profile) return profile;
+  return saveSignedInUser(user);
 }
 
 function makeRoleRequestPayload({ user, oldProfile, clean, requestedRole, farmId = 'main', now }) {

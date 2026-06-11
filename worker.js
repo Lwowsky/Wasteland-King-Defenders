@@ -1,6 +1,6 @@
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_FIELD_LENGTH = 300;
-const MAX_TABLE_ROWS = 1000;
+const MAX_TABLE_ROWS = 2000;
 const FIREBASE_JWKS_URL =
   "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
 

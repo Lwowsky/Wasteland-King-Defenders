@@ -7,7 +7,7 @@ import {
   markUserNotificationsRead,
   readUserNotificationSummary,
   setUserNotificationSummary
-} from './services/user-db.js?v=146';
+} from './services/user-db.js?v=147';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -23,6 +23,7 @@ let previewLoaded = false;
 let previewLoading = false;
 let bound = false;
 let authStarted = false;
+const NOTIFY_REMOTE_CACHE_TTL_MS = 60 * 1000;
 
 function campaignVars(item = {}) {
   return {
@@ -86,7 +87,8 @@ function normalizeSummary(raw = {}) {
     campaignSeenAtMs: Math.max(0, Number(raw?.campaignSeenAtMs) || 0),
     lastTitle: String(raw?.lastTitle || '').trim(),
     lastMessage: String(raw?.lastMessage || '').trim(),
-    lastNotificationAtMs: Number(raw?.lastNotificationAtMs || raw?.updatedAtMs || 0) || 0
+    lastNotificationAtMs: Number(raw?.lastNotificationAtMs || raw?.updatedAtMs || 0) || 0,
+    cachedAtMs: Number(raw?.cachedAtMs || 0) || 0
   };
 }
 function readCachedSummary(uid = '') {
@@ -100,7 +102,43 @@ function readCachedSummary(uid = '') {
 }
 function writeCachedSummary(uid = '', value = {}) {
   if (!uid) return;
-  try { localStorage.setItem(cacheKey(uid), JSON.stringify(normalizeSummary(value))); } catch (_) {}
+  try { localStorage.setItem(cacheKey(uid), JSON.stringify({ ...normalizeSummary(value), cachedAtMs: Date.now() })); } catch (_) {}
+}
+function isFreshCachedSummary(value = {}) {
+  const cachedAtMs = Number(value?.cachedAtMs) || 0;
+  return cachedAtMs > 0 && (Date.now() - cachedAtMs) < NOTIFY_REMOTE_CACHE_TTL_MS;
+}
+function campaignCacheKey(uid = '') {
+  return `wkd.notify.campaignPreview.${uid}`;
+}
+function profileCampaignCacheScope(profile = {}) {
+  const games = [profile?.gameProfile || {}, ...(Array.isArray(profile?.farms) ? profile.farms : [])]
+    .map(item => `${String(item?.region || '').replace(/[^0-9]/g, '')}:${String(item?.alliance || '').trim()}`)
+    .filter(value => value !== ':')
+    .sort();
+  return `${String(profile?.role || 'player')}:${games.join('|')}`;
+}
+function readCachedCampaignPreview(uid = '', seenAtMs = 0, scope = '') {
+  if (!uid) return null;
+  try {
+    const raw = JSON.parse(localStorage.getItem(campaignCacheKey(uid)) || 'null');
+    if (!raw || (Date.now() - Number(raw.savedAtMs || 0)) > NOTIFY_REMOTE_CACHE_TTL_MS) return null;
+    if (Number(raw.seenAtMs || 0) !== Number(seenAtMs || 0)) return null;
+    if (String(raw.scope || '') !== String(scope || '')) return null;
+    const rows = Array.isArray(raw.rows) ? raw.rows : [];
+    return rows.map(item => ({ ...item, unread: createdMs(item) > Number(seenAtMs || 0) }));
+  } catch (_) {
+    return null;
+  }
+}
+function writeCachedCampaignPreview(uid = '', seenAtMs = 0, scope = '', rows = []) {
+  if (!uid) return;
+  try {
+    localStorage.setItem(campaignCacheKey(uid), JSON.stringify({ savedAtMs: Date.now(), seenAtMs: Number(seenAtMs) || 0, scope: String(scope || ''), rows: Array.isArray(rows) ? rows.slice(0, 12) : [] }));
+  } catch (_) {}
+}
+function clearCachedCampaignPreview(uid = '') {
+  try { if (uid) localStorage.removeItem(campaignCacheKey(uid)); } catch (_) {}
 }
 function applySummary(value = {}, cache = true) {
   summary = normalizeSummary(value || {});
@@ -120,11 +158,20 @@ async function refreshCampaignPreview(force = false) {
   if (!currentUser || !currentProfile) return [];
   if (campaignPreviewItems.length && !force) return campaignPreviewItems;
   const seenAtMs = Number(summary?.campaignSeenAtMs) || 0;
+  const scope = profileCampaignCacheScope(currentProfile);
+  if (!force) {
+    const cached = readCachedCampaignPreview(currentUser.uid, seenAtMs, scope);
+    if (cached) {
+      campaignPreviewItems = cached;
+      return campaignPreviewItems;
+    }
+  }
   campaignPreviewItems = await listRegionNotificationCampaignsForProfile(currentProfile, {
-    sinceMs: 0,
+    sinceMs: seenAtMs,
     perRegionLimit: 8,
     totalLimit: 12
   }).then(list => list.map(item => ({ ...item, unread: createdMs(item) > seenAtMs }))).catch(() => []);
+  writeCachedCampaignPreview(currentUser.uid, seenAtMs, scope, campaignPreviewItems);
   return campaignPreviewItems;
 }
 async function loadPreview(force = false) {
@@ -184,7 +231,7 @@ function render() {
       <small>${esc(sourceLabel(item))}${esc(item.actorName ? ` · ${item.actorName}` : '')}${esc(item.region ? ` · R${item.region}` : '')} · ${esc(item.createdAt ? formatUserDate(item.createdAt) : (item.createdAtMs ? new Date(item.createdAtMs).toLocaleString() : ''))}</small>
     </div>`).join('');
 }
-async function load(user) {
+async function load(user, options = {}) {
   currentUser = user || null;
   currentProfile = null;
   previewItems = [];
@@ -197,18 +244,17 @@ async function load(user) {
     return;
   }
 
-  applySummary(readCachedSummary(user.uid), false);
+  const cachedSummary = readCachedSummary(user.uid);
+  applySummary(cachedSummary, false);
+  const shouldUseCachedSummary = !options?.forceRemote && isFreshCachedSummary(cachedSummary);
   const [remoteSummary, profile] = await Promise.all([
-    readUserNotificationSummary(user.uid).catch(() => null),
+    shouldUseCachedSummary ? Promise.resolve(cachedSummary) : readUserNotificationSummary(user.uid).catch(() => null),
     getUserProfile(user.uid).catch(() => null)
   ]);
   currentProfile = profile || null;
-  const baseSummary = normalizeSummary(remoteSummary || readCachedSummary(user.uid));
-  campaignPreviewItems = currentProfile ? await listRegionNotificationCampaignsForProfile(currentProfile, {
-    sinceMs: 0,
-    perRegionLimit: 8,
-    totalLimit: 12
-  }).then(list => list.map(item => ({ ...item, unread: createdMs(item) > baseSummary.campaignSeenAtMs }))).catch(() => []) : [];
+  const baseSummary = normalizeSummary(remoteSummary || cachedSummary);
+  applySummary(baseSummary, !shouldUseCachedSummary);
+  campaignPreviewItems = currentProfile ? await refreshCampaignPreview(Boolean(options?.forceRemote)) : [];
   applySummary({ ...baseSummary, campaignUnreadTotal: campaignPreviewItems.filter(isUnread).length }, true);
 }
 async function markRead() {
@@ -225,6 +271,7 @@ async function markRead() {
   const nextUnread = Math.max(0, (Number(summary?.unreadTotal) || 0) - unreadPersonal.length);
   const nextCampaignSeen = unreadCampaigns.reduce((max, item) => Math.max(max, Number(item.createdAtMs) || 0), Number(summary?.campaignSeenAtMs) || 0);
   await setUserNotificationSummary(currentUser.uid, { unreadTotal: nextUnread, campaignSeenAtMs: nextCampaignSeen, updatedAtMs: nowMs }).catch(() => null);
+  clearCachedCampaignPreview(currentUser.uid);
   applySummary({ ...summary, unreadTotal: nextUnread, campaignUnreadTotal: 0, campaignSeenAtMs: nextCampaignSeen, updatedAtMs: nowMs }, true);
   previewItems = previewItems.map(item => unreadPreview.some(row => row.id === item.id && (row.source === item.source || isCampaign(row) === isCampaign(item))) ? { ...item, unread: false, readAtMs: nowMs } : item);
   campaignPreviewItems = campaignPreviewItems.map(item => ({ ...item, unread: false, readAtMs: nowMs }));
@@ -243,8 +290,8 @@ async function toggleMenu() {
   const opened = menu.classList.toggle('is-open');
   btn?.setAttribute('aria-expanded', opened ? 'true' : 'false');
   if (opened) {
-    await load(currentUser).catch(() => null);
-    await loadPreview(true);
+    await load(currentUser, { forceRemote: true }).catch(() => null);
+    await loadPreview(false);
   }
 }
 function bind() {
