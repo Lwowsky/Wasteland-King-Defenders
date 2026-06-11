@@ -1,5 +1,5 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=160';
+import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=161';
 import {
   canManageRegion,
   canViewAnyRegion,
@@ -26,7 +26,7 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=160';
+} from '../services/region-db.js?v=161';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];

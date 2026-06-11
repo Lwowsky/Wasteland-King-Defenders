@@ -1,6 +1,6 @@
 import { formatUserDate, getUserProfile, makePublicPlayer, roleLabel } from '../services/user-db.js';
 import { watchAuth } from '../services/firebase-service.js';
-import { troopLabel } from '../services/region-db.js?v=160';
+import { troopLabel } from '../services/region-db.js?v=161';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -73,7 +73,7 @@ async function fetchPublicStatsPlayers({ force = false } = {}) {
   const response = await fetch(url, { cache: force ? 'no-store' : 'no-cache' });
   if (!response.ok) throw new Error(`stats-players-${response.status}`);
   const data = await response.json();
-  const list = Array.isArray(data) ? data : [];
+  const list = dedupePublicPlayersList(Array.isArray(data) ? data : []);
   writePlayersCache(list);
   return list;
 }
@@ -83,6 +83,40 @@ function playerIdentityKey(player = {}) {
   return [player.nickname || player.gameNick || '', player.region || '', player.alliance || '']
     .map(value => String(value || '').trim().toLowerCase())
     .join('|');
+}
+
+
+function publicPlayerUpdatedAtMs(player = {}) {
+  const value = player?.updatedAt || player?.createdAt || 0;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (typeof value === 'string') {
+    const time = Date.parse(value);
+    return Number.isFinite(time) ? time : 0;
+  }
+  if (value && typeof value === 'object') {
+    if (typeof value.seconds === 'number') return (value.seconds * 1000) + Math.floor((Number(value.nanoseconds) || 0) / 1000000);
+    if (typeof value._seconds === 'number') return (value._seconds * 1000) + Math.floor((Number(value._nanoseconds) || 0) / 1000000);
+  }
+  return 0;
+}
+
+function publicPlayerDedupeKey(player = {}) {
+  const key = String(player.publicKey || player.uid || player.id || '').trim();
+  if (key) return `key:${key}`;
+  return `identity:${playerIdentityKey(player)}`;
+}
+
+function dedupePublicPlayersList(list = []) {
+  const map = new Map();
+  (Array.isArray(list) ? list : []).forEach(player => {
+    if (!player || !player.nickname) return;
+    const key = publicPlayerDedupeKey(player);
+    const existing = map.get(key);
+    if (!existing || publicPlayerUpdatedAtMs(player) >= publicPlayerUpdatedAtMs(existing)) {
+      map.set(key, player);
+    }
+  });
+  return [...map.values()];
 }
 
 function mergeLivePublicPlayer(livePlayer = null) {
@@ -173,7 +207,7 @@ async function loadSummaryOnly(options = {}) {
       fetchPublicStatsPlayers({ force })
     ]);
     statsSummaryCache = hasUsableStatsSummary(summary) ? summary : null;
-    players = Array.isArray(publicPlayers) ? publicPlayers : [];
+    players = dedupePublicPlayersList(Array.isArray(publicPlayers) ? publicPlayers : []);
     detailsLoaded = true;
     await refreshCurrentUserLiveStats({ rerender: false });
     renderStats();

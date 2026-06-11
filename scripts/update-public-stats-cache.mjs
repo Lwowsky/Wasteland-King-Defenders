@@ -280,6 +280,40 @@ function sanitizePlayerForPublic(docId = '', player = {}) {
   else row.farms = [];
   return row;
 }
+
+function publicPlayerUpdatedAtMs(player = {}) {
+  const value = player?.updatedAt || player?.createdAt || 0;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (typeof value === 'string') {
+    const time = Date.parse(value);
+    return Number.isFinite(time) ? time : 0;
+  }
+  if (value && typeof value === 'object') {
+    if (typeof value.seconds === 'number') return (value.seconds * 1000) + Math.floor((Number(value.nanoseconds) || 0) / 1000000);
+    if (typeof value._seconds === 'number') return (value._seconds * 1000) + Math.floor((Number(value._nanoseconds) || 0) / 1000000);
+  }
+  return 0;
+}
+
+function publicPlayerDedupeKey(player = {}) {
+  const publicKey = cleanString(player?.publicKey || player?.uid || player?.id, 80);
+  if (publicKey) return `key:${publicKey}`;
+  return `identity:${cleanString(player?.nickname || player?.gameNick, 80).toLowerCase()}|${String(player?.region || '').replace(/[^0-9]/g, '')}|${cleanString(player?.alliance, 40)}`;
+}
+
+function dedupePublicPlayers(players = []) {
+  const map = new Map();
+  (Array.isArray(players) ? players : []).forEach(player => {
+    if (!player || !player.publicKey || !player.nickname || player.profileComplete === false) return;
+    const key = publicPlayerDedupeKey(player);
+    const existing = map.get(key);
+    if (!existing || publicPlayerUpdatedAtMs(player) >= publicPlayerUpdatedAtMs(existing)) {
+      map.set(key, player);
+    }
+  });
+  return sortPublicPlayers([...map.values()]);
+}
+
 function sortPublicPlayers(players = []) {
   return [...players].sort((a, b) => String(a.region || '').localeCompare(String(b.region || ''), 'uk', { numeric: true })
     || String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk', { numeric: true }));
@@ -449,7 +483,7 @@ async function fetchPublicStatsFromD1() {
   if (!response.ok || data?.ok === false) {
     throw new Error(data?.error || `public-stats-export-${response.status}`);
   }
-  const publicPlayers = sortPublicPlayers(Array.isArray(data?.players) ? data.players.filter(player => player && player.profileComplete !== false && player.publicKey && player.nickname) : []);
+  const publicPlayers = dedupePublicPlayers(Array.isArray(data?.players) ? data.players.filter(player => player && player.profileComplete !== false && player.publicKey && player.nickname) : []);
   const summary = buildSummaryFromPublicPlayers(publicPlayers, {
     source: data?.source || 'cloudflare-d1-public-stats',
     d1Version: data?.d1Version || null,
@@ -639,6 +673,8 @@ async function main() {
     summary = result.summary;
     publicPlayers = result.publicPlayers;
   }
+  publicPlayers = dedupePublicPlayers(publicPlayers);
+  summary = buildSummaryFromPublicPlayers(publicPlayers, { source: summary?.source || 'github-actions', lastFullRebuildDate: summary?.lastFullRebuildDate || null, processedChanges: summary?.processedChanges || 0 });
   await writeJson(SUMMARY_CACHE_PATH, summary);
   await writeJson(PLAYERS_CACHE_PATH, publicPlayers);
   const cleaned = await cleanupOldChanges(db).catch(() => 0);

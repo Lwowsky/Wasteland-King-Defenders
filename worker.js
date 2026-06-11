@@ -1480,9 +1480,7 @@ async function readPublicStatsPage(db, bucket) {
 
 async function writePublicStatsPage(db, bucket, players = []) {
   await ensureRegionTableSchema(db);
-  const cleanPlayers = (Array.isArray(players) ? players : [])
-    .filter(player => player?.publicKey && player?.nickname)
-    .sort((a, b) => String(a.region || '').localeCompare(String(b.region || ''), 'uk', { numeric: true }) || String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk', { numeric: true }));
+  const cleanPlayers = dedupePublicStatsPlayers(Array.isArray(players) ? players : []);
   const updatedAtMs = Date.now();
   await db.batch([
     db.prepare(
@@ -1531,6 +1529,45 @@ async function handlePublicStatsPlayerUpsert(request, env) {
   return json({ ok: true, bucket, saved, rowsCount });
 }
 
+
+function publicStatsPlayerSort(a = {}, b = {}) {
+  return String(a.region || '').localeCompare(String(b.region || ''), 'uk', { numeric: true })
+    || String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk', { numeric: true });
+}
+
+function publicStatsPlayerUpdatedAtMs(player = {}) {
+  const value = player?.updatedAt || player?.createdAt || 0;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (typeof value === 'string') {
+    const time = Date.parse(value);
+    return Number.isFinite(time) ? time : 0;
+  }
+  if (value && typeof value === 'object') {
+    if (typeof value.seconds === 'number') return (value.seconds * 1000) + Math.floor((Number(value.nanoseconds) || 0) / 1000000);
+    if (typeof value._seconds === 'number') return (value._seconds * 1000) + Math.floor((Number(value._nanoseconds) || 0) / 1000000);
+  }
+  return 0;
+}
+
+function publicStatsPlayerDedupeKey(player = {}, fallback = '') {
+  const publicKey = clean(player?.publicKey || player?.uid || player?.id, 80);
+  if (publicKey) return `key:${publicKey}`;
+  return `identity:${clean(player?.nickname || player?.gameNick, 80).toLowerCase()}|${normalizeRegion(player?.region)}|${clean(player?.alliance, 40)}`;
+}
+
+function dedupePublicStatsPlayers(players = []) {
+  const map = new Map();
+  (Array.isArray(players) ? players : []).forEach((player, index) => {
+    if (!player || !player.publicKey || !player.nickname || player.profileComplete === false) return;
+    const key = publicStatsPlayerDedupeKey(player, index);
+    const existing = map.get(key);
+    if (!existing || publicStatsPlayerUpdatedAtMs(player) >= publicStatsPlayerUpdatedAtMs(existing)) {
+      map.set(key, player);
+    }
+  });
+  return [...map.values()].sort(publicStatsPlayerSort);
+}
+
 async function handlePublicStatsImport(request, env) {
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
@@ -1539,13 +1576,16 @@ async function handlePublicStatsImport(request, env) {
   let body = null;
   try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
   const rawPlayers = Array.isArray(body?.players) ? body.players : [];
-  const pages = new Map();
+  const cleanPlayers = [];
   for (const raw of rawPlayers.slice(0, 50000)) {
     const uid = clean(raw.uid || raw.id || raw.publicKey || raw.nickname, 180);
     const publicKey = clean(raw.publicKey || await publicStatsKeyForUid(uid), 40);
-    const bucket = publicStatsBucketForKey(uid || publicKey);
     const player = await sanitizePublicStatsPlayer({ ...raw, publicKey }, uid || publicKey);
-    if (!player) continue;
+    if (player) cleanPlayers.push(player);
+  }
+  const pages = new Map();
+  for (const player of dedupePublicStatsPlayers(cleanPlayers)) {
+    const bucket = publicStatsBucketForKey(player.publicKey || player.nickname);
     if (!pages.has(bucket)) pages.set(bucket, []);
     pages.get(bucket).push(player);
   }
@@ -1583,11 +1623,11 @@ async function handlePublicStatsExport(request, env) {
   const rows = await db.prepare(
     `SELECT bucket, updated_at_ms, players_json FROM public_stats_pages ORDER BY bucket ASC`
   ).all();
-  const players = [];
+  const exportedPlayers = [];
   for (const row of rows?.results || []) {
-    players.push(...parseArrayJson(row.players_json));
+    exportedPlayers.push(...parseArrayJson(row.players_json));
   }
-  players.sort((a, b) => String(a.region || '').localeCompare(String(b.region || ''), 'uk', { numeric: true }) || String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk', { numeric: true }));
+  const players = dedupePublicStatsPlayers(exportedPlayers);
   const meta = await db.prepare(`SELECT version, updated_at_ms, source FROM public_stats_meta WHERE id = 'current'`).first();
   return json({
     ok: true,

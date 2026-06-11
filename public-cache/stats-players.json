@@ -5,26 +5,19 @@
     "gameNick": "Lwowsky",
     "region": "987",
     "alliance": "YYY",
-    "rank": "p4",
+    "rank": "P4",
     "shk": "39",
     "role": "admin",
     "roleLabel": "Адмін",
     "country": "Україна",
     "countryCode": "UA",
     "farmCount": 3,
-    "profileComplete": true,
     "profileVisibility": {
       "showWastelandInfo": true,
       "showFarmsInfo": true
     },
-    "createdAt": {
-      "seconds": 1779889915,
-      "nanoseconds": 337000000
-    },
-    "updatedAt": {
-      "seconds": 1781130302,
-      "nanoseconds": 178000000
-    },
+    "createdAt": "2026-05-27T13:51:55.337Z",
+    "updatedAt": "2026-06-09T08:32:55.414Z",
     "wastelandProfile": {
       "lairLevel": "50",
       "troopType": "fighter",
@@ -55,11 +48,11 @@
     },
     "farms": [
       {
-        "farmId": "farm-1780412538097",
+        "farmKey": "farm-1",
         "nickname": "炎Shɪsuɪ숬Uchiha炎",
         "region": "982",
         "alliance": "DIO",
-        "rank": "p3",
+        "rank": "P3",
         "shk": "24",
         "role": "admin",
         "roleLabel": "Адмін",
@@ -80,11 +73,11 @@
         }
       },
       {
-        "farmId": "farm-main-1780723884170",
+        "farmKey": "farm-2",
         "nickname": "廾عά_dS廾όナ",
         "region": "987",
         "alliance": "YYY",
-        "rank": "p2",
+        "rank": "P2",
         "shk": "24",
         "role": "admin",
         "roleLabel": "Адмін",
@@ -105,137 +98,11 @@
         }
       },
       {
-        "farmId": "farm-1780412494763",
+        "farmKey": "farm-3",
         "nickname": "TheKidsCallMeBoss",
         "region": "987",
         "alliance": "YYY",
-        "rank": "p2",
-        "shk": "24",
-        "role": "admin",
-        "roleLabel": "Адмін",
-        "wastelandProfile": {
-          "lairLevel": "",
-          "troopType": "",
-          "tier": "T10",
-          "marchSize": "",
-          "rallySize": "",
-          "captainReady": false,
-          "readyToJoin": false,
-          "readyToAttack": false,
-          "shift": "",
-          "extraEnabled": false,
-          "extraSquads": [],
-          "extraTroopType": "",
-          "extraTier": ""
-        }
-      }
-    ]
-  },
-  {
-    "publicKey": "6db42f5a72b0b64b1b0c2916",
-    "nickname": "Lwowsky",
-    "gameNick": "Lwowsky",
-    "region": "987",
-    "alliance": "YYY",
-    "rank": "p4",
-    "shk": "39",
-    "role": "admin",
-    "roleLabel": "Адмін",
-    "country": "Україна",
-    "countryCode": "UA",
-    "farmCount": 3,
-    "profileComplete": true,
-    "profileVisibility": {
-      "showWastelandInfo": true,
-      "showFarmsInfo": true
-    },
-    "createdAt": "2026-05-27T13:51:55.337Z",
-    "updatedAt": "2026-06-09T00:31:30.484Z",
-    "wastelandProfile": {
-      "lairLevel": "50",
-      "troopType": "fighter",
-      "tier": "T12",
-      "marchSize": "463000",
-      "rallySize": "2510000",
-      "captainReady": true,
-      "readyToJoin": true,
-      "readyToAttack": true,
-      "shift": "shift1",
-      "extraEnabled": true,
-      "extraSquads": [
-        {
-          "troopType": "fighter",
-          "tier": "T12"
-        },
-        {
-          "troopType": "rider",
-          "tier": "T12"
-        },
-        {
-          "troopType": "shooter",
-          "tier": "T12"
-        }
-      ],
-      "extraTroopType": "fighter",
-      "extraTier": "T12"
-    },
-    "farms": [
-      {
-        "farmId": "farm-1",
-        "nickname": "廾عά_dS廾όナ",
-        "region": "987",
-        "alliance": "YYY",
-        "rank": "p2",
-        "shk": "24",
-        "role": "admin",
-        "roleLabel": "Адмін",
-        "wastelandProfile": {
-          "lairLevel": "42",
-          "troopType": "rider",
-          "tier": "T8",
-          "marchSize": "291000",
-          "rallySize": "1400000",
-          "captainReady": false,
-          "readyToJoin": false,
-          "readyToAttack": false,
-          "shift": "shift1",
-          "extraEnabled": false,
-          "extraSquads": [],
-          "extraTroopType": "",
-          "extraTier": ""
-        }
-      },
-      {
-        "farmId": "farm-2",
-        "nickname": "炎Shɪsuɪ숬Uchiha炎",
-        "region": "982",
-        "alliance": "DIO",
-        "rank": "p3",
-        "shk": "24",
-        "role": "admin",
-        "roleLabel": "Адмін",
-        "wastelandProfile": {
-          "lairLevel": "",
-          "troopType": "",
-          "tier": "T10",
-          "marchSize": "",
-          "rallySize": "",
-          "captainReady": false,
-          "readyToJoin": false,
-          "readyToAttack": false,
-          "shift": "",
-          "extraEnabled": false,
-          "extraSquads": [],
-          "extraTroopType": "",
-          "extraTier": ""
-        }
-      },
-      {
-        "farmId": "farm-3",
-        "nickname": "TheKidsCallMeBoss",
-        "region": "987",
-        "alliance": "YYY",
-        "rank": "p2",
+        "rank": "P2",
         "shk": "24",
         "role": "admin",
         "roleLabel": "Адмін",

@@ -7,7 +7,7 @@ import {
   markUserNotificationsRead,
   readNotificationBellForProfile,
   setUserNotificationSummary
-} from './services/user-db.js?v=160';
+} from './services/user-db.js?v=161';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
