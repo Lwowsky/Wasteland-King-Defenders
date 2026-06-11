@@ -67,6 +67,30 @@ function regionTableDb(env) {
   return env.REGION_TABLE_DB || env.DB || null;
 }
 
+
+async function ensureD1Columns(db, tableName = '', columns = []) {
+  const safeTables = new Set(['user_notifications', 'user_notification_summary', 'user_sent_messages', 'notification_campaigns', 'notification_directory']);
+  if (!db || !safeTables.has(tableName)) return;
+  let info = { results: [] };
+  try { info = await db.prepare(`PRAGMA table_info(${tableName})`).all(); }
+  catch (error) { console.warn(`[WKD Worker] Unable to inspect ${tableName}`, error); return; }
+  const existing = new Set((info?.results || []).map(row => clean(row?.name || '', 80)).filter(Boolean));
+  for (const column of columns) {
+    const name = clean(column?.name || '', 80);
+    const definition = String(column?.definition || '').trim();
+    if (!name || !definition || existing.has(name)) continue;
+    try {
+      await db.prepare(`ALTER TABLE ${tableName} ADD COLUMN ${name} ${definition}`).run();
+      existing.add(name);
+    } catch (error) {
+      const message = String(error?.message || '').toLowerCase();
+      if (!message.includes('duplicate column')) {
+        console.warn(`[WKD Worker] Unable to add ${tableName}.${name}`, error);
+      }
+    }
+  }
+}
+
 let d1SchemaReadyPromise = null;
 async function ensureRegionTableSchema(db) {
   if (!db) throw new Error("d1_not_configured");
@@ -282,6 +306,57 @@ async function ensureRegionTableSchema(db) {
     for (const statement of statements) {
       await db.prepare(statement).run();
     }
+    await ensureD1Columns(db, 'user_notifications', [
+      { name: 'actor_photo_url', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'target_type', definition: "TEXT NOT NULL DEFAULT 'player'" },
+      { name: 'target_label', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'reply_to_id', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'reply_to_title', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'reply_to_actor_name', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'reply_to_created_at_ms', definition: 'INTEGER NOT NULL DEFAULT 0' },
+      { name: 'archived', definition: 'INTEGER NOT NULL DEFAULT 0' },
+      { name: 'deleted', definition: 'INTEGER NOT NULL DEFAULT 0' }
+    ]);
+    await ensureD1Columns(db, 'user_notification_summary', [
+      { name: 'campaign_seen_at_ms', definition: 'INTEGER NOT NULL DEFAULT 0' },
+      { name: 'last_region', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'last_alliance', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'last_actor_uid', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'last_actor_name', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'last_actor_role', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'last_target_type', definition: "TEXT NOT NULL DEFAULT ''" }
+    ]);
+    await ensureD1Columns(db, 'user_sent_messages', [
+      { name: 'alliance', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'target_type', definition: "TEXT NOT NULL DEFAULT 'player'" },
+      { name: 'target_label', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'recipient_count', definition: 'INTEGER NOT NULL DEFAULT 0' },
+      { name: 'recipient_preview', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'reply_to_id', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'reply_to_title', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'reply_to_actor_name', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'reply_to_created_at_ms', definition: 'INTEGER NOT NULL DEFAULT 0' },
+      { name: 'archived', definition: 'INTEGER NOT NULL DEFAULT 0' },
+      { name: 'deleted', definition: 'INTEGER NOT NULL DEFAULT 0' }
+    ]);
+    await ensureD1Columns(db, 'notification_campaigns', [
+      { name: 'source', definition: "TEXT NOT NULL DEFAULT 'region-campaign'" },
+      { name: 'cycle_id', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'actor_uid', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'actor_name', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'actor_role', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'actor_role_text', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'target_type', definition: "TEXT NOT NULL DEFAULT 'region'" },
+      { name: 'target_label', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'alliance', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'campaign_group_id', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'title', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'message', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'title_key', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'message_key', definition: "TEXT NOT NULL DEFAULT ''" },
+      { name: 'created_at_ms', definition: 'INTEGER NOT NULL DEFAULT 0' },
+      { name: 'expires_at_ms', definition: 'INTEGER NOT NULL DEFAULT 0' }
+    ]);
   })();
   return d1SchemaReadyPromise;
 }

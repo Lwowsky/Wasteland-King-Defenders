@@ -21,12 +21,12 @@ import {
   patchUserSentMessage,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=150';
+} from '../services/user-db.js?v=151';
 import {
   countNotificationDirectoryD1,
   listNotificationDirectoryRegionsD1,
   searchNotificationDirectoryD1
-} from '../services/notifications-d1.js?v=150';
+} from '../services/notifications-d1.js?v=151';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -878,6 +878,16 @@ async function markAll() {
   render();
   window.WKD?.refreshNotifications?.();
 }
+
+function d1CampaignErrorHint(error) {
+  const raw = String(error?.message || error?.data?.error || '').trim();
+  if (/d1_not_configured|notifications-d1-disabled/i.test(raw)) return 'D1 не підключений або Worker ще не оновлений.';
+  if (/token|auth|required/i.test(raw)) return 'Потрібно оновити сторінку і знову увійти в акаунт.';
+  if (/no such column|SQLITE_ERROR|table|column|schema/i.test(raw)) return 'D1 база має стару схему. Потрібно задеплоїти новий worker.js v151 один раз, щоб він додав відсутні колонки.';
+  if (/failed to fetch|network/i.test(raw)) return 'Немає відповіді від Cloudflare Worker.';
+  return raw ? `D1: ${raw}` : 'D1 campaign не створився.';
+}
+
 function canUseCampaignForTarget(type = 'player') {
   return ['all', 'region', 'alliance', 'consuls', 'officers'].includes(type) && !directReply?.replyToId;
 }
@@ -971,8 +981,18 @@ async function sendMessage() {
   let recipientPreview = recipients.slice(0, 5).map(playerLabel).join(' • ');
 
   if (canUseCampaignForTarget(type)) {
-    const campaigns = await sendCampaignMessage(type, recipients, { title, message: body, targetLabel });
-    if (!campaigns.length) throw new Error('campaign-write-failed');
+    let campaigns = [];
+    try {
+      campaigns = await sendCampaignMessage(type, recipients, { title, message: body, targetLabel });
+    } catch (error) {
+      console.error('[WKD] D1 campaign send failed', error);
+      setHint(`${t('messages.sendFailed', 'Не вдалося відправити повідомлення.')} ${d1CampaignErrorHint(error)}`);
+      return;
+    }
+    if (!campaigns.length) {
+      setHint(`${t('messages.sendFailed', 'Не вдалося відправити повідомлення.')} D1 campaign не створився.`);
+      return;
+    }
     recipientPreview = type === 'all'
       ? `${t('messages.campaignRegions', 'Регіонів')}: ${campaigns.length}`
       : `${messageTargetLabel({ targetType: type, region: activeRegion(), alliance: activeAlliance(), targetLabel })}`;
