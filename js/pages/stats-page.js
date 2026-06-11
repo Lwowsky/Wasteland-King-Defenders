@@ -1,6 +1,6 @@
 import { formatUserDate, getUserProfile, makePublicPlayer, roleLabel } from '../services/user-db.js';
 import { watchAuth } from '../services/firebase-service.js';
-import { troopLabel } from '../services/region-db.js?v=157';
+import { troopLabel } from '../services/region-db.js?v=158';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -35,13 +35,39 @@ function locale() {
 const PUBLIC_STATS_CACHE_URL = 'public-cache/stats-summary.json';
 const PUBLIC_STATS_PLAYERS_URL = 'public-cache/stats-players.json';
 const PUBLIC_STATS_INDEX_URL = 'public-cache/stats-players-index.json';
-const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v157';
-const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.full.v157';
-const STATS_PLAYERS_INDEX_CACHE_KEY = 'wkd.publicStatsPlayers.index.v157';
-const STATS_CHUNK_CACHE_PREFIX = 'wkd.publicStatsPlayers.chunk.v157.';
-const STATS_REGION_PLAYERS_CACHE_PREFIX = 'wkd.publicStatsPlayers.regionFull.v157.';
+const STATS_SUMMARY_CACHE_KEY = 'wkd.publicStatsSummary.v158';
+const STATS_PLAYERS_CACHE_KEY = 'wkd.publicStatsPlayers.full.v158';
+const STATS_PLAYERS_INDEX_CACHE_KEY = 'wkd.publicStatsPlayers.index.v158';
+const STATS_CHUNK_CACHE_PREFIX = 'wkd.publicStatsPlayers.chunk.v158.';
+const STATS_REGION_PLAYERS_CACHE_PREFIX = 'wkd.publicStatsPlayers.regionFull.v158.';
 const STATS_CACHE_TTL_MS = 10 * 60 * 1000;
 const STATS_CHUNK_SIZE = 50;
+
+function appBasePath() {
+  const baseEl = document.querySelector('base[href]');
+  if (baseEl?.href) {
+    try { return new URL(baseEl.href, window.location.href).pathname.replace(/\/?$/, '/'); } catch (_) {}
+  }
+  const path = window.location.pathname || '/';
+  if (window.location.hostname.endsWith('github.io')) {
+    const first = path.split('/').filter(Boolean)[0];
+    return first ? `/${first}/` : '/';
+  }
+  return '/';
+}
+function publicCacheUrl(path = '', { force = false } = {}) {
+  const clean = String(path || '').replace(/^\/+/, '');
+  const url = new URL(`${appBasePath()}${clean}`, window.location.origin);
+  if (force) url.searchParams.set('t', String(Date.now()));
+  return url.toString();
+}
+function clearPublicStatsCaches() {
+  try {
+    Object.keys(localStorage)
+      .filter(key => key.startsWith('wkd.publicStats'))
+      .forEach(key => localStorage.removeItem(key));
+  } catch (_) {}
+}
 let loadedPlayersScope = 'all';
 let regionFetchTimer = null;
 let statsIndexCache = null;
@@ -134,7 +160,7 @@ async function fetchPublicStatsIndex({ force = false } = {}) {
       if (statsIndexCache) return statsIndexCache;
     }
   }
-  const url = `${PUBLIC_STATS_INDEX_URL}${force ? `?t=${Date.now()}` : ''}`;
+  const url = publicCacheUrl(PUBLIC_STATS_INDEX_URL, { force });
   const response = await fetch(url, { cache: force ? 'no-store' : 'no-cache' });
   if (!response.ok) throw new Error(`stats-index-${response.status}`);
   const data = normalizeIndex(await response.json());
@@ -148,7 +174,7 @@ async function fetchPublicStatsSummary({ force = false } = {}) {
     const cached = readSummaryCache();
     if (cached) return cached;
   }
-  const url = `${PUBLIC_STATS_CACHE_URL}${force ? `?t=${Date.now()}` : ''}`;
+  const url = publicCacheUrl(PUBLIC_STATS_CACHE_URL, { force });
   const response = await fetch(url, { cache: force ? 'no-store' : 'no-cache' });
   if (!response.ok) throw new Error(`stats-summary-${response.status}`);
   const data = await response.json();
@@ -162,7 +188,7 @@ async function fetchLegacyStatsPlayers({ force = false, region = '' } = {}) {
       const cached = readRegionPlayersCache(safeRegion);
       if (cached) return cached;
     }
-    const response = await fetch(`${regionPlayersUrl(safeRegion)}${force ? `?t=${Date.now()}` : ''}`, { cache: force ? 'no-store' : 'no-cache' });
+    const response = await fetch(publicCacheUrl(regionPlayersUrl(safeRegion), { force }), { cache: force ? 'no-store' : 'no-cache' });
     if (response.ok) {
       const data = await response.json();
       const list = Array.isArray(data) ? data : [];
@@ -174,7 +200,7 @@ async function fetchLegacyStatsPlayers({ force = false, region = '' } = {}) {
     const cached = readPlayersCache();
     if (cached) return cached;
   }
-  const response = await fetch(`${PUBLIC_STATS_PLAYERS_URL}${force ? `?t=${Date.now()}` : ''}`, { cache: force ? 'no-store' : 'no-cache' });
+  const response = await fetch(publicCacheUrl(PUBLIC_STATS_PLAYERS_URL, { force }), { cache: force ? 'no-store' : 'no-cache' });
   if (!response.ok) throw new Error(`stats-players-${response.status}`);
   const data = await response.json();
   const list = Array.isArray(data) ? data : [];
@@ -192,7 +218,7 @@ async function fetchPlayersChunk({ force = false, scope = 'all', region = '', pa
   const meta = pageMetaFor(scope, safeRegion, safePage);
   const fallbackFile = scope === 'region' ? regionChunkUrl(safeRegion, safePage) : allChunkUrl(safePage);
   const file = String(meta.file || fallbackFile).replace(/^public-cache\//, '');
-  const url = `public-cache/${file}${force ? `?t=${Date.now()}` : ''}`;
+  const url = publicCacheUrl(`public-cache/${file}`, { force });
   const response = await fetch(url, { cache: force ? 'no-store' : 'no-cache' });
   if (!response.ok) throw new Error(`stats-chunk-${response.status}`);
   const list = await response.json();
@@ -766,7 +792,7 @@ function scheduleFilteredStatsRender() {
 }
 
 function bindControls() {
-  $('#refreshStatsBtn')?.addEventListener('click', () => loadSummaryOnly({ force: true, playersRegion: activeStatsRegionScope(), page: 1, allForFilter: filtersNeedAllLoaded() }));
+  $('#refreshStatsBtn')?.addEventListener('click', () => { clearPublicStatsCaches(); loadSummaryOnly({ force: true, playersRegion: activeStatsRegionScope(), page: 1, allForFilter: filtersNeedAllLoaded() }); });
   $('#statsNickSearch')?.addEventListener('input', scheduleFilteredStatsRender);
   $('#statsAllianceSearch')?.addEventListener('input', scheduleFilteredStatsRender);
   $('#statsRegionSearch')?.addEventListener('input', scheduleRegionScopedStatsLoad);
