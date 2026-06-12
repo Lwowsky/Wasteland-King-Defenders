@@ -2105,6 +2105,11 @@ window.WKD_TRANSLATIONS.ru = {
   "tower.discardDraftTitle": 'Вернуть опубликованный план?',
   "tower.discardDraftMessage": 'Локальный черновик для {region} будет отброшен, а последний опубликованный план будет восстановлен.',
   "tower.publishedPlanLoaded": 'Опубликованный план восстановлен.',
-  "players.regionD1MissingNoFirestore": "У таблицы региона ещё нет D1-кеша. Firebase fallback не запускался, чтобы не тратить reads."
+  "players.regionD1MissingNoFirestore": "У таблицы региона ещё нет D1-кеша. Firebase fallback не запускался, чтобы не тратить reads.",
+  "players.localToRegionResetTowerPlanOption": "Очистить старый план турелей после переноса",
+  "players.localToRegionResetTowerPlanHint": "По умолчанию выключено: перенос локального списка не сбросит финальный план и не добавит лишние writes. Включай только если хочешь начать план турелей заново.",
+  "players.localToRegionConfirmNote": "Текущая таблица этого цикла будет заменена локальным списком. Форма региона останется открытой, но заявки/строки текущего цикла будут перезаписаны.",
+  "players.localToRegionConfirmAccept": "Да, перенести",
+  "players.localToRegionCancelled": "Перенос локального списка отменён."
 
 };

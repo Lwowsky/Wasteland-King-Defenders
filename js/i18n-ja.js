@@ -2105,6 +2105,11 @@ window.WKD_TRANSLATIONS.ja = {
   "tower.discardDraftTitle": '公開済みプランに戻しますか？',
   "tower.discardDraftMessage": '{region} のローカル下書きは破棄され、最後に公開されたプランに戻ります。',
   "tower.publishedPlanLoaded": '公開済みプランに戻しました。',
-  "players.regionD1MissingNoFirestore": "地域テーブルにはまだ D1 キャッシュがありません。読み取りを節約するため Firebase fallback は使用していません。"
+  "players.regionD1MissingNoFirestore": "地域テーブルにはまだ D1 キャッシュがありません。読み取りを節約するため Firebase fallback は使用していません。",
+  "players.localToRegionResetTowerPlanOption": "転送後に古いタレット計画を削除する",
+  "players.localToRegionResetTowerPlanHint": "初期状態ではオフです。ローカルリストの転送では最終計画をリセットせず、追加の書き込みも増えません。タレット計画を最初から作り直す場合だけオンにしてください。",
+  "players.localToRegionConfirmNote": "このサイクルの現在の表はローカルリストで置き換えられます。地域フォームは開いたままですが、現在サイクルの申請/行は上書きされます。",
+  "players.localToRegionConfirmAccept": "はい、移動する",
+  "players.localToRegionCancelled": "ローカルリストの移動をキャンセルしました。"
 
 };

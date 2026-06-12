@@ -2108,6 +2108,8 @@ window.WKD_TRANSLATIONS.en = {
   "tower.discardDraftTitle": 'Return published plan?',
   "tower.discardDraftMessage": 'The local draft for {region} will be discarded and the latest published plan will be restored.',
   "tower.publishedPlanLoaded": 'Published plan restored.',
-  "players.regionD1MissingNoFirestore": "The region table has no D1 cache yet. Firebase fallback was not used to protect reads."
+  "players.regionD1MissingNoFirestore": "The region table has no D1 cache yet. Firebase fallback was not used to protect reads.",
+  "players.localToRegionResetTowerPlanOption": "Clear the old turret plan after transfer",
+  "players.localToRegionResetTowerPlanHint": "Off by default: moving the local list will not reset the final plan and will not add extra writes. Turn it on only if you want to start the turret plan from zero."
 
 };

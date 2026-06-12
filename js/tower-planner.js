@@ -141,7 +141,7 @@ window.WKD = window.WKD || {};
   plan = normalizePlan(null);
 
   function emptyAssignments() {
-    return Object.fromEntries(SHIFT_ORDER.map(shift => [shift, Object.fromEntries(TOWERS.map(tower => [tower.id, { captain: '', helpers: [], helperMarches: {} }]))]));
+    return Object.fromEntries(SHIFT_ORDER.map(shift => [shift, Object.fromEntries(TOWERS.map(tower => [tower.id, { captain: '', captainLocked: false, helpers: [], helperMarches: {} }]))]));
   }
   function normalizePlan(raw) {
     const base = {
@@ -182,8 +182,14 @@ window.WKD = window.WKD || {};
         Object.keys(TIER_DEFAULTS).forEach(tier => {
           towerTierLimits[tier] = Math.max(0, Number(rawTowerTierLimits?.[tier] || 0) || 0);
         });
+        const captainId = clean(item.captain || item.captainId || '');
+        const hasCaptainLockFlag = Object.prototype.hasOwnProperty.call(item, 'captainLocked')
+          || Object.prototype.hasOwnProperty.call(item, 'manualCaptain')
+          || Object.prototype.hasOwnProperty.call(item, 'lockedCaptain')
+          || Object.prototype.hasOwnProperty.call(item, 'captainLock');
         assignments[shift][tower.id] = {
-          captain: clean(item.captain || item.captainId || ''),
+          captain: captainId,
+          captainLocked: Boolean(captainId && (hasCaptainLockFlag ? (item.captainLocked || item.manualCaptain || item.lockedCaptain || item.captainLock) : true)),
           helpers,
           helperMarches,
           tierLimits: towerTierLimits
@@ -288,6 +294,7 @@ window.WKD = window.WKD || {};
         ensureSlotShape(slot);
         if (slot.captain && !valid.has(String(slot.captain))) {
           slot.captain = '';
+          slot.captainLocked = false;
           changed = true;
         }
         const before = slot.helpers.length;
@@ -846,6 +853,29 @@ window.WKD = window.WKD || {};
       roleLabel: found.kind
     };
   }
+  function clearSlotCaptain(slot) {
+    const normalized = ensureSlotShape(slot || {});
+    normalized.captain = '';
+    normalized.captainLocked = false;
+    return normalized;
+  }
+  function setSlotCaptain(slot, id, options = {}) {
+    const normalized = ensureSlotShape(slot || {});
+    const playerId = clean(id || '');
+    if (!playerId) return clearSlotCaptain(normalized);
+    if (options.promotePrevious !== false && normalized.captain && normalized.captain !== playerId && !normalized.helpers.includes(normalized.captain)) {
+      normalized.helpers.unshift(normalized.captain);
+    }
+    normalized.helpers = (normalized.helpers || []).filter(helperId => helperId !== playerId);
+    if (normalized.helperMarches) delete normalized.helperMarches[playerId];
+    normalized.captain = playerId;
+    normalized.captainLocked = options.locked !== false;
+    return ensureSlotShape(normalized);
+  }
+  function isLockedCaptain(slot, id) {
+    return Boolean(slot && clean(slot.captain || '') === clean(id || '') && slot.captainLocked);
+  }
+
   async function assignPlayerFromEditor(id, options = {}) {
     const playerId = String(id || '');
     if (!playerId) return false;
@@ -854,18 +884,16 @@ window.WKD = window.WKD || {};
     const shift = SHIFT_ORDER.includes(normalizeShift(options.shift)) ? normalizeShift(options.shift) : 'shift1';
     const towerId = normalizeTowerId(options.towerId || options.tower || options.placement);
     const placementRole = options.role === 'captain' ? 'captain' : 'helper';
-    removePlayer(playerId);
+    removePlayer(playerId, '', { forceCaptain: true });
 
     if (towerId) {
       const slot = ensureSlotShape(plan.assignments[shift][towerId] || { captain: '', helpers: [], helperMarches: {} });
       slot.helpers = (slot.helpers || []).filter(helperId => helperId !== playerId);
       if (slot.helperMarches) delete slot.helperMarches[playerId];
       if (placementRole === 'captain') {
-        if (slot.captain && slot.captain !== playerId && !slot.helpers.includes(slot.captain)) slot.helpers.unshift(slot.captain);
-        slot.captain = playerId;
-        ensureSlotShape(slot);
+        setSlotCaptain(slot, playerId, { locked: true });
       } else {
-        if (slot.captain === playerId) slot.captain = '';
+        if (slot.captain === playerId) clearSlotCaptain(slot);
         if (!slot.helpers.includes(playerId)) {
           const room = towerRoom(slot);
           slot.helpers.push(playerId);
@@ -881,13 +909,26 @@ window.WKD = window.WKD || {};
     document.dispatchEvent(new CustomEvent('wkd:tower-plan-updated', { detail: { playerId, shift, towerId, role: placementRole } }));
     return true;
   }
-  function removePlayer(id, onlyShift = '') {
-    const shifts = onlyShift ? [onlyShift] : SHIFT_ORDER;
+  function removePlayer(id, onlyShift = '', options = {}) {
+    const playerId = clean(id || '');
+    if (!playerId) return;
+    let shiftScope = onlyShift;
+    let removeOptions = options || {};
+    if (typeof onlyShift === 'object' && onlyShift !== null) {
+      removeOptions = onlyShift;
+      shiftScope = '';
+    }
+    const shifts = shiftScope ? [shiftScope] : SHIFT_ORDER;
+    const forceCaptain = Boolean(removeOptions.forceCaptain || removeOptions.clearCaptain || removeOptions.explicit);
+    const helpersOnly = Boolean(removeOptions.helpersOnly);
     shifts.forEach(shift => TOWERS.forEach(tower => {
-      const slot = plan.assignments[shift][tower.id];
-      if (slot.captain === id) slot.captain = '';
-      slot.helpers = (slot.helpers || []).filter(helperId => helperId !== id);
-      if (slot.helperMarches) delete slot.helperMarches[id];
+      const slot = ensureSlotShape(plan.assignments?.[shift]?.[tower.id] || { captain: '', captainLocked: false, helpers: [], helperMarches: {} });
+      if (!helpersOnly && slot.captain === playerId) {
+        if (forceCaptain || !isLockedCaptain(slot, playerId)) clearSlotCaptain(slot);
+      }
+      slot.helpers = (slot.helpers || []).filter(helperId => helperId !== playerId);
+      if (slot.helperMarches) delete slot.helperMarches[playerId];
+      if (plan.assignments?.[shift]) plan.assignments[shift][tower.id] = slot;
     }));
   }
   function optionPlayers({ shift, towerId, selected = '', captainOnly = false, excludeUsed = false, ignoreRole = false }) {
@@ -1451,7 +1492,9 @@ window.WKD = window.WKD || {};
     return cap > 0 ? Math.min(march, cap) : march;
   }
   function ensureSlotShape(slot) {
-    if (!slot) return { captain: '', helpers: [], helperMarches: {} };
+    if (!slot) return { captain: '', captainLocked: false, helpers: [], helperMarches: {}, tierLimits: {} };
+    slot.captain = clean(slot.captain || '');
+    slot.captainLocked = Boolean(slot.captain && slot.captainLocked);
     if (!Array.isArray(slot.helpers)) slot.helpers = [];
     if (!slot.helperMarches || typeof slot.helperMarches !== 'object') slot.helperMarches = {};
     if (!slot.tierLimits || typeof slot.tierLimits !== 'object') slot.tierLimits = {};
@@ -1742,7 +1785,7 @@ window.WKD = window.WKD || {};
   function clearShiftHelpersKeepCaptains(shift = activeShift) {
     TOWERS.forEach(tower => {
       const slot = plan.assignments[shift][tower.id] || { captain: '', helpers: [], helperMarches: {} };
-      plan.assignments[shift][tower.id] = { captain: clean(slot.captain || ''), helpers: [], helperMarches: {}, tierLimits: { ...(slot.tierLimits || {}) } };
+      plan.assignments[shift][tower.id] = { captain: clean(slot.captain || ''), captainLocked: Boolean(slot.captain && slot.captainLocked), helpers: [], helperMarches: {}, tierLimits: { ...(slot.tierLimits || {}) } };
     });
   }
   function clearAll() { plan.assignments = emptyAssignments(); }
@@ -2045,7 +2088,7 @@ window.WKD = window.WKD || {};
       if (!slot.captain) {
         const captain = pickCaptain(entries, shift, used, assignedNickKeys);
         if (captain) {
-          slot.captain = captain.id;
+          setSlotCaptain(slot, captain.id, { locked: false, promotePrevious: false });
           used.add(captain.id);
           const key = nickKey(captain.player);
           if (key) assignedNickKeys.add(key);
@@ -2080,7 +2123,7 @@ window.WKD = window.WKD || {};
     if (!slot.captain) {
       const captain = pickCaptain(entries, shift, used, assignedNickKeys);
       if (captain) {
-        slot.captain = captain.id;
+        setSlotCaptain(slot, captain.id, { locked: false, promotePrevious: false });
         used.add(captain.id);
         const key = nickKey(captain.player);
         if (key) assignedNickKeys.add(key);
@@ -2090,12 +2133,12 @@ window.WKD = window.WKD || {};
     fillSlotToCapacity(slot, entries, shift, used, assignedNickKeys);
   }
   function autoPlacePlayer(id, shift) {
-    removePlayer(id);
+    removePlayer(id, '', { forceCaptain: true });
     if (!plan.assignments[shift]) return;
     const entry = playerEntries().find(item => item.id === String(id));
     for (const tower of TOWERS) {
       const slot = plan.assignments[shift][tower.id];
-      if (!slot.captain && entry?.player?.captain) { slot.captain = id; return; }
+      if (!slot.captain && entry?.player?.captain) { setSlotCaptain(slot, id, { locked: true, promotePrevious: false }); return; }
       if (slot.captain && addHelperToSlot(slot, entry, usedIdsForShift(shift), assignedNickKeysForShift(shift))) return;
     }
   }
@@ -2433,9 +2476,8 @@ ${text}` : text };
         const select = $(`[data-tower-captain-pick="${CSS.escape(tid)}"]`);
         const id = select?.value || '';
         if (!id || !plan.assignments[activeShift]?.[tid]) return;
-        removePlayer(id, activeShift);
-        plan.assignments[activeShift][tid].captain = id;
-        ensureSlotShape(plan.assignments[activeShift][tid]);
+        removePlayer(id, activeShift, { forceCaptain: true });
+        setSlotCaptain(plan.assignments[activeShift][tid], id, { locked: true });
         render();
         savePlan(false);
         return;
@@ -2446,9 +2488,8 @@ ${text}` : text };
         const tid = manualCaptain.dataset.towerAddManualCaptain;
         const entry = manualEntryOrSelected(tid, `[data-tower-helper-pick="${CSS.escape(tid)}"]`);
         if (!entry || !plan.assignments[activeShift]?.[tid]) return;
-        removePlayer(entry.id, activeShift);
-        plan.assignments[activeShift][tid].captain = entry.id;
-        ensureSlotShape(plan.assignments[activeShift][tid]);
+        removePlayer(entry.id, activeShift, { forceCaptain: true });
+        setSlotCaptain(plan.assignments[activeShift][tid], entry.id, { locked: true });
         render();
         savePlan(false);
         return;
@@ -2490,7 +2531,7 @@ ${text}` : text };
         if (entry?.id && slot) {
           if (helpersLimitReached(slot)) { WKD.showNotice?.('У турелі вже 29 помічників. Більше не влазить.'); return; }
           if (slot.captain && towerRoom(slot) <= 0) { WKD.showNotice?.('У цій турелі вже немає вільного місця ралі.'); return; }
-          removePlayer(entry.id, activeShift);
+          removePlayer(entry.id, activeShift, { forceCaptain: true });
           const used = usedIdsForShift(activeShift);
           const keys = assignedNickKeysForShift(activeShift);
           if (!addHelperToSlot(plan.assignments[activeShift][tid], entry, used, keys)) { WKD.showNotice?.('Цей гравець не влазить у вільне місце ралі.'); return; }
@@ -2511,9 +2552,9 @@ ${text}` : text };
         return;
       }
       const remove = event.target.closest('[data-tower-remove-player]');
-      if (remove && canEditPlan()) { event.preventDefault(); removePlayer(remove.dataset.towerRemovePlayer, activeShift); render(); savePlan(false); return; }
+      if (remove && canEditPlan()) { event.preventDefault(); removePlayer(remove.dataset.towerRemovePlayer, activeShift, { forceCaptain: true }); render(); savePlan(false); return; }
       const reserve = event.target.closest('[data-status-reserve]');
-      if (reserve && canEditPlan()) { event.preventDefault(); removePlayer(reserve.dataset.statusReserve); render(); savePlan(false); return; }
+      if (reserve && canEditPlan()) { event.preventDefault(); removePlayer(reserve.dataset.statusReserve, '', { forceCaptain: true }); render(); savePlan(false); return; }
       const place = event.target.closest('[data-status-auto-place]');
       if (place && canEditPlan()) { event.preventDefault(); autoPlacePlayer(place.dataset.statusAutoPlace, place.dataset.statusShift || activeShift); render(); savePlan(false); return; }
       const finalShift = event.target.closest('[data-final-shift]');
@@ -2547,7 +2588,7 @@ ${text}` : text };
       else if (event.target.matches('[data-tier-limit]')) { const tier = event.target.dataset.tierLimit; if (tier) plan.settings.tierLimits[tier] = Math.max(0, Number(event.target.value) || 0); plan.settings.useTierLimits = true; render(); savePlan(false); }
       else if (event.target.matches('#towerFillMode,#towerOnlyCaptains,#towerMatchShift,#towerSameRole,#towerUseBoth,#towerUseTierLimits,#towerManualShiftEdit,#towerShiftLimit1,#towerShiftLimit2')) { readFormValues(); render(); savePlan(false); }
       if (event.target.matches('[data-tower-setting]')) { const key = event.target.dataset.towerSetting; if (key && Object.prototype.hasOwnProperty.call(plan.settings, key)) { plan.settings[key] = Boolean(event.target.checked); render(); savePlan(false); } }
-      if (event.target.matches('[data-tower-captain]')) { const tid = event.target.dataset.towerCaptain; const id = event.target.value || ''; if (id) removePlayer(id, activeShift); plan.assignments[activeShift][tid].captain = id; render(); savePlan(false); }
+      if (event.target.matches('[data-tower-captain]')) { const tid = event.target.dataset.towerCaptain; const id = event.target.value || ''; if (id) { removePlayer(id, activeShift, { forceCaptain: true }); setSlotCaptain(plan.assignments[activeShift][tid], id, { locked: true }); } render(); savePlan(false); }
     });
     $('#towerAutoDistributeBtn')?.addEventListener('click', event => { event.preventDefault(); if (canEditPlan()) autoDistribute({ topup: false }); });
     $('#towerAutoFillBtn')?.addEventListener('click', event => { event.preventDefault(); if (canEditPlan()) autoDistribute({ topup: true }); });

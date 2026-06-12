@@ -2105,6 +2105,11 @@ window.WKD_TRANSLATIONS.ko = {
   "tower.discardDraftTitle": '게시된 계획으로 되돌릴까요?',
   "tower.discardDraftMessage": '{region}의 로컬 초안이 삭제되고 마지막으로 게시된 계획이 복원됩니다.',
   "tower.publishedPlanLoaded": '게시된 계획을 복원했습니다.',
-  "players.regionD1MissingNoFirestore": "지역 테이블에 아직 D1 캐시가 없습니다. reads를 아끼기 위해 Firebase fallback을 사용하지 않았습니다."
+  "players.regionD1MissingNoFirestore": "지역 테이블에 아직 D1 캐시가 없습니다. reads를 아끼기 위해 Firebase fallback을 사용하지 않았습니다.",
+  "players.localToRegionResetTowerPlanOption": "이전 포탑 계획을 전송 후 삭제",
+  "players.localToRegionResetTowerPlanHint": "기본값은 꺼짐입니다. 로컬 목록을 전송해도 최종 계획을 초기화하지 않고 추가 writes가 생기지 않습니다. 포탑 계획을 처음부터 다시 만들 때만 켜세요.",
+  "players.localToRegionConfirmNote": "현재 사이클의 표가 로컬 목록으로 대체됩니다. 지역 양식은 계속 열려 있지만 현재 사이클의 신청/행은 덮어쓰기됩니다.",
+  "players.localToRegionConfirmAccept": "예, 이동",
+  "players.localToRegionCancelled": "로컬 목록 이동이 취소되었습니다."
 
 };

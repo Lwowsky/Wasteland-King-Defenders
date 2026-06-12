@@ -2105,6 +2105,11 @@ window.WKD_TRANSLATIONS.de = {
   "tower.discardDraftTitle": 'Veröffentlichten Plan wiederherstellen?',
   "tower.discardDraftMessage": 'Der lokale Entwurf für {region} wird verworfen und der zuletzt veröffentlichte Plan wird wiederhergestellt.',
   "tower.publishedPlanLoaded": 'Veröffentlichter Plan wiederhergestellt.',
-  "players.regionD1MissingNoFirestore": "Die Regionstabelle hat noch keinen D1-Cache. Firebase-Fallback wurde nicht genutzt, um Reads zu sparen."
+  "players.regionD1MissingNoFirestore": "Die Regionstabelle hat noch keinen D1-Cache. Firebase-Fallback wurde nicht genutzt, um Reads zu sparen.",
+  "players.localToRegionResetTowerPlanOption": "Alten Turmplan nach dem Transfer löschen",
+  "players.localToRegionResetTowerPlanHint": "Standardmäßig aus: Die lokale Liste setzt den finalen Plan nicht zurück und erzeugt keine zusätzlichen Writes. Nur einschalten, wenn du den Turmplan komplett neu starten willst.",
+  "players.localToRegionConfirmNote": "Die aktuelle Tabelle für diesen Zyklus wird durch die lokale Liste ersetzt. Das Regionsformular bleibt geöffnet, aber aktuelle Zyklus-Anmeldungen/Zeilen werden überschrieben.",
+  "players.localToRegionConfirmAccept": "Ja, übertragen",
+  "players.localToRegionCancelled": "Übertragung der lokalen Liste abgebrochen."
 
 };

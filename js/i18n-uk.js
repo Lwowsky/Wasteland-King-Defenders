@@ -2108,6 +2108,8 @@ window.WKD_TRANSLATIONS.uk = {
   "tower.discardDraftTitle": 'Повернути опублікований план?',
   "tower.discardDraftMessage": 'Локальна чернетка для {region} буде відкинута, а буде повернено останній опублікований план.',
   "tower.publishedPlanLoaded": 'Опублікований план повернено.',
-  "players.regionD1MissingNoFirestore": "Таблиця регіону ще не має D1-кешу. Firebase fallback не запускався, щоб не витрачати reads."
+  "players.regionD1MissingNoFirestore": "Таблиця регіону ще не має D1-кешу. Firebase fallback не запускався, щоб не витрачати reads.",
+  "players.localToRegionResetTowerPlanOption": "Очистити старий план турелей після переносу",
+  "players.localToRegionResetTowerPlanHint": "За замовчуванням вимкнено: перенос локального списку не буде скидати фінальний план і не додасть зайві writes. Увімкни тільки якщо хочеш повністю почати план турелей заново."
 
 };

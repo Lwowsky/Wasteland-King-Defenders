@@ -2105,6 +2105,11 @@ window.WKD_TRANSLATIONS.zh = {
   "tower.discardDraftTitle": '恢复已发布计划？',
   "tower.discardDraftMessage": '{region} 的本地草稿将被放弃，并恢复最后发布的计划。',
   "tower.publishedPlanLoaded": '已恢复已发布计划。',
-  "players.regionD1MissingNoFirestore": "区域表还没有 D1 缓存。为了节省读取次数，未使用 Firebase 回退。"
+  "players.regionD1MissingNoFirestore": "区域表还没有 D1 缓存。为了节省读取次数，未使用 Firebase 回退。",
+  "players.localToRegionResetTowerPlanOption": "转移后清空旧炮塔计划",
+  "players.localToRegionResetTowerPlanHint": "默认关闭：转移本地列表不会重置最终计划，也不会增加额外写入。只有想从零开始重做炮塔计划时才开启。",
+  "players.localToRegionConfirmNote": "当前周期的表格将被本地列表替换。地区表单会保持开放，但当前周期的申请/行会被覆盖。",
+  "players.localToRegionConfirmAccept": "是，转移",
+  "players.localToRegionCancelled": "已取消转移本地列表。"
 
 };

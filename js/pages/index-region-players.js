@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=184';
+import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=185';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -370,6 +370,8 @@ function showLocalToRegionModeDialog(preview = {}, regionLabel = '') {
           ${preview.missingTierCount ? `⚠️ ${esc(t('players.localMissingTier', 'Рядків без тіру'))}: ${preview.missingTierCount}<br>` : ''}
           ${preview.missingMarchCount ? `⚠️ ${esc(t('players.localMissingMarch', 'Рядків без розміру маршу'))}: ${preview.missingMarchCount}<br>` : ''}
           <div style="margin-top:.55rem;">${esc(t('players.localToRegionDailyLimitInfo', 'Тестовий режим: ліміт 1 перенос на 24 години тимчасово вимкнено.'))}</div>
+          <label class="local-import-reset-tower-option"><input id="localImportResetTowerPlan" type="checkbox"> <span>${esc(t('players.localToRegionResetTowerPlanOption', 'Очистити старий план турелей після переносу'))}</span></label>
+          <small>${esc(t('players.localToRegionResetTowerPlanHint', 'За замовчуванням вимкнено: перенос локального списку не буде скидати фінальний план і не додасть зайві writes. Увімкни тільки якщо хочеш повністю почати план турелей заново.'))}</small>
           ${preview.sampleRows?.length ? `<hr><small><strong>${esc(t('players.localToRegionSampleTitle', 'Приклад рядків: нік · альянс · тір · марш'))}</strong><br>${preview.sampleRows.map(previewRowText).map(esc).join('<br>')}</small>` : ''}
         </div>
         <div class="confirm-note" style="margin-top:.7rem;">
@@ -393,8 +395,9 @@ function showLocalToRegionModeDialog(preview = {}, regionLabel = '') {
       if (!action) return;
       if (action === 'cancel') finish(null);
       const dedupe = Boolean(modal.querySelector('#localImportDedupe')?.checked);
-      if (action === 'merge') finish({ mode: 'merge', dedupe });
-      if (action === 'replace') finish({ mode: 'replace', dedupe });
+      const resetTowerPlan = Boolean(modal.querySelector('#localImportResetTowerPlan')?.checked);
+      if (action === 'merge') finish({ mode: 'merge', dedupe, resetTowerPlan });
+      if (action === 'replace') finish({ mode: 'replace', dedupe, resetTowerPlan });
     });
   });
 }
@@ -404,7 +407,7 @@ async function loadExistingRegionRowsForLocalImportPreview(region = '') {
   const cached = readLocalImportPreviewCache(region);
   if (cached) return cached;
   try {
-    const result = await listRegionRegistrations(currentUser, region, { force: false });
+    const result = await listRegionRegistrations(currentUser, region, { d1Only: true, forceD1: false });
     currentProfile = result.profile || currentProfile;
     const rows = (Array.isArray(result.rows) ? result.rows : []).map(row => ({ ...regionRegistrationToPlayer(row), source: REGION_SOURCE }));
     writeLocalImportPreviewCache(region, rows);
@@ -680,8 +683,10 @@ async function copyLocalToRegion() {
     setNote(`${actionText} ${currentRegionLabel()} · ${rowsForImport.length}`, 'muted');
     const result = await importLocalPlayersToRegion(currentUser, rowsForImport, regionToImport, { mode: selection.mode, dedupe: false });
     const region = result.region || regionToImport;
-    await saveRegionTowerPlan(currentUser, region, { version: 1, updatedAtMs: Date.now(), regions: { home: {}, region2: {}, region3: {} } }).catch(error => console.warn('tower plan reset skipped', error));
-    document.dispatchEvent(new CustomEvent('wkd:tower-plan-hard-reset', { detail: { source: 'local-to-region' } }));
+    if (selection.resetTowerPlan === true) {
+      await saveRegionTowerPlan(currentUser, region, { version: 1, updatedAtMs: Date.now(), regions: { home: {}, region2: {}, region3: {} } }).catch(error => console.warn('tower plan reset skipped', error));
+      document.dispatchEvent(new CustomEvent('wkd:tower-plan-hard-reset', { detail: { source: 'local-to-region' } }));
+    }
     loadedRegionRows = [];
     writeLocalImportPreviewCache(regionToImport, []);
     await applyMode('region', { forceRegion: true });

@@ -2105,6 +2105,11 @@ window.WKD_TRANSLATIONS.pl = {
   "tower.discardDraftTitle": 'Przywrócić opublikowany plan?',
   "tower.discardDraftMessage": 'Lokalny szkic dla {region} zostanie odrzucony, a ostatni opublikowany plan zostanie przywrócony.',
   "tower.publishedPlanLoaded": 'Opublikowany plan przywrócony.',
-  "players.regionD1MissingNoFirestore": "Tabela regionu nie ma jeszcze pamięci podręcznej D1. Fallback Firebase nie został użyty, aby nie zużywać odczytów."
+  "players.regionD1MissingNoFirestore": "Tabela regionu nie ma jeszcze pamięci podręcznej D1. Fallback Firebase nie został użyty, aby nie zużywać odczytów.",
+  "players.localToRegionResetTowerPlanOption": "Wyczyść stary plan wież po transferze",
+  "players.localToRegionResetTowerPlanHint": "Domyślnie wyłączone: przeniesienie listy lokalnej nie zresetuje planu końcowego i nie doda dodatkowych writes. Włącz tylko wtedy, gdy chcesz zacząć plan wież od zera.",
+  "players.localToRegionConfirmNote": "Bieżąca tabela tego cyklu zostanie zastąpiona listą lokalną. Formularz regionu pozostanie otwarty, ale zgłoszenia/wiersze bieżącego cyklu zostaną nadpisane.",
+  "players.localToRegionConfirmAccept": "Tak, przenieś",
+  "players.localToRegionCancelled": "Przenoszenie listy lokalnej anulowane."
 
 };

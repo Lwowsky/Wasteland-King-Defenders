@@ -2105,6 +2105,11 @@ window.WKD_TRANSLATIONS.vi = {
   "tower.discardDraftTitle": 'Khôi phục kế hoạch đã đăng?',
   "tower.discardDraftMessage": 'Bản nháp cục bộ của {region} sẽ bị bỏ và kế hoạch đã đăng gần nhất sẽ được khôi phục.',
   "tower.publishedPlanLoaded": 'Đã khôi phục kế hoạch đã đăng.',
-  "players.regionD1MissingNoFirestore": "Bảng khu vực chưa có bộ nhớ đệm D1. Không dùng Firebase fallback để tiết kiệm lượt đọc."
+  "players.regionD1MissingNoFirestore": "Bảng khu vực chưa có bộ nhớ đệm D1. Không dùng Firebase fallback để tiết kiệm lượt đọc.",
+  "players.localToRegionResetTowerPlanOption": "Xóa kế hoạch tháp cũ sau khi chuyển",
+  "players.localToRegionResetTowerPlanHint": "Mặc định tắt: chuyển danh sách cục bộ sẽ không đặt lại kế hoạch cuối và không tạo thêm writes. Chỉ bật nếu muốn làm lại kế hoạch tháp từ đầu.",
+  "players.localToRegionConfirmNote": "Bảng hiện tại của chu kỳ này sẽ được thay bằng danh sách cục bộ. Biểu mẫu khu vực vẫn mở, nhưng các đơn/hàng của chu kỳ hiện tại sẽ bị ghi đè.",
+  "players.localToRegionConfirmAccept": "Có, chuyển",
+  "players.localToRegionCancelled": "Đã hủy chuyển danh sách cục bộ."
 
 };

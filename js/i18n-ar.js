@@ -2103,6 +2103,11 @@ window.WKD_TRANSLATIONS.ar = {
   "tower.discardDraftTitle": 'استعادة الخطة المنشورة؟',
   "tower.discardDraftMessage": 'سيتم تجاهل المسودة المحلية لـ {region} واستعادة آخر خطة منشورة.',
   "tower.publishedPlanLoaded": 'تمت استعادة الخطة المنشورة.',
-  "players.regionD1MissingNoFirestore": "لا يحتوي جدول المنطقة على ذاكرة D1 مؤقتة بعد. لم يتم استخدام Firebase fallback لتوفير القراءات."
+  "players.regionD1MissingNoFirestore": "لا يحتوي جدول المنطقة على ذاكرة D1 مؤقتة بعد. لم يتم استخدام Firebase fallback لتوفير القراءات.",
+  "players.localToRegionResetTowerPlanOption": "مسح خطة الأبراج القديمة بعد النقل",
+  "players.localToRegionResetTowerPlanHint": "مغلق افتراضيًا: نقل القائمة المحلية لن يعيد ضبط الخطة النهائية ولن يضيف writes إضافية. فعّله فقط إذا أردت بدء خطة الأبراج من الصفر.",
+  "players.localToRegionConfirmNote": "سيتم استبدال الجدول الحالي لهذه الدورة بالقائمة المحلية. سيبقى نموذج المنطقة مفتوحًا، لكن طلبات/صفوف الدورة الحالية ستُستبدل.",
+  "players.localToRegionConfirmAccept": "نعم، انقل",
+  "players.localToRegionCancelled": "تم إلغاء نقل القائمة المحلية."
 
 };
