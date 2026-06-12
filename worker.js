@@ -172,6 +172,16 @@ async function ensureRegionTableSchema(db) {
       `CREATE INDEX IF NOT EXISTS idx_final_plan_shares_region ON final_plan_shares(region)`,
       `CREATE INDEX IF NOT EXISTS idx_final_plan_shares_updated ON final_plan_shares(updated_at_ms)`,
       `CREATE INDEX IF NOT EXISTS idx_final_plan_shares_expires ON final_plan_shares(expires_at_ms)`,
+      `CREATE TABLE IF NOT EXISTS region_tower_plans (
+        region TEXT PRIMARY KEY,
+        cycle_id TEXT NOT NULL DEFAULT 'active',
+        version INTEGER NOT NULL DEFAULT 0,
+        updated_at_ms INTEGER NOT NULL DEFAULT 0,
+        updated_by TEXT NOT NULL DEFAULT '',
+        updated_by_name TEXT NOT NULL DEFAULT '',
+        plan_json TEXT NOT NULL DEFAULT '{}'
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_region_tower_plans_updated ON region_tower_plans(updated_at_ms)`,
       `CREATE TABLE IF NOT EXISTS public_stats_pages (
         bucket INTEGER PRIMARY KEY,
         updated_at_ms INTEGER NOT NULL DEFAULT 0,
@@ -1428,6 +1438,100 @@ async function handleFinalPlanShareRead(request, env, codeValue) {
   return json({ ok: true, plan: finalPlanRowToPlan(row), usage: { d1RowsRead: 1 } }, 200, 'private, no-store');
 }
 
+
+function sanitizeTowerPlanSnapshotBody(body = {}, user = {}) {
+  const region = normalizeRegion(body?.region);
+  const cycleId = normalizeCycleId(body?.cycleId || 'active');
+  const plan = body?.plan && typeof body.plan === 'object' && !Array.isArray(body.plan) ? body.plan : {};
+  const planJson = JSON.stringify(plan);
+  if (planJson.length > 900000) throw new Error('tower_plan_too_large');
+  return {
+    region,
+    cycleId,
+    version: Number(body?.updatedAtMs || Date.now()) || Date.now(),
+    updatedAtMs: Number(body?.updatedAtMs || Date.now()) || Date.now(),
+    updatedBy: clean(user?.uid || body?.updatedBy || '', 160),
+    updatedByName: clean(body?.updatedByName || user?.name || user?.email || '', 160),
+    planJson,
+  };
+}
+
+function towerPlanRowToObject(row = {}) {
+  let plan = {};
+  try { plan = JSON.parse(row.plan_json || '{}') || {}; } catch { plan = {}; }
+  return {
+    region: normalizeRegion(row.region),
+    cycleId: normalizeCycleId(row.cycle_id || 'active'),
+    version: Number(row.version) || Number(row.updated_at_ms) || 0,
+    updatedAtMs: Number(row.updated_at_ms) || 0,
+    updatedBy: clean(row.updated_by || '', 160),
+    updatedByName: clean(row.updated_by_name || '', 160),
+    plan,
+  };
+}
+
+async function canWriteTowerPlanD1(db, env, user, region) {
+  if (!user?.uid || !region) return false;
+  if (isAdminUid(env, user.uid)) return true;
+  const access = await readDirectoryAccess(db, env, user).catch(() => null);
+  if (!access) return false;
+  if (access.isGlobal) return true;
+  const roles = access.roles || new Set();
+  const regions = new Set(access.regions || []);
+  return regions.has(region) && (roles.has('consul') || roles.has('officer'));
+}
+
+async function handleTowerPlanRead(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  await verifyFirebaseToken(request, env);
+  const url = new URL(request.url);
+  const region = normalizeRegion(url.searchParams.get('region'));
+  if (!region) return json({ ok: false, error: 'region_required' }, 400);
+  const row = await db.prepare(
+    `SELECT region, cycle_id, version, updated_at_ms, updated_by, updated_by_name, plan_json
+       FROM region_tower_plans
+      WHERE region = ?1
+      LIMIT 1`
+  ).bind(region).first();
+  if (!row) return json({ ok: false, error: 'tower_plan_not_found' }, 404);
+  return json({ ok: true, towerPlan: towerPlanRowToObject(row), usage: { d1RowsRead: 1 }, source: 'cloudflare-d1-tower-plan' }, 200, 'private, no-store');
+}
+
+async function handleTowerPlanPut(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const payload = sanitizeTowerPlanSnapshotBody(body, user);
+  if (!payload.region) return json({ ok: false, error: 'region_required' }, 400);
+  const allowed = await canWriteTowerPlanD1(db, env, user, payload.region);
+  if (!allowed) return json({ ok: false, error: 'region_plan_access_denied' }, 403);
+  await db.prepare(
+    `INSERT INTO region_tower_plans (region, cycle_id, version, updated_at_ms, updated_by, updated_by_name, plan_json)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+     ON CONFLICT(region) DO UPDATE SET
+       cycle_id = excluded.cycle_id,
+       version = excluded.version,
+       updated_at_ms = excluded.updated_at_ms,
+       updated_by = excluded.updated_by,
+       updated_by_name = excluded.updated_by_name,
+       plan_json = excluded.plan_json`
+  ).bind(
+    payload.region,
+    payload.cycleId,
+    payload.version,
+    payload.updatedAtMs,
+    payload.updatedBy,
+    payload.updatedByName,
+    payload.planJson
+  ).run();
+  await grantRegionAccess(db, payload.region, user.uid, 'tower-plan');
+  return json({ ok: true, towerPlan: { region: payload.region, cycleId: payload.cycleId, version: payload.version, updatedAtMs: payload.updatedAtMs, updatedBy: payload.updatedBy, updatedByName: payload.updatedByName, plan: JSON.parse(payload.planJson || '{}') }, usage: { d1RowsWritten: 1 }, source: 'cloudflare-d1-tower-plan' });
+}
 
 const PUBLIC_STATS_BUCKETS = 64;
 
@@ -3371,6 +3475,14 @@ export default {
         return await handleRegionTableShareRead(request, env, shareMatch[1]);
       }
 
+
+      if (url.pathname === "/api/tower-plan" && request.method === "GET") {
+        return await handleTowerPlanRead(request, env);
+      }
+
+      if (url.pathname === "/api/tower-plan" && request.method === "PUT") {
+        return await handleTowerPlanPut(request, env);
+      }
 
       if (url.pathname === "/api/final-plan/share" && request.method === "POST") {
         return await handleFinalPlanShareCreate(request, env);

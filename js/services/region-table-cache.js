@@ -1,10 +1,11 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=174';
+import { trackCloudflareUsage } from './usage-tracker.js?v=175';
 
 const MAX_ROWS = 2000;
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
 const SHARE_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
 const REGION_FORM_SETTINGS_TTL_MS = 5 * 60 * 1000;
+const TOWER_PLAN_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 function cleanText(value = '', max = 120) {
   return String(value ?? '')
@@ -52,7 +53,7 @@ async function getFirebaseToken(user) {
 }
 
 function localCacheKey(kind, id) {
-  return `wkd.${kind}.d1.v164.${cleanText(id, 160)}`;
+  return `wkd.${kind}.d1.v175.${cleanText(id, 160)}`;
 }
 
 function readLocalTableCache(kind, id, ttlMs) {
@@ -332,6 +333,73 @@ export async function readRegionFormSettings(region, options = {}) {
   const normalized = normalizeRegionFormResponse(data);
   writeLocalJsonCache('regionFormSettings', safeRegion, normalized);
   return normalized;
+}
+
+function sanitizeTowerPlanPayload(plan = {}) {
+  const safePlan = plan && typeof plan === 'object' && !Array.isArray(plan) ? plan : {};
+  const json = JSON.stringify(safePlan);
+  if (json.length > 900000) throw new Error('tower-plan-too-large');
+  return JSON.parse(json);
+}
+
+function normalizeTowerPlanResponse(data = {}) {
+  const item = data.towerPlan || data.plan || data;
+  return {
+    ok: data.ok !== false,
+    region: cleanRegion(item.region || data.region),
+    cycleId: cleanText(item.cycleId || item.cycle_id || data.cycleId || 'active', 80) || 'active',
+    plan: sanitizeTowerPlanPayload(item.plan || {}),
+    updatedAtMs: Number(item.updatedAtMs || item.updated_at_ms || data.updatedAtMs || 0) || 0,
+    updatedBy: cleanText(item.updatedBy || item.updated_by || '', 160),
+    updatedByName: cleanText(item.updatedByName || item.updated_by_name || '', 160),
+    cached: true,
+    source: data.source || 'cloudflare-d1-tower-plan'
+  };
+}
+
+export async function readRegionTowerPlanSnapshot(user, region, options = {}) {
+  if (!isRegionTableCacheEnabled()) throw new Error('region-tower-plan-cache-disabled');
+  const safeRegion = cleanRegion(region);
+  if (!safeRegion) throw new Error('region-required');
+  if (!options?.force) {
+    const cached = readLocalJsonCache('regionTowerPlan', safeRegion, Number(options?.ttlMs) || TOWER_PLAN_CACHE_TTL_MS);
+    if (cached?.plan) return cached;
+  }
+  const token = await getFirebaseToken(user);
+  if (!token) throw new Error('auth-token-required');
+  const data = await requestJson(`/api/tower-plan?region=${encodeURIComponent(safeRegion)}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const normalized = normalizeTowerPlanResponse(data);
+  writeLocalJsonCache('regionTowerPlan', safeRegion, normalized);
+  return normalized;
+}
+
+export async function publishRegionTowerPlanSnapshot(user, payload = {}) {
+  if (!isRegionTableCacheEnabled()) return { skipped: true };
+  const safeRegion = cleanRegion(payload.region);
+  if (!safeRegion) return { skipped: true };
+  const token = await getFirebaseToken(user);
+  if (!token) return { skipped: true };
+  const body = {
+    region: safeRegion,
+    cycleId: cleanText(payload.cycleId || payload.currentCycleId || 'active', 80) || 'active',
+    plan: sanitizeTowerPlanPayload(payload.plan || {}),
+    updatedAtMs: Number(payload.updatedAtMs) || Date.now(),
+    updatedByName: cleanText(payload.updatedByName || '', 160)
+  };
+  removeLocalJsonCache('regionTowerPlan', safeRegion);
+  return requestJson('/api/tower-plan', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body)
+  }).then(result => {
+    if (result?.ok !== false) writeLocalJsonCache('regionTowerPlan', safeRegion, { ...body, ok: true, cached: true, source: 'cloudflare-d1-tower-plan' });
+    return result;
+  }).catch(error => {
+    console.warn('[WKD] tower plan D1 publish skipped:', error);
+    return { ok: false, skipped: true, error: error.message };
+  });
 }
 
 export async function readRegionFormShare(code, options = {}) {

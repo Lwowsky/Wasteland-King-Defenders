@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=174';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=174';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=175';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=175';
 import {
   getUserProfile,
   getFarmById,
@@ -12,8 +12,8 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=174';
-import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings } from './region-table-cache.js?v=174';
+} from './user-db.js?v=175';
+import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot } from './region-table-cache.js?v=175';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -852,7 +852,7 @@ function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
 }
 
 async function actionLogCacheModule() {
-  return import('./action-log-cache.js?v=174');
+  return import('./action-log-cache.js?v=175');
 }
 
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
@@ -1201,7 +1201,7 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=174');
+    const mod = await import('./region-table-cache.js?v=175');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1211,7 +1211,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=174');
+    const mod = await import('./region-table-cache.js?v=175');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1221,7 +1221,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=174');
+    const mod = await import('./region-table-cache.js?v=175');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1231,7 +1231,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=174');
+    const mod = await import('./region-table-cache.js?v=175');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1242,7 +1242,7 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
 
 async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=174');
+    const mod = await import('./region-table-cache.js?v=175');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readMyRegionRegistrationD1(user, region, farmId, options);
   } catch (error) {
@@ -1253,7 +1253,7 @@ async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', opti
 
 async function readFinalPlanFromD1Cache(code, options = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=174');
+    const mod = await import('./final-plan-cache.js?v=175');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.readFinalPlanShare(code, options);
   } catch (error) {
@@ -1264,7 +1264,7 @@ async function readFinalPlanFromD1Cache(code, options = {}) {
 
 async function publishFinalPlanToD1Cache(user, payload = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=174');
+    const mod = await import('./final-plan-cache.js?v=175');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.publishFinalPlanShare(user, payload);
   } catch (error) {
@@ -2416,7 +2416,7 @@ function localImportRegistrationKey(row = {}) {
 
 async function readLocalImportRegionLockFromD1(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=174');
+    const mod = await import('./region-table-cache.js?v=175');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readLocalImportRegionLock(user, region);
   } catch (error) {
@@ -2427,7 +2427,7 @@ async function readLocalImportRegionLockFromD1(user, region) {
 
 async function commitLocalImportRegionLockToD1(user, region, payload = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=174');
+    const mod = await import('./region-table-cache.js?v=175');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.commitLocalImportRegionLock(user, region, payload);
   } catch (error) {
@@ -2619,17 +2619,49 @@ export function regionRegistrationToPlayer(row = {}) {
 
 export async function getRegionTowerPlan(user, regionOverride = '') {
   if (!user) throw new Error('auth-required');
-  const { db, firestoreMod } = await getFirebaseParts();
   const { profile, region } = await getMyRegionContext(user, regionOverride);
   if (!region) throw new Error('region-required');
+
+  const cached = await readRegionTowerPlanSnapshot(user, region).catch(error => {
+    console.warn('[WKD] tower plan D1 read fallback:', error);
+    return null;
+  });
+  if (cached?.plan) {
+    return {
+      profile,
+      region: cached.region || region,
+      plan: cached.plan || null,
+      updatedAt: null,
+      updatedAtMs: Number(cached.updatedAtMs || 0) || 0,
+      updatedBy: cached.updatedBy || '',
+      source: cached.source || 'cloudflare-d1-tower-plan'
+    };
+  }
+
+  const { db, firestoreMod } = await getFirebaseParts();
   const ref = firestoreMod.doc(db, 'regions', region, 'wastelandTowerPlans', 'current');
   const snap = await firestoreMod.getDoc(ref);
+  trackReads(1);
+  const data = snap.exists() ? (snap.data() || {}) : {};
+  const plan = data.plan || null;
+  const updatedAtMs = Number(data.updatedAtMs || timestampToMs(data.updatedAt)) || 0;
+  if (plan) {
+    publishRegionTowerPlanSnapshot(user, {
+      region,
+      cycleId: data.cycleId || 'active',
+      plan,
+      updatedAtMs: updatedAtMs || Date.now(),
+      updatedByName: getRegionActorName(profile || {}, region, user)
+    }).catch(() => null);
+  }
   return {
     profile,
     region,
-    plan: snap.exists() ? (snap.data()?.plan || null) : null,
-    updatedAt: snap.exists() ? snap.data()?.updatedAt || null : null,
-    updatedBy: snap.exists() ? snap.data()?.updatedBy || '' : ''
+    plan,
+    updatedAt: data.updatedAt || null,
+    updatedAtMs,
+    updatedBy: data.updatedBy || '',
+    source: 'firebase-tower-plan-fallback'
   };
 }
 
@@ -2661,7 +2693,15 @@ export async function saveRegionTowerPlan(user, region, plan = {}) {
     lastTowerPlanUpdateBy: user.uid
   }, { merge: true }).catch(() => null);
   await writeRegionActionLog({ db, firestoreMod }, user, profile, safeRegion, 'tower_plan_saved', { summary: 'Оновлено регіональний розподіл турелей' });
-  return { region: safeRegion, plan: cleanPlan };
+  const updatedAtMs = Date.now();
+  await publishRegionTowerPlanSnapshot(user, {
+    region: safeRegion,
+    cycleId: settings.currentCycleId || 'active',
+    plan: cleanPlan,
+    updatedAtMs,
+    updatedByName: getRegionActorName(profile || {}, safeRegion, user)
+  }).catch(error => console.warn('[WKD] tower plan D1 snapshot skipped:', error));
+  return { region: safeRegion, plan: cleanPlan, updatedAtMs, source: 'firebase-and-d1-tower-plan' };
 }
 
 export { formatUserDate, timestampToMs };

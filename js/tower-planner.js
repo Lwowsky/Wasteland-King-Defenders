@@ -478,9 +478,9 @@ window.WKD = window.WKD || {};
     if (info.mode !== 'region' || typeof WKD.loadTowerPlanFromActiveSource !== 'function') return false;
     const region = clean(info.region || '').replace(/[^0-9]/g, '');
     const ok = await (WKD.confirmDialog?.({
-      title: tr('tower.discardDraftTitle', 'Завантажити опублікований план?'),
+      title: tr('tower.discardDraftTitle', 'Повернути опублікований план?'),
       message: tr('tower.discardDraftMessage', 'Локальна чернетка для {region} буде відкинута, а буде відкрито останній опублікований план.', { region: info.label || (region ? `R${region}` : '') }),
-      acceptText: tr('tower.loadPublishedPlan', 'Завантажити опублікований'),
+      acceptText: tr('tower.loadPublishedPlan', 'Повернути опублікований'),
       cancelText: tr('common.cancel', 'Скасувати')
     }) ?? Promise.resolve(window.confirm(tr('tower.discardDraftTitle', 'Завантажити опублікований план?'))));
     if (!ok) return false;
@@ -490,7 +490,7 @@ window.WKD = window.WKD || {};
     prunePlanToCurrentPlayers();
     writeRegionDraft(region, plan, { dirty: false, publishedAtMs: Date.now(), sourceUpdatedAtMs: Number(loaded?.updatedAtMs || 0) || Date.now() });
     render();
-    WKD.showNotice?.(tr('tower.publishedPlanLoaded', 'Опублікований план завантажено.'));
+    WKD.showNotice?.(tr('tower.publishedPlanLoaded', 'Опублікований план повернено.')); 
     return true;
   }
   async function disableTierLimitsForFreshData(source = '') {
@@ -1236,9 +1236,14 @@ window.WKD = window.WKD || {};
       if (typeof WKD.setTowerPlannerSource === 'function') {
         await WKD.setTowerPlannerSource(mode === 'region' ? { mode: 'region', region } : { mode: 'local' });
       }
-      await loadPlan();
-      const prunedRegionalPlan = sourceInfo().mode === 'region' ? prunePlanToCurrentPlayers() : false;
-      if (prunedRegionalPlan && canEditPlan()) await savePlan(false);
+      const info = sourceInfo();
+      if (info.mode === 'region') {
+        const draft = readRegionDraft(info.region || region || '');
+        plan = draft?.plan ? normalizePlan(draft.plan) : normalizePlan(null);
+        prunePlanToCurrentPlayers();
+      } else {
+        plan = localLoadPlan();
+      }
       render();
       WKD.showNotice?.(mode === 'region'
         ? `${tr('tower.regionalMode', 'Регіонально')}: R${region}`
@@ -1251,17 +1256,25 @@ window.WKD = window.WKD || {};
 
   function renderFinalToolbar(root) {
     if (!root) return;
+    const info = sourceInfo();
+    const canPublish = info.mode === 'region' && canEditPlan();
+    const hasDraft = canPublish && regionHasUnpublishedDraft(info.region || '');
     const shifts = availableShifts();
     if (!shifts.includes(activeFinalShift)) activeFinalShift = shifts[0] || 'shift1';
     const buttons = shifts.map(shift => `<button class="btn btn-sm ${shift === activeFinalShift ? 'is-active' : ''}" type="button" data-final-shift="${shift}">${shiftLabel(shift)}</button>`).join('');
     root.innerHTML = `${buttons}
-      ${sourceInfo().mode === 'region' && canEditPlan() ? `<button class="btn btn-sm" type="button" data-tower-publish>${esc(tr('tower.publishPlan', 'Опублікувати в регіон'))}</button>` : ''}
-      ${sourceInfo().mode === 'region' && canEditPlan() && regionHasUnpublishedDraft(sourceInfo().region || '') ? `<button class="btn btn-sm" type="button" data-tower-load-published>${esc(tr('tower.loadPublishedPlan', 'Завантажити опублікований'))}</button>` : ''}
-      <button class="btn btn-sm tower-final-lang-trigger board-lang-trigger" type="button" data-final-lang-open>Мова плану</button>
-      <button class="btn btn-sm" type="button" data-final-download>Завантажити PNG</button>
-      <button class="btn btn-sm" type="button" data-final-txt>TXT</button>
-      <button class="btn btn-sm" type="button" data-final-share>Поділитися</button>
-      <button class="btn btn-sm" type="button" data-final-copy-link>${window.WKD_t?.('finalPlan.copyLink') || 'Копіювати посилання'}</button>`;
+      <button class="btn btn-sm tower-final-lang-trigger board-lang-trigger" type="button" data-final-lang-open>${esc(tr('finalPlan.langButton', 'Мова плану'))}</button>
+      ${canPublish ? `<button class="btn btn-sm" type="button" data-tower-publish>${esc(tr('tower.publishPlan', 'Опублікувати в регіон'))}</button>` : ''}
+      <span class="tower-final-more-wrap">
+        <button class="btn btn-sm" type="button" data-final-more-toggle aria-haspopup="true" aria-expanded="false">${esc(tr('tower.moreActions', 'Ще'))} ▾</button>
+        <span class="tower-final-more-menu" data-final-more-menu hidden>
+          ${hasDraft ? `<button type="button" data-tower-load-published>${esc(tr('tower.loadPublishedPlan', 'Повернути опублікований'))}</button>` : ''}
+          <button type="button" data-final-download>${esc(tr('finalPlan.downloadPng', 'Завантажити PNG'))}</button>
+          <button type="button" data-final-txt>TXT</button>
+          <button type="button" data-final-share>${esc(tr('finalPlan.share', 'Поділитися'))}</button>
+          <button type="button" data-final-copy-link>${esc(window.WKD_t?.('finalPlan.copyLink') || tr('finalPlan.copyLink', 'Копіювати посилання'))}</button>
+        </span>
+      </span>`;
   }
   function towerTitle(tower) {
     return combinedText(lang => towerLangName(tower, lang));
@@ -2169,6 +2182,17 @@ ${text}` : text };
       if (finalCloseBtn) { event.preventDefault(); closeFinalPlan(); return; }
       const tab = event.target.closest('[data-tower-main-tab]');
       if (tab) { event.preventDefault(); setActiveTab(tab.dataset.towerMainTab); return; }
+      const moreToggle = event.target.closest('[data-final-more-toggle]');
+      if (moreToggle) {
+        event.preventDefault();
+        const wrap = moreToggle.closest('.tower-final-more-wrap');
+        const panel = wrap?.querySelector('[data-final-more-menu]');
+        const willOpen = Boolean(panel?.hidden);
+        document.querySelectorAll('[data-final-more-menu]').forEach(menu => { if (menu !== panel) menu.hidden = true; });
+        if (panel) panel.hidden = !willOpen;
+        moreToggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        return;
+      }
       const sourceOpen = event.target.closest('[data-tower-scope-open]');
       if (sourceOpen) { event.preventDefault(); openTowerSourceDialog(); return; }
       const sourceClose = event.target.closest('[data-tower-scope-close]');

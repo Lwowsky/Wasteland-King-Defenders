@@ -219,3 +219,14 @@ CREATE TABLE IF NOT EXISTS final_plan_shares (
 CREATE INDEX IF NOT EXISTS idx_final_plan_shares_region ON final_plan_shares(region);
 CREATE INDEX IF NOT EXISTS idx_final_plan_shares_updated ON final_plan_shares(updated_at_ms);
 CREATE INDEX IF NOT EXISTS idx_final_plan_shares_expires ON final_plan_shares(expires_at_ms);
+
+CREATE TABLE IF NOT EXISTS region_tower_plans (
+  region TEXT PRIMARY KEY,
+  cycle_id TEXT NOT NULL DEFAULT 'active',
+  version INTEGER NOT NULL DEFAULT 0,
+  updated_at_ms INTEGER NOT NULL DEFAULT 0,
+  updated_by TEXT NOT NULL DEFAULT '',
+  updated_by_name TEXT NOT NULL DEFAULT '',
+  plan_json TEXT NOT NULL DEFAULT '{}'
+);
+CREATE INDEX IF NOT EXISTS idx_region_tower_plans_updated ON region_tower_plans(updated_at_ms);
