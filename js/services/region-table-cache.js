@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=169';
+import { trackCloudflareUsage } from './usage-tracker.js?v=170';
 
 const MAX_ROWS = 2000;
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -524,4 +524,34 @@ function normalizeTableResponse(data = {}) {
     cached: true,
     source: 'cloudflare-d1-snapshot'
   };
+}
+
+export async function readLocalImportRegionLock(user, region) {
+  if (!isRegionTableCacheEnabled()) throw new Error('region-table-cache-disabled');
+  const safeRegion = cleanRegion(region);
+  if (!safeRegion) throw new Error('region-required');
+  const token = await getFirebaseToken(user);
+  if (!token) throw new Error('auth-token-required');
+  const data = await requestJson(`/api/region-table/import-lock?region=${encodeURIComponent(safeRegion)}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return data?.lock || data || {};
+}
+
+export async function commitLocalImportRegionLock(user, region, payload = {}) {
+  if (!isRegionTableCacheEnabled()) throw new Error('region-table-cache-disabled');
+  const safeRegion = cleanRegion(region);
+  if (!safeRegion) throw new Error('region-required');
+  const token = await getFirebaseToken(user);
+  if (!token) throw new Error('auth-token-required');
+  return requestJson('/api/region-table/import-lock', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      region: safeRegion,
+      mode: cleanText(payload.mode || '', 40),
+      rowsCount: numberValue(payload.rowsCount || payload.count || 0),
+      actorName: cleanText(payload.actorName || '', 120)
+    })
+  });
 }

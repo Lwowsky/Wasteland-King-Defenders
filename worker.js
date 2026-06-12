@@ -131,6 +131,17 @@ async function ensureRegionTableSchema(db) {
         revoked INTEGER NOT NULL DEFAULT 0
       )`,
       `CREATE INDEX IF NOT EXISTS idx_region_access_uid ON region_access(uid)`,
+      `CREATE TABLE IF NOT EXISTS region_import_locks (
+        region TEXT PRIMARY KEY,
+        last_import_at_ms INTEGER NOT NULL DEFAULT 0,
+        next_allowed_at_ms INTEGER NOT NULL DEFAULT 0,
+        imported_by_uid TEXT NOT NULL DEFAULT '',
+        imported_by_name TEXT NOT NULL DEFAULT '',
+        rows_count INTEGER NOT NULL DEFAULT 0,
+        mode TEXT NOT NULL DEFAULT '',
+        updated_at_ms INTEGER NOT NULL DEFAULT 0
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_region_import_locks_next ON region_import_locks(next_allowed_at_ms)`,
       `CREATE INDEX IF NOT EXISTS idx_region_table_shares_region ON region_table_shares(region)`,
       `CREATE INDEX IF NOT EXISTS idx_region_tables_updated ON region_tables(updated_at_ms)`,
       `CREATE INDEX IF NOT EXISTS idx_region_table_shares_expires ON region_table_shares(expires_at_ms)`,
@@ -1157,6 +1168,69 @@ async function handleRegionTableSnapshot(request, env) {
     version: table.version,
     rowsCount: table.rows.length,
   });
+}
+
+
+async function handleRegionImportLockRead(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  const url = new URL(request.url);
+  const region = normalizeRegion(url.searchParams.get("region"));
+  if (!region) return json({ ok: false, error: "region_required" }, 400);
+  const row = await db.prepare(`SELECT region, last_import_at_ms, next_allowed_at_ms, imported_by_uid, imported_by_name, rows_count, mode, updated_at_ms FROM region_import_locks WHERE region = ?1 LIMIT 1`).bind(region).first();
+  const nowMs = Date.now();
+  const nextAllowedAtMs = Number(row?.next_allowed_at_ms || 0) || 0;
+  const remainingMs = Math.max(0, nextAllowedAtMs - nowMs);
+  return json({
+    ok: true,
+    lock: {
+      region,
+      locked: remainingMs > 0,
+      remainingMs,
+      nextAllowedAtMs,
+      lastImportAtMs: Number(row?.last_import_at_ms || 0) || 0,
+      importedByUid: clean(row?.imported_by_uid || '', 160),
+      importedByName: clean(row?.imported_by_name || '', 160),
+      rowsCount: Number(row?.rows_count || 0) || 0,
+      mode: clean(row?.mode || '', 40),
+      updatedAtMs: Number(row?.updated_at_ms || 0) || 0,
+    },
+    usage: { d1RowsRead: 1 }
+  }, 200, "private, no-store");
+}
+
+async function handleRegionImportLockCommit(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: "bad_json" }, 400); }
+  const region = normalizeRegion(body?.region);
+  if (!region) return json({ ok: false, error: "region_required" }, 400);
+  const nowMs = Date.now();
+  const existing = await db.prepare(`SELECT next_allowed_at_ms FROM region_import_locks WHERE region = ?1 LIMIT 1`).bind(region).first();
+  const existingNext = Number(existing?.next_allowed_at_ms || 0) || 0;
+  if (existingNext > nowMs) {
+    return json({ ok: false, error: "region_import_cooldown", lock: { region, locked: true, remainingMs: existingNext - nowMs, nextAllowedAtMs: existingNext }, usage: { d1RowsRead: 1 } }, 429, "private, no-store");
+  }
+  const nextAllowedAtMs = nowMs + 24 * 60 * 60 * 1000;
+  const actorName = clean(body?.actorName || user.name || user.email || user.uid || '', 160);
+  const mode = clean(body?.mode || '', 40);
+  const rowsCount = Math.max(0, Number(body?.rowsCount || body?.count || 0) || 0);
+  await db.prepare(`INSERT INTO region_import_locks (region, last_import_at_ms, next_allowed_at_ms, imported_by_uid, imported_by_name, rows_count, mode, updated_at_ms)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?2)
+    ON CONFLICT(region) DO UPDATE SET
+      last_import_at_ms = excluded.last_import_at_ms,
+      next_allowed_at_ms = excluded.next_allowed_at_ms,
+      imported_by_uid = excluded.imported_by_uid,
+      imported_by_name = excluded.imported_by_name,
+      rows_count = excluded.rows_count,
+      mode = excluded.mode,
+      updated_at_ms = excluded.updated_at_ms`).bind(region, nowMs, nextAllowedAtMs, user.uid || '', actorName, rowsCount, mode).run();
+  return json({ ok: true, lock: { region, locked: true, remainingMs: nextAllowedAtMs - nowMs, nextAllowedAtMs, lastImportAtMs: nowMs, importedByUid: user.uid || '', importedByName: actorName, rowsCount, mode }, usage: { d1RowsRead: 1, d1RowsWritten: 1 } }, 200, "private, no-store");
 }
 
 async function handleRegionTableShareCreate(request, env) {
@@ -3258,6 +3332,14 @@ export default {
 
       if (url.pathname === "/api/region-table/my-registration" && request.method === "GET") {
         return await handleMyRegionTableRegistration(request, env);
+      }
+
+      if (url.pathname === "/api/region-table/import-lock" && request.method === "GET") {
+        return await handleRegionImportLockRead(request, env);
+      }
+
+      if (url.pathname === "/api/region-table/import-lock" && request.method === "POST") {
+        return await handleRegionImportLockCommit(request, env);
       }
 
       if (

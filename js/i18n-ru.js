@@ -2048,4 +2048,7 @@ window.WKD_TRANSLATIONS.ru = {
   "players.localDuplicateNicknames": "Повторяющихся ников",
   "players.localDuplicateExtraRows": "лишних повторных строк",
   "players.localToRegionDailyLimitInfo": "Защита от случайного спама: перенос в тот же регион разрешён 1 раз в 24 часа из этого браузера."
+  "players.localDuplicateNamesList": 'Duplicate nicknames',
+  "players.regionToLocalPreparing": 'Loading the region table from D1 cache...',
+  "players.localToRegionGlobalRateLimited": 'Import to R{region} was already performed. Try again in {time}.',
 };

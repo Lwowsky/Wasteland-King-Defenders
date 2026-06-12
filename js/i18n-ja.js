@@ -2048,4 +2048,7 @@ window.WKD_TRANSLATIONS.ja = {
   "players.localDuplicateNicknames": "重複ニックネーム",
   "players.localDuplicateExtraRows": "余分な重複行",
   "players.localToRegionDailyLimitInfo": "誤操作防止：同じ地域への移動はこのブラウザから24時間に1回までです。"
+  "players.localDuplicateNamesList": 'Duplicate nicknames',
+  "players.regionToLocalPreparing": 'Loading the region table from D1 cache...',
+  "players.localToRegionGlobalRateLimited": 'Import to R{region} was already performed. Try again in {time}.',
 };

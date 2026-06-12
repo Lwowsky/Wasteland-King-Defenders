@@ -2048,4 +2048,7 @@ window.WKD_TRANSLATIONS.pl = {
   "players.localDuplicateNicknames": "Powtarzające się nicki",
   "players.localDuplicateExtraRows": "nadmiarowe duplikaty",
   "players.localToRegionDailyLimitInfo": "Ochrona przed spamem: transfer do tego samego regionu jest dozwolony raz na 24 godziny z tej przeglądarki."
+  "players.localDuplicateNamesList": 'Duplicate nicknames',
+  "players.regionToLocalPreparing": 'Loading the region table from D1 cache...',
+  "players.localToRegionGlobalRateLimited": 'Import to R{region} was already performed. Try again in {time}.',
 };

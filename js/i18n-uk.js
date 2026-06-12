@@ -2051,4 +2051,7 @@ window.WKD_TRANSLATIONS.uk = {
   "players.localDuplicateNicknames": "Повторюваних ніків",
   "players.localDuplicateExtraRows": "зайвих повторних рядків",
   "players.localToRegionDailyLimitInfo": "Захист від випадкового спаму: перенос у той самий регіон дозволено 1 раз на 24 години з цього браузера."
+  "players.localDuplicateNamesList": 'Ніки з повторами',
+  "players.regionToLocalPreparing": 'Завантажую регіональну таблицю з кешу D1...',
+  "players.localToRegionGlobalRateLimited": 'Перенос у R{region} уже виконували. Повторити можна через {time}.',
 };
