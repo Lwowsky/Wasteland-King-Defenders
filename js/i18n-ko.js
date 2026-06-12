@@ -2105,4 +2105,6 @@ window.WKD_TRANSLATIONS.ko = {
   "tower.discardDraftTitle": '게시된 계획으로 되돌릴까요?',
   "tower.discardDraftMessage": '{region}의 로컬 초안이 삭제되고 마지막으로 게시된 계획이 복원됩니다.',
   "tower.publishedPlanLoaded": '게시된 계획을 복원했습니다.',
+  "players.regionD1MissingNoFirestore": "지역 테이블에 아직 D1 캐시가 없습니다. reads를 아끼기 위해 Firebase fallback을 사용하지 않았습니다."
+
 };

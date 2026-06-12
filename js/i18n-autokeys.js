@@ -841,6 +841,7 @@ window.WKD_I18N_AUTO_ATTR = {
   "Нік у грі": "auto.attr.i.i.8996e4",
   "Тег альянсу": "auto.attr.text.72a6ba",
   "name@example.com": "auto.attr.name.example.com.a130ce",
-  "Напиши, що хочеш покращити або про що хочеш запитати": "auto.attr.text.2094c8"
+  "Напиши, що хочеш покращити або про що хочеш запитати": "auto.attr.text.2094c8",
+  "players.regionD1MissingNoFirestore": "The region table has no D1 cache yet. Firebase fallback was not used to protect reads."
 
 };

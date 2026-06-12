@@ -1,7 +1,7 @@
-import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=183';
+import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=184';
 import { getFirebase, watchAuth } from './services/firebase-service.js';
 import { getGameProfile, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=183';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=184';
 
 window.WKD = window.WKD || {};
 
@@ -91,12 +91,20 @@ async function loadRegionRows(force = false, regionOverride = '') {
   }
   if (requestedRegion) currentRegion = requestedRegion;
   loadingRegion = requestedRegion;
-  loadingPromise = listRegionRegistrations(currentUser, requestedRegion).then(result => {
+  loadingPromise = listRegionRegistrations(currentUser, requestedRegion, {
+    d1Only: true,
+    forceD1: Boolean(force),
+    d1TtlMs: force ? 0 : undefined
+  }).then(result => {
     currentProfile = result.profile || currentProfile;
     currentRegion = result.region || currentRegion || requestedRegion || regionOf(result.profile || currentProfile);
     currentRegionSettings = result.settings || currentRegionSettings;
     loadedRows = (result.rows || []).flatMap(row => expandRegionPlayerRow(row).map(player => ({ ...player, source: REGION_SOURCE })));
-    return { rows: loadedRows, region: currentRegion, profile: currentProfile, canUseRegion: true };
+    if (result?.d1Missing) {
+      console.warn('[WKD] region table D1 snapshot missing; Firebase fallback was not used to protect reads.', currentRegion);
+      window.WKD?.showNotice?.(tr('players.regionD1MissingNoFirestore', 'Таблиця регіону ще не має D1-кешу. Firebase fallback не запускався, щоб не витрачати reads.'));
+    }
+    return { rows: loadedRows, region: currentRegion, profile: currentProfile, canUseRegion: true, d1Missing: Boolean(result?.d1Missing), source: result?.source || '' };
   }).finally(() => { loadingPromise = null; loadingRegion = ''; });
   return loadingPromise;
 }
@@ -246,7 +254,7 @@ async function reloadRegionPlayersForTower(region = '', options = {}) {
   await authReady;
   const requested = normalizeRegion(region || currentRegion || regionOf());
   if (!requested || !canUseRegion()) return loadedRows || [];
-  await loadRegionRows(requested, options.force !== false);
+  await loadRegionRows(options.force === true, requested);
   if (currentMode === 'region') await showRowsForMode(false);
   return loadedRows || [];
 }

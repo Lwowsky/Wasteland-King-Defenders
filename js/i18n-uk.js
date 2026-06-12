@@ -2108,4 +2108,6 @@ window.WKD_TRANSLATIONS.uk = {
   "tower.discardDraftTitle": 'Повернути опублікований план?',
   "tower.discardDraftMessage": 'Локальна чернетка для {region} буде відкинута, а буде повернено останній опублікований план.',
   "tower.publishedPlanLoaded": 'Опублікований план повернено.',
+  "players.regionD1MissingNoFirestore": "Таблиця регіону ще не має D1-кешу. Firebase fallback не запускався, щоб не витрачати reads."
+
 };

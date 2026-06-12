@@ -2,6 +2,7 @@ window.WKD = window.WKD || {};
 
 (function () {
   const LOCAL_KEY = 'wkd.clean.tower.plan.v1';
+  const DEBUG_KEY = 'wkd.tower.localDebug.v1';
   const REGION_DRAFT_PREFIX = 'wkd.clean.tower.regionDraft.v1';
   const SHIFT_BACKUP_KEY = 'wkd.clean.tower.shiftBackup.v1';
   const TOWERS = [
@@ -74,6 +75,20 @@ window.WKD = window.WKD || {};
     const value = window.WKD_t(key);
     return interpolateText((!value || value === key) ? fb : value, params);
   };
+  function recordLocalPlannerAction(action = 'local') {
+    try {
+      const now = Date.now();
+      const raw = JSON.parse(localStorage.getItem(DEBUG_KEY) || '{}') || {};
+      const day = new Date(now).toISOString().slice(0, 10);
+      const next = raw.day === day ? raw : { day, actions: {}, localActions: 0, expectedRemote: 0 };
+      next.localActions = Number(next.localActions || 0) + 1;
+      next.actions[action] = Number(next.actions?.[action] || 0) + 1;
+      next.updatedAtMs = now;
+      localStorage.setItem(DEBUG_KEY, JSON.stringify(next));
+      window.WKD.towerPlannerDebug = next;
+    } catch (_error) {}
+  }
+
 
   function languages() {
     const list = Array.isArray(window.WKD_LANGUAGES) && window.WKD_LANGUAGES.length ? window.WKD_LANGUAGES : FALLBACK_LANGS;
@@ -338,7 +353,7 @@ window.WKD = window.WKD || {};
     if (!force && last && Date.now() - last < 15000) return false;
     try {
       sessionStorage.setItem(key, String(Date.now()));
-      const rows = await WKD.reloadRegionPlayersForTower(info.region || '', { force: true });
+      const rows = await WKD.reloadRegionPlayersForTower(info.region || '', { force: Boolean(force || broken), d1Only: true });
       return Array.isArray(rows) && rows.length > 0;
     } catch (error) {
       console.warn('[WKD] tower region rows refresh skipped:', error);
@@ -544,7 +559,7 @@ window.WKD = window.WKD || {};
             writeRegionDraft(info.region || loaded?.region || '', plan, { dirty: false, publishedAtMs: sourceUpdatedAtMs || Date.now(), sourceUpdatedAtMs });
           }
         }
-        if (sourceRowsHaveBrokenShifts()) await ensureRegionPlayersFreshForTower(true);
+        if (sourceRowsHaveBrokenShifts()) await ensureRegionPlayersFreshForTower(false);
         sanitizeShiftOverridesForCurrentPlayers();
         prunePlanToCurrentPlayers();
       } else {
@@ -1981,6 +1996,7 @@ window.WKD = window.WKD || {};
     return true;
   }
   async function applyManualBothShiftAdds() {
+    recordLocalPlannerAction('manual-both-shift-add');
     if (!canEditPlan()) return;
     readFormValues();
     const add1 = Math.max(0, Number($('#towerShiftAdd1')?.value || 0) || 0);
@@ -2010,6 +2026,7 @@ window.WKD = window.WKD || {};
     WKD.showNotice?.('Зміни гравців відновлено з імпортованого стану.');
   }
   function autoDistribute({ topup = false } = {}) {
+    recordLocalPlannerAction(topup ? 'autofill-towers' : 'redistribute');
     readFormValues();
     const shifts = availableShifts();
     if (!topup) shifts.forEach(clearShiftHelpersKeepCaptains);
@@ -2500,8 +2517,8 @@ ${text}` : text };
       const place = event.target.closest('[data-status-auto-place]');
       if (place && canEditPlan()) { event.preventDefault(); autoPlacePlayer(place.dataset.statusAutoPlace, place.dataset.statusShift || activeShift); render(); savePlan(false); return; }
       const finalShift = event.target.closest('[data-final-shift]');
-      if (finalShift) { event.preventDefault(); activeFinalShift = finalShift.dataset.finalShift; renderFinals(); return; }
-      if (event.target.closest('[data-final-lang],[data-final-lang-open]')) { event.preventDefault(); openFinalLangDialog(); return; }
+      if (finalShift) { event.preventDefault(); recordLocalPlannerAction('switch-final-shift'); activeFinalShift = finalShift.dataset.finalShift; renderFinals(); return; }
+      if (event.target.closest('[data-final-lang],[data-final-lang-open]')) { event.preventDefault(); recordLocalPlannerAction('plan-language'); openFinalLangDialog(); return; }
       if (event.target.closest('[data-final-lang-close]')) { event.preventDefault(); closeFinalLangDialog(); return; }
       if (event.target.closest('[data-final-download]')) { event.preventDefault(); downloadFinalPng(); return; }
       if (event.target.closest('[data-final-txt]')) { event.preventDefault(); downloadFinalTxt(); return; }
@@ -2539,7 +2556,7 @@ ${text}` : text };
       if (!canEditPlan()) return;
       const ok = await (WKD.confirmDialog?.({ title: 'Очистити розподіл?', message: 'Усі гравці будуть прибрані з турелей, але таблиця гравців залишиться.', acceptText: 'Очистити' }) ?? Promise.resolve(window.confirm('Очистити розподіл?')));
       if (!ok) return;
-      clearAll(); render(); savePlan();
+      recordLocalPlannerAction('clear-local-plan'); clearAll(); render(); savePlan();
     });
     $('#towerSavePlanBtn')?.addEventListener('click', event => { event.preventDefault(); if (canEditPlan()) savePlan(); });
     document.addEventListener('click', event => {

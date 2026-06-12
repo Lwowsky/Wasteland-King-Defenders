@@ -2105,4 +2105,6 @@ window.WKD_TRANSLATIONS.zh = {
   "tower.discardDraftTitle": '恢复已发布计划？',
   "tower.discardDraftMessage": '{region} 的本地草稿将被放弃，并恢复最后发布的计划。',
   "tower.publishedPlanLoaded": '已恢复已发布计划。',
+  "players.regionD1MissingNoFirestore": "区域表还没有 D1 缓存。为了节省读取次数，未使用 Firebase 回退。"
+
 };

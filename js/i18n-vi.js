@@ -2105,4 +2105,6 @@ window.WKD_TRANSLATIONS.vi = {
   "tower.discardDraftTitle": 'Khôi phục kế hoạch đã đăng?',
   "tower.discardDraftMessage": 'Bản nháp cục bộ của {region} sẽ bị bỏ và kế hoạch đã đăng gần nhất sẽ được khôi phục.',
   "tower.publishedPlanLoaded": 'Đã khôi phục kế hoạch đã đăng.',
+  "players.regionD1MissingNoFirestore": "Bảng khu vực chưa có bộ nhớ đệm D1. Không dùng Firebase fallback để tiết kiệm lượt đọc."
+
 };

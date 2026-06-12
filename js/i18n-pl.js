@@ -2105,4 +2105,6 @@ window.WKD_TRANSLATIONS.pl = {
   "tower.discardDraftTitle": 'Przywrócić opublikowany plan?',
   "tower.discardDraftMessage": 'Lokalny szkic dla {region} zostanie odrzucony, a ostatni opublikowany plan zostanie przywrócony.',
   "tower.publishedPlanLoaded": 'Opublikowany plan przywrócony.',
+  "players.regionD1MissingNoFirestore": "Tabela regionu nie ma jeszcze pamięci podręcznej D1. Fallback Firebase nie został użyty, aby nie zużywać odczytów."
+
 };

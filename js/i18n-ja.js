@@ -2105,4 +2105,6 @@ window.WKD_TRANSLATIONS.ja = {
   "tower.discardDraftTitle": '公開済みプランに戻しますか？',
   "tower.discardDraftMessage": '{region} のローカル下書きは破棄され、最後に公開されたプランに戻ります。',
   "tower.publishedPlanLoaded": '公開済みプランに戻しました。',
+  "players.regionD1MissingNoFirestore": "地域テーブルにはまだ D1 キャッシュがありません。読み取りを節約するため Firebase fallback は使用していません。"
+
 };

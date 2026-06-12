@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=183';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=183';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=184';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=184';
 import {
   getUserProfile,
   getFarmById,
@@ -12,8 +12,8 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=183';
-import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot } from './region-table-cache.js?v=183';
+} from './user-db.js?v=184';
+import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot } from './region-table-cache.js?v=184';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -858,7 +858,7 @@ function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
 }
 
 async function actionLogCacheModule() {
-  return import('./action-log-cache.js?v=183');
+  return import('./action-log-cache.js?v=184');
 }
 
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
@@ -1207,7 +1207,7 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=183');
+    const mod = await import('./region-table-cache.js?v=184');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1217,7 +1217,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=183');
+    const mod = await import('./region-table-cache.js?v=184');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1227,7 +1227,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=183');
+    const mod = await import('./region-table-cache.js?v=184');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1237,7 +1237,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=183');
+    const mod = await import('./region-table-cache.js?v=184');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1248,7 +1248,7 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
 
 async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=183');
+    const mod = await import('./region-table-cache.js?v=184');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readMyRegionRegistrationD1(user, region, farmId, options);
   } catch (error) {
@@ -1259,7 +1259,7 @@ async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', opti
 
 async function readFinalPlanFromD1Cache(code, options = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=183');
+    const mod = await import('./final-plan-cache.js?v=184');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.readFinalPlanShare(code, options);
   } catch (error) {
@@ -1270,7 +1270,7 @@ async function readFinalPlanFromD1Cache(code, options = {}) {
 
 async function publishFinalPlanToD1Cache(user, payload = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=183');
+    const mod = await import('./final-plan-cache.js?v=184');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.publishFinalPlanShare(user, payload);
   } catch (error) {
@@ -2134,8 +2134,9 @@ function mergeRows(players = [], registrations = [], activeCycle = '') {
 export async function listRegionRegistrations(user, regionOverride = '', options = {}) {
   const { db, firestoreMod } = await getFirebaseParts();
   const { profile, region } = await getMyRegionContext(user, regionOverride);
+  const wantsD1Only = Boolean(options?.d1Only || options?.noFirestoreFallback || options?.preventFirestoreFallback);
 
-  if (!options?.force && !options?.skipD1) {
+  if (!options?.skipD1) {
     const snapshot = await readSnapshotFromRegionTableCache(user, region, { force: Boolean(options?.forceD1), ttlMs: options?.d1TtlMs });
     if (snapshot && Array.isArray(snapshot.rows)) {
       const d1Settings = getRegionFormStatus(snapshot.settings || {});
@@ -2146,6 +2147,18 @@ export async function listRegionRegistrations(user, regionOverride = '', options
         rows: snapshot.rows,
         cached: Boolean(snapshot.cached),
         source: snapshot.source || 'cloudflare-d1-snapshot'
+      };
+    }
+    if (wantsD1Only) {
+      return {
+        profile,
+        region,
+        settings: getRegionFormStatus({}),
+        rows: [],
+        cached: false,
+        d1Missing: true,
+        requiresManualFirestoreFallback: true,
+        source: 'cloudflare-d1-missing-no-firestore'
       };
     }
   }
@@ -2446,7 +2459,7 @@ function localImportRegistrationKey(row = {}) {
 
 async function readLocalImportRegionLockFromD1(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=183');
+    const mod = await import('./region-table-cache.js?v=184');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readLocalImportRegionLock(user, region);
   } catch (error) {
@@ -2457,7 +2470,7 @@ async function readLocalImportRegionLockFromD1(user, region) {
 
 async function commitLocalImportRegionLockToD1(user, region, payload = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=183');
+    const mod = await import('./region-table-cache.js?v=184');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.commitLocalImportRegionLock(user, region, payload);
   } catch (error) {
@@ -2671,13 +2684,14 @@ export function regionRegistrationToPlayer(row = {}) {
 }
 
 
-export async function getRegionTowerPlan(user, regionOverride = '') {
+export async function getRegionTowerPlan(user, regionOverride = '', options = {}) {
   if (!user) throw new Error('auth-required');
   const { profile, region } = await getMyRegionContext(user, regionOverride);
   if (!region) throw new Error('region-required');
+  const allowFirestoreFallback = Boolean(options?.allowFirestoreFallback || options?.firebaseFallback);
 
-  const cached = await readRegionTowerPlanSnapshot(user, region).catch(error => {
-    console.warn('[WKD] tower plan D1 read fallback:', error);
+  const cached = await readRegionTowerPlanSnapshot(user, region, { force: Boolean(options?.forceD1), ttlMs: options?.d1TtlMs }).catch(error => {
+    console.warn('[WKD] tower plan D1 read skipped:', error);
     return null;
   });
   if (cached?.plan) {
@@ -2689,6 +2703,19 @@ export async function getRegionTowerPlan(user, regionOverride = '') {
       updatedAtMs: Number(cached.updatedAtMs || 0) || 0,
       updatedBy: cached.updatedBy || '',
       source: cached.source || 'cloudflare-d1-tower-plan'
+    };
+  }
+  if (!allowFirestoreFallback) {
+    return {
+      profile,
+      region,
+      plan: null,
+      updatedAt: null,
+      updatedAtMs: 0,
+      updatedBy: '',
+      d1Missing: true,
+      requiresManualFirestoreFallback: true,
+      source: 'cloudflare-d1-tower-plan-missing-no-firestore'
     };
   }
 

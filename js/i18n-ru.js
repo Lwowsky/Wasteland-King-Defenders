@@ -2105,4 +2105,6 @@ window.WKD_TRANSLATIONS.ru = {
   "tower.discardDraftTitle": 'Вернуть опубликованный план?',
   "tower.discardDraftMessage": 'Локальный черновик для {region} будет отброшен, а последний опубликованный план будет восстановлен.',
   "tower.publishedPlanLoaded": 'Опубликованный план восстановлен.',
+  "players.regionD1MissingNoFirestore": "У таблицы региона ещё нет D1-кеша. Firebase fallback не запускался, чтобы не тратить reads."
+
 };

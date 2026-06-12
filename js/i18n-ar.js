@@ -2103,4 +2103,6 @@ window.WKD_TRANSLATIONS.ar = {
   "tower.discardDraftTitle": 'استعادة الخطة المنشورة؟',
   "tower.discardDraftMessage": 'سيتم تجاهل المسودة المحلية لـ {region} واستعادة آخر خطة منشورة.',
   "tower.publishedPlanLoaded": 'تمت استعادة الخطة المنشورة.',
+  "players.regionD1MissingNoFirestore": "لا يحتوي جدول المنطقة على ذاكرة D1 مؤقتة بعد. لم يتم استخدام Firebase fallback لتوفير القراءات."
+
 };
