@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=167';
+import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=168';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -260,10 +260,15 @@ function showLocalToRegionModeDialog(preview = {}, regionLabel = '') {
           ${esc(t('players.regionRows', 'Зараз у регіоні'))}: ${preview.existingCount || 0}<br>
           ${esc(t('players.mergeWillAdd', 'Додасть'))}: ${preview.addCount || 0} · ${esc(t('players.mergeWillUpdate', 'Оновить'))}: ${preview.updateCount || 0} · ${esc(t('players.mergeWillKeep', 'Залишить'))}: ${preview.keepCount || 0}<br>
           ${esc(t('players.replaceWillDelete', 'При заміні буде очищено старих рядків'))}: ${preview.replaceDeleteCount || 0}<br>
+          ${(preview.duplicateCount || preview.missingTierCount || preview.missingMarchCount) ? `<strong>${esc(t('players.localToRegionWarningsTitle', 'Попередження перед переносом'))}</strong><br>` : ''}
           ${preview.duplicateCount ? `⚠️ ${esc(t('players.localDuplicateRows', 'Повторів у локальному списку'))}: ${preview.duplicateCount}<br>` : ''}
-          ${preview.missingTierCount ? `⚠️ ${esc(t('players.localMissingTier', 'Без тіру'))}: ${preview.missingTierCount}<br>` : ''}
-          ${preview.missingMarchCount ? `⚠️ ${esc(t('players.localMissingMarch', 'Без розміру маршу'))}: ${preview.missingMarchCount}<br>` : ''}
-          ${preview.sampleRows?.length ? `<hr><small>${preview.sampleRows.map(previewRowText).map(esc).join('<br>')}</small>` : ''}
+          ${preview.missingTierCount ? `⚠️ ${esc(t('players.localMissingTier', 'Рядків без тіру'))}: ${preview.missingTierCount}<br>` : ''}
+          ${preview.missingMarchCount ? `⚠️ ${esc(t('players.localMissingMarch', 'Рядків без розміру маршу'))}: ${preview.missingMarchCount}<br>` : ''}
+          ${preview.sampleRows?.length ? `<hr><small><strong>${esc(t('players.localToRegionSampleTitle', 'Приклад рядків: нік · альянс · тір · марш'))}</strong><br>${preview.sampleRows.map(previewRowText).map(esc).join('<br>')}</small>` : ''}
+        </div>
+        <div class="confirm-note" style="margin-top:.7rem;">
+          <strong>${esc(t('players.localToRegionMerge', 'Додати / оновити'))}</strong> — ${esc(t('players.localToRegionMergeHint', 'Безпечний режим: додає нових і оновлює знайдених. Старі рядки не видаляє.'))}<br>
+          <strong>${esc(t('players.localToRegionReplace', 'Замінити таблицю'))}</strong> — ${esc(t('players.localToRegionReplaceHint', 'Небезпечний режим: повністю замінює таблицю регіону локальним списком.'))}
         </div>
         <div class="confirm-actions" style="flex-wrap:wrap; gap:.6rem;">
           <button class="btn" type="button" data-action="cancel">${esc(t('common.cancel', 'Скасувати'))}</button>
