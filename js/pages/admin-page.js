@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=168';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=168';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=168';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=169';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=169';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=169';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -22,14 +22,14 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=168';
+} from '../services/user-db.js?v=169';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
   createManualRegion,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=168';
+} from '../services/region-db.js?v=169';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);

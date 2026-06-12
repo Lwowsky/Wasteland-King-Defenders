@@ -1,14 +1,16 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=168';
+import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=169';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
 const REGION_KEY = 'wkd.players.activeRegion';
 const MODES = ['local', 'region'];
 const LOCAL_IMPORT_RATE_KEY = 'wkd.players.localToRegion.runs';
-const LOCAL_IMPORT_RATE_WINDOW_MS = 5 * 60 * 1000;
-const LOCAL_IMPORT_RATE_LIMIT = 2;
+const LOCAL_IMPORT_RATE_WINDOW_MS = 24 * 60 * 60 * 1000;
+const LOCAL_IMPORT_RATE_LIMIT = 1;
+const LOCAL_IMPORT_PREVIEW_CACHE_KEY = 'wkd.players.localToRegion.preview';
+const LOCAL_IMPORT_PREVIEW_CACHE_TTL_MS = 10 * 60 * 1000;
 
 let currentUser = null;
 let currentProfile = null;
@@ -148,14 +150,19 @@ function localImportPreviewKey(row = {}) {
   return `${name}|${alliance}|${shift}`;
 }
 
-function countDuplicateKeys(rows = []) {
+function duplicateKeyStats(rows = []) {
   const counts = new Map();
   rows.forEach(row => {
     const key = localImportPreviewKey(row);
     if (!key.replaceAll('|', '').trim()) return;
     counts.set(key, (counts.get(key) || 0) + 1);
   });
-  return [...counts.values()].filter(count => count > 1).reduce((total, count) => total + count, 0);
+  const duplicateCounts = [...counts.values()].filter(count => count > 1);
+  return {
+    groups: duplicateCounts.length,
+    rows: duplicateCounts.reduce((total, count) => total + count, 0),
+    extra: duplicateCounts.reduce((total, count) => total + count - 1, 0)
+  };
 }
 
 function hasTierValue(row = {}) {
@@ -168,6 +175,7 @@ function hasMarchValue(row = {}) {
 }
 
 function buildLocalToRegionPreview(localRows = [], existingRows = []) {
+  const duplicateStats = duplicateKeyStats(localRows);
   const existingByKey = new Map();
   existingRows.forEach(row => {
     const key = localImportPreviewKey(row);
@@ -196,7 +204,10 @@ function buildLocalToRegionPreview(localRows = [], existingRows = []) {
     updateCount,
     keepCount,
     replaceDeleteCount,
-    duplicateCount: countDuplicateKeys(localRows),
+    duplicateGroupCount: duplicateStats.groups,
+    duplicateRowCount: duplicateStats.rows,
+    duplicateExtraCount: duplicateStats.extra,
+    duplicateCount: duplicateStats.rows,
     missingTierCount,
     missingMarchCount,
     sampleRows: localRows.slice(0, 10)
@@ -231,6 +242,25 @@ function rememberLocalImportRun(region = '') {
   } catch {}
 }
 
+function readLocalImportPreviewCache(region = '') {
+  try {
+    const all = JSON.parse(localStorage.getItem(LOCAL_IMPORT_PREVIEW_CACHE_KEY) || '{}') || {};
+    const cached = all[region];
+    if (!cached || Date.now() - Number(cached.savedAt || 0) > LOCAL_IMPORT_PREVIEW_CACHE_TTL_MS) return null;
+    return Array.isArray(cached.rows) ? cached.rows : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalImportPreviewCache(region = '', rows = []) {
+  try {
+    const all = JSON.parse(localStorage.getItem(LOCAL_IMPORT_PREVIEW_CACHE_KEY) || '{}') || {};
+    all[region] = { savedAt: Date.now(), rows: Array.isArray(rows) ? rows.slice(0, 2500) : [] };
+    localStorage.setItem(LOCAL_IMPORT_PREVIEW_CACHE_KEY, JSON.stringify(all));
+  } catch {}
+}
+
 function previewRowText(row = {}) {
   const name = String(row.name || row.nickname || '—').trim() || '—';
   const alliance = String(row.alliance || '—').trim() || '—';
@@ -260,10 +290,12 @@ function showLocalToRegionModeDialog(preview = {}, regionLabel = '') {
           ${esc(t('players.regionRows', 'Зараз у регіоні'))}: ${preview.existingCount || 0}<br>
           ${esc(t('players.mergeWillAdd', 'Додасть'))}: ${preview.addCount || 0} · ${esc(t('players.mergeWillUpdate', 'Оновить'))}: ${preview.updateCount || 0} · ${esc(t('players.mergeWillKeep', 'Залишить'))}: ${preview.keepCount || 0}<br>
           ${esc(t('players.replaceWillDelete', 'При заміні буде очищено старих рядків'))}: ${preview.replaceDeleteCount || 0}<br>
-          ${(preview.duplicateCount || preview.missingTierCount || preview.missingMarchCount) ? `<strong>${esc(t('players.localToRegionWarningsTitle', 'Попередження перед переносом'))}</strong><br>` : ''}
-          ${preview.duplicateCount ? `⚠️ ${esc(t('players.localDuplicateRows', 'Повторів у локальному списку'))}: ${preview.duplicateCount}<br>` : ''}
+          ${(preview.duplicateGroupCount || preview.duplicateRowCount || preview.missingTierCount || preview.missingMarchCount) ? `<strong>${esc(t('players.localToRegionWarningsTitle', 'Попередження перед переносом'))}</strong><br>` : ''}
+          ${preview.duplicateGroupCount ? `⚠️ ${esc(t('players.localDuplicateNicknames', 'Повторюваних ніків'))}: ${preview.duplicateGroupCount}<br>` : ''}
+          ${preview.duplicateRowCount ? `⚠️ ${esc(t('players.localDuplicateRows', 'Рядків у повторах'))}: ${preview.duplicateRowCount} · ${esc(t('players.localDuplicateExtraRows', 'зайвих повторних рядків'))}: ${preview.duplicateExtraCount || 0}<br>` : ''}
           ${preview.missingTierCount ? `⚠️ ${esc(t('players.localMissingTier', 'Рядків без тіру'))}: ${preview.missingTierCount}<br>` : ''}
           ${preview.missingMarchCount ? `⚠️ ${esc(t('players.localMissingMarch', 'Рядків без розміру маршу'))}: ${preview.missingMarchCount}<br>` : ''}
+          <div style="margin-top:.55rem;">${esc(t('players.localToRegionDailyLimitInfo', 'Захист від випадкового спаму: перенос у той самий регіон дозволено 1 раз на 24 години з цього браузера.'))}</div>
           ${preview.sampleRows?.length ? `<hr><small><strong>${esc(t('players.localToRegionSampleTitle', 'Приклад рядків: нік · альянс · тір · марш'))}</strong><br>${preview.sampleRows.map(previewRowText).map(esc).join('<br>')}</small>` : ''}
         </div>
         <div class="confirm-note" style="margin-top:.7rem;">
@@ -293,11 +325,15 @@ function showLocalToRegionModeDialog(preview = {}, regionLabel = '') {
 }
 
 async function loadExistingRegionRowsForLocalImportPreview(region = '') {
-  if (loadedRegion === region && Array.isArray(loadedRegionRows) && loadedRegionRows.length) return loadedRegionRows;
+  if (loadedRegion === region && Array.isArray(loadedRegionRows)) return loadedRegionRows;
+  const cached = readLocalImportPreviewCache(region);
+  if (cached) return cached;
   try {
-    const result = await listRegionRegistrations(currentUser, region, { force: true });
+    const result = await listRegionRegistrations(currentUser, region, { force: false });
     currentProfile = result.profile || currentProfile;
-    return (Array.isArray(result.rows) ? result.rows : []).map(row => ({ ...regionRegistrationToPlayer(row), source: REGION_SOURCE }));
+    const rows = (Array.isArray(result.rows) ? result.rows : []).map(row => ({ ...regionRegistrationToPlayer(row), source: REGION_SOURCE }));
+    writeLocalImportPreviewCache(region, rows);
+    return rows;
   } catch (error) {
     console.warn('[WKD] local-to-region preview skipped:', error);
     return [];
@@ -517,7 +553,7 @@ async function copyLocalToRegion() {
     return;
   }
   if (!canRunLocalImport(regionToImport)) {
-    setNote(t('players.localToRegionRateLimited', 'Перенос можна запускати не більше 2 разів за 5 хвилин для одного регіону.'), 'warn');
+    setNote(t('players.localToRegionRateLimited', 'Перенос у цей регіон уже запускали. Повторити можна через 24 години або після очищення локального кешу.'), 'warn');
     return;
   }
   setNote(t('players.localToRegionPreparing', 'Перевіряю поточну таблицю регіону перед переносом...'), 'muted');
@@ -540,6 +576,7 @@ async function copyLocalToRegion() {
     await saveRegionTowerPlan(currentUser, region, { version: 1, updatedAtMs: Date.now(), regions: { home: {}, region2: {}, region3: {} } }).catch(error => console.warn('tower plan reset skipped', error));
     document.dispatchEvent(new CustomEvent('wkd:tower-plan-hard-reset', { detail: { source: 'local-to-region' } }));
     loadedRegionRows = [];
+    writeLocalImportPreviewCache(regionToImport, []);
     await applyMode('region', { forceRegion: true });
     rememberLocalImportRun(region);
     const message = result.mode === 'merge'
