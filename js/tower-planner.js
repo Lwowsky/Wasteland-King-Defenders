@@ -351,10 +351,22 @@ window.WKD = window.WKD || {};
     const id = clean(value || '').toLowerCase();
     return TOWERS.some(tower => tower.id === id) ? id : '';
   }
-  function roleKey(role = '') {
-    const text = clean(role).toLowerCase();
-    if (/fighter|бійц|боєц|боец|воїн|воин/.test(text)) return 'Fighter';
-    if (/rider|наїз|наезд/.test(text)) return 'Rider';
+  function troopTextFromPlayer(player = {}) {
+    if (!player || typeof player !== 'object') return clean(player);
+    const fields = [
+      player.troopType, player.troopLabel, player.mainTroopType, player.primaryTroopType,
+      player.wastelandProfile?.troopType, player.wastelandProfile?.troopLabel,
+      player.raw?.troopType, player.raw?.troopLabel,
+      player['Тип військ'], player['тип військ'], player['Troop type'],
+      player.role
+    ];
+    return clean(fields.find(value => clean(value)) || '');
+  }
+  function roleKey(value = '') {
+    const text = (typeof value === 'object' ? troopTextFromPlayer(value) : clean(value)).toLowerCase();
+    if (/fighter|fighters|infantry|бійц|боєц|боец|бойц|воїн|воин|wojownik|wojown|kämpfer|kaempfer|ファイター|战士|戰士|전사|đấu sĩ|dau si|مقاتل|المقاتل/.test(text)) return 'Fighter';
+    if (/rider|riders|cavalry|наїз|наезд|ездник|кавал|jeźdź|jezdz|reiter|ライダー|骑兵|騎兵|기병|kỵ sĩ|ky si|فارس|فرسان|الفرسان/.test(text)) return 'Rider';
+    if (/shooter|shooters|стріл|стрел|shoot|marksman|strzel|schütz|schuetz|シューター|射手|사수|xạ thủ|xa thu|رامي|الرماة/.test(text)) return 'Shooter';
     return 'Shooter';
   }
   function roleLabel(role = '') {
@@ -386,9 +398,9 @@ window.WKD = window.WKD || {};
   function towerManualRole(towerId) {
     const slot = plan.assignments?.[activeShift]?.[towerId];
     const captain = playerById(slot?.captain);
-    if (captain) return roleKey(captain.role);
+    if (captain) return roleKey(captain);
     const firstHelper = (slot?.helpers || []).map(id => playerById(id)).find(Boolean);
-    return firstHelper ? roleKey(firstHelper.role) : 'Shooter';
+    return firstHelper ? roleKey(firstHelper) : 'Shooter';
   }
   function roleSelectOptions(selected = 'Shooter') {
     const current = roleKey(selected);
@@ -710,7 +722,7 @@ window.WKD = window.WKD || {};
   }
   function countRoles(list) {
     const res = { Fighter: 0, Rider: 0, Shooter: 0 };
-    list.forEach(({ player }) => { res[roleKey(player.role)] += 1; });
+    list.forEach(({ player }) => { res[roleKey(player)] += 1; });
     return res;
   }
   function entriesForShift(shift, includeBoth = true) {
@@ -859,7 +871,7 @@ window.WKD = window.WKD || {};
     const used = usedIdsForShift(shift);
     const slot = plan.assignments[shift]?.[towerId] || { captain: '', helpers: [], helperMarches: {} };
     const captain = playerById(slot.captain);
-    const captainRole = roleKey(captain?.role || '');
+    const captainRole = roleKey(captain);
     let list = playerEntries().filter(({ player, id }) => {
       if (excludeUsed && used.has(id) && id !== selected) return false;
       if (captainOnly && plan.settings.onlyCaptains && !player.captain) return false;
@@ -868,11 +880,11 @@ window.WKD = window.WKD || {};
         const allowBothForCaptain = captainOnly && s === 'both';
         if (s !== shift && !(plan.settings.useBoth && s === 'both') && !allowBothForCaptain) return false;
       }
-      if (!captainOnly && !ignoreRole && plan.settings.sameRole && captain && roleKey(player.role) !== captainRole) return false;
+      if (!captainOnly && !ignoreRole && plan.settings.sameRole && captain && roleKey(player) !== captainRole) return false;
       return true;
     });
     list = list.sort((a, b) => Number(b.player.captain) - Number(a.player.captain) || Number(b.player.rally || 0) - Number(a.player.rally || 0) || Number(b.player.march || 0) - Number(a.player.march || 0));
-    return `<option value="">—</option>` + list.map(({ player, id }) => `<option value="${esc(id)}" ${id === selected ? 'selected' : ''}>${esc(player.name)} · ${esc(player.alliance || '—')} · ${esc(roleLabel(player.role))} ${esc(player.tier || '')}</option>`).join('');
+    return `<option value="">—</option>` + list.map(({ player, id }) => `<option value="${esc(id)}" ${id === selected ? 'selected' : ''}>${esc(player.name)} · ${esc(player.alliance || '—')} · ${esc(roleLabel(player))} ${esc(player.tier || '')}</option>`).join('');
   }
   function renderShiftTabs() {
     const host = $('#towerShiftTabs');
@@ -928,7 +940,7 @@ window.WKD = window.WKD || {};
     return `<div class="tower-picker-detail">
       <div class="tower-picker-detail-head tower-picker-detail-head--clean">
         <div class="tower-card-title"><img class="tower-icon" src="${esc(tower.icon)}" alt=""><div><h3>${esc(tower.uk)}</h3></div></div>
-        <span class="tower-role-pill">${captain ? roleLabel(captain.role) : 'Без капітана'}</span>
+        <span class="tower-role-pill">${captain ? roleLabel(captain) : 'Без капітана'}</span>
       </div>
       <div class="tower-picker-flags tower-picker-flags--single-row">
         <label><input data-tower-setting="onlyCaptains" type="checkbox" ${plan.settings.onlyCaptains ? 'checked' : ''} ${disabledAttr}><span>Тільки капітани</span></label>
@@ -995,7 +1007,7 @@ window.WKD = window.WKD || {};
     return `<div class="tower-assignment-row ${kind === 'Капітан' ? 'is-captain' : ''}">
       <span><b>${esc(player.name)}</b><small>${esc(kind)}</small></span>
       <span>${esc(player.alliance || '—')}</span>
-      <span>${esc(roleLabel(player.role))}</span>
+      <span>${esc(roleLabel(player))}</span>
       <span>${esc(player.tier || '—')}</span>
       <span>${fmt(shownMarch)}</span>
       <button class="btn btn-sm tower-assignment-edit-btn" type="button" data-tower-edit-player="${esc(id)}">✎</button>
@@ -1020,7 +1032,7 @@ window.WKD = window.WKD || {};
     const data = {
       name: entry.player.name || '',
       alliance: entry.player.alliance || '',
-      role: roleKey(entry.player.role),
+      role: roleKey(entry.player),
       tier: visibleTierOptions().includes(clean(entry.player.tier || '').toUpperCase().replace(/\s+/g, '')) ? clean(entry.player.tier || '').toUpperCase().replace(/\s+/g, '') : (visibleTierOptions()[0] || 'T14'),
       march: Number(entry.player.march || 0) || '',
       rally: Number(entry.player.rally || 0) || ''
@@ -1212,7 +1224,7 @@ window.WKD = window.WKD || {};
     body.innerHTML = rows.length ? rows.map(({ player, id }) => {
       const assigned = assignmentOf(id);
       const shift = normalizeShift(player.shift || player.shiftLabel);
-      return `<tr><td><b>${esc(player.name)}</b></td><td>${esc(player.alliance || '—')}</td><td>${esc(roleLabel(player.role))} / ${esc(player.tier || '—')}</td><td>${fmt(player.march)}</td><td>${assigned ? '<span class="tower-status-pill is-in">У турелі</span>' : '<span class="tower-status-pill is-reserve">Поза туреллю</span>'}</td><td>${assigned ? `${esc(assigned.tower.uk)} · ${shiftLabel(assigned.shift)} · ${assigned.kind}` : '—'}</td><td>${statusActions(id, shift, Boolean(assigned))}</td></tr>`;
+      return `<tr><td><b>${esc(player.name)}</b></td><td>${esc(player.alliance || '—')}</td><td>${esc(roleLabel(player))} / ${esc(player.tier || '—')}</td><td>${fmt(player.march)}</td><td>${assigned ? '<span class="tower-status-pill is-in">У турелі</span>' : '<span class="tower-status-pill is-reserve">Поза туреллю</span>'}</td><td>${assigned ? `${esc(assigned.tower.uk)} · ${shiftLabel(assigned.shift)} · ${assigned.kind}` : '—'}</td><td>${statusActions(id, shift, Boolean(assigned))}</td></tr>`;
     }).join('') : '<tr><td colspan="7">Гравців не знайдено.</td></tr>';
   }
   function statusActions(id, shift, assigned) {
@@ -1500,7 +1512,7 @@ window.WKD = window.WKD || {};
       .map(id => ({ id, player: playerById(id) }))
       .filter(item => item.player)
       .sort((left, right) => Number(right.player?.tierRank || String(right.player?.tier || '').replace(/\D/g, '') || 0) - Number(left.player?.tierRank || String(left.player?.tier || '').replace(/\D/g, '') || 0) || Number(right.player?.march || 0) - Number(left.player?.march || 0) || String(left.player?.name || '').localeCompare(String(right.player?.name || '')));
-    const role = captain ? roleKey(captain.role) : '';
+    const role = captain ? roleKey(captain) : '';
     const theme = captain ? (role === 'Fighter' ? 'fighter-theme' : role === 'Rider' ? 'rider-theme' : 'shooter-theme') : 'is-auto';
     const captainMarch = tierAssignedMarch(captain, true);
     const rallySize = Math.max(0, Number(captain?.rally || 0) || 0);
@@ -1509,7 +1521,7 @@ window.WKD = window.WKD || {};
     const capacityTotal = captain ? captainMarch + rallySize : 0;
     const freeMarch = Math.max(0, capacityTotal - usedMarch);
     const title = towerTitle(tower);
-    const subtitle = captain ? finalRoleText(captain.role) : combinedText(lang => finalPhrase('typeByCaptain', lang));
+    const subtitle = captain ? finalRoleText(captain) : combinedText(lang => finalPhrase('typeByCaptain', lang));
     const rows = [];
     if (captain) {
       rows.push(`<li class="captain-row captain-row--highlight"><span title="${esc(captain.name)}">${esc(captain.name)}</span><em>${esc(captain.alliance || '—')}</em><b>${esc(captain.tier || '')}</b><strong class="captain-march-warn">${fmtBoard(captainMarch)}</strong></li>`);
@@ -1860,7 +1872,7 @@ window.WKD = window.WKD || {};
       const playerShift = normalizeShift(entry.player.shift || entry.player.shiftLabel);
       if (playerShift !== shift && !(plan.settings.useBoth && playerShift === 'both')) return false;
     }
-    if (captainPlayer && plan.settings.sameRole && roleKey(entry.player.role) !== roleKey(captainPlayer.role)) return false;
+    if (captainPlayer && plan.settings.sameRole && roleKey(entry.player) !== roleKey(captainPlayer)) return false;
     return true;
   }
   function assignedNickKeysForShift(shift) {
