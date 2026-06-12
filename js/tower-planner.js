@@ -207,7 +207,34 @@ window.WKD = window.WKD || {};
     return String(player._rowId);
   }
   function baseShiftForPlayer(player = {}) {
-    return normalizeShift(player.shift || player.shiftLabel);
+    return strictBaseShiftForPlayer(player) || normalizeShift(rawShiftValue(player));
+  }
+  function sanitizeShiftOverridesForCurrentPlayers() {
+    if (!plan || !plan.shiftOverrides || typeof plan.shiftOverrides !== 'object') return false;
+    const rows = players();
+    if (!rows.length) {
+      if (Object.keys(plan.shiftOverrides).length) { plan.shiftOverrides = {}; return true; }
+      return false;
+    }
+    const valid = new Map();
+    rows.forEach((player, index) => {
+      const id = playerId(player, index);
+      if (id) valid.set(String(id), strictBaseShiftForPlayer(player) || 'both');
+    });
+    let changed = false;
+    Object.entries({ ...(plan.shiftOverrides || {}) }).forEach(([id, value]) => {
+      const key = String(id || '');
+      const target = normalizeShiftStrict(value);
+      const base = valid.get(key);
+      // Manual shift overrides are only for players imported as “both shifts”.
+      // Never let a saved/corrupted draft turn real shift 1/2 players back into “both”.
+      const allowed = Boolean(base && base === 'both' && SHIFT_ORDER.includes(target));
+      if (!allowed || target === base) {
+        delete plan.shiftOverrides[key];
+        changed = true;
+      }
+    });
+    return changed;
   }
   function shiftOverrideForId(id = '') {
     const key = String(id || '');
@@ -216,6 +243,7 @@ window.WKD = window.WKD || {};
     return (SHIFT_ORDER.includes(shift) || shift === 'both') ? shift : '';
   }
   function playerEntries() {
+    sanitizeShiftOverridesForCurrentPlayers();
     return players().map((player, index) => {
       const id = playerId(player, index);
       const overrideShift = shiftOverrideForId(id);
@@ -257,13 +285,26 @@ window.WKD = window.WKD || {};
     });
     return changed;
   }
-  function normalizeShift(value) {
+  function normalizeShiftStrict(value) {
     const text = clean(value).toLowerCase();
+    if (!text) return '';
+    if (/both|all|всі|все|обидві|обе|оба|both shifts|both shift/.test(text)) return 'both';
     if (/4/.test(text)) return 'shift4';
     if (/3/.test(text)) return 'shift3';
     if (/2/.test(text)) return 'shift2';
     if (/1/.test(text)) return 'shift1';
-    return 'both';
+    return '';
+  }
+  function normalizeShift(value) {
+    return normalizeShiftStrict(value) || 'both';
+  }
+  function rawShiftValue(player = {}) {
+    return player.shift ?? player.shiftLabel ?? player.registeredShift ?? player.availabilityShift
+      ?? player.raw?.shift ?? player.raw?.shiftLabel ?? player.raw?.registeredShift
+      ?? player['Зміна'] ?? player['зміна'] ?? player['Shift'] ?? player['shift'] ?? '';
+  }
+  function strictBaseShiftForPlayer(player = {}) {
+    return normalizeShiftStrict(rawShiftValue(player));
   }
   function shiftLabel(shift) {
     return ({ shift1: 'Зміна 1', shift2: 'Зміна 2', shift3: 'Зміна 3', shift4: 'Зміна 4', both: 'Обидві' })[shift] || 'Зміна';
@@ -445,9 +486,11 @@ window.WKD = window.WKD || {};
             writeRegionDraft(info.region || loaded?.region || '', plan, { dirty: false, publishedAtMs: sourceUpdatedAtMs || Date.now(), sourceUpdatedAtMs });
           }
         }
+        sanitizeShiftOverridesForCurrentPlayers();
         prunePlanToCurrentPlayers();
       } else {
         plan = localLoadPlan();
+        sanitizeShiftOverridesForCurrentPlayers();
       }
     } catch (error) {
       console.error(error);
@@ -1849,9 +1892,17 @@ window.WKD = window.WKD || {};
     const info = sourceInfo();
     if (info.mode === 'region') {
       plan.shiftOverrides = plan.shiftOverrides && typeof plan.shiftOverrides === 'object' ? plan.shiftOverrides : {};
-      const originalShift = baseShiftForPlayer(sourcePlayer);
-      if (targetShift === originalShift) delete plan.shiftOverrides[entry.id];
+      const originalShift = strictBaseShiftForPlayer(sourcePlayer) || 'both';
+      if (originalShift !== 'both') {
+        // Do not rewrite real shift 1/2 players into “both” or another shift from this panel.
+        delete plan.shiftOverrides[entry.id];
+        removePlayer(entry.id);
+        await savePlan(false);
+        return targetShift === originalShift;
+      }
+      if (targetShift === 'both') delete plan.shiftOverrides[entry.id];
       else plan.shiftOverrides[entry.id] = targetShift;
+      sanitizeShiftOverridesForCurrentPlayers();
       removePlayer(entry.id);
       await savePlan(false);
       return true;
