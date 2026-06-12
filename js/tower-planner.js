@@ -246,10 +246,12 @@ window.WKD = window.WKD || {};
     sanitizeShiftOverridesForCurrentPlayers();
     return players().map((player, index) => {
       const id = playerId(player, index);
+      const stablePlayer = playerWithStableShift(player);
+      const baseShift = strictBaseShiftForPlayer(stablePlayer);
       const overrideShift = shiftOverrideForId(id);
-      if (!overrideShift) return { player, id, index };
+      if (!overrideShift || baseShift !== 'both' || !SHIFT_ORDER.includes(overrideShift)) return { player: stablePlayer, id, index };
       return {
-        player: { ...player, shift: overrideShift, shiftLabel: shiftLabel(overrideShift), _shiftOverridden: true },
+        player: { ...stablePlayer, shift: overrideShift, shiftLabel: shiftLabel(overrideShift), _shiftOverridden: true },
         id,
         index
       };
@@ -299,12 +301,48 @@ window.WKD = window.WKD || {};
     return normalizeShiftStrict(value) || 'both';
   }
   function rawShiftValue(player = {}) {
-    return player.shift ?? player.shiftLabel ?? player.registeredShift ?? player.availabilityShift
+    return player._sourceShift ?? player.sourceShift ?? player.originalShift ?? player.importShift ?? player.baseShift
+      ?? player.registeredShift ?? player.availabilityShift ?? player.rawShift
+      ?? player.wastelandProfile?.shift ?? player.wastelandProfile?.shiftLabel
       ?? player.raw?.shift ?? player.raw?.shiftLabel ?? player.raw?.registeredShift
-      ?? player['Зміна'] ?? player['зміна'] ?? player['Shift'] ?? player['shift'] ?? '';
+      ?? player['Зміна'] ?? player['зміна'] ?? player['Shift'] ?? player['shift']
+      ?? player.shift ?? player.shiftLabel ?? '';
   }
   function strictBaseShiftForPlayer(player = {}) {
     return normalizeShiftStrict(rawShiftValue(player));
+  }
+  function playerWithStableShift(player = {}) {
+    const base = strictBaseShiftForPlayer(player);
+    if (!base) return player;
+    const current = normalizeShiftStrict(player.shift || player.shiftLabel || '');
+    if (current === base) return player;
+    return { ...player, shift: base, shiftLabel: shiftLabel(base), _shiftRecoveredFromSource: true };
+  }
+  function sourceRowsHaveBrokenShifts(rows = players()) {
+    const list = Array.isArray(rows) ? rows : [];
+    if (list.length < 5) return false;
+    const strict = list.map(row => strictBaseShiftForPlayer(row));
+    const real = strict.filter(shift => SHIFT_ORDER.includes(shift)).length;
+    const both = strict.filter(shift => shift === 'both').length;
+    return real === 0 && both === list.length;
+  }
+  async function ensureRegionPlayersFreshForTower(force = false) {
+    const info = sourceInfo();
+    if (info.mode !== 'region') return false;
+    const broken = sourceRowsHaveBrokenShifts();
+    if (!force && !broken) return false;
+    if (typeof WKD.reloadRegionPlayersForTower !== 'function') return false;
+    const key = `wkd.tower.regionRowsRefresh.${clean(info.region || '')}`;
+    const last = Number(sessionStorage.getItem(key) || 0) || 0;
+    if (!force && last && Date.now() - last < 15000) return false;
+    try {
+      sessionStorage.setItem(key, String(Date.now()));
+      const rows = await WKD.reloadRegionPlayersForTower(info.region || '', { force: true });
+      return Array.isArray(rows) && rows.length > 0;
+    } catch (error) {
+      console.warn('[WKD] tower region rows refresh skipped:', error);
+      return false;
+    }
   }
   function shiftLabel(shift) {
     return ({ shift1: 'Зміна 1', shift2: 'Зміна 2', shift3: 'Зміна 3', shift4: 'Зміна 4', both: 'Обидві' })[shift] || 'Зміна';
@@ -486,6 +524,7 @@ window.WKD = window.WKD || {};
             writeRegionDraft(info.region || loaded?.region || '', plan, { dirty: false, publishedAtMs: sourceUpdatedAtMs || Date.now(), sourceUpdatedAtMs });
           }
         }
+        if (sourceRowsHaveBrokenShifts()) await ensureRegionPlayersFreshForTower(true);
         sanitizeShiftOverridesForCurrentPlayers();
         prunePlanToCurrentPlayers();
       } else {
@@ -2046,6 +2085,7 @@ window.WKD = window.WKD || {};
     root.classList.add('is-open');
     root.setAttribute('aria-hidden', 'false');
     document.body.classList.add('wkd-modal-open');
+    await ensureRegionPlayersFreshForTower(false);
     await loadPlan();
     render();
   }
@@ -2065,6 +2105,7 @@ window.WKD = window.WKD || {};
     root.classList.add('is-open');
     root.setAttribute('aria-hidden', 'false');
     document.body.classList.add('wkd-modal-open');
+    await ensureRegionPlayersFreshForTower(false);
     await loadPlan();
     renderFinals();
   }

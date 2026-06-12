@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=178';
+import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=179';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -791,6 +791,15 @@ async function saveTowerPlanToActiveSource(plan = {}) {
   return { handled: true, ...result };
 }
 
+
+async function reloadRegionPlayersForTower(region = '', options = {}) {
+  const requested = normalizeRegion(region || loadedRegion || targetRegion());
+  if (!requested || !canUseRegionSource()) return loadedRegionRows || [];
+  await loadRegionRows(options.force !== false, requested);
+  if (currentMode === 'region') renderCurrentRows();
+  return loadedRegionRows || [];
+}
+
 function getPlayersSourceInfo() {
   const region = loadedRegion || getGameProfile(currentProfile || {}).region;
   return {
@@ -891,6 +900,7 @@ async function init() {
   window.WKD.saveTowerPlanToActiveSource = saveTowerPlanToActiveSource;
   window.WKD.setTowerPlannerSource = setTowerPlannerSource;
   window.WKD.refreshTowerRegionOptions = refreshTowerRegionOptions;
+  window.WKD.reloadRegionPlayersForTower = reloadRegionPlayersForTower;
 
   document.addEventListener('wkd:source-mode-request', event => {
     applyMode(event.detail?.mode || 'local', { forceRegion: event.detail?.forceRegion === true });

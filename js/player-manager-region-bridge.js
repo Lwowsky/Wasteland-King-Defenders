@@ -1,7 +1,7 @@
-import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=178';
+import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=179';
 import { getFirebase, watchAuth } from './services/firebase-service.js';
 import { getGameProfile, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=178';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=179';
 
 window.WKD = window.WKD || {};
 
@@ -241,6 +241,16 @@ async function showRowsForMode(force = false) {
   return rows;
 }
 
+
+async function reloadRegionPlayersForTower(region = '', options = {}) {
+  await authReady;
+  const requested = normalizeRegion(region || currentRegion || regionOf());
+  if (!requested || !canUseRegion()) return loadedRows || [];
+  await loadRegionRows(requested, options.force !== false);
+  if (currentMode === 'region') await showRowsForMode(false);
+  return loadedRows || [];
+}
+
 async function loadTowerPlanFromActiveSource() {
   await authReady;
   if (currentMode !== 'region') return { handled: false, plan: null };
@@ -374,6 +384,7 @@ window.WKD.saveTowerPlanToActiveSource = saveTowerPlanToActiveSource;
 window.WKD.shareRegionFinalPlan = shareRegionFinalPlan;
 window.WKD.setTowerPlannerSource = setTowerPlannerSource;
 window.WKD.refreshTowerRegionOptions = refreshTowerRegionOptions;
+window.WKD.reloadRegionPlayersForTower = reloadRegionPlayersForTower;
 
 window.WKD.playerManagerRegion = {
   authReady,

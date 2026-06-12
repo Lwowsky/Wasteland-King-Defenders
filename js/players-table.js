@@ -115,6 +115,8 @@ function normalizePlayer(row) {
 
 function normalizeStoredPlayer(player) {
   const captainValue = Object.prototype.hasOwnProperty.call(player, 'captain') ? player.captain : player.captainReady;
+  const sourceShift = player._sourceShift || player.sourceShift || player.originalShift || player.importShift || player.baseShift || player.registeredShift || player.rawShift || player.shift || player.shiftLabel || '';
+  const normalizedShift = normalizeShift(sourceShift);
   return {
     name: WKD.clean(player.name),
     alliance: WKD.clean(player.alliance),
@@ -123,7 +125,12 @@ function normalizeStoredPlayer(player) {
     march: toNumber(player.march),
     rally: toNumber(player.rally),
     captain: normalizeYes(captainValue),
-    shift: normalizeShift(player.shift || player.shiftLabel || player.registeredShift),
+    shift: normalizedShift,
+    shiftLabel: shiftLabel(normalizedShift),
+    registeredShift: normalizedShift,
+    sourceShift: normalizedShift,
+    originalShift: normalizedShift,
+    _sourceShift: normalizedShift,
     lair: normalizeYesNoText(player.lair || player.captureRegion || player.capture),
     lairLevel: clampLairLevel(player.lairLevel),
     registeredAt: player.registeredAt || player.registered_at || player.createdAt || player.created_at || player.submittedAt || player.updatedAt || '',
