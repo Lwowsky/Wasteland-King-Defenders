@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=180';
+import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=183';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -9,6 +9,8 @@ const MODES = ['local', 'region'];
 const LOCAL_IMPORT_RATE_KEY = 'wkd.players.localToRegion.runs';
 const LOCAL_IMPORT_RATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 const LOCAL_IMPORT_RATE_LIMIT = 1;
+// TEST MODE: local-to-region transfer cooldown is disabled temporarily.
+const LOCAL_IMPORT_RATE_DISABLED = true;
 const LOCAL_IMPORT_PREVIEW_CACHE_KEY = 'wkd.players.localToRegion.preview';
 const LOCAL_IMPORT_PREVIEW_CACHE_TTL_MS = 10 * 60 * 1000;
 
@@ -296,10 +298,12 @@ function readLocalImportRuns(region = '') {
 }
 
 function canRunLocalImport(region = '') {
+  if (LOCAL_IMPORT_RATE_DISABLED) return true;
   return readLocalImportRuns(region).length < LOCAL_IMPORT_RATE_LIMIT;
 }
 
 function rememberLocalImportRun(region = '') {
+  if (LOCAL_IMPORT_RATE_DISABLED) return;
   try {
     const all = JSON.parse(localStorage.getItem(LOCAL_IMPORT_RATE_KEY) || '{}') || {};
     const now = Date.now();
@@ -365,7 +369,7 @@ function showLocalToRegionModeDialog(preview = {}, regionLabel = '') {
           ${preview.duplicateExtraCount ? `<label class="local-import-dedupe-option"><input id="localImportDedupe" type="checkbox" checked> <span>${esc(tv('players.localImportDedupeOption', 'Автоматично прибрати дублікати: залишити найповніший запис. До переносу піде {count} рядків, пропустить зайвих: {skipped}.', { count: preview.dedupedLocalCount || preview.localCount || 0, skipped: preview.dedupedSkippedCount || 0 }))}</span></label>` : ''}
           ${preview.missingTierCount ? `⚠️ ${esc(t('players.localMissingTier', 'Рядків без тіру'))}: ${preview.missingTierCount}<br>` : ''}
           ${preview.missingMarchCount ? `⚠️ ${esc(t('players.localMissingMarch', 'Рядків без розміру маршу'))}: ${preview.missingMarchCount}<br>` : ''}
-          <div style="margin-top:.55rem;">${esc(t('players.localToRegionDailyLimitInfo', 'Захист від випадкового спаму: перенос у цей регіон дозволено 1 раз на 24 години для всього регіону.'))}</div>
+          <div style="margin-top:.55rem;">${esc(t('players.localToRegionDailyLimitInfo', 'Тестовий режим: ліміт 1 перенос на 24 години тимчасово вимкнено.'))}</div>
           ${preview.sampleRows?.length ? `<hr><small><strong>${esc(t('players.localToRegionSampleTitle', 'Приклад рядків: нік · альянс · тір · марш'))}</strong><br>${preview.sampleRows.map(previewRowText).map(esc).join('<br>')}</small>` : ''}
         </div>
         <div class="confirm-note" style="margin-top:.7rem;">
@@ -648,7 +652,7 @@ async function copyLocalToRegion() {
     return;
   }
   if (!canRunLocalImport(regionToImport)) {
-    setNote(t('players.localToRegionRateLimited', 'Перенос у цей регіон уже запускали. Повторити можна через 24 години або після очищення локального кешу.'), 'warn');
+    setNote(t('players.localToRegionRateLimited', 'Тестовий режим: ліміт переносу тимчасово вимкнено.'), 'warn');
     return;
   }
   setNote(t('players.localToRegionPreparing', 'Перевіряю поточну таблицю регіону перед переносом...'), 'muted');

@@ -5,6 +5,8 @@ const FIREBASE_JWKS_URL =
   "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
 
 let firebaseJwksCache = { expiresAt: 0, keys: null };
+// TEST MODE: local-to-region global 24h cooldown is disabled temporarily.
+const REGION_IMPORT_COOLDOWN_DISABLED = true;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -1192,14 +1194,15 @@ async function handleRegionImportLockRead(request, env) {
   const row = await db.prepare(`SELECT region, last_import_at_ms, next_allowed_at_ms, imported_by_uid, imported_by_name, rows_count, mode, updated_at_ms FROM region_import_locks WHERE region = ?1 LIMIT 1`).bind(region).first();
   const nowMs = Date.now();
   const nextAllowedAtMs = Number(row?.next_allowed_at_ms || 0) || 0;
-  const remainingMs = Math.max(0, nextAllowedAtMs - nowMs);
+  const remainingMs = REGION_IMPORT_COOLDOWN_DISABLED ? 0 : Math.max(0, nextAllowedAtMs - nowMs);
   return json({
     ok: true,
+    cooldownDisabled: REGION_IMPORT_COOLDOWN_DISABLED,
     lock: {
       region,
-      locked: remainingMs > 0,
+      locked: REGION_IMPORT_COOLDOWN_DISABLED ? false : remainingMs > 0,
       remainingMs,
-      nextAllowedAtMs,
+      nextAllowedAtMs: REGION_IMPORT_COOLDOWN_DISABLED ? 0 : nextAllowedAtMs,
       lastImportAtMs: Number(row?.last_import_at_ms || 0) || 0,
       importedByUid: clean(row?.imported_by_uid || '', 160),
       importedByName: clean(row?.imported_by_name || '', 160),
@@ -1223,10 +1226,10 @@ async function handleRegionImportLockCommit(request, env) {
   const nowMs = Date.now();
   const existing = await db.prepare(`SELECT next_allowed_at_ms FROM region_import_locks WHERE region = ?1 LIMIT 1`).bind(region).first();
   const existingNext = Number(existing?.next_allowed_at_ms || 0) || 0;
-  if (existingNext > nowMs) {
+  if (!REGION_IMPORT_COOLDOWN_DISABLED && existingNext > nowMs) {
     return json({ ok: false, error: "region_import_cooldown", lock: { region, locked: true, remainingMs: existingNext - nowMs, nextAllowedAtMs: existingNext }, usage: { d1RowsRead: 1 } }, 429, "private, no-store");
   }
-  const nextAllowedAtMs = nowMs + 24 * 60 * 60 * 1000;
+  const nextAllowedAtMs = REGION_IMPORT_COOLDOWN_DISABLED ? nowMs : nowMs + 24 * 60 * 60 * 1000;
   const actorName = clean(body?.actorName || user.name || user.email || user.uid || '', 160);
   const mode = clean(body?.mode || '', 40);
   const rowsCount = Math.max(0, Number(body?.rowsCount || body?.count || 0) || 0);
@@ -1240,7 +1243,7 @@ async function handleRegionImportLockCommit(request, env) {
       rows_count = excluded.rows_count,
       mode = excluded.mode,
       updated_at_ms = excluded.updated_at_ms`).bind(region, nowMs, nextAllowedAtMs, user.uid || '', actorName, rowsCount, mode).run();
-  return json({ ok: true, lock: { region, locked: true, remainingMs: nextAllowedAtMs - nowMs, nextAllowedAtMs, lastImportAtMs: nowMs, importedByUid: user.uid || '', importedByName: actorName, rowsCount, mode }, usage: { d1RowsRead: 1, d1RowsWritten: 1 } }, 200, "private, no-store");
+  return json({ ok: true, cooldownDisabled: REGION_IMPORT_COOLDOWN_DISABLED, lock: { region, locked: REGION_IMPORT_COOLDOWN_DISABLED ? false : true, remainingMs: REGION_IMPORT_COOLDOWN_DISABLED ? 0 : nextAllowedAtMs - nowMs, nextAllowedAtMs: REGION_IMPORT_COOLDOWN_DISABLED ? 0 : nextAllowedAtMs, lastImportAtMs: nowMs, importedByUid: user.uid || '', importedByName: actorName, rowsCount, mode }, usage: { d1RowsRead: 1, d1RowsWritten: 1 } }, 200, "private, no-store");
 }
 
 async function handleRegionTableShareCreate(request, env) {

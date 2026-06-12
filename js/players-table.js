@@ -96,11 +96,61 @@ function clampLairLevel(value) {
   return String(Math.max(1, Math.min(70, Math.round(n))));
 }
 
+
+function isTroopRoleValue(value) {
+  return ['Fighter', 'Rider', 'Shooter'].includes(value);
+}
+
+function isAccountRoleText(value) {
+  const text = WKD.clean(value).toLowerCase();
+  return /^(admin|administrator|owner|moderator|consul|officer|player|guest|адмін|администратор|модератор|консул|офіцер|офицер|гравець|игрок|гість|гость)$/.test(text);
+}
+
+function normalizeTroopRole(value) {
+  if (isAccountRoleText(value)) return '';
+  const role = normalizeRole(value);
+  return isTroopRoleValue(role) ? role : '';
+}
+
+function getRowTroopRole(row = {}) {
+  const mapped = WKD.getMappedValue(row, 'role');
+  const mappedRole = normalizeTroopRole(mapped);
+  if (mappedRole) return mappedRole;
+  const headerRe = /(troop|unit|army|soldier|type|військ|войск|тип|війська|войска|兵|部隊|병과|loại quân|نوع)/i;
+  for (const [header, value] of Object.entries(row || {})) {
+    if (!headerRe.test(String(header || ''))) continue;
+    const role = normalizeTroopRole(value);
+    if (role) return role;
+  }
+  for (const value of Object.values(row || {})) {
+    const role = normalizeTroopRole(value);
+    if (role) return role;
+  }
+  return '—';
+}
+
+function getPlayerTroopRole(player = {}) {
+  const candidates = [
+    player.troopType, player.troopLabel, player.mainTroopType, player.primaryTroopType,
+    player.wastelandProfile?.troopType, player.wastelandProfile?.troopLabel,
+    player.raw?.troopType, player.raw?.troopLabel,
+    player['Тип військ'], player['тип військ'], player['Troop type'],
+    player.role
+  ];
+  for (const value of candidates) {
+    const role = normalizeTroopRole(value);
+    if (role) return role;
+  }
+  return '—';
+}
+
 function normalizePlayer(row) {
   return {
     name: WKD.clean(WKD.getMappedValue(row, 'name')),
     alliance: WKD.clean(WKD.getMappedValue(row, 'alliance')),
-    role: normalizeRole(WKD.getMappedValue(row, 'role')),
+    role: getRowTroopRole(row),
+    troopType: '',
+    troopLabel: '',
     tier: normalizeTier(WKD.getMappedValue(row, 'tier')),
     march: toNumber(WKD.getMappedValue(row, 'march')),
     rally: toNumber(WKD.getMappedValue(row, 'rally')),
@@ -120,7 +170,9 @@ function normalizeStoredPlayer(player) {
   return {
     name: WKD.clean(player.name),
     alliance: WKD.clean(player.alliance),
-    role: normalizeRole(player.role),
+    role: getPlayerTroopRole(player),
+    troopType: player.troopType || '',
+    troopLabel: player.troopLabel || '',
     tier: normalizeTier(player.tier),
     march: toNumber(player.march),
     rally: toNumber(player.rally),
@@ -346,10 +398,11 @@ function normalizeYes(value) {
 
 function normalizeRole(value) {
   const text = WKD.clean(value).toLowerCase();
+  if (!text || isAccountRoleText(text)) return '—';
   if (/fighter|fighters|infantry|боец|боєць|бійц|бойц|воїн|воин|піхот|пехот|fight|wojownik|wojown|kämpfer|kaempfer|ファイター|战士|戰士|전사|đấu sĩ|dau si|مقاتل|المقاتل/.test(text)) return 'Fighter';
   if (/rider|riders|cavalry|наїз|наезд|ездник|кавал|ride|jeźdź|jezdz|reiter|ライダー|骑兵|騎兵|기병|kỵ sĩ|ky si|فارس|فرسان|الفرسان/.test(text)) return 'Rider';
   if (/shooter|shooters|стрілець|стрільц|стрел|shoot|marksman|strzel|schütz|schuetz|シューター|射手|사수|xạ thủ|xa thu|رامي|الرماة/.test(text)) return 'Shooter';
-  return WKD.clean(value) || '—';
+  return '—';
 }
 
 function normalizeShift(value) {

@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=180';
+import { trackCloudflareUsage } from './usage-tracker.js?v=183';
 
 function cleanText(value = '', max = 120) {
   return String(value ?? '')

@@ -41,6 +41,7 @@ window.WKD = window.WKD || {};
     secondHalf: { en: 'Second half', uk: 'Друга половина', ru: 'Вторая половина', pl: 'Druga połowa', de: 'Zweite Hälfte', ja: '後半', zh: '下半场', ko: '후반', vi: 'Nửa sau', ar: 'النصف الثاني' },
     shift: { en: 'Shift', uk: 'Зміна', ru: 'Смена', pl: 'Zmiana', de: 'Schicht', ja: 'シフト', zh: '班次', ko: '교대', vi: 'Ca', ar: 'المناوبة' },
     typeByCaptain: { en: 'Turret type is defined by the captain', uk: 'Тип турелі визначається капітаном', ru: 'Тип турели определяется капитаном', pl: 'Typ wieży określa kapitan', de: 'Turmtyp wird vom Kapitän bestimmt', ja: 'タレットタイプはキャプテンで決まります', zh: '炮塔类型由队长决定', ko: '포탑 유형은 캡틴이 결정합니다', vi: 'Loại tháp do đội trưởng quyết định', ar: 'نوع البرج يحدده القائد' },
+    unknownTroop: { en: 'Troop type is not set', uk: 'Тип військ не заданий', ru: 'Тип войск не задан', pl: 'Typ wojska nie jest ustawiony', de: 'Truppentyp ist nicht festgelegt', ja: '兵種が未設定です', zh: '兵种未设置', ko: '병과가 설정되지 않음', vi: 'Chưa đặt loại quân', ar: 'نوع القوات غير محدد' },
     noAssigned: { en: 'No assigned players', uk: 'Немає призначених гравців', ru: 'Нет назначенных игроков', pl: 'Brak przypisanych graczy', de: 'Keine zugewiesenen Spieler', ja: '割り当てられたプレイヤーはいません', zh: '没有分配的玩家', ko: '배정된 플레이어 없음', vi: 'Chưa có người chơi được chỉ định', ar: 'لا يوجد لاعبون معينون' },
     shooterPlural: { en: 'Shooters', uk: 'Стрільці', ru: 'Стрелки', pl: 'Strzelcy', de: 'Schützen', ja: 'シューター', zh: '射手', ko: '슈터', vi: 'Xạ thủ', ar: 'الرماة' },
     fighterPlural: { en: 'Fighters', uk: 'Бійці', ru: 'Бойцы', pl: 'Wojownicy', de: 'Kämpfer', ja: 'ファイター', zh: '战士', ko: '파이터', vi: 'Chiến binh', ar: 'المقاتلون' },
@@ -351,8 +352,13 @@ window.WKD = window.WKD || {};
     const id = clean(value || '').toLowerCase();
     return TOWERS.some(tower => tower.id === id) ? id : '';
   }
+  function isAccountRoleText(value = '') {
+    const text = clean(value).toLowerCase();
+    return /^(admin|administrator|owner|moderator|consul|officer|player|guest|адмін|администратор|модератор|консул|офіцер|офицер|гравець|игрок|гість|гость)$/.test(text);
+  }
+
   function troopTextFromPlayer(player = {}) {
-    if (!player || typeof player !== 'object') return clean(player);
+    if (!player || typeof player !== 'object') return isAccountRoleText(player) ? '' : clean(player);
     const fields = [
       player.troopType, player.troopLabel, player.mainTroopType, player.primaryTroopType,
       player.wastelandProfile?.troopType, player.wastelandProfile?.troopLabel,
@@ -360,17 +366,19 @@ window.WKD = window.WKD || {};
       player['Тип військ'], player['тип військ'], player['Troop type'],
       player.role
     ];
-    return clean(fields.find(value => clean(value)) || '');
+    return clean(fields.find(value => clean(value) && !isAccountRoleText(value)) || '');
   }
-  function roleKey(value = '') {
+  function roleKey(value = '', fallback = '') {
     const text = (typeof value === 'object' ? troopTextFromPlayer(value) : clean(value)).toLowerCase();
-    if (/fighter|fighters|infantry|бійц|боєц|боец|бойц|воїн|воин|wojownik|wojown|kämpfer|kaempfer|ファイター|战士|戰士|전사|đấu sĩ|dau si|مقاتل|المقاتل/.test(text)) return 'Fighter';
+    if (!text || isAccountRoleText(text) || text === '—' || text === '-') return fallback;
+    if (/fighter|fighters|infantry|бійц|боєц|боец|бойц|воїн|воин|піхот|пехот|wojownik|wojown|kämpfer|kaempfer|ファイター|战士|戰士|전사|đấu sĩ|dau si|مقاتل|المقاتل/.test(text)) return 'Fighter';
     if (/rider|riders|cavalry|наїз|наезд|ездник|кавал|jeźdź|jezdz|reiter|ライダー|骑兵|騎兵|기병|kỵ sĩ|ky si|فارس|فرسان|الفرسان/.test(text)) return 'Rider';
     if (/shooter|shooters|стріл|стрел|shoot|marksman|strzel|schütz|schuetz|シューター|射手|사수|xạ thủ|xa thu|رامي|الرماة/.test(text)) return 'Shooter';
-    return 'Shooter';
+    return fallback;
   }
   function roleLabel(role = '') {
     const key = roleKey(role);
+    if (!key) return '—';
     return key === 'Fighter' ? 'Бійці' : key === 'Rider' ? 'Наїзники' : 'Стрільці';
   }
   function uniqueAlliances() {
@@ -403,7 +411,7 @@ window.WKD = window.WKD || {};
     return firstHelper ? roleKey(firstHelper) : 'Shooter';
   }
   function roleSelectOptions(selected = 'Shooter') {
-    const current = roleKey(selected);
+    const current = roleKey(selected, 'Shooter');
     return ['Fighter', 'Rider', 'Shooter'].map(role => `<option value="${role}" ${role === current ? 'selected' : ''}>${esc(roleLabel(role))}</option>`).join('');
   }
   function allianceDatalist(id) {
@@ -722,7 +730,7 @@ window.WKD = window.WKD || {};
   }
   function countRoles(list) {
     const res = { Fighter: 0, Rider: 0, Shooter: 0 };
-    list.forEach(({ player }) => { res[roleKey(player)] += 1; });
+    list.forEach(({ player }) => { const key = roleKey(player); if (key && Object.prototype.hasOwnProperty.call(res, key)) res[key] += 1; });
     return res;
   }
   function entriesForShift(shift, includeBoth = true) {
@@ -732,7 +740,7 @@ window.WKD = window.WKD || {};
     });
   }
   function roleIcon(role) {
-    const key = roleKey(role).toLowerCase();
+    const key = roleKey(role, 'Shooter').toLowerCase();
     return key === 'fighter' ? 'img/fighter.webp' : key === 'rider' ? 'img/rider.webp' : 'img/shooter.webp';
   }
   function roleIconSummary(roles) {
@@ -880,7 +888,7 @@ window.WKD = window.WKD || {};
         const allowBothForCaptain = captainOnly && s === 'both';
         if (s !== shift && !(plan.settings.useBoth && s === 'both') && !allowBothForCaptain) return false;
       }
-      if (!captainOnly && !ignoreRole && plan.settings.sameRole && captain && roleKey(player) !== captainRole) return false;
+      if (!captainOnly && !ignoreRole && plan.settings.sameRole && captainRole) { const playerRole = roleKey(player); if (playerRole && playerRole !== captainRole) return false; }
       return true;
     });
     list = list.sort((a, b) => Number(b.player.captain) - Number(a.player.captain) || Number(b.player.rally || 0) - Number(a.player.rally || 0) || Number(b.player.march || 0) - Number(a.player.march || 0));
@@ -1032,7 +1040,7 @@ window.WKD = window.WKD || {};
     const data = {
       name: entry.player.name || '',
       alliance: entry.player.alliance || '',
-      role: roleKey(entry.player),
+      role: roleKey(entry.player) || '',
       tier: visibleTierOptions().includes(clean(entry.player.tier || '').toUpperCase().replace(/\s+/g, '')) ? clean(entry.player.tier || '').toUpperCase().replace(/\s+/g, '') : (visibleTierOptions()[0] || 'T14'),
       march: Number(entry.player.march || 0) || '',
       rally: Number(entry.player.rally || 0) || ''
@@ -1496,6 +1504,7 @@ window.WKD = window.WKD || {};
   }
   function finalRoleText(role) {
     const key = roleKey(role);
+    if (!key) return combinedText(lang => finalPhrase('unknownTroop', lang));
     const phraseKey = key === 'Fighter' ? 'fighterPlural' : key === 'Rider' ? 'riderPlural' : 'shooterPlural';
     return combinedText(lang => finalPhrase(phraseKey, lang));
   }
@@ -1513,7 +1522,7 @@ window.WKD = window.WKD || {};
       .filter(item => item.player)
       .sort((left, right) => Number(right.player?.tierRank || String(right.player?.tier || '').replace(/\D/g, '') || 0) - Number(left.player?.tierRank || String(left.player?.tier || '').replace(/\D/g, '') || 0) || Number(right.player?.march || 0) - Number(left.player?.march || 0) || String(left.player?.name || '').localeCompare(String(right.player?.name || '')));
     const role = captain ? roleKey(captain) : '';
-    const theme = captain ? (role === 'Fighter' ? 'fighter-theme' : role === 'Rider' ? 'rider-theme' : 'shooter-theme') : 'is-auto';
+    const theme = captain ? (role === 'Fighter' ? 'fighter-theme' : role === 'Rider' ? 'rider-theme' : role === 'Shooter' ? 'shooter-theme' : 'is-auto') : 'is-auto';
     const captainMarch = tierAssignedMarch(captain, true);
     const rallySize = Math.max(0, Number(captain?.rally || 0) || 0);
     const helperTotal = helperItems.reduce((sum, item) => sum + helperAssignedMarch(item.id, slot, item.player), 0);
@@ -1872,7 +1881,7 @@ window.WKD = window.WKD || {};
       const playerShift = normalizeShift(entry.player.shift || entry.player.shiftLabel);
       if (playerShift !== shift && !(plan.settings.useBoth && playerShift === 'both')) return false;
     }
-    if (captainPlayer && plan.settings.sameRole && roleKey(entry.player) !== roleKey(captainPlayer)) return false;
+    if (captainPlayer && plan.settings.sameRole) { const captainRole = roleKey(captainPlayer); const playerRole = roleKey(entry.player); if (captainRole && playerRole && playerRole !== captainRole) return false; }
     return true;
   }
   function assignedNickKeysForShift(shift) {
@@ -2137,6 +2146,7 @@ window.WKD = window.WKD || {};
   }
   function txtRoleText(role) {
     const key = roleKey(role);
+    if (!key) return combinedText(lang => finalPhrase('unknownTroop', lang));
     const phraseKey = key === 'Fighter' ? 'fighterPlural' : key === 'Rider' ? 'riderPlural' : 'shooterPlural';
     return combinedText(lang => finalPhrase(phraseKey, lang));
   }
@@ -2151,7 +2161,7 @@ window.WKD = window.WKD || {};
       .map(id => ({ id, player: playerById(id) }))
       .filter(item => item.player)
       .sort((left, right) => compareAutoCandidates(left, right));
-    const troopText = captain ? txtRoleText(captain.role) : combinedText(lang => finalPhrase('typeByCaptain', lang));
+    const troopText = captain ? txtRoleText(captain) : combinedText(lang => finalPhrase('typeByCaptain', lang));
     const lines = [
       '┌───────────────────────────────',
       `│ Turret: ${towerTitle(tower)}`,

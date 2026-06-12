@@ -28,7 +28,7 @@ WKD.defaultVisibleTiers = ['T14', 'T13', 'T12', 'T11', 'T10', 'T9', 'T8'];
 
 WKD.baseFields = {
   name: { label: 'Нік гравця', required: true, aliases: ['player name','name','nickname','nick','нік гравця','нік','гравець','игрок'] },
-  role: { label: 'Тип військ', required: true, aliases: ['troop type','type','role','тип військ','тип войск','війська'] },
+  role: { label: 'Тип військ', required: true, aliases: ['troop type','unit type','troops','type of troops','type','тип військ','тип войск','війська','войска','основний тип військ','основной тип войск'] },
   tier: { label: 'Тір військ', required: true, aliases: ['tier','тір','тир','рівень'] },
   march: { label: 'Розмір маршу', required: true, aliases: ['march size','march','розмір маршу','марш'] },
   rally: { label: 'Розмір ралі', required: true, aliases: ['group attack size','rally size','rally','розмір ралі','ралі','атака групи'] },
