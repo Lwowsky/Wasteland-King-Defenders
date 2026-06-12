@@ -1261,9 +1261,22 @@ window.WKD = window.WKD || {};
     const hasDraft = canPublish && regionHasUnpublishedDraft(info.region || '');
     const shifts = availableShifts();
     if (!shifts.includes(activeFinalShift)) activeFinalShift = shifts[0] || 'shift1';
-    const buttons = shifts.map(shift => `<button class="btn btn-sm ${shift === activeFinalShift ? 'is-active' : ''}" type="button" data-final-shift="${shift}">${shiftLabel(shift)}</button>`).join('');
-    root.innerHTML = `${buttons}
-      <button class="btn btn-sm tower-final-lang-trigger board-lang-trigger" type="button" data-final-lang-open>${esc(tr('finalPlan.langButton', 'Мова плану'))}</button>
+    const shiftButtons = shifts.map(shift => `<button class="btn btn-sm ${shift === activeFinalShift ? 'is-active' : ''}" type="button" data-final-shift="${shift}">${shiftLabel(shift)}</button>`).join('');
+    const languageButton = `<button class="btn btn-sm tower-final-lang-trigger board-lang-trigger" type="button" data-final-lang-open>${esc(tr('finalPlan.langButton', 'Мова плану'))}</button>`;
+    const exportButtons = `
+      <button class="btn btn-sm" type="button" data-final-download>${esc(tr('finalPlan.downloadPng', 'Завантажити PNG'))}</button>
+      <button class="btn btn-sm" type="button" data-final-txt>TXT</button>
+      <button class="btn btn-sm" type="button" data-final-share>${esc(tr('finalPlan.share', 'Поділитися'))}</button>
+      <button class="btn btn-sm" type="button" data-final-copy-link>${esc(window.WKD_t?.('finalPlan.copyLink') || tr('finalPlan.copyLink', 'Копіювати посилання'))}</button>`;
+    if (info.mode !== 'region') {
+      root.classList.add('is-local-mode');
+      root.classList.remove('is-region-mode');
+      root.innerHTML = `${shiftButtons}${languageButton}${exportButtons}`;
+      return;
+    }
+    root.classList.add('is-region-mode');
+    root.classList.remove('is-local-mode');
+    root.innerHTML = `${shiftButtons}${languageButton}
       ${canPublish ? `<button class="btn btn-sm" type="button" data-tower-publish>${esc(tr('tower.publishPlan', 'Опублікувати в регіон'))}</button>` : ''}
       <span class="tower-final-more-wrap">
         <button class="btn btn-sm" type="button" data-final-more-toggle aria-haspopup="true" aria-expanded="false">${esc(tr('tower.moreActions', 'Ще'))} ▾</button>
@@ -2188,8 +2201,29 @@ ${text}` : text };
         const wrap = moreToggle.closest('.tower-final-more-wrap');
         const panel = wrap?.querySelector('[data-final-more-menu]');
         const willOpen = Boolean(panel?.hidden);
-        document.querySelectorAll('[data-final-more-menu]').forEach(menu => { if (menu !== panel) menu.hidden = true; });
-        if (panel) panel.hidden = !willOpen;
+        document.querySelectorAll('[data-final-more-menu]').forEach(menu => {
+          if (menu !== panel) {
+            menu.hidden = true;
+            menu.classList.remove('is-fixed-open');
+            menu.removeAttribute('style');
+          }
+        });
+        if (panel) {
+          panel.hidden = !willOpen;
+          panel.classList.toggle('is-fixed-open', willOpen);
+          if (willOpen) {
+            const rect = moreToggle.getBoundingClientRect();
+            const width = Math.min(300, Math.max(230, rect.width + 80));
+            const left = Math.max(10, Math.min(window.innerWidth - width - 10, rect.right - width));
+            const top = Math.max(10, Math.min(window.innerHeight - 12, rect.bottom + 8));
+            panel.style.minWidth = `${width}px`;
+            panel.style.left = `${left}px`;
+            panel.style.top = `${top}px`;
+            panel.style.right = 'auto';
+          } else {
+            panel.removeAttribute('style');
+          }
+        }
         moreToggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         return;
       }
