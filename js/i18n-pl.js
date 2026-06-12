@@ -2090,4 +2090,6 @@ window.WKD_TRANSLATIONS.pl = {
   "players.regionSwitchLabel": "Region",
   "players.copyLocalToRegion": "Lokalne → region",
   "players.copyRegionToLocal": "Region → lokalnie",
+  "players.localImportDedupeOption": "Automatycznie usuń duplikaty: zostaw najpełniejszy wpis. Do przeniesienia pójdzie {count} wierszy, pominięte nadmiarowe duplikaty: {skipped}.",
+  "players.localImportDedupeApplied": "Duplikaty wyczyszczone przed przeniesieniem: przeniesiono {count}, pominięto {skipped}.",
 };

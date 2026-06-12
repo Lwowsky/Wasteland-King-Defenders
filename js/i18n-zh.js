@@ -2090,4 +2090,6 @@ window.WKD_TRANSLATIONS.zh = {
   "players.regionSwitchLabel": "地区",
   "players.copyLocalToRegion": "本地 → 地区",
   "players.copyRegionToLocal": "地区 → 本地",
+  "players.localImportDedupeOption": "自动移除重复项：保留最完整的记录。将转移 {count} 行，跳过多余重复：{skipped}。",
+  "players.localImportDedupeApplied": "转移前已清理重复项：已转移 {count}，跳过 {skipped}。",
 };

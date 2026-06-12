@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=171';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=171';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=172';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=172';
 import {
   getUserProfile,
   getFarmById,
@@ -12,8 +12,8 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=171';
-import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings } from './region-table-cache.js?v=171';
+} from './user-db.js?v=172';
+import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings } from './region-table-cache.js?v=172';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -852,7 +852,7 @@ function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
 }
 
 async function actionLogCacheModule() {
-  return import('./action-log-cache.js?v=171');
+  return import('./action-log-cache.js?v=172');
 }
 
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
@@ -1201,7 +1201,7 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=171');
+    const mod = await import('./region-table-cache.js?v=172');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1211,7 +1211,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=171');
+    const mod = await import('./region-table-cache.js?v=172');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1221,7 +1221,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=171');
+    const mod = await import('./region-table-cache.js?v=172');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1231,7 +1231,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=171');
+    const mod = await import('./region-table-cache.js?v=172');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1242,7 +1242,7 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
 
 async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=171');
+    const mod = await import('./region-table-cache.js?v=172');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readMyRegionRegistrationD1(user, region, farmId, options);
   } catch (error) {
@@ -1253,7 +1253,7 @@ async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', opti
 
 async function readFinalPlanFromD1Cache(code, options = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=171');
+    const mod = await import('./final-plan-cache.js?v=172');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.readFinalPlanShare(code, options);
   } catch (error) {
@@ -1264,7 +1264,7 @@ async function readFinalPlanFromD1Cache(code, options = {}) {
 
 async function publishFinalPlanToD1Cache(user, payload = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=171');
+    const mod = await import('./final-plan-cache.js?v=172');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.publishFinalPlanShare(user, payload);
   } catch (error) {
@@ -2247,21 +2247,29 @@ export async function updateRegionRegistration(user, region, registrationId, val
   const profile = await getUserProfile(user.uid);
   const safeRegion = normalizeRegion(region || getGameProfile(profile || {}).region);
   if (!safeRegion) throw new Error('region-required');
-  if (!canManageRegion(profile, safeRegion, user)) throw new Error('region-update-access-denied');
+  if (!canManageRegion(profile, safeRegion, user)) {
+    throw new Error('region-update-access-denied');
+  }
 
-  const troopType = normalizePlayerTroopType(values.role || values.troopType);
-  const shift = trim(values.shift || 'both');
+  const registrationRef = firestoreMod.doc(db, 'regions', safeRegion, 'wastelandRegistrations', id);
+  const existingSnap = await firestoreMod.getDoc(registrationRef).catch(() => null);
+  trackReads(1);
+  const existingData = existingSnap?.exists?.() ? { id, ...existingSnap.data() } : {};
+  const mergedInput = { ...existingData, ...(values || {}) };
+  const troopType = normalizePlayerTroopType(mergedInput.role || mergedInput.troopType || mergedInput.troopLabel);
+  const shift = trim(mergedInput.shift || mergedInput.shiftLabel || 'both');
+  const hasCaptainField = Object.prototype.hasOwnProperty.call(mergedInput, 'captain') || Object.prototype.hasOwnProperty.call(mergedInput, 'captainReady');
   const clean = {
-    nickname: trim(values.name || values.nickname),
-    alliance: normalizeAllianceTag(values.alliance),
+    nickname: trim(mergedInput.name || mergedInput.nickname),
+    alliance: normalizeAllianceTag(mergedInput.alliance),
     troopType,
     troopLabel: troopLabel(troopType),
-    tier: normalizeTier(values.tier || 'T10'),
-    lairLevel: lairLevelValue(values.lairLevel || values.denLevel),
-    captureRegion: /^(1|true|yes|так|да|y)$/i.test(String(values.lair || values.captureRegion || '').trim()),
-    marchSize: numberValue(values.march || values.marchSize),
-    rallySize: numberValue(values.rally || values.rallySize),
-    captainReady: Boolean(values.captain || values.captainReady),
+    tier: normalizeTier(mergedInput.tier || 'T10'),
+    lairLevel: lairLevelValue(mergedInput.lairLevel || mergedInput.denLevel),
+    captureRegion: /^(1|true|yes|так|да|y)$/i.test(String(mergedInput.lair || mergedInput.captureRegion || '').trim()),
+    marchSize: numberValue(mergedInput.march ?? mergedInput.marchSize),
+    rallySize: numberValue(mergedInput.rally ?? mergedInput.rallySize),
+    captainReady: hasCaptainField ? Boolean(mergedInput.captain || mergedInput.captainReady) : Boolean(existingData.captainReady),
     shift,
     shiftLabel: shiftLabel(shift),
     updatedAt: firestoreMod.serverTimestamp(),
@@ -2273,10 +2281,6 @@ export async function updateRegionRegistration(user, region, registrationId, val
     throw new Error('registration-invalid');
   }
 
-  const registrationRef = firestoreMod.doc(db, 'regions', safeRegion, 'wastelandRegistrations', id);
-  const existingSnap = await firestoreMod.getDoc(registrationRef).catch(() => null);
-  trackReads(1);
-  const existingData = existingSnap?.exists?.() ? { id, ...existingSnap.data() } : {};
   const activeSettings = await getRegionSettings(safeRegion).catch(() => ({}));
   const activeCycle = trim(existingData.cycleId || activeSettings.currentCycleId || '');
   const cleanWithCycle = { ...clean, region: safeRegion, cycleId: activeCycle };
@@ -2412,7 +2416,7 @@ function localImportRegistrationKey(row = {}) {
 
 async function readLocalImportRegionLockFromD1(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=171');
+    const mod = await import('./region-table-cache.js?v=172');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readLocalImportRegionLock(user, region);
   } catch (error) {
@@ -2423,7 +2427,7 @@ async function readLocalImportRegionLockFromD1(user, region) {
 
 async function commitLocalImportRegionLockToD1(user, region, payload = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=171');
+    const mod = await import('./region-table-cache.js?v=172');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.commitLocalImportRegionLock(user, region, payload);
   } catch (error) {
@@ -2438,6 +2442,44 @@ export async function readLocalImportRegionLock(user, region = '') {
 
 export async function commitLocalImportRegionLock(user, region = '', payload = {}) {
   return await commitLocalImportRegionLockToD1(user, region, payload);
+}
+
+
+function localImportCompletenessScore(row = {}) {
+  let score = 0;
+  if (trim(row.name || row.nickname)) score += 20;
+  if (trim(row.alliance)) score += 12;
+  if (trim(localImportTier(row))) score += 12;
+  if (localImportMarch(row) > 0) score += 12;
+  if (localImportRally(row) > 0) score += 8;
+  if (trim(row.role || row.troopType || row.troopLabel)) score += 8;
+  if (trim(row.shift || row.shiftLabel)) score += 6;
+  if (row.captain || row.captainReady) score += 3;
+  if (trim(row.lair || row.lairLevel || row.denLevel)) score += 2;
+  return score;
+}
+
+function localImportDedupeKey(row = {}) {
+  let value = trim(row.name || row.nickname).toLowerCase();
+  try { value = value.normalize('NFKC'); } catch (_error) {}
+  return value.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function dedupeLocalImportPlayers(players = []) {
+  const bestByKey = new Map();
+  const order = [];
+  (Array.isArray(players) ? players : []).forEach((row, index) => {
+    const key = localImportDedupeKey(row) || `__empty_${index}`;
+    const score = localImportCompletenessScore(row);
+    const current = bestByKey.get(key);
+    if (!current) {
+      order.push(key);
+      bestByKey.set(key, { row, score });
+    } else if (score > current.score) {
+      bestByKey.set(key, { row, score });
+    }
+  });
+  return order.map(key => bestByKey.get(key)?.row).filter(Boolean);
 }
 
 export async function importLocalPlayersToRegion(user, players = [], regionOverride = '', options = {}) {
@@ -2464,7 +2506,8 @@ export async function importLocalPlayersToRegion(user, players = [], regionOverr
 
   const usedExistingIds = new Set();
   const usedNewIds = new Set();
-  const rows = (Array.isArray(players) ? players : [])
+  const preparedPlayers = options?.dedupe ? dedupeLocalImportPlayers(players) : (Array.isArray(players) ? players : []);
+  const rows = preparedPlayers
     .filter(player => trim(player.name || player.nickname) && trim(player.alliance))
     .map((player, index) => {
       const data = playerToImportedRegistration(player, user, profile, region, settings);

@@ -2090,4 +2090,6 @@ window.WKD_TRANSLATIONS.ru = {
   "players.regionSwitchLabel": "Регион",
   "players.copyLocalToRegion": "Локальный → регион",
   "players.copyRegionToLocal": "Регион → локальный",
+  "players.localImportDedupeOption": "Автоматически убрать дубликаты: оставить самую полную запись. Будет перенесено {count} строк, лишних дублей пропущено: {skipped}.",
+  "players.localImportDedupeApplied": "Дубликаты очищены перед переносом: перенесено {count}, пропущено лишних {skipped}.",
 };

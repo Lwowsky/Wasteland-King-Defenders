@@ -2088,4 +2088,6 @@ window.WKD_TRANSLATIONS.ar = {
   "players.regionSwitchLabel": "المنطقة",
   "players.copyLocalToRegion": "محلي → منطقة",
   "players.copyRegionToLocal": "منطقة → محلي",
+  "players.localImportDedupeOption": "إزالة التكرارات تلقائياً: الاحتفاظ بالسجل الأكثر اكتمالاً. سيتم نقل {count} صفاً وتخطي التكرارات الزائدة: {skipped}.",
+  "players.localImportDedupeApplied": "تم تنظيف التكرارات قبل النقل: نُقل {count} وتُخطي {skipped}.",
 };

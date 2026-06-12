@@ -2090,4 +2090,6 @@ window.WKD_TRANSLATIONS.ja = {
   "players.regionSwitchLabel": "地域",
   "players.copyLocalToRegion": "ローカル → 地域",
   "players.copyRegionToLocal": "地域 → ローカル",
+  "players.localImportDedupeOption": "重複を自動で削除し、最も完全な記録を残します。転送する行: {count}、スキップする余分な重複: {skipped}。",
+  "players.localImportDedupeApplied": "転送前に重複を整理しました: 転送 {count}、スキップ {skipped}。",
 };

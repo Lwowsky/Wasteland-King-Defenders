@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=171';
+import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=172';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -188,6 +188,47 @@ function duplicateKeyStats(rows = []) {
   };
 }
 
+function numberFromAny(value = '') {
+  const number = Number(String(value ?? '').replace(/[^0-9.-]/g, ''));
+  return Number.isFinite(number) ? number : 0;
+}
+
+function localImportCompletenessScore(row = {}) {
+  let score = 0;
+  if (String(row.name || row.nickname || '').trim()) score += 20;
+  if (String(row.alliance || '').trim()) score += 12;
+  if (hasTierValue(row)) score += 12;
+  if (hasMarchValue(row)) score += 12;
+  if (numberFromAny(row.rally ?? row.rallySize ?? row.mainRallySize) > 0) score += 8;
+  if (String(row.role || row.troopType || row.troopLabel || '').trim()) score += 8;
+  if (String(row.shift || row.shiftLabel || '').trim()) score += 6;
+  if (row.captain || row.captainReady) score += 3;
+  if (String(row.lair || row.lairLevel || row.denLevel || '').trim()) score += 2;
+  return score;
+}
+
+function dedupeLocalRowsForRegionImport(rows = []) {
+  const bestByNick = new Map();
+  const order = [];
+  (Array.isArray(rows) ? rows : []).forEach((row, index) => {
+    const key = normalizeDuplicateNick(row.name || row.nickname || '');
+    if (!key) {
+      order.push(`__empty_${index}`);
+      bestByNick.set(`__empty_${index}`, { row, score: localImportCompletenessScore(row), index });
+      return;
+    }
+    const score = localImportCompletenessScore(row);
+    const current = bestByNick.get(key);
+    if (!current) {
+      order.push(key);
+      bestByNick.set(key, { row, score, index });
+      return;
+    }
+    if (score > current.score) bestByNick.set(key, { row, score, index: current.index });
+  });
+  return order.map(key => bestByNick.get(key)?.row).filter(Boolean).map(row => ({ ...row }));
+}
+
 function hasTierValue(row = {}) {
   return Boolean(String(row.tier || row.tierLabel || row.tierLevel || '').trim());
 }
@@ -220,8 +261,11 @@ function buildLocalToRegionPreview(localRows = [], existingRows = []) {
   const replaceDeleteCount = existingRows.length;
   const missingTierCount = localRows.filter(row => !hasTierValue(row)).length;
   const missingMarchCount = localRows.filter(row => !hasMarchValue(row)).length;
+  const dedupedRows = duplicateStats.extra > 0 ? dedupeLocalRowsForRegionImport(localRows) : localRows;
   return {
     localCount: localRows.length,
+    dedupedLocalCount: dedupedRows.length,
+    dedupedSkippedCount: Math.max(0, localRows.length - dedupedRows.length),
     existingCount: existingRows.length,
     addCount,
     updateCount,
@@ -234,7 +278,7 @@ function buildLocalToRegionPreview(localRows = [], existingRows = []) {
     duplicateCount: duplicateStats.rows,
     missingTierCount,
     missingMarchCount,
-    sampleRows: localRows.slice(0, 10)
+    sampleRows: dedupedRows.slice(0, 10)
   };
 }
 
@@ -318,6 +362,7 @@ function showLocalToRegionModeDialog(preview = {}, regionLabel = '') {
           ${preview.duplicateGroupCount ? `⚠️ ${esc(t('players.localDuplicateNicknames', 'Повторюваних ніків'))}: ${preview.duplicateGroupCount}<br>` : ''}
           ${preview.duplicateRowCount ? `⚠️ ${esc(t('players.localDuplicateRows', 'Рядків у повторах'))}: ${preview.duplicateRowCount} · ${esc(t('players.localDuplicateExtraRows', 'зайвих повторних рядків'))}: ${preview.duplicateExtraCount || 0}<br>` : ''}
           ${preview.duplicateNames?.length ? `<small>${esc(t('players.localDuplicateNamesList', 'Ніки з повторами'))}: ${preview.duplicateNames.slice(0, 20).map(item => `${item.name} ×${item.count}`).map(esc).join(', ')}${preview.duplicateNames.length > 20 ? '…' : ''}</small><br>` : ''}
+          ${preview.duplicateExtraCount ? `<label class="local-import-dedupe-option"><input id="localImportDedupe" type="checkbox" checked> <span>${esc(tv('players.localImportDedupeOption', 'Автоматично прибрати дублікати: залишити найповніший запис. До переносу піде {count} рядків, пропустить зайвих: {skipped}.', { count: preview.dedupedLocalCount || preview.localCount || 0, skipped: preview.dedupedSkippedCount || 0 }))}</span></label>` : ''}
           ${preview.missingTierCount ? `⚠️ ${esc(t('players.localMissingTier', 'Рядків без тіру'))}: ${preview.missingTierCount}<br>` : ''}
           ${preview.missingMarchCount ? `⚠️ ${esc(t('players.localMissingMarch', 'Рядків без розміру маршу'))}: ${preview.missingMarchCount}<br>` : ''}
           <div style="margin-top:.55rem;">${esc(t('players.localToRegionDailyLimitInfo', 'Захист від випадкового спаму: перенос у цей регіон дозволено 1 раз на 24 години для всього регіону.'))}</div>
@@ -342,9 +387,10 @@ function showLocalToRegionModeDialog(preview = {}, regionLabel = '') {
     modal.addEventListener('click', event => {
       const action = event.target?.dataset?.action;
       if (!action) return;
-      if (action === 'cancel') finish('');
-      if (action === 'merge') finish('merge');
-      if (action === 'replace') finish('replace');
+      if (action === 'cancel') finish(null);
+      const dedupe = Boolean(modal.querySelector('#localImportDedupe')?.checked);
+      if (action === 'merge') finish({ mode: 'merge', dedupe });
+      if (action === 'replace') finish({ mode: 'replace', dedupe });
     });
   });
 }
@@ -608,26 +654,27 @@ async function copyLocalToRegion() {
   setNote(t('players.localToRegionPreparing', 'Перевіряю поточну таблицю регіону перед переносом...'), 'muted');
   const existingRows = await loadExistingRegionRowsForLocalImportPreview(regionToImport);
   const preview = buildLocalToRegionPreview(localRows, existingRows);
-  const mode = await showLocalToRegionModeDialog(preview, regionToImport ? `R${regionToImport}` : currentRegionLabel());
-  if (!mode) {
+  const selection = await showLocalToRegionModeDialog(preview, regionToImport ? `R${regionToImport}` : currentRegionLabel());
+  if (!selection?.mode) {
     setNote(t('players.localToRegionCancelled', 'Перенесення локального списку скасовано.'), 'muted');
     return;
   }
+  const rowsForImport = selection.dedupe ? dedupeLocalRowsForRegionImport(localRows) : localRows;
   try {
     loadedRegion = regionToImport;
     localStorage.setItem(REGION_KEY, regionToImport);
-    const actionText = mode === 'merge'
+    const actionText = selection.mode === 'merge'
       ? t('players.localToRegionMergeProgress', 'Додаю/оновлюю локальний список у регіоні...')
       : t('players.localToRegionReplaceProgress', 'Замінюю регіональну таблицю локальним списком...');
-    setNote(`${actionText} ${currentRegionLabel()} · ${localRows.length}`, 'muted');
-    const result = await importLocalPlayersToRegion(currentUser, localRows, regionToImport, { mode });
+    setNote(`${actionText} ${currentRegionLabel()} · ${rowsForImport.length}`, 'muted');
+    const result = await importLocalPlayersToRegion(currentUser, rowsForImport, regionToImport, { mode: selection.mode, dedupe: false });
     const region = result.region || regionToImport;
     await saveRegionTowerPlan(currentUser, region, { version: 1, updatedAtMs: Date.now(), regions: { home: {}, region2: {}, region3: {} } }).catch(error => console.warn('tower plan reset skipped', error));
     document.dispatchEvent(new CustomEvent('wkd:tower-plan-hard-reset', { detail: { source: 'local-to-region' } }));
     loadedRegionRows = [];
     writeLocalImportPreviewCache(regionToImport, []);
     await applyMode('region', { forceRegion: true });
-    await commitLocalImportRegionLock(currentUser, region, { mode, rowsCount: localRows.length }).catch(error => console.warn('[WKD] global local import lock commit skipped:', error?.message || error));
+    await commitLocalImportRegionLock(currentUser, region, { mode: selection.mode, rowsCount: rowsForImport.length }).catch(error => console.warn('[WKD] global local import lock commit skipped:', error?.message || error));
     rememberLocalImportRun(region);
     const message = result.mode === 'merge'
       ? tv('players.regionMerged', 'Region table R{region} updated: added {added}, updated {updated}, kept {kept}.', { region: result.region, added: result.added || 0, updated: result.updated || 0, kept: result.kept || 0 })

@@ -2090,4 +2090,6 @@ window.WKD_TRANSLATIONS.ko = {
   "players.regionSwitchLabel": "지역",
   "players.copyLocalToRegion": "로컬 → 지역",
   "players.copyRegionToLocal": "지역 → 로컬",
+  "players.localImportDedupeOption": "중복을 자동 제거하고 가장 완전한 기록을 유지합니다. 전송될 행: {count}, 건너뛸 추가 중복: {skipped}.",
+  "players.localImportDedupeApplied": "전송 전에 중복을 정리했습니다: 전송 {count}, 건너뜀 {skipped}.",
 };

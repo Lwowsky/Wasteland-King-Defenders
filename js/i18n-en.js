@@ -2093,4 +2093,6 @@ window.WKD_TRANSLATIONS.en = {
   "players.regionSwitchLabel": "Region",
   "players.copyLocalToRegion": "Local → region",
   "players.copyRegionToLocal": "Region → local",
+  "players.localImportDedupeOption": "Automatically remove duplicates: keep the most complete record. {count} rows will be transferred, extra duplicates skipped: {skipped}.",
+  "players.localImportDedupeApplied": "Duplicates cleaned before transfer: transferred {count}, skipped extra duplicates {skipped}.",
 };

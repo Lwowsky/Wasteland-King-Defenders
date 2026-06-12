@@ -2090,4 +2090,6 @@ window.WKD_TRANSLATIONS.vi = {
   "players.regionSwitchLabel": "Khu vực",
   "players.copyLocalToRegion": "Cục bộ → khu vực",
   "players.copyRegionToLocal": "Khu vực → cục bộ",
+  "players.localImportDedupeOption": "Tự động bỏ trùng: giữ bản ghi đầy đủ nhất. Sẽ chuyển {count} dòng, bỏ qua dòng trùng dư: {skipped}.",
+  "players.localImportDedupeApplied": "Đã dọn trùng trước khi chuyển: chuyển {count}, bỏ qua {skipped}.",
 };

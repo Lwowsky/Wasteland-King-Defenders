@@ -2093,4 +2093,6 @@ window.WKD_TRANSLATIONS.uk = {
   "players.regionSwitchLabel": "Регіон",
   "players.copyLocalToRegion": "Локальний → регіон",
   "players.copyRegionToLocal": "Регіон → локальний",
+  "players.localImportDedupeOption": "Автоматично прибрати дублікати: залишити найповніший запис. До переносу піде {count} рядків, пропустить зайвих: {skipped}.",
+  "players.localImportDedupeApplied": "Дублікати очищено перед переносом: перенесено {count}, пропущено зайвих {skipped}.",
 };
