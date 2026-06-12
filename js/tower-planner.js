@@ -2,6 +2,7 @@ window.WKD = window.WKD || {};
 
 (function () {
   const LOCAL_KEY = 'wkd.clean.tower.plan.v1';
+  const REGION_DRAFT_PREFIX = 'wkd.clean.tower.regionDraft.v1';
   const SHIFT_BACKUP_KEY = 'wkd.clean.tower.shiftBackup.v1';
   const TOWERS = [
     { id: 'hub', uk: 'Техно-Центр', en: 'Tech Hub', icon: 'img/tower_hub.webp' },
@@ -63,11 +64,14 @@ window.WKD = window.WKD || {};
   const esc = value => WKD.escapeHtml ? WKD.escapeHtml(value) : String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[ch]));
   const fmt = value => WKD.formatNumber ? WKD.formatNumber(value) : (Number(value) ? new Intl.NumberFormat('en-US').format(Number(value)) : '—');
   const clean = value => WKD.clean ? WKD.clean(value) : String(value ?? '').trim();
-  const tr = (key, fallback = '') => {
+  function interpolateText(text = '', params = {}) {
+    return String(text ?? '').replace(/\{(\w+)\}/g, (_match, name) => params[name] ?? '');
+  }
+  const tr = (key, fallback = '', params = {}) => {
     const fb = fallback || key;
-    if (!window.WKD_t) return fb;
+    if (!window.WKD_t) return interpolateText(fb, params);
     const value = window.WKD_t(key);
-    return (!value || value === key) ? fb : value;
+    return interpolateText((!value || value === key) ? fb : value, params);
   };
 
   function languages() {
@@ -339,6 +343,61 @@ window.WKD = window.WKD || {};
   }
   function localLoadPlan() { return normalizePlan(WKD.loadJson ? WKD.loadJson(LOCAL_KEY, null) : JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null')); }
   function localSavePlan(nextPlan) { WKD.saveJson ? WKD.saveJson(LOCAL_KEY, nextPlan) : localStorage.setItem(LOCAL_KEY, JSON.stringify(nextPlan)); }
+  function regionDraftKey(region = '') {
+    const safe = clean(region).replace(/[^0-9]/g, '') || 'unknown';
+    return `${REGION_DRAFT_PREFIX}.${safe}`;
+  }
+  function readRegionDraft(region = '') {
+    try {
+      const raw = localStorage.getItem(regionDraftKey(region));
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data || typeof data !== 'object') return null;
+      return {
+        ...data,
+        plan: normalizePlan(data.plan || null),
+        savedAtMs: Number(data.savedAtMs || 0) || 0,
+        publishedAtMs: Number(data.publishedAtMs || 0) || 0,
+        sourceUpdatedAtMs: Number(data.sourceUpdatedAtMs || 0) || 0,
+        dirty: data.dirty !== false
+      };
+    } catch (_error) {
+      return null;
+    }
+  }
+  function writeRegionDraft(region = '', nextPlan = {}, meta = {}) {
+    const safeRegion = clean(region).replace(/[^0-9]/g, '');
+    if (!safeRegion) return null;
+    const previous = readRegionDraft(safeRegion) || {};
+    const now = Date.now();
+    const payload = {
+      region: safeRegion,
+      plan: normalizePlan(nextPlan),
+      savedAtMs: Number(meta.savedAtMs || now) || now,
+      publishedAtMs: Number(meta.publishedAtMs ?? previous.publishedAtMs ?? 0) || 0,
+      sourceUpdatedAtMs: Number(meta.sourceUpdatedAtMs ?? previous.sourceUpdatedAtMs ?? 0) || 0,
+      dirty: meta.dirty !== false
+    };
+    try { localStorage.setItem(regionDraftKey(safeRegion), JSON.stringify(payload)); } catch (_error) {}
+    return payload;
+  }
+  function removeRegionDraft(region = '') {
+    try { localStorage.removeItem(regionDraftKey(region)); } catch (_error) {}
+  }
+  function regionDraftStatus(region = '') {
+    const info = sourceInfo();
+    const safeRegion = clean(region || info.region || '').replace(/[^0-9]/g, '');
+    return safeRegion ? readRegionDraft(safeRegion) : null;
+  }
+  function regionHasUnpublishedDraft(region = '') {
+    const draft = regionDraftStatus(region);
+    return Boolean(draft?.dirty && draft?.savedAtMs);
+  }
+  function formatDateTimeMs(ms = 0) {
+    const number = Number(ms) || 0;
+    if (!number) return '';
+    try { return new Intl.DateTimeFormat(siteLang() || 'uk', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(number)); } catch (_error) { return new Date(number).toLocaleString(); }
+  }
   async function loadPlan() {
     if (loading) return plan;
     loading = true;
@@ -346,15 +405,27 @@ window.WKD = window.WKD || {};
       const info = sourceInfo();
       if (info.mode === 'region' && typeof WKD.loadTowerPlanFromActiveSource === 'function') {
         const loaded = await WKD.loadTowerPlanFromActiveSource();
-        plan = normalizePlan(loaded?.plan || loaded || null);
+        const published = normalizePlan(loaded?.plan || loaded || null);
+        const sourceUpdatedAtMs = Number(loaded?.updatedAtMs || loaded?.updatedAt?.toMillis?.() || 0) || 0;
+        const draft = canEditPlan() ? readRegionDraft(info.region || loaded?.region || '') : null;
+        if (draft?.plan && draft.dirty) {
+          plan = draft.plan;
+        } else {
+          plan = published;
+          if (canEditPlan() && (loaded?.plan || loaded?.handled)) {
+            writeRegionDraft(info.region || loaded?.region || '', plan, { dirty: false, publishedAtMs: sourceUpdatedAtMs || Date.now(), sourceUpdatedAtMs });
+          }
+        }
         prunePlanToCurrentPlayers();
       } else {
         plan = localLoadPlan();
       }
     } catch (error) {
       console.error(error);
-      plan = localLoadPlan();
-      WKD.showNotice?.('Не вдалося завантажити план регіону. Показую локальний план.');
+      const info = sourceInfo();
+      const draft = info.mode === 'region' ? readRegionDraft(info.region || '') : null;
+      plan = draft?.plan || localLoadPlan();
+      WKD.showNotice?.(tr('tower.planLoadFailed', 'Не вдалося завантажити план регіону. Показую локальний план.'));
     } finally {
       loading = false;
     }
@@ -363,17 +434,63 @@ window.WKD = window.WKD || {};
   async function savePlan(show = true) {
     plan.updatedAtMs = Date.now();
     const info = sourceInfo();
-    if (info.mode === 'region' && typeof WKD.saveTowerPlanToActiveSource === 'function') {
+    if (info.mode === 'region') {
       if (!canEditPlan()) {
-        WKD.showNotice?.('Для регіону редагувати план можуть консул або офіцер свого регіону.');
+        WKD.showNotice?.(tr('tower.regionPlanEditDenied', 'Для регіону редагувати план можуть консул або офіцер свого регіону.'));
         return false;
       }
-      await WKD.saveTowerPlanToActiveSource(plan);
-      if (show) WKD.showNotice?.(`План збережено в таблиці ${info.label || 'регіону'}.`);
+      writeRegionDraft(info.region || '', plan, { dirty: true });
+      if (show) WKD.showNotice?.(tr('tower.planSavedDraft', 'Чернетку плану збережено локально. Опублікуй її, коли план готовий.'));
+      updateAccessUi();
       return true;
     }
     localSavePlan(plan);
-    if (show) WKD.showNotice?.('Локальний план збережено в цьому браузері.');
+    if (show) WKD.showNotice?.(tr('tower.planSavedLocal', 'Локальний план збережено в цьому браузері.'));
+    return true;
+  }
+  async function publishPlan(showConfirm = true) {
+    const info = sourceInfo();
+    if (info.mode !== 'region') return savePlan(true);
+    if (typeof WKD.saveTowerPlanToActiveSource !== 'function') return false;
+    if (!canEditPlan()) {
+      WKD.showNotice?.(tr('tower.regionPlanEditDenied', 'Для регіону редагувати план можуть консул або офіцер свого регіону.'));
+      return false;
+    }
+    const region = clean(info.region || '').replace(/[^0-9]/g, '');
+    const ok = !showConfirm || await (WKD.confirmDialog?.({
+      title: tr('tower.publishConfirmTitle', 'Опублікувати фінальний план?'),
+      message: tr('tower.publishConfirmMessage', 'Поточна локальна чернетка стане видимою для регіону {region}. Після публікації гравці побачать цей план.', { region: region ? `R${region}` : info.label || '' }),
+      acceptText: tr('tower.publishPlan', 'Опублікувати в регіон'),
+      cancelText: tr('common.cancel', 'Скасувати')
+    }) ?? Promise.resolve(window.confirm(tr('tower.publishConfirmTitle', 'Опублікувати фінальний план?'))));
+    if (!ok) return false;
+    plan.updatedAtMs = Date.now();
+    await WKD.saveTowerPlanToActiveSource(plan);
+    writeRegionDraft(region, plan, { dirty: false, publishedAtMs: Date.now(), sourceUpdatedAtMs: Date.now() });
+    updateAccessUi();
+    render();
+    WKD.showNotice?.(tr('tower.planPublishedRegion', 'Фінальний план опубліковано в регіоні {region}.', { region: info.label || (region ? `R${region}` : '') }));
+    document.dispatchEvent(new CustomEvent('wkd:tower-plan-published', { detail: { region, plan } }));
+    return true;
+  }
+  async function reloadPublishedPlan() {
+    const info = sourceInfo();
+    if (info.mode !== 'region' || typeof WKD.loadTowerPlanFromActiveSource !== 'function') return false;
+    const region = clean(info.region || '').replace(/[^0-9]/g, '');
+    const ok = await (WKD.confirmDialog?.({
+      title: tr('tower.discardDraftTitle', 'Завантажити опублікований план?'),
+      message: tr('tower.discardDraftMessage', 'Локальна чернетка для {region} буде відкинута, а буде відкрито останній опублікований план.', { region: info.label || (region ? `R${region}` : '') }),
+      acceptText: tr('tower.loadPublishedPlan', 'Завантажити опублікований'),
+      cancelText: tr('common.cancel', 'Скасувати')
+    }) ?? Promise.resolve(window.confirm(tr('tower.discardDraftTitle', 'Завантажити опублікований план?'))));
+    if (!ok) return false;
+    removeRegionDraft(region);
+    const loaded = await WKD.loadTowerPlanFromActiveSource();
+    plan = normalizePlan(loaded?.plan || loaded || null);
+    prunePlanToCurrentPlayers();
+    writeRegionDraft(region, plan, { dirty: false, publishedAtMs: Date.now(), sourceUpdatedAtMs: Number(loaded?.updatedAtMs || 0) || Date.now() });
+    render();
+    WKD.showNotice?.(tr('tower.publishedPlanLoaded', 'Опублікований план завантажено.'));
     return true;
   }
   async function disableTierLimitsForFreshData(source = '') {
@@ -452,10 +569,27 @@ window.WKD = window.WKD || {};
 
     const note = $('#towerPlannerAccessNote');
     if (note) {
-      note.textContent = '';
-      note.hidden = true;
+      const draft = info.mode === 'region' ? regionDraftStatus(info.region || '') : null;
+      if (info.mode === 'region' && editable) {
+        const publishedText = draft?.publishedAtMs ? ` ${tr('tower.lastPublishedAt', 'Остання публікація')}: ${formatDateTimeMs(draft.publishedAtMs)}.` : '';
+        note.textContent = draft?.dirty
+          ? `${tr('tower.draftUnpublished', 'Є неопубліковані локальні зміни. Вони не витрачають ліміти, поки ти не натиснеш “Опублікувати в регіон”.')}${publishedText}`
+          : `${tr('tower.draftClean', 'Редагування працює локально. Публікуй план тільки коли він готовий.')}${publishedText}`;
+        note.hidden = false;
+      } else {
+        note.textContent = '';
+        note.hidden = true;
+      }
       note.classList.toggle('is-locked', !editable);
     }
+    $$('[data-tower-publish]').forEach(el => {
+      el.hidden = !(info.mode === 'region' && editable);
+      el.disabled = !(info.mode === 'region' && editable);
+    });
+    $$('[data-tower-load-published]').forEach(el => {
+      el.hidden = !(info.mode === 'region' && editable && regionHasUnpublishedDraft(info.region || ''));
+      el.disabled = !(info.mode === 'region' && editable && regionHasUnpublishedDraft(info.region || ''));
+    });
   }
   function renderTierLimits() {
     const host = $('#towerTierLimits');
@@ -1126,6 +1260,8 @@ window.WKD = window.WKD || {};
     const buttons = shifts.map(shift => `<button class="btn btn-sm ${shift === activeFinalShift ? 'is-active' : ''}" type="button" data-final-shift="${shift}">${shiftLabel(shift)}</button>`).join('');
     root.innerHTML = `${buttons}
       ${finalSourceButton()}
+      ${sourceInfo().mode === 'region' && canEditPlan() ? `<button class="btn btn-sm" type="button" data-tower-publish>${esc(tr('tower.publishPlan', 'Опублікувати в регіон'))}</button>` : ''}
+      ${sourceInfo().mode === 'region' && canEditPlan() && regionHasUnpublishedDraft(sourceInfo().region || '') ? `<button class="btn btn-sm" type="button" data-tower-load-published>${esc(tr('tower.loadPublishedPlan', 'Завантажити опублікований'))}</button>` : ''}
       <button class="btn btn-sm tower-final-lang-trigger board-lang-trigger" type="button" data-final-lang-open>Мова плану</button>
       <button class="btn btn-sm" type="button" data-final-download>Завантажити PNG</button>
       <button class="btn btn-sm" type="button" data-final-txt>TXT</button>
@@ -2157,6 +2293,8 @@ ${text}` : text };
       if (event.target.closest('[data-final-lang-close]')) { event.preventDefault(); closeFinalLangDialog(); return; }
       if (event.target.closest('[data-final-download]')) { event.preventDefault(); downloadFinalPng(); return; }
       if (event.target.closest('[data-final-txt]')) { event.preventDefault(); downloadFinalTxt(); return; }
+      if (event.target.closest('[data-tower-publish]')) { event.preventDefault(); publishPlan(true); return; }
+      if (event.target.closest('[data-tower-load-published]')) { event.preventDefault(); reloadPublishedPlan(); return; }
       if (event.target.closest('[data-final-share]')) { event.preventDefault(); shareFinalText(); return; }
       if (event.target.closest('[data-final-copy-link]')) { event.preventDefault(); copyFinalShareLink(); return; }
     });
@@ -2255,4 +2393,5 @@ ${text}` : text };
   WKD.getTowerPlannerTowers = () => TOWERS.map(tower => ({ ...tower }));
   WKD.getPlayerTowerAssignment = publicAssignmentOf;
   WKD.assignPlayerToTowerFromEditor = assignPlayerFromEditor;
+  WKD.publishTowerPlanDraft = publishPlan;
 })();
