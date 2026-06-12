@@ -142,6 +142,7 @@ window.WKD = window.WKD || {};
         shiftLimits: { shift1: 100, shift2: 100 }
       },
       assignments: emptyAssignments(),
+      shiftOverrides: {},
       updatedAtMs: 0
     };
     const input = raw && typeof raw === 'object' ? raw : {};
@@ -173,8 +174,16 @@ window.WKD = window.WKD || {};
         };
       });
     });
+    const shiftOverrides = {};
+    const rawShiftOverrides = input.shiftOverrides && typeof input.shiftOverrides === 'object' ? input.shiftOverrides : {};
+    Object.entries(rawShiftOverrides).forEach(([id, value]) => {
+      const key = clean(id);
+      const shift = normalizeShift(value);
+      if (key && (SHIFT_ORDER.includes(shift) || shift === 'both')) shiftOverrides[key] = shift;
+    });
     return {
       ...base,
+      shiftOverrides,
       settings: {
         ...base.settings,
         ...settings,
@@ -197,7 +206,27 @@ window.WKD = window.WKD || {};
     if (!player._rowId) player._rowId = String(player.id || player.uid || `local-${index + 1}`);
     return String(player._rowId);
   }
-  function playerEntries() { return players().map((player, index) => ({ player, id: playerId(player, index), index })); }
+  function baseShiftForPlayer(player = {}) {
+    return normalizeShift(player.shift || player.shiftLabel);
+  }
+  function shiftOverrideForId(id = '') {
+    const key = String(id || '');
+    const value = plan?.shiftOverrides?.[key];
+    const shift = normalizeShift(value);
+    return (SHIFT_ORDER.includes(shift) || shift === 'both') ? shift : '';
+  }
+  function playerEntries() {
+    return players().map((player, index) => {
+      const id = playerId(player, index);
+      const overrideShift = shiftOverrideForId(id);
+      if (!overrideShift) return { player, id, index };
+      return {
+        player: { ...player, shift: overrideShift, shiftLabel: shiftLabel(overrideShift), _shiftOverridden: true },
+        id,
+        index
+      };
+    });
+  }
   function playerById(id) { return playerEntries().find(entry => entry.id === String(id || ''))?.player || null; }
   function currentPlayerIdSet() {
     return new Set(playerEntries().map(entry => String(entry.id || '')).filter(Boolean));
@@ -1803,18 +1832,36 @@ window.WKD = window.WKD || {};
     try { localStorage.setItem(SHIFT_BACKUP_KEY, JSON.stringify(data || {})); } catch (_error) {}
   }
   async function updatePlayerShift(id, shift, remember = true) {
-    const entry = playerEntries().find(item => item.id === String(id || ''));
-    if (!entry) return false;
+    const targetShift = normalizeShift(shift);
+    if (!(SHIFT_ORDER.includes(targetShift) || targetShift === 'both')) return false;
+    const idText = String(id || '');
+    const sourceIndex = players().findIndex((player, index) => playerId(player, index) === idText);
+    const sourcePlayer = sourceIndex >= 0 ? players()[sourceIndex] : null;
+    const entry = playerEntries().find(item => item.id === idText);
+    if (!entry || !sourcePlayer) return false;
+
     const backup = loadShiftBackup();
     if (remember && !Object.prototype.hasOwnProperty.call(backup, entry.id)) {
-      backup[entry.id] = normalizeShift(entry.player.shift || entry.player.shiftLabel);
+      backup[entry.id] = baseShiftForPlayer(sourcePlayer);
       saveShiftBackup(backup);
     }
+
+    const info = sourceInfo();
+    if (info.mode === 'region') {
+      plan.shiftOverrides = plan.shiftOverrides && typeof plan.shiftOverrides === 'object' ? plan.shiftOverrides : {};
+      const originalShift = baseShiftForPlayer(sourcePlayer);
+      if (targetShift === originalShift) delete plan.shiftOverrides[entry.id];
+      else plan.shiftOverrides[entry.id] = targetShift;
+      removePlayer(entry.id);
+      await savePlan(false);
+      return true;
+    }
+
     if (typeof WKD.updatePlayerInActiveSource === 'function') {
-      await WKD.updatePlayerInActiveSource(entry.id, { shift });
+      await WKD.updatePlayerInActiveSource(entry.id, { shift: targetShift });
     } else {
-      entry.player.shift = shift;
-      entry.player.shiftLabel = shiftLabel(shift);
+      sourcePlayer.shift = targetShift;
+      sourcePlayer.shiftLabel = shiftLabel(targetShift);
       WKD.saveJson?.(WKD.storageKeys.players, players());
       WKD.renderPlayers?.();
       document.dispatchEvent(new CustomEvent('wkd:players-updated', { detail: { source: 'tower-shift-local', persist: true } }));
@@ -1833,7 +1880,6 @@ window.WKD = window.WKD || {};
     const toShift2 = both.slice(add1, add1 + add2);
     for (const entry of toShift1) await updatePlayerShift(entry.id, 'shift1', true);
     for (const entry of toShift2) await updatePlayerShift(entry.id, 'shift2', true);
-    await loadPlan();
     render();
     await savePlan(false);
     WKD.showNotice?.(`Обидві: додано у зміну 1 — ${toShift1.length}, у зміну 2 — ${toShift2.length}.`);
@@ -1848,7 +1894,6 @@ window.WKD = window.WKD || {};
       if (['shift1','shift2','shift3','shift4','both'].includes(shift)) await updatePlayerShift(id, shift, false);
     }
     saveShiftBackup({});
-    await loadPlan();
     render();
     await savePlan(false);
     WKD.showNotice?.('Зміни гравців відновлено з імпортованого стану.');
