@@ -702,7 +702,7 @@ window.WKD_TRANSLATIONS.zh = {
   "players.importLocalFirst": "请先将Excel/CSV导入本地列表。",
   "players.loadingRegionTable": "正在加载地区表{region}...",
   "players.localShown": "本地列表：显示{count}。",
-  "players.localToRegionAccess": "只有当前地区的执政官、官员、版主或管理员可以将本地列表移动到地区。",
+  "players.localToRegionAccess": "只有该地区的执政官、版主或管理员可以将本地列表移动到地区。",
   "players.localToRegionFailed": "无法将本地列表移动到地区。请检查权限或地区。",
   "players.localToRegionTitle": "将本地列表移动到当前地区表。",
   "players.movingToRegion": "正在将{count}名玩家移动到{region}...",

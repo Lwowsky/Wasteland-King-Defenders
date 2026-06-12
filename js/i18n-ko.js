@@ -702,7 +702,7 @@ window.WKD_TRANSLATIONS.ko = {
   "players.importLocalFirst": "먼저 Excel/CSV를 로컬 목록에 가져오세요.",
   "players.loadingRegionTable": "지역 테이블 {region} 로딩 중...",
   "players.localShown": "로컬 목록: {count}개 표시.",
-  "players.localToRegionAccess": "현재 지역의 영사, 장교, 모더레이터 또는 관리자만 로컬 목록을 지역으로 이동할 수 있습니다.",
+  "players.localToRegionAccess": "이 지역의 영사, 모더레이터 또는 관리자만 로컬 목록을 지역으로 이동할 수 있습니다.",
   "players.localToRegionFailed": "로컬 목록을 지역으로 이동할 수 없습니다. 권한 또는 지역을 확인하세요.",
   "players.localToRegionTitle": "로컬 목록을 현재 지역 테이블로 이동합니다.",
   "players.movingToRegion": "{count}명을 {region}(으)로 이동 중...",

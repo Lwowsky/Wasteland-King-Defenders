@@ -702,7 +702,7 @@ window.WKD_TRANSLATIONS.pl = {
   "players.importLocalFirst": "Najpierw zaimportuj Excel/CSV do listy lokalnej.",
   "players.loadingRegionTable": "Ładowanie tabeli regionu {region}...",
   "players.localShown": "Lista lokalna: pokazano {count}.",
-  "players.localToRegionAccess": "Listę lokalną do regionu może przenieść tylko konsul, oficer, moderator albo admin bieżącego regionu.",
+  "players.localToRegionAccess": "Listę lokalną do regionu może przenieść tylko konsul tego regionu, moderator albo admin.",
   "players.localToRegionFailed": "Nie udało się przenieść listy lokalnej do regionu. Sprawdź prawa dostępu lub region.",
   "players.localToRegionTitle": "Przenieś listę lokalną do tabeli bieżącego regionu.",
   "players.movingToRegion": "Przenoszę {count} graczy do {region}...",

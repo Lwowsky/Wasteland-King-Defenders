@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=165';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=165';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=167';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=167';
 import {
   getUserProfile,
   getFarmById,
@@ -12,8 +12,8 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=165';
-import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings } from './region-table-cache.js?v=165';
+} from './user-db.js?v=167';
+import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings } from './region-table-cache.js?v=167';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -852,7 +852,7 @@ function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
 }
 
 async function actionLogCacheModule() {
-  return import('./action-log-cache.js?v=165');
+  return import('./action-log-cache.js?v=167');
 }
 
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
@@ -1201,7 +1201,7 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=165');
+    const mod = await import('./region-table-cache.js?v=167');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1211,7 +1211,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=165');
+    const mod = await import('./region-table-cache.js?v=167');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1221,7 +1221,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=165');
+    const mod = await import('./region-table-cache.js?v=167');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1231,7 +1231,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=165');
+    const mod = await import('./region-table-cache.js?v=167');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1242,7 +1242,7 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
 
 async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=165');
+    const mod = await import('./region-table-cache.js?v=167');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readMyRegionRegistrationD1(user, region, farmId, options);
   } catch (error) {
@@ -1253,7 +1253,7 @@ async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', opti
 
 async function readFinalPlanFromD1Cache(code, options = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=165');
+    const mod = await import('./final-plan-cache.js?v=167');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.readFinalPlanShare(code, options);
   } catch (error) {
@@ -1264,7 +1264,7 @@ async function readFinalPlanFromD1Cache(code, options = {}) {
 
 async function publishFinalPlanToD1Cache(user, payload = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=165');
+    const mod = await import('./final-plan-cache.js?v=167');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.publishFinalPlanShare(user, payload);
   } catch (error) {
@@ -2402,16 +2402,20 @@ function playerToImportedRegistration(player = {}, user = {}, profile = {}, regi
   };
 }
 
-export async function importLocalPlayersToRegion(user, players = [], regionOverride = '') {
+function localImportRegistrationKey(row = {}) {
+  const nick = trim(row.nickname || row.name || '').toLowerCase();
+  const alliance = trim(row.alliance || '');
+  const shift = trim(row.shift || row.shiftLabel || '').toLowerCase();
+  return `${nick}|${alliance}|${shift}`;
+}
+
+export async function importLocalPlayersToRegion(user, players = [], regionOverride = '', options = {}) {
   if (!user) throw new Error('auth-required');
   const { db, firestoreMod } = await getFirebaseParts();
   const { profile, region } = await getMyRegionContext(user, regionOverride);
   if (!canManageRegion(profile, region, user)) throw new Error('region-access-denied');
   const settings = await getRegionSettings(region).then(getRegionFormStatus);
-  const rows = (Array.isArray(players) ? players : [])
-    .filter(player => trim(player.name || player.nickname) && trim(player.alliance))
-    .map((player, index) => ({ id: importDocId(user.uid, player, index), data: playerToImportedRegistration(player, user, profile, region, settings) }));
-
+  const mode = options?.mode === 'merge' ? 'merge' : 'replace';
   const collectionRef = firestoreMod.collection(db, 'regions', region, 'wastelandRegistrations');
   const activeCycle = settings.currentCycleId;
   const currentCycleQuery = activeCycle
@@ -2419,10 +2423,37 @@ export async function importLocalPlayersToRegion(user, players = [], regionOverr
     : collectionRef;
   const existingSnap = await firestoreMod.getDocs(currentCycleQuery).catch(() => ({ docs: [] }));
   const oldCycleRows = existingSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  trackReads(existingSnap.docs?.length || 0);
+
+  const existingByKey = new Map();
+  oldCycleRows.forEach(row => {
+    const key = localImportRegistrationKey(row);
+    if (key.replaceAll('|', '').trim() && !existingByKey.has(key)) existingByKey.set(key, row);
+  });
+
+  const usedExistingIds = new Set();
+  const usedNewIds = new Set();
+  const rows = (Array.isArray(players) ? players : [])
+    .filter(player => trim(player.name || player.nickname) && trim(player.alliance))
+    .map((player, index) => {
+      const data = playerToImportedRegistration(player, user, profile, region, settings);
+      const existing = mode === 'merge' ? existingByKey.get(localImportRegistrationKey(data)) : null;
+      let id = existing?.id && !usedExistingIds.has(existing.id)
+        ? existing.id
+        : importDocId(user.uid, player, index);
+      while (usedNewIds.has(id)) id = `${importDocId(user.uid, player, index)}-${usedNewIds.size + 1}`;
+      if (existing?.id) usedExistingIds.add(existing.id);
+      usedNewIds.add(id);
+      return { id, data, matchedExisting: Boolean(existing?.id) };
+    });
 
   const now = firestoreMod.serverTimestamp();
+  const newIds = new Set(rows.map(row => row.id));
+  const deletes = mode === 'replace'
+    ? oldCycleRows.filter(row => !newIds.has(row.id)).map(row => ({ type: 'delete', id: row.id }))
+    : [];
   const writes = [
-    ...oldCycleRows.map(row => ({ type: 'delete', id: row.id })),
+    ...deletes,
     ...rows.map(row => ({ type: 'set', id: row.id, data: row.data }))
   ];
 
@@ -2431,17 +2462,35 @@ export async function importLocalPlayersToRegion(user, players = [], regionOverr
     writes.slice(index, index + 450).forEach(write => {
       const ref = firestoreMod.doc(db, 'regions', region, 'wastelandRegistrations', write.id);
       if (write.type === 'delete') batch.delete(ref);
-      else batch.set(ref, { ...write.data, updatedAt: now, submittedAt: now }, { merge: true });
+      else batch.set(ref, { ...write.data, updatedAt: now, submittedAt: now });
     });
     await batch.commit();
   }
+  trackWrites(rows.length + 1);
+  trackDeletes(deletes.length);
+
+  const added = rows.filter(row => !row.matchedExisting).length;
+  const updated = rows.length - added;
+  const kept = mode === 'merge' ? Math.max(0, oldCycleRows.length - updated) : 0;
+  const snapshotMap = new Map();
+  if (mode === 'merge') oldCycleRows.forEach(row => snapshotMap.set(row.id, row));
+  rows.forEach(row => snapshotMap.set(row.id, { id: row.id, ...row.data }));
+  if (mode === 'replace') deletes.forEach(row => snapshotMap.delete(row.id));
+  const snapshotRows = mode === 'merge'
+    ? [...snapshotMap.values()]
+    : rows.map(row => ({ id: row.id, ...row.data }));
 
   await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', region), {
     region,
     activeTable: {
       cycleId: activeCycle,
-      source: 'local-import',
-      rowsCount: rows.length,
+      source: mode === 'merge' ? 'local-import-merge' : 'local-import-replace',
+      rowsCount: snapshotRows.length,
+      importedRowsCount: rows.length,
+      added,
+      updated,
+      kept,
+      deleted: deletes.length,
       replacedAt: now,
       replacedBy: user.uid
     },
@@ -2452,9 +2501,9 @@ export async function importLocalPlayersToRegion(user, players = [], regionOverr
     region,
     cycleId: activeCycle || '',
     settings: settings || {},
-    rows: rows.map(row => ({ id: row.id, ...row.data }))
+    rows: snapshotRows
   }).catch(() => null);
-  return { profile, region, count: rows.length, replaced: oldCycleRows.length };
+  return { profile, region, count: rows.length, mode, added, updated, kept, deleted: deletes.length, replaced: deletes.length, total: snapshotRows.length };
 }
 
 export function regionRegistrationToPlayer(row = {}) {

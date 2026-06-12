@@ -702,7 +702,7 @@ window.WKD_TRANSLATIONS.ar = {
   "players.importLocalFirst": "استورد Excel/CSV إلى القائمة المحلية أولًا.",
   "players.loadingRegionTable": "جارٍ تحميل جدول المنطقة {region}...",
   "players.localShown": "القائمة المحلية: تم عرض {count}.",
-  "players.localToRegionAccess": "يمكن لقنصل أو ضابط أو مشرف أو مدير المنطقة الحالية فقط نقل القائمة المحلية إلى المنطقة.",
+  "players.localToRegionAccess": "يمكن لقنصل هذه المنطقة أو المشرف أو المدير فقط نقل القائمة المحلية إلى المنطقة.",
   "players.localToRegionFailed": "تعذر نقل القائمة المحلية إلى المنطقة. تحقق من الصلاحيات أو المنطقة.",
   "players.localToRegionTitle": "نقل القائمة المحلية إلى جدول المنطقة الحالية.",
   "players.movingToRegion": "جارٍ نقل {count} لاعب إلى {region}...",

@@ -702,7 +702,7 @@ window.WKD_TRANSLATIONS.vi = {
   "players.importLocalFirst": "Trước tiên hãy nhập Excel/CSV vào danh sách cục bộ.",
   "players.loadingRegionTable": "Đang tải bảng khu vực {region}...",
   "players.localShown": "Danh sách cục bộ: hiển thị {count}.",
-  "players.localToRegionAccess": "Chỉ lãnh sự, sĩ quan, điều phối viên hoặc admin của khu vực hiện tại mới có thể chuyển danh sách cục bộ sang khu vực.",
+  "players.localToRegionAccess": "Chỉ lãnh sự của khu vực này, điều phối viên hoặc admin mới có thể chuyển danh sách cục bộ sang khu vực.",
   "players.localToRegionFailed": "Không thể chuyển danh sách cục bộ sang khu vực. Hãy kiểm tra quyền hoặc khu vực.",
   "players.localToRegionTitle": "Chuyển danh sách cục bộ vào bảng khu vực hiện tại.",
   "players.movingToRegion": "Đang chuyển {count} người chơi vào {region}...",

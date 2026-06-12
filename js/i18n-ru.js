@@ -702,7 +702,7 @@ window.WKD_TRANSLATIONS.ru = {
   "players.importLocalFirst": "Сначала импортируй Excel/CSV в локальный список.",
   "players.loadingRegionTable": "Загружаю таблицу региона {region}...",
   "players.localShown": "Локальный список: показано {count}.",
-  "players.localToRegionAccess": "Локальный список в регион могут переносить только консул, офицер, модератор или админ текущего региона.",
+  "players.localToRegionAccess": "Локальный список в регион могут переносить только консул этого региона, модератор или админ.",
   "players.localToRegionFailed": "Не удалось перенести локальный список в регион. Проверь права доступа или регион.",
   "players.localToRegionTitle": "Перенести локальный список в таблицу текущего региона.",
   "players.movingToRegion": "Переношу {count} игроков в таблицу {region}...",

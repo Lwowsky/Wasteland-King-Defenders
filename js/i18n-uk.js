@@ -702,7 +702,7 @@ window.WKD_TRANSLATIONS.uk = {
   "players.importLocalFirst": "Спочатку імпортуй Excel/CSV у локальний список.",
   "players.loadingRegionTable": "Завантажую таблицю регіону {region}...",
   "players.localShown": "Локальний список: показано {count}.",
-  "players.localToRegionAccess": "Локальний список у регіон можуть переносити тільки консул, офіцер, модератор або адмін поточного регіону.",
+  "players.localToRegionAccess": "Локальний список у регіон можуть переносити тільки консул цього регіону, модератор або адмін.",
   "players.localToRegionFailed": "Не вдалося перенести локальний список у регіон. Перевір права доступу або регіон.",
   "players.localToRegionTitle": "Перенести локальний список у таблицю поточного регіону.",
   "players.movingToRegion": "Переношу {count} гравців у таблицю {region}...",
@@ -2022,4 +2022,9 @@ window.WKD_TRANSLATIONS.uk = {
   'messages.playerSearchHint': 'Введи точний нік і вибери регіон/альянс. Частина ніку не відправляється.',
   'messages.selectExactPlayer': 'Вибери точного гравця: повний нік + правильний регіон і альянс.',
 
+  "players.localToRegionConfirmTitle": "Перенести локальний список у регіон?",
+  "players.localToRegionConfirmMessage": "Ти точно хочеш перенести {count} гравців у таблицю {region}?",
+  "players.localToRegionConfirmNote": "Поточна таблиця цього циклу буде замінена локальним списком. Форма регіону не закриється, але заявки/рядки поточного циклу в регіональній таблиці будуть перезаписані.",
+  "players.localToRegionConfirmAccept": "Так, перенести",
+  "players.localToRegionCancelled": "Перенесення локального списку скасовано.",
 };

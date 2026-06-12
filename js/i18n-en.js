@@ -702,7 +702,7 @@ window.WKD_TRANSLATIONS.en = {
   "players.importLocalFirst": "Import Excel/CSV into the local list first.",
   "players.loadingRegionTable": "Loading region table {region}...",
   "players.localShown": "Local list: shown {count}.",
-  "players.localToRegionAccess": "Only the consul, officer, moderator, or admin of the current region can move the local list to the region.",
+  "players.localToRegionAccess": "Only the consul of this region, moderator, or admin can move the local list to the region.",
   "players.localToRegionFailed": "Could not move the local list to the region. Check access rights or region.",
   "players.localToRegionTitle": "Move the local list into the table of the current region.",
   "players.movingToRegion": "Moving {count} players into {region}...",
@@ -2022,4 +2022,9 @@ window.WKD_TRANSLATIONS.en = {
   'messages.playerSearchHint': 'Enter the exact nickname and choose the region/alliance. Partial nicknames are not sent.',
   'messages.selectExactPlayer': 'Choose the exact player: full nickname + correct region and alliance.',
 
+  "players.localToRegionConfirmTitle": "Move the local list to the region?",
+  "players.localToRegionConfirmMessage": "Are you sure you want to move {count} players into {region}?",
+  "players.localToRegionConfirmNote": "The current table for this cycle will be replaced by the local list. The region form will stay open, but current-cycle applications/rows in the region table will be overwritten.",
+  "players.localToRegionConfirmAccept": "Yes, move it",
+  "players.localToRegionCancelled": "Moving the local list was cancelled.",
 };

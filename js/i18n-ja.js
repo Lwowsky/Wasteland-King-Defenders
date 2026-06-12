@@ -702,7 +702,7 @@ window.WKD_TRANSLATIONS.ja = {
   "players.importLocalFirst": "先にExcel/CSVをローカルリストへインポートしてください。",
   "players.loadingRegionTable": "地域テーブル {region} を読み込み中...",
   "players.localShown": "ローカルリスト: {count}件表示。",
-  "players.localToRegionAccess": "ローカルリストを地域へ移動できるのは、現在地域の領事、役員、モデレーター、管理者のみです。",
+  "players.localToRegionAccess": "ローカルリストを地域へ移動できるのは、この地域の領事、モデレーター、管理者のみです。",
   "players.localToRegionFailed": "ローカルリストを地域へ移動できませんでした。権限または地域を確認してください。",
   "players.localToRegionTitle": "ローカルリストを現在地域のテーブルへ移動します。",
   "players.movingToRegion": "{count}人を{region}へ移動中...",

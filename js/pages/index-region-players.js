@@ -1,11 +1,14 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=165';
+import { canDeleteRegionRegistration, canManageRegion, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=167';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
 const REGION_KEY = 'wkd.players.activeRegion';
 const MODES = ['local', 'region'];
+const LOCAL_IMPORT_RATE_KEY = 'wkd.players.localToRegion.runs';
+const LOCAL_IMPORT_RATE_WINDOW_MS = 5 * 60 * 1000;
+const LOCAL_IMPORT_RATE_LIMIT = 2;
 
 let currentUser = null;
 let currentProfile = null;
@@ -138,14 +141,184 @@ function normalizeLocalRowsForRegionImport(rawRows = []) {
   return Array.isArray(rawRows) ? rawRows.map(row => ({ ...row })) : [];
 }
 
+function localImportPreviewKey(row = {}) {
+  const name = String(row.name || row.nickname || '').trim().toLowerCase();
+  const alliance = String(row.alliance || '').trim();
+  const shift = String(row.shift || row.shiftLabel || '').trim().toLowerCase();
+  return `${name}|${alliance}|${shift}`;
+}
+
+function countDuplicateKeys(rows = []) {
+  const counts = new Map();
+  rows.forEach(row => {
+    const key = localImportPreviewKey(row);
+    if (!key.replaceAll('|', '').trim()) return;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  });
+  return [...counts.values()].filter(count => count > 1).reduce((total, count) => total + count, 0);
+}
+
+function hasTierValue(row = {}) {
+  return Boolean(String(row.tier || row.tierLabel || row.tierLevel || '').trim());
+}
+
+function hasMarchValue(row = {}) {
+  const value = row.march ?? row.marchSize ?? row.mainMarchSize ?? row.mainMarch ?? '';
+  return Number(String(value).replace(/[^0-9.-]/g, '')) > 0;
+}
+
+function buildLocalToRegionPreview(localRows = [], existingRows = []) {
+  const existingByKey = new Map();
+  existingRows.forEach(row => {
+    const key = localImportPreviewKey(row);
+    if (key.replaceAll('|', '').trim() && !existingByKey.has(key)) existingByKey.set(key, row);
+  });
+  let updateCount = 0;
+  let addCount = 0;
+  const usedKeys = new Set();
+  localRows.forEach(row => {
+    const key = localImportPreviewKey(row);
+    if (key && existingByKey.has(key) && !usedKeys.has(key)) {
+      updateCount += 1;
+      usedKeys.add(key);
+    } else {
+      addCount += 1;
+    }
+  });
+  const keepCount = Math.max(0, existingRows.length - usedKeys.size);
+  const replaceDeleteCount = existingRows.length;
+  const missingTierCount = localRows.filter(row => !hasTierValue(row)).length;
+  const missingMarchCount = localRows.filter(row => !hasMarchValue(row)).length;
+  return {
+    localCount: localRows.length,
+    existingCount: existingRows.length,
+    addCount,
+    updateCount,
+    keepCount,
+    replaceDeleteCount,
+    duplicateCount: countDuplicateKeys(localRows),
+    missingTierCount,
+    missingMarchCount,
+    sampleRows: localRows.slice(0, 10)
+  };
+}
+
+function readLocalImportRuns(region = '') {
+  try {
+    const all = JSON.parse(localStorage.getItem(LOCAL_IMPORT_RATE_KEY) || '{}') || {};
+    const now = Date.now();
+    const rows = Array.isArray(all[region]) ? all[region].filter(ts => now - Number(ts) < LOCAL_IMPORT_RATE_WINDOW_MS) : [];
+    all[region] = rows;
+    localStorage.setItem(LOCAL_IMPORT_RATE_KEY, JSON.stringify(all));
+    return rows;
+  } catch {
+    return [];
+  }
+}
+
+function canRunLocalImport(region = '') {
+  return readLocalImportRuns(region).length < LOCAL_IMPORT_RATE_LIMIT;
+}
+
+function rememberLocalImportRun(region = '') {
+  try {
+    const all = JSON.parse(localStorage.getItem(LOCAL_IMPORT_RATE_KEY) || '{}') || {};
+    const now = Date.now();
+    const rows = (Array.isArray(all[region]) ? all[region] : []).filter(ts => now - Number(ts) < LOCAL_IMPORT_RATE_WINDOW_MS);
+    rows.push(now);
+    all[region] = rows;
+    localStorage.setItem(LOCAL_IMPORT_RATE_KEY, JSON.stringify(all));
+  } catch {}
+}
+
+function previewRowText(row = {}) {
+  const name = String(row.name || row.nickname || '—').trim() || '—';
+  const alliance = String(row.alliance || '—').trim() || '—';
+  const tier = String(row.tier || row.tierLabel || '—').trim() || '—';
+  const march = String(row.march || row.marchSize || '—').trim() || '—';
+  return `${name} · ${alliance} · ${tier} · ${march}`;
+}
+
+function showLocalToRegionModeDialog(preview = {}, regionLabel = '') {
+  return new Promise(resolve => {
+    const modal = document.createElement('section');
+    modal.className = 'confirm-modal is-open';
+    modal.setAttribute('aria-hidden', 'false');
+    modal.innerHTML = `
+      <button class="confirm-backdrop" type="button" data-action="cancel" aria-label="${esc(t('common.cancel', 'Скасувати'))}"></button>
+      <div class="confirm-card" role="dialog" aria-modal="true">
+        <div class="confirm-top">
+          <span class="confirm-icon" aria-hidden="true">⚠️</span>
+          <div>
+            <h3>${esc(t('players.localToRegionConfirmTitle', 'Перенести локальний список у регіон?'))}</h3>
+            <p>${esc(tv('players.localToRegionConfirmMessage', 'Ти точно хочеш перенести {count} гравців у таблицю {region}?', { count: preview.localCount || 0, region: regionLabel }))}</p>
+          </div>
+        </div>
+        <div class="confirm-note">
+          <strong>${esc(t('players.localToRegionPreview', 'Попередній перегляд змін'))}</strong><br>
+          ${esc(t('players.localRows', 'Локальних рядків'))}: ${preview.localCount || 0}<br>
+          ${esc(t('players.regionRows', 'Зараз у регіоні'))}: ${preview.existingCount || 0}<br>
+          ${esc(t('players.mergeWillAdd', 'Додасть'))}: ${preview.addCount || 0} · ${esc(t('players.mergeWillUpdate', 'Оновить'))}: ${preview.updateCount || 0} · ${esc(t('players.mergeWillKeep', 'Залишить'))}: ${preview.keepCount || 0}<br>
+          ${esc(t('players.replaceWillDelete', 'При заміні буде очищено старих рядків'))}: ${preview.replaceDeleteCount || 0}<br>
+          ${preview.duplicateCount ? `⚠️ ${esc(t('players.localDuplicateRows', 'Повторів у локальному списку'))}: ${preview.duplicateCount}<br>` : ''}
+          ${preview.missingTierCount ? `⚠️ ${esc(t('players.localMissingTier', 'Без тіру'))}: ${preview.missingTierCount}<br>` : ''}
+          ${preview.missingMarchCount ? `⚠️ ${esc(t('players.localMissingMarch', 'Без розміру маршу'))}: ${preview.missingMarchCount}<br>` : ''}
+          ${preview.sampleRows?.length ? `<hr><small>${preview.sampleRows.map(previewRowText).map(esc).join('<br>')}</small>` : ''}
+        </div>
+        <div class="confirm-actions" style="flex-wrap:wrap; gap:.6rem;">
+          <button class="btn" type="button" data-action="cancel">${esc(t('common.cancel', 'Скасувати'))}</button>
+          <button class="btn" type="button" data-action="merge">${esc(t('players.localToRegionMerge', 'Додати / оновити'))}</button>
+          <button class="btn btn-danger-solid" type="button" data-action="replace">${esc(t('players.localToRegionReplace', 'Замінити таблицю'))}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    const finish = value => {
+      modal.classList.remove('is-open');
+      modal.remove();
+      resolve(value);
+    };
+    modal.addEventListener('click', event => {
+      const action = event.target?.dataset?.action;
+      if (!action) return;
+      if (action === 'cancel') finish('');
+      if (action === 'merge') finish('merge');
+      if (action === 'replace') finish('replace');
+    });
+  });
+}
+
+async function loadExistingRegionRowsForLocalImportPreview(region = '') {
+  if (loadedRegion === region && Array.isArray(loadedRegionRows) && loadedRegionRows.length) return loadedRegionRows;
+  try {
+    const result = await listRegionRegistrations(currentUser, region, { force: true });
+    currentProfile = result.profile || currentProfile;
+    return (Array.isArray(result.rows) ? result.rows : []).map(row => ({ ...regionRegistrationToPlayer(row), source: REGION_SOURCE }));
+  } catch (error) {
+    console.warn('[WKD] local-to-region preview skipped:', error);
+    return [];
+  }
+}
+
 function canUseRegionSource() {
   return Boolean(currentUser && isProfileComplete(currentProfile));
 }
 
+function regionRoleForLocalImport(region = '') {
+  const safeRegion = normalizeRegion(region || targetRegion());
+  const globalRole = normalizeUserRole(currentProfile?.role || 'player');
+  const email = String(currentUser?.email || currentProfile?.email || '').trim().toLowerCase();
+  if (email === 'vovapotaychuk@gmail.com') return 'admin';
+  if (globalRole === 'admin' || globalRole === 'moderator') return globalRole;
+  const main = getGameProfile(currentProfile || {});
+  if (normalizeRegion(main.region) === safeRegion) return globalRole;
+  const farm = getUserFarms(currentProfile || {}).find(item => normalizeRegion(item.region) === safeRegion);
+  return normalizeUserRole(farm?.role || 'player');
+}
+
 function canMoveLocalToRegion() {
   const region = targetRegion();
-  const role = normalizeUserRole(currentProfile?.role || 'player');
-  return Boolean(currentUser && region && canUseRegionSource() && ['admin', 'moderator', 'consul', 'officer'].includes(role) && canManageRegion(currentProfile, region, currentUser));
+  const role = regionRoleForLocalImport(region);
+  return Boolean(currentUser && region && canUseRegionSource() && ['admin', 'moderator', 'consul'].includes(role) && canManageRegion(currentProfile, region, currentUser));
 }
 
 function targetRegion() {
@@ -233,10 +406,11 @@ function updateTransferButtons() {
   const regionBtn = regionToLocalButton();
 
   if (localBtn) {
-    localBtn.hidden = !canUseRegionSource();
-    localBtn.disabled = !canMoveLocalToRegion() || !localRows.length || loadingRegion;
-    localBtn.title = !canMoveLocalToRegion()
-      ? t('players.localToRegionAccess', 'Only the consul, officer, moderator, or admin of the current region can move the local list to the region.')
+    const allowed = canMoveLocalToRegion();
+    localBtn.hidden = !allowed;
+    localBtn.disabled = !allowed || !localRows.length || loadingRegion;
+    localBtn.title = !allowed
+      ? t('players.localToRegionAccess', 'Only the consul of this region, moderator, or admin can move the local list to the region.')
       : (!localRows.length ? t('players.importLocalFirst', 'Import Excel/CSV into the local list first.') : t('players.localToRegionTitle', 'Move the local list into the table of the current region.'));
   }
 
@@ -325,26 +499,48 @@ async function copyLocalToRegion() {
   const storedLocalRows = getLocalPlayers();
   const localRows = normalizeLocalRowsForRegionImport(storedLocalRows);
   if (!canMoveLocalToRegion()) {
-    setNote(t('players.localToRegionAccess', 'Only the consul, officer, moderator, or admin of the current region can move the local list to the region.'), 'warn');
+    setNote(t('players.localToRegionAccess', 'Only the consul of this region, moderator, or admin can move the local list to the region.'), 'warn');
     return;
   }
   if (!localRows.length) {
     setNote(t('players.noLocalToMove', 'No local players to move. Import Excel/CSV first.'), 'warn');
     return;
   }
+  const regionToImport = targetRegion();
+  if (!regionToImport) {
+    setNote(t('players.localToRegionFailed', 'Could not move the local list to the region. Check access rights or region.'), 'warn');
+    return;
+  }
+  if (!canRunLocalImport(regionToImport)) {
+    setNote(t('players.localToRegionRateLimited', 'Перенос можна запускати не більше 2 разів за 5 хвилин для одного регіону.'), 'warn');
+    return;
+  }
+  setNote(t('players.localToRegionPreparing', 'Перевіряю поточну таблицю регіону перед переносом...'), 'muted');
+  const existingRows = await loadExistingRegionRowsForLocalImportPreview(regionToImport);
+  const preview = buildLocalToRegionPreview(localRows, existingRows);
+  const mode = await showLocalToRegionModeDialog(preview, regionToImport ? `R${regionToImport}` : currentRegionLabel());
+  if (!mode) {
+    setNote(t('players.localToRegionCancelled', 'Перенесення локального списку скасовано.'), 'muted');
+    return;
+  }
   try {
-    const regionToImport = targetRegion();
-    if (!regionToImport) throw new Error('region-required');
     loadedRegion = regionToImport;
     localStorage.setItem(REGION_KEY, regionToImport);
-    setNote(tv('players.movingToRegion', 'Moving {count} players into {region}...', { count: localRows.length, region: currentRegionLabel() }), 'muted');
-    const result = await importLocalPlayersToRegion(currentUser, localRows, regionToImport);
+    const actionText = mode === 'merge'
+      ? t('players.localToRegionMergeProgress', 'Додаю/оновлюю локальний список у регіоні...')
+      : t('players.localToRegionReplaceProgress', 'Замінюю регіональну таблицю локальним списком...');
+    setNote(`${actionText} ${currentRegionLabel()} · ${localRows.length}`, 'muted');
+    const result = await importLocalPlayersToRegion(currentUser, localRows, regionToImport, { mode });
     const region = result.region || regionToImport;
     await saveRegionTowerPlan(currentUser, region, { version: 1, updatedAtMs: Date.now(), regions: { home: {}, region2: {}, region3: {} } }).catch(error => console.warn('tower plan reset skipped', error));
     document.dispatchEvent(new CustomEvent('wkd:tower-plan-hard-reset', { detail: { source: 'local-to-region' } }));
     loadedRegionRows = [];
     await applyMode('region', { forceRegion: true });
-    setNote(tv('players.regionReplaced', 'Region table R{region} replaced: added {count} players, previous cycle is hidden/cleared.', { region: result.region, count: result.count }), 'success');
+    rememberLocalImportRun(region);
+    const message = result.mode === 'merge'
+      ? tv('players.regionMerged', 'Region table R{region} updated: added {added}, updated {updated}, kept {kept}.', { region: result.region, added: result.added || 0, updated: result.updated || 0, kept: result.kept || 0 })
+      : tv('players.regionReplaced', 'Region table R{region} replaced: added {count} players, deleted {deleted} old rows.', { region: result.region, count: result.count, deleted: result.deleted || result.replaced || 0 });
+    setNote(message, 'success');
   } catch (error) {
     console.error(error);
     setNote(t('players.localToRegionFailed', 'Could not move the local list to the region. Check access rights or region.'), 'warn');
