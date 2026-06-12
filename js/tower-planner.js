@@ -1171,10 +1171,6 @@ window.WKD = window.WKD || {};
     button.classList.toggle('is-region', active.mode === 'region');
     button.classList.toggle('is-local', active.mode !== 'region');
   }
-  function finalSourceButton() {
-    if (!signedInForTowerSource()) return '';
-    return `<button class="btn btn-sm tower-source-trigger-inline ${activeTowerSourceOption().mode === 'region' ? 'is-region' : ''}" type="button" data-tower-scope-open>${esc(towerSourceLabel())}</button>`;
-  }
   function ensureTowerSourceDialog() {
     let root = document.getElementById('towerSourceDialog');
     if (!root) {
@@ -1259,7 +1255,6 @@ window.WKD = window.WKD || {};
     if (!shifts.includes(activeFinalShift)) activeFinalShift = shifts[0] || 'shift1';
     const buttons = shifts.map(shift => `<button class="btn btn-sm ${shift === activeFinalShift ? 'is-active' : ''}" type="button" data-final-shift="${shift}">${shiftLabel(shift)}</button>`).join('');
     root.innerHTML = `${buttons}
-      ${finalSourceButton()}
       ${sourceInfo().mode === 'region' && canEditPlan() ? `<button class="btn btn-sm" type="button" data-tower-publish>${esc(tr('tower.publishPlan', 'Опублікувати в регіон'))}</button>` : ''}
       ${sourceInfo().mode === 'region' && canEditPlan() && regionHasUnpublishedDraft(sourceInfo().region || '') ? `<button class="btn btn-sm" type="button" data-tower-load-published>${esc(tr('tower.loadPublishedPlan', 'Завантажити опублікований'))}</button>` : ''}
       <button class="btn btn-sm tower-final-lang-trigger board-lang-trigger" type="button" data-final-lang-open>Мова плану</button>
