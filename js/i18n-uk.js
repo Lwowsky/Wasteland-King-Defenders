@@ -2110,6 +2110,13 @@ window.WKD_TRANSLATIONS.uk = {
   "tower.publishedPlanLoaded": 'Опублікований план повернено.',
   "players.regionD1MissingNoFirestore": "Таблиця регіону ще не має D1-кешу. Firebase fallback не запускався, щоб не витрачати reads.",
   "players.localToRegionResetTowerPlanOption": "Очистити старий план турелей після переносу",
-  "players.localToRegionResetTowerPlanHint": "За замовчуванням вимкнено: перенос локального списку не буде скидати фінальний план і не додасть зайві writes. Увімкни тільки якщо хочеш повністю почати план турелей заново."
-
+  "players.localToRegionResetTowerPlanHint": "За замовчуванням вимкнено: перенос локального списку не буде скидати фінальний план і не додасть зайві writes. Увімкни тільки якщо хочеш повністю почати план турелей заново.",
+  "tower.bothShiftApplied": "Обидві: додано у зміну 1 — {shift1}, у зміну 2 — {shift2}.",
+  "tower.noManualShiftBackup": "Немає збереженого ручного розподілу для відновлення.",
+  "tower.importShiftRestored": "Зміни гравців відновлено з імпортованого стану.",
+  "finalPlan.pngLibraryLoadFailed": "Не вдалося завантажити бібліотеку для PNG. Перевір інтернет і спробуй ще раз.",
+  "finalPlan.pngLibraryMissing": "Не вдалося завантажити PNG: бібліотека html2canvas ще не завантажилась. Онови сторінку і спробуй ще раз.",
+  "finalPlan.pngCreateFailed": "Не вдалося створити PNG фінального плану.",
+  "tower.clearPlanTitle": "Очистити розподіл?",
+  "tower.clearPlanMessage": "Усі гравці будуть прибрані з турелей, але таблиця гравців залишиться."
 };

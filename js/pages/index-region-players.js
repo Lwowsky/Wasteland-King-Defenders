@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=186';
+import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=187';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -409,7 +409,9 @@ async function loadExistingRegionRowsForLocalImportPreview(region = '') {
   try {
     const result = await listRegionRegistrations(currentUser, region, { d1Only: true, forceD1: false });
     currentProfile = result.profile || currentProfile;
-    const rows = (Array.isArray(result.rows) ? result.rows : []).map(row => ({ ...regionRegistrationToPlayer(row), source: REGION_SOURCE }));
+    const rows = (Array.isArray(result.rows) ? result.rows : [])
+      .filter(row => !normalizeRegion(row.region || '') || normalizeRegion(row.region || '') === normalizeRegion(region))
+      .map(row => ({ ...regionRegistrationToPlayer(row), source: REGION_SOURCE }));
     writeLocalImportPreviewCache(region, rows);
     return rows;
   } catch (error) {
@@ -595,8 +597,10 @@ async function loadRegionRows(force = false, regionOverride = '') {
       d1TtlMs: force ? 0 : undefined
     });
     currentProfile = result.profile || currentProfile;
-    loadedRegion = result.region || loadedRegion || requestedRegion;
-    loadedRegionRows = (result.rows || []).map(row => ({ ...regionRegistrationToPlayer(row), source: REGION_SOURCE }));
+    loadedRegion = normalizeRegion(result.region || requestedRegion || loadedRegion);
+    loadedRegionRows = (result.rows || [])
+      .filter(row => !normalizeRegion(row.region || '') || normalizeRegion(row.region || '') === loadedRegion)
+      .map(row => ({ ...regionRegistrationToPlayer(row), source: REGION_SOURCE }));
     loadedRegionAlliances = loadedRegion ? await listRegionAlliances(loadedRegion).catch(() => []) : [];
     updateAllianceColorMap();
     if (result?.d1Missing) {

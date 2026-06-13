@@ -2110,6 +2110,13 @@ window.WKD_TRANSLATIONS.pl = {
   "players.localToRegionResetTowerPlanHint": "Domyślnie wyłączone: przeniesienie listy lokalnej nie zresetuje planu końcowego i nie doda dodatkowych writes. Włącz tylko wtedy, gdy chcesz zacząć plan wież od zera.",
   "players.localToRegionConfirmNote": "Bieżąca tabela tego cyklu zostanie zastąpiona listą lokalną. Formularz regionu pozostanie otwarty, ale zgłoszenia/wiersze bieżącego cyklu zostaną nadpisane.",
   "players.localToRegionConfirmAccept": "Tak, przenieś",
-  "players.localToRegionCancelled": "Przenoszenie listy lokalnej anulowane."
-
+  "players.localToRegionCancelled": "Przenoszenie listy lokalnej anulowane.",
+  "tower.bothShiftApplied": "Obie zmiany: dodano do zmiany 1 — {shift1}, do zmiany 2 — {shift2}.",
+  "tower.noManualShiftBackup": "Brak zapisanego ręcznego podziału do przywrócenia.",
+  "tower.importShiftRestored": "Zmiany graczy przywrócono ze stanu importu.",
+  "finalPlan.pngLibraryLoadFailed": "Nie udało się załadować biblioteki PNG. Sprawdź internet i spróbuj ponownie.",
+  "finalPlan.pngLibraryMissing": "Nie udało się pobrać PNG: biblioteka html2canvas nie jest jeszcze załadowana. Odśwież stronę i spróbuj ponownie.",
+  "finalPlan.pngCreateFailed": "Nie udało się utworzyć PNG planu końcowego.",
+  "tower.clearPlanTitle": "Wyczyścić podział?",
+  "tower.clearPlanMessage": "Wszyscy gracze zostaną usunięci z wież, ale tabela graczy zostanie."
 };

@@ -184,6 +184,18 @@ async function ensureRegionTableSchema(db) {
         plan_json TEXT NOT NULL DEFAULT '{}'
       )`,
       `CREATE INDEX IF NOT EXISTS idx_region_tower_plans_updated ON region_tower_plans(updated_at_ms)`,
+      `CREATE TABLE IF NOT EXISTS region_alliances (
+        region TEXT NOT NULL,
+        tag TEXT NOT NULL,
+        name TEXT NOT NULL DEFAULT '',
+        note TEXT NOT NULL DEFAULT '',
+        color_hue INTEGER,
+        color_mode TEXT NOT NULL DEFAULT 'auto',
+        updated_at_ms INTEGER NOT NULL DEFAULT 0,
+        updated_by TEXT NOT NULL DEFAULT '',
+        PRIMARY KEY (region, tag)
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_region_alliances_region ON region_alliances(region)`,
       `CREATE TABLE IF NOT EXISTS public_stats_pages (
         bucket INTEGER PRIMARY KEY,
         updated_at_ms INTEGER NOT NULL DEFAULT 0,
@@ -586,7 +598,7 @@ async function saveTable(db, table) {
     table.cycleId || table.settings?.currentCycleId || "active",
   );
   const rows = (Array.isArray(table.rows) ? table.rows : [])
-    .map(sanitizeTableRow)
+    .map((row) => sanitizeTableRow({ ...row, region }))
     .filter((row) => row.nickname)
     .slice(0, MAX_TABLE_ROWS);
   const version =
@@ -625,6 +637,105 @@ async function saveTable(db, table) {
   ]);
 
   return { region, cycleId, version, updatedAtMs, settings, rows };
+}
+
+
+function allianceRowToObject(row = {}) {
+  if (!row) return null;
+  const tag = clean(row.tag || '', 12);
+  if (!tag) return null;
+  const hueNumber = Number(row.color_hue);
+  return {
+    id: tag,
+    tag,
+    region: normalizeRegion(row.region),
+    name: clean(row.name || tag, 80),
+    note: clean(row.note || '', 160),
+    colorHue: Number.isFinite(hueNumber) ? ((Math.round(hueNumber) % 360) + 360) % 360 : null,
+    colorMode: clean(row.color_mode || 'auto', 40),
+    updatedAtMs: Number(row.updated_at_ms) || 0,
+    updatedBy: clean(row.updated_by || '', 160),
+  };
+}
+
+function sanitizeAlliancePayload(item = {}, region = '') {
+  const tag = clean(item?.tag || item?.id || '', 12);
+  if (!tag) return null;
+  const hueNumber = Number(item?.colorHue);
+  const colorHue = Number.isFinite(hueNumber) ? ((Math.round(hueNumber) % 360) + 360) % 360 : null;
+  return {
+    id: tag,
+    tag,
+    region: normalizeRegion(region || item?.region),
+    name: clean(item?.name || tag, 80),
+    note: clean(item?.note || '', 160),
+    colorHue,
+    colorMode: colorHue === null ? 'auto' : clean(item?.colorMode || 'manual', 40),
+    updatedAtMs: Number(item?.updatedAtMs) || Date.now(),
+  };
+}
+
+async function canWriteRegionD1(db, env, user, region) {
+  if (!user?.uid || !region) return false;
+  if (isAdminUid(env, user.uid) || await hasSavedRegionAccess(db, user.uid, region)) return true;
+  const table = await getActiveTable(db, region).catch(() => null);
+  return tableContainsUid(table, user.uid);
+}
+
+async function handleRegionAlliancesRead(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  const url = new URL(request.url);
+  const region = normalizeRegion(url.searchParams.get('region'));
+  if (!region) return json({ ok: false, error: 'region_required' }, 400);
+  const table = await getActiveTable(db, region).catch(() => null);
+  const allowed = isAdminUid(env, user.uid) || tableContainsUid(table, user.uid) || await hasSavedRegionAccess(db, user.uid, region);
+  if (!allowed) return json({ ok: false, error: 'region_access_denied' }, 403);
+  const result = await db.prepare(`SELECT region, tag, name, note, color_hue, color_mode, updated_at_ms, updated_by FROM region_alliances WHERE region = ?1 ORDER BY tag ASC`).bind(region).all();
+  const items = (result?.results || []).map(allianceRowToObject).filter(Boolean);
+  return json({ ok: true, region, items, version: Date.now(), usage: { d1RowsRead: Math.max(1, items.length) }, source: 'cloudflare-d1-region-alliances' }, 200, 'private, no-store');
+}
+
+async function handleRegionAlliancesPut(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const region = normalizeRegion(body?.region || body?.alliance?.region);
+  const item = sanitizeAlliancePayload(body?.alliance || body, region);
+  if (!region || !item?.tag) return json({ ok: false, error: 'alliance_tag_required' }, 400);
+  if (!await canWriteRegionD1(db, env, user, region)) return json({ ok: false, error: 'region_access_denied' }, 403);
+  const nowMs = Date.now();
+  await db.prepare(`INSERT INTO region_alliances (region, tag, name, note, color_hue, color_mode, updated_at_ms, updated_by)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+    ON CONFLICT(region, tag) DO UPDATE SET
+      name = excluded.name,
+      note = excluded.note,
+      color_hue = excluded.color_hue,
+      color_mode = excluded.color_mode,
+      updated_at_ms = excluded.updated_at_ms,
+      updated_by = excluded.updated_by`).bind(region, item.tag, item.name || item.tag, item.note || '', item.colorHue, item.colorMode || 'auto', nowMs, clean(user.uid, 160)).run();
+  await grantRegionAccess(db, region, user.uid, 'alliance-color');
+  return json({ ok: true, region, item: { ...item, updatedAtMs: nowMs, updatedBy: user.uid }, usage: { d1RowsWritten: 1 }, source: 'cloudflare-d1-region-alliances' });
+}
+
+async function handleRegionAlliancesDelete(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const region = normalizeRegion(body?.region);
+  const tag = clean(body?.tag || body?.id || '', 12);
+  if (!region || !tag) return json({ ok: false, error: 'alliance_tag_required' }, 400);
+  if (!await canWriteRegionD1(db, env, user, region)) return json({ ok: false, error: 'region_access_denied' }, 403);
+  await db.prepare(`DELETE FROM region_alliances WHERE region = ?1 AND tag = ?2`).bind(region, tag).run();
+  return json({ ok: true, region, tag, usage: { d1RowsWritten: 1 }, source: 'cloudflare-d1-region-alliances' });
 }
 
 
@@ -1150,8 +1261,6 @@ async function handleRegionTableSnapshot(request, env) {
   if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
   await ensureRegionTableSchema(db);
   const user = await verifyFirebaseToken(request, env);
-  if (!isAdminUid(env, user.uid))
-    return json({ ok: false, error: "admin_required" }, 403);
   let body = null;
   try {
     body = await request.json();
@@ -1159,12 +1268,14 @@ async function handleRegionTableSnapshot(request, env) {
     return json({ ok: false, error: "bad_json" }, 400);
   }
   const region = normalizeRegion(body?.region);
+  if (!region || !await canWriteRegionD1(db, env, user, region))
+    return json({ ok: false, error: "region_access_denied" }, 403);
   const cycleId = normalizeCycleId(
     body?.cycleId || body?.settings?.currentCycleId || "active",
   );
   if (!region) return json({ ok: false, error: "region_required" }, 400);
   const rows = (Array.isArray(body?.rows) ? body.rows : [])
-    .map(sanitizeTableRow)
+    .map((row) => sanitizeTableRow({ ...row, region }))
     .filter((row) => row.nickname)
     .slice(0, MAX_TABLE_ROWS);
   const table = await saveTable(db, {
@@ -1180,6 +1291,31 @@ async function handleRegionTableSnapshot(request, env) {
     version: table.version,
     rowsCount: table.rows.length,
   });
+}
+
+
+async function handleRegionTableDeleteRows(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: "bad_json" }, 400); }
+  const region = normalizeRegion(body?.region);
+  const ids = (Array.isArray(body?.ids) ? body.ids : [body?.id]).map(item => clean(item || '', 180)).filter(Boolean).slice(0, 500);
+  if (!region || !ids.length) return json({ ok: false, error: "delete_rows_required" }, 400);
+  const table = await getActiveTable(db, region);
+  if (!table) return json({ ok: true, region, deleted: 0, rowsCount: 0, usage: { d1RowsRead: 1 }, source: "cloudflare-d1-region-table" });
+  const allowed = isAdminUid(env, user.uid) || tableContainsUid(table, user.uid) || await hasSavedRegionAccess(db, user.uid, region);
+  if (!allowed) return json({ ok: false, error: "region_access_denied" }, 403);
+  const wanted = new Set(ids);
+  const before = Array.isArray(table.rows) ? table.rows.length : 0;
+  const rows = (Array.isArray(table.rows) ? table.rows : []).filter(row => !wanted.has(clean(row.id || row.uid || '', 180)));
+  const deleted = before - rows.length;
+  if (deleted > 0) {
+    await saveTable(db, { ...table, version: Date.now(), rows });
+  }
+  return json({ ok: true, region, deleted, rowsCount: rows.length, usage: { d1RowsRead: before, d1RowsWritten: deleted > 0 ? 1 : 0 }, source: "cloudflare-d1-region-table" });
 }
 
 
@@ -3433,6 +3569,19 @@ export default {
         return await handleRegionFormShareRead(request, env, regionFormShareMatch[1]);
       }
 
+
+      if (url.pathname === "/api/region-alliances" && request.method === "GET") {
+        return await handleRegionAlliancesRead(request, env);
+      }
+
+      if (url.pathname === "/api/region-alliances" && request.method === "PUT") {
+        return await handleRegionAlliancesPut(request, env);
+      }
+
+      if (url.pathname === "/api/region-alliances" && request.method === "DELETE") {
+        return await handleRegionAlliancesDelete(request, env);
+      }
+
       if (url.pathname === "/api/region-table" && request.method === "GET") {
         return await handleRegionTableRead(request, env);
       }
@@ -3447,6 +3596,11 @@ export default {
 
       if (url.pathname === "/api/region-table/import-lock" && request.method === "POST") {
         return await handleRegionImportLockCommit(request, env);
+      }
+
+
+      if (url.pathname === "/api/region-table/delete-rows" && request.method === "POST") {
+        return await handleRegionTableDeleteRows(request, env);
       }
 
       if (

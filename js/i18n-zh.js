@@ -2110,6 +2110,13 @@ window.WKD_TRANSLATIONS.zh = {
   "players.localToRegionResetTowerPlanHint": "默认关闭：转移本地列表不会重置最终计划，也不会增加额外写入。只有想从零开始重做炮塔计划时才开启。",
   "players.localToRegionConfirmNote": "当前周期的表格将被本地列表替换。地区表单会保持开放，但当前周期的申请/行会被覆盖。",
   "players.localToRegionConfirmAccept": "是，转移",
-  "players.localToRegionCancelled": "已取消转移本地列表。"
-
+  "players.localToRegionCancelled": "已取消转移本地列表。",
+  "tower.bothShiftApplied": "两班：已加入第1班 — {shift1}，第2班 — {shift2}。",
+  "tower.noManualShiftBackup": "没有可恢复的手动分配记录。",
+  "tower.importShiftRestored": "玩家变更已恢复到导入状态。",
+  "finalPlan.pngLibraryLoadFailed": "无法加载 PNG 库。请检查网络后重试。",
+  "finalPlan.pngLibraryMissing": "无法下载 PNG：html2canvas 尚未加载。请刷新页面后重试。",
+  "finalPlan.pngCreateFailed": "无法创建最终计划 PNG。",
+  "tower.clearPlanTitle": "清除分配？",
+  "tower.clearPlanMessage": "所有玩家将从炮塔中移除，但玩家表会保留。"
 };

@@ -2108,6 +2108,13 @@ window.WKD_TRANSLATIONS.ar = {
   "players.localToRegionResetTowerPlanHint": "مغلق افتراضيًا: نقل القائمة المحلية لن يعيد ضبط الخطة النهائية ولن يضيف writes إضافية. فعّله فقط إذا أردت بدء خطة الأبراج من الصفر.",
   "players.localToRegionConfirmNote": "سيتم استبدال الجدول الحالي لهذه الدورة بالقائمة المحلية. سيبقى نموذج المنطقة مفتوحًا، لكن طلبات/صفوف الدورة الحالية ستُستبدل.",
   "players.localToRegionConfirmAccept": "نعم، انقل",
-  "players.localToRegionCancelled": "تم إلغاء نقل القائمة المحلية."
-
+  "players.localToRegionCancelled": "تم إلغاء نقل القائمة المحلية.",
+  "tower.bothShiftApplied": "كلتا المناوبتين: تمت الإضافة إلى المناوبة 1 — {shift1}، وإلى المناوبة 2 — {shift2}.",
+  "tower.noManualShiftBackup": "لا يوجد توزيع يدوي محفوظ لاستعادته.",
+  "tower.importShiftRestored": "تمت استعادة تغييرات اللاعبين من حالة الاستيراد.",
+  "finalPlan.pngLibraryLoadFailed": "تعذر تحميل مكتبة PNG. تحقق من الإنترنت وحاول مرة أخرى.",
+  "finalPlan.pngLibraryMissing": "تعذر تنزيل PNG: لم يتم تحميل html2canvas بعد. حدّث الصفحة وحاول مرة أخرى.",
+  "finalPlan.pngCreateFailed": "تعذر إنشاء PNG للخطة النهائية.",
+  "tower.clearPlanTitle": "هل تريد مسح التوزيع؟",
+  "tower.clearPlanMessage": "سيتم إزالة جميع اللاعبين من الأبراج، لكن جدول اللاعبين سيبقى."
 };

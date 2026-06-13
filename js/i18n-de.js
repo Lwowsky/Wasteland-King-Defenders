@@ -2110,6 +2110,13 @@ window.WKD_TRANSLATIONS.de = {
   "players.localToRegionResetTowerPlanHint": "Standardmäßig aus: Die lokale Liste setzt den finalen Plan nicht zurück und erzeugt keine zusätzlichen Writes. Nur einschalten, wenn du den Turmplan komplett neu starten willst.",
   "players.localToRegionConfirmNote": "Die aktuelle Tabelle für diesen Zyklus wird durch die lokale Liste ersetzt. Das Regionsformular bleibt geöffnet, aber aktuelle Zyklus-Anmeldungen/Zeilen werden überschrieben.",
   "players.localToRegionConfirmAccept": "Ja, übertragen",
-  "players.localToRegionCancelled": "Übertragung der lokalen Liste abgebrochen."
-
+  "players.localToRegionCancelled": "Übertragung der lokalen Liste abgebrochen.",
+  "tower.bothShiftApplied": "Beide Schichten: zu Schicht 1 hinzugefügt — {shift1}, zu Schicht 2 — {shift2}.",
+  "tower.noManualShiftBackup": "Keine gespeicherte manuelle Verteilung zum Wiederherstellen.",
+  "tower.importShiftRestored": "Spieleränderungen wurden aus dem Importzustand wiederhergestellt.",
+  "finalPlan.pngLibraryLoadFailed": "Die PNG-Bibliothek konnte nicht geladen werden. Prüfe die Internetverbindung und versuche es erneut.",
+  "finalPlan.pngLibraryMissing": "PNG konnte nicht heruntergeladen werden: html2canvas ist noch nicht geladen. Aktualisiere die Seite und versuche es erneut.",
+  "finalPlan.pngCreateFailed": "PNG des finalen Plans konnte nicht erstellt werden.",
+  "tower.clearPlanTitle": "Verteilung löschen?",
+  "tower.clearPlanMessage": "Alle Spieler werden aus den Türmen entfernt, aber die Spielertabelle bleibt erhalten."
 };

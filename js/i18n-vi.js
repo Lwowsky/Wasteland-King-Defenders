@@ -2110,6 +2110,13 @@ window.WKD_TRANSLATIONS.vi = {
   "players.localToRegionResetTowerPlanHint": "Mặc định tắt: chuyển danh sách cục bộ sẽ không đặt lại kế hoạch cuối và không tạo thêm writes. Chỉ bật nếu muốn làm lại kế hoạch tháp từ đầu.",
   "players.localToRegionConfirmNote": "Bảng hiện tại của chu kỳ này sẽ được thay bằng danh sách cục bộ. Biểu mẫu khu vực vẫn mở, nhưng các đơn/hàng của chu kỳ hiện tại sẽ bị ghi đè.",
   "players.localToRegionConfirmAccept": "Có, chuyển",
-  "players.localToRegionCancelled": "Đã hủy chuyển danh sách cục bộ."
-
+  "players.localToRegionCancelled": "Đã hủy chuyển danh sách cục bộ.",
+  "tower.bothShiftApplied": "Cả hai ca: đã thêm vào ca 1 — {shift1}, ca 2 — {shift2}.",
+  "tower.noManualShiftBackup": "Không có phân bổ thủ công đã lưu để khôi phục.",
+  "tower.importShiftRestored": "Các thay đổi của người chơi đã được khôi phục từ trạng thái nhập.",
+  "finalPlan.pngLibraryLoadFailed": "Không tải được thư viện PNG. Kiểm tra internet và thử lại.",
+  "finalPlan.pngLibraryMissing": "Không tải được PNG: thư viện html2canvas chưa được tải. Làm mới trang và thử lại.",
+  "finalPlan.pngCreateFailed": "Không tạo được PNG của kế hoạch cuối.",
+  "tower.clearPlanTitle": "Xóa phân bổ?",
+  "tower.clearPlanMessage": "Tất cả người chơi sẽ được gỡ khỏi tháp, nhưng bảng người chơi vẫn giữ nguyên."
 };

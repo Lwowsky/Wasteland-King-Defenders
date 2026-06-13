@@ -2110,6 +2110,13 @@ window.WKD_TRANSLATIONS.ko = {
   "players.localToRegionResetTowerPlanHint": "기본값은 꺼짐입니다. 로컬 목록을 전송해도 최종 계획을 초기화하지 않고 추가 writes가 생기지 않습니다. 포탑 계획을 처음부터 다시 만들 때만 켜세요.",
   "players.localToRegionConfirmNote": "현재 사이클의 표가 로컬 목록으로 대체됩니다. 지역 양식은 계속 열려 있지만 현재 사이클의 신청/행은 덮어쓰기됩니다.",
   "players.localToRegionConfirmAccept": "예, 이동",
-  "players.localToRegionCancelled": "로컬 목록 이동이 취소되었습니다."
-
+  "players.localToRegionCancelled": "로컬 목록 이동이 취소되었습니다.",
+  "tower.bothShiftApplied": "양쪽 교대: 1교대에 {shift1}명, 2교대에 {shift2}명 추가했습니다.",
+  "tower.noManualShiftBackup": "복원할 저장된 수동 배치가 없습니다.",
+  "tower.importShiftRestored": "플레이어 변경 사항을 가져온 상태로 복원했습니다.",
+  "finalPlan.pngLibraryLoadFailed": "PNG 라이브러리를 불러오지 못했습니다. 인터넷을 확인하고 다시 시도하세요.",
+  "finalPlan.pngLibraryMissing": "PNG를 다운로드하지 못했습니다: html2canvas가 아직 로드되지 않았습니다. 페이지를 새로고침하고 다시 시도하세요.",
+  "finalPlan.pngCreateFailed": "최종 계획 PNG를 만들지 못했습니다.",
+  "tower.clearPlanTitle": "배치를 지울까요?",
+  "tower.clearPlanMessage": "모든 플레이어가 포탑에서 제거되지만 플레이어 표는 유지됩니다."
 };

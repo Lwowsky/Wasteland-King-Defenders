@@ -2110,6 +2110,13 @@ window.WKD_TRANSLATIONS.en = {
   "tower.publishedPlanLoaded": 'Published plan restored.',
   "players.regionD1MissingNoFirestore": "The region table has no D1 cache yet. Firebase fallback was not used to protect reads.",
   "players.localToRegionResetTowerPlanOption": "Clear the old turret plan after transfer",
-  "players.localToRegionResetTowerPlanHint": "Off by default: moving the local list will not reset the final plan and will not add extra writes. Turn it on only if you want to start the turret plan from zero."
-
+  "players.localToRegionResetTowerPlanHint": "Off by default: moving the local list will not reset the final plan and will not add extra writes. Turn it on only if you want to start the turret plan from zero.",
+  "tower.bothShiftApplied": "Both shifts: added to shift 1 — {shift1}, to shift 2 — {shift2}.",
+  "tower.noManualShiftBackup": "No saved manual distribution to restore.",
+  "tower.importShiftRestored": "Player shifts were restored from the imported state.",
+  "finalPlan.pngLibraryLoadFailed": "Could not load the PNG library. Check your internet connection and try again.",
+  "finalPlan.pngLibraryMissing": "Could not download PNG: html2canvas is not loaded yet. Refresh the page and try again.",
+  "finalPlan.pngCreateFailed": "Could not create the final plan PNG.",
+  "tower.clearPlanTitle": "Clear the distribution?",
+  "tower.clearPlanMessage": "All players will be removed from turrets, but the player table will remain."
 };

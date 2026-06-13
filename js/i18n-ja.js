@@ -2110,6 +2110,13 @@ window.WKD_TRANSLATIONS.ja = {
   "players.localToRegionResetTowerPlanHint": "初期状態ではオフです。ローカルリストの転送では最終計画をリセットせず、追加の書き込みも増えません。タレット計画を最初から作り直す場合だけオンにしてください。",
   "players.localToRegionConfirmNote": "このサイクルの現在の表はローカルリストで置き換えられます。地域フォームは開いたままですが、現在サイクルの申請/行は上書きされます。",
   "players.localToRegionConfirmAccept": "はい、移動する",
-  "players.localToRegionCancelled": "ローカルリストの移動をキャンセルしました。"
-
+  "players.localToRegionCancelled": "ローカルリストの移動をキャンセルしました。",
+  "tower.bothShiftApplied": "両方シフト: シフト1に {shift1}、シフト2に {shift2} を追加しました。",
+  "tower.noManualShiftBackup": "復元できる手動配分の保存がありません。",
+  "tower.importShiftRestored": "プレイヤーの変更をインポート時の状態に戻しました。",
+  "finalPlan.pngLibraryLoadFailed": "PNGライブラリを読み込めませんでした。インターネット接続を確認してもう一度試してください。",
+  "finalPlan.pngLibraryMissing": "PNGをダウンロードできませんでした: html2canvas がまだ読み込まれていません。ページを更新してもう一度試してください。",
+  "finalPlan.pngCreateFailed": "最終プランのPNGを作成できませんでした。",
+  "tower.clearPlanTitle": "配置をクリアしますか？",
+  "tower.clearPlanMessage": "すべてのプレイヤーはタレットから外されますが、プレイヤー表は残ります。"
 };

@@ -230,3 +230,16 @@ CREATE TABLE IF NOT EXISTS region_tower_plans (
   plan_json TEXT NOT NULL DEFAULT '{}'
 );
 CREATE INDEX IF NOT EXISTS idx_region_tower_plans_updated ON region_tower_plans(updated_at_ms);
+
+CREATE TABLE IF NOT EXISTS region_alliances (
+  region TEXT NOT NULL,
+  tag TEXT NOT NULL,
+  name TEXT NOT NULL DEFAULT '',
+  note TEXT NOT NULL DEFAULT '',
+  color_hue INTEGER,
+  color_mode TEXT NOT NULL DEFAULT 'auto',
+  updated_at_ms INTEGER NOT NULL DEFAULT 0,
+  updated_by TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (region, tag)
+);
+CREATE INDEX IF NOT EXISTS idx_region_alliances_region ON region_alliances(region);

@@ -2110,6 +2110,13 @@ window.WKD_TRANSLATIONS.ru = {
   "players.localToRegionResetTowerPlanHint": "По умолчанию выключено: перенос локального списка не сбросит финальный план и не добавит лишние writes. Включай только если хочешь начать план турелей заново.",
   "players.localToRegionConfirmNote": "Текущая таблица этого цикла будет заменена локальным списком. Форма региона останется открытой, но заявки/строки текущего цикла будут перезаписаны.",
   "players.localToRegionConfirmAccept": "Да, перенести",
-  "players.localToRegionCancelled": "Перенос локального списка отменён."
-
+  "players.localToRegionCancelled": "Перенос локального списка отменён.",
+  "tower.bothShiftApplied": "Обе смены: добавлено в смену 1 — {shift1}, в смену 2 — {shift2}.",
+  "tower.noManualShiftBackup": "Нет сохранённого ручного распределения для восстановления.",
+  "tower.importShiftRestored": "Изменения игроков восстановлены из импортированного состояния.",
+  "finalPlan.pngLibraryLoadFailed": "Не удалось загрузить библиотеку для PNG. Проверь интернет и попробуй ещё раз.",
+  "finalPlan.pngLibraryMissing": "Не удалось скачать PNG: библиотека html2canvas ещё не загрузилась. Обнови страницу и попробуй ещё раз.",
+  "finalPlan.pngCreateFailed": "Не удалось создать PNG финального плана.",
+  "tower.clearPlanTitle": "Очистить распределение?",
+  "tower.clearPlanMessage": "Все игроки будут убраны из турелей, но таблица игроков останется."
 };

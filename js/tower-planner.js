@@ -368,7 +368,7 @@ window.WKD = window.WKD || {};
     }
   }
   function shiftLabel(shift) {
-    return ({ shift1: 'Зміна 1', shift2: 'Зміна 2', shift3: 'Зміна 3', shift4: 'Зміна 4', both: 'Обидві' })[shift] || 'Зміна';
+    return ({ shift1: tr('shift.shift1', 'Зміна 1'), shift2: tr('shift.shift2', 'Зміна 2'), shift3: tr('shift.shift3', 'Зміна 3'), shift4: tr('shift.shift4', 'Зміна 4'), both: tr('shift.both', 'Обидві') })[shift] || tr('common.shift', 'Зміна');
   }
   function normalizeTowerId(value) {
     const id = clean(value || '').toLowerCase();
@@ -401,7 +401,7 @@ window.WKD = window.WKD || {};
   function roleLabel(role = '') {
     const key = roleKey(role);
     if (!key) return '—';
-    return key === 'Fighter' ? 'Бійці' : key === 'Rider' ? 'Наїзники' : 'Стрільці';
+    return key === 'Fighter' ? tr('troop.fighter', 'Бійці') : key === 'Rider' ? tr('troop.rider', 'Наїзники') : tr('troop.shooter', 'Стрільці');
   }
   function uniqueAlliances() {
     const seen = new Map();
@@ -485,7 +485,7 @@ window.WKD = window.WKD || {};
     return SHIFT_ORDER.filter(shift => seen.has(shift));
   }
   function sourceInfo() {
-    return WKD.getPlayersSourceInfo?.() || { mode: 'local', label: 'локального списку', canUpdate: true, region: '' };
+    return WKD.getPlayersSourceInfo?.() || { mode: 'local', label: tr('playerManager.localList', 'локального списку'), canUpdate: true, region: '' };
   }
   function canEditPlan() {
     const info = sourceInfo();
@@ -711,7 +711,7 @@ window.WKD = window.WKD || {};
         const auth = typeof window.firebase?.auth === 'function' ? window.firebase.auth() : window.firebase?.auth;
         signedIn = Boolean(auth?.currentUser);
       } catch (_error) {}
-      const text = info.mode === 'region' ? 'Регіональний' : signedIn ? 'Локальний' : '';
+      const text = info.mode === 'region' ? tr('tower.regionalMode', 'Регіонально') : signedIn ? tr('tower.localMode', 'Локально') : '';
       badge.textContent = text;
       badge.hidden = !text;
       badge.classList.toggle('is-region', info.mode === 'region');
@@ -784,15 +784,15 @@ window.WKD = window.WKD || {};
     const disabled = editable ? '' : 'disabled';
     const manualDisabled = editable && plan.settings.manualShiftEdit ? '' : 'disabled';
     host.innerHTML = `<section class="tower-shift-balance-card">
-      <div class="tower-shift-balance-title"><strong>Обидві зміни і ліміти гравців в альянсі</strong><span>${both.length} гравців</span></div>
-      <label class="tower-check tower-manual-toggle"><input id="towerManualShiftEdit" type="checkbox" ${plan.settings.manualShiftEdit ? 'checked' : ''} ${disabled}><span>Редагувати ліміти вручну</span></label>
+      <div class="tower-shift-balance-title"><strong>${esc(tr('tower.manualShiftTitle', 'Обидві зміни і ліміти гравців в альянсі'))}</strong><span>${esc(tr('tower.playersCountShort', '{count} гравців', { count: both.length }))}</span></div>
+      <label class="tower-check tower-manual-toggle"><input id="towerManualShiftEdit" type="checkbox" ${plan.settings.manualShiftEdit ? 'checked' : ''} ${disabled}><span>${esc(tr('tower.editLimitsManually', 'Редагувати ліміти вручну'))}</span></label>
       <div class="tower-shift-balance-grid tower-shift-limits-grid">
-        <label class="tower-limit-row"><span>Ліміт<br>зміни 1</span><input id="towerShiftLimit1" type="number" min="0" max="100" value="${Number(plan.settings.shiftLimits?.shift1 ?? 100)}" ${manualDisabled}></label>
-        <label class="tower-limit-row"><span>Ліміт<br>зміни 2</span><input id="towerShiftLimit2" type="number" min="0" max="100" value="${Number(plan.settings.shiftLimits?.shift2 ?? 100)}" ${manualDisabled}></label>
-        <label class="tower-limit-row"><span>Додати в<br>зміну 1</span><input id="towerShiftAdd1" type="number" min="0" max="${both.length}" value="0" ${disabled}></label>
-        <label class="tower-limit-row"><span>Додати в<br>зміну 2</span><input id="towerShiftAdd2" type="number" min="0" max="${both.length}" value="0" ${disabled}></label>
+        <label class="tower-limit-row"><span>${esc(tr('tower.limit', 'Ліміт'))}<br>${esc(tr('shift.shift1', 'Зміна 1').toLowerCase())}</span><input id="towerShiftLimit1" type="number" min="0" max="100" value="${Number(plan.settings.shiftLimits?.shift1 ?? 100)}" ${manualDisabled}></label>
+        <label class="tower-limit-row"><span>${esc(tr('tower.limit', 'Ліміт'))}<br>${esc(tr('shift.shift2', 'Зміна 2').toLowerCase())}</span><input id="towerShiftLimit2" type="number" min="0" max="100" value="${Number(plan.settings.shiftLimits?.shift2 ?? 100)}" ${manualDisabled}></label>
+        <label class="tower-limit-row"><span>${esc(tr('tower.addTo', 'Додати в'))}<br>${esc(tr('shift.shift1', 'Зміна 1').toLowerCase())}</span><input id="towerShiftAdd1" type="number" min="0" max="${both.length}" value="0" ${disabled}></label>
+        <label class="tower-limit-row"><span>${esc(tr('tower.addTo', 'Додати в'))}<br>${esc(tr('shift.shift2', 'Зміна 2').toLowerCase())}</span><input id="towerShiftAdd2" type="number" min="0" max="${both.length}" value="0" ${disabled}></label>
       </div>
-      <div class="tower-shift-balance-actions"><button class="btn" type="button" id="towerApplyShiftAddBtn" ${disabled}>Застосувати</button><button class="btn" type="button" id="towerRestoreImportShiftBtn" ${disabled}>Відновити з імпорту</button></div>
+      <div class="tower-shift-balance-actions"><button class="btn" type="button" id="towerApplyShiftAddBtn" ${disabled}>${esc(tr('tower.apply', 'Застосувати'))}</button><button class="btn" type="button" id="towerRestoreImportShiftBtn" ${disabled}>${esc(tr('tower.restoreFromImport', 'Відновити з імпорту'))}</button></div>
     </section>`;
   }
   function entriesForExactShift(shift) {
@@ -808,11 +808,13 @@ window.WKD = window.WKD || {};
     const used1 = usedIdsForShift('shift1');
     const used2 = usedIdsForShift('shift2');
     const usedAll = usedIdsAll();
+    const usedShift1 = [...used1].filter(id => shift1.some(e => e.id === id)).length;
+    const usedShift2 = [...used2].filter(id => shift2.some(e => e.id === id)).length;
     host.innerHTML = [
-      renderSetupCard('Зміна 1', shift1.length, `У турелях ${[...used1].filter(id => shift1.some(e => e.id === id)).length} · Резерв ${Math.max(0, shift1.length - [...used1].filter(id => shift1.some(e => e.id === id)).length)}`, countRoles(shift1)),
-      renderSetupCard('Зміна 2', shift2.length, `У турелях ${[...used2].filter(id => shift2.some(e => e.id === id)).length} · Резерв ${Math.max(0, shift2.length - [...used2].filter(id => shift2.some(e => e.id === id)).length)}`, countRoles(shift2)),
-      renderSetupCard('Обидві зміни', both.length, 'окремо від основного плану', countRoles(both)),
-      renderSetupCard('Усього', all.length, `У турелях ${usedAll.size} · Резерв ${Math.max(0, all.length - usedAll.size)}`, countRoles(all))
+      renderSetupCard(tr('shift.shift1', 'Зміна 1'), shift1.length, tr('tower.inReserveLine', 'У турелях {inCount} · Резерв {reserve}', { inCount: usedShift1, reserve: Math.max(0, shift1.length - usedShift1) }), countRoles(shift1)),
+      renderSetupCard(tr('shift.shift2', 'Зміна 2'), shift2.length, tr('tower.inReserveLine', 'У турелях {inCount} · Резерв {reserve}', { inCount: usedShift2, reserve: Math.max(0, shift2.length - usedShift2) }), countRoles(shift2)),
+      renderSetupCard(tr('tower.bothShifts', 'Обидві зміни'), both.length, tr('tower.separateMainPlan', 'Окремо від основного плану'), countRoles(both)),
+      renderSetupCard(tr('tower.total', 'Усього'), all.length, tr('tower.inReserveLine', 'У турелях {inCount} · Резерв {reserve}', { inCount: usedAll.size, reserve: Math.max(0, all.length - usedAll.size) }), countRoles(all))
     ].join('');
     renderManualShiftControls();
   }
@@ -964,7 +966,7 @@ window.WKD = window.WKD || {};
     if (!TOWERS.some(tower => tower.id === activeTowerId)) activeTowerId = TOWERS[0].id;
     const activeTower = TOWERS.find(tower => tower.id === activeTowerId) || TOWERS[0];
     host.innerHTML = `<div class="tower-picker-layout">
-      <aside class="tower-picker-list" aria-label="Список турелей">
+      <aside class="tower-picker-list" aria-label="${esc(tr('tower.towerList', 'Список турелей'))}">
         ${TOWERS.map(tower => towerPickerItem(tower)).join('')}
       </aside>
       <section class="tower-picker-detail-card">
@@ -981,9 +983,9 @@ window.WKD = window.WKD || {};
     return `<button class="tower-picker-item ${tower.id === activeTowerId ? 'is-active' : ''}" type="button" data-tower-select="${esc(tower.id)}">
       <img class="tower-picker-item-icon" src="${esc(tower.icon)}" alt="">
       <span class="tower-picker-item-text">
-        <b>${esc(tower.uk)}</b>
-        <small class="tower-picker-captain">${captain ? esc(captain.name) : 'Без капітана'}</small>
-        <em class="${countClass}">гравців: ${count}</em>
+        <b>${esc(towerName(tower.id) || tower.uk)}</b>
+        <small class="tower-picker-captain">${captain ? esc(captain.name) : esc(tr('tower.noCaptain', 'Без капітана'))}</small>
+        <em class="${countClass}">${esc(tr('tower.playersCount', 'гравців: {count}', { count }))}</em>
       </span>
       ${ready ? '<span class="tower-picker-ok">✓</span>' : '<span class="tower-picker-warn">!</span>'}
     </button>`;
@@ -1003,73 +1005,75 @@ window.WKD = window.WKD || {};
     const free = rally ? Math.max(0, rally - helperTotal) : 0;
     return `<div class="tower-picker-detail">
       <div class="tower-picker-detail-head tower-picker-detail-head--clean">
-        <div class="tower-card-title"><img class="tower-icon" src="${esc(tower.icon)}" alt=""><div><h3>${esc(tower.uk)}</h3></div></div>
-        <span class="tower-role-pill">${captain ? roleLabel(captain) : 'Без капітана'}</span>
+        <div class="tower-card-title"><img class="tower-icon" src="${esc(tower.icon)}" alt=""><div><h3>${esc(towerName(tower.id) || tower.uk)}</h3></div></div>
+        <span class="tower-role-pill">${captain ? roleLabel(captain) : esc(tr('tower.noCaptain', 'Без капітана'))}</span>
       </div>
       <div class="tower-picker-flags tower-picker-flags--single-row">
-        <label><input data-tower-setting="onlyCaptains" type="checkbox" ${plan.settings.onlyCaptains ? 'checked' : ''} ${disabledAttr}><span>Тільки капітани</span></label>
-        <label><input data-tower-setting="matchShift" type="checkbox" ${plan.settings.matchShift ? 'checked' : ''} ${disabledAttr}><span>Зміна гравця</span></label>
-        <label><input data-tower-setting="sameRole" type="checkbox" ${plan.settings.sameRole ? 'checked' : ''} ${disabledAttr}><span>Той самий тип</span></label>
-        <label><input data-tower-setting="useBoth" type="checkbox" ${plan.settings.useBoth ? 'checked' : ''} ${disabledAttr}><span>Обидві</span></label>
+        <label><input data-tower-setting="onlyCaptains" type="checkbox" ${plan.settings.onlyCaptains ? 'checked' : ''} ${disabledAttr}><span>${esc(tr('tower.onlyCaptains', 'Тільки капітани'))}</span></label>
+        <label><input data-tower-setting="matchShift" type="checkbox" ${plan.settings.matchShift ? 'checked' : ''} ${disabledAttr}><span>${esc(tr('tower.matchShiftShort', 'Зміна гравця'))}</span></label>
+        <label><input data-tower-setting="sameRole" type="checkbox" ${plan.settings.sameRole ? 'checked' : ''} ${disabledAttr}><span>${esc(tr('tower.sameRoleShort', 'Той самий тип'))}</span></label>
+        <label><input data-tower-setting="useBoth" type="checkbox" ${plan.settings.useBoth ? 'checked' : ''} ${disabledAttr}><span>${esc(tr('tower.useBothShort', 'Обидві'))}</span></label>
       </div>
       <div class="tower-picker-topline tower-picker-topline--captain">
-        <label class="tower-field"><span>Капітан</span><select ${editableAttr} data-tower-captain-pick="${esc(tower.id)}">${optionPlayers({ shift: activeShift, towerId: tower.id, selected: slot.captain, captainOnly: true, excludeUsed: false })}</select></label>
-        <button class="btn" ${editableAttr} type="button" data-tower-set-captain="${esc(tower.id)}">Поставити капітана</button>
-        <button class="btn" ${editableAttr} type="button" data-tower-autofill-one="${esc(tower.id)}">Автозаповнення</button>
-        <button class="btn" ${editableAttr} type="button" data-tower-clear="${esc(tower.id)}">Очистити турель</button>
+        <label class="tower-field"><span>${esc(tr('tower.captain', 'Капітан'))}</span><select ${editableAttr} data-tower-captain-pick="${esc(tower.id)}">${optionPlayers({ shift: activeShift, towerId: tower.id, selected: slot.captain, captainOnly: true, excludeUsed: false })}</select></label>
+        <button class="btn" ${editableAttr} type="button" data-tower-set-captain="${esc(tower.id)}">${esc(tr('tower.placeCaptain', 'Поставити капітана'))}</button>
+        <button class="btn" ${editableAttr} type="button" data-tower-autofill-one="${esc(tower.id)}">${esc(tr('tower.autofill', 'Автозаповнення'))}</button>
+        <button class="btn" ${editableAttr} type="button" data-tower-clear="${esc(tower.id)}">${esc(tr('tower.clearTurret', 'Очистити турель'))}</button>
       </div>
       <div class="tower-picker-metrics">
-        <div><span>Марш капітана</span><strong>${fmt(captainMarch)}</strong></div>
-        <div><span>Розмір ралі</span><strong>${fmt(rally)}</strong></div>
-        <div><span>Разом</span><strong>${fmt(total)}</strong></div>
-        <div><span>Вільне місце</span><strong>${fmt(free)}</strong></div>
+        <div><span>${esc(tr('tower.captainMarch', 'Марш капітана'))}</span><strong>${fmt(captainMarch)}</strong></div>
+        <div><span>${esc(tr('tower.rallySize', 'Розмір ралі'))}</span><strong>${fmt(rally)}</strong></div>
+        <div><span>${esc(tr('tower.sum', 'Разом'))}</span><strong>${fmt(total)}</strong></div>
+        <div><span>${esc(tr('tower.freeSpace', 'Вільне місце'))}</span><strong>${fmt(free)}</strong></div>
       </div>
       <details class="tower-collapsible tower-inline-section tower-tier-editor" id="towerPickerLimitsBlock-${esc(tower.id)}">
-        <summary>Налаштування турелі · ліміти по тірах (марш)</summary>
+        <summary>${esc(tr('tower.tierSettings', 'Налаштування турелі · ліміти маршу по тірах'))}</summary>
         <div class="tower-collapsible-inner">
           <div class="tower-tier-toolbar">
-            <label class="tower-field tower-max-players-field"><span>Макс. гравців</span><input data-edit-only type="number" min="1" max="${MAX_HELPERS_PER_TOWER}" value="${MAX_HELPERS_PER_TOWER}" disabled></label>
-            <button class="btn" ${editableAttr} type="button" data-tower-save-tier="${esc(tower.id)}">Зберегти ліміти</button>
-            <button class="btn" ${editableAttr} type="button" data-tower-recalc-tier="${esc(tower.id)}">Перерахувати склад</button>
-            <button class="btn" ${editableAttr} type="button" data-tower-reset-tier="${esc(tower.id)}">Скинути ліміти</button>
+            <label class="tower-field tower-max-players-field"><span>${esc(tr('tower.maxPlayers', 'Макс. гравців'))}</span><input data-edit-only type="number" min="1" max="${MAX_HELPERS_PER_TOWER}" value="${MAX_HELPERS_PER_TOWER}" disabled></label>
+            <button class="btn" ${editableAttr} type="button" data-tower-save-tier="${esc(tower.id)}">${esc(tr('tower.saveLimits', 'Зберегти ліміти'))}</button>
+            <button class="btn" ${editableAttr} type="button" data-tower-recalc-tier="${esc(tower.id)}">${esc(tr('tower.recalculateSquad', 'Перерахувати склад'))}</button>
+            <button class="btn" ${editableAttr} type="button" data-tower-reset-tier="${esc(tower.id)}">${esc(tr('tower.resetLimits', 'Скинути ліміти'))}</button>
           </div>
           <div class="tower-tier-grid tower-tier-grid-compact">${Object.keys(TIER_DEFAULTS).map(tier => `<label><span>${tier}</span><input data-edit-only data-tower-tier-limit="${tier}" data-tower-tier-scope="${esc(tower.id)}" type="number" min="0" step="1000" value="${Number(slot.tierLimits?.[tier] || 0)}"></label>`).join('')}</div>
-          <p class="tower-help-text">0 = не рухати цей тір. Вкажи число тільки для тіру, який хочеш перерахувати в цій турелі.</p>
+          <p class="tower-help-text">${esc(tr('tower.towerTierHelp', '0 = не рухати цей тір. Вкажи число тільки для тіру, який хочеш перерахувати в цій турелі.'))}</p>
         </div>
       </details>
       <details class="tower-collapsible tower-inline-section tower-manual-add-section" id="towerPickerManualBlock-${esc(tower.id)}">
-        <summary>Додати гравця вручну</summary>
+        <summary>${esc(tr('tower.addManualPlayer', 'Додати гравця вручну'))}</summary>
         <div class="tower-collapsible-inner">
         ${allianceDatalist(`towerAllianceOptions-${tower.id}`)}
         <div class="tower-manual-grid tower-manual-grid--top">
-          <label class="tower-field"><span>Пошук гравця (зі списку)</span><select ${editableAttr} data-tower-helper-pick="${esc(tower.id)}">${optionPlayers({ shift: activeShift, towerId: tower.id, selected: '', captainOnly: false, excludeUsed: false, ignoreRole: true })}</select></label>
-          <label class="tower-field"><span>Нік (можна свій, не зі списку)</span><input ${editableAttr} data-manual-name="${esc(tower.id)}" type="text" placeholder="Нік гравця"></label>
-          <label class="tower-field"><span>Альянс</span><input ${editableAttr} list="towerAllianceOptions-${esc(tower.id)}" data-manual-alliance="${esc(tower.id)}" type="text" placeholder="Вибери або введи новий"></label>
-          <label class="tower-field"><span>Тип військ</span><select ${editableAttr} data-manual-role="${esc(tower.id)}">${roleSelectOptions(towerManualRole(tower.id))}</select></label>
+          <label class="tower-field"><span>${esc(tr('tower.searchPlayerFromList', 'Пошук гравця (зі списку)'))}</span><select ${editableAttr} data-tower-helper-pick="${esc(tower.id)}">${optionPlayers({ shift: activeShift, towerId: tower.id, selected: '', captainOnly: false, excludeUsed: false, ignoreRole: true })}</select></label>
+          <label class="tower-field"><span>${esc(tr('tower.manualNickname', 'Нік (можна свій, не зі списку)'))}</span><input ${editableAttr} data-manual-name="${esc(tower.id)}" type="text" placeholder="${esc(tr('tower.name', 'Нік'))}"></label>
+          <label class="tower-field"><span>${esc(tr('account.alliance', 'Альянс'))}</span><input ${editableAttr} list="towerAllianceOptions-${esc(tower.id)}" data-manual-alliance="${esc(tower.id)}" type="text" placeholder="${esc(tr('tower.chooseOrEnterAlliance', 'Вибери або введи новий'))}"></label>
+          <label class="tower-field"><span>${esc(tr('playerEdit.troopType', 'Тип військ'))}</span><select ${editableAttr} data-manual-role="${esc(tower.id)}">${roleSelectOptions(towerManualRole(tower.id))}</select></label>
         </div>
         <div class="tower-manual-grid tower-manual-grid--bottom">
-          <label class="tower-field"><span>Тір</span><select ${editableAttr} data-manual-tier="${esc(tower.id)}">${tierSelectOptions(visibleTierOptions()[0] || 'T14')}</select></label>
-          <label class="tower-field"><span>Марш</span><input ${editableAttr} data-manual-march="${esc(tower.id)}" type="number" min="0" step="1000" placeholder="Марш"></label>
-          <label class="tower-field"><span>Розмір ралі</span><input ${editableAttr} data-manual-rally="${esc(tower.id)}" type="number" min="0" step="1000" placeholder="Ралі"></label>
-          <button class="btn" ${editableAttr} type="button" data-tower-add-manual-captain="${esc(tower.id)}">Поставити капітана</button>
-          <button class="btn" ${editableAttr} type="button" data-tower-add-helper="${esc(tower.id)}">Додати гравця вручну</button>
+          <label class="tower-field"><span>${esc(tr('playerEdit.tier', 'Тір'))}</span><select ${editableAttr} data-manual-tier="${esc(tower.id)}">${tierSelectOptions(visibleTierOptions()[0] || 'T14')}</select></label>
+          <label class="tower-field"><span>${esc(tr('tower.march', 'Марш'))}</span><input ${editableAttr} data-manual-march="${esc(tower.id)}" type="number" min="0" step="1000" placeholder="${esc(tr('tower.march', 'Марш'))}"></label>
+          <label class="tower-field"><span>${esc(tr('tower.rallySize', 'Розмір ралі'))}</span><input ${editableAttr} data-manual-rally="${esc(tower.id)}" type="number" min="0" step="1000" placeholder="${esc(tr('tower.rallySize', 'Ралі'))}"></label>
+          <button class="btn" ${editableAttr} type="button" data-tower-add-manual-captain="${esc(tower.id)}">${esc(tr('tower.placeCaptain', 'Поставити капітана'))}</button>
+          <button class="btn" ${editableAttr} type="button" data-tower-add-helper="${esc(tower.id)}">${esc(tr('tower.manualAdd', 'Додати гравця вручну'))}</button>
         </div>
         </div>
       </details>
       <div class="tower-assignment-table">
-        <div class="tower-assignment-table-title">Гравці в турелі <small>Капітан і гравці</small></div>
-        <div class="tower-assignment-table-head"><span>Гравець</span><span>Альянс</span><span>Роль</span><span>Тір</span><span>Марш</span><span>✎</span></div>
+        <div class="tower-assignment-table-title">${esc(tr('tower.playersInTurret', 'Гравці в турелі'))} <small>${esc(tr('tower.captainAndPlayers', 'Капітан і гравці'))}</small></div>
+        <div class="tower-assignment-table-head"><span>${esc(tr('tower.status.player', 'Гравець'))}</span><span>${esc(tr('account.alliance', 'Альянс'))}</span><span>${esc(tr('tower.role', 'Роль'))}</span><span>${esc(tr('playerEdit.tier', 'Тір'))}</span><span>${esc(tr('tower.march', 'Марш'))}</span><span>✎</span></div>
         <div class="tower-assignment-table-body">
-          ${ids.length ? `${slot.captain ? assignmentRow(slot.captain, captain, 'Капітан', slot) : ''}${helpers.map(item => assignmentRow(item.id, item.player, 'Помічник', slot)).join('')}` : '<div class="tower-empty-note">Немає призначених гравців</div>'}
+          ${ids.length ? `${slot.captain ? assignmentRow(slot.captain, captain, 'captain', slot) : ''}${helpers.map(item => assignmentRow(item.id, item.player, 'helper', slot)).join('')}` : `<div class="tower-empty-note">${esc(tr('tower.noPlayersAssigned', 'Немає призначених гравців'))}</div>`}
         </div>
       </div>
     </div>`;
   }
   function assignmentRow(id, player, kind, slot = null) {
     if (!player) return '';
-    const shownMarch = kind === 'Капітан' ? Number(player.march || 0) : helperAssignedMarch(id, slot, player);
-    return `<div class="tower-assignment-row ${kind === 'Капітан' ? 'is-captain' : ''}">
-      <span><b>${esc(player.name)}</b><small>${esc(kind)}</small></span>
+    const isCaptainKind = kind === 'captain';
+    const kindLabel = isCaptainKind ? tr('tower.captain', 'Капітан') : tr('tower.helper', 'Помічник');
+    const shownMarch = isCaptainKind ? Number(player.march || 0) : helperAssignedMarch(id, slot, player);
+    return `<div class="tower-assignment-row ${isCaptainKind ? 'is-captain' : ''}">
+      <span><b>${esc(player.name)}</b><small>${esc(kindLabel)}</small></span>
       <span>${esc(player.alliance || '—')}</span>
       <span>${esc(roleLabel(player))}</span>
       <span>${esc(player.tier || '—')}</span>
@@ -1116,7 +1120,7 @@ window.WKD = window.WKD || {};
     const data = manualFields(towerId);
     if (!data.name) return null;
     if (sourceInfo().mode === 'region') {
-      WKD.showNotice?.('Для таблиці регіону нового гравця спочатку додай через форму/таблицю регіону, а потім вибери його зі списку.');
+      WKD.showNotice?.(tr('tower.regionManualAddBlocked', 'Для таблиці регіону нового гравця спочатку додай через форму/таблицю регіону, а потім вибери його зі списку.'));
       return null;
     }
     const row = {
@@ -1169,12 +1173,12 @@ window.WKD = window.WKD || {};
   }
   function recalculateTowerComposition(towerId, shift = activeShift) {
     const slot = plan.assignments?.[shift]?.[towerId];
-    if (!slot) return { ok: false, reason: 'Турель не знайдено.' };
+    if (!slot) return { ok: false, reason: tr('tower.turretNotFound', 'Турель не знайдена.') };
     ensureSlotShape(slot);
     const captain = playerById(slot.captain);
-    if (!captain) return { ok: false, reason: 'Спочатку постав капітана.' };
+    if (!captain) return { ok: false, reason: tr('tower.setCaptainFirst', 'Спочатку постав капітана.') };
     const helpers = (slot.helpers || []).map(id => ({ id, player: playerById(id) })).filter(item => item.id && item.player);
-    if (!helpers.length) return { ok: false, reason: 'У турелі ще немає помічників.' };
+    if (!helpers.length) return { ok: false, reason: tr('tower.noHelpers', 'У цій турелі ще немає помічників.') };
     const tierOrderLowToHigh = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12','T13','T14'];
     const tierLimits = slot.tierLimits || {};
     const explicitTierIndices = [];
@@ -1192,7 +1196,7 @@ window.WKD = window.WKD || {};
     });
 
     if (!explicitTierIndices.length) {
-      return { ok: true, changed: false, reason: 'Усі ліміти 0 — склад не змінено.' };
+      return { ok: true, changed: false, reason: tr('tower.zeroLimits', 'Усі ліміти 0 — склад не змінено.') };
     }
 
     const distributeTier = (items, target, maxById) => {
@@ -1274,8 +1278,8 @@ window.WKD = window.WKD || {};
     const used = usedIdsAll();
     const shifts = availableShifts();
     const inTower = playerEntries().filter(e => used.has(e.id)).length;
-    head.innerHTML = `<div class="tower-summary-card"><b>${inTower}</b><span>У турелях</span><small>Зараз реально стоять у турелях</small></div><div class="tower-summary-card"><b>${Math.max(0, players().length - inTower)}</b><span>Поза турелями</span><small>Не стоять у жодній турелі</small></div><div class="tower-summary-card"><b>${players().length}</b><span>Усього</span><small>Загальна кількість гравців</small></div>`;
-    const filterItems = ['all', 'in', 'reserve', ...shifts, 'both'].filter((value, index, arr) => arr.indexOf(value) === index).map(filter => `<button class="btn btn-sm ${filter === statusFilter ? 'is-active' : ''}" type="button" data-status-filter="${filter}">${filter === 'all' ? 'Усі' : filter === 'in' ? 'У турелях' : filter === 'reserve' ? 'Поза турелями' : shiftLabel(filter)}</button>`).join('');
+    head.innerHTML = `<div class="tower-summary-card"><b>${inTower}</b><span>${esc(tr('tower.inTowers', 'У турелях'))}</span><small>${esc(tr('tower.inTowersNow', 'Зараз реально стоять у турелях'))}</small></div><div class="tower-summary-card"><b>${Math.max(0, players().length - inTower)}</b><span>${esc(tr('tower.outsideTowers', 'Поза турелями'))}</span><small>${esc(tr('tower.notInAnyTower', 'Не стоять у жодній турелі'))}</small></div><div class="tower-summary-card"><b>${players().length}</b><span>${esc(tr('tower.total', 'Усього'))}</span><small>${esc(tr('tower.totalPlayers', 'Загальна кількість гравців'))}</small></div>`;
+    const filterItems = ['all', 'in', 'reserve', ...shifts, 'both'].filter((value, index, arr) => arr.indexOf(value) === index).map(filter => `<button class="btn btn-sm ${filter === statusFilter ? 'is-active' : ''}" type="button" data-status-filter="${filter}">${filter === 'all' ? tr('common.all', 'Усі') : filter === 'in' ? tr('tower.inTowers', 'У турелях') : filter === 'reserve' ? tr('tower.outsideTowers', 'Поза турелями') : shiftLabel(filter)}</button>`).join('');
     filters.innerHTML = filterItems;
     let rows = playerEntries().filter(entry => {
       const assigned = assignmentOf(entry.id);
@@ -1288,14 +1292,14 @@ window.WKD = window.WKD || {};
     body.innerHTML = rows.length ? rows.map(({ player, id }) => {
       const assigned = assignmentOf(id);
       const shift = normalizeShift(player.shift || player.shiftLabel);
-      return `<tr><td><b>${esc(player.name)}</b></td><td>${esc(player.alliance || '—')}</td><td>${esc(roleLabel(player))} / ${esc(player.tier || '—')}</td><td>${fmt(player.march)}</td><td>${assigned ? '<span class="tower-status-pill is-in">У турелі</span>' : '<span class="tower-status-pill is-reserve">Поза туреллю</span>'}</td><td>${assigned ? `${esc(assigned.tower.uk)} · ${shiftLabel(assigned.shift)} · ${assigned.kind}` : '—'}</td><td>${statusActions(id, shift, Boolean(assigned))}</td></tr>`;
-    }).join('') : '<tr><td colspan="7">Гравців не знайдено.</td></tr>';
+      return `<tr><td><b>${esc(player.name)}</b></td><td>${esc(player.alliance || '—')}</td><td>${esc(roleLabel(player))} / ${esc(player.tier || '—')}</td><td>${fmt(player.march)}</td><td>${assigned ? `<span class="tower-status-pill is-in">${esc(tr('tower.inTowers', 'У турелі'))}</span>` : `<span class="tower-status-pill is-reserve">${esc(tr('tower.outsideTowers', 'Поза туреллю'))}</span>`}</td><td>${assigned ? `${esc(assigned.tower.uk)} · ${shiftLabel(assigned.shift)} · ${assigned.kind}` : '—'}</td><td>${statusActions(id, shift, Boolean(assigned))}</td></tr>`;
+    }).join('') : `<tr><td colspan="7">${esc(tr('playerManager.noPlayers', 'Гравців не знайдено.'))}</td></tr>`;
   }
   function statusActions(id, shift, assigned) {
-    if (!canEditPlan()) return 'Перегляд';
-    if (assigned) return `<button class="btn btn-sm" data-edit-only type="button" data-status-reserve="${esc(id)}">В резерв</button>`;
+    if (!canEditPlan()) return tr('common.view', 'Перегляд');
+    if (assigned) return `<button class="btn btn-sm" data-edit-only type="button" data-status-reserve="${esc(id)}">${esc(tr('tower.toReserve', 'В резерв'))}</button>`;
     const buttons = availableShifts().slice(0, 4).map(s => `<button class="btn btn-sm" data-edit-only type="button" data-status-auto-place="${esc(id)}" data-status-shift="${s}">${shiftLabel(s)}</button>`).join(' ');
-    return buttons || `<button class="btn btn-sm" data-edit-only type="button" data-status-auto-place="${esc(id)}" data-status-shift="${shift}">Поставити</button>`;
+    return buttons || `<button class="btn btn-sm" data-edit-only type="button" data-status-auto-place="${esc(id)}" data-status-shift="${shift}">${esc(tr('tower.place', 'Поставити'))}</button>`;
   }
   function towerSourceOptions() {
     const external = Array.isArray(WKD.towerPlannerRegionOptions) ? WKD.towerPlannerRegionOptions : [];
@@ -1623,7 +1627,7 @@ window.WKD = window.WKD || {};
     const root = document.getElementById('towerFinalLangDialog');
     if (!root) return;
     const selected = new Set(finalLangs);
-    root.innerHTML = `<button class="tower-final-lang-backdrop" type="button" data-final-lang-close aria-label="Закрити"></button><div class="tower-final-lang-card" role="dialog" aria-modal="true" aria-label="Мова плану"><div class="tower-final-lang-head"><div><h3>Мова плану</h3><p>Познач мови, які треба показувати у фінальному плані.</p></div><button class="btn btn-icon" type="button" data-final-lang-close>✕</button></div><div class="tower-final-lang-grid">${languages().map(lang => `<label class="tower-final-lang-option ${selected.has(lang.id) ? 'is-active' : ''}"><input type="checkbox" data-final-lang-option="${esc(lang.id)}" ${selected.has(lang.id) ? 'checked' : ''} ${lang.id === 'en' ? 'disabled' : ''}><img src="${esc(lang.icon)}" alt=""><span>${esc(lang.name)}</span></label>`).join('')}</div><div class="tower-final-lang-actions"><button class="btn" type="button" data-final-lang-close>Готово</button></div></div>`;
+    root.innerHTML = `<button class="tower-final-lang-backdrop" type="button" data-final-lang-close aria-label="${esc(tr('common.close', 'Закрити'))}"></button><div class="tower-final-lang-card" role="dialog" aria-modal="true" aria-label="${esc(tr('finalPlan.langButton', 'Мова плану'))}"><div class="tower-final-lang-head"><div><h3>${esc(tr('finalPlan.langButton', 'Мова плану'))}</h3><p>${esc(tr('finalPlan.langHelp', 'Познач мови, які треба показувати у фінальному плані.'))}</p></div><button class="btn btn-icon" type="button" data-final-lang-close>✕</button></div><div class="tower-final-lang-grid">${languages().map(lang => `<label class="tower-final-lang-option ${selected.has(lang.id) ? 'is-active' : ''}"><input type="checkbox" data-final-lang-option="${esc(lang.id)}" ${selected.has(lang.id) ? 'checked' : ''} ${lang.id === 'en' ? 'disabled' : ''}><img src="${esc(lang.icon)}" alt=""><span>${esc(lang.name)}</span></label>`).join('')}</div><div class="tower-final-lang-actions"><button class="btn" type="button" data-final-lang-close>${esc(tr('common.done', 'Готово'))}</button></div></div>`;
   }
   function openFinalLangDialog() {
     const root = ensureFinalLangDialog();
@@ -1746,11 +1750,11 @@ window.WKD = window.WKD || {};
       if (typeof window.html2canvas !== 'function' && typeof WKD.ensureHtml2Canvas === 'function') await WKD.ensureHtml2Canvas();
     } catch (error) {
       console.error(error);
-      WKD.showNotice?.('Не вдалося завантажити бібліотеку для PNG. Перевір інтернет і спробуй ще раз.');
+      WKD.showNotice?.(tr('finalPlan.pngLibraryLoadFailed', 'Не вдалося завантажити бібліотеку для PNG. Перевір інтернет і спробуй ще раз.'));
       return;
     }
     if (typeof window.html2canvas !== 'function') {
-      WKD.showNotice?.('Не вдалося завантажити PNG: бібліотека html2canvas ще не завантажилась. Онови сторінку і спробуй ще раз.');
+      WKD.showNotice?.(tr('finalPlan.pngLibraryMissing', 'Не вдалося завантажити PNG: бібліотека html2canvas ще не завантажилась. Онови сторінку і спробуй ще раз.'));
       return;
     }
     sheet.classList.add('is-exporting-png');
@@ -1759,7 +1763,7 @@ window.WKD = window.WKD || {};
       downloadBlob(`wasteland-final-plan-${activeFinalShift}-${Date.now()}.png`, blob);
     } catch (error) {
       console.error(error);
-      WKD.showNotice?.('Не вдалося створити PNG фінального плану.');
+      WKD.showNotice?.(tr('finalPlan.pngCreateFailed', 'Не вдалося створити PNG фінального плану.'));
     } finally {
       sheet.classList.remove('is-exporting-png');
     }
@@ -2052,13 +2056,13 @@ window.WKD = window.WKD || {};
     for (const entry of toShift2) await updatePlayerShift(entry.id, 'shift2', true);
     render();
     await savePlan(false);
-    WKD.showNotice?.(`Обидві: додано у зміну 1 — ${toShift1.length}, у зміну 2 — ${toShift2.length}.`);
+    WKD.showNotice?.(tr('tower.bothShiftApplied', 'Обидві: додано у зміну 1 — {shift1}, у зміну 2 — {shift2}.', { shift1: toShift1.length, shift2: toShift2.length }));
   }
   async function restoreManualShiftBackup() {
     if (!canEditPlan()) return;
     const backup = loadShiftBackup();
     const ids = Object.keys(backup);
-    if (!ids.length) { WKD.showNotice?.('Немає збереженого ручного розподілу для відновлення.'); return; }
+    if (!ids.length) { WKD.showNotice?.(tr('tower.noManualShiftBackup', 'Немає збереженого ручного розподілу для відновлення.')); return; }
     for (const id of ids) {
       const shift = backup[id];
       if (['shift1','shift2','shift3','shift4','both'].includes(shift)) await updatePlayerShift(id, shift, false);
@@ -2066,7 +2070,7 @@ window.WKD = window.WKD || {};
     saveShiftBackup({});
     render();
     await savePlan(false);
-    WKD.showNotice?.('Зміни гравців відновлено з імпортованого стану.');
+    WKD.showNotice?.(tr('tower.importShiftRestored', 'Зміни гравців відновлено з імпортованого стану.'));
   }
   function autoDistribute({ topup = false } = {}) {
     recordLocalPlannerAction(topup ? 'autofill-towers' : 'redistribute');
@@ -2076,7 +2080,7 @@ window.WKD = window.WKD || {};
     shifts.forEach(shift => autoDistributeShift(shift));
     render();
     savePlan(false);
-    WKD.showNotice?.(topup ? 'Турелі дозаповнено.' : 'Перерозподіл застосовано. Капітани, поставлені вручну, залишились у своїх турелях.');
+    WKD.showNotice?.(topup ? tr('tower.autoFilled', 'Турелі дозаповнено.') : tr('tower.redistributionDone', 'Перерозподіл застосовано. Капітани, поставлені вручну, залишились у своїх турелях.'));
   }
   function autoDistributeShift(shift) {
     const entries = candidateEntriesForShift(shift);
@@ -2158,7 +2162,7 @@ window.WKD = window.WKD || {};
   }
 
   async function openPlanner(trigger = null, tab = 'setup') {
-    if (!ensureTowerPlannerBound()) { WKD.showNotice?.('Розподіл по турелях ще завантажується. Спробуй ще раз.'); return; }
+    if (!ensureTowerPlannerBound()) { WKD.showNotice?.(tr('tower.plannerLoading', 'Розподіл по турелях ще завантажується. Спробуй ще раз.')); return; }
     const root = modal();
     if (!root) return;
     lastTrigger = trigger || document.activeElement;
@@ -2179,7 +2183,7 @@ window.WKD = window.WKD || {};
     try { lastTrigger?.focus?.(); } catch (_error) {}
   }
   async function openFinal(trigger = null) {
-    if (!ensureTowerPlannerBound()) { WKD.showNotice?.('Фінальний план ще завантажується. Спробуй ще раз.'); return; }
+    if (!ensureTowerPlannerBound()) { WKD.showNotice?.(tr('tower.finalLoading', 'Фінальний план ще завантажується. Спробуй ще раз.')); return; }
     const root = finalModal();
     if (!root) return;
     lastTrigger = trigger || document.activeElement;
@@ -2264,12 +2268,12 @@ window.WKD = window.WKD || {};
     const shifts = txtShiftsToExport().map(shift => String(shift).replace('shift', 'shift')).join('-') || activeFinalShift;
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
     downloadBlob(`pns-final-plan-${shifts}-${Date.now()}.txt`, blob);
-    WKD.showNotice?.('TXT фінального плану завантажено.');
+    WKD.showNotice?.(tr('tower.txtDownloaded', 'TXT фінального плану завантажено.'));
   }
   async function copyFinalText() {
     const text = currentTxt({ allShifts: true });
-    try { await navigator.clipboard.writeText(text); WKD.showNotice?.('Фінальний план скопійовано в TXT.'); }
-    catch { window.prompt('Скопіюй TXT:', text); }
+    try { await navigator.clipboard.writeText(text); WKD.showNotice?.(tr('tower.txtCopied', 'Фінальний план скопійовано в TXT.')); }
+    catch { window.prompt(tr('tower.copyTxtPrompt', 'Скопіюй TXT:'), text); }
   }
   function finalShareShifts() {
     const shifts = txtShiftsToExport();
@@ -2352,10 +2356,10 @@ window.WKD = window.WKD || {};
       const { shareUrl } = await makeFinalShareData();
       if (!shareUrl) throw new Error('share-url-empty');
       await navigator.clipboard.writeText(shareUrl);
-      WKD.showNotice?.(window.WKD_t?.('finalPlan.linkCopied') || 'Секретне посилання скопійовано.');
+      WKD.showNotice?.(tr('finalPlan.linkCopied', 'Секретне посилання скопійовано.'));
     } catch (error) {
       console.error(error);
-      WKD.showNotice?.(window.WKD_t?.('finalPlan.shareLinkFailed') || 'Не вдалося створити секретне посилання.');
+      WKD.showNotice?.(tr('finalPlan.shareLinkFailed', 'Не вдалося створити секретне посилання.'));
     }
   }
   async function shareFinalText() {
@@ -2364,7 +2368,7 @@ window.WKD = window.WKD || {};
       data = await makeFinalShareData();
     } catch (error) {
       console.error(error);
-      WKD.showNotice?.(window.WKD_t?.('finalPlan.shareLinkFailed') || 'Не вдалося створити секретне посилання.');
+      WKD.showNotice?.(tr('finalPlan.shareLinkFailed', 'Не вдалося створити секретне посилання.'));
       data = { text: currentTxt({ allShifts: true }), sheets: renderFinalShareSheets(finalShareShifts()), shareUrl: '' };
     }
     const { text, sheets, shareUrl } = data;
@@ -2382,19 +2386,19 @@ ${text}` : text };
     if (shareUrl) {
       try { await navigator.clipboard.writeText(shareUrl); } catch (_error) {}
       WKD.actionDoneDialog?.({
-        title: window.WKD_t?.('finalPlan.shareLinkReadyTitle') || 'Посилання готове',
-        message: window.WKD_t?.('finalPlan.shareLinkReadyMessage') || 'Секретне посилання на фінальний план скопійовано. Його можуть відкрити гравці без входу.',
+        title: tr('finalPlan.shareLinkReadyTitle', 'Посилання готове'),
+        message: tr('finalPlan.shareLinkReadyMessage', 'Секретне посилання на фінальний план скопійовано. Його можуть відкрити гравці без входу.'),
         href: shareUrl,
-        acceptText: window.WKD_t?.('finalPlan.openSharedPlan') || 'Відкрити план',
-        cancelText: window.WKD_t?.('common.continue') || 'Продовжити'
+        acceptText: tr('finalPlan.openSharedPlan', 'Відкрити план'),
+        cancelText: tr('common.continue', 'Продовжити')
       });
       return;
     }
     try {
       await navigator.clipboard.writeText(text);
-      WKD.showNotice?.(window.WKD_t?.('finalPlan.txtCopied') || 'Фінальний план скопійовано в TXT.');
+      WKD.showNotice?.(tr('finalPlan.txtCopied', 'Фінальний план скопійовано в TXT.'));
     } catch {
-      window.prompt('Скопіюй TXT:', text);
+      window.prompt(tr('tower.copyTxtPrompt', 'Скопіюй TXT:'), text);
     }
   }
   function cycleFinalLang() {
@@ -2519,7 +2523,7 @@ ${text}` : text };
         const result = recalculateTowerComposition(tid, activeShift);
         render();
         savePlan(false);
-        WKD.showNotice?.(result.reason || 'Склад цієї турелі перераховано.');
+        WKD.showNotice?.(result.reason || tr('tower.recalculated', 'Склад цієї турелі перераховано.'));
         return;
       }
       const addHelper = event.target.closest('[data-tower-add-helper]');
@@ -2529,12 +2533,12 @@ ${text}` : text };
         const slot = plan.assignments[activeShift]?.[tid];
         const entry = manualEntryOrSelected(tid);
         if (entry?.id && slot) {
-          if (helpersLimitReached(slot)) { WKD.showNotice?.('У турелі вже 29 помічників. Більше не влазить.'); return; }
-          if (slot.captain && towerRoom(slot) <= 0) { WKD.showNotice?.('У цій турелі вже немає вільного місця ралі.'); return; }
+          if (helpersLimitReached(slot)) { WKD.showNotice?.(tr('tower.helpersFull', 'У турелі вже 29 помічників. Більше не влазить.')); return; }
+          if (slot.captain && towerRoom(slot) <= 0) { WKD.showNotice?.(tr('tower.rallyNoRoom', 'У цій турелі вже немає вільного місця ралі.')); return; }
           removePlayer(entry.id, activeShift, { forceCaptain: true });
           const used = usedIdsForShift(activeShift);
           const keys = assignedNickKeysForShift(activeShift);
-          if (!addHelperToSlot(plan.assignments[activeShift][tid], entry, used, keys)) { WKD.showNotice?.('Цей гравець не влазить у вільне місце ралі.'); return; }
+          if (!addHelperToSlot(plan.assignments[activeShift][tid], entry, used, keys)) { WKD.showNotice?.(tr('tower.playerNoRoom', 'Цей гравець не влазить у вільне місце ралі.')); return; }
           render();
           savePlan(false);
         }
@@ -2548,7 +2552,7 @@ ${text}` : text };
       if (editPlayer) {
         event.preventDefault();
         if (typeof WKD.openPlayerEditModal === 'function') WKD.openPlayerEditModal(editPlayer.dataset.towerEditPlayer, editPlayer);
-        else WKD.showNotice?.('Редактор гравців ще не завантажився.');
+        else WKD.showNotice?.(tr('tower.editorLoading', 'Редактор гравців ще не завантажився.'));
         return;
       }
       const remove = event.target.closest('[data-tower-remove-player]');
@@ -2595,7 +2599,7 @@ ${text}` : text };
     $('#towerClearPlanBtn')?.addEventListener('click', async event => {
       event.preventDefault();
       if (!canEditPlan()) return;
-      const ok = await (WKD.confirmDialog?.({ title: 'Очистити розподіл?', message: 'Усі гравці будуть прибрані з турелей, але таблиця гравців залишиться.', acceptText: 'Очистити' }) ?? Promise.resolve(window.confirm('Очистити розподіл?')));
+      const ok = await (WKD.confirmDialog?.({ title: tr('tower.clearPlanTitle', 'Очистити розподіл?'), message: tr('tower.clearPlanMessage', 'Усі гравці будуть прибрані з турелей, але таблиця гравців залишиться.'), acceptText: tr('tower.clear', 'Очистити') }) ?? Promise.resolve(window.confirm(tr('tower.clearPlanTitle', 'Очистити розподіл?'))));
       if (!ok) return;
       recordLocalPlannerAction('clear-local-plan'); clearAll(); render(); savePlan();
     });
