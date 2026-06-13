@@ -1,5 +1,12 @@
 window.WKD = window.WKD || {};
 const t = (key, fallback) => window.WKD_t ? window.WKD_t(key) : fallback;
+function isRegionServerPaging() { return Boolean(window.WKD?.regionPlayersServerMode && typeof window.WKD?.requestRegionPlayersPage === 'function'); }
+function requestRegionServerPage(reset = false) {
+  if (!isRegionServerPaging()) return false;
+  if (reset) WKD.state.page = 1;
+  WKD.requestRegionPlayersPage({ page: WKD.state.page }).catch(error => console.warn('[WKD] region page request failed:', error));
+  return true;
+}
 
 WKD.initPlayersTable = () => {
   const { $, $$, state } = WKD;
@@ -22,7 +29,7 @@ WKD.initPlayersTable = () => {
     $('#' + id).addEventListener('input', () => {
       state.page = 1;
       state.pageSize = $('#pageSizeSelect').value === 'all' ? 'all' : Number($('#pageSizeSelect').value || 10);
-      WKD.renderPlayers();
+      if (!requestRegionServerPage(true)) WKD.renderPlayers();
     });
   });
 
@@ -32,7 +39,7 @@ WKD.initPlayersTable = () => {
     $('#pageSizeSelect').value = '10';
     state.page = 1;
     state.pageSize = 10;
-    WKD.renderPlayers();
+    if (!requestRegionServerPage(true)) WKD.renderPlayers();
   });
 
   $('#showAllDataBtn').addEventListener('click', () => {
@@ -48,16 +55,16 @@ WKD.initPlayersTable = () => {
     state.sort.field = field;
     $$('.sort-btn').forEach(btn => btn.classList.remove('is-desc'));
     button.classList.toggle('is-desc', state.sort.dir < 0);
-    WKD.renderPlayers();
+    if (!requestRegionServerPage(true)) WKD.renderPlayers();
   }));
 
   $('#pagePrevBtn').addEventListener('click', () => {
     state.page = Math.max(1, state.page - 1);
-    WKD.renderPlayers();
+    if (!requestRegionServerPage(false)) WKD.renderPlayers();
   });
   $('#pageNextBtn').addEventListener('click', () => {
     state.page += 1;
-    WKD.renderPlayers();
+    if (!requestRegionServerPage(false)) WKD.renderPlayers();
   });
 
   WKD.renderPlayers();
@@ -71,7 +78,7 @@ WKD.setPlayers = (rows, options = {}) => {
   WKD.state.players = (Array.isArray(rows) ? rows : [])
     .map((row, index) => finalizePlayer(alreadyNormalized ? normalizeStoredPlayer(row) : normalizePlayer(row), row, index, source))
     .filter(player => player.name);
-  WKD.state.page = 1;
+  if (!options.keepPage) WKD.state.page = 1;
   if (persist) WKD.saveJson(WKD.storageKeys.players, WKD.state.players);
   else if (options.clearStorage === true) localStorage.removeItem(WKD.storageKeys.players);
   WKD.renderPlayers();
@@ -224,11 +231,12 @@ function findRegistrationValue(row = {}) {
 
 function renderStats() {
   const players = WKD.state.players;
+  const serverMeta = isRegionServerPaging() ? (WKD.regionPlayersServerMeta || null) : null;
   const setText = (selector, value) => {
     const element = WKD.$(selector);
     if (element) element.textContent = value;
   };
-  setText('#totalPlayers', players.length);
+  setText('#totalPlayers', serverMeta ? (serverMeta.totalRows || players.length) : players.length);
   setText('#captainsReady', players.filter(p => p.captain).length);
   setText('#fighterCount', players.filter(p => p.role === 'Fighter').length);
   setText('#riderCount', players.filter(p => p.role === 'Rider').length);
@@ -247,11 +255,12 @@ function renderTable() {
     document.dispatchEvent(new CustomEvent('wkd:players-rendered', { detail: { total: state.players.length, shown: 0 } }));
     return;
   }
-  const list = filteredPlayers();
-  const pageSize = state.pageSize === 'all' ? list.length || 1 : state.pageSize;
-  const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+  const serverMeta = isRegionServerPaging() ? (WKD.regionPlayersServerMeta || null) : null;
+  const list = serverMeta ? state.players : filteredPlayers();
+  const pageSize = serverMeta ? (serverMeta.pageSize || list.length || 1) : (state.pageSize === 'all' ? list.length || 1 : state.pageSize);
+  const totalPages = serverMeta ? Math.max(1, Number(serverMeta.totalPages || 1)) : Math.max(1, Math.ceil(list.length / pageSize));
   state.page = Math.min(state.page, totalPages);
-  const pageRows = list.slice((state.page - 1) * pageSize, state.page * pageSize);
+  const pageRows = serverMeta ? list : list.slice((state.page - 1) * pageSize, state.page * pageSize);
 
   if (!state.players.length) tbody.innerHTML = `<tr><td colspan="11" class="empty-cell">${t('players.emptyImport', 'Імпортуй Excel або CSV файл, щоб показати гравців.')}</td></tr>`;
   else if (!pageRows.length) tbody.innerHTML = `<tr><td colspan="11" class="empty-cell">${t('players.emptyFilters', 'Немає гравців за вибраними фільтрами.')}</td></tr>`;
@@ -260,7 +269,7 @@ function renderTable() {
   const pageInfo = WKD.$('#pageInfoText');
   const pagePrev = WKD.$('#pagePrevBtn');
   const pageNext = WKD.$('#pageNextBtn');
-  if (pageInfo) pageInfo.textContent = `${t('common.page', 'Сторінка')} ${state.page} / ${totalPages} • ${t('common.shown', 'показано')} ${list.length}`;
+  if (pageInfo) pageInfo.textContent = `${t('common.page', 'Сторінка')} ${state.page} / ${totalPages} • ${t('common.shown', 'показано')} ${serverMeta ? `${pageRows.length} / ${serverMeta.totalRows || pageRows.length}` : list.length}`;
   if (pagePrev) pagePrev.disabled = state.page <= 1;
   if (pageNext) pageNext.disabled = state.page >= totalPages;
   document.dispatchEvent(new CustomEvent('wkd:players-rendered', { detail: { total: state.players.length, shown: pageRows.length } }));

@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="css/region-page.css" />
   <link rel="stylesheet" href="css/confirm-modal.css" />
   <link rel="stylesheet" href="css/responsive.css" />
-  <script defer src="js/i18n.js?v=195"></script>
+  <script defer src="js/i18n.js?v=196"></script>
   <script defer src="js/i18n-uk.js"></script>
   <script defer src="js/i18n-en.js"></script>
   <script defer src="js/i18n-ru.js"></script>
@@ -29,17 +29,17 @@
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
   <script defer src="js/core/assets-loader.js"></script>
-  <script defer src="js/badges.js?v=195"></script>
+  <script defer src="js/badges.js?v=196"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/core/state.js"></script>
   <script defer src="js/confirm-modal.js"></script>
   <script defer src="js/core/app-boot.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/auth-google.js?v=195"></script>
-  <script type="module" src="js/notifications.js?v=195"></script>
-  <script type="module" src="js/pages/admin-page.js?v=195"></script>
-  <script type="module" src="js/pages/security-page.js?v=195"></script>
+  <script type="module" src="js/auth-google.js?v=196"></script>
+  <script type="module" src="js/notifications.js?v=196"></script>
+  <script type="module" src="js/pages/admin-page.js?v=196"></script>
+  <script type="module" src="js/pages/security-page.js?v=196"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -71,6 +71,7 @@
         <button class="admin-tab" type="button" data-admin-tab="requests" data-i18n="admin.roleRequests">Заявки на ролі</button>
         <button class="admin-tab" type="button" data-admin-tab="regions" data-i18n="admin.regionsTab">Регіони</button>
         <button class="admin-tab" type="button" data-admin-tab="security" data-i18n="security.title">Безпека</button>
+        <button class="admin-tab admin-limits-only" type="button" data-admin-tab="clean" data-i18n="admin.cleanTab" hidden>Чистка</button>
         <button class="admin-tab admin-limits-only" type="button" data-admin-tab="limits" data-i18n="admin.limitsTab" hidden>Ліміти</button>
       </div>
 
@@ -187,6 +188,38 @@
           <div class="region-actions" id="securityActions" hidden>
             <button class="btn region-save" id="cleanupEmailFieldsBtn" type="button" data-i18n="security.cleanupEmails">Очистити старі email-поля</button>
           </div>
+        </div>
+      </section>
+      <section class="admin-section admin-limits-only" id="adminCleanSection" data-admin-panel="clean" hidden>
+        <div class="admin-limit-head">
+          <div>
+            <h3 data-i18n="admin.cleanTitle">Чистка</h3>
+            <p data-i18n="admin.cleanLead">Очищення старих резервів без зміни активної D1-таблиці, архіву циклів і фінального плану.</p>
+          </div>
+        </div>
+        <div class="admin-archive-cleanup" id="oldFirestoreRegistrationsPanel">
+          <div class="admin-archive-cleanup-head">
+            <div>
+              <h4 data-i18n="admin.oldFirestoreRegistrationsTitle">Старі Firestore-заявки</h4>
+              <p data-i18n="admin.oldFirestoreRegistrationsLead">Це старий Firebase-резерв. Активна D1-таблиця, D1-архів циклів і поточний cycleId не чіпаються. Заявки 14+ днів можна чистити пачками.</p>
+            </div>
+            <div class="admin-archive-actions">
+              <label class="admin-clean-region-label"><span data-i18n="admin.cleanRegion">Регіон</span><select id="cleanFirestoreRegionSelect"></select></label>
+              <button class="btn" id="refreshCleanRegionsBtn" type="button" data-i18n="common.refresh">Оновити</button>
+              <button class="btn" id="checkOldFirestoreRegistrationsBtn" type="button" data-i18n="admin.checkOldFirestoreRegistrations">Перевірити старі заявки</button>
+              <button class="btn admin-decline" id="cleanupOldFirestoreRegistrationsBtn" type="button" disabled data-i18n="admin.cleanupOldFirestoreRegistrations">Очистити 100 старих</button>
+            </div>
+          </div>
+          <div class="region-note admin-usage-note" id="oldFirestoreRegistrationsStatus" data-i18n="admin.firestoreCleanupIdle">Перевірка не запускалась. Автоочистка запускається тільки для Admin, максимум раз на 24 години, і тільки для заявок старше 14 днів.</div>
+        </div>
+        <div class="admin-archive-cleanup">
+          <div class="admin-archive-cleanup-head">
+            <div>
+              <h4 data-i18n="admin.d1StorageTitle">D1 зберігання</h4>
+              <p data-i18n="admin.d1StorageLead">D1 storage росте від рядків активної таблиці, архівів циклів, фінальних планів, повідомлень/кампаній і службових індексів. Чистка D1 архівів залишилась у вкладці Ліміти → Cloudflare.</p>
+            </div>
+          </div>
+          <div class="region-note admin-usage-note" data-i18n="admin.d1StorageHint">Щоб зменшити D1 розмір: чисть старі цикли 60+ днів, прострочені секретні посилання і старі кампанії. Активний цикл не видаляється.</div>
         </div>
       </section>
       <section class="admin-section admin-limits-only" id="adminLimitsSection" data-admin-panel="limits" hidden>

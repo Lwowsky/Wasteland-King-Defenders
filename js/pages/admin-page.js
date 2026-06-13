@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=195';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=195';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=195';
+import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=196';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=196';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=196';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -22,14 +22,16 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=195';
+} from '../services/user-db.js?v=196';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
+  cleanupOldRegionRegistrations,
   createManualRegion,
+  inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=195';
+} from '../services/region-db.js?v=196';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -59,6 +61,9 @@ let playersPageMeta = { hasNext: false, reads: 0, queryMode: 'indexed' };
 let playerSearchDebounce = null;
 let cloudflareRealUsage = getCachedCloudflareUsage();
 let cloudflareUsageLoading = false;
+let oldFirestoreCleanupCount = 0;
+let oldFirestoreAutoRunning = false;
+const OLD_FIRESTORE_AUTO_KEY = 'wkd.admin.clean.firestoreRegs.auto.v196';
 const ADMIN_REGION_CACHE_TTL_MS = 5 * 60 * 1000;
 const ADMIN_REGION_CACHE_VERSION = 'v145';
 
@@ -260,7 +265,7 @@ function updateRebuildIndexAccess() {
 
 function setLimitsAccess(enabled) {
   document.querySelectorAll('.admin-limits-only').forEach(el => { el.hidden = !enabled; });
-  if (!enabled && window.location.hash.replace('#', '') === 'limits') switchTab('players');
+  if (!enabled && ['limits','clean'].includes(window.location.hash.replace('#', ''))) switchTab('players');
 }
 
 function sortRows(a, b) {
@@ -716,6 +721,159 @@ async function runD1ArchiveCleanup(scope) {
     console.error(error);
     setD1ArchiveStatus(t('admin.d1ArchiveCleanFailed', 'Не вдалося очистити D1 архів.'), 'error');
   }
+}
+
+
+function selectedCleanRegion() {
+  const select = $('#cleanFirestoreRegionSelect');
+  return String(select?.value || '').replace(/[^0-9]/g, '');
+}
+
+function setOldFirestoreStatus(text, type = 'muted') {
+  const box = $('#oldFirestoreRegistrationsStatus');
+  if (!box) return;
+  box.removeAttribute('data-i18n');
+  box.textContent = text;
+  box.dataset.type = type;
+}
+
+function renderCleanRegions() {
+  const select = $('#cleanFirestoreRegionSelect');
+  if (!select) return;
+  const previous = selectedCleanRegion();
+  const items = (regionsCatalog || []).filter(item => item?.region).sort((a, b) => Number(a.region) - Number(b.region) || String(a.region).localeCompare(String(b.region)));
+  select.innerHTML = items.length
+    ? items.map(item => `<option value="${escapeHtml(item.region)}">${escapeHtml(item.name || `R${item.region}`)}</option>`).join('')
+    : `<option value="">${escapeHtml(t('admin.noRegions', 'Немає регіонів'))}</option>`;
+  if (previous && items.some(item => String(item.region) === previous)) select.value = previous;
+}
+
+function renderOldFirestoreCleanupResult(result = {}) {
+  oldFirestoreCleanupCount = Number(result.oldCount || 0) || 0;
+  const scanned = Number(result.scannedCount || 0) || 0;
+  const maxDeletes = Number(result.maxDeletes || 100) || 100;
+  const hasMore = result.hasMore ? ` ${t('admin.firestoreCleanupHasMore', 'Можливо є ще старі заявки — повтори перевірку після очищення.')}` : '';
+  const legacy = result.legacyScan ? ` ${t('admin.firestoreCleanupLegacyNote', 'Перевірено також старі заявки без expiresAtMs, але тільки маленькою пачкою.')}` : '';
+  const text = oldFirestoreCleanupCount
+    ? tv('admin.firestoreCleanupFound', 'Знайдено старих Firestore-заявок: {count}. Перевірено документів: {scanned}. Можна очистити до {max} за раз.', { count: oldFirestoreCleanupCount, scanned, max: maxDeletes })
+    : tv('admin.firestoreCleanupNone', 'Старих Firestore-заявок для очищення не знайдено. Перевірено документів: {scanned}.', { scanned });
+  setOldFirestoreStatus(`${text}${hasMore}${legacy}`.trim(), oldFirestoreCleanupCount ? 'warn' : 'success');
+  const cleanupBtn = $('#cleanupOldFirestoreRegistrationsBtn');
+  if (cleanupBtn) cleanupBtn.disabled = oldFirestoreCleanupCount <= 0;
+}
+
+async function ensureCleanRegionsLoaded(force = false) {
+  if (!currentUser || !canUseLimitsPanel()) return [];
+  const regions = await loadRegionsCatalog(force).catch(error => {
+    console.warn('[WKD] clean regions load failed:', error);
+    return [];
+  });
+  renderCleanRegions();
+  return regions;
+}
+
+async function checkOldFirestoreRegistrations() {
+  if (!currentUser || !canUseLimitsPanel()) return null;
+  const region = selectedCleanRegion();
+  if (!region) {
+    setOldFirestoreStatus(t('admin.cleanRegionRequired', 'Вибери регіон для перевірки.'), 'warn');
+    return null;
+  }
+  const checkBtn = $('#checkOldFirestoreRegistrationsBtn');
+  const cleanupBtn = $('#cleanupOldFirestoreRegistrationsBtn');
+  if (checkBtn) checkBtn.disabled = true;
+  if (cleanupBtn) cleanupBtn.disabled = true;
+  setOldFirestoreStatus(t('admin.firestoreCleanupChecking', 'Перевіряю старі Firestore-заявки...'), 'muted');
+  try {
+    const result = await inspectOldRegionRegistrations(currentUser, region, { maxDeletes: 100, allowLegacyFullScan: true });
+    if (result.skipped) {
+      setOldFirestoreStatus(t('admin.firestoreCleanupDenied', 'Немає доступу для перевірки старих заявок.'), 'error');
+      return result;
+    }
+    renderOldFirestoreCleanupResult(result);
+    renderUsage();
+    return result;
+  } catch (error) {
+    console.warn('[WKD] old Firestore registrations check failed:', error);
+    setOldFirestoreStatus(t('admin.firestoreCleanupCheckFailed', 'Не вдалося перевірити старі Firestore-заявки.'), 'error');
+    return null;
+  } finally {
+    if (checkBtn) checkBtn.disabled = false;
+  }
+}
+
+async function cleanupOldFirestoreRegistrations({ auto = false } = {}) {
+  if (!currentUser || !canUseLimitsPanel()) return null;
+  const region = selectedCleanRegion();
+  if (!region) {
+    setOldFirestoreStatus(t('admin.cleanRegionRequired', 'Вибери регіон для очищення.'), 'warn');
+    return null;
+  }
+  if (!auto && oldFirestoreCleanupCount <= 0) {
+    const result = await checkOldFirestoreRegistrations();
+    if (!result || Number(result.oldCount || 0) <= 0) return result;
+  }
+  if (!auto) {
+    const ok = await confirmAction({
+      title: t('admin.firestoreCleanupConfirmTitle', 'Очистити 100 старих Firestore-заявок?'),
+      message: t('admin.firestoreCleanupConfirmMessage', 'Буде очищено тільки старий Firebase-резерв. Активна D1-таблиця, архів циклів і поточний cycleId не чіпаються.'),
+      icon: '🧹',
+      acceptText: t('admin.cleanupOldFirestoreRegistrations', 'Очистити 100 старих')
+    });
+    if (!ok) return null;
+  }
+  const checkBtn = $('#checkOldFirestoreRegistrationsBtn');
+  const cleanupBtn = $('#cleanupOldFirestoreRegistrationsBtn');
+  if (checkBtn) checkBtn.disabled = true;
+  if (cleanupBtn) cleanupBtn.disabled = true;
+  setOldFirestoreStatus(auto ? t('admin.firestoreCleanupAutoRunning', 'Автоочистка: очищаю старі Firestore-заявки 14+ днів...') : t('admin.firestoreCleanupRunning', 'Очищаю старі Firestore-заявки пачкою до 100...'), 'muted');
+  try {
+    const result = await cleanupOldRegionRegistrations(currentUser, region, { maxDeletes: 100, allowLegacyFullScan: true });
+    if (result.skipped) {
+      setOldFirestoreStatus(t('admin.firestoreCleanupDenied', 'Немає доступу для очищення старих заявок.'), 'error');
+      return result;
+    }
+    const deleted = Number(result.deletedCount || 0) || 0;
+    const ops = Number(result.deletedOps || 0) || 0;
+    oldFirestoreCleanupCount = Math.max(0, oldFirestoreCleanupCount - deleted);
+    setOldFirestoreStatus(tv(auto ? 'admin.firestoreCleanupAutoDone' : 'admin.firestoreCleanupDone', auto ? 'Автоочистка завершена. Очищено заявок: {count}. Delete operations: {ops}.' : 'Очищено заявок: {count}. Delete operations: {ops}. Активна D1-таблиця й архів не змінювались.', { count: deleted, ops }), deleted ? 'success' : 'muted');
+    renderUsage();
+    return result;
+  } catch (error) {
+    console.warn('[WKD] old Firestore registrations cleanup failed:', error);
+    setOldFirestoreStatus(t('admin.firestoreCleanupFailed', 'Не вдалося очистити старі Firestore-заявки.'), 'error');
+    return null;
+  } finally {
+    if (checkBtn) checkBtn.disabled = false;
+    if (cleanupBtn) cleanupBtn.disabled = oldFirestoreCleanupCount <= 0;
+  }
+}
+
+async function maybeRunOldFirestoreAutoCleanup() {
+  if (oldFirestoreAutoRunning || !currentUser || !canUseLimitsPanel()) return;
+  const region = selectedCleanRegion();
+  if (!region) return;
+  const key = `${OLD_FIRESTORE_AUTO_KEY}.${region}`;
+  const now = Date.now();
+  const last = Number(localStorage.getItem(key) || 0) || 0;
+  if (now - last < 24 * 60 * 60 * 1000) return;
+  oldFirestoreAutoRunning = true;
+  try {
+    localStorage.setItem(key, String(now));
+    const result = await inspectOldRegionRegistrations(currentUser, region, { maxDeletes: 100, allowLegacyFullScan: false });
+    if (Number(result?.oldCount || 0) > 0) await cleanupOldFirestoreRegistrations({ auto: true });
+    else renderOldFirestoreCleanupResult(result || {});
+  } catch (error) {
+    console.warn('[WKD] old Firestore auto cleanup skipped:', error);
+  } finally {
+    oldFirestoreAutoRunning = false;
+  }
+}
+
+async function loadCleanPanel(forceRegions = false) {
+  if (!currentUser || !canUseLimitsPanel()) return;
+  await ensureCleanRegionsLoaded(forceRegions);
+  if (selectedCleanRegion()) await maybeRunOldFirestoreAutoCleanup();
 }
 
 function counterValue(key, fallback = 0) {
@@ -1201,10 +1359,11 @@ async function loadAdminData() {
 
 function switchTab(tab) {
   const requested = tab || 'players';
-  const safeTab = requested === 'limits' && !canUseLimitsPanel() ? 'players' : requested;
+  const safeTab = (requested === 'limits' || requested === 'clean') && !canUseLimitsPanel() ? 'players' : requested;
   document.querySelectorAll('[data-admin-tab]').forEach(button => button.classList.toggle('is-active', button.dataset.adminTab === safeTab));
   document.querySelectorAll('[data-admin-panel]').forEach(panel => panel.classList.toggle('is-active', panel.dataset.adminPanel === safeTab));
   if (safeTab === 'limits') renderUsage();
+  if (safeTab === 'clean') loadCleanPanel().catch(console.error);
   if (safeTab === 'requests' && !requestsLoaded) loadRoleRequests().catch(console.error);
   if (safeTab === 'regions') loadRegionsCatalog().catch(console.error);
   if (safeTab === 'security') document.dispatchEvent(new CustomEvent('wkd:security-load'));
@@ -1249,6 +1408,10 @@ function bindAdminControls() {
   $('#cleanupD1CyclesBtn')?.addEventListener('click', () => runD1ArchiveCleanup('cycles').catch(console.error));
   $('#cleanupD1SharesBtn')?.addEventListener('click', () => runD1ArchiveCleanup('shares').catch(console.error));
   $('#cleanupD1AllBtn')?.addEventListener('click', () => runD1ArchiveCleanup('all').catch(console.error));
+  $('#refreshCleanRegionsBtn')?.addEventListener('click', () => loadCleanPanel(true).catch(console.error));
+  $('#cleanFirestoreRegionSelect')?.addEventListener('change', () => { oldFirestoreCleanupCount = 0; maybeRunOldFirestoreAutoCleanup().catch(console.error); });
+  $('#checkOldFirestoreRegistrationsBtn')?.addEventListener('click', () => checkOldFirestoreRegistrations().catch(console.error));
+  $('#cleanupOldFirestoreRegistrationsBtn')?.addEventListener('click', () => cleanupOldFirestoreRegistrations().catch(console.error));
   $('#backToProfileBtn')?.addEventListener('click', () => { window.location.href = 'profile.html'; });
   $('#refreshRegionsBtn')?.addEventListener('click', () => { clearAdminJsonCache('regionsCatalog'); loadRegionsCatalog(true).catch(console.error); });
   $('#adminRegionForm')?.addEventListener('submit', saveManualRegion);

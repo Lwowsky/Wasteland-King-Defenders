@@ -1,6 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=195';
+import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=196';
+import { readRegionTableSnapshot } from '../services/region-table-cache.js?v=196';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -18,6 +19,7 @@ let currentUser = null;
 let currentProfile = null;
 let currentMode = normalizeMode(localStorage.getItem(SOURCE_KEY) || 'local');
 let loadedRegionRows = [];
+let loadedRegionPageMeta = null;
 let loadedRegion = '';
 let loadingRegion = false;
 let loadingRegionKey = '';
@@ -561,20 +563,104 @@ function updateTabs() {
   updateTransferButtons();
 }
 
+
+function readPlayerTableFilters() {
+  const role = $('#roleFilter')?.value || 'all';
+  const shift = $('#shiftFilter')?.value || 'all';
+  const tier = $('#tierFilter')?.value || 'all';
+  const status = $('#statusFilter')?.value || 'all';
+  const pageSizeRaw = $('#pageSizeSelect')?.value || '10';
+  const sortFieldMap = { name: 'nickname', alliance: 'alliance', role: 'troopType', tier: 'tier', march: 'marchSize', rally: 'rallySize', captain: 'captainReady', shift: 'shift' };
+  return {
+    search: String($('#searchFilter')?.value || '').trim(),
+    troop: role === 'all' ? '' : role,
+    shift: shift === 'all' ? '' : shift,
+    tier: tier === 'all' ? '' : tier,
+    status,
+    pageSize: pageSizeRaw === 'all' ? 100 : Math.max(10, Math.min(100, Number(pageSizeRaw) || 10)),
+    sortField: sortFieldMap[window.WKD?.state?.sort?.field || ''] || '',
+    sortDir: (window.WKD?.state?.sort?.dir || 1) < 0 ? 'desc' : 'asc'
+  };
+}
+
+async function loadRegionRowsPage(force = false, regionOverride = '', pageOverride = 1) {
+  if (!canUseRegionSource()) return;
+  const requestedRegion = normalizeRegion(regionOverride || loadedRegion || activeProfileRegion() || getGameProfile(currentProfile || {}).region || '');
+  if (!requestedRegion) return;
+  const requestId = ++regionLoadRequestId;
+  loadingRegion = true;
+  loadingRegionKey = requestedRegion;
+  loadedRegion = requestedRegion;
+  localStorage.setItem(REGION_KEY, requestedRegion);
+  updateTransferButtons();
+  setNote(tv('players.loadingRegionTable', 'Loading region table {region}...', { region: currentRegionLabel() }), 'muted');
+  try {
+    const filters = readPlayerTableFilters();
+    const result = await readRegionTableSnapshot(currentUser, requestedRegion, {
+      force,
+      page: Math.max(1, Number(pageOverride) || 1),
+      pageSize: filters.pageSize,
+      search: filters.search,
+      troop: filters.troop,
+      shift: filters.shift,
+      tier: filters.tier,
+      sortField: filters.sortField,
+      sortDir: filters.sortDir,
+      ttlMs: force ? 0 : undefined
+    });
+    const resultRegion = normalizeRegion(result.region || requestedRegion || loadedRegion);
+    if (requestId !== regionLoadRequestId || resultRegion !== requestedRegion) return;
+    currentProfile = result.profile || currentProfile;
+    loadedRegion = resultRegion;
+    let rows = (result.rows || [])
+      .filter(row => !normalizeRegion(row.region || '') || normalizeRegion(row.region || '') === loadedRegion)
+      .map(row => ({ ...regionRegistrationToPlayer(row), source: REGION_SOURCE }));
+    if (filters.status === 'captains') rows = rows.filter(row => row.captain);
+    loadedRegionRows = rows;
+    loadedRegionPageMeta = {
+      page: Number(result.page || pageOverride) || 1,
+      pageSize: Number(result.pageSize || filters.pageSize) || filters.pageSize,
+      totalRows: Number(result.totalRows || rows.length) || rows.length,
+      totalPages: Number(result.totalPages || 1) || 1,
+      source: result.source || 'cloudflare-d1-rows'
+    };
+    if (window.WKD?.state) window.WKD.state.page = loadedRegionPageMeta.page;
+    loadedRegionAlliances = loadedRegion ? await listRegionAlliances(loadedRegion).catch(() => []) : [];
+    if (requestId !== regionLoadRequestId) return;
+    updateAllianceColorMap();
+  } catch (error) {
+    if (requestId !== regionLoadRequestId) return;
+    console.error(error);
+    loadedRegionRows = [];
+    loadedRegionPageMeta = null;
+    setNote(t('players.regionLoadFailed', 'Could not load the region table. Check the profile or region.'), 'warn');
+  } finally {
+    if (requestId === regionLoadRequestId) {
+      loadingRegion = false;
+      loadingRegionKey = '';
+      updateTransferButtons();
+    }
+  }
+}
+
 function renderCurrentRows() {
   if (!window.WKD?.setPlayers) return;
   const localRows = getLocalPlayers();
   const rows = currentMode === 'region' ? loadedRegionRows : localRows;
+  window.WKD.regionPlayersServerMode = currentMode === 'region';
+  window.WKD.regionPlayersServerMeta = currentMode === 'region' ? loadedRegionPageMeta : null;
 
   WKD.setPlayers(rows, {
     persist: false,
     normalized: true,
     eventSource: `source-${currentMode}`,
-    clearStorage: false
+    clearStorage: false,
+    keepPage: currentMode === 'region'
   });
 
   if (currentMode === 'region') {
-    setNote(tv('players.regionShown', 'Region table {region}: shown {count} players.', { region: currentRegionLabel(), count: loadedRegionRows.length }), loadedRegionRows.length ? 'success' : 'warn');
+    const total = loadedRegionPageMeta?.totalRows || loadedRegionRows.length;
+    setNote(`${tv('players.regionShown', 'Region table {region}: shown {count} players.', { region: currentRegionLabel(), count: total })} ${t('players.serverPagingNote', 'Регіональна таблиця показує сторінку з D1, а не тягне весь список у браузер.')}`, loadedRegionRows.length ? 'success' : 'warn');
     setHelp(t('players.regionActive', 'Region table is active.'));
     updateTransferButtons();
     return;
@@ -586,49 +672,10 @@ function renderCurrentRows() {
 }
 
 async function loadRegionRows(force = false, regionOverride = '') {
-  if (!canUseRegionSource()) return;
-  const requestedRegion = normalizeRegion(regionOverride || loadedRegion || activeProfileRegion() || getGameProfile(currentProfile || {}).region || '');
-  if (!requestedRegion) return;
-  if (!force && loadedRegionRows.length && requestedRegion === loadedRegion) return;
-  const requestId = ++regionLoadRequestId;
-  loadingRegion = true;
-  loadingRegionKey = requestedRegion;
-  loadedRegion = requestedRegion;
-  localStorage.setItem(REGION_KEY, requestedRegion);
-  updateTransferButtons();
-  setNote(tv('players.loadingRegionTable', 'Loading region table {region}...', { region: currentRegionLabel() }), 'muted');
-  try {
-    const result = await listRegionRegistrations(currentUser, requestedRegion, {
-      d1Only: true,
-      forceD1: Boolean(force),
-      d1TtlMs: force ? 0 : undefined
-    });
-    const resultRegion = normalizeRegion(result.region || requestedRegion || loadedRegion);
-    if (requestId !== regionLoadRequestId || resultRegion !== requestedRegion) return;
-    currentProfile = result.profile || currentProfile;
-    loadedRegion = resultRegion;
-    loadedRegionRows = (result.rows || [])
-      .filter(row => !normalizeRegion(row.region || '') || normalizeRegion(row.region || '') === loadedRegion)
-      .map(row => ({ ...regionRegistrationToPlayer(row), source: REGION_SOURCE }));
-    loadedRegionAlliances = loadedRegion ? await listRegionAlliances(loadedRegion).catch(() => []) : [];
-    if (requestId !== regionLoadRequestId) return;
-    updateAllianceColorMap();
-    if (result?.d1Missing) {
-      setNote(t('players.regionD1MissingNoFirestore', 'Таблиця регіону ще не має D1-кешу. Firebase fallback не запускався, щоб не витрачати reads.'), 'warn');
-    }
-  } catch (error) {
-    if (requestId !== regionLoadRequestId) return;
-    console.error(error);
-    loadedRegionRows = [];
-    setNote(t('players.regionLoadFailed', 'Could not load the region table. Check the profile or region.'), 'warn');
-  } finally {
-    if (requestId === regionLoadRequestId) {
-      loadingRegion = false;
-      loadingRegionKey = '';
-      updateTransferButtons();
-    }
-  }
+  const page = window.WKD?.state?.page || 1;
+  await loadRegionRowsPage(force, regionOverride, page);
 }
+
 
 async function applyMode(mode, options = {}) {
   const nextMode = normalizeMode(mode);
@@ -926,6 +973,11 @@ async function init() {
   updateTabs();
   renderCurrentRows();
 
+  window.WKD.requestRegionPlayersPage = async (options = {}) => {
+    if (currentMode !== 'region') return;
+    await loadRegionRowsPage(Boolean(options.force), options.region || '', options.page || window.WKD?.state?.page || 1);
+    renderCurrentRows();
+  };
   window.WKD.setPlayersSourceMode = (mode, options = {}) => applyMode(mode, options);
   window.WKD.deletePlayersFromActiveSource = deletePlayersFromActiveSource;
   window.WKD.updatePlayerInActiveSource = updatePlayerInActiveSource;
