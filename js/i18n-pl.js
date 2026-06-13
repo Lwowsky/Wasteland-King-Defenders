@@ -2157,5 +2157,6 @@ window.WKD_TRANSLATIONS.pl = {
   "regionSettings.archiveRestoreD1Message": "Cykl {cycle} stanie się aktywną tabelą regionu R{region}.",
   "regionSettings.archiveRestoreD1Note": "To nie nadpisuje zgłoszeń Firestore. Firebase reads/writes: 0. Pełne przywrócenie Firestore to osobny kosztowny krok.",
   "regionSettings.archiveRestoredD1": "Tabela D1 przywrócona jako aktywna: {count} graczy. Firebase reads/writes: 0.",
-  "regionSettings.archiveRestoreD1Failed": "Nie udało się przywrócić tabeli D1 z archiwum."
+  "regionSettings.archiveRestoreD1Failed": "Nie udało się przywrócić tabeli D1 z archiwum.",
+  'region.rowsPerPage': 'Wierszy'
 };

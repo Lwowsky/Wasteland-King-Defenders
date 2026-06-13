@@ -2157,5 +2157,6 @@ window.WKD_TRANSLATIONS.en = {
   "regionSettings.archiveRestoreD1Message": "Cycle {cycle} will become the active table for region R{region}.",
   "regionSettings.archiveRestoreD1Note": "This does not rewrite Firestore registrations. Firebase reads/writes: 0. Full Firestore restore is a separate expensive step.",
   "regionSettings.archiveRestoredD1": "D1 table restored as active: {count} players. Firebase reads/writes: 0.",
-  "regionSettings.archiveRestoreD1Failed": "Could not restore the D1 table from the archive."
+  "regionSettings.archiveRestoreD1Failed": "Could not restore the D1 table from the archive.",
+  'region.rowsPerPage': 'Rows'
 };

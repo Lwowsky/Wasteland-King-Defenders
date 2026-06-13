@@ -2157,5 +2157,6 @@ window.WKD_TRANSLATIONS.de = {
   "regionSettings.archiveRestoreD1Message": "Zyklus {cycle} wird zur aktiven Tabelle der Region R{region}.",
   "regionSettings.archiveRestoreD1Note": "Dies überschreibt keine Firestore-Anmeldungen. Firebase reads/writes: 0. Eine vollständige Firestore-Wiederherstellung ist ein separater teurer Schritt.",
   "regionSettings.archiveRestoredD1": "D1-Tabelle als aktiv wiederhergestellt: {count} Spieler. Firebase reads/writes: 0.",
-  "regionSettings.archiveRestoreD1Failed": "D1-Tabelle konnte nicht aus dem Archiv wiederhergestellt werden."
+  "regionSettings.archiveRestoreD1Failed": "D1-Tabelle konnte nicht aus dem Archiv wiederhergestellt werden.",
+  'region.rowsPerPage': 'Zeilen'
 };

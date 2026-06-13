@@ -2157,5 +2157,6 @@ window.WKD_TRANSLATIONS.ja = {
   "regionSettings.archiveRestoreD1Message": "サイクル {cycle} が地域 R{region} のアクティブテーブルになります。",
   "regionSettings.archiveRestoreD1Note": "Firestore の申請は書き換えません。Firebase reads/writes: 0。完全な Firestore 復元は別の高コスト手順です。",
   "regionSettings.archiveRestoredD1": "D1 テーブルをアクティブとして復元しました: {count} 人。Firebase reads/writes: 0。",
-  "regionSettings.archiveRestoreD1Failed": "アーカイブから D1 テーブルを復元できませんでした。"
+  "regionSettings.archiveRestoreD1Failed": "アーカイブから D1 テーブルを復元できませんでした。",
+  'region.rowsPerPage': '行数'
 };

@@ -2155,5 +2155,6 @@ window.WKD_TRANSLATIONS.ar = {
   "regionSettings.archiveRestoreD1Message": "ستصبح الدورة {cycle} الجدول النشط للمنطقة R{region}.",
   "regionSettings.archiveRestoreD1Note": "هذا لا يعيد كتابة طلبات Firestore. Firebase reads/writes: 0. الاستعادة الكاملة في Firestore خطوة منفصلة ومكلفة.",
   "regionSettings.archiveRestoredD1": "تمت استعادة جدول D1 كنشط: {count} لاعبًا. Firebase reads/writes: 0.",
-  "regionSettings.archiveRestoreD1Failed": "تعذرت استعادة جدول D1 من الأرشيف."
+  "regionSettings.archiveRestoreD1Failed": "تعذرت استعادة جدول D1 من الأرشيف.",
+  'region.rowsPerPage': 'الصفوف'
 };

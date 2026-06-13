@@ -2157,5 +2157,6 @@ window.WKD_TRANSLATIONS.ko = {
   "regionSettings.archiveRestoreD1Message": "사이클 {cycle}이 지역 R{region}의 활성 테이블이 됩니다.",
   "regionSettings.archiveRestoreD1Note": "Firestore 신청서는 다시 쓰지 않습니다. Firebase reads/writes: 0. 전체 Firestore 복원은 별도의 비용이 큰 단계입니다.",
   "regionSettings.archiveRestoredD1": "D1 테이블이 활성 상태로 복원됨: {count}명. Firebase reads/writes: 0.",
-  "regionSettings.archiveRestoreD1Failed": "아카이브에서 D1 테이블을 복원하지 못했습니다."
+  "regionSettings.archiveRestoreD1Failed": "아카이브에서 D1 테이블을 복원하지 못했습니다.",
+  'region.rowsPerPage': '행'
 };

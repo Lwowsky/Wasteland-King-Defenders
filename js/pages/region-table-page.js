@@ -1,4 +1,4 @@
-import { makePublicShareUrl, rememberShareCode } from '../core/share-links.js?v=192';
+import { makePublicShareUrl, rememberShareCode } from '../core/share-links.js?v=193';
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, saveSignedInUser } from '../services/user-db.js';
 import {
@@ -17,8 +17,8 @@ import {
   listRegionAlliances,
   listRegionCatalog,
   shareRegionTable
-} from '../services/region-db.js?v=192';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot } from '../services/region-table-cache.js?v=192';
+} from '../services/region-db.js?v=193';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot } from '../services/region-table-cache.js?v=193';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
@@ -59,6 +59,12 @@ let regionOptions = [];
 let tableSort = { field: 'nickname', dir: 1 };
 let timerId = null;
 let ready = false;
+let tablePage = 1;
+let tablePageSize = Number(localStorage.getItem('wkd.regionTable.pageSize') || 50) || 50;
+let tableTotalRows = 0;
+let tableTotalPages = 1;
+let serverPagedTable = false;
+let filterDebounceId = null;
 
 
 function normTag(value) { return String(value || '').trim(); }
@@ -213,8 +219,7 @@ function renderTierFilter() {
   const select = $('#regionTierFilter');
   if (!select) return;
   const oldValue = select.value || 'all';
-  const tiers = [...new Set(rows.map(row => String(row.tier || '').trim().toUpperCase()).filter(Boolean))]
-    .sort((a, b) => (Number(b.replace(/[^0-9]/g, '')) || 0) - (Number(a.replace(/[^0-9]/g, '')) || 0));
+  const tiers = ['T14','T13','T12','T11','T10','T9','T8','T7','T6','T5','T4','T3','T2','T1'];
   select.innerHTML = `<option value="all">${esc(t('common.all', 'Усі'))}</option>` + tiers.map(tier => `<option value="${esc(tier)}">${esc(tier)}</option>`).join('');
   select.value = oldValue === 'all' || tiers.includes(oldValue) ? oldValue : 'all';
 }
@@ -326,7 +331,47 @@ function compareRows(a, b) {
   return String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' }) * tableSort.dir;
 }
 
+function tableFilterValues() {
+  return {
+    search: String($('#regionNickSearch')?.value || '').trim(),
+    alliance: String($('#regionAllianceSearch')?.value || '').trim(),
+    troop: $('#regionTroopFilter')?.value || 'all',
+    tier: $('#regionTierFilter')?.value || 'all',
+    shift: $('#regionShiftFilter')?.value || 'all',
+    sortField: tableSort.field,
+    sortDir: tableSort.dir < 0 ? 'desc' : 'asc'
+  };
+}
+
+function resetTablePage() { tablePage = 1; }
+
+function renderPager() {
+  const pager = $('#regionTablePager');
+  if (!pager) return;
+  const total = Math.max(0, Number(tableTotalRows || rows.length) || 0);
+  tableTotalPages = Math.max(1, Number(tableTotalPages || Math.ceil(total / Math.max(1, tablePageSize))) || 1);
+  const hasPages = serverPagedTable || total > tablePageSize;
+  pager.hidden = !hasPages;
+  const info = $('#regionTablePageInfo');
+  if (info) info.textContent = tv('regionSettings.archivePageInfo', 'Сторінка {page} / {pages}', { page: tablePage, pages: tableTotalPages }) + ` · ${total}`;
+  const prev = $('#regionTablePrevBtn');
+  const next = $('#regionTableNextBtn');
+  if (prev) prev.disabled = tablePage <= 1;
+  if (next) next.disabled = tablePage >= tableTotalPages;
+  const size = $('#regionTablePageSize');
+  if (size) size.value = String(tablePageSize);
+}
+
+async function reloadTablePage(options = {}) {
+  if (options.resetPage) resetTablePage();
+  await load(currentUser, { forceD1: Boolean(options.forceD1), keepPage: true }).catch(error => {
+    console.error(error);
+    setStatus(t('region.tableRefreshFailed', 'Could not refresh the region table.'), 'error');
+  });
+}
+
 function filteredRows() {
+  if (serverPagedTable) return rows;
   const nick = String($('#regionNickSearch')?.value || '').trim().toLowerCase();
   const alliance = String($('#regionAllianceSearch')?.value || '').trim();
   const troop = $('#regionTroopFilter')?.value || 'all';
@@ -470,8 +515,10 @@ function render() {
   const body = $('#regionRegistrationsBody');
   if (!body) return;
   const visible = filteredRows();
+  const total = serverPagedTable ? tableTotalRows : rows.length;
   body.innerHTML = visible.length ? visible.map(rowHtml).join('') : `<tr><td colspan="8">${t('region.table.emptyCycle', 'У цьому активному наборі ще немає гравців або заявок.')}</td></tr>`;
-  setStatus(tv('region.tableShownStatus', '{regionLabel} {region}: shown {visible} of {total} records.', { regionLabel: t('account.region', 'Region'), region: currentRegion, visible: visible.length, total: rows.length }), currentSettings?.open ? 'success' : 'warn');
+  setStatus(tv('region.tableShownStatus', '{regionLabel} {region}: shown {visible} of {total} records.', { regionLabel: t('account.region', 'Region'), region: currentRegion, visible: visible.length, total }), currentSettings?.open ? 'success' : 'warn');
+  renderPager();
 }
 
 async function load(user, options = {}) {
@@ -491,12 +538,19 @@ async function load(user, options = {}) {
   }
   const allowedRegion = canUseRequestedRegion ? requestedRegion : '';
   let result = null;
+  if (!options?.keepPage) tablePage = 1;
   if (isRegionTableCacheEnabled() && allowedRegion) {
-    result = await readRegionTableSnapshot(user, allowedRegion, { force: Boolean(options?.forceD1) }).catch(error => {
-      console.warn('[WKD] region table JSON cache unavailable, using Firebase:', error);
+    result = await readRegionTableSnapshot(user, allowedRegion, {
+      force: Boolean(options?.forceD1),
+      page: tablePage,
+      pageSize: tablePageSize,
+      ...tableFilterValues()
+    }).catch(error => {
+      console.warn('[WKD] region table D1 page unavailable, using Firebase fallback:', error);
       return null;
     });
   }
+  serverPagedTable = Boolean(result && Number(result.totalRows) >= 0 && Number(result.pageSize));
   if (!result) {
     result = await listRegionRegistrations(user, allowedRegion, { skipD1: true });
     await publishRegionTableSnapshot(user, {
@@ -505,11 +559,16 @@ async function load(user, options = {}) {
       settings: result.settings || {},
       rows: result.rows || []
     });
+    serverPagedTable = false;
   }
   currentProfile = result.profile || profile;
   currentRegion = result.region;
   rememberActiveRegion(currentRegion);
   rows = result.rows || [];
+  tablePage = Math.max(1, Number(result.page || tablePage) || 1);
+  tablePageSize = Math.max(10, Math.min(100, Number(result.pageSize || tablePageSize) || 50));
+  tableTotalRows = serverPagedTable ? Math.max(0, Number(result.totalRows || 0) || 0) : rows.length;
+  tableTotalPages = serverPagedTable ? Math.max(1, Number(result.totalPages || 1) || 1) : Math.max(1, Math.ceil(rows.length / tablePageSize));
   currentSettings = result.settings || {};
   await loadAllianceColors();
   renderTroopFilter(currentSettings);
@@ -552,9 +611,15 @@ async function shareRegionTableLink() {
 }
 
 function bind() {
-  ['#regionNickSearch', '#regionAllianceSearch', '#regionTroopFilter', '#regionTierFilter', '#regionShiftFilter'].forEach(selector => {
-    $(selector)?.addEventListener('input', render);
-    $(selector)?.addEventListener('change', render);
+  const scheduleReload = () => {
+    window.clearTimeout(filterDebounceId);
+    filterDebounceId = window.setTimeout(() => reloadTablePage({ resetPage: true }), 250);
+  };
+  ['#regionNickSearch', '#regionAllianceSearch'].forEach(selector => {
+    $(selector)?.addEventListener('input', scheduleReload);
+  });
+  ['#regionTroopFilter', '#regionTierFilter', '#regionShiftFilter'].forEach(selector => {
+    $(selector)?.addEventListener('change', () => reloadTablePage({ resetPage: true }));
   });
 
   document.querySelectorAll('[data-region-sort]').forEach(button => {
@@ -564,7 +629,7 @@ function bind() {
       tableSort.field = field;
       document.querySelectorAll('[data-region-sort]').forEach(btn => btn.classList.remove('is-desc'));
       button.classList.toggle('is-desc', tableSort.dir < 0);
-      render();
+      reloadTablePage({ resetPage: true });
     });
   });
 
@@ -579,10 +644,22 @@ function bind() {
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') closeRequestDetails();
   });
-  $('#refreshRegionTableBtn')?.addEventListener('click', () => load(currentUser, { forceD1: true }).catch(error => {
-    console.error(error);
-    setStatus(t('region.tableRefreshFailed', 'Could not refresh the region table.'), 'error');
-  }));
+  $('#refreshRegionTableBtn')?.addEventListener('click', () => reloadTablePage({ forceD1: true }));
+  $('#regionTablePrevBtn')?.addEventListener('click', () => {
+    if (tablePage <= 1) return;
+    tablePage -= 1;
+    reloadTablePage({ keepPage: true });
+  });
+  $('#regionTableNextBtn')?.addEventListener('click', () => {
+    if (tablePage >= tableTotalPages) return;
+    tablePage += 1;
+    reloadTablePage({ keepPage: true });
+  });
+  $('#regionTablePageSize')?.addEventListener('change', event => {
+    tablePageSize = Math.max(10, Math.min(100, Number(event.currentTarget.value) || 50));
+    localStorage.setItem('wkd.regionTable.pageSize', String(tablePageSize));
+    reloadTablePage({ resetPage: true });
+  });
   $('#openRegionLookupBtn')?.addEventListener('click', () => openRegion($('#regionLookupInput')?.value || ''));
   $('#regionLookupInput')?.addEventListener('keydown', event => {
     if (event.key === 'Enter') openRegion(event.currentTarget.value);

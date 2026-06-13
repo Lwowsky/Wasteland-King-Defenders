@@ -638,40 +638,65 @@ async function readTableMeta(db, region, cycleId = "active") {
   return row || null;
 }
 
-async function readTableRows(db, region, cycleId = "active", options = {}) {
-  await ensureRegionTableSchema(db);
+function tableRowsWhere(region, cycleId = 'active', options = {}) {
   const safeRegion = normalizeRegion(region);
   const safeCycle = normalizeCycleId(cycleId || 'active');
+  const binds = [safeRegion, safeCycle];
+  const parts = ['region = ?1', 'cycle_id = ?2'];
+  const add = (sql, value) => { binds.push(value); parts.push(sql.replace('?', `?${binds.length}`)); };
+  const search = clean(options.search || '', 120).toLowerCase();
+  if (search) {
+    add(`(nickname_key LIKE ? OR lower(alliance) LIKE ? OR lower(troop_type) LIKE ? OR lower(tier) LIKE ? OR lower(shift) LIKE ? OR lower(row_json) LIKE ?)`, `%${search}%`);
+    const last = binds.length;
+    for (let i = 0; i < 5; i += 1) binds.push(binds[last - 1]);
+    parts[parts.length - 1] = `(nickname_key LIKE ?${last} OR lower(alliance) LIKE ?${last + 1} OR lower(troop_type) LIKE ?${last + 2} OR lower(tier) LIKE ?${last + 3} OR lower(shift) LIKE ?${last + 4} OR lower(row_json) LIKE ?${last + 5})`;
+  }
+  const alliance = clean(options.alliance || '', 12);
+  if (alliance) add('alliance LIKE ?', `%${alliance}%`);
+  const troop = clean(options.troop || '', 40).toLowerCase();
+  if (troop && troop !== 'all') add('lower(troop_type) = ?', troop);
+  const tier = clean(options.tier || '', 12).toUpperCase();
+  if (tier && tier !== 'ALL') add('upper(tier) = ?', tier);
+  const shift = clean(options.shift || '', 40).toLowerCase();
+  if (shift && shift !== 'all') add('lower(shift) = ?', shift);
+  return { safeRegion, safeCycle, where: parts.join(' AND '), binds };
+}
+
+function tableRowsOrder(options = {}) {
+  const field = clean(options.sort || options.sortField || '', 40);
+  const dir = String(options.dir || options.sortDir || '').toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+  const numericDir = dir;
+  const textDir = dir;
+  const map = {
+    nickname: `nickname_key ${textDir}`,
+    alliance: `alliance COLLATE NOCASE ${textDir}, nickname_key ASC`,
+    troopType: `troop_type COLLATE NOCASE ${textDir}, nickname_key ASC`,
+    tier: `CAST(REPLACE(upper(tier), 'T', '') AS INTEGER) ${numericDir}, nickname_key ASC`,
+    marchSize: `CAST(json_extract(row_json, '$.marchSize') AS INTEGER) ${numericDir}, nickname_key ASC`,
+    rallySize: `CAST(json_extract(row_json, '$.rallySize') AS INTEGER) ${numericDir}, nickname_key ASC`,
+    captainReady: `CAST(json_extract(row_json, '$.captainReady') AS INTEGER) ${numericDir}, nickname_key ASC`,
+    shift: `shift COLLATE NOCASE ${textDir}, nickname_key ASC`
+  };
+  return map[field] || `updated_at_ms DESC, nickname_key ASC`;
+}
+
+async function readTableRows(db, region, cycleId = "active", options = {}) {
+  await ensureRegionTableSchema(db);
   const limit = Math.max(1, Math.min(MAX_TABLE_ROWS, Number(options.limit || MAX_TABLE_ROWS) || MAX_TABLE_ROWS));
   const offset = Math.max(0, Number(options.offset || 0) || 0);
-  const search = clean(options.search || '', 120).toLowerCase();
-  let query = `SELECT region, cycle_id, id, uid, public_key, farm_id, nickname, nickname_key, alliance, troop_type, tier, shift, updated_at_ms, row_json
+  const scope = tableRowsWhere(region, cycleId, options);
+  const query = `SELECT region, cycle_id, id, uid, public_key, farm_id, nickname, nickname_key, alliance, troop_type, tier, shift, updated_at_ms, row_json
                  FROM region_table_rows
-                WHERE region = ?1 AND cycle_id = ?2`;
-  const binds = [safeRegion, safeCycle];
-  if (search) {
-    const like = `%${search}%`;
-    query += ` AND (nickname_key LIKE ?3 OR lower(alliance) LIKE ?3 OR lower(troop_type) LIKE ?3 OR lower(tier) LIKE ?3 OR lower(shift) LIKE ?3 OR lower(row_json) LIKE ?3)`;
-    binds.push(like);
-  }
-  query += ` ORDER BY updated_at_ms DESC, nickname COLLATE NOCASE ASC LIMIT ?${binds.length + 1} OFFSET ?${binds.length + 2}`;
-  binds.push(limit, offset);
-  const result = await db.prepare(query).bind(...binds).all();
-  return (result?.results || []).map(row => d1RegionTableRowToObject(row, safeRegion, safeCycle)).filter(row => row.nickname);
+                WHERE ${scope.where}
+                ORDER BY ${tableRowsOrder(options)} LIMIT ?${scope.binds.length + 1} OFFSET ?${scope.binds.length + 2}`;
+  const result = await db.prepare(query).bind(...scope.binds, limit, offset).all();
+  return (result?.results || []).map(row => d1RegionTableRowToObject(row, scope.safeRegion, scope.safeCycle)).filter(row => row.nickname);
 }
 
 async function countTableRows(db, region, cycleId = "active", options = {}) {
   await ensureRegionTableSchema(db);
-  const safeRegion = normalizeRegion(region);
-  const safeCycle = normalizeCycleId(cycleId || 'active');
-  const search = clean(options.search || '', 120).toLowerCase();
-  let query = `SELECT COUNT(*) AS count FROM region_table_rows WHERE region = ?1 AND cycle_id = ?2`;
-  const binds = [safeRegion, safeCycle];
-  if (search) {
-    query += ` AND (nickname_key LIKE ?3 OR lower(alliance) LIKE ?3 OR lower(troop_type) LIKE ?3 OR lower(tier) LIKE ?3 OR lower(shift) LIKE ?3 OR lower(row_json) LIKE ?3)`;
-    binds.push(`%${search}%`);
-  }
-  const row = await db.prepare(query).bind(...binds).first();
+  const scope = tableRowsWhere(region, cycleId, options);
+  const row = await db.prepare(`SELECT COUNT(*) AS count FROM region_table_rows WHERE ${scope.where}`).bind(...scope.binds).first();
   return Math.max(0, Number(row?.count || 0) || 0);
 }
 
@@ -1428,14 +1453,44 @@ async function handleRegionTableRead(request, env) {
   const url = new URL(request.url);
   const region = normalizeRegion(url.searchParams.get("region"));
   if (!region) return json({ ok: false, error: "region_required" }, 400);
-  const table = await getActiveTable(db, region);
-  if (!table) return json({ ok: false, error: "table_not_found" }, 404);
+  const cycleId = await getActiveCycleId(db, region);
+  const meta = await readTableMeta(db, region, cycleId);
+  if (!meta) return json({ ok: false, error: "table_not_found" }, 404);
+  await migrateLegacyTableRowsIfNeeded(db, meta);
   const allowed =
     isAdminUid(env, user.uid) ||
     await hasSavedRegionAccess(db, user.uid, region) ||
     await activeRegionHasUid(db, region, user.uid);
   if (!allowed) return json({ ok: false, error: "region_access_denied" }, 403);
-  return json({ ok: true, table, source: 'cloudflare-d1-region-table-rows', usage: { d1RowsRead: table.rows.length } }, 200, "private, no-store");
+
+  const requestedPage = Number(url.searchParams.get('page') || 0) || 0;
+  const requestedPageSize = Number(url.searchParams.get('pageSize') || 0) || 0;
+  const hasServerFilters = requestedPage > 0 || requestedPageSize > 0 || ['search','alliance','troop','tier','shift','sort','dir'].some(key => url.searchParams.has(key));
+  const settings = sanitizeSettings(parseJson(meta.settings_json, {}));
+  if (!hasServerFilters) {
+    const rows = await readTableRows(db, region, cycleId);
+    const table = rowToTable(meta, rows);
+    return json({ ok: true, table, source: 'cloudflare-d1-region-table-rows', usage: { d1RowsRead: rows.length } }, 200, "private, no-store");
+  }
+
+  const pageSize = Math.max(10, Math.min(100, requestedPageSize || 20));
+  const page = Math.max(1, requestedPage || 1);
+  const filters = {
+    search: clean(url.searchParams.get('search') || '', 120),
+    alliance: clean(url.searchParams.get('alliance') || '', 12),
+    troop: clean(url.searchParams.get('troop') || '', 40),
+    tier: clean(url.searchParams.get('tier') || '', 12),
+    shift: clean(url.searchParams.get('shift') || '', 40),
+    sort: clean(url.searchParams.get('sort') || '', 40),
+    dir: clean(url.searchParams.get('dir') || '', 8)
+  };
+  const totalRows = await countTableRows(db, region, cycleId, filters);
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const rows = await readTableRows(db, region, cycleId, { ...filters, limit: pageSize, offset: (safePage - 1) * pageSize });
+  const table = rowToTable(meta, rows);
+  table.settings = settings;
+  return json({ ok: true, table, page: safePage, pageSize, totalRows, totalPages, filters, source: 'cloudflare-d1-region-table-rows-paged', usage: { d1RowsRead: rows.length + 1 } }, 200, "private, no-store");
 }
 
 async function findRegionTableRow(db, region, cycleId, lookup = {}) {

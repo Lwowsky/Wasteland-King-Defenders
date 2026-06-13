@@ -2157,5 +2157,6 @@ window.WKD_TRANSLATIONS.ru = {
   "regionSettings.archiveRestoreD1Message": "Цикл {cycle} станет активной таблицей региона R{region}.",
   "regionSettings.archiveRestoreD1Note": "Это не перезаписывает Firestore-заявки. Firebase reads/writes: 0. Полное восстановление Firestore — отдельный дорогой шаг.",
   "regionSettings.archiveRestoredD1": "D1-таблица восстановлена как активная: {count} игроков. Firebase reads/writes: 0.",
-  "regionSettings.archiveRestoreD1Failed": "Не удалось восстановить D1-таблицу из архива."
+  "regionSettings.archiveRestoreD1Failed": "Не удалось восстановить D1-таблицу из архива.",
+  'region.rowsPerPage': 'Строк'
 };

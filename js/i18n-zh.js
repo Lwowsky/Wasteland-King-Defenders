@@ -2157,5 +2157,6 @@ window.WKD_TRANSLATIONS.zh = {
   "regionSettings.archiveRestoreD1Message": "周期 {cycle} 将成为区域 R{region} 的活动表格。",
   "regionSettings.archiveRestoreD1Note": "这不会重写 Firestore 报名。Firebase reads/writes: 0。完整 Firestore 恢复是单独且成本较高的步骤。",
   "regionSettings.archiveRestoredD1": "D1 表格已恢复为活动表格：{count} 名玩家。Firebase reads/writes: 0。",
-  "regionSettings.archiveRestoreD1Failed": "无法从归档恢复 D1 表格。"
+  "regionSettings.archiveRestoreD1Failed": "无法从归档恢复 D1 表格。",
+  'region.rowsPerPage': '行数'
 };

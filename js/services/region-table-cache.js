@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=192';
+import { trackCloudflareUsage } from './usage-tracker.js?v=193';
 
 const MAX_ROWS = 2000;
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -53,7 +53,7 @@ async function getFirebaseToken(user) {
 }
 
 function localCacheKey(kind, id) {
-  return `wkd.${kind}.d1.v192.${cleanText(id, 160)}`;
+  return `wkd.${kind}.d1.v193.${cleanText(id, 160)}`;
 }
 
 function readLocalTableCache(kind, id, ttlMs) {
@@ -310,19 +310,43 @@ export async function readRegionTableSnapshot(user, region, options = {}) {
   if (!isRegionTableCacheEnabled()) throw new Error('region-table-cache-disabled');
   const safeRegion = cleanRegion(region);
   if (!safeRegion) throw new Error('region-required');
-  if (!options?.force) {
+  const paged = Boolean(options?.page || options?.pageSize || options?.search || options?.alliance || options?.troop || options?.tier || options?.shift || options?.sortField);
+  if (!paged && !options?.force) {
     const cached = readLocalTableCache('regionTableSnapshot', safeRegion, Number(options?.ttlMs) || REGION_TABLE_CACHE_TTL_MS);
     if (cached) return cached;
   }
   const token = await getFirebaseToken(user);
   if (!token) throw new Error('auth-token-required');
-  const data = await requestJson(`/api/region-table?region=${encodeURIComponent(safeRegion)}`, {
+  const params = new URLSearchParams();
+  params.set('region', safeRegion);
+  if (paged) {
+    params.set('page', String(Math.max(1, Number(options?.page) || 1)));
+    params.set('pageSize', String(Math.max(10, Math.min(100, Number(options?.pageSize) || 20))));
+    if (options?.search) params.set('search', cleanText(options.search, 120));
+    if (options?.alliance) params.set('alliance', cleanText(options.alliance, 12));
+    if (options?.troop && options.troop !== 'all') params.set('troop', cleanText(options.troop, 40));
+    if (options?.tier && options.tier !== 'all') params.set('tier', cleanText(options.tier, 12).toUpperCase());
+    if (options?.shift && options.shift !== 'all') params.set('shift', cleanText(options.shift, 40));
+    if (options?.sortField) params.set('sort', cleanText(options.sortField, 40));
+    if (options?.sortDir) params.set('dir', String(options.sortDir).toLowerCase() === 'desc' || Number(options.sortDir) < 0 ? 'desc' : 'asc');
+  }
+  const data = await requestJson(`/api/region-table?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   const normalized = normalizeTableResponse(data, safeRegion);
   if (!normalized || normalized.region !== safeRegion) {
     removeLocalTableCache('regionTableSnapshot', safeRegion);
     throw new Error('region-table-cache-region-mismatch');
+  }
+  if (paged) {
+    return {
+      ...normalized,
+      page: Math.max(1, Number(data.page) || Number(options?.page) || 1),
+      pageSize: Math.max(1, Number(data.pageSize) || Number(options?.pageSize) || normalized.rows.length || 20),
+      totalRows: Math.max(0, Number(data.totalRows) || normalized.rows.length || 0),
+      totalPages: Math.max(1, Number(data.totalPages) || 1),
+      filters: data.filters || {}
+    };
   }
   writeLocalTableCache('regionTableSnapshot', safeRegion, normalized);
   return normalized;
@@ -705,17 +729,19 @@ export async function updateRegionTableRowD1(user, region, registrationId, value
   if (!token) throw new Error('auth-token-required');
   const row = editValuesToD1Row(id, values || {});
   removeLocalTableCache('regionTableSnapshot', safeRegion);
+  const explicitCycleId = cleanText(settings?.currentCycleId || values?.cycleId || '', 80);
+  const payload = {
+    region: safeRegion,
+    settings: sanitizeSettings(settings || {}),
+    row,
+    forceUpdate: Boolean(options?.forceUpdate),
+    updateOnly: true
+  };
+  if (explicitCycleId) payload.cycleId = explicitCycleId;
   const data = await requestJson('/api/region-table/registration', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({
-      region: safeRegion,
-      cycleId: cleanText(settings?.currentCycleId || values?.cycleId || 'active', 80) || 'active',
-      settings: sanitizeSettings(settings || {}),
-      row,
-      forceUpdate: Boolean(options?.forceUpdate),
-      updateOnly: true
-    })
+    body: JSON.stringify(payload)
   });
   return { ok: data.ok !== false, region: safeRegion, id, row: data.row || null, ...data, d1First: true };
 }

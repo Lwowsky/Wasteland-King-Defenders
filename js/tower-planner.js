@@ -180,7 +180,7 @@ window.WKD = window.WKD || {};
           Object.entries(rawMarches).forEach(([id, value]) => {
             const key = clean(id);
             const number = Math.max(0, Number(value) || 0);
-            if (key && number > 0) helperMarches[key] = number;
+            if (key && Number.isFinite(number) && number >= 0) helperMarches[key] = number;
           });
         }
         const towerTierLimits = {};
@@ -1595,8 +1595,10 @@ window.WKD = window.WKD || {};
     const normalized = ensureSlotShape(slot || {});
     const current = player || playerById(id);
     const base = baseHelperMarch(current);
-    const stored = Math.max(0, Number(normalized.helperMarches?.[id] || 0) || 0);
-    if (stored > 0) return Math.min(base || stored, stored);
+    if (Object.prototype.hasOwnProperty.call(normalized.helperMarches || {}, id)) {
+      const stored = Math.max(0, Number(normalized.helperMarches?.[id]) || 0);
+      return Math.min(base || stored, stored);
+    }
     return base;
   }
   function slotHelpersMarch(slot) {
@@ -1605,11 +1607,13 @@ window.WKD = window.WKD || {};
   }
   function setHelperAssignedMarch(slot, id, amount) {
     const normalized = ensureSlotShape(slot);
-    const player = playerById(id);
+    const key = clean(id);
+    if (!key || !normalized.helpers.includes(key)) return 0;
+    const player = playerById(key);
     const base = baseHelperMarch(player);
-    const value = Math.max(0, Math.min(base || amount || 0, Number(amount) || 0));
-    if (value > 0) normalized.helperMarches[id] = value;
-    else delete normalized.helperMarches[id];
+    const raw = Math.max(0, Number(amount) || 0);
+    const value = Math.max(0, Math.min(base || raw || 0, raw));
+    normalized.helperMarches[key] = value;
     return value;
   }
   function finalRoleText(role) {

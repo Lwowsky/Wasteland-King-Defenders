@@ -2157,5 +2157,6 @@ window.WKD_TRANSLATIONS.vi = {
   "regionSettings.archiveRestoreD1Message": "Chu kỳ {cycle} sẽ trở thành bảng hoạt động của vùng R{region}.",
   "regionSettings.archiveRestoreD1Note": "Việc này không ghi lại đăng ký Firestore. Firebase reads/writes: 0. Khôi phục Firestore đầy đủ là một bước riêng tốn nhiều giới hạn.",
   "regionSettings.archiveRestoredD1": "Đã khôi phục bảng D1 thành hoạt động: {count} người chơi. Firebase reads/writes: 0.",
-  "regionSettings.archiveRestoreD1Failed": "Không thể khôi phục bảng D1 từ kho lưu trữ."
+  "regionSettings.archiveRestoreD1Failed": "Không thể khôi phục bảng D1 từ kho lưu trữ.",
+  'region.rowsPerPage': 'Dòng'
 };
