@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, scanD1Archives } from '../services/d1-archive-cleanup.js?v=198';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=198';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=198';
+import { cleanupD1Archives, inspectD1Storage, scanD1Archives } from '../services/d1-archive-cleanup.js?v=199';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=199';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=199';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -22,7 +22,7 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=198';
+} from '../services/user-db.js?v=199';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -31,7 +31,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=198';
+} from '../services/region-db.js?v=199';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -646,6 +646,7 @@ async function runFirebaseArchiveCleanup(scope) {
   const ok = await confirmAction({
     title: tv('admin.firebaseArchiveCleanTitle', 'Очистити {scope}?', { scope: label }),
     message: tv('admin.firebaseArchiveCleanMessage', 'Буде видалено до 500 старих документів старше 30 днів. Непрочитані приватні повідомлення не видаляються. Продовжити?', { scope: label }),
+    note: tv('admin.d1ArchiveCleanNote', 'Вік: {days}. Якщо вибрано “Усі старі”, активний цикл усе одно не видаляється.', { days: selectedD1CleanupAge() ? `${selectedD1CleanupAge()}+` : t('admin.cleanupAgeAny', 'Усі старі') }),
     icon: '🧹',
     acceptText: t('admin.firebaseArchiveCleanAccept', 'Очистити')
   });
@@ -745,13 +746,14 @@ function d1ArchiveScopeLabel(scope = 'all') {
     campaigns: t('admin.d1ArchiveScopeCampaigns', 'D1 кампанії'),
     messages: t('admin.d1ArchiveScopeMessages', 'старі повідомлення'),
     logs: t('admin.d1ArchiveScopeLogs', 'старі журнали'),
+    finalPlans: t('admin.d1ArchiveScopeFinalPlans', 'старі фінальні плани'),
     all: t('admin.d1ArchiveScopeAll', 'D1 архів')
   };
   return labels[scope] || labels.all;
 }
 
 function d1ArchiveResultText(result = {}) {
-  return tv('admin.d1ArchiveResult', 'Знайдено: {found}. Видалено: {deleted}. Перевірено: {scanned}. Цикли: {cycles}. Посилання: {shares}. Кампанії: {campaigns}. Повідомлення: {messages}. Журнали: {logs}.', {
+  return tv('admin.d1ArchiveResult', 'Знайдено: {found}. Видалено: {deleted}. Перевірено: {scanned}. Цикли: {cycles}. Посилання: {shares}. Кампанії: {campaigns}. Повідомлення: {messages}. Журнали: {logs}. Фінальні плани: {finalPlans}.', {
     found: Number(result.found || 0),
     deleted: Number(result.deleted || 0),
     scanned: Number(result.scanned || 0),
@@ -759,7 +761,8 @@ function d1ArchiveResultText(result = {}) {
     shares: Number(result.shares || 0),
     campaigns: Number(result.campaigns || 0),
     messages: Number(result.messages || 0),
-    logs: Number(result.logs || 0)
+    logs: Number(result.logs || 0),
+    finalPlans: Number(result.finalPlans || 0)
   }) + (result.hasMore ? ` ${t('admin.d1ArchiveHasMore', 'Є ще записи — можна натиснути ще раз.')}` : '');
 }
 
@@ -767,7 +770,7 @@ async function runD1ArchiveScan() {
   if (!currentUser || !canUseLimitsPanel()) return;
   try {
     setD1ArchiveStatus(t('admin.d1ArchiveScanning', 'Перевіряю D1 архів...'), 'muted');
-    const result = await scanD1Archives(currentUser, { scope: 'all', retentionDays: 60, maxScan: 500 });
+    const result = await scanD1Archives(currentUser, { scope: 'all', retentionDays: selectedD1CleanupAge(), maxScan: 500 });
     setD1ArchiveStatus(d1ArchiveResultText(result), 'success');
   } catch (error) {
     console.error(error);
@@ -781,13 +784,14 @@ async function runD1ArchiveCleanup(scope) {
   const ok = await confirmAction({
     title: tv('admin.d1ArchiveCleanTitle', 'Очистити {scope}?', { scope: label }),
     message: tv('admin.d1ArchiveCleanMessage', 'Буде видалено до 500 старих D1 рядків. Активний цикл регіону не видаляється. Продовжити?', { scope: label }),
+    note: tv('admin.d1ArchiveCleanNote', 'Вік: {days}. Якщо вибрано “Усі старі”, активний цикл усе одно не видаляється.', { days: selectedD1CleanupAge() ? `${selectedD1CleanupAge()}+` : t('admin.cleanupAgeAny', 'Усі старі') }),
     icon: '🧹',
     acceptText: t('admin.d1ArchiveCleanAccept', 'Очистити')
   });
   if (!ok) return;
   try {
     setD1ArchiveStatus(tv('admin.d1ArchiveCleaning', 'Очищаю {scope}...', { scope: label }), 'muted');
-    const result = await cleanupD1Archives(currentUser, { scope, retentionDays: 60, maxDeletes: 500 });
+    const result = await cleanupD1Archives(currentUser, { scope, retentionDays: selectedD1CleanupAge(), maxDeletes: 500 });
     setD1ArchiveStatus(d1ArchiveResultText(result), Number(result.deleted || 0) ? 'success' : 'muted');
   } catch (error) {
     console.error(error);
@@ -795,10 +799,38 @@ async function runD1ArchiveCleanup(scope) {
   }
 }
 
+async function runD1DatabaseOptimize() {
+  if (!currentUser || !canUseLimitsPanel()) return;
+  const ok = await confirmAction({
+    title: t('admin.optimizeDatabaseTitle', 'Оптимізувати базу?'),
+    message: t('admin.optimizeDatabaseMessage', 'Будуть маленькими пачками очищені старі цикли, старі фінальні плани, прострочені секретні посилання, старі повідомлення і журнали. Активний цикл не чіпається.'),
+    note: tv('admin.d1ArchiveCleanNote', 'Вік: {days}. Якщо вибрано “Усі старі”, активний цикл усе одно не видаляється.', { days: selectedD1CleanupAge() ? `${selectedD1CleanupAge()}+` : t('admin.cleanupAgeAny', 'Усі старі') }),
+    icon: '🧹',
+    acceptText: t('admin.optimizeDatabase', 'Оптимізувати базу')
+  });
+  if (!ok) return;
+  try {
+    setD1ArchiveStatus(t('admin.optimizeDatabaseRunning', 'Оптимізую базу маленькою пачкою...'), 'muted');
+    const result = await cleanupD1Archives(currentUser, { scope: 'all', retentionDays: selectedD1CleanupAge(), maxDeletes: 500 });
+    setD1ArchiveStatus(`${d1ArchiveResultText(result)} ${t('admin.optimizeDatabaseDone', 'Готово. Якщо є ще записи — натисни ще раз.')}`, Number(result.deleted || 0) ? 'success' : 'muted');
+    await runD1StorageInspect().catch(() => null);
+  } catch (error) {
+    console.error(error);
+    setD1ArchiveStatus(t('admin.optimizeDatabaseFailed', 'Не вдалося оптимізувати базу.'), 'error');
+  }
+}
 
 function selectedCleanRegion() {
   const select = $('#cleanFirestoreRegionSelect');
   return String(select?.value || '').replace(/[^0-9]/g, '');
+}
+function selectedFirestoreCleanupAge() {
+  const value = Number($('#cleanFirestoreAgeSelect')?.value || 14);
+  return Number.isFinite(value) ? Math.max(0, Math.min(3650, value)) : 14;
+}
+function selectedD1CleanupAge() {
+  const value = Number($('#cleanD1AgeSelect')?.value || 30);
+  return Number.isFinite(value) ? Math.max(0, Math.min(3650, value)) : 30;
 }
 
 function setOldFirestoreStatus(text, type = 'muted') {
@@ -857,7 +889,7 @@ async function checkOldFirestoreRegistrations() {
   if (cleanupBtn) cleanupBtn.disabled = true;
   setOldFirestoreStatus(t('admin.firestoreCleanupChecking', 'Перевіряю старі Firestore-заявки...'), 'muted');
   try {
-    const result = await inspectOldRegionRegistrations(currentUser, region, { maxDeletes: 100, allowLegacyFullScan: true });
+    const result = await inspectOldRegionRegistrations(currentUser, region, { maxDeletes: 100, allowLegacyFullScan: true, retentionDays: selectedFirestoreCleanupAge() });
     if (result.skipped) {
       setOldFirestoreStatus(t('admin.firestoreCleanupDenied', 'Немає доступу для перевірки старих заявок.'), 'error');
       return result;
@@ -900,7 +932,7 @@ async function cleanupOldFirestoreRegistrations({ auto = false } = {}) {
   if (cleanupBtn) cleanupBtn.disabled = true;
   setOldFirestoreStatus(auto ? t('admin.firestoreCleanupAutoRunning', 'Автоочистка: очищаю старі Firestore-заявки 14+ днів...') : t('admin.firestoreCleanupRunning', 'Очищаю старі Firestore-заявки пачкою до 100...'), 'muted');
   try {
-    const result = await cleanupOldRegionRegistrations(currentUser, region, { maxDeletes: 100, allowLegacyFullScan: true });
+    const result = await cleanupOldRegionRegistrations(currentUser, region, { maxDeletes: 100, allowLegacyFullScan: true, retentionDays: auto ? 14 : selectedFirestoreCleanupAge() });
     if (result.skipped) {
       setOldFirestoreStatus(t('admin.firestoreCleanupDenied', 'Немає доступу для очищення старих заявок.'), 'error');
       return result;
@@ -932,7 +964,7 @@ async function maybeRunOldFirestoreAutoCleanup() {
   oldFirestoreAutoRunning = true;
   try {
     localStorage.setItem(key, String(now));
-    const result = await inspectOldRegionRegistrations(currentUser, region, { maxDeletes: 100, allowLegacyFullScan: false });
+    const result = await inspectOldRegionRegistrations(currentUser, region, { maxDeletes: 100, allowLegacyFullScan: false, retentionDays: 14 });
     if (Number(result?.oldCount || 0) > 0) await cleanupOldFirestoreRegistrations({ auto: true });
     else renderOldFirestoreCleanupResult(result || {});
   } catch (error) {
@@ -1482,7 +1514,9 @@ function bindAdminControls() {
   $('#cleanupD1SharesBtn')?.addEventListener('click', () => runD1ArchiveCleanup('shares').catch(console.error));
   $('#cleanupD1MessagesBtn')?.addEventListener('click', () => runD1ArchiveCleanup('messages').catch(console.error));
   $('#cleanupD1LogsBtn')?.addEventListener('click', () => runD1ArchiveCleanup('logs').catch(console.error));
+  $('#cleanupD1FinalPlansBtn')?.addEventListener('click', () => runD1ArchiveCleanup('finalPlans').catch(console.error));
   $('#cleanupD1AllBtn')?.addEventListener('click', () => runD1ArchiveCleanup('all').catch(console.error));
+  $('#optimizeD1DatabaseBtn')?.addEventListener('click', () => runD1DatabaseOptimize().catch(console.error));
   $('#refreshCleanRegionsBtn')?.addEventListener('click', () => loadCleanPanel(true).catch(console.error));
   $('#cleanFirestoreRegionSelect')?.addEventListener('change', () => { oldFirestoreCleanupCount = 0; maybeRunOldFirestoreAutoCleanup().catch(console.error); });
   $('#checkOldFirestoreRegistrationsBtn')?.addEventListener('click', () => checkOldFirestoreRegistrations().catch(console.error));

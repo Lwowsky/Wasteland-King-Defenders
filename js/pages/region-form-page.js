@@ -1,4 +1,4 @@
-import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=198';
+import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=199';
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile, saveFarmWastelandProfile } from '../services/user-db.js';
 import {
@@ -6,7 +6,6 @@ import {
   getRegionSettings,
   getRegionShareLinkCode,
   getMyWastelandRegistration,
-  saveWastelandRegistration,
   readRegionFromUrl,
   resolveRegionShareLink,
   shiftLabel,
@@ -25,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=198';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=198';
+} from '../services/region-db.js?v=199';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=199';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -688,19 +687,8 @@ async function submitRegistrationD1First(values, options = {}) {
 async function submitCurrentRegistration(values, { auto = false, forceUpdate = false } = {}) {
   try {
     setStatus(auto ? t('region.autoSubmitting', 'Автоматично відправляю заявку з профілю...') : t('region.savingRequest', 'Saving request...'), 'muted');
-    let savedRequest = null;
-    if (shouldUseD1FirstRegistration()) {
-      try {
-        savedRequest = await submitRegistrationD1First(values, { forceUpdate });
-      } catch (d1Error) {
-        if (isHardD1RegistrationError(d1Error) || isD1OnlyRegistration()) throw d1Error;
-        console.warn('[WKD] D1-first registration failed for signed-in account, using Firebase fallback:', d1Error);
-        savedRequest = await saveWastelandRegistration(currentUser, values, currentRegion);
-      }
-    } else {
-      if (isD1OnlyRegistration()) throw new Error('d1-registration-required');
-      savedRequest = await saveWastelandRegistration(currentUser, values, currentRegion);
-    }
+    if (!shouldUseD1FirstRegistration()) throw new Error('d1-registration-required');
+    const savedRequest = await submitRegistrationD1First(values, { forceUpdate });
 
     if (savedRequest?.unchanged && !forceUpdate) {
       setStatus(t('region.requestAlreadySavedNoChanges', 'Заявка вже була подана без змін.'), 'warn');
@@ -756,8 +744,8 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
       await showNicknameDuplicateDialog();
       return false;
     }
-    if (isD1OnlyRegistration() && (error?.message === 'd1-registration-required' || !isHardD1RegistrationError(error))) {
-      setStatus(t('region.d1RegistrationRequired', 'Гостьова реєстрація працює тільки через Cloudflare D1. Перевір деплой Worker або відкрий секретне посилання ще раз.'), 'error');
+    if (error?.message === 'd1-registration-required' || (!isHardD1RegistrationError(error) && shouldUseD1FirstRegistration())) {
+      setStatus(t('region.d1RegistrationRequired', 'Відправити заявку можна тільки через Cloudflare D1. Перевір деплой Worker або спробуй ще раз через кілька хвилин.'), 'error');
       return false;
     }
     setStatus(t('region.requestSaveFailed', 'Could not save the request. Check access rights or try again.'), 'error');

@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=198';
+import { trackCloudflareUsage } from './usage-tracker.js?v=199';
 
 function cleanText(value = '', max = 120) {
   return String(value ?? '')
@@ -29,12 +29,13 @@ function normalizeResult(data = {}) {
     ok: data.ok !== false,
     scope: cleanText(data.scope || 'all', 40),
     region: cleanRegion(data.region || ''),
-    retentionDays: Math.max(1, Number(data.retentionDays) || 60),
+    retentionDays: Number.isFinite(Number(data.retentionDays)) ? Math.max(0, Number(data.retentionDays)) : 60,
     found: Math.max(0, Number(data.found) || 0),
     deleted: Math.max(0, Number(data.deleted) || 0),
     scanned: Math.max(0, Number(data.scanned) || 0),
     cycles: Math.max(0, Number(data.cycles) || 0),
     shares: Math.max(0, Number(data.shares) || 0),
+    finalPlans: Math.max(0, Number(data.finalPlans) || 0),
     campaigns: Math.max(0, Number(data.campaigns) || 0),
     messages: Math.max(0, Number(data.messages) || 0),
     logs: Math.max(0, Number(data.logs) || 0),
@@ -96,7 +97,7 @@ export async function scanD1Archives(user, { scope = 'all', region = '', retenti
   return requestJson('/api/d1-cleanup/scan', user, {
     scope: cleanText(scope || 'all', 40),
     region: cleanRegion(region),
-    retentionDays: Math.max(1, Number(retentionDays) || 60),
+    retentionDays: Number.isFinite(Number(retentionDays)) ? Math.max(0, Number(retentionDays)) : 60,
     limitCount: Math.max(1, Math.min(500, Number(maxScan) || 500))
   });
 }
@@ -105,7 +106,7 @@ export async function cleanupD1Archives(user, { scope = 'all', region = '', rete
   return requestJson('/api/d1-cleanup/clear', user, {
     scope: cleanText(scope || 'all', 40),
     region: cleanRegion(region),
-    retentionDays: Math.max(1, Number(retentionDays) || 60),
+    retentionDays: Number.isFinite(Number(retentionDays)) ? Math.max(0, Number(retentionDays)) : 60,
     limitCount: Math.max(1, Math.min(500, Number(maxDeletes) || 500))
   });
 }

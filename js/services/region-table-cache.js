@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=198';
+import { trackCloudflareUsage } from './usage-tracker.js?v=199';
 
 const MAX_ROWS = 2000;
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -304,6 +304,20 @@ function sanitizeSettings(settings = {}) {
     updatedAtMs: Number(settings.updatedAtMs) || 0,
     updatedByName: cleanText(settings.updatedByName || '', 120)
   };
+}
+
+
+export async function rotateRegionPublicShares(user, region) {
+  if (!isRegionTableCacheEnabled()) return { skipped: true };
+  const token = await getFirebaseToken(user);
+  if (!token) return { skipped: true };
+  const safeRegion = cleanRegion(region);
+  if (!safeRegion) return { skipped: true };
+  return requestJson('/api/region-shares/rotate', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ region: safeRegion })
+  });
 }
 
 export async function readRegionTableSnapshot(user, region, options = {}) {

@@ -140,6 +140,7 @@ const clean = value => WKD.clean ? WKD.clean(value) : String(value ?? '').trim()
       tier: normalizeTier(field('playerEditTier')?.value),
       march: toNumber(field('playerEditMarch')?.value),
       rally: toNumber(field('playerEditRally')?.value),
+      towerMarch: clean(field('playerEditTowerMarch')?.value),
       shift,
       lair: field('playerEditLair')?.checked ? t('common.yes', 'Yes') : t('common.no', 'No'),
       captain: Boolean(field('playerEditCaptain')?.checked),
@@ -163,9 +164,27 @@ const clean = value => WKD.clean ? WKD.clean(value) : String(value ?? '').trim()
     setValue('playerEditShift', shift);
     setValue('playerEditLair', /^(1|true|yes|y|так|да)$/i.test(clean(player.lair || player.captureRegion || player.capture))); 
     setValue('playerEditCaptain', isCaptain(player.captain ?? player.captainReady));
+    const placementRole = assignment?.role || (isCaptain(player.captain ?? player.captainReady) ? 'captain' : 'helper');
     setValue('playerEditPlacement', placement);
-    setValue('playerEditPlacementRole', assignment?.role || (isCaptain(player.captain ?? player.captainReady) ? 'captain' : 'helper'));
+    setValue('playerEditPlacementRole', placementRole);
+    const towerMarchField = field('playerEditTowerMarchField');
+    const towerMarchAllowed = Boolean(assignment?.towerId && placementRole !== 'captain');
+    if (towerMarchField) towerMarchField.hidden = !towerMarchAllowed;
+    const towerMarch = towerMarchAllowed && typeof WKD.getPlayerTowerManualMarch === 'function'
+      ? WKD.getPlayerTowerManualMarch(entry?.id || activePlayerId, assignment)
+      : '';
+    setValue('playerEditTowerMarch', towerMarch);
+    refreshTowerMarchField();
   }
+
+  function refreshTowerMarchField() {
+    const towerMarchField = field('playerEditTowerMarchField');
+    if (!towerMarchField) return;
+    const towerId = clean(field('playerEditPlacement')?.value || 'reserve');
+    const role = field('playerEditPlacementRole')?.value === 'captain' ? 'captain' : 'helper';
+    towerMarchField.hidden = !(towerId && towerId !== 'reserve' && role !== 'captain');
+  }
+
   function updateAccessState(entry) {
     const root = modal();
     const editable = canEdit(entry);
@@ -244,6 +263,7 @@ const clean = value => WKD.clean ? WKD.clean(value) : String(value ?? '').trim()
       const playerValues = { ...values };
       delete playerValues.towerId;
       delete playerValues.towerRole;
+      delete playerValues.towerMarch;
       if (typeof WKD.updatePlayerInActiveSource === 'function') {
         await WKD.updatePlayerInActiveSource(entry.id, playerValues);
       } else {
@@ -253,6 +273,9 @@ const clean = value => WKD.clean ? WKD.clean(value) : String(value ?? '').trim()
       }
       if (typeof WKD.assignPlayerToTowerFromEditor === 'function') {
         await WKD.assignPlayerToTowerFromEditor(entry.id, { shift: values.shift, towerId: values.towerId, role: values.towerRole });
+      }
+      if (typeof WKD.setPlayerTowerManualMarch === 'function') {
+        await WKD.setPlayerTowerManualMarch(entry.id, values.towerMarch, { shift: values.shift, towerId: values.towerId, role: values.towerRole });
       }
       setStatus(tv('playerEdit.savedName', 'Saved: {name}.', { name: values.name }), 'success');
       document.dispatchEvent(new CustomEvent('wkd:player-edit-saved', { detail: { id: entry.id, values } }));
@@ -317,6 +340,7 @@ const clean = value => WKD.clean ? WKD.clean(value) : String(value ?? '').trim()
       }
     });
     field('playerEditSaveBtn')?.addEventListener('click', event => { event.preventDefault(); save(); });
+    ['playerEditPlacement', 'playerEditPlacementRole'].forEach(id => field(id)?.addEventListener('change', refreshTowerMarchField));
     field('playerEditReserveBtn')?.addEventListener('click', event => { event.preventDefault(); removeFromTower(); });
     field('playerEditDeleteBtn')?.addEventListener('click', event => { event.preventDefault(); remove(); });
     field('playerEditCaptain')?.addEventListener('change', () => {

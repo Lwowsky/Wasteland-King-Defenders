@@ -874,6 +874,49 @@ window.WKD = window.WKD || {};
       roleLabel: found.kind
     };
   }
+  function getPlayerTowerManualMarch(id, assignment = {}) {
+    const playerId = clean(id || '');
+    if (!playerId) return '';
+    const found = assignment?.towerId ? assignment : publicAssignmentOf(playerId, assignment?.shift || '');
+    if (!found?.towerId || found.role === 'captain') return '';
+    const slot = ensureSlotShape(plan.assignments?.[found.shift]?.[found.towerId] || {});
+    if (!Object.prototype.hasOwnProperty.call(slot.helperMarches || {}, playerId)) return '';
+    const amount = Math.max(0, Number(slot.helperMarches[playerId]) || 0);
+    return amount > 0 ? amount : 0;
+  }
+
+  async function setPlayerTowerManualMarch(id, amount = 0, options = {}) {
+    const playerId = clean(id || '');
+    if (!playerId) return false;
+    await loadPlan();
+    if (!canEditPlan()) throw new Error('region-plan-access-denied');
+    const shift = SHIFT_ORDER.includes(normalizeShift(options.shift)) ? normalizeShift(options.shift) : activeShift;
+    const towerId = normalizeTowerId(options.towerId || options.tower || options.placement);
+    const role = options.role === 'captain' ? 'captain' : 'helper';
+    if (!towerId || role === 'captain') {
+      removePlayer(playerId, '', { helpersOnly: true });
+      await savePlan(false);
+      render();
+      return true;
+    }
+    const slot = ensureSlotShape(plan.assignments?.[shift]?.[towerId] || { captain: '', helpers: [], helperMarches: {} });
+    if (!slot.helpers.includes(playerId)) return false;
+    const rawText = String(amount ?? '').trim();
+    if (!slot.helperMarches || typeof slot.helperMarches !== 'object') slot.helperMarches = {};
+    if (!rawText) {
+      delete slot.helperMarches[playerId];
+    } else {
+      const value = Math.max(0, Number(rawText) || 0);
+      if (value > 0) setHelperAssignedMarch(slot, playerId, value);
+      else slot.helperMarches[playerId] = 0;
+    }
+    plan.assignments[shift][towerId] = slot;
+    await savePlan(false);
+    render();
+    WKD.renderPlayers?.();
+    document.dispatchEvent(new CustomEvent('wkd:tower-plan-updated', { detail: { playerId, shift, towerId, role, manualMarch: String(amount ?? '').trim() } }));
+    return true;
+  }
   function clearSlotCaptain(slot) {
     const normalized = ensureSlotShape(slot || {});
     normalized.captain = '';
@@ -2761,6 +2804,8 @@ ${text}` : text };
   WKD.resetTowerPlannerPlan = resetPlanToEmpty;
   WKD.getTowerPlannerTowers = () => TOWERS.map(tower => ({ ...tower }));
   WKD.getPlayerTowerAssignment = publicAssignmentOf;
+  WKD.getPlayerTowerManualMarch = getPlayerTowerManualMarch;
+  WKD.setPlayerTowerManualMarch = setPlayerTowerManualMarch;
   WKD.assignPlayerToTowerFromEditor = assignPlayerFromEditor;
   WKD.publishTowerPlanDraft = publishPlan;
 })();

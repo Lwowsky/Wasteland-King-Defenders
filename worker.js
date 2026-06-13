@@ -2509,11 +2509,19 @@ async function handleActionLogClear(request, env) {
 
 function d1CleanupScope(value = 'all') {
   const scope = clean(value || 'all', 40).toLowerCase();
-  return ['cycles', 'shares', 'campaigns', 'messages', 'logs', 'all'].includes(scope) ? scope : 'all';
+  return ['cycles', 'shares', 'finalplans', 'campaigns', 'messages', 'logs', 'all'].includes(scope) ? scope : 'all';
 }
 
 function d1CleanupCutoffMs(retentionDays = 60) {
-  return Date.now() - Math.max(1, Math.min(3650, Number(retentionDays) || 60)) * 24 * 60 * 60 * 1000;
+  const value = Number(retentionDays);
+  if (Number.isFinite(value) && value <= 0) return Number.MAX_SAFE_INTEGER;
+  return Date.now() - Math.max(1, Math.min(3650, value || 60)) * 24 * 60 * 60 * 1000;
+}
+
+function d1CleanupRetentionDays(retentionDays = 60) {
+  const value = Number(retentionDays);
+  if (Number.isFinite(value) && value <= 0) return 0;
+  return Math.max(1, Math.min(3650, value || 60));
 }
 
 async function selectOldD1CycleIds(db, { cutoffMs = 0, region = '', limitCount = 500 } = {}) {
@@ -2537,9 +2545,12 @@ async function selectOldD1CycleIds(db, { cutoffMs = 0, region = '', limitCount =
 
 async function selectOldD1ShareCodes(db, { cutoffMs = 0, region = '', limitCount = 500 } = {}) {
   const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
+  const allOld = Number(cutoffMs) >= Number.MAX_SAFE_INTEGER;
   const nowMs = Date.now();
-  const params = [nowMs, Number(cutoffMs) || 0];
-  let where = `((expires_at_ms > 0 AND expires_at_ms < ?1) OR (revoked = 1 AND created_at_ms > 0 AND created_at_ms < ?2))`;
+  const params = allOld ? [] : [nowMs, Number(cutoffMs) || 0];
+  let where = allOld
+    ? `created_at_ms > 0`
+    : `((expires_at_ms > 0 AND expires_at_ms < ?1) OR (revoked = 1 AND created_at_ms > 0 AND created_at_ms < ?2))`;
   if (region) {
     params.push(region);
     where += ` AND region = ?${params.length}`;
@@ -2550,11 +2561,33 @@ async function selectOldD1ShareCodes(db, { cutoffMs = 0, region = '', limitCount
   return (result?.results || []).map(row => normalizeCode(row.code)).filter(Boolean);
 }
 
+
+async function selectOldD1FinalPlanCodes(db, { cutoffMs = 0, region = '', limitCount = 500 } = {}) {
+  const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
+  const allOld = Number(cutoffMs) >= Number.MAX_SAFE_INTEGER;
+  const nowMs = Date.now();
+  const params = allOld ? [] : [nowMs, Number(cutoffMs) || 0];
+  let where = allOld
+    ? `(updated_at_ms > 0 OR created_at_ms > 0)`
+    : `((expires_at_ms > 0 AND expires_at_ms < ?1) OR (updated_at_ms > 0 AND updated_at_ms < ?2) OR (created_at_ms > 0 AND created_at_ms < ?2))`;
+  if (region) {
+    params.push(region);
+    where += ` AND region = ?${params.length}`;
+  }
+  const result = await db.prepare(
+    `SELECT code FROM final_plan_shares WHERE ${where} ORDER BY COALESCE(updated_at_ms, created_at_ms, 0) ASC LIMIT ${safeLimit}`
+  ).bind(...params).all();
+  return (result?.results || []).map(row => normalizeCode(row.code)).filter(Boolean);
+}
+
 async function selectOldD1CampaignIds(db, { cutoffMs = 0, region = '', limitCount = 500 } = {}) {
   const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
+  const allOld = Number(cutoffMs) >= Number.MAX_SAFE_INTEGER;
   const nowMs = Date.now();
-  const params = [nowMs, Number(cutoffMs) || 0];
-  let where = `((expires_at_ms > 0 AND expires_at_ms < ?1) OR (created_at_ms > 0 AND created_at_ms < ?2))`;
+  const params = allOld ? [] : [nowMs, Number(cutoffMs) || 0];
+  let where = allOld
+    ? `created_at_ms > 0`
+    : `((expires_at_ms > 0 AND expires_at_ms < ?1) OR (created_at_ms > 0 AND created_at_ms < ?2))`;
   if (region) {
     params.push(region);
     where += ` AND region = ?${params.length}`;
@@ -2606,10 +2639,12 @@ async function runD1ArchiveCleanup(db, { scope = 'all', region = '', retentionDa
   const safeScope = d1CleanupScope(scope);
   const safeRegion = normalizeRegion(region);
   const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
-  const cutoffMs = d1CleanupCutoffMs(retentionDays);
+  const safeRetentionDays = d1CleanupRetentionDays(retentionDays);
+  const cutoffMs = d1CleanupCutoffMs(safeRetentionDays);
   let remaining = safeLimit;
   let cycles = 0;
   let shares = 0;
+  let finalPlans = 0;
   let campaigns = 0;
   let messages = 0;
   let logs = 0;
@@ -2638,6 +2673,20 @@ async function runD1ArchiveCleanup(db, { scope = 'all', region = '', retentionDa
     if (!dryRun && codes.length) {
       const placeholders = codes.map((_, index) => `?${index + 1}`).join(',');
       const result = await db.prepare(`DELETE FROM region_table_shares WHERE code IN (${placeholders})`).bind(...codes).run();
+      deleted += Number(result?.meta?.changes) || 0;
+    }
+    remaining -= codes.length;
+    if (codes.length === safeLimit) hasMore = true;
+  }
+
+
+  if ((safeScope === 'finalplans' || safeScope === 'all') && remaining > 0) {
+    const codes = await selectOldD1FinalPlanCodes(db, { cutoffMs, region: safeRegion, limitCount: remaining });
+    finalPlans = codes.length;
+    scanned += codes.length;
+    if (!dryRun && codes.length) {
+      const placeholders = codes.map((_, index) => `?${index + 1}`).join(',');
+      const result = await db.prepare(`DELETE FROM final_plan_shares WHERE code IN (${placeholders})`).bind(...codes).run();
       deleted += Number(result?.meta?.changes) || 0;
     }
     remaining -= codes.length;
@@ -2695,17 +2744,18 @@ async function runD1ArchiveCleanup(db, { scope = 'all', region = '', retentionDa
     if (ids.length === safeLimit) hasMore = true;
   }
 
-  const found = cycles + shares + campaigns + messages + logs;
+  const found = cycles + shares + finalPlans + campaigns + messages + logs;
   return {
     ok: true,
     scope: safeScope,
     region: safeRegion,
-    retentionDays: Math.max(1, Number(retentionDays) || 60),
+    retentionDays: safeRetentionDays,
     found,
     deleted: dryRun ? 0 : deleted,
     scanned,
     cycles,
     shares,
+    finalPlans,
     campaigns,
     messages,
     logs,
@@ -2771,7 +2821,7 @@ async function inspectD1StorageTables(db, { region = '' } = {}) {
     regionParams), '', true);
   push('finalPlanShares', await d1CountBytes(db,
     `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(html,'')) + LENGTH(COALESCE(text,'')) + LENGTH(COALESCE(title,''))),0) AS bytes FROM final_plan_shares WHERE 1=1${regionClause}`,
-    regionParams), 'shares', false);
+    regionParams), 'finalPlans', false);
   push('regionTableShares', await d1CountBytes(db,
     `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(code,'')) + LENGTH(COALESCE(access,''))),0) AS bytes FROM region_table_shares WHERE 1=1${regionClause}`,
     regionParams), 'shares', false);
@@ -2808,6 +2858,25 @@ async function inspectD1StorageTables(db, { region = '' } = {}) {
     totalBytes: items.reduce((sum, item) => sum + item.bytes, 0),
     source: 'cloudflare-d1-storage-inspect'
   };
+}
+
+
+async function handleRegionSharesRotate(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const region = normalizeRegion(body?.region);
+  if (!region) return json({ ok: false, error: 'region_required' }, 400);
+  const allowed = isAdminUid(env, user.uid) || await hasSavedRegionAccess(db, user.uid, region) || await activeRegionHasUid(db, region, user.uid);
+  if (!allowed) return json({ ok: false, error: 'region_access_denied' }, 403);
+  const tableResult = await db.prepare(`DELETE FROM region_table_shares WHERE region = ?1`).bind(region).run();
+  const finalResult = await db.prepare(`DELETE FROM final_plan_shares WHERE region = ?1`).bind(region).run();
+  const tableShares = Number(tableResult?.meta?.changes) || 0;
+  const finalPlans = Number(finalResult?.meta?.changes) || 0;
+  return json({ ok: true, region, tableShares, finalPlans, deleted: tableShares + finalPlans, usage: { d1RowsRead: 0, d1RowsWritten: tableShares + finalPlans }, source: 'cloudflare-d1-share-rotation' });
 }
 
 async function handleD1StorageInspect(request, env) {
@@ -4114,6 +4183,10 @@ export default {
 
       if (url.pathname === "/api/notification-campaigns" && request.method === "POST") {
         return await handleCampaignCreate(request, env);
+      }
+
+      if (url.pathname === "/api/region-shares/rotate" && request.method === "POST") {
+        return await handleRegionSharesRotate(request, env);
       }
 
       if (url.pathname === "/api/d1-cleanup/inspect" && request.method === "POST") {

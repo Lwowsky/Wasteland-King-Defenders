@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=198';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=198';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=199';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=199';
 import {
   getUserProfile,
   getFarmById,
@@ -12,8 +12,8 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=198';
-import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1 } from './region-table-cache.js?v=198';
+} from './user-db.js?v=199';
+import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1 } from './region-table-cache.js?v=199';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -858,7 +858,7 @@ function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
 }
 
 async function actionLogCacheModule() {
-  return import('./action-log-cache.js?v=198');
+  return import('./action-log-cache.js?v=199');
 }
 
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
@@ -1070,6 +1070,18 @@ export async function cleanupOldEmailFields(user) {
   return { cleaned };
 }
 
+
+async function rotateRegionPublicSharesForNewCycle(user, region) {
+  try {
+    const mod = await import('./region-table-cache.js?v=199');
+    if (!mod?.rotateRegionPublicShares) return null;
+    return await mod.rotateRegionPublicShares(user, region);
+  } catch (error) {
+    console.warn('[WKD] public share rotation skipped:', error);
+    return null;
+  }
+}
+
 async function saveRegionShareLink({ db, firestoreMod }, user, region, settings, forceNew = false) {
   const safeRegion = normalizeRegion(region);
   const privateRef = firestoreMod.doc(db, 'regions', safeRegion, 'privateSettings', 'shortLink');
@@ -1207,7 +1219,7 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=198');
+    const mod = await import('./region-table-cache.js?v=199');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1217,7 +1229,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=198');
+    const mod = await import('./region-table-cache.js?v=199');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1228,7 +1240,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function updateRegionTableRowD1First(user, region, registrationId, values = {}, settings = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=198');
+    const mod = await import('./region-table-cache.js?v=199');
     return await mod.updateRegionTableRowD1(user, region, registrationId, values, settings, { updateOnly: true });
   } catch (error) {
     const status = Number(error?.status || 0) || 0;
@@ -1240,7 +1252,7 @@ async function updateRegionTableRowD1First(user, region, registrationId, values 
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=198');
+    const mod = await import('./region-table-cache.js?v=199');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1250,7 +1262,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=198');
+    const mod = await import('./region-table-cache.js?v=199');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1261,7 +1273,7 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
 
 async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=198');
+    const mod = await import('./region-table-cache.js?v=199');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readMyRegionRegistrationD1(user, region, farmId, options);
   } catch (error) {
@@ -1272,7 +1284,7 @@ async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', opti
 
 async function readFinalPlanFromD1Cache(code, options = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=198');
+    const mod = await import('./final-plan-cache.js?v=199');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.readFinalPlanShare(code, options);
   } catch (error) {
@@ -1283,7 +1295,7 @@ async function readFinalPlanFromD1Cache(code, options = {}) {
 
 async function publishFinalPlanToD1Cache(user, payload = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=198');
+    const mod = await import('./final-plan-cache.js?v=199');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.publishFinalPlanShare(user, payload);
   } catch (error) {
@@ -1383,6 +1395,18 @@ function regionActiveCycleIdFromData(data = {}) {
   return trim(form.currentCycleId || data.currentCycleId || form.cycleId || data.cycleId);
 }
 
+function registrationCleanupRetentionDays(value = REGION_REGISTRATION_RETENTION_DAYS) {
+  const days = Number(value);
+  if (Number.isFinite(days) && days <= 0) return 0;
+  return Math.max(1, Math.min(3650, days || REGION_REGISTRATION_RETENTION_DAYS));
+}
+
+function registrationCleanupCutoffMs(retentionDays = REGION_REGISTRATION_RETENTION_DAYS) {
+  const days = registrationCleanupRetentionDays(retentionDays);
+  if (days <= 0) return Number.MAX_SAFE_INTEGER;
+  return Date.now() - days * DAY_MS;
+}
+
 async function registrationCleanupContext(user, regionOverride = '') {
   if (!user) return { skipped: 'auth-required', region: normalizeRegion(regionOverride) };
   const { db, firestoreMod } = await getFirebaseParts();
@@ -1400,18 +1424,22 @@ async function registrationCleanupContext(user, regionOverride = '') {
 function isCleanableOldRegistration(data = {}, cutoffMs = Date.now(), activeCycleId = '', options = {}) {
   const cycleId = trim(data.cycleId || '');
   if (activeCycleId && cycleId && cycleId === activeCycleId) return false;
-  const expiresAtMs = Number(data.expiresAtMs) || 0;
-  if (expiresAtMs > 0) return expiresAtMs <= cutoffMs;
-  if (!options.allowLegacyFullScan) return false;
   const savedAtMs = registrationSavedAtMs(data);
-  return savedAtMs > 0 && savedAtMs < (Date.now() - REGION_REGISTRATION_RETENTION_MS);
+  if (options.anyAge === true) return Boolean(cycleId || savedAtMs);
+  if (savedAtMs > 0) return savedAtMs <= cutoffMs;
+  const expiresAtMs = Number(data.expiresAtMs) || 0;
+  if (expiresAtMs > 0) return expiresAtMs <= Date.now();
+  if (!options.allowLegacyFullScan) return false;
+  return false;
 }
 
 async function queryCleanableOldRegistrationDocs(firestoreMod, db, safeRegion, options = {}) {
   const maxDocs = Math.max(10, Math.min(200, Number(options.maxDocs || options.maxDeletes) || 100));
-  const cutoffMs = Number(options.cutoffMs) || Date.now();
+  const retentionDays = registrationCleanupRetentionDays(options.retentionDays);
+  const anyAge = retentionDays <= 0;
+  const cutoffMs = Number(options.cutoffMs) || registrationCleanupCutoffMs(retentionDays);
   const activeCycleId = trim(options.activeCycleId || '');
-  const allowLegacyFullScan = options.allowLegacyFullScan === true;
+  const allowLegacyFullScan = options.allowLegacyFullScan === true || anyAge;
   const collectionRef = firestoreMod.collection(db, 'regions', safeRegion, 'wastelandRegistrations');
   const byId = new Map();
   let scannedCount = 0;
@@ -1422,7 +1450,7 @@ async function queryCleanableOldRegistrationDocs(firestoreMod, db, safeRegion, o
     scannedCount += docs.length;
     docs.forEach(doc => {
       const data = doc.data() || {};
-      if (isCleanableOldRegistration(data, cutoffMs, activeCycleId, { allowLegacyFullScan })) {
+      if (isCleanableOldRegistration(data, cutoffMs, activeCycleId, { allowLegacyFullScan, anyAge })) {
         byId.set(doc.id, doc);
       }
     });
@@ -1431,7 +1459,7 @@ async function queryCleanableOldRegistrationDocs(firestoreMod, db, safeRegion, o
   try {
     const snap = await firestoreMod.getDocs(firestoreMod.query(
       collectionRef,
-      firestoreMod.where('expiresAtMs', '<=', cutoffMs),
+      firestoreMod.where('expiresAtMs', '<=', anyAge ? Number.MAX_SAFE_INTEGER : Date.now()),
       firestoreMod.orderBy('expiresAtMs', 'asc'),
       firestoreMod.limit(maxDocs + 1)
     ));
@@ -1466,11 +1494,13 @@ export async function inspectOldRegionRegistrations(user, regionOverride = '', o
   const ctx = await registrationCleanupContext(user, regionOverride);
   if (ctx.skipped) return { region: ctx.region, oldCount: 0, scannedCount: 0, skipped: ctx.skipped };
   const maxDocs = Math.max(10, Math.min(200, Number(options.maxDocs || options.maxDeletes) || 100));
+  const retentionDays = registrationCleanupRetentionDays(options.retentionDays);
   const result = await queryCleanableOldRegistrationDocs(ctx.firestoreMod, ctx.db, ctx.region, {
     maxDocs,
     activeCycleId: ctx.activeCycleId,
     allowLegacyFullScan: options.allowLegacyFullScan === true,
-    cutoffMs: Date.now()
+    retentionDays,
+    cutoffMs: registrationCleanupCutoffMs(retentionDays)
   });
   return {
     region: ctx.region,
@@ -1481,7 +1511,7 @@ export async function inspectOldRegionRegistrations(user, regionOverride = '', o
     hasMore: result.hasMore,
     legacyScan: result.legacyScan,
     indexedSkipped: result.indexedSkipped || '',
-    retentionDays: REGION_REGISTRATION_RETENTION_DAYS,
+    retentionDays,
     optimized: true
   };
 }
@@ -1490,11 +1520,13 @@ export async function cleanupOldRegionRegistrations(user, regionOverride = '', o
   const ctx = await registrationCleanupContext(user, regionOverride);
   if (ctx.skipped) return { region: ctx.region, deletedCount: 0, skipped: ctx.skipped };
   const maxDeletes = Math.max(10, Math.min(200, Number(options.maxDeletes) || 100));
+  const retentionDays = registrationCleanupRetentionDays(options.retentionDays);
   const result = await queryCleanableOldRegistrationDocs(ctx.firestoreMod, ctx.db, ctx.region, {
     maxDocs: maxDeletes,
     activeCycleId: ctx.activeCycleId,
     allowLegacyFullScan: options.allowLegacyFullScan === true,
-    cutoffMs: Date.now()
+    retentionDays,
+    cutoffMs: registrationCleanupCutoffMs(retentionDays)
   });
   const docs = result.docs.slice(0, maxDeletes);
 
@@ -1522,7 +1554,7 @@ export async function cleanupOldRegionRegistrations(user, regionOverride = '', o
     scannedCount: result.scannedCount,
     hasMore: result.hasMore,
     maxDeletes,
-    retentionDays: REGION_REGISTRATION_RETENTION_DAYS,
+    retentionDays,
     optimized: true,
     legacyScan: result.legacyScan,
     indexedSkipped: result.indexedSkipped || ''
@@ -1764,6 +1796,7 @@ export async function saveRegionSettings(user, region, settings) {
       settings: clean || {},
       rows: []
     }).catch(error => console.warn('[WKD] empty D1 table for new cycle skipped:', error));
+    await rotateRegionPublicSharesForNewCycle(user, safeRegion).catch(() => null);
   }
 
   const cleanup = { deletedCount: 0, skipped: 'manual-cleanup-only' };
@@ -2709,7 +2742,7 @@ function localImportRegistrationKey(row = {}) {
 
 async function readLocalImportRegionLockFromD1(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=198');
+    const mod = await import('./region-table-cache.js?v=199');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readLocalImportRegionLock(user, region);
   } catch (error) {
@@ -2720,7 +2753,7 @@ async function readLocalImportRegionLockFromD1(user, region) {
 
 async function commitLocalImportRegionLockToD1(user, region, payload = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=198');
+    const mod = await import('./region-table-cache.js?v=199');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.commitLocalImportRegionLock(user, region, payload);
   } catch (error) {
