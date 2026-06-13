@@ -2509,7 +2509,7 @@ async function handleActionLogClear(request, env) {
 
 function d1CleanupScope(value = 'all') {
   const scope = clean(value || 'all', 40).toLowerCase();
-  return ['cycles', 'shares', 'campaigns', 'all'].includes(scope) ? scope : 'all';
+  return ['cycles', 'shares', 'campaigns', 'messages', 'logs', 'all'].includes(scope) ? scope : 'all';
 }
 
 function d1CleanupCutoffMs(retentionDays = 60) {
@@ -2565,6 +2565,43 @@ async function selectOldD1CampaignIds(db, { cutoffMs = 0, region = '', limitCoun
   return (result?.results || []).map(row => clean(row.id, 140)).filter(Boolean);
 }
 
+async function selectOldD1MessageIds(db, { cutoffMs = 0, region = '', limitCount = 500 } = {}) {
+  const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
+  const params = [Number(cutoffMs) || 0];
+  let where = `created_at_ms > 0 AND created_at_ms < ?1 AND (deleted = 1 OR archived = 1 OR read_at_ms > 0)`;
+  if (region) {
+    params.push(region);
+    where += ` AND region = ?${params.length}`;
+  }
+  const result = await db.prepare(`SELECT id FROM user_notifications WHERE ${where} ORDER BY created_at_ms ASC LIMIT ${safeLimit}`).bind(...params).all();
+  return (result?.results || []).map(row => clean(row.id, 140)).filter(Boolean);
+}
+
+async function selectOldD1SentMessageIds(db, { cutoffMs = 0, region = '', limitCount = 500 } = {}) {
+  const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
+  const params = [Number(cutoffMs) || 0];
+  let where = `created_at_ms > 0 AND created_at_ms < ?1 AND (deleted = 1 OR archived = 1)`;
+  if (region) {
+    params.push(region);
+    where += ` AND region = ?${params.length}`;
+  }
+  const result = await db.prepare(`SELECT id FROM user_sent_messages WHERE ${where} ORDER BY created_at_ms ASC LIMIT ${safeLimit}`).bind(...params).all();
+  return (result?.results || []).map(row => clean(row.id, 140)).filter(Boolean);
+}
+
+async function selectOldD1ActionLogIds(db, { cutoffMs = 0, region = '', limitCount = 500 } = {}) {
+  const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
+  const params = [Number(cutoffMs) || 0];
+  let where = `created_at_ms > 0 AND created_at_ms < ?1`;
+  if (region) {
+    params.push(region);
+    where += ` AND region = ?${params.length}`;
+  }
+  const result = await db.prepare(`SELECT id FROM action_logs WHERE ${where} ORDER BY created_at_ms ASC LIMIT ${safeLimit}`).bind(...params).all();
+  return (result?.results || []).map(row => clean(row.id, 140)).filter(Boolean);
+}
+
+
 async function runD1ArchiveCleanup(db, { scope = 'all', region = '', retentionDays = 60, limitCount = 500, dryRun = false } = {}) {
   const safeScope = d1CleanupScope(scope);
   const safeRegion = normalizeRegion(region);
@@ -2574,6 +2611,8 @@ async function runD1ArchiveCleanup(db, { scope = 'all', region = '', retentionDa
   let cycles = 0;
   let shares = 0;
   let campaigns = 0;
+  let messages = 0;
+  let logs = 0;
   let deleted = 0;
   let scanned = 0;
   let hasMore = false;
@@ -2618,7 +2657,45 @@ async function runD1ArchiveCleanup(db, { scope = 'all', region = '', retentionDa
     if (ids.length === safeLimit) hasMore = true;
   }
 
-  const found = cycles + shares + campaigns;
+
+  if ((safeScope === 'messages' || safeScope === 'all') && remaining > 0) {
+    const limitForInbox = Math.ceil(remaining / 2);
+    const inboxIds = await selectOldD1MessageIds(db, { cutoffMs, region: safeRegion, limitCount: limitForInbox });
+    const sentIds = remaining - inboxIds.length > 0
+      ? await selectOldD1SentMessageIds(db, { cutoffMs, region: safeRegion, limitCount: remaining - inboxIds.length })
+      : [];
+    messages = inboxIds.length + sentIds.length;
+    scanned += messages;
+    if (!dryRun) {
+      if (inboxIds.length) {
+        const placeholders = inboxIds.map((_, index) => `?${index + 1}`).join(',');
+        const result = await db.prepare(`DELETE FROM user_notifications WHERE id IN (${placeholders})`).bind(...inboxIds).run();
+        deleted += Number(result?.meta?.changes) || 0;
+      }
+      if (sentIds.length) {
+        const placeholders = sentIds.map((_, index) => `?${index + 1}`).join(',');
+        const result = await db.prepare(`DELETE FROM user_sent_messages WHERE id IN (${placeholders})`).bind(...sentIds).run();
+        deleted += Number(result?.meta?.changes) || 0;
+      }
+    }
+    remaining -= messages;
+    if (messages >= safeLimit) hasMore = true;
+  }
+
+  if ((safeScope === 'logs' || safeScope === 'all') && remaining > 0) {
+    const ids = await selectOldD1ActionLogIds(db, { cutoffMs, region: safeRegion, limitCount: remaining });
+    logs = ids.length;
+    scanned += ids.length;
+    if (!dryRun && ids.length) {
+      const placeholders = ids.map((_, index) => `?${index + 1}`).join(',');
+      const result = await db.prepare(`DELETE FROM action_logs WHERE id IN (${placeholders})`).bind(...ids).run();
+      deleted += Number(result?.meta?.changes) || 0;
+    }
+    remaining -= ids.length;
+    if (ids.length === safeLimit) hasMore = true;
+  }
+
+  const found = cycles + shares + campaigns + messages + logs;
   return {
     ok: true,
     scope: safeScope,
@@ -2630,9 +2707,118 @@ async function runD1ArchiveCleanup(db, { scope = 'all', region = '', retentionDa
     cycles,
     shares,
     campaigns,
+    messages,
+    logs,
     hasMore: hasMore || found >= safeLimit,
     source: 'cloudflare-d1-cleanup'
   };
+}
+
+
+async function d1CountBytes(db, sql, params = []) {
+  try {
+    const row = await db.prepare(sql).bind(...params).first();
+    return {
+      rows: Math.max(0, Number(row?.rows || row?.count || 0) || 0),
+      bytes: Math.max(0, Number(row?.bytes || 0) || 0)
+    };
+  } catch (error) {
+    console.warn('[WKD Worker] D1 inspect query skipped:', error?.message || error);
+    return { rows: 0, bytes: 0 };
+  }
+}
+
+async function inspectD1StorageTables(db, { region = '' } = {}) {
+  const safeRegion = normalizeRegion(region);
+  const regionClause = safeRegion ? ' AND region = ?1' : '';
+  const regionParams = safeRegion ? [safeRegion] : [];
+  const rowRegionClause = safeRegion ? ' AND rr.region = ?1' : '';
+  const rowRegionParams = safeRegion ? [safeRegion] : [];
+  const items = [];
+  const push = (key, data = {}, cleanup = '', active = false) => {
+    items.push({
+      key,
+      rows: Math.max(0, Number(data.rows || 0) || 0),
+      bytes: Math.max(0, Number(data.bytes || 0) || 0),
+      cleanup,
+      active: Boolean(active)
+    });
+  };
+
+  push('activePlayers', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(rr.row_json,''))),0) AS bytes
+       FROM region_table_rows rr
+       LEFT JOIN region_active ra ON ra.region = rr.region
+      WHERE rr.cycle_id = COALESCE(ra.cycle_id, 'active')${rowRegionClause}`,
+    rowRegionParams), '', true);
+  push('archivedPlayers', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(rr.row_json,''))),0) AS bytes
+       FROM region_table_rows rr
+       LEFT JOIN region_active ra ON ra.region = rr.region
+      WHERE rr.cycle_id != COALESCE(ra.cycle_id, 'active')${rowRegionClause}`,
+    rowRegionParams), 'cycles', false);
+  push('cycleIndex', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(title,'')) + LENGTH(COALESCE(opened_by_name,''))),0) AS bytes FROM region_cycles WHERE 1=1${regionClause}`,
+    regionParams), 'cycles', false);
+  push('legacySnapshots', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(settings_json,'')) + LENGTH(COALESCE(rows_json,''))),0) AS bytes FROM region_tables WHERE 1=1${regionClause}`,
+    regionParams), 'cycles', false);
+  push('towerPlans', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(plan_json,''))),0) AS bytes FROM region_tower_plans WHERE 1=1${regionClause}`,
+    regionParams), '', true);
+  push('formSettings', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(settings_json,''))),0) AS bytes FROM region_form_settings WHERE 1=1${regionClause}`,
+    regionParams), '', true);
+  push('finalPlanShares', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(html,'')) + LENGTH(COALESCE(text,'')) + LENGTH(COALESCE(title,''))),0) AS bytes FROM final_plan_shares WHERE 1=1${regionClause}`,
+    regionParams), 'shares', false);
+  push('regionTableShares', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(code,'')) + LENGTH(COALESCE(access,''))),0) AS bytes FROM region_table_shares WHERE 1=1${regionClause}`,
+    regionParams), 'shares', false);
+  push('alliances', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(tag,'')) + LENGTH(COALESCE(name,'')) + LENGTH(COALESCE(note,''))),0) AS bytes FROM region_alliances WHERE 1=1${regionClause}`,
+    regionParams), '', true);
+  push('actionLogs', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(summary,'')) + LENGTH(COALESCE(details_json,''))),0) AS bytes FROM action_logs WHERE 1=1${regionClause}`,
+    regionParams), 'logs', false);
+  push('notifications', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(title,'')) + LENGTH(COALESCE(message,''))),0) AS bytes FROM user_notifications`,
+    []), 'messages', false);
+  push('sentMessages', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(title,'')) + LENGTH(COALESCE(message,'')) + LENGTH(COALESCE(recipient_preview,''))),0) AS bytes FROM user_sent_messages`,
+    []), 'messages', false);
+  push('campaigns', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(title,'')) + LENGTH(COALESCE(message,''))),0) AS bytes FROM notification_campaigns WHERE 1=1${regionClause}`,
+    regionParams), 'campaigns', false);
+  push('notificationDirectory', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(nickname,'')) + LENGTH(COALESCE(email,'')) + LENGTH(COALESCE(display_name,''))),0) AS bytes FROM notification_directory WHERE deleted = 0${regionClause}`,
+    regionParams), '', true);
+  push('publicStats', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(players_json,''))),0) AS bytes FROM public_stats_pages`,
+    []), '', true);
+  push('activeIndexes', await d1CountBytes(db,
+    `SELECT COUNT(*) AS rows, COALESCE(SUM(LENGTH(COALESCE(cycle_id,''))),0) AS bytes FROM region_active WHERE 1=1${regionClause}`,
+    regionParams), '', true);
+
+  return {
+    ok: true,
+    region: safeRegion,
+    items,
+    totalRows: items.reduce((sum, item) => sum + item.rows, 0),
+    totalBytes: items.reduce((sum, item) => sum + item.bytes, 0),
+    source: 'cloudflare-d1-storage-inspect'
+  };
+}
+
+async function handleD1StorageInspect(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  if (!isAdminUid(env, user.uid)) return json({ ok: false, error: 'admin_required' }, 403);
+  let body = null;
+  try { body = await request.json(); } catch { body = {}; }
+  return json(await inspectD1StorageTables(db, { region: body?.region || '' }));
 }
 
 async function handleD1CleanupScan(request, env) {
@@ -3930,6 +4116,9 @@ export default {
         return await handleCampaignCreate(request, env);
       }
 
+      if (url.pathname === "/api/d1-cleanup/inspect" && request.method === "POST") {
+        return await handleD1StorageInspect(request, env);
+      }
       if (url.pathname === "/api/d1-cleanup/scan" && request.method === "POST") {
         return await handleD1CleanupScan(request, env);
       }

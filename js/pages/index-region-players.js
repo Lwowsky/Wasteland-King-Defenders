@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=196';
-import { readRegionTableSnapshot } from '../services/region-table-cache.js?v=196';
+import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=198';
+import { readRegionTableSnapshot } from '../services/region-table-cache.js?v=198';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -595,36 +595,20 @@ async function loadRegionRowsPage(force = false, regionOverride = '', pageOverri
   updateTransferButtons();
   setNote(tv('players.loadingRegionTable', 'Loading region table {region}...', { region: currentRegionLabel() }), 'muted');
   try {
-    const filters = readPlayerTableFilters();
+    // Main players page uses the full D1 active list again. Average region size is small enough,
+    // and the summary cards must show the real whole region, not only the current server page.
     const result = await readRegionTableSnapshot(currentUser, requestedRegion, {
       force,
-      page: Math.max(1, Number(pageOverride) || 1),
-      pageSize: filters.pageSize,
-      search: filters.search,
-      troop: filters.troop,
-      shift: filters.shift,
-      tier: filters.tier,
-      sortField: filters.sortField,
-      sortDir: filters.sortDir,
       ttlMs: force ? 0 : undefined
     });
     const resultRegion = normalizeRegion(result.region || requestedRegion || loadedRegion);
     if (requestId !== regionLoadRequestId || resultRegion !== requestedRegion) return;
     currentProfile = result.profile || currentProfile;
     loadedRegion = resultRegion;
-    let rows = (result.rows || [])
+    loadedRegionRows = (result.rows || [])
       .filter(row => !normalizeRegion(row.region || '') || normalizeRegion(row.region || '') === loadedRegion)
       .map(row => ({ ...regionRegistrationToPlayer(row), source: REGION_SOURCE }));
-    if (filters.status === 'captains') rows = rows.filter(row => row.captain);
-    loadedRegionRows = rows;
-    loadedRegionPageMeta = {
-      page: Number(result.page || pageOverride) || 1,
-      pageSize: Number(result.pageSize || filters.pageSize) || filters.pageSize,
-      totalRows: Number(result.totalRows || rows.length) || rows.length,
-      totalPages: Number(result.totalPages || 1) || 1,
-      source: result.source || 'cloudflare-d1-rows'
-    };
-    if (window.WKD?.state) window.WKD.state.page = loadedRegionPageMeta.page;
+    loadedRegionPageMeta = null;
     loadedRegionAlliances = loadedRegion ? await listRegionAlliances(loadedRegion).catch(() => []) : [];
     if (requestId !== regionLoadRequestId) return;
     updateAllianceColorMap();
@@ -647,8 +631,8 @@ function renderCurrentRows() {
   if (!window.WKD?.setPlayers) return;
   const localRows = getLocalPlayers();
   const rows = currentMode === 'region' ? loadedRegionRows : localRows;
-  window.WKD.regionPlayersServerMode = currentMode === 'region';
-  window.WKD.regionPlayersServerMeta = currentMode === 'region' ? loadedRegionPageMeta : null;
+  window.WKD.regionPlayersServerMode = false;
+  window.WKD.regionPlayersServerMeta = null;
 
   WKD.setPlayers(rows, {
     persist: false,
@@ -659,8 +643,7 @@ function renderCurrentRows() {
   });
 
   if (currentMode === 'region') {
-    const total = loadedRegionPageMeta?.totalRows || loadedRegionRows.length;
-    setNote(`${tv('players.regionShown', 'Region table {region}: shown {count} players.', { region: currentRegionLabel(), count: total })} ${t('players.serverPagingNote', 'Регіональна таблиця показує сторінку з D1, а не тягне весь список у браузер.')}`, loadedRegionRows.length ? 'success' : 'warn');
+    setNote(tv('players.regionShown', 'Region table {region}: shown {count} players.', { region: currentRegionLabel(), count: loadedRegionRows.length }), loadedRegionRows.length ? 'success' : 'warn');
     setHelp(t('players.regionActive', 'Region table is active.'));
     updateTransferButtons();
     return;

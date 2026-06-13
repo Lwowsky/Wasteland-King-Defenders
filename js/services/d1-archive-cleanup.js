@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=196';
+import { trackCloudflareUsage } from './usage-tracker.js?v=198';
 
 function cleanText(value = '', max = 120) {
   return String(value ?? '')
@@ -36,8 +36,29 @@ function normalizeResult(data = {}) {
     cycles: Math.max(0, Number(data.cycles) || 0),
     shares: Math.max(0, Number(data.shares) || 0),
     campaigns: Math.max(0, Number(data.campaigns) || 0),
+    messages: Math.max(0, Number(data.messages) || 0),
+    logs: Math.max(0, Number(data.logs) || 0),
     hasMore: Boolean(data.hasMore),
     source: cleanText(data.source || 'cloudflare-d1-cleanup', 80)
+  };
+}
+
+
+function normalizeInspectResult(data = {}) {
+  const items = Array.isArray(data.items) ? data.items.map(item => ({
+    key: cleanText(item.key || '', 80),
+    rows: Math.max(0, Number(item.rows) || 0),
+    bytes: Math.max(0, Number(item.bytes) || 0),
+    cleanup: cleanText(item.cleanup || '', 40),
+    active: Boolean(item.active)
+  })).filter(item => item.key) : [];
+  return {
+    ok: data.ok !== false,
+    region: cleanRegion(data.region || ''),
+    totalRows: Math.max(0, Number(data.totalRows) || items.reduce((sum, item) => sum + item.rows, 0)),
+    totalBytes: Math.max(0, Number(data.totalBytes) || items.reduce((sum, item) => sum + item.bytes, 0)),
+    items,
+    source: cleanText(data.source || 'cloudflare-d1-storage-inspect', 80)
   };
 }
 
@@ -88,3 +109,34 @@ export async function cleanupD1Archives(user, { scope = 'all', region = '', rete
     limitCount: Math.max(1, Math.min(500, Number(maxDeletes) || 500))
   });
 }
+
+async function requestInspectJson(path, user, payload = {}) {
+  const token = await getFirebaseToken(user);
+  if (!token) throw new Error('auth-token-required');
+  const response = await fetch(apiUrl(path), {
+    method: 'POST',
+    cache: 'no-store',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload || {})
+  });
+  let data = null;
+  try { data = await response.json(); } catch { data = null; }
+  if (!response.ok || data?.ok === false) {
+    const error = new Error(data?.error || `d1-inspect-${response.status}`);
+    error.status = response.status;
+    error.data = data;
+    throw error;
+  }
+  const itemsCount = Array.isArray(data?.items) ? data.items.length : 0;
+  trackCloudflareUsage({ workerRequests: 1, d1RowsRead: itemsCount, d1RowsWritten: 0 });
+  return normalizeInspectResult(data || {});
+}
+
+export async function inspectD1Storage(user, { region = '' } = {}) {
+  return requestInspectJson('/api/d1-cleanup/inspect', user, { region: cleanRegion(region) });
+}
+

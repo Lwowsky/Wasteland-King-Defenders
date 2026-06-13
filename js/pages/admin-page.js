@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, scanD1Archives } from '../services/d1-archive-cleanup.js?v=196';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=196';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=196';
+import { cleanupD1Archives, inspectD1Storage, scanD1Archives } from '../services/d1-archive-cleanup.js?v=198';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=198';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=198';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -22,7 +22,7 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=196';
+} from '../services/user-db.js?v=198';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -31,7 +31,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=196';
+} from '../services/region-db.js?v=198';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -63,7 +63,7 @@ let cloudflareRealUsage = getCachedCloudflareUsage();
 let cloudflareUsageLoading = false;
 let oldFirestoreCleanupCount = 0;
 let oldFirestoreAutoRunning = false;
-const OLD_FIRESTORE_AUTO_KEY = 'wkd.admin.clean.firestoreRegs.auto.v196';
+const OLD_FIRESTORE_AUTO_KEY = 'wkd.admin.clean.firestoreRegs.auto.v198';
 const ADMIN_REGION_CACHE_TTL_MS = 5 * 60 * 1000;
 const ADMIN_REGION_CACHE_VERSION = 'v145';
 
@@ -670,24 +670,96 @@ function setD1ArchiveStatus(text, type = 'muted') {
   box.dataset.type = type;
 }
 
+function d1StorageItemLabel(key = '') {
+  const labels = {
+    activePlayers: t('admin.d1StorageActivePlayers', 'Активні гравці'),
+    archivedPlayers: t('admin.d1StorageArchivedPlayers', 'Гравці в архівних циклах'),
+    cycleIndex: t('admin.d1StorageCycleIndex', 'Індекс циклів'),
+    legacySnapshots: t('admin.d1StorageLegacySnapshots', 'Старі JSON snapshots'),
+    towerPlans: t('admin.d1StorageTowerPlans', 'Плани турелей'),
+    formSettings: t('admin.d1StorageFormSettings', 'Налаштування форм'),
+    finalPlanShares: t('admin.d1StorageFinalPlanShares', 'Секретні фінальні плани'),
+    regionTableShares: t('admin.d1StorageTableShares', 'Секретні таблиці регіону'),
+    alliances: t('admin.d1StorageAlliances', 'Альянси / кольори'),
+    actionLogs: t('admin.d1StorageActionLogs', 'Журнали дій'),
+    notifications: t('admin.d1StorageNotifications', 'Вхідні повідомлення'),
+    sentMessages: t('admin.d1StorageSentMessages', 'Відправлені повідомлення'),
+    campaigns: t('admin.d1StorageCampaigns', 'Кампанії повідомлень'),
+    notificationDirectory: t('admin.d1StorageDirectory', 'Довідник отримувачів'),
+    publicStats: t('admin.d1StoragePublicStats', 'Публічна статистика'),
+    activeIndexes: t('admin.d1StorageActiveIndexes', 'Активні індекси')
+  };
+  return labels[key] || key;
+}
+
+function renderD1StorageDetails(result = {}) {
+  const box = $('#d1StorageBreakdown');
+  if (!box) return;
+  const items = Array.isArray(result.items) ? result.items.slice().sort((a, b) => Number(b.bytes || 0) - Number(a.bytes || 0)) : [];
+  if (!items.length) {
+    box.innerHTML = `<div class="admin-empty">${escapeHtml(t('admin.d1StorageNoDetails', 'Деталі D1 ще не завантажені.'))}</div>`;
+    return;
+  }
+  const totalBytes = Number(result.totalBytes || 0) || items.reduce((sum, item) => sum + Number(item.bytes || 0), 0);
+  const totalRows = Number(result.totalRows || 0) || items.reduce((sum, item) => sum + Number(item.rows || 0), 0);
+  const rows = items.map(item => {
+    const cleanup = item.cleanup ? d1ArchiveScopeLabel(item.cleanup) : (item.active ? t('admin.d1StorageKeep', 'не чистити') : t('admin.d1StorageManual', 'вручну'));
+    return `<tr>
+      <td>${escapeHtml(d1StorageItemLabel(item.key))}</td>
+      <td>${formatCompactNumber(Number(item.rows || 0))}</td>
+      <td>${escapeHtml(formatBytes(item.bytes || 0))}</td>
+      <td>${escapeHtml(cleanup)}</td>
+    </tr>`;
+  }).join('');
+  box.innerHTML = `
+    <div class="region-note admin-usage-note" data-type="success">${escapeHtml(tv('admin.d1StorageSummary', 'Разом у D1 деталях: {rows} рядків, приблизно {bytes}.', { rows: formatCompactNumber(totalRows), bytes: formatBytes(totalBytes) }))}</div>
+    <div class="admin-table-wrap admin-d1-details-wrap">
+      <table class="admin-table admin-d1-details-table">
+        <thead><tr><th>${escapeHtml(t('admin.d1StorageTable', 'Таблиця'))}</th><th>${escapeHtml(t('admin.rows', 'Рядків'))}</th><th>${escapeHtml(t('admin.approxSize', 'Приблизний розмір'))}</th><th>${escapeHtml(t('admin.cleanup', 'Чистка'))}</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+async function runD1StorageInspect() {
+  if (!currentUser || !canUseLimitsPanel()) return;
+  const button = $('#inspectD1StorageBtn');
+  if (button) button.disabled = true;
+  try {
+    setD1ArchiveStatus(t('admin.d1StorageInspecting', 'Перевіряю D1 таблиці...'), 'muted');
+    const result = await inspectD1Storage(currentUser, { region: selectedCleanRegion() || '' });
+    renderD1StorageDetails(result);
+    setD1ArchiveStatus(tv('admin.d1StorageInspectDone', 'D1 перевірено: {rows} рядків, приблизно {bytes}.', { rows: formatCompactNumber(result.totalRows || 0), bytes: formatBytes(result.totalBytes || 0) }), 'success');
+  } catch (error) {
+    console.error(error);
+    setD1ArchiveStatus(t('admin.d1StorageInspectFailed', 'Не вдалося перевірити D1 таблиці.'), 'error');
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
 function d1ArchiveScopeLabel(scope = 'all') {
   const labels = {
     cycles: t('admin.d1ArchiveScopeCycles', 'старі цикли'),
     shares: t('admin.d1ArchiveScopeShares', 'секретні посилання'),
     campaigns: t('admin.d1ArchiveScopeCampaigns', 'D1 кампанії'),
+    messages: t('admin.d1ArchiveScopeMessages', 'старі повідомлення'),
+    logs: t('admin.d1ArchiveScopeLogs', 'старі журнали'),
     all: t('admin.d1ArchiveScopeAll', 'D1 архів')
   };
   return labels[scope] || labels.all;
 }
 
 function d1ArchiveResultText(result = {}) {
-  return tv('admin.d1ArchiveResult', 'Знайдено: {found}. Видалено: {deleted}. Перевірено: {scanned}. Цикли: {cycles}. Посилання: {shares}. Кампанії: {campaigns}.', {
+  return tv('admin.d1ArchiveResult', 'Знайдено: {found}. Видалено: {deleted}. Перевірено: {scanned}. Цикли: {cycles}. Посилання: {shares}. Кампанії: {campaigns}. Повідомлення: {messages}. Журнали: {logs}.', {
     found: Number(result.found || 0),
     deleted: Number(result.deleted || 0),
     scanned: Number(result.scanned || 0),
     cycles: Number(result.cycles || 0),
     shares: Number(result.shares || 0),
-    campaigns: Number(result.campaigns || 0)
+    campaigns: Number(result.campaigns || 0),
+    messages: Number(result.messages || 0),
+    logs: Number(result.logs || 0)
   }) + (result.hasMore ? ` ${t('admin.d1ArchiveHasMore', 'Є ще записи — можна натиснути ще раз.')}` : '');
 }
 
@@ -1404,9 +1476,12 @@ function bindAdminControls() {
   $('#cleanupFirebaseNotificationsBtn')?.addEventListener('click', () => runFirebaseArchiveCleanup('notifications').catch(console.error));
   $('#cleanupFirebaseCampaignsBtn')?.addEventListener('click', () => runFirebaseArchiveCleanup('campaigns').catch(console.error));
   $('#cleanupFirebaseActionLogsBtn')?.addEventListener('click', () => runFirebaseArchiveCleanup('actionLogs').catch(console.error));
+  $('#inspectD1StorageBtn')?.addEventListener('click', () => runD1StorageInspect().catch(console.error));
   $('#scanD1ArchiveBtn')?.addEventListener('click', () => runD1ArchiveScan().catch(console.error));
   $('#cleanupD1CyclesBtn')?.addEventListener('click', () => runD1ArchiveCleanup('cycles').catch(console.error));
   $('#cleanupD1SharesBtn')?.addEventListener('click', () => runD1ArchiveCleanup('shares').catch(console.error));
+  $('#cleanupD1MessagesBtn')?.addEventListener('click', () => runD1ArchiveCleanup('messages').catch(console.error));
+  $('#cleanupD1LogsBtn')?.addEventListener('click', () => runD1ArchiveCleanup('logs').catch(console.error));
   $('#cleanupD1AllBtn')?.addEventListener('click', () => runD1ArchiveCleanup('all').catch(console.error));
   $('#refreshCleanRegionsBtn')?.addEventListener('click', () => loadCleanPanel(true).catch(console.error));
   $('#cleanFirestoreRegionSelect')?.addEventListener('change', () => { oldFirestoreCleanupCount = 0; maybeRunOldFirestoreAutoCleanup().catch(console.error); });
