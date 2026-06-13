@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="css/tower-planner-mobile.css" />
   <link rel="stylesheet" href="css/contact-modal.css" />
   <link rel="stylesheet" href="css/responsive.css" />
-  <script defer src="js/i18n.js?v=194"></script>
+  <script defer src="js/i18n.js?v=195"></script>
   <script defer src="js/i18n-uk.js"></script>
   <script defer src="js/i18n-en.js"></script>
   <script defer src="js/i18n-ru.js"></script>
@@ -38,7 +38,7 @@
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
   <script defer src="js/core/assets-loader.js"></script>
-  <script defer src="js/badges.js?v=194"></script>
+  <script defer src="js/badges.js?v=195"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/core/state.js"></script>
@@ -48,18 +48,18 @@
   <script defer src="js/import-mapping.js"></script>
   <script defer src="js/import-shift-recognition.js"></script>
   <script defer src="js/visible-tiers.js"></script>
-  <script defer src="js/players-table.js?v=194"></script>
+  <script defer src="js/players-table.js?v=195"></script>
   <script defer src="js/confirm-modal.js"></script>
-  <script defer src="js/player-edit-modal.js?v=194"></script>
-  <script defer src="js/player-manager-modal.js?v=194"></script>
-  <script defer src="js/tower-planner.js?v=194"></script>
+  <script defer src="js/player-edit-modal.js?v=195"></script>
+  <script defer src="js/player-manager-modal.js?v=195"></script>
+  <script defer src="js/tower-planner.js?v=195"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/core/app-boot.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/player-manager-region-bridge.js?v=194"></script>
-  <script type="module" src="js/auth-google.js?v=194"></script>
-  <script type="module" src="js/notifications.js?v=194"></script>
-  <script type="module" src="js/pages/region-settings-page.js?v=194"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=195"></script>
+  <script type="module" src="js/auth-google.js?v=195"></script>
+  <script type="module" src="js/notifications.js?v=195"></script>
+  <script type="module" src="js/pages/region-settings-page.js?v=195"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -266,6 +266,17 @@
           <button class="btn" id="refreshArchiveCyclesBtn" type="button" data-i18n="common.refresh">Оновити</button>
         </div>
         <div class="region-note" id="regionArchiveStatus" data-i18n="regionSettings.archiveEmpty">Архів ще не завантажений.</div>
+        <div class="region-note region-firestore-cleanup" id="regionFirestoreCleanupBox">
+          <div>
+            <strong data-i18n="regionSettings.firestoreCleanupTitle">Старі Firestore-заявки</strong>
+            <small data-i18n="regionSettings.firestoreCleanupHelp">Це старий резерв у Firebase. Активна D1-таблиця й архів циклів не чіпаються.</small>
+          </div>
+          <div class="region-archive-actions">
+            <button class="btn" id="checkOldFirestoreRegistrationsBtn" type="button" data-i18n="regionSettings.checkOldFirestoreRegistrations">Перевірити старі заявки</button>
+            <button class="btn admin-decline" id="cleanupOldFirestoreRegistrationsBtn" type="button" disabled data-i18n="regionSettings.cleanupOldFirestoreRegistrations">Очистити 100 старих</button>
+          </div>
+          <small id="regionFirestoreCleanupStatus" data-i18n="regionSettings.firestoreCleanupIdle">Перевірка не запускалась.</small>
+        </div>
         <div class="region-archive-list" id="regionArchiveCycleList"></div>
         <div class="region-archive-viewer" id="regionArchiveViewer" hidden>
           <div class="region-archive-viewer-head">

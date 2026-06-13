@@ -1,5 +1,5 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=194';
+import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=195';
 import {
   canManageRegion,
   canViewAnyRegion,
@@ -24,9 +24,11 @@ import {
   formatCountdown,
   formatUtcAndLocal,
   getRegionLifecycle,
-  getRegionActorName
-} from '../services/region-db.js?v=194';
-import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1 } from '../services/region-table-cache.js?v=194';
+  getRegionActorName,
+  inspectOldRegionRegistrations,
+  cleanupOldRegionRegistrations
+} from '../services/region-db.js?v=195';
+import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1 } from '../services/region-table-cache.js?v=195';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -53,6 +55,7 @@ let archivePage = 1;
 let archivePageSize = 20;
 let archiveSearch = '';
 let archiveTotalPages = 1;
+let firestoreCleanupOldCount = 0;
 
 const colorBuilderKey = 'wkd.regionAllianceColorBuilder.offset';
 function t(key, fallback = '') { return window.WKD_t ? window.WKD_t(key) : (fallback || key); }
@@ -516,6 +519,89 @@ async function restoreArchiveCycleToActiveD1() {
     setDynamicText('#regionArchiveStatus', t('regionSettings.archiveRestoreD1Failed', 'Не вдалося відновити D1-таблицю з архіву.'));
   }
 }
+
+function setFirestoreCleanupStatus(text) {
+  setDynamicText('#regionFirestoreCleanupStatus', text);
+}
+
+function renderFirestoreCleanupResult(result = {}) {
+  firestoreCleanupOldCount = Number(result.oldCount || 0) || 0;
+  const scanned = Number(result.scannedCount || 0) || 0;
+  const maxDeletes = Number(result.maxDeletes || 100) || 100;
+  const hasMore = result.hasMore ? ` ${t('regionSettings.firestoreCleanupHasMore', 'Можливо є ще старі заявки — повтори перевірку після очищення.')}` : '';
+  const legacy = result.legacyScan ? ` ${t('regionSettings.firestoreCleanupLegacyNote', 'Перевірено також старі заявки без expiresAtMs, але тільки маленькою пачкою.')}` : '';
+  const text = firestoreCleanupOldCount
+    ? tv('regionSettings.firestoreCleanupFound', 'Знайдено старих Firestore-заявок: {count}. Перевірено документів: {scanned}. Можна очистити до {max} за раз.', { count: firestoreCleanupOldCount, scanned, max: maxDeletes })
+    : tv('regionSettings.firestoreCleanupNone', 'Старих Firestore-заявок для очищення не знайдено. Перевірено документів: {scanned}.', { scanned });
+  setFirestoreCleanupStatus(`${text}${hasMore}${legacy}`.trim());
+  const cleanupBtn = $('#cleanupOldFirestoreRegistrationsBtn');
+  if (cleanupBtn) cleanupBtn.disabled = firestoreCleanupOldCount <= 0;
+}
+
+async function checkOldFirestoreRegistrations() {
+  if (!currentUser || !currentRegion) return;
+  const checkBtn = $('#checkOldFirestoreRegistrationsBtn');
+  const cleanupBtn = $('#cleanupOldFirestoreRegistrationsBtn');
+  if (checkBtn) checkBtn.disabled = true;
+  if (cleanupBtn) cleanupBtn.disabled = true;
+  setFirestoreCleanupStatus(t('regionSettings.firestoreCleanupChecking', 'Перевіряю старі Firestore-заявки...'));
+  try {
+    const result = await inspectOldRegionRegistrations(currentUser, currentRegion, { maxDeletes: 100, allowLegacyFullScan: true });
+    if (result.skipped) {
+      setFirestoreCleanupStatus(t('regionSettings.firestoreCleanupDenied', 'Немає доступу для перевірки старих заявок.'));
+      return result;
+    }
+    renderFirestoreCleanupResult(result);
+    return result;
+  } catch (error) {
+    console.warn('[WKD] old Firestore registrations check failed:', error);
+    setFirestoreCleanupStatus(t('regionSettings.firestoreCleanupCheckFailed', 'Не вдалося перевірити старі Firestore-заявки.'));
+    return null;
+  } finally {
+    if (checkBtn) checkBtn.disabled = false;
+  }
+}
+
+async function cleanupOldFirestoreRegistrations() {
+  if (!currentUser || !currentRegion) return;
+  if (firestoreCleanupOldCount <= 0) {
+    const result = await checkOldFirestoreRegistrations();
+    if (!result || Number(result.oldCount || 0) <= 0) return;
+  }
+  const ok = window.WKD?.confirmDialog
+    ? await window.WKD.confirmDialog({
+      title: t('regionSettings.firestoreCleanupConfirmTitle', 'Очистити 100 старих Firestore-заявок?'),
+      message: t('regionSettings.firestoreCleanupConfirmMessage', 'Буде очищено тільки старий Firebase-резерв. Активна D1-таблиця, архів циклів і поточний cycleId не чіпаються.'),
+      note: t('regionSettings.firestoreCleanupConfirmNote', 'Ліміти: до 100 reads і до 200 deletes за одне натискання. Автоматично це не запускається.'),
+      icon: '🧹',
+      acceptText: t('regionSettings.cleanupOldFirestoreRegistrations', 'Очистити 100 старих')
+    })
+    : window.confirm(t('regionSettings.firestoreCleanupConfirmTitle', 'Очистити 100 старих Firestore-заявок?'));
+  if (!ok) return;
+  const checkBtn = $('#checkOldFirestoreRegistrationsBtn');
+  const cleanupBtn = $('#cleanupOldFirestoreRegistrationsBtn');
+  if (checkBtn) checkBtn.disabled = true;
+  if (cleanupBtn) cleanupBtn.disabled = true;
+  setFirestoreCleanupStatus(t('regionSettings.firestoreCleanupRunning', 'Очищаю старі Firestore-заявки пачкою до 100...'));
+  try {
+    const result = await cleanupOldRegionRegistrations(currentUser, currentRegion, { maxDeletes: 100, allowLegacyFullScan: true });
+    if (result.skipped) {
+      setFirestoreCleanupStatus(t('regionSettings.firestoreCleanupDenied', 'Немає доступу для очищення старих заявок.'));
+      return;
+    }
+    const deleted = Number(result.deletedCount || 0) || 0;
+    const ops = Number(result.deletedOps || 0) || 0;
+    firestoreCleanupOldCount = Math.max(0, firestoreCleanupOldCount - deleted);
+    setFirestoreCleanupStatus(tv('regionSettings.firestoreCleanupDone', 'Очищено заявок: {count}. Delete operations: {ops}. Активна D1-таблиця й архів не змінювались.', { count: deleted, ops }));
+    if (cleanupBtn) cleanupBtn.disabled = true;
+  } catch (error) {
+    console.warn('[WKD] old Firestore registrations cleanup failed:', error);
+    setFirestoreCleanupStatus(t('regionSettings.firestoreCleanupFailed', 'Не вдалося очистити старі Firestore-заявки.'));
+  } finally {
+    if (checkBtn) checkBtn.disabled = false;
+  }
+}
+
 
 async function refreshRegionSwitcher() {
   const wrap = $('#regionSettingsSwitcher');
@@ -1330,6 +1416,8 @@ function bind() {
   });
   $('#regionArchiveCopyLocalBtn')?.addEventListener('click', () => copyArchiveCycleToLocal());
   $('#regionArchiveRestoreD1Btn')?.addEventListener('click', () => restoreArchiveCycleToActiveD1());
+  $('#checkOldFirestoreRegistrationsBtn')?.addEventListener('click', () => checkOldFirestoreRegistrations());
+  $('#cleanupOldFirestoreRegistrationsBtn')?.addEventListener('click', () => cleanupOldFirestoreRegistrations());
   $('#regionArchiveSearch')?.addEventListener('keydown', event => {
     if (event.key === 'Enter') {
       event.preventDefault();
