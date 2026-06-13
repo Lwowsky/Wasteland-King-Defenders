@@ -8,6 +8,29 @@ CREATE TABLE IF NOT EXISTS region_tables (
   PRIMARY KEY (region, cycle_id)
 );
 
+
+CREATE TABLE IF NOT EXISTS region_table_rows (
+  region TEXT NOT NULL,
+  cycle_id TEXT NOT NULL,
+  id TEXT NOT NULL,
+  uid TEXT NOT NULL DEFAULT '',
+  public_key TEXT NOT NULL DEFAULT '',
+  farm_id TEXT NOT NULL DEFAULT '',
+  nickname TEXT NOT NULL DEFAULT '',
+  nickname_key TEXT NOT NULL DEFAULT '',
+  alliance TEXT NOT NULL DEFAULT '',
+  troop_type TEXT NOT NULL DEFAULT '',
+  tier TEXT NOT NULL DEFAULT '',
+  shift TEXT NOT NULL DEFAULT '',
+  updated_at_ms INTEGER NOT NULL DEFAULT 0,
+  row_json TEXT NOT NULL DEFAULT '{}',
+  PRIMARY KEY (region, cycle_id, id)
+);
+CREATE INDEX IF NOT EXISTS idx_region_table_rows_cycle_updated ON region_table_rows(region, cycle_id, updated_at_ms DESC);
+CREATE INDEX IF NOT EXISTS idx_region_table_rows_uid ON region_table_rows(region, cycle_id, uid, farm_id);
+CREATE INDEX IF NOT EXISTS idx_region_table_rows_public ON region_table_rows(region, cycle_id, public_key, farm_id);
+CREATE INDEX IF NOT EXISTS idx_region_table_rows_nickname ON region_table_rows(region, cycle_id, nickname_key);
+
 CREATE TABLE IF NOT EXISTS region_active (
   region TEXT PRIMARY KEY,
   cycle_id TEXT NOT NULL DEFAULT 'active',

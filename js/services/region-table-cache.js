@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=191';
+import { trackCloudflareUsage } from './usage-tracker.js?v=192';
 
 const MAX_ROWS = 2000;
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -53,7 +53,7 @@ async function getFirebaseToken(user) {
 }
 
 function localCacheKey(kind, id) {
-  return `wkd.${kind}.d1.v188.${cleanText(id, 160)}`;
+  return `wkd.${kind}.d1.v192.${cleanText(id, 160)}`;
 }
 
 function readLocalTableCache(kind, id, ttlMs) {

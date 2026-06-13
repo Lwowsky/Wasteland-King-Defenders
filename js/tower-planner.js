@@ -1020,7 +1020,7 @@ window.WKD = window.WKD || {};
     const captainMarch = Number(captain?.march || 0);
     const rally = Number(captain?.rally || 0);
     const helperTotal = helpers.reduce((sum, item) => sum + helperAssignedMarch(item.id, slot, item.player), 0);
-    const total = captainMarch + helperTotal;
+    const total = captain ? captainMarch + rally : 0;
     const free = rally ? Math.max(0, rally - helperTotal) : 0;
     return `<div class="tower-picker-detail">
       <div class="tower-picker-detail-head tower-picker-detail-head--clean">
@@ -1190,6 +1190,31 @@ window.WKD = window.WKD || {};
     ensureSlotShape(slot);
     Object.keys(TIER_DEFAULTS).forEach(tier => { slot.tierLimits[tier] = 0; });
   }
+  function trimSlotHelpersToRally(slot) {
+    const normalized = ensureSlotShape(slot || {});
+    const captain = playerById(normalized.captain);
+    if (!captain || !normalized.helpers.length) return 0;
+    const rally = Math.max(0, Number(captain.rally || 0) || 0);
+    let overflow = slotHelpersMarch(normalized) - rally;
+    if (overflow <= 0) return 0;
+    const ordered = normalized.helpers
+      .map(id => ({ id, player: playerById(id), current: helperAssignedMarch(id, normalized) }))
+      .filter(item => item.id && item.player && item.current > 0)
+      .sort((left, right) => tierRankValue(left.player) - tierRankValue(right.player)
+        || Number(left.current || 0) - Number(right.current || 0)
+        || String(left.player?.name || '').localeCompare(String(right.player?.name || '')));
+    let trimmed = 0;
+    for (const item of ordered) {
+      if (overflow <= 0) break;
+      const current = Math.max(0, Number(item.current || 0) || 0);
+      const cut = Math.min(current, overflow);
+      setHelperAssignedMarch(normalized, item.id, current - cut);
+      trimmed += cut;
+      overflow -= cut;
+    }
+    return trimmed;
+  }
+
   function recalculateTowerComposition(towerId, shift = activeShift) {
     const slot = plan.assignments?.[shift]?.[towerId];
     if (!slot) return { ok: false, reason: tr('tower.turretNotFound', 'Турель не знайдена.') };
@@ -1286,6 +1311,7 @@ window.WKD = window.WKD || {};
       const value = Math.max(0, Math.min(full, Math.floor(Number(assigned[id] || 0) || 0)));
       setHelperAssignedMarch(slot, id, value);
     });
+    trimSlotHelpersToRally(slot);
     return { ok: true, changed: true, used: slotHelpersMarch(slot), free: towerRoom(slot), helpers: helpers.length };
   }
 
@@ -1365,21 +1391,23 @@ window.WKD = window.WKD || {};
       : tr('tower.localMode', 'Локально');
   }
   function renderPlannerScopeTrigger() {
-    const button = $('#towerSourceTrigger');
+    const buttons = [$('#towerSourceTrigger'), $('#finalPlanSourceTrigger')].filter(Boolean);
     const badge = $('#towerPlannerScopeBadge');
     const options = towerSourceOptions();
     const canPick = signedInForTowerSource() && options.length > 0;
     if (badge) badge.hidden = true;
-    if (!button) return;
-    if (!canPick) {
-      button.hidden = true;
-      return;
-    }
-    const active = activeTowerSourceOption();
-    button.textContent = towerSourceLabel();
-    button.hidden = false;
-    button.classList.toggle('is-region', active.mode === 'region');
-    button.classList.toggle('is-local', active.mode !== 'region');
+    if (!buttons.length) return;
+    buttons.forEach(button => {
+      if (!canPick) {
+        button.hidden = true;
+        return;
+      }
+      const active = activeTowerSourceOption();
+      button.textContent = towerSourceLabel();
+      button.hidden = false;
+      button.classList.toggle('is-region', active.mode === 'region');
+      button.classList.toggle('is-local', active.mode !== 'region');
+    });
   }
   function ensureTowerSourceDialog() {
     let root = document.getElementById('towerSourceDialog');
@@ -1473,7 +1501,6 @@ window.WKD = window.WKD || {};
     if (!shifts.includes(activeFinalShift)) activeFinalShift = shifts[0] || 'shift1';
     const shiftButtons = shifts.map(shift => `<button class="btn btn-sm ${shift === activeFinalShift ? 'is-active' : ''}" type="button" data-final-shift="${shift}">${shiftLabel(shift)}</button>`).join('');
     const languageButton = `<button class="btn btn-sm tower-final-lang-trigger board-lang-trigger" type="button" data-final-lang-open>${esc(tr('finalPlan.langButton', 'Мова плану'))}</button>`;
-    const sourceButton = signedInForTowerSource() ? `<button class="btn btn-sm" type="button" data-tower-scope-open>${esc(towerSourceLabel())}</button>` : '';
     const exportButtons = `
       <button class="btn btn-sm" type="button" data-final-download>${esc(tr('finalPlan.downloadPng', 'Завантажити PNG'))}</button>
       <button class="btn btn-sm" type="button" data-final-txt>TXT</button>
@@ -1482,12 +1509,12 @@ window.WKD = window.WKD || {};
     if (info.mode !== 'region') {
       root.classList.add('is-local-mode');
       root.classList.remove('is-region-mode');
-      root.innerHTML = `${shiftButtons}${languageButton}${sourceButton}${exportButtons}`;
+      root.innerHTML = `${shiftButtons}${languageButton}${exportButtons}`;
       return;
     }
     root.classList.add('is-region-mode');
     root.classList.remove('is-local-mode');
-    root.innerHTML = `${shiftButtons}${languageButton}${sourceButton}
+    root.innerHTML = `${shiftButtons}${languageButton}
       ${canPublish ? `<button class="btn btn-sm" type="button" data-tower-publish>${esc(tr('tower.publishPlan', 'Опублікувати в регіон'))}</button>` : ''}
       <span class="tower-final-more-wrap">
         <button class="btn btn-sm" type="button" data-final-more-toggle aria-haspopup="true" aria-expanded="false">${esc(tr('tower.moreActions', 'Ще'))} ▾</button>
@@ -1631,6 +1658,7 @@ window.WKD = window.WKD || {};
     renderFinalBoard($('#towerFinalBoard'));
     renderFinalToolbar($('#finalPlanOnlyModal [data-final-toolbar]'));
     renderFinalBoard($('#finalPlanOnlyBoard'));
+    renderPlannerScopeTrigger();
     renderFinalLangDialog();
   }
   function ensureFinalLangDialog() {
@@ -1891,12 +1919,14 @@ window.WKD = window.WKD || {};
         });
         if (!progress) break;
       }
+      trimSlotHelpersToRally(normalized);
       return added;
     }
 
     // Максимум і Мінімум: заповнюємо ралі зверху вниз. У мінімальному режимі нижчі тіри
     // лишаються малими, доки вищі тіри не взяли свій доступний максимум.
     ordered.forEach(entry => addExtra(entry, maxHelperMarch(entry.player)));
+    trimSlotHelpersToRally(normalized);
     return added;
   }
   function growShiftHelperMarches(shift) {
