@@ -1,5 +1,5 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=187';
+import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=188';
 import {
   canManageRegion,
   canViewAnyRegion,
@@ -19,14 +19,14 @@ import {
   saveRegionAllianceColor as saveRegionAllianceColorDb,
   saveRegionSettings,
   saveRegionTowerPlan,
-  cleanupOldRegionRegistrations,
   computeCloseAtMs,
   computeOpenAtMs,
   formatCountdown,
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=187';
+} from '../services/region-db.js?v=188';
+import { listRegionCycleArchiveD1, readRegionCycleArchiveD1 } from '../services/region-table-cache.js?v=188';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -47,6 +47,12 @@ let selectedRegionColorTag = '';
 let rotationDraft = { enabled: false, loop: true, activeIndex: 0, alliances: [] };
 let timerId = null;
 let ready = false;
+let archiveCycles = [];
+let archiveSelectedCycleId = '';
+let archivePage = 1;
+let archivePageSize = 20;
+let archiveSearch = '';
+let archiveTotalPages = 1;
 
 const colorBuilderKey = 'wkd.regionAllianceColorBuilder.offset';
 function t(key, fallback = '') { return window.WKD_t ? window.WKD_t(key) : (fallback || key); }
@@ -307,6 +313,113 @@ function updateRegionPill(region = currentRegion) {
   if (pill) pill.textContent = region ? `R${region}` : 'R—';
 }
 
+function resetArchiveState() {
+  archiveCycles = [];
+  archiveSelectedCycleId = '';
+  archivePage = 1;
+  archiveSearch = '';
+  archiveTotalPages = 1;
+  const list = $('#regionArchiveCycleList');
+  if (list) list.innerHTML = '';
+  const rows = $('#regionArchiveRows');
+  if (rows) rows.innerHTML = '';
+  const viewer = $('#regionArchiveViewer');
+  if (viewer) viewer.hidden = true;
+  setDynamicText('#regionArchiveStatus', t('regionSettings.archiveEmpty', 'Архів ще не завантажений.'));
+}
+
+function formatArchiveDate(ms) {
+  const value = Number(ms) || 0;
+  if (!value) return '—';
+  try { return formatUtcAndLocal(value); } catch { return new Date(value).toLocaleString(); }
+}
+
+function renderArchiveCycleList() {
+  const list = $('#regionArchiveCycleList');
+  if (!list) return;
+  if (!archiveCycles.length) {
+    list.innerHTML = '';
+    setDynamicText('#regionArchiveStatus', t('regionSettings.archiveNoCycles', 'Архівних циклів ще немає. Вони зʼявляться після запуску нового циклу.'));
+    return;
+  }
+  setDynamicText('#regionArchiveStatus', tv('regionSettings.archiveCyclesFound', 'Знайдено архівних циклів: {count}.', { count: archiveCycles.length }));
+  list.innerHTML = archiveCycles.map(cycle => {
+    const cycleId = escapeHtml(cycle.cycleId || 'active');
+    const rowsCount = Number(cycle.rowsCount || 0) || 0;
+    const title = cycle.title || tv('regionSettings.archiveCycleTitle', 'Цикл {cycle}', { cycle: cycle.cycleId || 'active' });
+    const date = formatArchiveDate(cycle.eventStartAtMs || cycle.updatedAtMs || cycle.createdAtMs);
+    return `<article class="region-archive-cycle">
+      <div>
+        <strong>${escapeHtml(title)}</strong>
+        <small>${escapeHtml(cycleId)} · ${escapeHtml(tv('regionSettings.archiveRowsCount', 'Гравців: {count}', { count: rowsCount }))} · ${escapeHtml(date)}</small>
+      </div>
+      <button class="btn" type="button" data-view-archive-cycle="${cycleId}">${escapeHtml(t('regionSettings.viewArchiveCycle', 'Переглянути'))}</button>
+    </article>`;
+  }).join('');
+}
+
+async function loadArchiveCycles(force = false) {
+  if (!currentUser || !currentRegion) return;
+  setDynamicText('#regionArchiveStatus', t('regionSettings.archiveLoading', 'Завантажую архів циклів з D1...'));
+  try {
+    const result = await listRegionCycleArchiveD1(currentUser, currentRegion, { force });
+    archiveCycles = Array.isArray(result.cycles) ? result.cycles : [];
+    renderArchiveCycleList();
+  } catch (error) {
+    console.warn('[WKD] archive cycles unavailable:', error);
+    archiveCycles = [];
+    renderArchiveCycleList();
+    setDynamicText('#regionArchiveStatus', t('regionSettings.archiveLoadFailed', 'Не вдалося завантажити архів D1. Firebase fallback не запускався, щоб не витрачати reads.'));
+  }
+}
+
+function renderArchiveRows(result = {}) {
+  const rowsEl = $('#regionArchiveRows');
+  if (!rowsEl) return;
+  const rows = Array.isArray(result.rows) ? result.rows : [];
+  if (!rows.length) {
+    rowsEl.innerHTML = `<tr><td colspan="7">${escapeHtml(t('regionSettings.archiveNoRows', 'У цьому циклі немає рядків для показу.'))}</td></tr>`;
+  } else {
+    rowsEl.innerHTML = rows.map(row => `<tr>
+      <td>${escapeHtml(row.nickname || '—')}</td>
+      <td>${escapeHtml(row.alliance || '—')}</td>
+      <td>${escapeHtml(row.troopLabel || row.troopType || '—')}</td>
+      <td>${escapeHtml(row.tier || '—')}</td>
+      <td>${escapeHtml(row.shiftLabel || row.shift || '—')}</td>
+      <td>${escapeHtml((Number(row.marchSize) || 0).toLocaleString())}</td>
+      <td>${escapeHtml((Number(row.rallySize) || 0).toLocaleString())}</td>
+    </tr>`).join('');
+  }
+  archivePage = Number(result.page || archivePage) || 1;
+  archiveTotalPages = Math.max(1, Number(result.totalPages || 1) || 1);
+  const cycle = result.cycle || archiveCycles.find(item => item.cycleId === archiveSelectedCycleId) || {};
+  const title = cycle.title || tv('regionSettings.archiveCycleTitle', 'Цикл {cycle}', { cycle: archiveSelectedCycleId || 'active' });
+  setDynamicText('#regionArchiveViewerTitle', title);
+  setDynamicText('#regionArchiveViewerMeta', `${archiveSelectedCycleId || 'active'} · ${tv('regionSettings.archiveRowsCount', 'Гравців: {count}', { count: Number(result.totalRows || 0) || 0 })}`);
+  setDynamicText('#regionArchivePageInfo', tv('regionSettings.archivePageInfo', 'Сторінка {page} / {pages}', { page: archivePage, pages: archiveTotalPages }));
+  const prev = $('#regionArchivePrevBtn');
+  const next = $('#regionArchiveNextBtn');
+  if (prev) prev.disabled = archivePage <= 1;
+  if (next) next.disabled = archivePage >= archiveTotalPages;
+  const viewer = $('#regionArchiveViewer');
+  if (viewer) viewer.hidden = false;
+}
+
+async function viewArchiveCycle(cycleId, page = 1) {
+  archiveSelectedCycleId = trim(cycleId);
+  if (!archiveSelectedCycleId) return;
+  archivePage = Math.max(1, Number(page) || 1);
+  setDynamicText('#regionArchiveStatus', t('regionSettings.archiveCycleLoading', 'Завантажую вибраний цикл з D1...'));
+  try {
+    const result = await readRegionCycleArchiveD1(currentUser, currentRegion, archiveSelectedCycleId, { page: archivePage, pageSize: archivePageSize, search: archiveSearch });
+    renderArchiveRows(result);
+    setDynamicText('#regionArchiveStatus', t('regionSettings.archiveLoadedFromD1', 'Цикл завантажено з D1. Firebase reads: 0.'));
+  } catch (error) {
+    console.warn('[WKD] archive cycle unavailable:', error);
+    setDynamicText('#regionArchiveStatus', t('regionSettings.archiveCycleLoadFailed', 'Не вдалося відкрити цикл з D1. Firebase fallback не запускався.'));
+  }
+}
+
 async function refreshRegionSwitcher() {
   const wrap = $('#regionSettingsSwitcher');
   const select = $('#regionSettingsRegionSelect');
@@ -336,6 +449,7 @@ async function switchRegion(region) {
   url.searchParams.set('region', nextRegion);
   window.history.replaceState({}, '', url);
   $('#regionSettingsForm') && ($('#regionSettingsForm').hidden = true);
+  resetArchiveState();
   setStatus(t('regionSettings.switchingRegion', 'Opening selected region...'), 'muted');
   await load(currentUser);
 }
@@ -634,6 +748,7 @@ function activateSettingsTab(name) {
     panel.classList.toggle('is-active', active);
   });
   if (name === 'alliances') renderRegionColorBuilder();
+  if (name === 'archive' && !archiveCycles.length) loadArchiveCycles().catch(() => null);
 }
 
 async function save(event, overrides = {}) {
@@ -655,9 +770,7 @@ async function save(event, overrides = {}) {
     }
     fill(currentSettings);
     const note = openedNewCycle ? ` ${t('regionSettings.newCycleSavedNote', 'New cycle opened: the table shows a clean list, and old requests remain in the previous cycle.')}` : '';
-    const cleanupNote = currentSettings.cleanupDeletedCount
-      ? ` ${tv('regionSettings.oldRequestsCleanupNote', 'Old requests older than 14 days deleted: {count}.', { count: currentSettings.cleanupDeletedCount })}`
-      : '';
+    const cleanupNote = '';
     setStatus(`${t('regionSettings.formSaved', 'Region form saved.')}${note}${cleanupNote}`, 'success');
   } catch (error) {
     console.error(error);
@@ -979,7 +1092,7 @@ async function load(user) {
     setStatus(t('regionSettings.accessDenied', 'Only an admin, moderator, consul or officer of their own region can edit the region form.'), 'error');
     return;
   }
-  await cleanupOldRegionRegistrations(user, region).catch(error => console.warn('[WKD] old registration cleanup skipped:', error));
+  resetArchiveState();
   const settings = await ensureRegionRegistrationRunInfo(user, region).catch(error => {
     console.warn('[WKD] registration run info repair skipped:', error);
     return null;
@@ -1102,6 +1215,27 @@ function bind() {
   $('#regionRegeneratePaletteBtn')?.addEventListener('click', () => {
     localStorage.setItem(colorBuilderKey, String((colorOffset() + 37) % 360));
     renderRegionColorBuilder();
+  });
+  $('#refreshArchiveCyclesBtn')?.addEventListener('click', () => loadArchiveCycles(true).catch(error => {
+    console.warn(error);
+    setDynamicText('#regionArchiveStatus', t('regionSettings.archiveLoadFailed', 'Не вдалося завантажити архів D1. Firebase fallback не запускався, щоб не витрачати reads.'));
+  }));
+  $('#regionArchiveCycleList')?.addEventListener('click', event => {
+    const cycleId = event.target.closest('[data-view-archive-cycle]')?.dataset.viewArchiveCycle;
+    if (cycleId) viewArchiveCycle(cycleId, 1);
+  });
+  $('#regionArchivePrevBtn')?.addEventListener('click', () => viewArchiveCycle(archiveSelectedCycleId, Math.max(1, archivePage - 1)));
+  $('#regionArchiveNextBtn')?.addEventListener('click', () => viewArchiveCycle(archiveSelectedCycleId, Math.min(archiveTotalPages, archivePage + 1)));
+  $('#regionArchiveSearchBtn')?.addEventListener('click', () => {
+    archiveSearch = trim($('#regionArchiveSearch')?.value || '');
+    viewArchiveCycle(archiveSelectedCycleId, 1);
+  });
+  $('#regionArchiveSearch')?.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      archiveSearch = trim(event.currentTarget.value || '');
+      viewArchiveCycle(archiveSelectedCycleId, 1);
+    }
   });
   $$('[data-region-settings-tab]').forEach(button => {
     button.addEventListener('click', () => activateSettingsTab(button.dataset.regionSettingsTab));

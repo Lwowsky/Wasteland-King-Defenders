@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=187';
+import { trackCloudflareUsage } from './usage-tracker.js?v=188';
 
 const MAX_ROWS = 2000;
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -53,7 +53,7 @@ async function getFirebaseToken(user) {
 }
 
 function localCacheKey(kind, id) {
-  return `wkd.${kind}.d1.v187.${cleanText(id, 160)}`;
+  return `wkd.${kind}.d1.v188.${cleanText(id, 160)}`;
 }
 
 function readLocalTableCache(kind, id, ttlMs) {
@@ -340,6 +340,80 @@ export async function readRegionTableShare(code, options = {}) {
   const normalized = normalizeTableResponse(data);
   writeLocalTableCache('regionTableShare', safeCode, normalized);
   return normalized;
+}
+
+
+function normalizeCycleArchiveItem(item = {}) {
+  return {
+    region: cleanRegion(item.region || ''),
+    cycleId: cleanText(item.cycleId || item.cycle_id || 'active', 90) || 'active',
+    status: cleanText(item.status || '', 30),
+    title: cleanText(item.title || '', 160),
+    eventStartAtMs: Number(item.eventStartAtMs || item.event_start_at_ms || 0) || 0,
+    rowsCount: Number(item.rowsCount || item.rows_count || 0) || 0,
+    createdAtMs: Number(item.createdAtMs || item.created_at_ms || 0) || 0,
+    archivedAtMs: Number(item.archivedAtMs || item.archived_at_ms || 0) || 0,
+    updatedAtMs: Number(item.updatedAtMs || item.updated_at_ms || 0) || 0,
+    openedByName: cleanText(item.openedByName || item.opened_by_name || '', 160)
+  };
+}
+
+function normalizeCycleArchiveList(data = {}, expectedRegion = '') {
+  const region = cleanRegion(data.region || expectedRegion);
+  const cycles = (Array.isArray(data.cycles) ? data.cycles : [])
+    .map(normalizeCycleArchiveItem)
+    .filter(item => item.region === region && item.cycleId);
+  return {
+    ok: data.ok !== false,
+    region,
+    activeCycleId: cleanText(data.activeCycleId || data.active_cycle_id || '', 90),
+    cycles,
+    source: data.source || 'cloudflare-d1-cycle-archive',
+    cached: true
+  };
+}
+
+export async function listRegionCycleArchiveD1(user, region, options = {}) {
+  if (!isRegionTableCacheEnabled()) throw new Error('region-cycle-archive-disabled');
+  const safeRegion = cleanRegion(region);
+  if (!safeRegion) throw new Error('region-required');
+  const token = await getFirebaseToken(user);
+  if (!token) throw new Error('auth-token-required');
+  const params = new URLSearchParams();
+  params.set('region', safeRegion);
+  if (options?.includeActive) params.set('includeActive', '1');
+  const data = await requestJson(`/api/region-table/archive?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return normalizeCycleArchiveList(data, safeRegion);
+}
+
+export async function readRegionCycleArchiveD1(user, region, cycleId, options = {}) {
+  if (!isRegionTableCacheEnabled()) throw new Error('region-cycle-archive-disabled');
+  const safeRegion = cleanRegion(region);
+  const safeCycleId = cleanText(cycleId || '', 90);
+  if (!safeRegion || !safeCycleId) throw new Error('region-cycle-required');
+  const token = await getFirebaseToken(user);
+  if (!token) throw new Error('auth-token-required');
+  const params = new URLSearchParams();
+  params.set('region', safeRegion);
+  params.set('page', String(Math.max(1, Number(options?.page) || 1)));
+  params.set('pageSize', String(Math.max(5, Math.min(100, Number(options?.pageSize) || 20))));
+  if (options?.search) params.set('search', cleanText(options.search, 120));
+  const data = await requestJson(`/api/region-table/archive/${encodeURIComponent(safeCycleId)}?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const table = normalizeTableResponse(data, safeRegion);
+  return {
+    ...table,
+    cycle: normalizeCycleArchiveItem(data.cycle || { region: safeRegion, cycleId: safeCycleId }),
+    page: Math.max(1, Number(data.page) || 1),
+    pageSize: Math.max(1, Number(data.pageSize) || table.rows.length || 20),
+    totalRows: Math.max(0, Number(data.totalRows) || table.rows.length || 0),
+    totalPages: Math.max(1, Number(data.totalPages) || 1),
+    search: cleanText(data.search || options?.search || '', 120),
+    source: data.source || 'cloudflare-d1-cycle-archive'
+  };
 }
 
 

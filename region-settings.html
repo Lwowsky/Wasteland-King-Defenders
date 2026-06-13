@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="css/tower-planner-mobile.css" />
   <link rel="stylesheet" href="css/contact-modal.css" />
   <link rel="stylesheet" href="css/responsive.css" />
-  <script defer src="js/i18n.js?v=187"></script>
+  <script defer src="js/i18n.js?v=188"></script>
   <script defer src="js/i18n-uk.js"></script>
   <script defer src="js/i18n-en.js"></script>
   <script defer src="js/i18n-ru.js"></script>
@@ -38,7 +38,7 @@
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
   <script defer src="js/core/assets-loader.js"></script>
-  <script defer src="js/badges.js?v=187"></script>
+  <script defer src="js/badges.js?v=188"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/core/state.js"></script>
@@ -48,18 +48,18 @@
   <script defer src="js/import-mapping.js"></script>
   <script defer src="js/import-shift-recognition.js"></script>
   <script defer src="js/visible-tiers.js"></script>
-  <script defer src="js/players-table.js?v=187"></script>
+  <script defer src="js/players-table.js?v=188"></script>
   <script defer src="js/confirm-modal.js"></script>
-  <script defer src="js/player-edit-modal.js?v=187"></script>
-  <script defer src="js/player-manager-modal.js?v=187"></script>
-  <script defer src="js/tower-planner.js?v=187"></script>
+  <script defer src="js/player-edit-modal.js?v=188"></script>
+  <script defer src="js/player-manager-modal.js?v=188"></script>
+  <script defer src="js/tower-planner.js?v=188"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/core/app-boot.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/player-manager-region-bridge.js?v=187"></script>
-  <script type="module" src="js/auth-google.js?v=187"></script>
-  <script type="module" src="js/notifications.js?v=187"></script>
-  <script type="module" src="js/pages/region-settings-page.js?v=187"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=188"></script>
+  <script type="module" src="js/auth-google.js?v=188"></script>
+  <script type="module" src="js/notifications.js?v=188"></script>
+  <script type="module" src="js/pages/region-settings-page.js?v=188"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -109,6 +109,7 @@
       <div class="profile-tabs region-settings-tabs" role="tablist" aria-label="Налаштування форми регіону">
         <button class="profile-tab is-active" type="button" data-region-settings-tab="form" role="tab" aria-selected="true" data-i18n="region.settings.formTab">Форма</button>
         <button class="profile-tab" type="button" data-region-settings-tab="alliances" role="tab" aria-selected="false" data-i18n="region.settings.alliancesTab">Альянси</button>
+        <button class="profile-tab" type="button" data-region-settings-tab="archive" role="tab" aria-selected="false" data-i18n="regionSettings.archiveTab">Архів циклів</button>
       </div>
 
       <section data-region-settings-panel="form">
@@ -252,6 +253,51 @@
               </div>
               <div class="player-manager-color-preview" id="regionAllianceColorPreview"></div>
             </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="region-form-block region-archive-panel" id="regionArchivePanel" data-region-settings-panel="archive" hidden>
+        <div class="region-form-title">
+          <div>
+            <h3 data-i18n="regionSettings.archiveTitle">Архів циклів</h3>
+            <small data-i18n="regionSettings.archiveHelp">Старі цикли читаються з D1-архіву, не з Firebase. Відкривай тільки потрібний цикл.</small>
+          </div>
+          <button class="btn" id="refreshArchiveCyclesBtn" type="button" data-i18n="common.refresh">Оновити</button>
+        </div>
+        <div class="region-note" id="regionArchiveStatus" data-i18n="regionSettings.archiveEmpty">Архів ще не завантажений.</div>
+        <div class="region-archive-list" id="regionArchiveCycleList"></div>
+        <div class="region-archive-viewer" id="regionArchiveViewer" hidden>
+          <div class="region-archive-viewer-head">
+            <div>
+              <h4 id="regionArchiveViewerTitle">—</h4>
+              <small id="regionArchiveViewerMeta">—</small>
+            </div>
+            <div class="region-archive-actions">
+              <input id="regionArchiveSearch" maxlength="80" placeholder="Пошук у циклі" data-i18n-placeholder="regionSettings.archiveSearchPlaceholder" />
+              <button class="btn" id="regionArchiveSearchBtn" type="button" data-i18n="common.search">Пошук</button>
+            </div>
+          </div>
+          <div class="region-archive-table-wrap">
+            <table class="region-archive-table">
+              <thead>
+                <tr>
+                  <th data-i18n="players.nickname">Нік гравця</th>
+                  <th data-i18n="players.alliance">Альянс</th>
+                  <th data-i18n="players.troopType">Тип військ</th>
+                  <th data-i18n="players.tier">Тір</th>
+                  <th data-i18n="players.shift">Зміна</th>
+                  <th data-i18n="regionTable.marchSize">Розмір маршу</th>
+                  <th data-i18n="regionTable.rallySize">Розмір ралі</th>
+                </tr>
+              </thead>
+              <tbody id="regionArchiveRows"></tbody>
+            </table>
+          </div>
+          <div class="region-archive-pagination">
+            <button class="btn" id="regionArchivePrevBtn" type="button" data-i18n="common.previous">Назад</button>
+            <span id="regionArchivePageInfo">—</span>
+            <button class="btn" id="regionArchiveNextBtn" type="button" data-i18n="common.next">Далі</button>
           </div>
         </div>
       </section>

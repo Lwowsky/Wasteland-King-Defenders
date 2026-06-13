@@ -61,3 +61,21 @@
 .action-log-page .region-table-controls .region-control--region{width:100%!important;min-width:0!important;flex:0 0 auto!important}
 .action-log-page .region-table-controls .region-open-btn{width:auto!important;min-width:120px!important;flex:0 0 auto!important}
 @media (max-width:620px){.action-log-page .region-table-controls{grid-template-columns:1fr!important}.action-log-page .region-table-controls .region-open-btn{width:100%!important}}
+
+
+.region-archive-panel { margin-top: 18px; }
+.region-archive-list { display: grid; gap: 10px; margin-top: 14px; }
+.region-archive-cycle { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 14px; border: 1px solid rgba(111, 139, 205, .28); border-radius: 16px; background: rgba(8, 16, 36, .62); }
+.region-archive-cycle strong { display: block; color: var(--text-strong, #f7f8ff); }
+.region-archive-cycle small { display: block; color: var(--text-muted, #aeb8d6); margin-top: 4px; }
+.region-archive-viewer { margin-top: 18px; padding: 14px; border: 1px solid rgba(111, 139, 205, .25); border-radius: 18px; background: rgba(6, 13, 30, .62); }
+.region-archive-viewer-head { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; margin-bottom: 12px; }
+.region-archive-viewer-head h4 { margin: 0 0 4px; }
+.region-archive-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.region-archive-actions input { min-width: 220px; }
+.region-archive-table-wrap { overflow-x: auto; }
+.region-archive-table { width: 100%; border-collapse: collapse; min-width: 760px; }
+.region-archive-table th, .region-archive-table td { padding: 10px 12px; border-bottom: 1px solid rgba(111, 139, 205, .18); text-align: left; }
+.region-archive-table th { color: var(--text-muted, #aeb8d6); font-size: .85rem; text-transform: uppercase; }
+.region-archive-pagination { display: flex; gap: 12px; align-items: center; justify-content: flex-end; padding-top: 12px; }
+@media (max-width: 720px) { .region-archive-cycle, .region-archive-viewer-head { grid-template-columns: 1fr; display: grid; } .region-archive-actions input { min-width: 0; width: 100%; } }

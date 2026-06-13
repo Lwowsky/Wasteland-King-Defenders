@@ -115,6 +115,21 @@ async function ensureRegionTableSchema(db) {
         updated_at_ms INTEGER NOT NULL DEFAULT 0,
         rows_count INTEGER NOT NULL DEFAULT 0
       )`,
+      `CREATE TABLE IF NOT EXISTS region_cycles (
+        region TEXT NOT NULL,
+        cycle_id TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'archived',
+        title TEXT NOT NULL DEFAULT '',
+        event_start_at_ms INTEGER NOT NULL DEFAULT 0,
+        rows_count INTEGER NOT NULL DEFAULT 0,
+        created_at_ms INTEGER NOT NULL DEFAULT 0,
+        archived_at_ms INTEGER NOT NULL DEFAULT 0,
+        updated_at_ms INTEGER NOT NULL DEFAULT 0,
+        opened_by_name TEXT NOT NULL DEFAULT '',
+        PRIMARY KEY (region, cycle_id)
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_region_cycles_region_time ON region_cycles(region, updated_at_ms DESC)`,
+      `CREATE INDEX IF NOT EXISTS idx_region_cycles_region_status ON region_cycles(region, status, updated_at_ms DESC)`,
       `CREATE TABLE IF NOT EXISTS region_access (
         region TEXT NOT NULL,
         uid TEXT NOT NULL,
@@ -634,6 +649,26 @@ async function saveTable(db, table) {
          rows_count = excluded.rows_count`,
       )
       .bind(region, cycleId, version, updatedAtMs, rows.length),
+    db
+      .prepare(
+        `UPDATE region_cycles
+            SET status = 'archived', archived_at_ms = CASE WHEN archived_at_ms > 0 THEN archived_at_ms ELSE ?3 END, updated_at_ms = CASE WHEN updated_at_ms > 0 THEN updated_at_ms ELSE ?3 END
+          WHERE region = ?1 AND cycle_id != ?2 AND status != 'deleted'`,
+      )
+      .bind(region, cycleId, updatedAtMs),
+    db
+      .prepare(
+        `INSERT INTO region_cycles (region, cycle_id, status, title, event_start_at_ms, rows_count, created_at_ms, archived_at_ms, updated_at_ms, opened_by_name)
+         VALUES (?1, ?2, 'active', ?3, ?4, ?5, ?6, 0, ?7, ?8)
+         ON CONFLICT(region, cycle_id) DO UPDATE SET
+           status = 'active',
+           title = excluded.title,
+           event_start_at_ms = excluded.event_start_at_ms,
+           rows_count = excluded.rows_count,
+           updated_at_ms = excluded.updated_at_ms,
+           opened_by_name = excluded.opened_by_name`,
+      )
+      .bind(region, cycleId, clean(settings.title || '', 160), Number(settings.eventStartAtMs || settings.startAtMs || 0) || 0, rows.length, updatedAtMs, updatedAtMs, clean(settings.openedByName || settings.updatedByName || '', 160)),
   ]);
 
   return { region, cycleId, version, updatedAtMs, settings, rows };
@@ -1085,6 +1120,134 @@ function comparableRegistrationRow(row = {}) {
 
 function sameRegistrationData(a = {}, b = {}) {
   return stableStringify(comparableRegistrationRow(a)) === stableStringify(comparableRegistrationRow(b));
+}
+
+
+function cycleMetaFromTable(table = {}, activeCycleId = '') {
+  const settings = sanitizeSettings(table.settings || {});
+  return {
+    region: normalizeRegion(table.region),
+    cycleId: normalizeCycleId(table.cycleId || settings.currentCycleId || 'active'),
+    status: normalizeCycleId(table.cycleId || settings.currentCycleId || 'active') === normalizeCycleId(activeCycleId || '') ? 'active' : 'archived',
+    title: clean(settings.title || '', 160),
+    eventStartAtMs: Number(settings.eventStartAtMs || settings.startAtMs || 0) || 0,
+    rowsCount: Array.isArray(table.rows) ? table.rows.length : 0,
+    createdAtMs: Number(settings.openedAtMs || settings.updatedAtMs || table.updatedAtMs || 0) || 0,
+    archivedAtMs: 0,
+    updatedAtMs: Number(table.updatedAtMs || table.version || settings.updatedAtMs || 0) || 0,
+    openedByName: clean(settings.openedByName || settings.updatedByName || '', 160),
+  };
+}
+
+function cycleMetaFromRow(row = {}, activeCycleId = '') {
+  const cycleId = normalizeCycleId(row.cycle_id || 'active');
+  return {
+    region: normalizeRegion(row.region || ''),
+    cycleId,
+    status: clean(row.status || (cycleId === normalizeCycleId(activeCycleId || '') ? 'active' : 'archived'), 30),
+    title: clean(row.title || '', 160),
+    eventStartAtMs: Number(row.event_start_at_ms || 0) || 0,
+    rowsCount: Number(row.rows_count || 0) || 0,
+    createdAtMs: Number(row.created_at_ms || 0) || 0,
+    archivedAtMs: Number(row.archived_at_ms || 0) || 0,
+    updatedAtMs: Number(row.updated_at_ms || 0) || 0,
+    openedByName: clean(row.opened_by_name || '', 160),
+  };
+}
+
+async function canReadRegionArchive(db, env, user, region) {
+  if (!user?.uid || !region) return false;
+  if (isAdminUid(env, user.uid)) return true;
+  if (await hasSavedRegionAccess(db, user.uid, region)) return true;
+  const table = await getActiveTable(db, region).catch(() => null);
+  return table ? tableContainsUid(table, user.uid) : false;
+}
+
+async function handleRegionCycleArchiveList(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  const url = new URL(request.url);
+  const region = normalizeRegion(url.searchParams.get('region'));
+  const includeActive = url.searchParams.get('includeActive') === '1';
+  if (!region) return json({ ok: false, error: 'region_required' }, 400);
+  if (!await canReadRegionArchive(db, env, user, region)) return json({ ok: false, error: 'region_access_denied' }, 403);
+  const active = await db.prepare(`SELECT cycle_id FROM region_active WHERE region = ?1 LIMIT 1`).bind(region).first();
+  const activeCycleId = normalizeCycleId(active?.cycle_id || 'active');
+  const indexed = await db.prepare(
+    `SELECT region, cycle_id, status, title, event_start_at_ms, rows_count, created_at_ms, archived_at_ms, updated_at_ms, opened_by_name
+       FROM region_cycles
+      WHERE region = ?1 AND (?2 = 1 OR cycle_id != ?3)
+      ORDER BY updated_at_ms DESC
+      LIMIT 60`
+  ).bind(region, includeActive ? 1 : 0, activeCycleId).all();
+  const cycles = new Map();
+  for (const row of (indexed?.results || [])) {
+    const meta = cycleMetaFromRow(row, activeCycleId);
+    if (meta.region && meta.cycleId && meta.status !== 'deleted') cycles.set(meta.cycleId, meta);
+  }
+  const tableRows = await db.prepare(
+    `SELECT region, cycle_id, version, updated_at_ms, settings_json, rows_json
+       FROM region_tables
+      WHERE region = ?1 AND (?2 = 1 OR cycle_id != ?3)
+      ORDER BY updated_at_ms DESC
+      LIMIT 60`
+  ).bind(region, includeActive ? 1 : 0, activeCycleId).all();
+  for (const row of (tableRows?.results || [])) {
+    const table = rowToTable(row);
+    if (!table?.cycleId || cycles.has(table.cycleId)) continue;
+    cycles.set(table.cycleId, cycleMetaFromTable(table, activeCycleId));
+  }
+  const list = [...cycles.values()]
+    .filter(item => includeActive || item.cycleId !== activeCycleId)
+    .sort((a, b) => Number(b.updatedAtMs || 0) - Number(a.updatedAtMs || 0));
+  return json({ ok: true, region, activeCycleId, cycles: list, usage: { d1RowsRead: list.length }, source: 'cloudflare-d1-cycle-archive' }, 200, 'private, no-store');
+}
+
+async function handleRegionCycleArchiveRead(request, env, cycleIdValue) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  const url = new URL(request.url);
+  const region = normalizeRegion(url.searchParams.get('region'));
+  const cycleId = normalizeCycleId(cycleIdValue || '');
+  const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+  const pageSize = Math.max(5, Math.min(100, Number(url.searchParams.get('pageSize')) || 20));
+  const search = clean(url.searchParams.get('search') || '', 120).toLowerCase();
+  if (!region || !cycleId) return json({ ok: false, error: 'region_cycle_required' }, 400);
+  if (!await canReadRegionArchive(db, env, user, region)) return json({ ok: false, error: 'region_access_denied' }, 403);
+  const active = await db.prepare(`SELECT cycle_id FROM region_active WHERE region = ?1 LIMIT 1`).bind(region).first();
+  const activeCycleId = normalizeCycleId(active?.cycle_id || 'active');
+  const table = await readTable(db, region, cycleId);
+  if (!table) return json({ ok: false, error: 'cycle_not_found' }, 404);
+  let rows = (Array.isArray(table.rows) ? table.rows : []).map(row => sanitizeTableRow({ ...row, region }));
+  if (search) {
+    rows = rows.filter(row => [row.nickname, row.alliance, row.troopLabel, row.troopType, row.tier, row.shiftLabel, row.shift]
+      .some(value => clean(value || '', 200).toLowerCase().includes(search)));
+  }
+  const totalRows = rows.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = rows.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const metaRow = await db.prepare(
+    `SELECT region, cycle_id, status, title, event_start_at_ms, rows_count, created_at_ms, archived_at_ms, updated_at_ms, opened_by_name
+       FROM region_cycles WHERE region = ?1 AND cycle_id = ?2 LIMIT 1`
+  ).bind(region, cycleId).first().catch(() => null);
+  const cycle = metaRow ? cycleMetaFromRow(metaRow, activeCycleId) : cycleMetaFromTable(table, activeCycleId);
+  return json({
+    ok: true,
+    cycle,
+    page: safePage,
+    pageSize,
+    totalRows,
+    totalPages,
+    search,
+    table: { ...table, rows: pageRows },
+    source: 'cloudflare-d1-cycle-archive',
+    usage: { d1RowsRead: pageRows.length }
+  }, 200, 'private, no-store');
 }
 
 async function handleRegionTableRead(request, env) {
@@ -3580,6 +3743,15 @@ export default {
 
       if (url.pathname === "/api/region-alliances" && request.method === "DELETE") {
         return await handleRegionAlliancesDelete(request, env);
+      }
+
+      if (url.pathname === "/api/region-table/archive" && request.method === "GET") {
+        return await handleRegionCycleArchiveList(request, env);
+      }
+
+      const regionCycleArchiveMatch = url.pathname.match(/^\/api\/region-table\/archive\/([A-Za-z0-9._:-]{1,90})$/);
+      if (regionCycleArchiveMatch && request.method === "GET") {
+        return await handleRegionCycleArchiveRead(request, env, regionCycleArchiveMatch[1]);
       }
 
       if (url.pathname === "/api/region-table" && request.method === "GET") {

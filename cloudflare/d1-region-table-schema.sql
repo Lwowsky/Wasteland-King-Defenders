@@ -16,6 +16,22 @@ CREATE TABLE IF NOT EXISTS region_active (
   rows_count INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS region_cycles (
+  region TEXT NOT NULL,
+  cycle_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'archived',
+  title TEXT NOT NULL DEFAULT '',
+  event_start_at_ms INTEGER NOT NULL DEFAULT 0,
+  rows_count INTEGER NOT NULL DEFAULT 0,
+  created_at_ms INTEGER NOT NULL DEFAULT 0,
+  archived_at_ms INTEGER NOT NULL DEFAULT 0,
+  updated_at_ms INTEGER NOT NULL DEFAULT 0,
+  opened_by_name TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (region, cycle_id)
+);
+CREATE INDEX IF NOT EXISTS idx_region_cycles_region_time ON region_cycles(region, updated_at_ms DESC);
+CREATE INDEX IF NOT EXISTS idx_region_cycles_region_status ON region_cycles(region, status, updated_at_ms DESC);
+
 CREATE TABLE IF NOT EXISTS region_access (
   region TEXT NOT NULL,
   uid TEXT NOT NULL,
