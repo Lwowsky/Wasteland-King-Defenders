@@ -1306,6 +1306,44 @@ window.WKD = window.WKD || {};
       }
     }
 
+    total = Object.values(assigned).reduce((sum, value) => sum + (Math.max(0, Number(value || 0)) || 0), 0);
+    let remaining = Math.max(0, rally - total);
+    if (remaining > 0) {
+      const lowestExplicitIndex = Math.min(...explicitTierIndices);
+      const growTiers = tierOrderLowToHigh.slice(0, Math.max(0, lowestExplicitIndex));
+      const growCandidates = growTiers
+        .flatMap(tier => helpersByTier[tier] || [])
+        .map(item => ({
+          id: item.id,
+          player: item.player,
+          current: Math.max(0, Number(assigned[item.id] || 0) || 0),
+          max: Math.max(0, Number(item.player?.march || 0) || 0)
+        }))
+        .filter(item => item.id && item.max > item.current);
+      let queue = growCandidates;
+      let guard = 0;
+      while (remaining > 0 && queue.length && guard < 100) {
+        guard += 1;
+        const slice = Math.max(1, Math.floor(remaining / queue.length));
+        let used = 0;
+        const next = [];
+        for (const item of queue) {
+          const room = Math.max(0, item.max - item.current);
+          const grant = Math.min(room, slice, remaining - used);
+          if (grant > 0) {
+            item.current += grant;
+            assigned[item.id] = item.current;
+            used += grant;
+          }
+          if (item.max > item.current) next.push(item);
+          if (used >= remaining) break;
+        }
+        if (used <= 0) break;
+        remaining -= used;
+        queue = next;
+      }
+    }
+
     helpers.forEach(({ id, player }) => {
       const full = Math.max(0, Number(player.march || 0) || 0);
       const value = Math.max(0, Math.min(full, Math.floor(Number(assigned[id] || 0) || 0)));
