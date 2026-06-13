@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=188';
+import { trackCloudflareUsage } from './usage-tracker.js?v=189';
 
 const MAX_ROWS = 2000;
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -413,6 +413,29 @@ export async function readRegionCycleArchiveD1(user, region, cycleId, options = 
     totalPages: Math.max(1, Number(data.totalPages) || 1),
     search: cleanText(data.search || options?.search || '', 120),
     source: data.source || 'cloudflare-d1-cycle-archive'
+  };
+}
+
+export async function readFullRegionCycleArchiveD1(user, region, cycleId, options = {}) {
+  const pageSize = Math.max(20, Math.min(100, Number(options?.pageSize) || 100));
+  let page = 1;
+  let first = null;
+  let rows = [];
+  do {
+    const result = await readRegionCycleArchiveD1(user, region, cycleId, { page, pageSize, search: options?.search || '' });
+    if (!first) first = result;
+    rows = rows.concat(Array.isArray(result.rows) ? result.rows : []);
+    if (page >= Number(result.totalPages || 1)) break;
+    page += 1;
+  } while (page <= 200);
+  return {
+    ...(first || {}),
+    rows: rows.slice(0, MAX_ROWS),
+    page: 1,
+    pageSize: rows.length,
+    totalRows: Number(first?.totalRows || rows.length) || rows.length,
+    totalPages: 1,
+    source: first?.source || 'cloudflare-d1-cycle-archive-full'
   };
 }
 

@@ -2145,5 +2145,17 @@ window.WKD_TRANSLATIONS.ja = {
   "players.tier": "ティア",
   "players.shift": "シフト",
   "regionTable.marchSize": "行軍サイズ",
-  "regionTable.rallySize": "ラリーサイズ"
+  "regionTable.rallySize": "ラリーサイズ",
+  "regionSettings.copyArchiveToLocal": "ローカルへコピー",
+  "regionSettings.restoreArchiveActive": "D1 テーブルを復元",
+  "regionSettings.archiveCopyLocalTitle": "このサイクルをローカル一覧へコピーしますか？",
+  "regionSettings.archiveCopyLocalMessage": "サイクル {cycle} をこのブラウザのローカル一覧に読み込みます。",
+  "regionSettings.archiveCopyLocalNote": "Firebase は使用しません。現在のローカル一覧は置き換えられます。",
+  "regionSettings.archiveCopiedToLocal": "ローカル一覧へコピーしました: {count} 人。Firebase reads: 0。",
+  "regionSettings.archiveCopyLocalFailed": "アーカイブをローカル一覧へコピーできませんでした。",
+  "regionSettings.archiveRestoreD1Title": "D1 テーブルをアクティブとして復元しますか？",
+  "regionSettings.archiveRestoreD1Message": "サイクル {cycle} が地域 R{region} のアクティブテーブルになります。",
+  "regionSettings.archiveRestoreD1Note": "Firestore の申請は書き換えません。Firebase reads/writes: 0。完全な Firestore 復元は別の高コスト手順です。",
+  "regionSettings.archiveRestoredD1": "D1 テーブルをアクティブとして復元しました: {count} 人。Firebase reads/writes: 0。",
+  "regionSettings.archiveRestoreD1Failed": "アーカイブから D1 テーブルを復元できませんでした。"
 };

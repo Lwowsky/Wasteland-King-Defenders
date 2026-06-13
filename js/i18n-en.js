@@ -2145,5 +2145,17 @@ window.WKD_TRANSLATIONS.en = {
   "players.tier": "Tier",
   "players.shift": "Shift",
   "regionTable.marchSize": "March size",
-  "regionTable.rallySize": "Rally size"
+  "regionTable.rallySize": "Rally size",
+  "regionSettings.copyArchiveToLocal": "Copy to local",
+  "regionSettings.restoreArchiveActive": "Restore D1 table",
+  "regionSettings.archiveCopyLocalTitle": "Copy this cycle to the local list?",
+  "regionSettings.archiveCopyLocalMessage": "Cycle {cycle} will be loaded into this browser's local list.",
+  "regionSettings.archiveCopyLocalNote": "Firebase is not used. The current local list will be replaced.",
+  "regionSettings.archiveCopiedToLocal": "Copied to the local list: {count} players. Firebase reads: 0.",
+  "regionSettings.archiveCopyLocalFailed": "Could not copy the archive to the local list.",
+  "regionSettings.archiveRestoreD1Title": "Restore the D1 table as active?",
+  "regionSettings.archiveRestoreD1Message": "Cycle {cycle} will become the active table for region R{region}.",
+  "regionSettings.archiveRestoreD1Note": "This does not rewrite Firestore registrations. Firebase reads/writes: 0. Full Firestore restore is a separate expensive step.",
+  "regionSettings.archiveRestoredD1": "D1 table restored as active: {count} players. Firebase reads/writes: 0.",
+  "regionSettings.archiveRestoreD1Failed": "Could not restore the D1 table from the archive."
 };

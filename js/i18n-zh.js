@@ -2145,5 +2145,17 @@ window.WKD_TRANSLATIONS.zh = {
   "players.tier": "等级",
   "players.shift": "班次",
   "regionTable.marchSize": "行军容量",
-  "regionTable.rallySize": "集结容量"
+  "regionTable.rallySize": "集结容量",
+  "regionSettings.copyArchiveToLocal": "复制到本地",
+  "regionSettings.restoreArchiveActive": "恢复 D1 表格",
+  "regionSettings.archiveCopyLocalTitle": "将此周期复制到本地列表？",
+  "regionSettings.archiveCopyLocalMessage": "周期 {cycle} 将加载到此浏览器的本地列表。",
+  "regionSettings.archiveCopyLocalNote": "不会使用 Firebase。当前本地列表将被替换。",
+  "regionSettings.archiveCopiedToLocal": "已复制到本地列表：{count} 名玩家。Firebase reads: 0。",
+  "regionSettings.archiveCopyLocalFailed": "无法将归档复制到本地列表。",
+  "regionSettings.archiveRestoreD1Title": "将 D1 表格恢复为活动表格？",
+  "regionSettings.archiveRestoreD1Message": "周期 {cycle} 将成为区域 R{region} 的活动表格。",
+  "regionSettings.archiveRestoreD1Note": "这不会重写 Firestore 报名。Firebase reads/writes: 0。完整 Firestore 恢复是单独且成本较高的步骤。",
+  "regionSettings.archiveRestoredD1": "D1 表格已恢复为活动表格：{count} 名玩家。Firebase reads/writes: 0。",
+  "regionSettings.archiveRestoreD1Failed": "无法从归档恢复 D1 表格。"
 };

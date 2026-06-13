@@ -2143,5 +2143,17 @@ window.WKD_TRANSLATIONS.ar = {
   "players.tier": "المستوى",
   "players.shift": "الشفت",
   "regionTable.marchSize": "حجم المسيرة",
-  "regionTable.rallySize": "حجم الرالي"
+  "regionTable.rallySize": "حجم الرالي",
+  "regionSettings.copyArchiveToLocal": "نسخ إلى المحلي",
+  "regionSettings.restoreArchiveActive": "استعادة جدول D1",
+  "regionSettings.archiveCopyLocalTitle": "نسخ هذه الدورة إلى القائمة المحلية؟",
+  "regionSettings.archiveCopyLocalMessage": "سيتم تحميل الدورة {cycle} في القائمة المحلية لهذا المتصفح.",
+  "regionSettings.archiveCopyLocalNote": "لن يتم استخدام Firebase. سيتم استبدال القائمة المحلية الحالية.",
+  "regionSettings.archiveCopiedToLocal": "تم النسخ إلى القائمة المحلية: {count} لاعبًا. Firebase reads: 0.",
+  "regionSettings.archiveCopyLocalFailed": "تعذر نسخ الأرشيف إلى القائمة المحلية.",
+  "regionSettings.archiveRestoreD1Title": "استعادة جدول D1 كجدول نشط؟",
+  "regionSettings.archiveRestoreD1Message": "ستصبح الدورة {cycle} الجدول النشط للمنطقة R{region}.",
+  "regionSettings.archiveRestoreD1Note": "هذا لا يعيد كتابة طلبات Firestore. Firebase reads/writes: 0. الاستعادة الكاملة في Firestore خطوة منفصلة ومكلفة.",
+  "regionSettings.archiveRestoredD1": "تمت استعادة جدول D1 كنشط: {count} لاعبًا. Firebase reads/writes: 0.",
+  "regionSettings.archiveRestoreD1Failed": "تعذرت استعادة جدول D1 من الأرشيف."
 };

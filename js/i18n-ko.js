@@ -2145,5 +2145,17 @@ window.WKD_TRANSLATIONS.ko = {
   "players.tier": "티어",
   "players.shift": "교대",
   "regionTable.marchSize": "행군 규모",
-  "regionTable.rallySize": "랠리 규모"
+  "regionTable.rallySize": "랠리 규모",
+  "regionSettings.copyArchiveToLocal": "로컬로 복사",
+  "regionSettings.restoreArchiveActive": "D1 테이블 복원",
+  "regionSettings.archiveCopyLocalTitle": "이 사이클을 로컬 목록으로 복사할까요?",
+  "regionSettings.archiveCopyLocalMessage": "사이클 {cycle}이 이 브라우저의 로컬 목록에 로드됩니다.",
+  "regionSettings.archiveCopyLocalNote": "Firebase를 사용하지 않습니다. 현재 로컬 목록은 교체됩니다.",
+  "regionSettings.archiveCopiedToLocal": "로컬 목록으로 복사됨: {count}명. Firebase reads: 0.",
+  "regionSettings.archiveCopyLocalFailed": "아카이브를 로컬 목록으로 복사하지 못했습니다.",
+  "regionSettings.archiveRestoreD1Title": "D1 테이블을 활성 상태로 복원할까요?",
+  "regionSettings.archiveRestoreD1Message": "사이클 {cycle}이 지역 R{region}의 활성 테이블이 됩니다.",
+  "regionSettings.archiveRestoreD1Note": "Firestore 신청서는 다시 쓰지 않습니다. Firebase reads/writes: 0. 전체 Firestore 복원은 별도의 비용이 큰 단계입니다.",
+  "regionSettings.archiveRestoredD1": "D1 테이블이 활성 상태로 복원됨: {count}명. Firebase reads/writes: 0.",
+  "regionSettings.archiveRestoreD1Failed": "아카이브에서 D1 테이블을 복원하지 못했습니다."
 };

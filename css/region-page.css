@@ -79,3 +79,10 @@
 .region-archive-table th { color: var(--text-muted, #aeb8d6); font-size: .85rem; text-transform: uppercase; }
 .region-archive-pagination { display: flex; gap: 12px; align-items: center; justify-content: flex-end; padding-top: 12px; }
 @media (max-width: 720px) { .region-archive-cycle, .region-archive-viewer-head { grid-template-columns: 1fr; display: grid; } .region-archive-actions input { min-width: 0; width: 100%; } }
+
+
+/* v189: region settings tabs and archive actions share the existing profile-tab/btn styles but fill the row evenly. */
+.region-settings-tabs{grid-template-columns:repeat(var(--region-settings-tabs-count,3),minmax(0,1fr));}
+.region-settings-tabs .profile-tab{width:100%;}
+.region-archive-actions .btn{flex:1 1 180px;min-width:160px;}
+@media (max-width:720px){.region-settings-tabs{grid-template-columns:1fr;}.region-archive-actions .btn{width:100%;}}

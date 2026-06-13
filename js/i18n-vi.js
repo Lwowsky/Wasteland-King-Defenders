@@ -2145,5 +2145,17 @@ window.WKD_TRANSLATIONS.vi = {
   "players.tier": "Bậc",
   "players.shift": "Ca",
   "regionTable.marchSize": "Quy mô hành quân",
-  "regionTable.rallySize": "Quy mô rally"
+  "regionTable.rallySize": "Quy mô rally",
+  "regionSettings.copyArchiveToLocal": "Sao chép vào cục bộ",
+  "regionSettings.restoreArchiveActive": "Khôi phục bảng D1",
+  "regionSettings.archiveCopyLocalTitle": "Sao chép chu kỳ này vào danh sách cục bộ?",
+  "regionSettings.archiveCopyLocalMessage": "Chu kỳ {cycle} sẽ được tải vào danh sách cục bộ của trình duyệt này.",
+  "regionSettings.archiveCopyLocalNote": "Không dùng Firebase. Danh sách cục bộ hiện tại sẽ bị thay thế.",
+  "regionSettings.archiveCopiedToLocal": "Đã sao chép vào danh sách cục bộ: {count} người chơi. Firebase reads: 0.",
+  "regionSettings.archiveCopyLocalFailed": "Không thể sao chép kho lưu trữ vào danh sách cục bộ.",
+  "regionSettings.archiveRestoreD1Title": "Khôi phục bảng D1 thành bảng hoạt động?",
+  "regionSettings.archiveRestoreD1Message": "Chu kỳ {cycle} sẽ trở thành bảng hoạt động của vùng R{region}.",
+  "regionSettings.archiveRestoreD1Note": "Việc này không ghi lại đăng ký Firestore. Firebase reads/writes: 0. Khôi phục Firestore đầy đủ là một bước riêng tốn nhiều giới hạn.",
+  "regionSettings.archiveRestoredD1": "Đã khôi phục bảng D1 thành hoạt động: {count} người chơi. Firebase reads/writes: 0.",
+  "regionSettings.archiveRestoreD1Failed": "Không thể khôi phục bảng D1 từ kho lưu trữ."
 };

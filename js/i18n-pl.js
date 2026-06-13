@@ -2145,5 +2145,17 @@ window.WKD_TRANSLATIONS.pl = {
   "players.tier": "Tier",
   "players.shift": "Zmiana",
   "regionTable.marchSize": "Rozmiar marszu",
-  "regionTable.rallySize": "Rozmiar rajdu"
+  "regionTable.rallySize": "Rozmiar rajdu",
+  "regionSettings.copyArchiveToLocal": "Skopiuj do lokalnych",
+  "regionSettings.restoreArchiveActive": "Przywróć tabelę D1",
+  "regionSettings.archiveCopyLocalTitle": "Skopiować cykl do listy lokalnej?",
+  "regionSettings.archiveCopyLocalMessage": "Cykl {cycle} zostanie wczytany do lokalnej listy w tej przeglądarce.",
+  "regionSettings.archiveCopyLocalNote": "Firebase nie jest używany. Obecna lista lokalna zostanie zastąpiona.",
+  "regionSettings.archiveCopiedToLocal": "Skopiowano do listy lokalnej: {count} graczy. Firebase reads: 0.",
+  "regionSettings.archiveCopyLocalFailed": "Nie udało się skopiować archiwum do listy lokalnej.",
+  "regionSettings.archiveRestoreD1Title": "Przywrócić tabelę D1 jako aktywną?",
+  "regionSettings.archiveRestoreD1Message": "Cykl {cycle} stanie się aktywną tabelą regionu R{region}.",
+  "regionSettings.archiveRestoreD1Note": "To nie nadpisuje zgłoszeń Firestore. Firebase reads/writes: 0. Pełne przywrócenie Firestore to osobny kosztowny krok.",
+  "regionSettings.archiveRestoredD1": "Tabela D1 przywrócona jako aktywna: {count} graczy. Firebase reads/writes: 0.",
+  "regionSettings.archiveRestoreD1Failed": "Nie udało się przywrócić tabeli D1 z archiwum."
 };

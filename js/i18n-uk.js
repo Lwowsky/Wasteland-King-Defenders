@@ -2145,5 +2145,17 @@ window.WKD_TRANSLATIONS.uk = {
   "players.tier": "Тір",
   "players.shift": "Зміна",
   "regionTable.marchSize": "Розмір маршу",
-  "regionTable.rallySize": "Розмір ралі"
+  "regionTable.rallySize": "Розмір ралі",
+  "regionSettings.copyArchiveToLocal": "Скопіювати в локальний",
+  "regionSettings.restoreArchiveActive": "Відновити D1-таблицю",
+  "regionSettings.archiveCopyLocalTitle": "Скопіювати цикл у локальний список?",
+  "regionSettings.archiveCopyLocalMessage": "Цикл {cycle} буде завантажений у локальний список цього браузера.",
+  "regionSettings.archiveCopyLocalNote": "Firebase не використовується. Поточний локальний список буде замінений.",
+  "regionSettings.archiveCopiedToLocal": "Скопійовано в локальний список: {count} гравців. Firebase reads: 0.",
+  "regionSettings.archiveCopyLocalFailed": "Не вдалося скопіювати архів у локальний список.",
+  "regionSettings.archiveRestoreD1Title": "Відновити D1-таблицю як активну?",
+  "regionSettings.archiveRestoreD1Message": "Цикл {cycle} стане активною таблицею регіону R{region}.",
+  "regionSettings.archiveRestoreD1Note": "Це не переписує Firestore-заявки. Firebase reads/writes: 0. Якщо треба повне відновлення Firestore — це окремий дорогий крок.",
+  "regionSettings.archiveRestoredD1": "D1-таблицю відновлено як активну: {count} гравців. Firebase reads/writes: 0.",
+  "regionSettings.archiveRestoreD1Failed": "Не вдалося відновити D1-таблицю з архіву."
 };

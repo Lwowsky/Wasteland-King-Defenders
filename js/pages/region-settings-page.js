@@ -1,5 +1,5 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=188';
+import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=189';
 import {
   canManageRegion,
   canViewAnyRegion,
@@ -25,8 +25,8 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=188';
-import { listRegionCycleArchiveD1, readRegionCycleArchiveD1 } from '../services/region-table-cache.js?v=188';
+} from '../services/region-db.js?v=189';
+import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1 } from '../services/region-table-cache.js?v=189';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -328,6 +328,13 @@ function resetArchiveState() {
   setDynamicText('#regionArchiveStatus', t('regionSettings.archiveEmpty', 'Архів ще не завантажений.'));
 }
 
+function updateSettingsTabsLayout() {
+  const tabs = $('.region-settings-tabs');
+  if (!tabs) return;
+  const count = tabs.querySelectorAll('[data-region-settings-tab]').length || 1;
+  tabs.style.setProperty('--region-settings-tabs-count', String(count));
+}
+
 function formatArchiveDate(ms) {
   const value = Number(ms) || 0;
   if (!value) return '—';
@@ -417,6 +424,96 @@ async function viewArchiveCycle(cycleId, page = 1) {
   } catch (error) {
     console.warn('[WKD] archive cycle unavailable:', error);
     setDynamicText('#regionArchiveStatus', t('regionSettings.archiveCycleLoadFailed', 'Не вдалося відкрити цикл з D1. Firebase fallback не запускався.'));
+  }
+}
+
+function archiveRowsToLocalPlayers(rows = []) {
+  return (Array.isArray(rows) ? rows : [])
+    .map((row, index) => ({
+      _rowId: `archive-${archiveSelectedCycleId || 'cycle'}-${row.id || row.uid || index}`,
+      name: trim(row.nickname || row.name),
+      alliance: normalizeAllianceTag(row.alliance),
+      role: trim(row.troopType || row.role || 'Fighter'),
+      troopType: trim(row.troopType || row.role || 'Fighter'),
+      troopLabel: trim(row.troopLabel || ''),
+      tier: trim(row.tier || '').toUpperCase(),
+      march: toNumber(row.marchSize || row.march),
+      rally: toNumber(row.rallySize || row.rally),
+      captain: Boolean(row.captainReady || row.captain),
+      shift: trim(row.shift || 'both'),
+      shiftLabel: trim(row.shiftLabel || ''),
+      lairLevel: toNumber(row.lairLevel),
+      lair: row.captureRegion || row.readyToAttack || '',
+      comment: trim(row.comment || ''),
+      extraSquads: Array.isArray(row.extraSquads) ? row.extraSquads : [],
+      source: 'd1-archive'
+    }))
+    .filter(player => player.name);
+}
+
+async function loadSelectedArchiveCycleFull(actionKey = 'archive') {
+  if (!archiveSelectedCycleId) throw new Error('archive-cycle-required');
+  setDynamicText('#regionArchiveStatus', t('regionSettings.archiveCycleLoading', 'Завантажую вибраний цикл з D1...'));
+  const result = await readFullRegionCycleArchiveD1(currentUser, currentRegion, archiveSelectedCycleId, { pageSize: 100 });
+  if (!Array.isArray(result.rows) || !result.rows.length) throw new Error('archive-empty');
+  return result;
+}
+
+async function copyArchiveCycleToLocal() {
+  if (!archiveSelectedCycleId) return;
+  const ok = window.WKD?.confirmDialog
+    ? await window.WKD.confirmDialog({
+      title: t('regionSettings.archiveCopyLocalTitle', 'Скопіювати цикл у локальний список?'),
+      message: tv('regionSettings.archiveCopyLocalMessage', 'Цикл {cycle} буде завантажений у локальний список цього браузера.', { cycle: archiveSelectedCycleId }),
+      note: t('regionSettings.archiveCopyLocalNote', 'Firebase не використовується. Поточний локальний список буде замінений.'),
+      icon: '↙',
+      acceptText: t('regionSettings.copyArchiveToLocal', 'Скопіювати в локальний')
+    })
+    : window.confirm(t('regionSettings.archiveCopyLocalTitle', 'Скопіювати цикл у локальний список?'));
+  if (!ok) return;
+  try {
+    const result = await loadSelectedArchiveCycleFull('local');
+    const players = archiveRowsToLocalPlayers(result.rows);
+    if (!players.length) throw new Error('archive-empty');
+    if (window.WKD?.saveJson && window.WKD?.storageKeys?.players) window.WKD.saveJson(window.WKD.storageKeys.players, players);
+    else localStorage.setItem('wkd.clean.players.v1', JSON.stringify(players));
+    if (typeof window.WKD?.setPlayers === 'function') window.WKD.setPlayers(players, { persist: true, normalized: true, eventSource: 'archive-cycle-local' });
+    document.dispatchEvent(new CustomEvent('wkd:players-updated', { detail: { source: 'archive-cycle-local', persist: true } }));
+    localStorage.setItem('wkd.players.sourceMode', 'local');
+    setDynamicText('#regionArchiveStatus', tv('regionSettings.archiveCopiedToLocal', 'Скопійовано в локальний список: {count} гравців. Firebase reads: 0.', { count: players.length }));
+  } catch (error) {
+    console.warn('[WKD] archive copy to local failed:', error);
+    setDynamicText('#regionArchiveStatus', t('regionSettings.archiveCopyLocalFailed', 'Не вдалося скопіювати архів у локальний список.'));
+  }
+}
+
+async function restoreArchiveCycleToActiveD1() {
+  if (!archiveSelectedCycleId) return;
+  const ok = window.WKD?.confirmDialog
+    ? await window.WKD.confirmDialog({
+      title: t('regionSettings.archiveRestoreD1Title', 'Відновити D1-таблицю як активну?'),
+      message: tv('regionSettings.archiveRestoreD1Message', 'Цикл {cycle} стане активною таблицею регіону R{region}.', { cycle: archiveSelectedCycleId, region: currentRegion }),
+      note: t('regionSettings.archiveRestoreD1Note', 'Це не переписує Firestore-заявки. Firebase reads/writes: 0. Якщо треба повне відновлення Firestore — це окремий дорогий крок.'),
+      icon: '↻',
+      acceptText: t('regionSettings.restoreArchiveActive', 'Відновити D1-таблицю')
+    })
+    : window.confirm(t('regionSettings.archiveRestoreD1Title', 'Відновити D1-таблицю як активну?'));
+  if (!ok) return;
+  try {
+    const result = await loadSelectedArchiveCycleFull('restore');
+    const settings = { ...(result.settings || {}), currentCycleId: archiveSelectedCycleId };
+    const publishResult = await publishRegionTableSnapshot(currentUser, {
+      region: currentRegion,
+      cycleId: archiveSelectedCycleId,
+      settings,
+      rows: result.rows
+    });
+    if (publishResult?.ok === false || publishResult?.skipped) throw new Error(publishResult?.error || 'restore-skipped');
+    await loadArchiveCycles(true);
+    setDynamicText('#regionArchiveStatus', tv('regionSettings.archiveRestoredD1', 'D1-таблицю відновлено як активну: {count} гравців. Firebase reads/writes: 0.', { count: result.rows.length }));
+  } catch (error) {
+    console.warn('[WKD] archive restore D1 failed:', error);
+    setDynamicText('#regionArchiveStatus', t('regionSettings.archiveRestoreD1Failed', 'Не вдалося відновити D1-таблицю з архіву.'));
   }
 }
 
@@ -1116,6 +1213,7 @@ async function load(user) {
 }
 
 function bind() {
+  updateSettingsTabsLayout();
   $('#regionSettingsForm')?.addEventListener('submit', save);
   $('#openAddRegionBtn')?.addEventListener('click', () => toggleManualRegionForm());
   $('#cancelAddRegionBtn')?.addEventListener('click', () => toggleManualRegionForm(false));
@@ -1230,6 +1328,8 @@ function bind() {
     archiveSearch = trim($('#regionArchiveSearch')?.value || '');
     viewArchiveCycle(archiveSelectedCycleId, 1);
   });
+  $('#regionArchiveCopyLocalBtn')?.addEventListener('click', () => copyArchiveCycleToLocal());
+  $('#regionArchiveRestoreD1Btn')?.addEventListener('click', () => restoreArchiveCycleToActiveD1());
   $('#regionArchiveSearch')?.addEventListener('keydown', event => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -1272,6 +1372,8 @@ document.addEventListener('wkd:language-changed', () => {
   renderRuleLists();
   renderAlliances();
   renderRegionColorBuilder();
+  updateSettingsTabsLayout();
+  renderArchiveCycleList();
   renderRotationModal();
   updateRotationSummary();
   updatePreview();
