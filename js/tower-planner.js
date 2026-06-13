@@ -137,6 +137,12 @@ window.WKD = window.WKD || {};
     return `${finalPhrase('shift', lang)} ${n}${half ? ` • ${half}` : ''}`;
   }
   function towerLangName(tower, lang) { return TOWER_WORDS[tower.id]?.[lang] || (lang === 'uk' ? tower.uk : tower.en); }
+  function towerName(towerOrId = '') {
+    const tower = typeof towerOrId === 'object'
+      ? towerOrId
+      : TOWERS.find(item => item.id === clean(towerOrId).toLowerCase());
+    return tower ? towerLangName(tower, siteLang()) : '';
+  }
 
   plan = normalizePlan(null);
 

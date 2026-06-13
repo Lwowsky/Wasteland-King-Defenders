@@ -1,5 +1,5 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=189';
+import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=190';
 import {
   canManageRegion,
   canViewAnyRegion,
@@ -25,8 +25,8 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=189';
-import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1 } from '../services/region-table-cache.js?v=189';
+} from '../services/region-db.js?v=190';
+import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1 } from '../services/region-table-cache.js?v=190';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
