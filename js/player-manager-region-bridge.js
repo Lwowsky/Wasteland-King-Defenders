@@ -1,11 +1,12 @@
-import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=190';
+import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=191';
 import { getFirebase, watchAuth } from './services/firebase-service.js';
 import { getGameProfile, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=190';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=191';
 
 window.WKD = window.WKD || {};
 
 const SOURCE_KEY = 'wkd.players.sourceMode';
+const REGION_KEY = 'wkd.players.activeRegion';
 const REGION_SOURCE = 'regionForm';
 
 let currentUser = null;
@@ -16,6 +17,7 @@ let loadedRows = [];
 let loadedAlliances = [];
 let loadingPromise = null;
 let loadingRegion = '';
+let regionLoadRequestId = 0;
 let allianceLoadingPromise = null;
 let loadedAlliancesRegion = '';
 let currentRegionSettings = null;
@@ -24,7 +26,9 @@ const authReady = new Promise(resolve => { authReadyResolve = resolve; });
 
 function tr(key, fallback = '') { return window.WKD_t ? window.WKD_t(key) : fallback; }
 function normalizeMode(mode) { return mode === 'region' ? 'region' : 'local'; }
-function regionOf(profile = currentProfile) { return String(getGameProfile(profile || {}).region || currentRegion || '').trim(); }
+function savedRegion() { return String(localStorage.getItem(REGION_KEY) || '').replace(/[^0-9]/g, ''); }
+function profileRegionOf(profile = currentProfile) { return String(getGameProfile(profile || {}).region || '').replace(/[^0-9]/g, ''); }
+function regionOf(profile = currentProfile) { return String(currentRegion || savedRegion() || profileRegionOf(profile) || '').trim(); }
 function canUseRegion() { return Boolean(currentUser && isProfileComplete(currentProfile)); }
 function canEditRegion(region = currentRegion) { return Boolean(currentUser && region && canManageRegion(currentProfile, region, currentUser)); }
 function canPlanRegion(region = currentRegion) { return Boolean(currentUser && region && canEditRegionTowerPlan(currentProfile, region, currentUser, currentRegionSettings || {})); }
@@ -84,28 +88,37 @@ function expandRegionPlayerRow(row = {}) {
 async function loadRegionRows(force = false, regionOverride = '') {
   await authReady;
   if (!canUseRegion()) return { rows: [], region: '', profile: currentProfile, canUseRegion: false };
-  const requestedRegion = String(regionOverride || currentRegion || regionOf()).trim();
-  if (loadingPromise && (!requestedRegion || requestedRegion === loadingRegion)) return loadingPromise;
-  if (!force && loadedRows.length && (!requestedRegion || requestedRegion === currentRegion)) {
+  const requestedRegion = String(regionOverride || currentRegion || regionOf()).replace(/[^0-9]/g, '');
+  if (!requestedRegion) return { rows: [], region: '', profile: currentProfile, canUseRegion: true };
+  if (loadingPromise && requestedRegion === loadingRegion) return loadingPromise;
+  if (!force && loadedRows.length && requestedRegion === currentRegion) {
     return { rows: loadedRows, region: currentRegion, profile: currentProfile, canUseRegion: true };
   }
-  if (requestedRegion) currentRegion = requestedRegion;
+  const requestId = ++regionLoadRequestId;
+  currentRegion = requestedRegion;
   loadingRegion = requestedRegion;
+  localStorage.setItem(REGION_KEY, requestedRegion);
   loadingPromise = listRegionRegistrations(currentUser, requestedRegion, {
     d1Only: true,
     forceD1: Boolean(force),
     d1TtlMs: force ? 0 : undefined
   }).then(result => {
+    const resultRegion = String(result.region || requestedRegion || '').replace(/[^0-9]/g, '');
+    if (requestId !== regionLoadRequestId || resultRegion !== requestedRegion) {
+      return { rows: loadedRows, region: currentRegion, profile: currentProfile, canUseRegion: true, stale: true };
+    }
     currentProfile = result.profile || currentProfile;
-    currentRegion = result.region || currentRegion || requestedRegion || regionOf(result.profile || currentProfile);
+    currentRegion = resultRegion;
     currentRegionSettings = result.settings || currentRegionSettings;
-    loadedRows = (result.rows || []).flatMap(row => expandRegionPlayerRow(row).map(player => ({ ...player, source: REGION_SOURCE })));
+    loadedRows = (result.rows || [])
+      .filter(row => !String(row.region || '').replace(/[^0-9]/g, '') || String(row.region || '').replace(/[^0-9]/g, '') === currentRegion)
+      .flatMap(row => expandRegionPlayerRow(row).map(player => ({ ...player, source: REGION_SOURCE })));
     if (result?.d1Missing) {
       console.warn('[WKD] region table D1 snapshot missing; Firebase fallback was not used to protect reads.', currentRegion);
       window.WKD?.showNotice?.(tr('players.regionD1MissingNoFirestore', 'Таблиця регіону ще не має D1-кешу. Firebase fallback не запускався, щоб не витрачати reads.'));
     }
     return { rows: loadedRows, region: currentRegion, profile: currentProfile, canUseRegion: true, d1Missing: Boolean(result?.d1Missing), source: result?.source || '' };
-  }).finally(() => { loadingPromise = null; loadingRegion = ''; });
+  }).finally(() => { if (requestId === regionLoadRequestId) { loadingPromise = null; loadingRegion = ''; } });
   return loadingPromise;
 }
 
@@ -302,6 +315,7 @@ async function setTowerPlannerSource(options = {}) {
   const region = String(options.region || currentRegion || regionOf() || '').trim();
   if (region) {
     currentRegion = region;
+    localStorage.setItem(REGION_KEY, region);
     loadedRows = [];
     loadedAlliances = [];
     loadedAlliancesRegion = '';
@@ -375,7 +389,7 @@ async function handleAuth(user) {
   loadedRows = [];
   if (currentUser) {
     currentProfile = await getUserProfile(currentUser.uid).catch(() => null);
-    currentRegion = regionOf(currentProfile);
+    currentRegion = savedRegion() || profileRegionOf(currentProfile);
   }
   authReadyResolve?.();
   if (!canUseRegion() && currentMode === 'region') setMode('local');

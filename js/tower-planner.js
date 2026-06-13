@@ -230,6 +230,8 @@ window.WKD = window.WKD || {};
   function modal() { return document.getElementById('towerPlannerModal'); }
   function finalModal() { return document.getElementById('finalPlanOnlyModal'); }
   function players() { return Array.isArray(WKD.state?.players) ? WKD.state.players : []; }
+  let playerEntryCache = null;
+  function invalidatePlayerEntryCache() { playerEntryCache = null; }
   function playerId(player = {}, index = 0) {
     if (!player._rowId) player._rowId = String(player.id || player.uid || `local-${index + 1}`);
     return String(player._rowId);
@@ -271,8 +273,13 @@ window.WKD = window.WKD || {};
     return (SHIFT_ORDER.includes(shift) || shift === 'both') ? shift : '';
   }
   function playerEntries() {
+    const rows = players();
     sanitizeShiftOverridesForCurrentPlayers();
-    return players().map((player, index) => {
+    const overridesKey = JSON.stringify(plan?.shiftOverrides || {});
+    if (playerEntryCache && playerEntryCache.rows === rows && playerEntryCache.length === rows.length && playerEntryCache.overridesKey === overridesKey) {
+      return playerEntryCache.entries;
+    }
+    const entries = rows.map((player, index) => {
       const id = playerId(player, index);
       const stablePlayer = playerWithStableShift(player);
       const baseShift = strictBaseShiftForPlayer(stablePlayer);
@@ -284,8 +291,14 @@ window.WKD = window.WKD || {};
         index
       };
     });
+    playerEntryCache = { rows, length: rows.length, overridesKey, entries, map: new Map(entries.map(entry => [String(entry.id || ''), entry.player])) };
+    return entries;
   }
-  function playerById(id) { return playerEntries().find(entry => entry.id === String(id || ''))?.player || null; }
+  function playerById(id) {
+    const key = String(id || '');
+    const entries = playerEntries();
+    return playerEntryCache?.map?.get(key) || entries.find(entry => entry.id === key)?.player || null;
+  }
   function currentPlayerIdSet() {
     return new Set(playerEntries().map(entry => String(entry.id || '')).filter(Boolean));
   }
@@ -1460,6 +1473,7 @@ window.WKD = window.WKD || {};
     if (!shifts.includes(activeFinalShift)) activeFinalShift = shifts[0] || 'shift1';
     const shiftButtons = shifts.map(shift => `<button class="btn btn-sm ${shift === activeFinalShift ? 'is-active' : ''}" type="button" data-final-shift="${shift}">${shiftLabel(shift)}</button>`).join('');
     const languageButton = `<button class="btn btn-sm tower-final-lang-trigger board-lang-trigger" type="button" data-final-lang-open>${esc(tr('finalPlan.langButton', 'Мова плану'))}</button>`;
+    const sourceButton = signedInForTowerSource() ? `<button class="btn btn-sm" type="button" data-tower-scope-open>${esc(towerSourceLabel())}</button>` : '';
     const exportButtons = `
       <button class="btn btn-sm" type="button" data-final-download>${esc(tr('finalPlan.downloadPng', 'Завантажити PNG'))}</button>
       <button class="btn btn-sm" type="button" data-final-txt>TXT</button>
@@ -1468,16 +1482,17 @@ window.WKD = window.WKD || {};
     if (info.mode !== 'region') {
       root.classList.add('is-local-mode');
       root.classList.remove('is-region-mode');
-      root.innerHTML = `${shiftButtons}${languageButton}${exportButtons}`;
+      root.innerHTML = `${shiftButtons}${languageButton}${sourceButton}${exportButtons}`;
       return;
     }
     root.classList.add('is-region-mode');
     root.classList.remove('is-local-mode');
-    root.innerHTML = `${shiftButtons}${languageButton}
+    root.innerHTML = `${shiftButtons}${languageButton}${sourceButton}
       ${canPublish ? `<button class="btn btn-sm" type="button" data-tower-publish>${esc(tr('tower.publishPlan', 'Опублікувати в регіон'))}</button>` : ''}
       <span class="tower-final-more-wrap">
         <button class="btn btn-sm" type="button" data-final-more-toggle aria-haspopup="true" aria-expanded="false">${esc(tr('tower.moreActions', 'Ще'))} ▾</button>
         <span class="tower-final-more-menu" data-final-more-menu hidden>
+          <button type="button" data-tower-scope-open>${esc(tr('tower.changeSource', 'Переключити регіон'))}</button>
           ${hasDraft ? `<button type="button" data-tower-load-published>${esc(tr('tower.loadPublishedPlan', 'Повернути опублікований'))}</button>` : ''}
           <button type="button" data-final-download>${esc(tr('finalPlan.downloadPng', 'Завантажити PNG'))}</button>
           <button type="button" data-final-txt>TXT</button>
@@ -2079,6 +2094,7 @@ window.WKD = window.WKD || {};
     WKD.showNotice?.(tr('tower.importShiftRestored', 'Зміни гравців відновлено з імпортованого стану.'));
   }
   function autoDistribute({ topup = false } = {}) {
+    invalidatePlayerEntryCache();
     recordLocalPlannerAction(topup ? 'autofill-towers' : 'redistribute');
     readFormValues();
     const shifts = availableShifts();
@@ -2638,6 +2654,7 @@ ${text}` : text };
       resetPlanToEmpty(event.detail?.source || 'hard-reset').catch(error => console.warn('[WKD] tower hard reset skipped:', error));
     });
     document.addEventListener('wkd:players-updated', event => {
+      invalidatePlayerEntryCache();
       const source = event?.detail?.source || '';
       window.setTimeout(() => {
         disableTierLimitsForFreshData(source).catch(error => console.warn('tower tier limit reset skipped', error));

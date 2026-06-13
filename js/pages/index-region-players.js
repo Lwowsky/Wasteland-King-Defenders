@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=190';
+import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=191';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -20,6 +20,8 @@ let currentMode = normalizeMode(localStorage.getItem(SOURCE_KEY) || 'local');
 let loadedRegionRows = [];
 let loadedRegion = '';
 let loadingRegion = false;
+let loadingRegionKey = '';
+let regionLoadRequestId = 0;
 let loadedRegionAlliances = [];
 let controllerReady = false;
 
@@ -468,8 +470,9 @@ function profileRegionOptions() {
 
 function activeProfileRegion() {
   const options = profileRegionOptions();
-  const saved = String(localStorage.getItem(REGION_KEY) || '').replace(/[^0-9]/g, '');
-  return options.some(item => item.region === saved) ? saved : (options[0]?.region || getGameProfile(currentProfile || {}).region || '');
+  const saved = normalizeRegion(localStorage.getItem(REGION_KEY) || '');
+  if (saved && (options.some(item => item.region === saved) || canManageRegion(currentProfile, saved, currentUser))) return saved;
+  return options[0]?.region || getGameProfile(currentProfile || {}).region || '';
 }
 
 function renderRegionSwitch() {
@@ -583,12 +586,16 @@ function renderCurrentRows() {
 }
 
 async function loadRegionRows(force = false, regionOverride = '') {
-  if (!canUseRegionSource() || loadingRegion) return;
-  const requestedRegion = String(regionOverride || loadedRegion || getGameProfile(currentProfile || {}).region || '').trim();
-  if (!force && loadedRegionRows.length && (!requestedRegion || requestedRegion === loadedRegion)) return;
+  if (!canUseRegionSource()) return;
+  const requestedRegion = normalizeRegion(regionOverride || loadedRegion || activeProfileRegion() || getGameProfile(currentProfile || {}).region || '');
+  if (!requestedRegion) return;
+  if (!force && loadedRegionRows.length && requestedRegion === loadedRegion) return;
+  const requestId = ++regionLoadRequestId;
   loadingRegion = true;
+  loadingRegionKey = requestedRegion;
+  loadedRegion = requestedRegion;
+  localStorage.setItem(REGION_KEY, requestedRegion);
   updateTransferButtons();
-  if (requestedRegion) loadedRegion = requestedRegion;
   setNote(tv('players.loadingRegionTable', 'Loading region table {region}...', { region: currentRegionLabel() }), 'muted');
   try {
     const result = await listRegionRegistrations(currentUser, requestedRegion, {
@@ -596,23 +603,30 @@ async function loadRegionRows(force = false, regionOverride = '') {
       forceD1: Boolean(force),
       d1TtlMs: force ? 0 : undefined
     });
+    const resultRegion = normalizeRegion(result.region || requestedRegion || loadedRegion);
+    if (requestId !== regionLoadRequestId || resultRegion !== requestedRegion) return;
     currentProfile = result.profile || currentProfile;
-    loadedRegion = normalizeRegion(result.region || requestedRegion || loadedRegion);
+    loadedRegion = resultRegion;
     loadedRegionRows = (result.rows || [])
       .filter(row => !normalizeRegion(row.region || '') || normalizeRegion(row.region || '') === loadedRegion)
       .map(row => ({ ...regionRegistrationToPlayer(row), source: REGION_SOURCE }));
     loadedRegionAlliances = loadedRegion ? await listRegionAlliances(loadedRegion).catch(() => []) : [];
+    if (requestId !== regionLoadRequestId) return;
     updateAllianceColorMap();
     if (result?.d1Missing) {
       setNote(t('players.regionD1MissingNoFirestore', 'Таблиця регіону ще не має D1-кешу. Firebase fallback не запускався, щоб не витрачати reads.'), 'warn');
     }
   } catch (error) {
+    if (requestId !== regionLoadRequestId) return;
     console.error(error);
     loadedRegionRows = [];
     setNote(t('players.regionLoadFailed', 'Could not load the region table. Check the profile or region.'), 'warn');
   } finally {
-    loadingRegion = false;
-    updateTransferButtons();
+    if (requestId === regionLoadRequestId) {
+      loadingRegion = false;
+      loadingRegionKey = '';
+      updateTransferButtons();
+    }
   }
 }
 

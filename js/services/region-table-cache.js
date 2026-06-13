@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=190';
+import { trackCloudflareUsage } from './usage-tracker.js?v=191';
 
 const MAX_ROWS = 2000;
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -597,7 +597,7 @@ export async function saveRegionRegistrationD1First(user, region, values = {}, s
   if (!isRegionTableCacheEnabled()) throw new Error('region-table-cache-disabled');
   const safeRegion = cleanRegion(region || values.region);
   if (!safeRegion) throw new Error('region-required');
-  const cycleId = cleanText(settings?.currentCycleId || values?.cycleId || 'active', 80) || 'active';
+  const cycleId = cleanText(settings?.currentCycleId || values?.cycleId || '', 80);
   const token = await getFirebaseToken(user);
   const farmId = cleanText(values?.farmId || 'main', 80) || 'main';
   const publicKey = browserRegistrationKey(safeRegion, cycleId);
@@ -655,6 +655,69 @@ export async function mirrorRegionRegistration(user, region, row, settings = {})
     console.warn('[WKD] region table JSON mirror skipped:', error);
     return { ok: false, skipped: true, error: error.message };
   });
+}
+
+
+function cleanDefinedRowPatch(values = {}) {
+  const out = {};
+  Object.entries(values || {}).forEach(([key, value]) => {
+    if (value !== undefined) out[key] = value;
+  });
+  return out;
+}
+
+function editValuesToD1Row(registrationId = '', values = {}) {
+  const row = cleanDefinedRowPatch({
+    id: cleanText(registrationId, 180),
+    nickname: values.name ?? values.nickname,
+    alliance: values.alliance,
+    troopType: values.troopType ?? values.troopLabel ?? values.role,
+    troopLabel: values.troopLabel,
+    tier: values.tier,
+    lairLevel: values.lairLevel ?? values.denLevel,
+    captureRegion: values.lair ?? values.captureRegion,
+    marchSize: values.march ?? values.marchSize,
+    rallySize: values.rally ?? values.rallySize,
+    captainReady: values.captain ?? values.captainReady,
+    shift: values.shift ?? values.shiftLabel,
+    shiftLabel: values.shiftLabel,
+    comment: values.comment,
+    extraEnabled: values.extraEnabled,
+    extraSquads: values.extraSquads,
+    extraTroopType: values.extraTroopType,
+    extraTier: values.extraTier,
+    customFields: values.customFields,
+    updatedAtMs: Date.now()
+  });
+  Object.keys(row).forEach(key => {
+    if (row[key] === null || row[key] === '') delete row[key];
+  });
+  row.id = cleanText(registrationId || values.id || '', 180);
+  return row;
+}
+
+export async function updateRegionTableRowD1(user, region, registrationId, values = {}, settings = {}, options = {}) {
+  if (!isRegionTableCacheEnabled()) throw new Error('region-table-cache-disabled');
+  const safeRegion = cleanRegion(region || values.region);
+  const id = cleanText(registrationId || values.id || '', 180);
+  if (!safeRegion || !id) throw new Error('region-row-update-required');
+  const token = await getFirebaseToken(user);
+  if (!token) throw new Error('auth-token-required');
+  const row = editValuesToD1Row(id, values || {});
+  removeLocalTableCache('regionTableSnapshot', safeRegion);
+  const data = await requestJson('/api/region-table/registration', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      region: safeRegion,
+      cycleId: cleanText(settings?.currentCycleId || values?.cycleId || 'active', 80) || 'active',
+      settings: sanitizeSettings(settings || {}),
+      row,
+      forceUpdate: Boolean(options?.forceUpdate),
+      updateOnly: true
+    })
+  });
+  return { ok: data.ok !== false, region: safeRegion, id, row: data.row || null, ...data, d1First: true };
 }
 
 

@@ -1280,9 +1280,8 @@ async function handleRegionTableRegistration(request, env) {
     return json({ ok: false, error: "bad_json" }, 400);
   }
   const region = normalizeRegion(body?.region || body?.row?.region);
-  const cycleId = normalizeCycleId(
-    body?.cycleId || body?.settings?.currentCycleId || "active",
-  );
+  const requestedCycleRaw = clean(body?.cycleId || body?.settings?.currentCycleId || "", 90);
+  let cycleId = normalizeCycleId(requestedCycleRaw || "active");
   if (!region) return json({ ok: false, error: "region_required" }, 400);
 
   const isPublicRegistration = Boolean(body?.publicLink || body?.shareCode || body?.row?.publicKey);
@@ -1310,17 +1309,15 @@ async function handleRegionTableRegistration(request, env) {
       return json({ ok: false, error: "share_cycle_mismatch" }, 409);
   }
 
-  const row = sanitizeTableRow({
-    ...(body?.row || {}),
-    region,
-    uid: user?.uid ? (body?.row?.uid || user.uid) : '',
-  });
-  const canWrite = user?.uid
-    ? (isAdminUid(env, user.uid) || row.uid === user.uid || !row.uid)
-    : Boolean(isPublicRegistration && row.nickname && row.publicKey);
-  if (!canWrite) return json({ ok: false, error: "row_owner_mismatch" }, 403);
-
-  const current = (await readTable(db, region, cycleId)) || {
+  const rawRow = body?.row && typeof body.row === "object" ? body.row : {};
+  let current = null;
+  if (body?.updateOnly && !requestedCycleRaw) {
+    current = await getActiveTable(db, region);
+    if (current?.cycleId) cycleId = current.cycleId;
+  } else {
+    current = await readTable(db, region, cycleId);
+  }
+  current = current || {
     region,
     cycleId,
     version: 0,
@@ -1330,6 +1327,35 @@ async function handleRegionTableRegistration(request, env) {
   const rows = Array.isArray(current.rows)
     ? current.rows.map(sanitizeTableRow)
     : [];
+  const rawId = clean(rawRow.id || "", 180);
+  const rawUid = clean(rawRow.uid || "", 160);
+  const rawPublicKey = clean(rawRow.publicKey || "", 160);
+  const rawFarmId = clean(rawRow.farmId || "main", 80) || "main";
+  const existingIndex = rows.findIndex(
+    (item) =>
+      (rawId && item.id === rawId) ||
+      (rawUid && item.uid === rawUid && item.farmId === rawFarmId) ||
+      (rawPublicKey && item.publicKey === rawPublicKey && item.farmId === rawFarmId),
+  );
+  const existingRow = existingIndex >= 0 ? rows[existingIndex] : null;
+  if (body?.updateOnly && !existingRow) {
+    return json({ ok: false, error: "region_row_not_found" }, 404);
+  }
+
+  const mergedRawRow = {
+    ...(existingRow || {}),
+    ...rawRow,
+    region,
+    uid: user?.uid ? (rawRow.uid || existingRow?.uid || (!existingRow ? user.uid : "")) : (rawRow.uid || existingRow?.uid || ""),
+  };
+  const row = sanitizeTableRow(mergedRawRow);
+  if (!row.nickname) return json({ ok: false, error: "registration_nickname_required" }, 400);
+
+  const canWrite = user?.uid
+    ? (isAdminUid(env, user.uid) || await canWriteRegionD1(db, env, user, region) || row.uid === user.uid || !row.uid)
+    : Boolean(isPublicRegistration && row.nickname && row.publicKey);
+  if (!canWrite) return json({ ok: false, error: "row_owner_mismatch" }, 403);
+
   const key = row.id || `${row.uid || row.publicKey || "guest"}:${row.farmId || "main"}`;
   const nicknameKey = normalizedNickname(row.nickname);
   const duplicate = rows.find(item => {
@@ -1346,12 +1372,12 @@ async function handleRegionTableRegistration(request, env) {
       (row.uid && item.uid === row.uid && item.farmId === row.farmId) ||
       (row.publicKey && item.publicKey === row.publicKey && item.farmId === row.farmId),
   );
-  const existingRow = index >= 0 ? rows[index] : null;
-  const nextRow = { ...row, id: existingRow?.id || key };
-  const unchanged = existingRow ? sameRegistrationData(existingRow, nextRow) : false;
+  const nextExistingRow = index >= 0 ? rows[index] : null;
+  const nextRow = { ...row, id: nextExistingRow?.id || key };
+  const unchanged = nextExistingRow ? sameRegistrationData(nextExistingRow, nextRow) : false;
   const forceUpdate = Boolean(body?.forceUpdate);
 
-  if (existingRow && unchanged && !forceUpdate) {
+  if (nextExistingRow && unchanged && !forceUpdate) {
     return json({
       ok: true,
       version: current.version || 0,
@@ -1360,6 +1386,7 @@ async function handleRegionTableRegistration(request, env) {
       unchanged: true,
       notWritten: true,
       action: "unchanged",
+      row: nextExistingRow,
     });
   }
 
@@ -1394,6 +1421,7 @@ async function handleRegionTableRegistration(request, env) {
     existing: index >= 0,
     unchanged: false,
     action: index >= 0 ? (unchanged ? "refreshed" : "updated") : "created",
+    row: rows[index >= 0 ? index : rows.length - 1],
   });
 }
 
@@ -1433,9 +1461,8 @@ async function handleRegionTableSnapshot(request, env) {
   const region = normalizeRegion(body?.region);
   if (!region || !await canWriteRegionD1(db, env, user, region))
     return json({ ok: false, error: "region_access_denied" }, 403);
-  const cycleId = normalizeCycleId(
-    body?.cycleId || body?.settings?.currentCycleId || "active",
-  );
+  const requestedCycleRaw = clean(body?.cycleId || body?.settings?.currentCycleId || "", 90);
+  let cycleId = normalizeCycleId(requestedCycleRaw || "active");
   if (!region) return json({ ok: false, error: "region_required" }, 400);
   const rows = (Array.isArray(body?.rows) ? body.rows : [])
     .map((row) => sanitizeTableRow({ ...row, region }))
