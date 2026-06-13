@@ -2549,14 +2549,19 @@ async function selectOldD1ShareCodes(db, { cutoffMs = 0, region = '', limitCount
   const nowMs = Date.now();
   const params = allOld ? [] : [nowMs, Number(cutoffMs) || 0];
   let where = allOld
-    ? `created_at_ms > 0`
-    : `((expires_at_ms > 0 AND expires_at_ms < ?1) OR (revoked = 1 AND created_at_ms > 0 AND created_at_ms < ?2))`;
+    ? `s.created_at_ms > 0`
+    : `((s.expires_at_ms > 0 AND s.expires_at_ms < ?1) OR (s.revoked = 1 AND s.created_at_ms > 0 AND s.created_at_ms < ?2) OR (s.created_at_ms > 0 AND s.created_at_ms < ?2))`;
+  where += ` AND s.cycle_id != COALESCE(ra.cycle_id, 'active')`;
   if (region) {
     params.push(region);
-    where += ` AND region = ?${params.length}`;
+    where += ` AND s.region = ?${params.length}`;
   }
   const result = await db.prepare(
-    `SELECT code FROM region_table_shares WHERE ${where} ORDER BY created_at_ms ASC LIMIT ${safeLimit}`
+    `SELECT s.code AS code
+       FROM region_table_shares s
+       LEFT JOIN region_active ra ON ra.region = s.region
+      WHERE ${where}
+      ORDER BY s.created_at_ms ASC LIMIT ${safeLimit}`
   ).bind(...params).all();
   return (result?.results || []).map(row => normalizeCode(row.code)).filter(Boolean);
 }
@@ -2568,14 +2573,19 @@ async function selectOldD1FinalPlanCodes(db, { cutoffMs = 0, region = '', limitC
   const nowMs = Date.now();
   const params = allOld ? [] : [nowMs, Number(cutoffMs) || 0];
   let where = allOld
-    ? `(updated_at_ms > 0 OR created_at_ms > 0)`
-    : `((expires_at_ms > 0 AND expires_at_ms < ?1) OR (updated_at_ms > 0 AND updated_at_ms < ?2) OR (created_at_ms > 0 AND created_at_ms < ?2))`;
+    ? `fp.updated_at_ms > 0`
+    : `((fp.expires_at_ms > 0 AND fp.expires_at_ms < ?1) OR (fp.updated_at_ms > 0 AND fp.updated_at_ms < ?2))`;
+  where += ` AND fp.cycle_id != COALESCE(ra.cycle_id, 'active')`;
   if (region) {
     params.push(region);
-    where += ` AND region = ?${params.length}`;
+    where += ` AND fp.region = ?${params.length}`;
   }
   const result = await db.prepare(
-    `SELECT code FROM final_plan_shares WHERE ${where} ORDER BY COALESCE(updated_at_ms, created_at_ms, 0) ASC LIMIT ${safeLimit}`
+    `SELECT fp.code AS code
+       FROM final_plan_shares fp
+       LEFT JOIN region_active ra ON ra.region = fp.region
+      WHERE ${where}
+      ORDER BY fp.updated_at_ms ASC LIMIT ${safeLimit}`
   ).bind(...params).all();
   return (result?.results || []).map(row => normalizeCode(row.code)).filter(Boolean);
 }

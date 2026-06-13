@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="css/region-page.css" />
   <link rel="stylesheet" href="css/confirm-modal.css" />
   <link rel="stylesheet" href="css/responsive.css" />
-  <script defer src="js/i18n.js?v=199"></script>
+  <script defer src="js/i18n.js?v=200"></script>
   <script defer src="js/i18n-uk.js"></script>
   <script defer src="js/i18n-en.js"></script>
   <script defer src="js/i18n-ru.js"></script>
@@ -29,17 +29,17 @@
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
   <script defer src="js/core/assets-loader.js"></script>
-  <script defer src="js/badges.js?v=199"></script>
+  <script defer src="js/badges.js?v=200"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/core/state.js"></script>
   <script defer src="js/confirm-modal.js"></script>
   <script defer src="js/core/app-boot.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/auth-google.js?v=199"></script>
-  <script type="module" src="js/notifications.js?v=199"></script>
-  <script type="module" src="js/pages/admin-page.js?v=199"></script>
-  <script type="module" src="js/pages/security-page.js?v=199"></script>
+  <script type="module" src="js/auth-google.js?v=200"></script>
+  <script type="module" src="js/notifications.js?v=200"></script>
+  <script type="module" src="js/pages/admin-page.js?v=200"></script>
+  <script type="module" src="js/pages/security-page.js?v=200"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -222,7 +222,7 @@
             <div class="admin-archive-actions">
               <button class="btn" id="inspectD1StorageBtn" type="button" data-i18n="admin.d1StorageInspect">Перевірити D1 таблиці</button>
               <button class="btn" id="scanD1ArchiveBtn" type="button" data-i18n="admin.d1ArchiveScan">Перевірити D1 архів</button>
-              <label class="admin-clean-region-label"><span data-i18n="admin.cleanupAge">Вік</span><select id="cleanD1AgeSelect"><option value="30" data-i18n="admin.cleanupAge30">30+ днів</option><option value="60" data-i18n="admin.cleanupAge60">60+ днів</option><option value="90" data-i18n="admin.cleanupAge90">90+ днів</option><option value="0" data-i18n="admin.cleanupAgeAny">Усі старі</option></select></label>
+              <label class="admin-clean-region-label"><span data-i18n="admin.cleanupAge">Вік</span><select id="cleanD1AgeSelect"><option value="14" data-i18n="admin.cleanupAge14">14+ днів</option><option value="30" data-i18n="admin.cleanupAge30">30+ днів</option><option value="60" data-i18n="admin.cleanupAge60">60+ днів</option><option value="90" data-i18n="admin.cleanupAge90">90+ днів</option><option value="0" data-i18n="admin.cleanupAgeAny">Усі старі</option></select></label>
               <button class="btn region-save" id="cleanupD1CyclesBtn" type="button" data-i18n="admin.d1ArchiveCleanCycles">Очистити старі цикли</button>
               <button class="btn region-save" id="cleanupD1FinalPlansBtn" type="button" data-i18n="admin.d1ArchiveCleanFinalPlans">Очистити старі фінальні плани</button>
               <button class="btn region-save" id="cleanupD1SharesBtn" type="button" data-i18n="admin.d1ArchiveCleanShares">Очистити прострочені секретні посилання</button>
@@ -234,7 +234,7 @@
           </div>
           <div class="region-note admin-usage-note" id="d1ArchiveStatus" data-i18n="admin.d1ArchiveNote">Очищення запускається тільки вручну й видаляє максимум 500 D1 рядків за раз.</div>
           <div class="admin-d1-breakdown" id="d1StorageBreakdown">
-            <div class="region-note admin-usage-note" data-i18n="admin.d1StorageHint">Щоб зменшити D1 розмір: чисть старі цикли 60+ днів, прострочені секретні посилання і старі кампанії. Активний цикл не видаляється.</div>
+            <div class="region-note admin-usage-note" data-i18n="admin.d1StorageHint">Щоб зменшити D1 розмір: чисть старі цикли/фінальні плани/секретні посилання 14+ днів або старше. Активний цикл не видаляється.</div>
           </div>
         </div>
       </section>

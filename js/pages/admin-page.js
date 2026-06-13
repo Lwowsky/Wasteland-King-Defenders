@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, scanD1Archives } from '../services/d1-archive-cleanup.js?v=199';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=199';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=199';
+import { cleanupD1Archives, inspectD1Storage, scanD1Archives } from '../services/d1-archive-cleanup.js?v=200';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=200';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=200';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -22,7 +22,7 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=199';
+} from '../services/user-db.js?v=200';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -31,7 +31,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=199';
+} from '../services/region-db.js?v=200';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -63,7 +63,9 @@ let cloudflareRealUsage = getCachedCloudflareUsage();
 let cloudflareUsageLoading = false;
 let oldFirestoreCleanupCount = 0;
 let oldFirestoreAutoRunning = false;
+let d1AutoCleanupRunning = false;
 const OLD_FIRESTORE_AUTO_KEY = 'wkd.admin.clean.firestoreRegs.auto.v198';
+const D1_AUTO_CLEANUP_KEY = 'wkd.admin.clean.d1SharesFinal.auto.v200';
 const ADMIN_REGION_CACHE_TTL_MS = 5 * 60 * 1000;
 const ADMIN_REGION_CACHE_VERSION = 'v145';
 
@@ -829,8 +831,8 @@ function selectedFirestoreCleanupAge() {
   return Number.isFinite(value) ? Math.max(0, Math.min(3650, value)) : 14;
 }
 function selectedD1CleanupAge() {
-  const value = Number($('#cleanD1AgeSelect')?.value || 30);
-  return Number.isFinite(value) ? Math.max(0, Math.min(3650, value)) : 30;
+  const value = Number($('#cleanD1AgeSelect')?.value || 14);
+  return Number.isFinite(value) ? Math.max(0, Math.min(3650, value)) : 14;
 }
 
 function setOldFirestoreStatus(text, type = 'muted') {
@@ -974,10 +976,38 @@ async function maybeRunOldFirestoreAutoCleanup() {
   }
 }
 
+async function maybeRunD1AutoCleanup() {
+  if (d1AutoCleanupRunning || !currentUser || !canUseLimitsPanel()) return;
+  const region = selectedCleanRegion();
+  if (!region) return;
+  const key = `${D1_AUTO_CLEANUP_KEY}.${region}`;
+  const now = Date.now();
+  const last = Number(localStorage.getItem(key) || 0) || 0;
+  if (now - last < 24 * 60 * 60 * 1000) return;
+  d1AutoCleanupRunning = true;
+  try {
+    localStorage.setItem(key, String(now));
+    const shares = await cleanupD1Archives(currentUser, { scope: 'shares', region, retentionDays: 14, maxDeletes: 200 });
+    const finalPlans = await cleanupD1Archives(currentUser, { scope: 'finalPlans', region, retentionDays: 14, maxDeletes: 200 });
+    const deleted = Number(shares.deleted || 0) + Number(finalPlans.deleted || 0);
+    if (deleted > 0) {
+      setD1ArchiveStatus(tv('admin.d1AutoCleanupDone', 'D1 автоочистка 14+ днів: видалено {count} старих секретних посилань/фінальних планів. Активний цикл не чіпався.', { count: deleted }), 'success');
+      await runD1StorageInspect().catch(() => null);
+    }
+  } catch (error) {
+    console.warn('[WKD] D1 auto cleanup skipped:', error);
+  } finally {
+    d1AutoCleanupRunning = false;
+  }
+}
+
 async function loadCleanPanel(forceRegions = false) {
   if (!currentUser || !canUseLimitsPanel()) return;
   await ensureCleanRegionsLoaded(forceRegions);
-  if (selectedCleanRegion()) await maybeRunOldFirestoreAutoCleanup();
+  if (selectedCleanRegion()) {
+    await maybeRunOldFirestoreAutoCleanup();
+    await maybeRunD1AutoCleanup();
+  }
 }
 
 function counterValue(key, fallback = 0) {

@@ -855,7 +855,7 @@ window.WKD_I18N_AUTO_ATTR = {
   'admin.firestoreCleanupIdle': 'Check has not run. Auto cleanup runs only for Admin, at most once per 24 hours, and only for registrations older than 14 days.',
   'admin.d1StorageTitle': 'D1 storage',
   'admin.d1StorageLead': 'D1 storage grows from active table rows, cycle archives, final plans, messages/campaigns, and service indexes. D1 archive cleanup remains in Limits → Cloudflare.',
-  'admin.d1StorageHint': 'To reduce D1 size: clean cycles older than 60 days, expired secret links, and old campaigns. The active cycle is not deleted.',
+  'admin.d1StorageHint': 'To reduce D1 size: clean old cycles, final plans, secret links, messages, and logs 14+ days or older. The active cycle is not deleted.',
   'admin.cleanRegionRequired': 'Choose a region to check/clean.',
   'admin.firestoreCleanupHasMore': 'There may be more old registrations — repeat the check after cleanup.',
   'admin.firestoreCleanupLegacyNote': 'Legacy registrations without expiresAtMs were also checked, but only in a small batch.',
@@ -874,4 +874,5 @@ window.WKD_I18N_AUTO_ATTR = {
   'admin.noRegions': 'No regions',
   'players.serverPagingNote': 'The regional table shows a D1 page instead of loading the full list into the browser.',
 
+  'admin.d1AutoCleanupDone': 'D1 auto cleanup 14+ days: deleted {count} old secret links/final plans. Active cycle was not touched.',
 };
