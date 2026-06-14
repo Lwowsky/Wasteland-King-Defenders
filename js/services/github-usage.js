@@ -19,7 +19,7 @@ async function getFirebaseToken(user) {
   try { return await user.getIdToken(false); } catch { return ''; }
 }
 
-const GITHUB_USAGE_CACHE_KEY = 'wkd.githubUsageCache.v203';
+const GITHUB_USAGE_CACHE_KEY = 'wkd.githubUsageCache.v205';
 
 function numberValue(value = 0) {
   const number = Number(value);
@@ -82,6 +82,11 @@ function normalize(data = {}) {
       latestCreatedAt: cleanText(actions.latestCreatedAt || '', 80),
       latestUpdatedAt: cleanText(actions.latestUpdatedAt || '', 80),
       latestDurationMs: numberValue(actions.latestDurationMs || 0),
+      monthDurationMs: numberValue(actions.monthDurationMs || 0),
+      monthMinutesUsed: numberValue(actions.monthMinutesUsed || 0),
+      monthRuns: numberValue(actions.monthRuns || 0),
+      runsLastHour: numberValue(actions.runsLastHour || 0),
+      recentRunsReturned: numberValue(actions.recentRunsReturned || 0),
       recentRuns: Array.isArray(actions.recentRuns) ? actions.recentRuns.slice(0, 10).map(row => ({
         id: cleanText(row.id || '', 80),
         name: cleanText(row.name || '', 160),
@@ -94,10 +99,10 @@ function normalize(data = {}) {
       })) : []
     },
     limits: {
-      actionsMinutesMonth: usageRow(actions.minutesUsed || 0, limits.actionsMinutesMonth || 2000),
+      actionsMinutesMonth: usageRow(actions.monthMinutesUsed || actions.minutesUsed || 0, limits.actionsMinutesMonth || 2000),
       pagesSiteSizeBytes: usageRow((repo.sizeKb || 0) * 1024, limits.pagesSiteSizeBytes || 1024 * 1024 * 1024),
       pagesBandwidthMonthBytes: usageRow(0, limits.pagesBandwidthMonthBytes || 100 * 1024 * 1024 * 1024),
-      pagesBuildsHour: usageRow(0, limits.pagesBuildsHour || 10),
+      pagesBuildsHour: usageRow(actions.runsLastHour || 0, limits.pagesBuildsHour || 10),
       actionsCacheBytes: usageRow(actions.cacheBytes || 0, limits.actionsCacheBytes || 10 * 1024 * 1024 * 1024)
     },
     partialErrors: Array.isArray(data.partialErrors) ? data.partialErrors.map(item => ({

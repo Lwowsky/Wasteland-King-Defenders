@@ -27,6 +27,117 @@ function json(data, status = 200, cache = "no-store") {
   });
 }
 
+
+const PUBLIC_SHARE_CACHE_VERSION = "v206";
+
+function envNumber(value, fallback = 0, min = 0, max = Number.MAX_SAFE_INTEGER) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return fallback;
+  return Math.max(min, Math.min(max, Math.round(num)));
+}
+
+function publicShareCacheSeconds(env) {
+  return envNumber(env?.WKD_PUBLIC_SHARE_CACHE_SECONDS, 60, 0, 600);
+}
+
+function isPublicShareCacheEnabled(env) {
+  const raw = clean(env?.WKD_PUBLIC_SHARE_CACHE_ENABLED ?? "true", 20).toLowerCase();
+  return !["0", "false", "off", "no", "disabled"].includes(raw);
+}
+
+function publicShareCacheBypass(request) {
+  try {
+    const url = new URL(request.url);
+    return url.searchParams.get("refresh") === "1" || url.searchParams.get("nocache") === "1";
+  } catch {
+    return false;
+  }
+}
+
+function publicShareCacheKey(request, type = "", code = "") {
+  const origin = new URL(request.url).origin;
+  return new Request(`${origin}/__wkd-public-share-cache/${PUBLIC_SHARE_CACHE_VERSION}/${clean(type, 20)}/${encodeURIComponent(normalizeCode(code))}`, { method: "GET" });
+}
+
+function publicShareCacheHeaders(cacheSeconds = 60, hit = "MISS") {
+  return {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": `public, max-age=${cacheSeconds}, s-maxage=${cacheSeconds}`,
+    "X-WKD-Public-Cache": hit,
+    "X-WKD-Public-Cache-Version": PUBLIC_SHARE_CACHE_VERSION,
+    ...CORS_HEADERS,
+  };
+}
+
+async function readPublicShareCache(request, env, type = "", code = "") {
+  if (!isPublicShareCacheEnabled(env) || publicShareCacheSeconds(env) <= 0) return null;
+  if (!globalThis.caches?.default || publicShareCacheBypass(request)) return null;
+  const safeCode = normalizeCode(code);
+  if (!safeCode) return null;
+  try {
+    const cached = await globalThis.caches.default.match(publicShareCacheKey(request, type, safeCode));
+    if (!cached) return null;
+    const text = await cached.text();
+    let body = text;
+    try {
+      const data = JSON.parse(text);
+      data.usage = { d1RowsRead: 0, d1RowsWritten: 0 };
+      data.cache = { ...(data.cache || {}), hit: true, ttlSeconds: publicShareCacheSeconds(env), source: "public-share-cache" };
+      body = JSON.stringify(data);
+    } catch {}
+    const headers = new Headers(cached.headers);
+    headers.set("X-WKD-Public-Cache", "HIT");
+    headers.set("X-WKD-Public-Cache-Version", PUBLIC_SHARE_CACHE_VERSION);
+    return new Response(body, { status: cached.status, headers });
+  } catch {
+    return null;
+  }
+}
+
+async function writePublicShareCache(request, env, type = "", code = "", payload = {}, maxSeconds = 0) {
+  const baseTtl = publicShareCacheSeconds(env);
+  const cacheSeconds = Math.max(0, Math.min(baseTtl, envNumber(maxSeconds || baseTtl, baseTtl, 0, baseTtl)));
+  const response = new Response(JSON.stringify(payload), {
+    status: 200,
+    headers: publicShareCacheHeaders(cacheSeconds, "MISS"),
+  });
+  if (!isPublicShareCacheEnabled(env) || cacheSeconds <= 0 || !globalThis.caches?.default || publicShareCacheBypass(request)) {
+    return response;
+  }
+  const safeCode = normalizeCode(code);
+  if (!safeCode) return response;
+  try {
+    await globalThis.caches.default.put(publicShareCacheKey(request, type, safeCode), response.clone());
+  } catch {}
+  return response;
+}
+
+async function deletePublicShareCache(request, type = "", code = "") {
+  if (!globalThis.caches?.default) return false;
+  const safeCode = normalizeCode(code);
+  if (!safeCode) return false;
+  try {
+    return await globalThis.caches.default.delete(publicShareCacheKey(request, type, safeCode));
+  } catch {
+    return false;
+  }
+}
+
+async function deletePublicShareCaches(request, type = "", codes = []) {
+  const unique = [...new Set((Array.isArray(codes) ? codes : []).map(normalizeCode).filter(Boolean))];
+  let count = 0;
+  for (const code of unique.slice(0, 500)) {
+    if (await deletePublicShareCache(request, type, code)) count += 1;
+  }
+  return count;
+}
+
+function remainingCacheSecondsUntil(expiresAtMs = 0, fallbackSeconds = 60) {
+  const expires = Number(expiresAtMs) || 0;
+  if (!expires) return fallbackSeconds;
+  return Math.max(0, Math.floor((expires - Date.now()) / 1000));
+}
+
 function clean(value, max = MAX_FIELD_LENGTH) {
   return String(value ?? "")
     .replace(/[\u0000-\u001F\u007F]/g, " ")
@@ -1840,15 +1951,20 @@ async function handleRegionTableShareCreate(request, env) {
       user.uid,
     )
     .run();
+  await deletePublicShareCache(request, "region-table", code);
   return json({ ok: true, code, region, cycleId });
 }
 
 async function handleRegionTableShareRead(request, env, codeValue) {
+  const code = normalizeCode(codeValue);
+  if (!code) return json({ ok: false, error: "share_code_required" }, 400);
+
+  const cached = await readPublicShareCache(request, env, "region-table", code);
+  if (cached) return cached;
+
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
   await ensureRegionTableSchema(db);
-  const code = normalizeCode(codeValue);
-  if (!code) return json({ ok: false, error: "share_code_required" }, 400);
   const share = await db
     .prepare(
       `SELECT code, region, cycle_id, expires_at_ms, revoked FROM region_table_shares WHERE code = ?1 LIMIT 1`,
@@ -1872,10 +1988,19 @@ async function handleRegionTableShareRead(request, env, codeValue) {
     settings: { currentCycleId: cycleId, open: true, enabled: true },
     rows: [],
   };
-  return json(
-    { ok: true, table: { ...table, region, cycleId } },
-    200,
-    "private, no-store",
+  const payload = {
+    ok: true,
+    table: { ...table, region, cycleId },
+    usage: { d1RowsRead: Math.max(1, Number(table?.rows?.length || 0) + 1), d1RowsWritten: 0 },
+    cache: { enabled: isPublicShareCacheEnabled(env), ttlSeconds: publicShareCacheSeconds(env), source: "public-share-cache" },
+  };
+  return writePublicShareCache(
+    request,
+    env,
+    "region-table",
+    code,
+    payload,
+    remainingCacheSecondsUntil(share.expires_at_ms, publicShareCacheSeconds(env)),
   );
 }
 
@@ -1959,16 +2084,21 @@ async function handleFinalPlanShareCreate(request, env) {
     plan.updatedByName,
     plan.expiresAtMs,
   ).run();
+  await deletePublicShareCache(request, "final-plan", plan.code);
   await grantRegionAccess(db, plan.region, user.uid, 'final-plan-share');
   return json({ ok: true, plan, usage: { d1RowsWritten: 1 } });
 }
 
 async function handleFinalPlanShareRead(request, env, codeValue) {
+  const code = normalizeCode(codeValue);
+  if (!code) return json({ ok: false, error: 'final_plan_code_required' }, 400);
+
+  const cached = await readPublicShareCache(request, env, "final-plan", code);
+  if (cached) return cached;
+
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
   await ensureRegionTableSchema(db);
-  const code = normalizeCode(codeValue);
-  if (!code) return json({ ok: false, error: 'final_plan_code_required' }, 400);
   const row = await db.prepare(
     `SELECT code, region, cycle_id, event_start_at_ms, title, shift, html, text, updated_at_ms, updated_by, updated_by_name, expires_at_ms, revoked
        FROM final_plan_shares
@@ -1977,7 +2107,20 @@ async function handleFinalPlanShareRead(request, env, codeValue) {
   ).bind(code).first();
   if (!row || Number(row.revoked) === 1) return json({ ok: false, error: 'final_plan_not_found' }, 404);
   if (Number(row.expires_at_ms) > 0 && Number(row.expires_at_ms) < Date.now()) return json({ ok: false, error: 'final_plan_expired' }, 410);
-  return json({ ok: true, plan: finalPlanRowToPlan(row), usage: { d1RowsRead: 1 } }, 200, 'private, no-store');
+  const payload = {
+    ok: true,
+    plan: finalPlanRowToPlan(row),
+    usage: { d1RowsRead: 1, d1RowsWritten: 0 },
+    cache: { enabled: isPublicShareCacheEnabled(env), ttlSeconds: publicShareCacheSeconds(env), source: "public-share-cache" },
+  };
+  return writePublicShareCache(
+    request,
+    env,
+    "final-plan",
+    code,
+    payload,
+    remainingCacheSecondsUntil(row.expires_at_ms, publicShareCacheSeconds(env)),
+  );
 }
 
 
@@ -2889,11 +3032,14 @@ async function handleRegionSharesRotate(request, env) {
   if (!region) return json({ ok: false, error: 'region_required' }, 400);
   const allowed = isAdminUid(env, user.uid) || await hasSavedRegionAccess(db, user.uid, region) || await activeRegionHasUid(db, region, user.uid);
   if (!allowed) return json({ ok: false, error: 'region_access_denied' }, 403);
+  const tableCodes = (await db.prepare(`SELECT code FROM region_table_shares WHERE region = ?1`).bind(region).all())?.results?.map(row => row.code) || [];
+  const finalCodes = (await db.prepare(`SELECT code FROM final_plan_shares WHERE region = ?1`).bind(region).all())?.results?.map(row => row.code) || [];
   const tableResult = await db.prepare(`DELETE FROM region_table_shares WHERE region = ?1`).bind(region).run();
   const finalResult = await db.prepare(`DELETE FROM final_plan_shares WHERE region = ?1`).bind(region).run();
   const tableShares = Number(tableResult?.meta?.changes) || 0;
   const finalPlans = Number(finalResult?.meta?.changes) || 0;
-  return json({ ok: true, region, tableShares, finalPlans, deleted: tableShares + finalPlans, usage: { d1RowsRead: 0, d1RowsWritten: tableShares + finalPlans }, source: 'cloudflare-d1-share-rotation' });
+  const cacheDeleted = (await deletePublicShareCaches(request, "region-table", tableCodes)) + (await deletePublicShareCaches(request, "final-plan", finalCodes));
+  return json({ ok: true, region, tableShares, finalPlans, deleted: tableShares + finalPlans, cacheDeleted, usage: { d1RowsRead: tableCodes.length + finalCodes.length, d1RowsWritten: tableShares + finalPlans }, source: 'cloudflare-d1-share-rotation' });
 }
 
 
@@ -3057,26 +3203,36 @@ async function handleSecretLinksRotate(request, env) {
     rowsWritten += 1;
   }
 
+  let cacheDeleted = 0;
+
   if (scope === 'table' || scope === 'all') {
+    const codes = (await db.prepare(
+      `SELECT code FROM region_table_shares WHERE region = ?1 AND cycle_id = ?2 AND revoked = 0`
+    ).bind(region, activeCycleId).all())?.results?.map(row => row.code) || [];
     const result = await db.prepare(
       `UPDATE region_table_shares SET revoked = 1
         WHERE region = ?1 AND cycle_id = ?2 AND revoked = 0`
     ).bind(region, activeCycleId).run();
     rotated.table = Number(result?.meta?.changes) || 0;
     rowsWritten += rotated.table;
+    cacheDeleted += await deletePublicShareCaches(request, "region-table", codes);
   }
 
   if (scope === 'final' || scope === 'all') {
+    const codes = (await db.prepare(
+      `SELECT code FROM final_plan_shares WHERE region = ?1 AND cycle_id = ?2 AND revoked = 0`
+    ).bind(region, activeCycleId).all())?.results?.map(row => row.code) || [];
     const result = await db.prepare(
       `UPDATE final_plan_shares SET revoked = 1
         WHERE region = ?1 AND cycle_id = ?2 AND revoked = 0`
     ).bind(region, activeCycleId).run();
     rotated.final = Number(result?.meta?.changes) || 0;
     rowsWritten += rotated.final;
+    cacheDeleted += await deletePublicShareCaches(request, "final-plan", codes);
   }
 
   const payload = await buildSecretLinksPayload(db, request, region);
-  return json({ ...payload, rotated, usage: { d1RowsRead: Number(payload.usage?.d1RowsRead || 0) + 2, d1RowsWritten: rowsWritten }, source: 'cloudflare-d1-secret-links-rotate' });
+  return json({ ...payload, rotated, cacheDeleted, usage: { d1RowsRead: Number(payload.usage?.d1RowsRead || 0) + 2 + rotated.table + rotated.final, d1RowsWritten: rowsWritten }, source: 'cloudflare-d1-secret-links-rotate' });
 }
 
 
@@ -3125,6 +3281,68 @@ async function handleD1CleanupClear(request, env) {
     dryRun: false
   });
   return json(result);
+}
+
+
+function cronEnvInt(env, name, fallback, min = 1, max = 3650) {
+  const value = Number(env?.[name]);
+  if (!Number.isFinite(value)) return fallback;
+  return Math.max(min, Math.min(max, value));
+}
+
+function cronEnvFlag(env, name, defaultValue = true) {
+  const raw = clean(env?.[name] || '', 20).toLowerCase();
+  if (!raw) return defaultValue;
+  return !['0', 'false', 'off', 'no', 'disabled'].includes(raw);
+}
+
+async function runScheduledD1Cleanup(env, scheduledTimeMs = Date.now()) {
+  if (!cronEnvFlag(env, 'WKD_CRON_CLEANUP_ENABLED', true)) {
+    return { ok: true, skipped: true, reason: 'cron_cleanup_disabled', scheduledTimeMs };
+  }
+  const db = regionTableDb(env);
+  if (!db) return { ok: false, error: 'd1_not_configured', scheduledTimeMs };
+  await ensureRegionTableSchema(db);
+
+  const limitPerScope = cronEnvInt(env, 'WKD_CRON_CLEANUP_LIMIT_PER_SCOPE', 100, 1, 500);
+  const defaultRetentionDays = cronEnvInt(env, 'WKD_CRON_CLEANUP_RETENTION_DAYS', 30, 1, 3650);
+  const tasks = [
+    { scope: 'finalplans', retentionDays: cronEnvInt(env, 'WKD_CRON_FINAL_PLAN_RETENTION_DAYS', defaultRetentionDays, 1, 3650) },
+    { scope: 'shares', retentionDays: cronEnvInt(env, 'WKD_CRON_SECRET_LINK_RETENTION_DAYS', defaultRetentionDays, 1, 3650) },
+    { scope: 'campaigns', retentionDays: cronEnvInt(env, 'WKD_CRON_CAMPAIGN_RETENTION_DAYS', defaultRetentionDays, 1, 3650) },
+    { scope: 'messages', retentionDays: cronEnvInt(env, 'WKD_CRON_MESSAGE_RETENTION_DAYS', defaultRetentionDays, 1, 3650) },
+    { scope: 'logs', retentionDays: cronEnvInt(env, 'WKD_CRON_LOG_RETENTION_DAYS', defaultRetentionDays, 1, 3650) },
+  ];
+  if (cronEnvFlag(env, 'WKD_CRON_CLEAN_CYCLES', false)) {
+    tasks.unshift({ scope: 'cycles', retentionDays: cronEnvInt(env, 'WKD_CRON_CYCLE_RETENTION_DAYS', 60, 1, 3650) });
+  }
+
+  const results = [];
+  for (const task of tasks) {
+    try {
+      results.push(await runD1ArchiveCleanup(db, {
+        scope: task.scope,
+        region: '',
+        retentionDays: task.retentionDays,
+        limitCount: limitPerScope,
+        dryRun: false
+      }));
+    } catch (error) {
+      results.push({ ok: false, scope: task.scope, error: clean(error?.message || 'cleanup_failed', 160) });
+    }
+  }
+
+  const totals = results.reduce((acc, item) => {
+    acc.found += Number(item?.found || 0);
+    acc.deleted += Number(item?.deleted || 0);
+    acc.scanned += Number(item?.scanned || 0);
+    if (item?.hasMore) acc.hasMore = true;
+    if (item?.ok === false) acc.errors += 1;
+    return acc;
+  }, { found: 0, deleted: 0, scanned: 0, hasMore: false, errors: 0 });
+
+  console.info('[WKD Cron] D1 auto-cleanup finished', { scheduledTimeMs, ...totals });
+  return { ok: totals.errors === 0, scheduledTimeMs, limitPerScope, results, totals, source: 'cloudflare-cron-d1-cleanup' };
 }
 
 
@@ -3362,9 +3580,27 @@ async function fetchGithubPagesUsage(env, repoInfo = {}) {
 async function fetchGithubActionsUsage(env, repoInfo = {}) {
   const owner = repoInfo.owner;
   const repo = repoInfo.name;
-  const data = await callGithubApi(env, `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/actions/runs?per_page=5`);
+  const data = await callGithubApi(env, `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/actions/runs?per_page=100`);
   const runs = Array.isArray(data.workflow_runs) ? data.workflow_runs : [];
   const latest = runs[0] || {};
+  const now = Date.now();
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+  const monthStartMs = monthStart.getTime();
+  const hourStartMs = now - (60 * 60 * 1000);
+  let monthDurationMs = 0;
+  let monthRuns = 0;
+  let runsLastHour = 0;
+  for (const row of runs) {
+    const created = Date.parse(row.created_at || row.createdAt || '');
+    if (!Number.isFinite(created)) continue;
+    if (created >= monthStartMs) {
+      monthRuns += 1;
+      monthDurationMs += githubDurationMs(row);
+    }
+    if (created >= hourStartMs) runsLastHour += 1;
+  }
   return {
     enabled: true,
     totalRuns: numericMetric(data.total_count),
@@ -3376,7 +3612,12 @@ async function fetchGithubActionsUsage(env, repoInfo = {}) {
     latestCreatedAt: clean(latest.created_at || '', 80),
     latestUpdatedAt: clean(latest.updated_at || '', 80),
     latestDurationMs: githubDurationMs(latest),
-    recentRuns: runs.map(row => ({
+    monthDurationMs: numericMetric(monthDurationMs),
+    monthMinutesUsed: Math.ceil(numericMetric(monthDurationMs) / 60000),
+    monthRuns: numericMetric(monthRuns),
+    runsLastHour: numericMetric(runsLastHour),
+    recentRunsReturned: numericMetric(runs.length),
+    recentRuns: runs.slice(0, 10).map(row => ({
       id: clean(row.id || '', 80),
       name: clean(row.name || row.display_title || '', 160),
       status: clean(row.status || '', 80),
@@ -4447,6 +4688,12 @@ async function handleContact(request, env) {
 }
 
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runScheduledD1Cleanup(env, Number(event?.scheduledTime) || Date.now()).catch((error) => {
+      console.error('[WKD Cron] D1 auto-cleanup failed', error);
+    }));
+  },
+
   async fetch(request, env) {
     const url = new URL(request.url);
 

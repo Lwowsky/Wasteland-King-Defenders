@@ -56,3 +56,10 @@
 
 .admin-usage-card--wide{grid-column:1/-1}
 .admin-clean-region-label{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 10px;border:1px solid rgba(255,255,255,.10);border-radius:14px;background:#07101f;color:#dce6ff;font-weight:950}.admin-clean-region-label span{color:#aeb9d3;font-size:.9rem}.admin-clean-region-label select{min-width:130px;border:0;background:transparent;color:#fff;font-weight:950;outline:none}.admin-clean-region-label option{background:#07101f;color:#fff}
+
+/* v204: keep GitHub limit cards readable with long repo names and URLs */
+.github-usage-card{min-width:0;overflow:hidden}
+.github-usage-card .github-card-value,.admin-usage-card b{max-width:100%;overflow-wrap:anywhere;word-break:break-word;line-height:1.18}
+.github-usage-card small,.admin-usage-card small{overflow-wrap:anywhere;word-break:break-word;line-height:1.35}
+.github-usage-card span{overflow-wrap:anywhere;word-break:break-word}
+@media (min-width:1100px){.admin-usage-grid{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}.github-usage-card .github-card-value{font-size:clamp(1rem,1.6vw,1.25rem)}}

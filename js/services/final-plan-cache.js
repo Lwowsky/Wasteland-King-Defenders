@@ -1,7 +1,7 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=203';
+import { trackCloudflareUsage } from './usage-tracker.js?v=206';
 
-const FINAL_PLAN_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const FINAL_PLAN_CACHE_TTL_MS = 60 * 1000;
 
 function cleanText(value = '', max = 120) {
   return String(value ?? '')

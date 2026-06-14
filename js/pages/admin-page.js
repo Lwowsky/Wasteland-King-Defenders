@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=203';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=203';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=203';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=203';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=206';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=206';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=206';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=206';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -23,7 +23,7 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=203';
+} from '../services/user-db.js?v=206';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -32,7 +32,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=203';
+} from '../services/region-db.js?v=206';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -493,9 +493,9 @@ function githubDuration(value = 0) {
 }
 
 function githubValueCardHtml(key, value = '—', detail = '') {
-  return `<article class="admin-usage-card admin-usage-card--static">
+  return `<article class="admin-usage-card admin-usage-card--static github-usage-card">
     <span>${escapeHtml(t(`admin.github.${key}.label`, key))}</span>
-    <b>${escapeHtml(String(value || '—'))}</b>
+    <b class="github-card-value">${escapeHtml(String(value || '—'))}</b>
     <small>${escapeHtml(t(`admin.github.${key}.detail`, detail))}</small>
   </article>`;
 }
@@ -504,11 +504,35 @@ function githubBytesCardHtml(key, usedBytes = 0, limitBytes = 0, detail = '') {
   const row = { used: Math.max(0, Number(usedBytes) || 0), limit: Math.max(0, Number(limitBytes) || 0) };
   row.remaining = Math.max(0, row.limit - row.used);
   row.percent = row.limit ? Math.max(0, Math.min(100, (row.used / row.limit) * 100)) : 0;
-  return `<article class="admin-usage-card">
+  return `<article class="admin-usage-card github-usage-card">
     <span>${escapeHtml(t(`admin.github.${key}.label`, key))}</span>
-    <b>${escapeHtml(formatBytes(row.used))}</b>
+    <b class="github-card-value">${escapeHtml(formatBytes(row.used))}</b>
     <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(formatBytes(row.remaining))} / ${escapeHtml(formatBytes(row.limit))}</small>
     <div class="admin-usage-bar" aria-hidden="true"><i style="width:${row.percent}%"></i></div>
+    <small>${escapeHtml(t(`admin.github.${key}.detail`, detail))}</small>
+  </article>`;
+}
+
+function githubNumberUsageCardHtml(key, row = {}, unitKey = '', detail = '') {
+  const used = Math.max(0, Number(row.used) || 0);
+  const limit = Math.max(0, Number(row.limit) || 0);
+  const remaining = Math.max(0, Number(row.remaining ?? (limit - used)) || 0);
+  const percent = limit ? Math.max(0, Math.min(100, Number(row.percent) || ((used / limit) * 100))) : 0;
+  const unit = unitKey ? t(unitKey, '') : '';
+  const format = value => `${formatCompactNumber(value)}${unit ? ` ${unit}` : ''}`;
+  return `<article class="admin-usage-card github-usage-card">
+    <span>${escapeHtml(t(`admin.github.${key}.label`, key))}</span>
+    <b class="github-card-value">${escapeHtml(format(used))}</b>
+    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(format(remaining))} / ${escapeHtml(format(limit))}</small>
+    <div class="admin-usage-bar" aria-hidden="true"><i style="width:${percent}%"></i></div>
+    <small>${escapeHtml(t(`admin.github.${key}.detail`, detail))}</small>
+  </article>`;
+}
+
+function githubReferenceCardHtml(key, value = '', detail = '') {
+  return `<article class="admin-usage-card admin-usage-card--static github-usage-card">
+    <span>${escapeHtml(t(`admin.github.${key}.label`, key))}</span>
+    <b class="github-card-value">${escapeHtml(value || '—')}</b>
     <small>${escapeHtml(t(`admin.github.${key}.detail`, detail))}</small>
   </article>`;
 }
@@ -616,18 +640,19 @@ function renderGitHubUsage() {
     const pages = githubUsage.pages || {};
     const actions = githubUsage.actions || {};
     const limits = githubUsage.limits || {};
+    const repoSizeLimit = Number(limits.pagesSiteSizeBytes?.limit || 1024 * 1024 * 1024);
     grid.innerHTML = [
       githubValueCardHtml('repo', repo.fullName || '—', 'GitHub repository'),
-      githubBytesCardHtml('repoSize', Number(repo.sizeKb || 0) * 1024, Number(limits.pagesSiteSizeBytes?.limit || 1024 * 1024 * 1024), 'Repository size compared with GitHub Pages site soft size'),
+      githubBytesCardHtml('repoSize', Number(repo.sizeKb || 0) * 1024, repoSizeLimit, 'Repository size compared with GitHub Pages site soft size'),
       githubValueCardHtml('pagesStatus', pages.status || '—', 'GitHub Pages status'),
       githubValueCardHtml('pagesUrl', pages.htmlUrl || pages.cname || '—', 'Published GitHub Pages URL'),
       githubValueCardHtml('actionsLatest', `${actions.latestStatus || '—'}${actions.latestConclusion ? ` / ${actions.latestConclusion}` : ''}`, 'Latest GitHub Actions run'),
       githubValueCardHtml('actionsDuration', githubDuration(actions.latestDurationMs), 'Latest run duration approximation'),
       githubValueCardHtml('actionsRuns', formatCompactNumber(actions.totalRuns || 0), 'Total workflow runs returned by GitHub'),
-      staticLimitCardHtml('githubActionsMinutes', '2 000 / month', 'GitHub Free included private Actions minutes; public repos are generally free'),
-      staticLimitCardHtml('githubPagesBandwidth', '100 GB / month', 'GitHub Pages soft bandwidth limit'),
-      staticLimitCardHtml('githubPagesBuilds', '10 / hour', 'GitHub Pages soft build limit'),
-      staticLimitCardHtml('githubActionsCache', '10 GB / repo', 'GitHub Actions cache included storage')
+      githubNumberUsageCardHtml('actionsMinutesMonth', limits.actionsMinutesMonth || {}, 'admin.githubUnitMinutes', 'Approximate repo Actions minutes this month from returned workflow runs'),
+      githubNumberUsageCardHtml('pagesBuildsHour', limits.pagesBuildsHour || {}, 'admin.githubUnitBuilds', 'GitHub Pages soft build limit per hour'),
+      githubReferenceCardHtml('pagesBandwidthMonth', '100 GB / month', 'GitHub does not return exact Pages bandwidth through this repo API'),
+      githubReferenceCardHtml('actionsCache', '10 GB / repo', 'GitHub Actions cache reference limit')
     ].join('');
     if (note) {
       const errors = Array.isArray(githubUsage.partialErrors) && githubUsage.partialErrors.length
@@ -642,11 +667,11 @@ function renderGitHubUsage() {
     return;
   }
   grid.innerHTML = [
-    staticLimitCardHtml('githubActionsMinutes', '2 000 / month', 'GitHub Free included private Actions minutes; public repos are generally free'),
-    staticLimitCardHtml('githubPagesSize', '1 GB', 'Published GitHub Pages site size'),
-    staticLimitCardHtml('githubPagesBandwidth', '100 GB / month', 'GitHub Pages soft bandwidth limit'),
-    staticLimitCardHtml('githubPagesBuilds', '10 / hour', 'GitHub Pages soft build limit'),
-    staticLimitCardHtml('githubActionsCache', '10 GB / repo', 'GitHub Actions cache included storage')
+    githubReferenceCardHtml('actionsMinutesMonth', '2 000 min / month', 'GitHub Free included private Actions minutes; public repos are generally free'),
+    githubReferenceCardHtml('pagesSize', '1 GB', 'Published GitHub Pages site size'),
+    githubReferenceCardHtml('pagesBandwidthMonth', '100 GB / month', 'GitHub Pages soft bandwidth limit'),
+    githubReferenceCardHtml('pagesBuildsHour', '10 / hour', 'GitHub Pages soft build limit'),
+    githubReferenceCardHtml('actionsCache', '10 GB / repo', 'GitHub Actions cache reference limit')
   ].join('');
   if (note) note.textContent = t('admin.githubStaticNote', 'Показані довідкові GitHub ліміти. Для реальних даних додай GITHUB_TOKEN, GITHUB_OWNER і GITHUB_REPO у Worker secrets.');
 }

@@ -22,7 +22,17 @@
   ],
   "vars": {
     "FIREBASE_PROJECT_ID": "wasteland-king-defender",
-    "REGION_TABLE_ADMIN_UIDS": "b0LEXL31OFcwqByi9UUeywmSx7M2"
+    "REGION_TABLE_ADMIN_UIDS": "b0LEXL31OFcwqByi9UUeywmSx7M2",
+    "WKD_CRON_CLEANUP_RETENTION_DAYS": "30",
+    "WKD_CRON_CLEANUP_LIMIT_PER_SCOPE": "100",
+    "WKD_CRON_CLEAN_CYCLES": "false",
+    "WKD_PUBLIC_SHARE_CACHE_ENABLED": "true",
+    "WKD_PUBLIC_SHARE_CACHE_SECONDS": "60"
+  },
+  "triggers": {
+    "crons": [
+      "17 3 * * *"
+    ]
   },
   "observability": {
     "enabled": true
