@@ -1,5 +1,5 @@
-import { isFinalPlanCacheEnabled, readFinalPlanShare } from '../services/final-plan-cache.js?v=206';
-import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=206';
+import { isFinalPlanCacheEnabled, readFinalPlanShare } from '../services/final-plan-cache.js?v=213';
+import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=213';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -11,7 +11,7 @@ let ready = false;
 function codeFromUrl() {
   return readShareCode('finalPlan', {
     blockedPathNames: ['p', 'public-plan'],
-    pathRegex: /\/plan\/([A-Za-z0-9_-]{6,120})\/?$/
+    pathRegex: /\/(?:p|plan)\/([A-Za-z0-9_-]{6,120})\/?$/
   });
 }
 function publicLink() {

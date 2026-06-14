@@ -2348,4 +2348,11 @@ window.WKD_TRANSLATIONS.ko = {
   'admin.github.pagesSize.detail': '게시된 GitHub Pages site 크기',
   'admin.githubUnitMinutes': '분',
   'admin.githubUnitBuilds': 'builds',
+  'players.totalPlayers': '전체 플레이어',
+  'players.captainsReady': '준비된 대장',
+  'region.publicTableRows': '행 수',
+  'region.publicTableRegisteredAt': '등록됨',
+  'region.publicTableSearch': '닉네임 / 동맹',
+  'region.publicTablePageInfo': '{total}개 중 {from}–{to} 표시',
+  'region.formClosedNoAccess': '등록이 아직 닫혀 있습니다. 설정된 시간에 자동으로 열립니다. 지금은 신청을 보낼 수 없습니다.',
 };

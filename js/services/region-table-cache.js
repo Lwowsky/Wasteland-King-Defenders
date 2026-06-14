@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=206';
+import { trackCloudflareUsage } from './usage-tracker.js?v=213';
 
 const MAX_ROWS = 2000;
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -180,6 +180,35 @@ async function requestJson(path, options = {}) {
   return data || {};
 }
 
+async function requestPublicSnapshotJson(path, options = {}) {
+  const response = await fetch(String(path || ''), {
+    cache: options?.cache || 'default',
+    headers: { Accept: 'application/json', ...(options?.headers || {}) }
+  });
+  let data = null;
+  try { data = await response.json(); } catch { data = null; }
+  if (!response.ok || !data || data?.ok !== true) {
+    const error = new Error(data?.error || `region-table-public-snapshot-${response.status}`);
+    error.status = response.status;
+    error.data = data;
+    throw error;
+  }
+  const usage = data?.usage || {};
+  if (Number(usage.d1RowsRead || 0) || Number(usage.d1RowsWritten || 0) || data?.cache?.source) {
+    trackCloudflareUsage({
+      workerRequests: Number(data?.cache?.workerRequest || 0) || 0,
+      d1RowsRead: Number(usage.d1RowsRead || usage.rowsRead || 0) || 0,
+      d1RowsWritten: Number(usage.d1RowsWritten || usage.rowsWritten || 0) || 0
+    });
+  }
+  return data || {};
+}
+
+export function publicRegionTableSnapshotUrl(code = '') {
+  const safeCode = cleanCode(code);
+  return safeCode ? `/public-cache/share/rt/${encodeURIComponent(safeCode)}.json` : '';
+}
+
 function sanitizeTableRow(row = {}) {
   return {
     id: rowId(row),
@@ -213,7 +242,10 @@ function sanitizeTableRow(row = {}) {
     customFields: row.customFields && typeof row.customFields === 'object' && !Array.isArray(row.customFields) ? row.customFields : {},
     source: cleanText(row.source || 'registration', 40),
     rowType: cleanText(row.rowType || '', 80),
-    updatedAtMs: Number(row.updatedAtMs || row.submittedAtMs || Date.now()) || Date.now()
+    submittedAtMs: Number(row.submittedAtMs || row.registeredAtMs || row.createdAtMs || 0) || 0,
+    registeredAtMs: Number(row.registeredAtMs || row.submittedAtMs || row.createdAtMs || 0) || 0,
+    createdAtMs: Number(row.createdAtMs || 0) || 0,
+    updatedAtMs: Number(row.updatedAtMs || row.submittedAtMs || row.registeredAtMs || row.createdAtMs || Date.now()) || Date.now()
   };
 }
 
@@ -374,7 +406,12 @@ export async function readRegionTableShare(code, options = {}) {
     const cached = readLocalTableCache('regionTableShare', safeCode, Number(options?.ttlMs) || SHARE_TABLE_CACHE_TTL_MS);
     if (cached) return cached;
   }
-  const data = await requestJson(`/api/region-table/share/${encodeURIComponent(safeCode)}`);
+  let data = null;
+  try {
+    data = await requestPublicSnapshotJson(publicRegionTableSnapshotUrl(safeCode));
+  } catch (snapshotError) {
+    data = await requestJson(`/api/region-table/share/${encodeURIComponent(safeCode)}`);
+  }
   const normalized = normalizeTableResponse(data);
   writeLocalTableCache('regionTableShare', safeCode, normalized);
   return normalized;
@@ -651,6 +688,8 @@ export async function saveRegionRegistrationD1First(user, region, values = {}, s
     region: safeRegion,
     source,
     rowType: uid ? 'Заявка' : 'Заявка з посилання',
+    submittedAtMs: Number(values?.submittedAtMs || 0) || Date.now(),
+    registeredAtMs: Number(values?.registeredAtMs || values?.submittedAtMs || 0) || Date.now(),
     updatedAtMs: Date.now()
   });
   const headers = token ? { Authorization: `Bearer ${token}` } : {};

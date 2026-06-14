@@ -2348,4 +2348,11 @@ window.WKD_TRANSLATIONS.ja = {
   'admin.github.pagesSize.detail': '公開済みGitHub Pages siteサイズ',
   'admin.githubUnitMinutes': '分',
   'admin.githubUnitBuilds': 'build',
+  'players.totalPlayers': 'プレイヤー合計',
+  'players.captainsReady': '準備完了のキャプテン',
+  'region.publicTableRows': '行数',
+  'region.publicTableRegisteredAt': '登録日時',
+  'region.publicTableSearch': 'ニック / 同盟',
+  'region.publicTablePageInfo': '{total}件中 {from}–{to} 件を表示',
+  'region.formClosedNoAccess': '登録はまだ閉じています。フォームは設定時刻に自動で開きます。今は申請を送信できません。',
 };

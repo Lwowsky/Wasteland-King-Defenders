@@ -2348,4 +2348,11 @@ window.WKD_TRANSLATIONS.de = {
   'admin.github.pagesSize.detail': 'Größe der veröffentlichten GitHub-Pages-Site',
   'admin.githubUnitMinutes': 'Min.',
   'admin.githubUnitBuilds': 'Builds',
+  'players.totalPlayers': 'Spieler gesamt',
+  'players.captainsReady': 'Kapitäne bereit',
+  'region.publicTableRows': 'Zeilen',
+  'region.publicTableRegisteredAt': 'Registriert',
+  'region.publicTableSearch': 'Nick / Allianz',
+  'region.publicTablePageInfo': 'Angezeigt {from}–{to} von {total}',
+  'region.formClosedNoAccess': 'Die Registrierung ist noch geschlossen. Das Formular öffnet automatisch zur festgelegten Zeit. Du kannst jetzt keine Anfrage senden.',
 };

@@ -38,6 +38,12 @@ jobs:
           PUBLIC_STATS_EXPORT_SECRET: ${{ secrets.PUBLIC_STATS_EXPORT_SECRET }}
         run: node scripts/update-public-stats-cache.mjs
 
+      - name: Generate public share snapshots from Cloudflare D1
+        env:
+          PUBLIC_SHARE_EXPORT_URL: ${{ vars.PUBLIC_SHARE_EXPORT_URL }}
+          PUBLIC_SHARE_EXPORT_SECRET: ${{ secrets.PUBLIC_STATS_EXPORT_SECRET }}
+        run: node scripts/update-public-share-snapshots.mjs
+
       - name: Commit updated cache
         run: |
           git config user.name "github-actions[bot]"

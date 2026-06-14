@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "version": 1,
+  "source": "empty-local-cache",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "counts": {
+    "total": 0,
+    "regionTables": 0,
+    "finalPlans": 0
+  },
+  "files": []
+}

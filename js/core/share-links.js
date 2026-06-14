@@ -91,10 +91,19 @@ export function readShareCode(type, options = {}) {
 export function makePublicShareUrl(target, codeValue, base = window.location.href) {
   const code = cleanShareCode(codeValue);
   const url = new URL(target, base);
-  if (code) {
-    url.searchParams.set('s', code);
-    url.hash = code;
+  if (!code) return url.toString();
+  const path = String(url.pathname || '').toLowerCase();
+  if (path.endsWith('/public-plan.html') || path.endsWith('/p.html')) {
+    return new URL(`./p/${encodeURIComponent(code)}`, base).toString();
   }
+  if (path.endsWith('/public-region-table.html') || path.endsWith('/rt.html')) {
+    return new URL(`./rt/${encodeURIComponent(code)}`, base).toString();
+  }
+  if (path.endsWith('/region-form.html') || path.endsWith('/f.html')) {
+    return new URL(`./f/${encodeURIComponent(code)}`, base).toString();
+  }
+  url.searchParams.set('s', code);
+  url.hash = '';
   return url.toString();
 }
 
@@ -104,7 +113,8 @@ export function keepShareCodeInUrl(type, codeValue) {
   try {
     const url = new URL(window.location.href);
     if (!url.searchParams.get('s')) url.searchParams.set('s', code);
-    if (!url.hash) url.hash = code;
+    const hashCode = cleanShareCode(String(url.hash || '').replace(/^#/, '').split('/').pop() || '');
+    if (hashCode === code) url.hash = '';
     window.history.replaceState(window.history.state, document.title, url.toString());
     rememberShareCode(type, code);
   } catch (_error) {}

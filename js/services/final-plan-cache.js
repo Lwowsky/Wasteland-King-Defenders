@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=206';
+import { trackCloudflareUsage } from './usage-tracker.js?v=213';
 
 const FINAL_PLAN_CACHE_TTL_MS = 60 * 1000;
 
@@ -113,6 +113,35 @@ async function requestJson(path, options = {}) {
   return data || {};
 }
 
+async function requestPublicSnapshotJson(path, options = {}) {
+  const response = await fetch(String(path || ''), {
+    cache: options?.cache || 'default',
+    headers: { Accept: 'application/json', ...(options?.headers || {}) }
+  });
+  let data = null;
+  try { data = await response.json(); } catch { data = null; }
+  if (!response.ok || !data || data?.ok !== true) {
+    const error = new Error(data?.error || `final-plan-public-snapshot-${response.status}`);
+    error.status = response.status;
+    error.data = data;
+    throw error;
+  }
+  const usage = data?.usage || {};
+  if (Number(usage.d1RowsRead || 0) || Number(usage.d1RowsWritten || 0) || data?.cache?.source) {
+    trackCloudflareUsage({
+      workerRequests: Number(data?.cache?.workerRequest || 0) || 0,
+      d1RowsRead: Number(usage.d1RowsRead || usage.rowsRead || 0) || 0,
+      d1RowsWritten: Number(usage.d1RowsWritten || usage.rowsWritten || 0) || 0
+    });
+  }
+  return data || {};
+}
+
+export function publicFinalPlanSnapshotUrl(code = '') {
+  const safeCode = cleanCode(code);
+  return safeCode ? `/public-cache/share/p/${encodeURIComponent(safeCode)}.json` : '';
+}
+
 export async function readFinalPlanShare(code, options = {}) {
   if (!isFinalPlanCacheEnabled()) throw new Error('final-plan-cache-disabled');
   const safeCode = cleanCode(code);
@@ -121,7 +150,12 @@ export async function readFinalPlanShare(code, options = {}) {
     const cached = readLocal(safeCode, Number(options?.ttlMs) || FINAL_PLAN_CACHE_TTL_MS);
     if (cached) return cached;
   }
-  const data = await requestJson(`/api/final-plan/share/${encodeURIComponent(safeCode)}`);
+  let data = null;
+  try {
+    data = await requestPublicSnapshotJson(publicFinalPlanSnapshotUrl(safeCode));
+  } catch (snapshotError) {
+    data = await requestJson(`/api/final-plan/share/${encodeURIComponent(safeCode)}`);
+  }
   const plan = normalizePlan(data);
   writeLocal(safeCode, plan);
   return plan;

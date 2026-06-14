@@ -2348,4 +2348,11 @@ window.WKD_TRANSLATIONS.en = {
   'admin.github.pagesSize.detail': 'Published GitHub Pages site size',
   'admin.githubUnitMinutes': 'min',
   'admin.githubUnitBuilds': 'builds',
+  'players.totalPlayers': 'Total players',
+  'players.captainsReady': 'Captains ready',
+  'region.publicTableRows': 'Rows',
+  'region.publicTableRegisteredAt': 'Registered',
+  'region.publicTableSearch': 'Nickname / alliance',
+  'region.publicTablePageInfo': 'Showing {from}–{to} of {total}',
+  'region.formClosedNoAccess': 'Registration is still closed. The form will open automatically at the scheduled time. You cannot submit a request right now.',
 };

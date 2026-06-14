@@ -2348,4 +2348,11 @@ window.WKD_TRANSLATIONS.pl = {
   'admin.github.pagesSize.detail': 'Rozmiar opublikowanej strony GitHub Pages',
   'admin.githubUnitMinutes': 'min',
   'admin.githubUnitBuilds': 'buildów',
+  'players.totalPlayers': 'Łącznie graczy',
+  'players.captainsReady': 'Kapitanowie gotowi',
+  'region.publicTableRows': 'Wierszy',
+  'region.publicTableRegisteredAt': 'Zarejestrowano',
+  'region.publicTableSearch': 'Nick / sojusz',
+  'region.publicTablePageInfo': 'Pokazano {from}–{to} z {total}',
+  'region.formClosedNoAccess': 'Rejestracja jest jeszcze zamknięta. Formularz otworzy się automatycznie o ustawionej godzinie. Nie można teraz wysłać zgłoszenia.',
 };

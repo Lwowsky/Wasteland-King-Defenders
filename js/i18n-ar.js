@@ -2346,4 +2346,11 @@ window.WKD_TRANSLATIONS.ar = {
   'admin.github.pagesSize.detail': 'حجم GitHub Pages site المنشور',
   'admin.githubUnitMinutes': 'دقيقة',
   'admin.githubUnitBuilds': 'builds',
+  'players.totalPlayers': 'إجمالي اللاعبين',
+  'players.captainsReady': 'القادة جاهزون',
+  'region.publicTableRows': 'الصفوف',
+  'region.publicTableRegisteredAt': 'تم التسجيل',
+  'region.publicTableSearch': 'الاسم / التحالف',
+  'region.publicTablePageInfo': 'عرض {from}–{to} من {total}',
+  'region.formClosedNoAccess': 'التسجيل مغلق حالياً. سيتم فتح النموذج تلقائياً في الوقت المحدد. لا يمكن إرسال الطلب الآن.',
 };

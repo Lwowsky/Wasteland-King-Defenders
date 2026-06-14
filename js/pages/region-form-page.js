@@ -1,4 +1,4 @@
-import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=206';
+import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=213';
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile, saveFarmWastelandProfile } from '../services/user-db.js';
 import {
@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=206';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=206';
+} from '../services/region-db.js?v=213';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=213';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -67,7 +67,7 @@ const readFarmFromUrl = () => new URLSearchParams(window.location.search).get('f
 function readShortLinkFromUrl() {
   const code = readShareCode('regionForm', {
     blockedPathNames: ['f', 'region-form'],
-    pathRegex: /\/f\/\d{1,8}\/([A-Za-z0-9_-]{6,120})\/?$/
+    pathRegex: /\/f\/(?:\d{1,8}\/)?([A-Za-z0-9_-]{6,120})\/?$/
   });
   if (code) {
     try { sessionStorage.setItem('wkd.regionForm.shortCode', code); } catch {}
@@ -181,6 +181,12 @@ function setFormInputsDisabled(disabled) {
   [...form.elements].forEach(element => {
     element.disabled = disabled && !keepEnabled.has(element.id);
   });
+}
+function setFormAvailable(available) {
+  const form = $('#wastelandForm');
+  if (!form) return;
+  form.hidden = !available;
+  setFormInputsDisabled(!available);
 }
 async function saveDraft(values = readForm()) {
   const payload = { ...values, region: currentRegion, farmId: selectedFarmId || 'main', savedAtMs: Date.now(), cycleId: formSettings?.currentCycleId || '', autoSubmitEnabled: getAutoProfilePreference(currentRegion, selectedFarmId) };
@@ -448,11 +454,7 @@ function buildShortPlayerLink(code = shortCodeFromLink || '', region = currentRe
   const safeRegion = String(region || '').trim();
   const safeCode = String(code || '').trim();
   if (!safeRegion || !safeCode) return '';
-  const url = new URL('./f.html', window.location.href);
-  url.searchParams.set('r', safeRegion);
-  url.searchParams.set('s', safeCode);
-  url.hash = `${safeRegion}/${safeCode}`;
-  return url.toString();
+  return new URL(`./f/${encodeURIComponent(safeCode)}`, window.location.href).toString();
 }
 async function updatePlayerShortLinkPanel() {
   const panel = $('#regionPlayerShortLinkPanel');
@@ -736,7 +738,7 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
       lockForm(t('region.requestAlreadySavedLocked', 'Your request is already saved. Only a consul or officer can change it.'));
       return false;
     }
-    if (error?.message === 'region-form-closed') {
+    if (error?.message === 'region-form-closed' || error?.message === 'region_form_closed') {
       setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'error');
       return false;
     }
@@ -817,11 +819,17 @@ async function prepareForm(settings) {
   $('#regionFormDescText').textContent = settingsDescription(settings);
   setFormState(settings);
   renderEventInfo(settings);
-  await loadRegionAlliancesForForm();
   startCountdown(settings);
   updatePlayerShortLinkPanel().catch(error => console.warn('[WKD] player short link skipped:', error));
 
   const status = getRegionFormStatus(settings);
+  if (!status.open) {
+    setFormAvailable(false);
+    setStatus(t('region.formClosedNoAccess', 'Реєстрація ще закрита. Форма відкриється автоматично у встановлений час. Відправити заявку зараз не можна.'), 'warn');
+    return false;
+  }
+
+  await loadRegionAlliancesForForm();
   const extraPanel = $('#extraTroopPanel');
   if (extraPanel) extraPanel.hidden = !settings.allowExtraTroop;
   renderTroopOptions(settings);
@@ -830,12 +838,7 @@ async function prepareForm(settings) {
   renderCustomFields(settings, {});
   renderShiftOptions(settings);
   toggleExtraFields();
-  $('#wastelandForm').hidden = false;
-
-  if (!status.open) {
-    setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'warn');
-    return false;
-  }
+  setFormAvailable(true);
   return true;
 }
 
@@ -853,9 +856,9 @@ async function loadPublicForm(region) {
   $('#openRegionTableBtn').hidden = true;
   const open = await prepareForm(settings);
   syncTimeDisplayCheckbox();
+  if (!open) return;
   const draft = loadDraft();
   if (draft) fillSavedRegistration(draft);
-  if (!open) return;
   if (localStorage.getItem(publicLockKey())) {
     lockForm(t('region.alreadySubmittedBrowser', 'A request has already been sent from this browser. Only a consul or region officer can change it.'));
     return;
@@ -899,6 +902,10 @@ async function loadSignedInForm(user) {
   renderSavedFarmTools(currentProfile);
   syncTimeDisplayCheckbox();
   const autoProfile = syncAutoProfileCheckbox();
+  if (!open) {
+    syncAutoProfileCheckbox();
+    return;
+  }
   if (autoProfile) fillProfileFields(currentProfile);
   const saved = await getMyWastelandRegistration(user, currentRegion, selectedFarmId).catch(() => null);
   const draft = loadDraft();
@@ -910,10 +917,6 @@ async function loadSignedInForm(user) {
   }
   setFormInputsDisabled(false);
   if (autoProfile && !saved) await maybeAutoSubmitFromProfile('load');
-  if (!open) {
-    setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'warn');
-    return;
-  }
   setStatus(saved ? t('region.savedLeaderCanUpdate', 'Your request already exists. You are a region leader, so you can update it.') : t('region.fillRegionForm', 'Fill out the region form.'), saved ? 'success' : 'muted');
 }
 

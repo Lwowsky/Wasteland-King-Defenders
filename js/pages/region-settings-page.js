@@ -1,5 +1,5 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=206';
+import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=213';
 import {
   canManageRegion,
   canViewAnyRegion,
@@ -25,8 +25,8 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=206';
-import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1 } from '../services/region-table-cache.js?v=206';
+} from '../services/region-db.js?v=213';
+import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1 } from '../services/region-table-cache.js?v=213';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -590,19 +590,13 @@ async function saveManualRegionFromSettings(event) {
 function buildFullShareLink(region) {
   if (!currentShareCode || !region) return '';
   const url = new URL('region-form.html', window.location.href);
-  url.searchParams.set('r', normalizeRegion(region));
   url.searchParams.set('s', currentShareCode);
-  url.hash = `${normalizeRegion(region)}/${currentShareCode}`;
   return url.toString();
 }
 
 function buildShareLink(region) {
   if (!currentShareCode || !region) return '';
-  const url = new URL('./f.html', window.location.href);
-  url.searchParams.set('r', normalizeRegion(region));
-  url.searchParams.set('s', currentShareCode);
-  url.hash = `${normalizeRegion(region)}/${currentShareCode}`;
-  return url.toString();
+  return new URL(`./f/${encodeURIComponent(currentShareCode)}`, window.location.href).toString();
 }
 
 function updateShareLink() {

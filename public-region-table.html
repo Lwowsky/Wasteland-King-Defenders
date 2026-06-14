@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="css/region-page.css" />
   <link rel="stylesheet" href="css/contact-modal.css" />
   <link rel="stylesheet" href="css/responsive.css" />
-  <script defer src="js/i18n.js?v=206"></script>
+  <script defer src="js/i18n.js?v=213"></script>
   <script defer src="js/i18n-uk.js"></script>
   <script defer src="js/i18n-en.js"></script>
   <script defer src="js/i18n-ru.js"></script>
@@ -30,13 +30,13 @@
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
   <script defer src="js/core/assets-loader.js"></script>
-  <script defer src="js/badges.js?v=206"></script>
+  <script defer src="js/badges.js?v=213"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/contact-modal.js"></script>
   <script defer src="js/core/app-boot.js"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/pages/public-region-table-page.js?v=206"></script>
+  <script type="module" src="js/pages/public-region-table-page.js?v=213"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -47,23 +47,57 @@
         <div class="region-head-actions"><a class="btn" href="index.html" data-i18n="common.homePage">На головну</a><button class="btn" id="refreshPublicRegionTableBtn" type="button" data-i18n="common.refresh">Оновити</button><span class="region-pill region-pill--region" id="publicRegionTablePill">R—</span></div>
       </div>
       <div class="auth-status" id="publicRegionTableStatus" data-i18n="region.publicTableLoading">Завантажую таблицю регіону...</div>
+      <div class="stats-grid public-region-stats" id="publicRegionTableStats" hidden>
+        <div class="stat-card stat-card--duo">
+          <div class="stat-duo-item"><span data-i18n="players.totalPlayers">Усього гравців</span><strong id="prtTotalPlayers">0</strong></div>
+          <div class="stat-duo-divider"></div>
+          <div class="stat-duo-item"><span data-i18n="players.captainsReady">Капітани готові</span><strong id="prtCaptainsReady">0</strong></div>
+        </div>
+        <div class="stat-card stat-card--plain">
+          <div class="stat-split stat-split--roles">
+            <div class="stat-chip stat-chip--role is-fighter"><b id="prtFighters">0</b><small data-i18n="troop.fighter">Бійці</small></div>
+            <div class="stat-chip stat-chip--role is-rider"><b id="prtRiders">0</b><small data-i18n="troop.rider">Наїзники</small></div>
+            <div class="stat-chip stat-chip--role is-shooter"><b id="prtShooters">0</b><small data-i18n="troop.shooter">Стрільці</small></div>
+          </div>
+        </div>
+        <div class="stat-card stat-card--plain stat-card--shifts">
+          <div class="stat-split stat-split--shifts public-region-shift-split">
+            <div class="stat-chip stat-chip--shift is-shift1"><b id="prtShift1">0</b><small data-i18n="shift.shift1">Зміна 1</small></div>
+            <div class="stat-chip stat-chip--shift is-shift2"><b id="prtShift2">0</b><small data-i18n="shift.shift2">Зміна 2</small></div>
+            <div class="stat-chip stat-chip--shift is-both"><b id="prtBoth">0</b><small data-i18n="shift.both">Обидві</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="admin-toolbar admin-toolbar--public-table" id="publicRegionTableFilters" hidden>
+        <label><span data-i18n="common.search">Пошук</span><input id="prtSearch" autocomplete="off" data-i18n-placeholder="region.publicTableSearch" placeholder="Нік / альянс" /></label>
+        <label><span data-i18n="playerEdit.troopType">Тип військ</span><select id="prtTroop"><option value="all" data-i18n="common.all">Усі</option><option value="fighter" data-i18n="troop.fighter">Бійці</option><option value="rider" data-i18n="troop.rider">Наїзники</option><option value="shooter" data-i18n="troop.shooter">Стрільці</option></select></label>
+        <label><span data-i18n="common.shift">Зміна</span><select id="prtShift"><option value="all" data-i18n="common.all">Усі</option><option value="shift1" data-i18n="shift.shift1">Зміна 1</option><option value="shift2" data-i18n="shift.shift2">Зміна 2</option><option value="both" data-i18n="shift.both">Обидві</option></select></label>
+        <label><span data-i18n="playerEdit.tier">Тір</span><select id="prtTier"><option value="all" data-i18n="common.all">Усі</option></select></label>
+        <label><span data-i18n="region.publicTableRows">Рядків</span><select id="prtPageSize"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></label>
+        <button class="btn" id="prtReset" type="button" data-i18n="common.reset">Скинути фільтри</button>
+      </div>
       <div class="admin-table-wrap">
         <table class="admin-table region-public-table">
           <thead>
             <tr>
-              <th data-i18n="account.nickname">Нік</th>
-              <th data-i18n="account.alliance">Альянс</th>
-              <th data-i18n="playerEdit.troopType">Тип</th>
-              <th data-i18n="playerEdit.tier">Тір</th>
-              <th data-i18n="playerEdit.march">Марш</th>
-              <th data-i18n="playerEdit.rally">Ралі</th>
-              <th data-i18n="players.captain">Капітан</th>
-              <th data-i18n="common.shift">Зміна</th>
+              <th><button type="button" data-prt-sort="nickname"><span data-i18n="account.nickname">Нік</span><span class="sort-arrow" data-sort-arrow="nickname">↕</span></button></th>
+              <th><button type="button" data-prt-sort="alliance"><span data-i18n="account.alliance">Альянс</span><span class="sort-arrow" data-sort-arrow="alliance">↕</span></button></th>
+              <th><button type="button" data-prt-sort="troopType"><span data-i18n="playerEdit.troopType">Тип</span><span class="sort-arrow" data-sort-arrow="troopType">↕</span></button></th>
+              <th><button type="button" data-prt-sort="tier"><span data-i18n="playerEdit.tier">Тір</span><span class="sort-arrow" data-sort-arrow="tier">↕</span></button></th>
+              <th><button type="button" data-prt-sort="marchSize"><span data-i18n="playerEdit.march">Марш</span><span class="sort-arrow" data-sort-arrow="marchSize">↕</span></button></th>
+              <th><button type="button" data-prt-sort="rallySize"><span data-i18n="playerEdit.rally">Ралі</span><span class="sort-arrow" data-sort-arrow="rallySize">↕</span></button></th>
+              <th><button type="button" data-prt-sort="captainReady"><span data-i18n="players.captain">Капітан</span><span class="sort-arrow" data-sort-arrow="captainReady">↕</span></button></th>
+              <th><button type="button" data-prt-sort="shift"><span data-i18n="common.shift">Зміна</span><span class="sort-arrow" data-sort-arrow="shift">↕</span></button></th>
+              <th><button type="button" data-prt-sort="registeredAt"><span data-i18n="region.publicTableRegisteredAt">Зареєстрований</span><span class="sort-arrow" data-sort-arrow="registeredAt">↕</span></button></th>
             </tr>
           </thead>
-          <tbody id="publicRegionTableBody" data-no-auto-i18n="1"><tr><td colspan="8">...</td></tr></tbody>
+          <tbody id="publicRegionTableBody" data-no-auto-i18n="1"><tr><td colspan="9">...</td></tr></tbody>
         </table>
       </div>
+      <nav class="stats-pagination public-region-pagination" id="publicRegionTablePagination" hidden>
+        <div class="stats-pagination__info" id="prtPageInfo">—</div>
+        <div class="stats-pagination__buttons"><button class="btn" id="prtPrev" type="button">‹</button><span id="prtPageLabel">1 / 1</span><button class="btn" id="prtNext" type="button">›</button></div>
+      </nav>
     </section>
   </main>
   <div class="container"><div data-include="partials/footer.html"></div></div>

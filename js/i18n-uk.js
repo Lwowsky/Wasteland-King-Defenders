@@ -2348,4 +2348,11 @@ window.WKD_TRANSLATIONS.uk = {
   'admin.github.pagesSize.detail': 'Published GitHub Pages site size',
   'admin.githubUnitMinutes': 'хв',
   'admin.githubUnitBuilds': 'збірок',
+  'players.totalPlayers': 'Усього гравців',
+  'players.captainsReady': 'Капітани готові',
+  'region.publicTableRows': 'Рядків',
+  'region.publicTableRegisteredAt': 'Зареєстрований',
+  'region.publicTableSearch': 'Нік / альянс',
+  'region.publicTablePageInfo': 'Показано {from}–{to} з {total}',
+  'region.formClosedNoAccess': 'Реєстрація ще закрита. Форма відкриється автоматично у встановлений час. Відправити заявку зараз не можна.',
 };

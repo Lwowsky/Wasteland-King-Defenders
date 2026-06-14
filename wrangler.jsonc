@@ -10,6 +10,7 @@
       "/api/*",
       "/f/*",
       "/plan/*",
+      "/p/*",
       "/rt/*"
     ]
   },
@@ -27,7 +28,8 @@
     "WKD_CRON_CLEANUP_LIMIT_PER_SCOPE": "100",
     "WKD_CRON_CLEAN_CYCLES": "false",
     "WKD_PUBLIC_SHARE_CACHE_ENABLED": "true",
-    "WKD_PUBLIC_SHARE_CACHE_SECONDS": "60"
+    "WKD_PUBLIC_SHARE_CACHE_SECONDS": "300",
+    "WKD_PUBLIC_STATIC_SNAPSHOT_SECONDS": "300"
   },
   "triggers": {
     "crons": [

@@ -2348,4 +2348,11 @@ window.WKD_TRANSLATIONS.zh = {
   'admin.github.pagesSize.detail': '已发布 GitHub Pages site 大小',
   'admin.githubUnitMinutes': '分钟',
   'admin.githubUnitBuilds': 'builds',
+  'players.totalPlayers': '玩家总数',
+  'players.captainsReady': '队长已准备',
+  'region.publicTableRows': '行数',
+  'region.publicTableRegisteredAt': '已注册',
+  'region.publicTableSearch': '昵称 / 联盟',
+  'region.publicTablePageInfo': '显示 {from}–{to} / {total}',
+  'region.formClosedNoAccess': '报名尚未开放。表单会在设定时间自动开放。现在不能提交申请。',
 };

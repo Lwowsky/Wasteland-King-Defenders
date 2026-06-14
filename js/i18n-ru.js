@@ -2348,4 +2348,11 @@ window.WKD_TRANSLATIONS.ru = {
   'admin.github.pagesSize.detail': 'Размер опубликованного GitHub Pages site',
   'admin.githubUnitMinutes': 'мин',
   'admin.githubUnitBuilds': 'сборок',
+  'players.totalPlayers': 'Всего игроков',
+  'players.captainsReady': 'Капитаны готовы',
+  'region.publicTableRows': 'Строк',
+  'region.publicTableRegisteredAt': 'Зарегистрирован',
+  'region.publicTableSearch': 'Ник / альянс',
+  'region.publicTablePageInfo': 'Показано {from}–{to} из {total}',
+  'region.formClosedNoAccess': 'Регистрация пока закрыта. Форма откроется автоматически в установленное время. Отправить заявку сейчас нельзя.',
 };

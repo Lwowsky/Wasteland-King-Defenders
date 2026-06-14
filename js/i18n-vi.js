@@ -2348,4 +2348,11 @@ window.WKD_TRANSLATIONS.vi = {
   'admin.github.pagesSize.detail': 'Kích thước GitHub Pages site đã xuất bản',
   'admin.githubUnitMinutes': 'phút',
   'admin.githubUnitBuilds': 'builds',
+  'players.totalPlayers': 'Tổng người chơi',
+  'players.captainsReady': 'Đội trưởng sẵn sàng',
+  'region.publicTableRows': 'Dòng',
+  'region.publicTableRegisteredAt': 'Đã đăng ký',
+  'region.publicTableSearch': 'Tên / liên minh',
+  'region.publicTablePageInfo': 'Hiển thị {from}–{to} trong {total}',
+  'region.formClosedNoAccess': 'Đăng ký vẫn đang đóng. Biểu mẫu sẽ tự mở vào thời gian đã đặt. Hiện không thể gửi đăng ký.',
 };

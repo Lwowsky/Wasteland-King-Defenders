@@ -28,7 +28,7 @@ function json(data, status = 200, cache = "no-store") {
 }
 
 
-const PUBLIC_SHARE_CACHE_VERSION = "v206";
+const PUBLIC_SHARE_CACHE_VERSION = "v213";
 
 function envNumber(value, fallback = 0, min = 0, max = Number.MAX_SAFE_INTEGER) {
   const num = Number(value);
@@ -37,7 +37,7 @@ function envNumber(value, fallback = 0, min = 0, max = Number.MAX_SAFE_INTEGER) 
 }
 
 function publicShareCacheSeconds(env) {
-  return envNumber(env?.WKD_PUBLIC_SHARE_CACHE_SECONDS, 60, 0, 600);
+  return envNumber(env?.WKD_PUBLIC_SHARE_CACHE_SECONDS, 300, 0, 1800);
 }
 
 function isPublicShareCacheEnabled(env) {
@@ -652,6 +652,33 @@ function sanitizeSettings(settings = {}) {
   };
 }
 
+
+const WKD_FORM_DEFAULT_CLOSE_HOURS = 24;
+function firstPositiveD1Ms(...values) {
+  for (const value of values) {
+    const number = Number(value) || 0;
+    if (number > 0) return number;
+  }
+  return 0;
+}
+function isRegionFormOpenD1(settings = {}, nowMs = Date.now()) {
+  const enabled = Boolean(settings.enabled || settings.open);
+  if (!enabled) return false;
+  const startAtMs = firstPositiveD1Ms(settings.eventStartAtMs, settings.startAtMs);
+  const closeHours = Math.max(1, Math.min(168, Number(settings.closeHours) || WKD_FORM_DEFAULT_CLOSE_HOURS));
+  const closeAtMs = firstPositiveD1Ms(settings.closeAtMs, settings.registrationCloseAtMs, startAtMs ? startAtMs - closeHours * 60 * 60 * 1000 : 0);
+  const openAtMs = firstPositiveD1Ms(settings.openAtMs, settings.registrationOpenAtMs, settings.openedAtMs, settings.startedAtMs);
+  if (openAtMs && nowMs < openAtMs) return false;
+  if (closeAtMs && nowMs >= closeAtMs) return false;
+  if (startAtMs && nowMs >= startAtMs + 2 * 60 * 60 * 1000) return false;
+  return true;
+}
+function isRegionFormSubmission(body = {}) {
+  if (body?.updateOnly || body?.adminEdit || body?.skipFormStatusCheck) return false;
+  const source = clean(body?.row?.source || '', 60).toLowerCase();
+  return Boolean(body?.publicLink || body?.shareCode || source.includes('registration') || source.includes('account-d1') || source.includes('public-link'));
+}
+
 function sanitizeTableRow(row = {}) {
   const id = clean(
     row.id || row.uid || row.publicKey || row.nickname || crypto.randomUUID(),
@@ -691,7 +718,10 @@ function sanitizeTableRow(row = {}) {
         : {},
     source: clean(row.source || "registration", 40),
     rowType: clean(row.rowType || "", 80),
-    updatedAtMs: Number(row.updatedAtMs) || Date.now(),
+    submittedAtMs: Number(row.submittedAtMs || row.registeredAtMs || 0) || 0,
+    registeredAtMs: Number(row.registeredAtMs || row.submittedAtMs || 0) || 0,
+    createdAtMs: Number(row.createdAtMs || 0) || 0,
+    updatedAtMs: Number(row.updatedAtMs || row.submittedAtMs || row.registeredAtMs || row.createdAtMs || Date.now()) || Date.now(),
   };
 }
 
@@ -1671,16 +1701,15 @@ async function handleRegionTableRegistration(request, env) {
   const isPublicRegistration = Boolean(body?.publicLink || body?.shareCode || body?.row?.publicKey);
   if (!user?.uid && !isPublicRegistration) return json({ ok: false, error: "auth_required" }, 401);
 
+  let canonicalForm = null;
   if (!user?.uid) {
     const shareCode = normalizeCode(body?.shareCode || "");
     if (!shareCode) return json({ ok: false, error: "share_code_required" }, 403);
-    const share = await db.prepare(
-      `SELECT code, region, cycle_id, expires_at_ms, revoked FROM region_table_shares WHERE code = ?1 LIMIT 1`
-    ).bind(shareCode).first();
-    if (!share || Number(share.revoked) === 1) return json({ ok: false, error: "share_not_found" }, 404);
-    if (Number(share.expires_at_ms) > 0 && Number(share.expires_at_ms) < Date.now()) return json({ ok: false, error: "share_expired" }, 410);
-    if (normalizeRegion(share.region) !== region) return json({ ok: false, error: "share_region_mismatch" }, 403);
-    if (normalizeCycleId(share.cycle_id || "active") !== cycleId) return json({ ok: false, error: "share_cycle_mismatch" }, 409);
+    canonicalForm = await readRegionFormShareD1(db, shareCode);
+    if (!canonicalForm) return json({ ok: false, error: "share_not_found" }, 404);
+    if (normalizeRegion(canonicalForm.region) !== region) return json({ ok: false, error: "share_region_mismatch" }, 403);
+    if (normalizeCycleId(canonicalForm.cycleId || "active") !== cycleId) return json({ ok: false, error: "share_cycle_mismatch" }, 409);
+    if (!isRegionFormOpenD1(canonicalForm.settings || {})) return json({ ok: false, error: "region_form_closed" }, 423, "private, no-store");
   }
 
   const rawRow = body?.row && typeof body.row === "object" ? body.row : {};
@@ -1691,7 +1720,13 @@ async function handleRegionTableRegistration(request, env) {
   } else {
     meta = await readTableMeta(db, region, cycleId);
   }
-  const currentSettings = sanitizeSettings({ ...(parseJson(meta?.settings_json, {}) || {}), ...(body?.settings || {}), currentCycleId: cycleId });
+  canonicalForm = canonicalForm || await readRegionFormSettingsD1(db, region).catch(() => null);
+  const currentSettings = sanitizeSettings({ ...(parseJson(meta?.settings_json, {}) || {}), ...(canonicalForm?.settings || {}), currentCycleId: cycleId });
+  if (isRegionFormSubmission(body)) {
+    if (!canonicalForm) return json({ ok: false, error: "region_form_settings_not_found" }, 404, "private, no-store");
+    if (canonicalForm?.cycleId && normalizeCycleId(canonicalForm.cycleId) !== cycleId) return json({ ok: false, error: "region_form_cycle_mismatch" }, 409, "private, no-store");
+    if (!isRegionFormOpenD1(currentSettings)) return json({ ok: false, error: "region_form_closed" }, 423, "private, no-store");
+  }
   if (meta) await migrateLegacyTableRowsIfNeeded(db, meta);
   const rawId = clean(rawRow.id || "", 180);
   const rawUid = clean(rawRow.uid || "", 160);
@@ -1737,7 +1772,7 @@ async function handleRegionTableRegistration(request, env) {
   }
 
   const nowMs = Date.now();
-  const savedRow = sanitizeTableRow({ ...nextRow, updatedAtMs: nowMs });
+  const savedRow = sanitizeTableRow({ ...nextRow, submittedAtMs: existingRow?.submittedAtMs || nextRow.submittedAtMs || nowMs, registeredAtMs: existingRow?.registeredAtMs || nextRow.registeredAtMs || nextRow.submittedAtMs || nowMs, updatedAtMs: nowMs });
   await upsertTableRowStatement(db, region, cycleId, savedRow).run();
   const rowsCount = await countTableRows(db, region, cycleId);
   const table = await updateTableMeta(db, { region, cycleId, version: nowMs, settings: currentSettings }, rowsCount);
@@ -1952,18 +1987,16 @@ async function handleRegionTableShareCreate(request, env) {
     )
     .run();
   await deletePublicShareCache(request, "region-table", code);
+  await deletePublicShareCache(request, "snapshot-region-table", code);
   return json({ ok: true, code, region, cycleId });
 }
 
-async function handleRegionTableShareRead(request, env, codeValue) {
+
+async function buildRegionTableSharePayload(env, codeValue) {
   const code = normalizeCode(codeValue);
-  if (!code) return json({ ok: false, error: "share_code_required" }, 400);
-
-  const cached = await readPublicShareCache(request, env, "region-table", code);
-  if (cached) return cached;
-
+  if (!code) return { response: json({ ok: false, error: "share_code_required" }, 400) };
   const db = regionTableDb(env);
-  if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
+  if (!db) return { response: json({ ok: false, error: "d1_not_configured" }, 500) };
   await ensureRegionTableSchema(db);
   const share = await db
     .prepare(
@@ -1972,12 +2005,12 @@ async function handleRegionTableShareRead(request, env, codeValue) {
     .bind(code)
     .first();
   if (!share || Number(share.revoked) === 1)
-    return json({ ok: false, error: "share_not_found" }, 404);
+    return { response: json({ ok: false, error: "share_not_found" }, 404) };
   if (
     Number(share.expires_at_ms) > 0 &&
     Number(share.expires_at_ms) < Date.now()
   )
-    return json({ ok: false, error: "share_expired" }, 410);
+    return { response: json({ ok: false, error: "share_expired" }, 410) };
   const region = normalizeRegion(share.region);
   const cycleId = normalizeCycleId(share.cycle_id || "active");
   const table = (await readTable(db, region, cycleId)) || {
@@ -1988,19 +2021,56 @@ async function handleRegionTableShareRead(request, env, codeValue) {
     settings: { currentCycleId: cycleId, open: true, enabled: true },
     rows: [],
   };
-  const payload = {
-    ok: true,
-    table: { ...table, region, cycleId },
-    usage: { d1RowsRead: Math.max(1, Number(table?.rows?.length || 0) + 1), d1RowsWritten: 0 },
-    cache: { enabled: isPublicShareCacheEnabled(env), ttlSeconds: publicShareCacheSeconds(env), source: "public-share-cache" },
+  return {
+    code,
+    expiresAtMs: Number(share.expires_at_ms || 0) || 0,
+    payload: {
+      ok: true,
+      table: { ...table, region, cycleId },
+      usage: { d1RowsRead: Math.max(1, Number(table?.rows?.length || 0) + 1), d1RowsWritten: 0 },
+      cache: { enabled: isPublicShareCacheEnabled(env), ttlSeconds: publicShareCacheSeconds(env), source: "public-share-cache" },
+    }
   };
+}
+
+async function handleRegionTableShareRead(request, env, codeValue) {
+  const code = normalizeCode(codeValue);
+  if (!code) return json({ ok: false, error: "share_code_required" }, 400);
+
+  const cached = await readPublicShareCache(request, env, "region-table", code);
+  if (cached) return cached;
+
+  const built = await buildRegionTableSharePayload(env, code);
+  if (built.response) return built.response;
   return writePublicShareCache(
     request,
     env,
     "region-table",
     code,
+    built.payload,
+    remainingCacheSecondsUntil(built.expiresAtMs, publicShareCacheSeconds(env)),
+  );
+}
+
+async function handlePublicRegionTableSnapshot(request, env, codeValue) {
+  const code = normalizeCode(codeValue);
+  if (!code) return json({ ok: false, error: "share_code_required" }, 400);
+  const cached = await readPublicShareCache(request, env, "snapshot-region-table", code);
+  if (cached) return cached;
+  const built = await buildRegionTableSharePayload(env, code);
+  if (built.response) return built.response;
+  const payload = {
+    ...built.payload,
+    snapshot: { kind: "region-table", static: true, code, generatedAtMs: Date.now(), ttlSeconds: publicShareCacheSeconds(env) },
+    cache: { ...(built.payload.cache || {}), source: "public-static-snapshot", workerRequest: 1 }
+  };
+  return writePublicShareCache(
+    request,
+    env,
+    "snapshot-region-table",
+    code,
     payload,
-    remainingCacheSecondsUntil(share.expires_at_ms, publicShareCacheSeconds(env)),
+    remainingCacheSecondsUntil(built.expiresAtMs, publicShareCacheSeconds(env)),
   );
 }
 
@@ -2085,8 +2155,36 @@ async function handleFinalPlanShareCreate(request, env) {
     plan.expiresAtMs,
   ).run();
   await deletePublicShareCache(request, "final-plan", plan.code);
+  await deletePublicShareCache(request, "snapshot-final-plan", plan.code);
   await grantRegionAccess(db, plan.region, user.uid, 'final-plan-share');
   return json({ ok: true, plan, usage: { d1RowsWritten: 1 } });
+}
+
+
+async function buildFinalPlanSharePayload(env, codeValue) {
+  const code = normalizeCode(codeValue);
+  if (!code) return { response: json({ ok: false, error: 'final_plan_code_required' }, 400) };
+  const db = regionTableDb(env);
+  if (!db) return { response: json({ ok: false, error: 'd1_not_configured' }, 500) };
+  await ensureRegionTableSchema(db);
+  const row = await db.prepare(
+    `SELECT code, region, cycle_id, event_start_at_ms, title, shift, html, text, updated_at_ms, updated_by, updated_by_name, expires_at_ms, revoked
+       FROM final_plan_shares
+      WHERE code = ?1
+      LIMIT 1`
+  ).bind(code).first();
+  if (!row || Number(row.revoked) === 1) return { response: json({ ok: false, error: 'final_plan_not_found' }, 404) };
+  if (Number(row.expires_at_ms) > 0 && Number(row.expires_at_ms) < Date.now()) return { response: json({ ok: false, error: 'final_plan_expired' }, 410) };
+  return {
+    code,
+    expiresAtMs: Number(row.expires_at_ms || 0) || 0,
+    payload: {
+      ok: true,
+      plan: finalPlanRowToPlan(row),
+      usage: { d1RowsRead: 1, d1RowsWritten: 0 },
+      cache: { enabled: isPublicShareCacheEnabled(env), ttlSeconds: publicShareCacheSeconds(env), source: "public-share-cache" },
+    }
+  };
 }
 
 async function handleFinalPlanShareRead(request, env, codeValue) {
@@ -2096,30 +2194,37 @@ async function handleFinalPlanShareRead(request, env, codeValue) {
   const cached = await readPublicShareCache(request, env, "final-plan", code);
   if (cached) return cached;
 
-  const db = regionTableDb(env);
-  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
-  await ensureRegionTableSchema(db);
-  const row = await db.prepare(
-    `SELECT code, region, cycle_id, event_start_at_ms, title, shift, html, text, updated_at_ms, updated_by, updated_by_name, expires_at_ms, revoked
-       FROM final_plan_shares
-      WHERE code = ?1
-      LIMIT 1`
-  ).bind(code).first();
-  if (!row || Number(row.revoked) === 1) return json({ ok: false, error: 'final_plan_not_found' }, 404);
-  if (Number(row.expires_at_ms) > 0 && Number(row.expires_at_ms) < Date.now()) return json({ ok: false, error: 'final_plan_expired' }, 410);
-  const payload = {
-    ok: true,
-    plan: finalPlanRowToPlan(row),
-    usage: { d1RowsRead: 1, d1RowsWritten: 0 },
-    cache: { enabled: isPublicShareCacheEnabled(env), ttlSeconds: publicShareCacheSeconds(env), source: "public-share-cache" },
-  };
+  const built = await buildFinalPlanSharePayload(env, code);
+  if (built.response) return built.response;
   return writePublicShareCache(
     request,
     env,
     "final-plan",
     code,
+    built.payload,
+    remainingCacheSecondsUntil(built.expiresAtMs, publicShareCacheSeconds(env)),
+  );
+}
+
+async function handlePublicFinalPlanSnapshot(request, env, codeValue) {
+  const code = normalizeCode(codeValue);
+  if (!code) return json({ ok: false, error: 'final_plan_code_required' }, 400);
+  const cached = await readPublicShareCache(request, env, "snapshot-final-plan", code);
+  if (cached) return cached;
+  const built = await buildFinalPlanSharePayload(env, code);
+  if (built.response) return built.response;
+  const payload = {
+    ...built.payload,
+    snapshot: { kind: "final-plan", static: true, code, generatedAtMs: Date.now(), ttlSeconds: publicShareCacheSeconds(env) },
+    cache: { ...(built.payload.cache || {}), source: "public-static-snapshot", workerRequest: 1 }
+  };
+  return writePublicShareCache(
+    request,
+    env,
+    "snapshot-final-plan",
+    code,
     payload,
-    remainingCacheSecondsUntil(row.expires_at_ms, publicShareCacheSeconds(env)),
+    remainingCacheSecondsUntil(built.expiresAtMs, publicShareCacheSeconds(env)),
   );
 }
 
@@ -2500,6 +2605,85 @@ async function handlePublicStatsExport(request, env) {
     d1UpdatedAtMs: Number(meta?.updated_at_ms || 0),
     buckets: rows?.results?.length || 0,
     players
+  }, 200, 'private, no-store');
+}
+
+
+function shareSnapshotFileName(kind = '', code = '') {
+  const safeKind = clean(kind, 8).replace(/[^a-z]/g, '');
+  const safeCode = normalizeCode(code);
+  if (!safeKind || !safeCode) return '';
+  return `public-cache/share/${safeKind}/${safeCode}.json`;
+}
+
+function exportedSharePayload(payload = {}, kind = '', code = '') {
+  const now = Date.now();
+  return {
+    ...(payload || {}),
+    usage: { d1RowsRead: 0, d1RowsWritten: 0 },
+    snapshot: {
+      kind: kind === 'p' ? 'final-plan' : 'region-table',
+      static: true,
+      exported: true,
+      code: normalizeCode(code),
+      generatedAtMs: now,
+      generatedAt: new Date(now).toISOString()
+    },
+    cache: {
+      ...((payload && payload.cache) || {}),
+      source: 'github-public-cache-export',
+      workerRequest: 0,
+      d1RowsRead: 0,
+      d1RowsWritten: 0
+    }
+  };
+}
+
+async function handlePublicShareSnapshotExport(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  if (statsSecret(env) && !hasValidStatsSecret(request, env)) return json({ ok: false, error: 'stats_secret_required' }, 403);
+  await ensureRegionTableSchema(db);
+  const now = Date.now();
+  const tableRows = await db.prepare(
+    `SELECT code FROM region_table_shares
+      WHERE revoked = 0 AND (expires_at_ms = 0 OR expires_at_ms > ?1)
+      ORDER BY created_at_ms DESC
+      LIMIT 500`
+  ).bind(now).all();
+  const finalRows = await db.prepare(
+    `SELECT code FROM final_plan_shares
+      WHERE revoked = 0 AND (expires_at_ms = 0 OR expires_at_ms > ?1)
+      ORDER BY updated_at_ms DESC
+      LIMIT 500`
+  ).bind(now).all();
+  const files = [];
+  for (const row of tableRows?.results || []) {
+    const code = normalizeCode(row?.code);
+    if (!code) continue;
+    const built = await buildRegionTableSharePayload(env, code);
+    if (built.response || !built.payload?.ok) continue;
+    files.push({ kind: 'rt', code, path: shareSnapshotFileName('rt', code), data: exportedSharePayload(built.payload, 'rt', code) });
+  }
+  for (const row of finalRows?.results || []) {
+    const code = normalizeCode(row?.code);
+    if (!code) continue;
+    const built = await buildFinalPlanSharePayload(env, code);
+    if (built.response || !built.payload?.ok) continue;
+    files.push({ kind: 'p', code, path: shareSnapshotFileName('p', code), data: exportedSharePayload(built.payload, 'p', code) });
+  }
+  return json({
+    ok: true,
+    source: 'cloudflare-d1-public-share-export',
+    generatedAt: new Date(now).toISOString(),
+    generatedAtMs: now,
+    files,
+    counts: {
+      total: files.length,
+      regionTables: files.filter(file => file.kind === 'rt').length,
+      finalPlans: files.filter(file => file.kind === 'p').length
+    },
+    usage: { d1RowsRead: Math.max(1, files.length), d1RowsWritten: 0 }
   }, 200, 'private, no-store');
 }
 
@@ -3038,7 +3222,7 @@ async function handleRegionSharesRotate(request, env) {
   const finalResult = await db.prepare(`DELETE FROM final_plan_shares WHERE region = ?1`).bind(region).run();
   const tableShares = Number(tableResult?.meta?.changes) || 0;
   const finalPlans = Number(finalResult?.meta?.changes) || 0;
-  const cacheDeleted = (await deletePublicShareCaches(request, "region-table", tableCodes)) + (await deletePublicShareCaches(request, "final-plan", finalCodes));
+  const cacheDeleted = (await deletePublicShareCaches(request, "region-table", tableCodes)) + (await deletePublicShareCaches(request, "snapshot-region-table", tableCodes)) + (await deletePublicShareCaches(request, "final-plan", finalCodes)) + (await deletePublicShareCaches(request, "snapshot-final-plan", finalCodes));
   return json({ ok: true, region, tableShares, finalPlans, deleted: tableShares + finalPlans, cacheDeleted, usage: { d1RowsRead: tableCodes.length + finalCodes.length, d1RowsWritten: tableShares + finalPlans }, source: 'cloudflare-d1-share-rotation' });
 }
 
@@ -3059,8 +3243,8 @@ function secretLinkUrls(request, type = '', region = '', code = '') {
   if (!safeCode) return { shortUrl: '', publicUrl: '' };
   if (safeType === 'form') {
     return {
-      shortUrl: `${origin}/f/${encodeURIComponent(safeRegion)}/${encodeURIComponent(safeCode)}`,
-      publicUrl: `${origin}/region-form.html?r=${encodeURIComponent(safeRegion)}&s=${encodeURIComponent(safeCode)}`
+      shortUrl: `${origin}/f/${encodeURIComponent(safeCode)}`,
+      publicUrl: `${origin}/region-form.html?s=${encodeURIComponent(safeCode)}`
     };
   }
   if (safeType === 'table') {
@@ -3071,7 +3255,7 @@ function secretLinkUrls(request, type = '', region = '', code = '') {
   }
   if (safeType === 'final') {
     return {
-      shortUrl: `${origin}/plan/${encodeURIComponent(safeCode)}`,
+      shortUrl: `${origin}/p/${encodeURIComponent(safeCode)}`,
       publicUrl: `${origin}/public-plan.html?s=${encodeURIComponent(safeCode)}`
     };
   }
@@ -3216,6 +3400,7 @@ async function handleSecretLinksRotate(request, env) {
     rotated.table = Number(result?.meta?.changes) || 0;
     rowsWritten += rotated.table;
     cacheDeleted += await deletePublicShareCaches(request, "region-table", codes);
+    cacheDeleted += await deletePublicShareCaches(request, "snapshot-region-table", codes);
   }
 
   if (scope === 'final' || scope === 'all') {
@@ -3229,6 +3414,7 @@ async function handleSecretLinksRotate(request, env) {
     rotated.final = Number(result?.meta?.changes) || 0;
     rowsWritten += rotated.final;
     cacheDeleted += await deletePublicShareCaches(request, "final-plan", codes);
+    cacheDeleted += await deletePublicShareCaches(request, "snapshot-final-plan", codes);
   }
 
   const payload = await buildSecretLinksPayload(db, request, region);
@@ -4728,6 +4914,10 @@ export default {
         return await handlePublicStatsExport(request, env);
       }
 
+      if (url.pathname === "/api/public-share/export" && request.method === "GET") {
+        return await handlePublicShareSnapshotExport(request, env);
+      }
+
 
 
 
@@ -4849,6 +5039,16 @@ export default {
       }
 
 
+      const publicRegionTableSnapshotMatch = url.pathname.match(/^\/public-cache\/share\/rt\/([A-Za-z0-9_-]{6,140})\.json$/);
+      if (publicRegionTableSnapshotMatch && request.method === "GET") {
+        return await handlePublicRegionTableSnapshot(request, env, publicRegionTableSnapshotMatch[1]);
+      }
+
+      const publicFinalPlanSnapshotMatch = url.pathname.match(/^\/public-cache\/share\/p\/([A-Za-z0-9_-]{6,140})\.json$/);
+      if (publicFinalPlanSnapshotMatch && request.method === "GET") {
+        return await handlePublicFinalPlanSnapshot(request, env, publicFinalPlanSnapshotMatch[1]);
+      }
+
       if (url.pathname === "/api/region-alliances" && request.method === "GET") {
         return await handleRegionAlliancesRead(request, env);
       }
@@ -4948,17 +5148,25 @@ export default {
       return json({ ok: false, error: message }, status);
     }
 
-    const formMatch = url.pathname.match(
-      /^\/f\/(\d{1,8})\/([A-Za-z0-9_-]{6,80})$/,
-    );
-    if (formMatch) {
+    const formShortMatch = url.pathname.match(/^\/f\/([A-Za-z0-9_-]{6,120})$/);
+    if (formShortMatch) {
       return Response.redirect(
-        `${url.origin}/region-form.html?r=${encodeURIComponent(formMatch[1])}&s=${encodeURIComponent(formMatch[2])}`,
+        `${url.origin}/region-form.html?s=${encodeURIComponent(formShortMatch[1])}`,
         302,
       );
     }
 
-    const planMatch = url.pathname.match(/^\/plan\/([A-Za-z0-9_-]{6,120})$/);
+    const formMatch = url.pathname.match(
+      /^\/f\/(\d{1,8})\/([A-Za-z0-9_-]{6,120})$/,
+    );
+    if (formMatch) {
+      return Response.redirect(
+        `${url.origin}/region-form.html?s=${encodeURIComponent(formMatch[2])}`,
+        302,
+      );
+    }
+
+    const planMatch = url.pathname.match(/^\/(?:p|plan)\/([A-Za-z0-9_-]{6,120})$/);
     if (planMatch) {
       return Response.redirect(
         `${url.origin}/public-plan.html?s=${encodeURIComponent(planMatch[1])}`,
@@ -4974,6 +5182,17 @@ export default {
         `${url.origin}/public-region-table.html?s=${encodeURIComponent(regionTableMatch[1])}`,
         302,
       );
+    }
+
+
+    if (url.pathname === "/public-region-table") {
+      return Response.redirect(`${url.origin}/public-region-table.html${url.search || ''}`, 302);
+    }
+    if (url.pathname === "/public-plan") {
+      return Response.redirect(`${url.origin}/public-plan.html${url.search || ''}`, 302);
+    }
+    if (url.pathname === "/region-form") {
+      return Response.redirect(`${url.origin}/region-form.html${url.search || ''}`, 302);
     }
 
     if (url.pathname.startsWith("/api/")) {
