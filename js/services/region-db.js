@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=200';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=200';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=203';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=203';
 import {
   getUserProfile,
   getFarmById,
@@ -12,8 +12,8 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=200';
-import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1 } from './region-table-cache.js?v=200';
+} from './user-db.js?v=203';
+import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1 } from './region-table-cache.js?v=203';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -858,7 +858,7 @@ function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
 }
 
 async function actionLogCacheModule() {
-  return import('./action-log-cache.js?v=200');
+  return import('./action-log-cache.js?v=203');
 }
 
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
@@ -893,15 +893,9 @@ async function writeRegionActionLog(firebase, user, profile = {}, region = '', a
         if (result?.ok !== false) return result.log || payload;
       }
     } catch (d1Error) {
-      console.warn('[WKD] D1 action log fallback:', d1Error);
+      console.warn('[WKD] D1 action log unavailable; Firebase fallback disabled:', d1Error);
     }
-    const { db, firestoreMod } = firebase || await getFirebaseParts();
-    await firestoreMod.addDoc(firestoreMod.collection(db, 'regions', safeRegion, 'actionLogs'), {
-      ...payload,
-      createdAt: firestoreMod.serverTimestamp()
-    });
-    trackWrites(1);
-    return payload;
+    return { ...payload, source: 'action-log-d1-unavailable-no-firebase' };
   } catch (error) {
     console.warn('[WKD] action log skipped:', error);
     return null;
@@ -930,26 +924,7 @@ export async function listRegionActionLogs(user, regionOverride = '', { limitCou
   } catch (d1Error) {
     console.warn('[WKD] D1 action log list fallback:', d1Error);
   }
-  const ref = firestoreMod.collection(db, 'regions', region, 'actionLogs');
-  const order = firestoreMod.orderBy('createdAtMs', 'desc');
-  const cursor = safeCursorMs > 0 ? [firestoreMod.startAfter(safeCursorMs)] : [];
-  let q = firestoreMod.query(ref, order, ...cursor, firestoreMod.limit(limitValue));
-  if (role === 'officer' && ownAlliance) {
-    q = firestoreMod.query(ref, firestoreMod.where('alliance', '==', ownAlliance), order, ...cursor, firestoreMod.limit(limitValue));
-  }
-  const snap = await firestoreMod.getDocs(q).catch(async () => {
-    const fallbackCursor = safeCursorMs > 0 ? [firestoreMod.startAfter(safeCursorMs)] : [];
-    if (role === 'officer' && ownAlliance) {
-      return firestoreMod.getDocs(firestoreMod.query(ref, firestoreMod.where('alliance', '==', ownAlliance), ...fallbackCursor, firestoreMod.limit(limitValue)));
-    }
-    return firestoreMod.getDocs(firestoreMod.query(ref, ...fallbackCursor, firestoreMod.limit(limitValue)));
-  });
-  trackReads(Math.max(1, snap.docs.length));
-  const rows = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-    .filter(row => regionActionVisibleTo(profile || {}, region, user, row))
-    .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
-  const lastRow = rows[rows.length - 1] || null;
-  return { profile, region, rows, limitCount: limitValue, hasMore: rows.length === limitValue, nextCursorMs: Number(lastRow?.createdAtMs) || 0, source: 'firebase-action-log-fallback' };
+  return { profile, region, rows: [], limitCount: limitValue, hasMore: false, nextCursorMs: 0, source: 'action-log-d1-unavailable-no-firebase' };
 }
 
 
@@ -966,11 +941,9 @@ export async function deleteRegionActionLog(user, regionOverride = '', logId = '
       return { profile, region, ...(await mod.deleteRegionActionLogD1(user, region, safeLogId)) };
     }
   } catch (d1Error) {
-    console.warn('[WKD] D1 action log delete fallback:', d1Error);
+    console.warn('[WKD] D1 action log delete unavailable; Firebase fallback disabled:', d1Error);
   }
-  await firestoreMod.deleteDoc(firestoreMod.doc(db, 'regions', region, 'actionLogs', safeLogId));
-  trackDeletes(1);
-  return { profile, region, deleted: 1, source: 'firebase-action-log-fallback' };
+  return { profile, region, deleted: 0, source: 'action-log-d1-unavailable-no-firebase' };
 }
 
 export async function deleteRegionActionLogs(user, regionOverride = '', logIds = []) {
@@ -986,13 +959,9 @@ export async function deleteRegionActionLogs(user, regionOverride = '', logIds =
       return { profile, region, ...(await mod.deleteRegionActionLogsD1(user, region, ids)) };
     }
   } catch (d1Error) {
-    console.warn('[WKD] D1 action log batch delete fallback:', d1Error);
+    console.warn('[WKD] D1 action log batch delete unavailable; Firebase fallback disabled:', d1Error);
   }
-  const batch = firestoreMod.writeBatch(db);
-  ids.forEach(id => batch.delete(firestoreMod.doc(db, 'regions', region, 'actionLogs', id)));
-  await batch.commit();
-  trackDeletes(ids.length);
-  return { profile, region, deleted: ids.length, source: 'firebase-action-log-fallback' };
+  return { profile, region, deleted: 0, source: 'action-log-d1-unavailable-no-firebase' };
 }
 
 export async function clearRegionActionLogs(user, regionOverride = '', { olderThanMs = 0, limitCount = 500 } = {}) {
@@ -1009,18 +978,7 @@ export async function clearRegionActionLogs(user, regionOverride = '', { olderTh
   } catch (d1Error) {
     console.warn('[WKD] D1 action log clear fallback:', d1Error);
   }
-  const ref = firestoreMod.collection(db, 'regions', region, 'actionLogs');
-  const conditions = [];
-  if (Number(olderThanMs) > 0) conditions.push(firestoreMod.where('createdAtMs', '<', Number(olderThanMs)), firestoreMod.orderBy('createdAtMs', 'asc'));
-  else conditions.push(firestoreMod.orderBy('createdAtMs', 'asc'));
-  const snap = await firestoreMod.getDocs(firestoreMod.query(ref, ...conditions, firestoreMod.limit(safeLimit))).catch(() => ({ docs: [] }));
-  trackReads(Math.max(1, snap.docs.length));
-  if (!snap.docs.length) return { profile, region, deleted: 0, hasMore: false, source: 'firebase-action-log-fallback' };
-  const batch = firestoreMod.writeBatch(db);
-  snap.docs.forEach(docSnap => batch.delete(docSnap.ref));
-  await batch.commit();
-  trackDeletes(snap.docs.length);
-  return { profile, region, deleted: snap.docs.length, hasMore: snap.docs.length === safeLimit, source: 'firebase-action-log-fallback' };
+  return { profile, region, deleted: 0, hasMore: false, source: 'action-log-d1-unavailable-no-firebase' };
 }
 
 export async function getSecurityOverview(user) {
@@ -1073,7 +1031,7 @@ export async function cleanupOldEmailFields(user) {
 
 async function rotateRegionPublicSharesForNewCycle(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=200');
+    const mod = await import('./region-table-cache.js?v=203');
     if (!mod?.rotateRegionPublicShares) return null;
     return await mod.rotateRegionPublicShares(user, region);
   } catch (error) {
@@ -1169,17 +1127,14 @@ async function saveRegionFinalPlanShareLink({ db, firestoreMod }, user, region, 
 
 export async function shareRegionFinalPlan(user, region, payload = {}) {
   if (!user) throw new Error('auth-required');
-  const firebase = await getFirebaseParts();
-  const { db, firestoreMod } = firebase;
   const profile = await getUserProfile(user.uid);
   const safeRegion = normalizeRegion(region);
   if (!safeRegion) throw new Error('region-required');
   const settings = await getRegionSettings(safeRegion);
   if (!canEditRegionTowerPlan(profile, safeRegion, user, settings)) throw new Error('region-plan-access-denied');
-  const code = await saveRegionFinalPlanShareLink(firebase, user, safeRegion, settings, false);
   const cleanHtml = trim(payload.html).slice(0, 700000);
   const cleanText = trim(payload.text).slice(0, 50000);
-  await writeRegionActionLog(firebase, user, profile, safeRegion, 'final_plan_shared', { summary: 'Створено секретне посилання фінального плану', shift: trim(payload.shift || '') });
+  const code = makeShortLinkCode();
   const nowMs = Date.now();
   const updatedByName = getRegionActorName(profile || {}, safeRegion, user);
   const sharePayload = {
@@ -1191,15 +1146,15 @@ export async function shareRegionFinalPlan(user, region, payload = {}) {
     text: cleanText,
     title: trim(payload.title || 'Final plan').slice(0, 120),
     shift: trim(payload.shift || '').slice(0, 40),
-    updatedAt: firestoreMod.serverTimestamp(),
     updatedAtMs: nowMs,
     updatedBy: user.uid,
-    updatedByName
+    updatedByName,
+    expiresAtMs: Number(payload.expiresAtMs) || 0
   };
-  await firestoreMod.setDoc(firestoreMod.doc(db, 'finalPlanShares', code), sharePayload, { merge: true });
-  trackWrites(1);
-  await publishFinalPlanToD1Cache(user, sharePayload).catch(() => null);
-  return { code, region: safeRegion };
+  const d1 = await publishFinalPlanToD1Cache(user, sharePayload);
+  if (!d1 || d1.ok === false || d1.skipped) throw new Error(d1?.error || 'final-plan-d1-share-required');
+  writeRegionActionLog(null, user, profile, safeRegion, 'final_plan_shared', { summary: 'Створено D1-посилання фінального плану', shift: trim(payload.shift || ''), noFirebaseFallback: true }).catch(() => null);
+  return { code, region: safeRegion, source: 'cloudflare-d1-final-plan' };
 }
 
 export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
@@ -1219,7 +1174,7 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=200');
+    const mod = await import('./region-table-cache.js?v=203');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1229,7 +1184,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=200');
+    const mod = await import('./region-table-cache.js?v=203');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1240,7 +1195,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function updateRegionTableRowD1First(user, region, registrationId, values = {}, settings = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=200');
+    const mod = await import('./region-table-cache.js?v=203');
     return await mod.updateRegionTableRowD1(user, region, registrationId, values, settings, { updateOnly: true });
   } catch (error) {
     const status = Number(error?.status || 0) || 0;
@@ -1252,7 +1207,7 @@ async function updateRegionTableRowD1First(user, region, registrationId, values 
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=200');
+    const mod = await import('./region-table-cache.js?v=203');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1262,7 +1217,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=200');
+    const mod = await import('./region-table-cache.js?v=203');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1273,7 +1228,7 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
 
 async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=200');
+    const mod = await import('./region-table-cache.js?v=203');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readMyRegionRegistrationD1(user, region, farmId, options);
   } catch (error) {
@@ -1284,7 +1239,7 @@ async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', opti
 
 async function readFinalPlanFromD1Cache(code, options = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=200');
+    const mod = await import('./final-plan-cache.js?v=203');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.readFinalPlanShare(code, options);
   } catch (error) {
@@ -1295,7 +1250,7 @@ async function readFinalPlanFromD1Cache(code, options = {}) {
 
 async function publishFinalPlanToD1Cache(user, payload = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=200');
+    const mod = await import('./final-plan-cache.js?v=203');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.publishFinalPlanShare(user, payload);
   } catch (error) {
@@ -1322,8 +1277,6 @@ function sanitizeRegionTableRow(row = {}) {
 
 export async function shareRegionTable(user, region) {
   if (!user) throw new Error('auth-required');
-  const firebase = await getFirebaseParts();
-  const { db, firestoreMod } = firebase;
   const profile = await getUserProfile(user.uid);
   const safeRegion = normalizeRegion(region || getGameProfile(profile || {}).region);
   if (!safeRegion) throw new Error('region-required');
@@ -1332,29 +1285,16 @@ export async function shareRegionTable(user, region) {
   const code = makeShortLinkCode();
   const settings = result.settings || {};
   const rows = (result.rows || []).map(sanitizeRegionTableRow).filter(row => row.nickname).slice(0, 800);
-  await firestoreMod.setDoc(firestoreMod.doc(db, 'regionTableShares', code), {
-    code,
-    region: safeRegion,
-    cycleId: settings.currentCycleId || '',
-    eventStartAtMs: Number(settings.eventStartAtMs) || 0,
-    closeAtMs: Number(settings.closeAtMs) || 0,
-    open: Boolean(settings.open),
-    rows,
-    createdAt: firestoreMod.serverTimestamp(),
-    createdAtMs: Date.now(),
-    createdBy: user.uid,
-    createdByName: getRegionActorName(profile || {}, safeRegion, user)
-  });
-  trackWrites(1);
-  await publishShareToRegionTableCache(user, {
+  const d1 = await publishShareToRegionTableCache(user, {
     code,
     region: safeRegion,
     cycleId: settings.currentCycleId || '',
     settings,
     rows
   });
-  await writeRegionActionLog(firebase, user, profile, safeRegion, 'region_table_shared', { summary: serviceT('actionLog.regionTableShared', 'Створено секретне посилання таблиці регіону') }).catch(() => null);
-  return { code, region: safeRegion };
+  if (!d1 || d1.ok === false || d1.skipped) throw new Error(d1?.error || 'region-table-d1-share-required');
+  writeRegionActionLog(null, user, profile, safeRegion, 'region_table_shared', { summary: serviceT('actionLog.regionTableShared', 'Створено D1-посилання таблиці регіону'), noFirebaseFallback: true }).catch(() => null);
+  return { code, region: safeRegion, source: 'cloudflare-d1-region-table-share' };
 }
 
 export async function resolveRegionTableShare(codeValue, options = {}) {
@@ -2742,7 +2682,7 @@ function localImportRegistrationKey(row = {}) {
 
 async function readLocalImportRegionLockFromD1(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=200');
+    const mod = await import('./region-table-cache.js?v=203');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readLocalImportRegionLock(user, region);
   } catch (error) {
@@ -2753,7 +2693,7 @@ async function readLocalImportRegionLockFromD1(user, region) {
 
 async function commitLocalImportRegionLockToD1(user, region, payload = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=200');
+    const mod = await import('./region-table-cache.js?v=203');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.commitLocalImportRegionLock(user, region, payload);
   } catch (error) {

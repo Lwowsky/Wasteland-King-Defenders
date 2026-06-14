@@ -1,7 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, scanD1Archives } from '../services/d1-archive-cleanup.js?v=200';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=200';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=200';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=203';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=203';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=203';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=203';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -22,7 +23,7 @@ import {
   updateFarmByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=200';
+} from '../services/user-db.js?v=203';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -31,7 +32,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=200';
+} from '../services/region-db.js?v=203';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -61,6 +62,8 @@ let playersPageMeta = { hasNext: false, reads: 0, queryMode: 'indexed' };
 let playerSearchDebounce = null;
 let cloudflareRealUsage = getCachedCloudflareUsage();
 let cloudflareUsageLoading = false;
+let githubUsage = getCachedGitHubUsage();
+let githubUsageLoading = false;
 let oldFirestoreCleanupCount = 0;
 let oldFirestoreAutoRunning = false;
 let d1AutoCleanupRunning = false;
@@ -479,6 +482,37 @@ function cloudflareValueCardHtml(key, value = 0, detail = '') {
   </article>`;
 }
 
+function githubDuration(value = 0) {
+  const ms = Math.max(0, Number(value) || 0);
+  if (!ms) return '—';
+  const sec = Math.round(ms / 1000);
+  if (sec < 60) return `${sec}s`;
+  const min = Math.floor(sec / 60);
+  const rest = sec % 60;
+  return rest ? `${min}m ${rest}s` : `${min}m`;
+}
+
+function githubValueCardHtml(key, value = '—', detail = '') {
+  return `<article class="admin-usage-card admin-usage-card--static">
+    <span>${escapeHtml(t(`admin.github.${key}.label`, key))}</span>
+    <b>${escapeHtml(String(value || '—'))}</b>
+    <small>${escapeHtml(t(`admin.github.${key}.detail`, detail))}</small>
+  </article>`;
+}
+
+function githubBytesCardHtml(key, usedBytes = 0, limitBytes = 0, detail = '') {
+  const row = { used: Math.max(0, Number(usedBytes) || 0), limit: Math.max(0, Number(limitBytes) || 0) };
+  row.remaining = Math.max(0, row.limit - row.used);
+  row.percent = row.limit ? Math.max(0, Math.min(100, (row.used / row.limit) * 100)) : 0;
+  return `<article class="admin-usage-card">
+    <span>${escapeHtml(t(`admin.github.${key}.label`, key))}</span>
+    <b>${escapeHtml(formatBytes(row.used))}</b>
+    <small>${escapeHtml(t('admin.usageRemaining', 'залишилось'))} · ${escapeHtml(formatBytes(row.remaining))} / ${escapeHtml(formatBytes(row.limit))}</small>
+    <div class="admin-usage-bar" aria-hidden="true"><i style="width:${row.percent}%"></i></div>
+    <small>${escapeHtml(t(`admin.github.${key}.detail`, detail))}</small>
+  </article>`;
+}
+
 function firebaseStaticLimitCardHtml(key, value, detail = '') {
   return `<article class="admin-usage-card admin-usage-card--static">
     <span>${escapeHtml(t(`admin.firebase.${key}.label`, key))}</span>
@@ -507,6 +541,7 @@ function renderUsage() {
   }
   if (note) note.textContent = t('admin.usageNote', 'Це орієнтовний локальний лічильник сайту, а не офіційні цифри Firebase. Він оновлюється тільки діями цього браузера. Точні цифри дивись вручну у Firebase Console → Firestore → Usage.');
   renderCloudflareUsage();
+  renderGitHubUsage();
 }
 
 function renderCloudflareUsage() {
@@ -565,6 +600,74 @@ function renderCloudflareUsage() {
   ].join('');
   const note = $('#cloudflareUsageNote');
   if (note) note.textContent = t('admin.cloudflareNoCacheNote', 'Показані довідкові ліміти Cloudflare. Натисни Оновити, щоб отримати реальні дані й зберегти їх локально для економії запитів.');
+}
+
+function renderGitHubUsage() {
+  const grid = $('#githubUsageGrid');
+  const note = $('#githubUsageNote');
+  if (!grid) return;
+  if (githubUsageLoading) {
+    grid.innerHTML = `<div class="admin-empty">${escapeHtml(t('admin.githubLoading', 'Завантажую GitHub дані...'))}</div>`;
+    if (note) note.textContent = t('admin.githubLoading', 'Завантажую GitHub дані...');
+    return;
+  }
+  if (githubUsage) {
+    const repo = githubUsage.repo || {};
+    const pages = githubUsage.pages || {};
+    const actions = githubUsage.actions || {};
+    const limits = githubUsage.limits || {};
+    grid.innerHTML = [
+      githubValueCardHtml('repo', repo.fullName || '—', 'GitHub repository'),
+      githubBytesCardHtml('repoSize', Number(repo.sizeKb || 0) * 1024, Number(limits.pagesSiteSizeBytes?.limit || 1024 * 1024 * 1024), 'Repository size compared with GitHub Pages site soft size'),
+      githubValueCardHtml('pagesStatus', pages.status || '—', 'GitHub Pages status'),
+      githubValueCardHtml('pagesUrl', pages.htmlUrl || pages.cname || '—', 'Published GitHub Pages URL'),
+      githubValueCardHtml('actionsLatest', `${actions.latestStatus || '—'}${actions.latestConclusion ? ` / ${actions.latestConclusion}` : ''}`, 'Latest GitHub Actions run'),
+      githubValueCardHtml('actionsDuration', githubDuration(actions.latestDurationMs), 'Latest run duration approximation'),
+      githubValueCardHtml('actionsRuns', formatCompactNumber(actions.totalRuns || 0), 'Total workflow runs returned by GitHub'),
+      staticLimitCardHtml('githubActionsMinutes', '2 000 / month', 'GitHub Free included private Actions minutes; public repos are generally free'),
+      staticLimitCardHtml('githubPagesBandwidth', '100 GB / month', 'GitHub Pages soft bandwidth limit'),
+      staticLimitCardHtml('githubPagesBuilds', '10 / hour', 'GitHub Pages soft build limit'),
+      staticLimitCardHtml('githubActionsCache', '10 GB / repo', 'GitHub Actions cache included storage')
+    ].join('');
+    if (note) {
+      const errors = Array.isArray(githubUsage.partialErrors) && githubUsage.partialErrors.length
+        ? ` ${tv('admin.githubPartialNote', 'Часткові помилки: {errors}', { errors: githubUsage.partialErrors.map(item => `${item.source}: ${item.error}`).join('; ') })}`
+        : '';
+      const key = githubUsage.fromCache ? 'admin.githubCachedNote' : (githubUsage.real ? 'admin.githubRealNote' : 'admin.githubStaticNote');
+      const fallback = githubUsage.fromCache
+        ? 'Збережені GitHub дані. Останнє оновлення: {updated}.'
+        : (githubUsage.real ? 'Реальні GitHub дані через Worker secret. Оновлено: {updated}.' : 'Показані довідкові GitHub ліміти. Для реальних даних додай GITHUB_TOKEN, GITHUB_OWNER і GITHUB_REPO у Worker secrets.');
+      note.textContent = `${tv(key, fallback, { updated: githubUsage.generatedAt || githubUsage.cachedAt || '—' })}${errors}`;
+    }
+    return;
+  }
+  grid.innerHTML = [
+    staticLimitCardHtml('githubActionsMinutes', '2 000 / month', 'GitHub Free included private Actions minutes; public repos are generally free'),
+    staticLimitCardHtml('githubPagesSize', '1 GB', 'Published GitHub Pages site size'),
+    staticLimitCardHtml('githubPagesBandwidth', '100 GB / month', 'GitHub Pages soft bandwidth limit'),
+    staticLimitCardHtml('githubPagesBuilds', '10 / hour', 'GitHub Pages soft build limit'),
+    staticLimitCardHtml('githubActionsCache', '10 GB / repo', 'GitHub Actions cache included storage')
+  ].join('');
+  if (note) note.textContent = t('admin.githubStaticNote', 'Показані довідкові GitHub ліміти. Для реальних даних додай GITHUB_TOKEN, GITHUB_OWNER і GITHUB_REPO у Worker secrets.');
+}
+
+async function refreshGitHubUsage() {
+  if (!currentUser || !canUseLimitsPanel()) return;
+  githubUsageLoading = true;
+  renderGitHubUsage();
+  try {
+    githubUsage = await fetchGitHubUsage(currentUser);
+  } catch (error) {
+    console.warn('[WKD] GitHub usage unavailable:', error);
+    githubUsage = getCachedGitHubUsage();
+    const note = $('#githubUsageNote');
+    if (note) note.textContent = githubUsage
+      ? t('admin.githubFetchFailedUsingCache', 'Не вдалося отримати свіжі GitHub дані. Показую кеш.')
+      : t('admin.githubFetchFailed', 'Не вдалося отримати GitHub дані. Перевір Worker secrets: GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO.');
+  } finally {
+    githubUsageLoading = false;
+    renderGitHubUsage();
+  }
 }
 
 async function refreshRealCloudflareUsage() {
@@ -671,6 +774,152 @@ function setD1ArchiveStatus(text, type = 'muted') {
   box.removeAttribute('data-i18n');
   box.textContent = text;
   box.dataset.type = type;
+}
+
+
+function setSecretLinksStatus(text, type = 'muted') {
+  const box = $('#secretLinksStatus');
+  if (!box) return;
+  box.removeAttribute('data-i18n');
+  box.textContent = text;
+  box.dataset.type = type;
+}
+
+function secretLinkLabel(type = '') {
+  const labels = {
+    form: t('admin.secretLinkTypeForm', 'Форма заявки'),
+    table: t('admin.secretLinkTypeTable', 'Таблиця регіону'),
+    final: t('admin.secretLinkTypeFinal', 'Фінальний план')
+  };
+  return labels[String(type || '').toLowerCase()] || type || '—';
+}
+
+function secretLinkState(item = {}) {
+  if (item.revoked) return t('admin.secretLinkRevoked', 'відкликано');
+  if (item.expired) return t('admin.secretLinkExpired', 'прострочено');
+  if (item.active) return t('admin.secretLinkActive', 'активне');
+  return t('admin.secretLinkOld', 'старе');
+}
+
+function renderSecretLinks(result = {}) {
+  const box = $('#secretLinksList');
+  if (!box) return;
+  const links = Array.isArray(result.links) ? result.links : [];
+  if (!links.length) {
+    box.innerHTML = `<div class="admin-empty">${escapeHtml(t('admin.secretLinksEmpty', 'Секретних посилань для цього регіону ще немає.'))}</div>`;
+    return;
+  }
+  const rows = links.map(item => {
+    const shortUrl = item.shortUrl || item.publicUrl || '';
+    const created = item.createdAtMs ? formatUserDate(new Date(item.createdAtMs)) : '—';
+    const updated = item.updatedAtMs ? formatUserDate(new Date(item.updatedAtMs)) : '—';
+    const expires = item.expiresAtMs ? formatUserDate(new Date(item.expiresAtMs)) : t('admin.secretLinkNoExpiry', 'без строку');
+    const state = secretLinkState(item);
+    return `<tr>
+      <td>${escapeHtml(secretLinkLabel(item.type))}</td>
+      <td><code>${escapeHtml(item.code)}</code></td>
+      <td>${escapeHtml(state)}</td>
+      <td>${escapeHtml(item.cycleId || '—')}</td>
+      <td>${escapeHtml(created || '—')}</td>
+      <td>${escapeHtml(updated || '—')}</td>
+      <td>${escapeHtml(expires || '—')}</td>
+      <td>${shortUrl ? `<button class="btn btn-small" type="button" data-copy-secret-link="${escapeHtml(shortUrl)}">${escapeHtml(t('common.copy', 'Копіювати'))}</button>` : '—'}</td>
+    </tr>`;
+  }).join('');
+  box.innerHTML = `<div class="admin-table-wrap"><table class="admin-table compact">
+    <thead><tr>
+      <th>${escapeHtml(t('admin.secretLinkType', 'Тип'))}</th>
+      <th>${escapeHtml(t('admin.secretLinkCode', 'Код'))}</th>
+      <th>${escapeHtml(t('admin.secretLinkStatus', 'Статус'))}</th>
+      <th>${escapeHtml(t('admin.secretLinkCycle', 'Цикл'))}</th>
+      <th>${escapeHtml(t('admin.secretLinkCreated', 'Створено'))}</th>
+      <th>${escapeHtml(t('admin.secretLinkUpdated', 'Оновлено'))}</th>
+      <th>${escapeHtml(t('admin.secretLinkExpires', 'Діє до'))}</th>
+      <th>${escapeHtml(t('admin.actions', 'Дії'))}</th>
+    </tr></thead><tbody>${rows}</tbody>
+  </table></div>`;
+  box.querySelectorAll('[data-copy-secret-link]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const value = btn.getAttribute('data-copy-secret-link') || '';
+      try {
+        await navigator.clipboard.writeText(value);
+        setSecretLinksStatus(t('admin.secretLinkCopied', 'Секретне посилання скопійовано.'), 'success');
+      } catch (_) {
+        setSecretLinksStatus(value, 'muted');
+      }
+    });
+  });
+}
+
+async function inspectSecretLinksPanel() {
+  if (!currentUser || !canUseLimitsPanel()) return null;
+  const region = selectedCleanRegion();
+  if (!region) {
+    setSecretLinksStatus(t('admin.cleanRegionRequired', 'Вибери регіон для перевірки.'), 'warn');
+    return null;
+  }
+  setSecretLinksStatus(t('admin.secretLinksChecking', 'Перевіряю секретні посилання...'), 'muted');
+  try {
+    const result = await inspectSecretLinks(currentUser, { region });
+    renderSecretLinks(result);
+    const counts = result.counts || {};
+    setSecretLinksStatus(tv('admin.secretLinksChecked', 'Секретні посилання: активні {active}, прострочені {expired}, відкликані {revoked}, всього {total}. Firebase reads: 0.', {
+      active: counts.active || 0,
+      expired: counts.expired || 0,
+      revoked: counts.revoked || 0,
+      total: counts.total || 0
+    }), 'success');
+    renderUsage();
+    return result;
+  } catch (error) {
+    console.error(error);
+    setSecretLinksStatus(t('admin.secretLinksCheckFailed', 'Не вдалося перевірити секретні посилання.'), 'error');
+    return null;
+  }
+}
+
+async function rotateSecretLinksPanel(scope = 'all') {
+  if (!currentUser || !canUseLimitsPanel()) return null;
+  const region = selectedCleanRegion();
+  if (!region) {
+    setSecretLinksStatus(t('admin.cleanRegionRequired', 'Вибери регіон для очищення.'), 'warn');
+    return null;
+  }
+  const label = secretLinkRotateLabel(scope);
+  const ok = await confirmAction({
+    title: tv('admin.secretLinksRotateTitle', 'Перевипустити {scope}?', { scope: label }),
+    message: t('admin.secretLinksRotateMessage', 'Старі активні посилання вибраного типу перестануть працювати. Форма отримає новий короткий код. Таблицю і фінальний план треба буде опублікувати/поділитись знову, щоб створити нові посилання.'),
+    icon: '🔐',
+    acceptText: t('admin.secretLinksRotateAccept', 'Перевипустити')
+  });
+  if (!ok) return null;
+  setSecretLinksStatus(tv('admin.secretLinksRotating', 'Перевипускаю {scope}...', { scope: label }), 'muted');
+  try {
+    const result = await rotateSecretLinks(currentUser, { region, scope });
+    renderSecretLinks(result);
+    const rotated = result.rotated || {};
+    setSecretLinksStatus(tv('admin.secretLinksRotated', 'Готово. Форма: {form}, таблиці відкликано: {table}, фінальні плани відкликано: {final}. Firebase: 0.', {
+      form: rotated.form || 0,
+      table: rotated.table || 0,
+      final: rotated.final || 0
+    }), 'success');
+    renderUsage();
+    return result;
+  } catch (error) {
+    console.error(error);
+    setSecretLinksStatus(t('admin.secretLinksRotateFailed', 'Не вдалося перевипустити секретні посилання.'), 'error');
+    return null;
+  }
+}
+
+function secretLinkRotateLabel(scope = 'all') {
+  const labels = {
+    form: t('admin.secretLinksScopeForm', 'силку форми'),
+    table: t('admin.secretLinksScopeTable', 'силки таблиці'),
+    final: t('admin.secretLinksScopeFinal', 'силки фінального плану'),
+    all: t('admin.secretLinksScopeAll', 'усі секретні посилання')
+  };
+  return labels[String(scope || 'all').toLowerCase()] || labels.all;
 }
 
 function d1StorageItemLabel(key = '') {
@@ -1504,7 +1753,7 @@ function switchTab(tab) {
   if (window.location.hash.replace('#','') !== safeTab && safeTab !== 'players') history.replaceState(null, '', `#${safeTab}`);
 }
 function switchLimitTab(tab = 'firebase') {
-  const safeTab = tab === 'cloudflare' ? 'cloudflare' : 'firebase';
+  const safeTab = tab === 'cloudflare' || tab === 'github' ? tab : 'firebase';
   document.querySelectorAll('[data-limit-tab]').forEach(button => button.classList.toggle('is-active', button.dataset.limitTab === safeTab));
   document.querySelectorAll('[data-limit-panel]').forEach(panel => panel.classList.toggle('is-active', panel.dataset.limitPanel === safeTab));
   renderUsage();
@@ -1533,6 +1782,8 @@ function bindAdminControls() {
   $('#refreshCloudflareUsageBtn')?.addEventListener('click', () => refreshRealCloudflareUsage().catch(console.error));
   $('#resetUsageEstimateBtn')?.addEventListener('click', () => { resetUsageEstimate(); renderUsage(); setStatus(t('admin.firebaseEstimateReset', 'Оцінку Firebase скинуто.'), 'success'); });
   $('#resetCloudflareUsageBtn')?.addEventListener('click', () => { cloudflareRealUsage = null; clearCachedCloudflareUsage(); renderCloudflareUsage(); });
+  $('#refreshGitHubUsageBtn')?.addEventListener('click', () => refreshGitHubUsage().catch(console.error));
+  $('#resetGitHubUsageBtn')?.addEventListener('click', () => { githubUsage = null; clearCachedGitHubUsage(); renderGitHubUsage(); });
   $('#cleanupOldDocsBtn')?.addEventListener('click', () => runOldDocsCleanup().catch(console.error));
   $('#scanFirebaseArchiveBtn')?.addEventListener('click', () => runFirebaseArchiveScan().catch(console.error));
   $('#cleanupFirebaseNotificationsBtn')?.addEventListener('click', () => runFirebaseArchiveCleanup('notifications').catch(console.error));
@@ -1546,6 +1797,11 @@ function bindAdminControls() {
   $('#cleanupD1LogsBtn')?.addEventListener('click', () => runD1ArchiveCleanup('logs').catch(console.error));
   $('#cleanupD1FinalPlansBtn')?.addEventListener('click', () => runD1ArchiveCleanup('finalPlans').catch(console.error));
   $('#cleanupD1AllBtn')?.addEventListener('click', () => runD1ArchiveCleanup('all').catch(console.error));
+  $('#inspectSecretLinksBtn')?.addEventListener('click', () => inspectSecretLinksPanel().catch(console.error));
+  $('#rotateFormSecretLinkBtn')?.addEventListener('click', () => rotateSecretLinksPanel('form').catch(console.error));
+  $('#rotateTableSecretLinksBtn')?.addEventListener('click', () => rotateSecretLinksPanel('table').catch(console.error));
+  $('#rotateFinalSecretLinksBtn')?.addEventListener('click', () => rotateSecretLinksPanel('final').catch(console.error));
+  $('#rotateAllSecretLinksBtn')?.addEventListener('click', () => rotateSecretLinksPanel('all').catch(console.error));
   $('#optimizeD1DatabaseBtn')?.addEventListener('click', () => runD1DatabaseOptimize().catch(console.error));
   $('#refreshCleanRegionsBtn')?.addEventListener('click', () => loadCleanPanel(true).catch(console.error));
   $('#cleanFirestoreRegionSelect')?.addEventListener('change', () => { oldFirestoreCleanupCount = 0; maybeRunOldFirestoreAutoCleanup().catch(console.error); });

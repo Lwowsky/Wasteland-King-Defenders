@@ -21,12 +21,12 @@ import {
   patchUserSentMessage,
   rebuildUserNotificationSummary,
   roleLabel
-} from '../services/user-db.js?v=200';
+} from '../services/user-db.js?v=203';
 import {
   countNotificationDirectoryD1,
   listNotificationDirectoryRegionsD1,
   searchNotificationDirectoryD1
-} from '../services/notifications-d1.js?v=200';
+} from '../services/notifications-d1.js?v=203';
 
 const $ = selector => document.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -1100,7 +1100,7 @@ async function sendMessage() {
     setHint(`${t('messages.campaignSent', 'Масове повідомлення опубліковано')}: ${sentCount}`);
   } else {
     const safeRecipients = recipients.slice(0, 500);
-    await Promise.all(safeRecipients.map(player => {
+    const deliveryResults = await Promise.all(safeRecipients.map(player => {
       const target = { region: regionOf(player.region) || activeRegion(), alliance: tag(player.alliance) || activeAlliance() };
       const senderRole = actorRole(target);
       return createUserNotification(player.uid, {
@@ -1117,11 +1117,19 @@ async function sendMessage() {
         targetType: type,
         targetLabel,
         ...replyContext
-      }).catch(error => console.warn('[WKD] message skipped', player.uid, error));
+      }).catch(error => {
+        console.warn('[WKD] message skipped', player.uid, error);
+        return null;
+      });
     }));
-    sentCount = safeRecipients.length;
+    const delivered = deliveryResults.filter(item => item && item.ok !== false && item.skipped !== true).length;
+    if (!delivered) {
+      setHint(`${t('messages.sendFailed', 'Не вдалося відправити повідомлення.')} D1 notifications unavailable; Firebase fallback disabled.`);
+      return;
+    }
+    sentCount = delivered;
     recipientPreview = safeRecipients.slice(0, 5).map(playerLabel).join(' • ');
-    setHint(`${t('messages.sent', 'Повідомлення відправлено')}: ${safeRecipients.length}`);
+    setHint(`${t('messages.sent', 'Повідомлення відправлено')}: ${delivered}${delivered < safeRecipients.length ? ` / ${safeRecipients.length}` : ''}`);
   }
 
   await saveSentMessage(firebase, {

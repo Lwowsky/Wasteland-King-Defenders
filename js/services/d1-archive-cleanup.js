@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=200';
+import { trackCloudflareUsage } from './usage-tracker.js?v=203';
 
 function cleanText(value = '', max = 120) {
   return String(value ?? '')
@@ -135,6 +135,77 @@ async function requestInspectJson(path, user, payload = {}) {
   const itemsCount = Array.isArray(data?.items) ? data.items.length : 0;
   trackCloudflareUsage({ workerRequests: 1, d1RowsRead: itemsCount, d1RowsWritten: 0 });
   return normalizeInspectResult(data || {});
+}
+
+
+function normalizeSecretLinks(data = {}) {
+  const normalizeItem = item => ({
+    type: cleanText(item?.type || '', 40),
+    code: cleanText(item?.code || '', 160),
+    region: cleanRegion(item?.region || ''),
+    cycleId: cleanText(item?.cycleId || item?.cycle_id || '', 90),
+    active: Boolean(item?.active),
+    revoked: Boolean(item?.revoked),
+    expired: Boolean(item?.expired),
+    createdAtMs: Math.max(0, Number(item?.createdAtMs || item?.created_at_ms || 0) || 0),
+    updatedAtMs: Math.max(0, Number(item?.updatedAtMs || item?.updated_at_ms || 0) || 0),
+    expiresAtMs: Math.max(0, Number(item?.expiresAtMs || item?.expires_at_ms || 0) || 0),
+    shortUrl: cleanText(item?.shortUrl || '', 260),
+    publicUrl: cleanText(item?.publicUrl || '', 260)
+  });
+  const links = Array.isArray(data.links) ? data.links.map(normalizeItem).filter(item => item.type && item.code) : [];
+  return {
+    ok: data.ok !== false,
+    region: cleanRegion(data.region || ''),
+    activeCycleId: cleanText(data.activeCycleId || data.active_cycle_id || '', 90),
+    links,
+    counts: {
+      active: Math.max(0, Number(data?.counts?.active || 0) || 0),
+      expired: Math.max(0, Number(data?.counts?.expired || 0) || 0),
+      revoked: Math.max(0, Number(data?.counts?.revoked || 0) || 0),
+      total: Math.max(0, Number(data?.counts?.total || links.length) || 0)
+    },
+    usage: data.usage || {},
+    source: cleanText(data.source || 'cloudflare-d1-secret-links', 80)
+  };
+}
+
+async function requestSecretJson(path, user, payload = {}) {
+  const token = await getFirebaseToken(user);
+  if (!token) throw new Error('auth-token-required');
+  const response = await fetch(apiUrl(path), {
+    method: 'POST',
+    cache: 'no-store',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload || {})
+  });
+  let data = null;
+  try { data = await response.json(); } catch { data = null; }
+  if (!response.ok || data?.ok === false) {
+    const error = new Error(data?.error || `d1-secret-links-${response.status}`);
+    error.status = response.status;
+    error.data = data;
+    throw error;
+  }
+  const usage = data?.usage || {};
+  trackCloudflareUsage({
+    workerRequests: 1,
+    d1RowsRead: Number(usage.d1RowsRead ?? usage.rowsRead ?? 0) || 0,
+    d1RowsWritten: Number(usage.d1RowsWritten ?? usage.rowsWritten ?? 0) || 0
+  });
+  return normalizeSecretLinks(data || {});
+}
+
+export async function inspectSecretLinks(user, { region = '' } = {}) {
+  return requestSecretJson('/api/secret-links/inspect', user, { region: cleanRegion(region) });
+}
+
+export async function rotateSecretLinks(user, { region = '', scope = 'all' } = {}) {
+  return requestSecretJson('/api/secret-links/rotate', user, { region: cleanRegion(region), scope: cleanText(scope || 'all', 40) });
 }
 
 export async function inspectD1Storage(user, { region = '' } = {}) {

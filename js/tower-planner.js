@@ -2339,6 +2339,16 @@ window.WKD = window.WKD || {};
     if (!modal()?.classList.contains('is-open')) document.body.classList.remove('wkd-modal-open');
     try { lastTrigger?.focus?.(); } catch (_error) {}
   }
+  async function reloadPlanForActiveSourceAfterReady(reason = '') {
+    if (!(modal()?.classList.contains('is-open') || finalModal()?.classList.contains('is-open'))) return;
+    try {
+      await ensureRegionPlayersFreshForTower(false);
+      await loadPlan();
+      render();
+    } catch (error) {
+      console.warn('[WKD] tower source refresh skipped:', reason, error);
+    }
+  }
   function txtLine(char = '═', length = 32) {
     return char.repeat(length);
   }
@@ -2765,6 +2775,8 @@ ${text}` : text };
       if (modal()?.classList.contains('is-open') || finalModal()?.classList.contains('is-open')) renderFinals();
       if (document.getElementById('towerSourceDialog')?.classList.contains('is-open')) renderTowerSourceDialog();
     });
+    document.addEventListener('wkd:player-manager-auth-ready', () => reloadPlanForActiveSourceAfterReady('auth-ready'));
+    document.addEventListener('wkd:player-manager-source-changed', () => reloadPlanForActiveSourceAfterReady('source-changed'));
     document.addEventListener('wkd:tower-plan-hard-reset', event => {
       resetPlanToEmpty(event.detail?.source || 'hard-reset').catch(error => console.warn('[WKD] tower hard reset skipped:', error));
     });
@@ -2783,13 +2795,22 @@ ${text}` : text };
     });
   }
   function closeFinalPlan() { closeFinal(); }
+  let initialHashRouteOpened = false;
   function openInitialRouteFromHash() {
     const hash = String(window.location.hash || '').toLowerCase();
-    if (hash === '#final-plan' || hash === '#finalplan') {
-      window.setTimeout(() => openFinal(null), 120);
-    } else if (hash === '#tower-planner' || hash === '#towerplanner' || hash === '#towers') {
-      window.setTimeout(() => openPlanner(null, 'setup'), 120);
-    }
+    const route = (hash === '#final-plan' || hash === '#finalplan') ? 'final' : (hash === '#tower-planner' || hash === '#towerplanner' || hash === '#towers') ? 'tower' : '';
+    if (!route || initialHashRouteOpened) return;
+    const openRoute = () => {
+      if (initialHashRouteOpened) return;
+      initialHashRouteOpened = true;
+      window.setTimeout(() => {
+        if (route === 'final') openFinal(null);
+        else openPlanner(null, 'setup');
+      }, 60);
+    };
+    document.addEventListener('wkd:player-manager-auth-ready', openRoute, { once: true });
+    document.addEventListener('wkd:player-manager-source-changed', openRoute, { once: true });
+    window.setTimeout(openRoute, 1200);
   }
   WKD.initTowerPlanner = () => {
     if (!ensureTowerPlannerBound()) return;

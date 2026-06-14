@@ -47,6 +47,13 @@ function normalizeCode(value) {
     .slice(0, 140);
 }
 
+function makeD1SecretCode(prefix = '') {
+  const safePrefix = clean(prefix, 12).replace(/[^A-Za-z0-9]/g, '').slice(0, 8);
+  const random = crypto.randomUUID().replace(/-/g, '').slice(0, 18);
+  const time = Date.now().toString(36);
+  return normalizeCode(`${safePrefix}${time}${random}`.slice(0, 48));
+}
+
 function normalizeCycleId(value) {
   return (
     clean(value || "active", 90)
@@ -2889,6 +2896,190 @@ async function handleRegionSharesRotate(request, env) {
   return json({ ok: true, region, tableShares, finalPlans, deleted: tableShares + finalPlans, usage: { d1RowsRead: 0, d1RowsWritten: tableShares + finalPlans }, source: 'cloudflare-d1-share-rotation' });
 }
 
+
+function secretLinkTypeLabel(type = '') {
+  const value = clean(type, 40).toLowerCase();
+  if (value === 'form') return 'form';
+  if (value === 'table') return 'table';
+  if (value === 'final') return 'final';
+  return value || 'unknown';
+}
+
+function secretLinkUrls(request, type = '', region = '', code = '') {
+  const origin = new URL(request.url).origin;
+  const safeCode = normalizeCode(code);
+  const safeRegion = normalizeRegion(region);
+  const safeType = secretLinkTypeLabel(type);
+  if (!safeCode) return { shortUrl: '', publicUrl: '' };
+  if (safeType === 'form') {
+    return {
+      shortUrl: `${origin}/f/${encodeURIComponent(safeRegion)}/${encodeURIComponent(safeCode)}`,
+      publicUrl: `${origin}/region-form.html?r=${encodeURIComponent(safeRegion)}&s=${encodeURIComponent(safeCode)}`
+    };
+  }
+  if (safeType === 'table') {
+    return {
+      shortUrl: `${origin}/rt/${encodeURIComponent(safeCode)}`,
+      publicUrl: `${origin}/public-region-table.html?s=${encodeURIComponent(safeCode)}`
+    };
+  }
+  if (safeType === 'final') {
+    return {
+      shortUrl: `${origin}/plan/${encodeURIComponent(safeCode)}`,
+      publicUrl: `${origin}/public-plan.html?s=${encodeURIComponent(safeCode)}`
+    };
+  }
+  return { shortUrl: '', publicUrl: '' };
+}
+
+function secretLinkRow(request, row = {}, type = '', activeCycleId = '') {
+  const code = normalizeCode(row.code || row.short_code || '');
+  const region = normalizeRegion(row.region || '');
+  const cycleId = normalizeCycleId(row.cycle_id || row.cycleId || 'active');
+  const expiresAtMs = Number(row.expires_at_ms || row.expiresAtMs || 0) || 0;
+  const revoked = Number(row.revoked || 0) === 1;
+  const expired = expiresAtMs > 0 && expiresAtMs < Date.now();
+  const urls = secretLinkUrls(request, type, region, code);
+  return {
+    type: secretLinkTypeLabel(type),
+    code,
+    region,
+    cycleId,
+    active: cycleId === normalizeCycleId(activeCycleId || 'active') && !revoked && !expired,
+    revoked,
+    expired,
+    createdAtMs: Number(row.created_at_ms || row.createdAtMs || 0) || 0,
+    updatedAtMs: Number(row.updated_at_ms || row.updatedAtMs || 0) || 0,
+    expiresAtMs,
+    ...urls
+  };
+}
+
+async function readActiveCycleIdForRegion(db, region = '') {
+  const safeRegion = normalizeRegion(region);
+  if (!safeRegion) return 'active';
+  const active = await db.prepare(`SELECT cycle_id FROM region_active WHERE region = ?1 LIMIT 1`).bind(safeRegion).first();
+  if (active?.cycle_id) return normalizeCycleId(active.cycle_id);
+  const form = await db.prepare(`SELECT cycle_id FROM region_form_settings WHERE region = ?1 LIMIT 1`).bind(safeRegion).first();
+  return normalizeCycleId(form?.cycle_id || 'active');
+}
+
+async function buildSecretLinksPayload(db, request, region = '') {
+  const safeRegion = normalizeRegion(region);
+  const activeCycleId = await readActiveCycleIdForRegion(db, safeRegion);
+  const links = [];
+  let rowsRead = 1;
+  const form = await db.prepare(
+    `SELECT region, short_code, cycle_id, updated_at_ms FROM region_form_settings WHERE region = ?1 LIMIT 1`
+  ).bind(safeRegion).first();
+  rowsRead += 1;
+  if (form?.short_code) links.push(secretLinkRow(request, form, 'form', activeCycleId));
+
+  const tableRows = await db.prepare(
+    `SELECT code, region, cycle_id, created_at_ms, expires_at_ms, revoked
+       FROM region_table_shares
+      WHERE region = ?1
+      ORDER BY created_at_ms DESC
+      LIMIT 40`
+  ).bind(safeRegion).all();
+  const tableLinks = tableRows?.results || [];
+  rowsRead += tableLinks.length;
+  tableLinks.forEach(row => links.push(secretLinkRow(request, row, 'table', activeCycleId)));
+
+  const finalRows = await db.prepare(
+    `SELECT code, region, cycle_id, updated_at_ms, expires_at_ms, revoked
+       FROM final_plan_shares
+      WHERE region = ?1
+      ORDER BY updated_at_ms DESC
+      LIMIT 40`
+  ).bind(safeRegion).all();
+  const finalLinks = finalRows?.results || [];
+  rowsRead += finalLinks.length;
+  finalLinks.forEach(row => links.push(secretLinkRow(request, row, 'final', activeCycleId)));
+
+  const counts = links.reduce((acc, item) => {
+    acc.total += 1;
+    if (item.active) acc.active += 1;
+    if (item.expired) acc.expired += 1;
+    if (item.revoked) acc.revoked += 1;
+    return acc;
+  }, { total: 0, active: 0, expired: 0, revoked: 0 });
+  return { ok: true, region: safeRegion, activeCycleId, links, counts, usage: { d1RowsRead: rowsRead, d1RowsWritten: 0 }, source: 'cloudflare-d1-secret-links' };
+}
+
+function secretLinkRotateScope(value = 'all') {
+  const scope = clean(value || 'all', 40).toLowerCase();
+  return ['form', 'table', 'final', 'all'].includes(scope) ? scope : 'all';
+}
+
+async function handleSecretLinksInspect(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  if (!isAdminUid(env, user.uid)) return json({ ok: false, error: 'admin_required' }, 403);
+  let body = null;
+  try { body = await request.json(); } catch { body = {}; }
+  const region = normalizeRegion(body?.region);
+  if (!region) return json({ ok: false, error: 'region_required' }, 400);
+  return json(await buildSecretLinksPayload(db, request, region));
+}
+
+async function handleSecretLinksRotate(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  if (!isAdminUid(env, user.uid)) return json({ ok: false, error: 'admin_required' }, 403);
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const region = normalizeRegion(body?.region);
+  if (!region) return json({ ok: false, error: 'region_required' }, 400);
+  const scope = secretLinkRotateScope(body?.scope || 'all');
+  const activeCycleId = await readActiveCycleIdForRegion(db, region);
+  let rowsWritten = 0;
+  const rotated = { form: 0, table: 0, final: 0 };
+
+  if (scope === 'form' || scope === 'all') {
+    const existing = await db.prepare(`SELECT settings_json, cycle_id, version FROM region_form_settings WHERE region = ?1 LIMIT 1`).bind(region).first();
+    const code = makeD1SecretCode('f');
+    await db.prepare(
+      `INSERT INTO region_form_settings (region, short_code, cycle_id, version, updated_at_ms, settings_json)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+       ON CONFLICT(region) DO UPDATE SET
+         short_code = excluded.short_code,
+         cycle_id = excluded.cycle_id,
+         version = excluded.version,
+         updated_at_ms = excluded.updated_at_ms,
+         settings_json = excluded.settings_json`
+    ).bind(region, code, activeCycleId, Date.now(), Date.now(), existing?.settings_json || '{}').run();
+    rotated.form = 1;
+    rowsWritten += 1;
+  }
+
+  if (scope === 'table' || scope === 'all') {
+    const result = await db.prepare(
+      `UPDATE region_table_shares SET revoked = 1
+        WHERE region = ?1 AND cycle_id = ?2 AND revoked = 0`
+    ).bind(region, activeCycleId).run();
+    rotated.table = Number(result?.meta?.changes) || 0;
+    rowsWritten += rotated.table;
+  }
+
+  if (scope === 'final' || scope === 'all') {
+    const result = await db.prepare(
+      `UPDATE final_plan_shares SET revoked = 1
+        WHERE region = ?1 AND cycle_id = ?2 AND revoked = 0`
+    ).bind(region, activeCycleId).run();
+    rotated.final = Number(result?.meta?.changes) || 0;
+    rowsWritten += rotated.final;
+  }
+
+  const payload = await buildSecretLinksPayload(db, request, region);
+  return json({ ...payload, rotated, usage: { d1RowsRead: Number(payload.usage?.d1RowsRead || 0) + 2, d1RowsWritten: rowsWritten }, source: 'cloudflare-d1-secret-links-rotate' });
+}
+
+
 async function handleD1StorageInspect(request, env) {
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
@@ -2943,6 +3134,12 @@ const D1_FREE_ROWS_READ_PER_DAY = 5000000;
 const D1_FREE_ROWS_WRITTEN_PER_DAY = 100000;
 const D1_FREE_STORAGE_TOTAL_BYTES = 5 * 1024 * 1024 * 1024;
 const D1_FREE_DATABASE_SIZE_BYTES = 500 * 1024 * 1024;
+const GITHUB_API_BASE_URL = 'https://api.github.com';
+const GITHUB_FREE_ACTIONS_MINUTES_MONTH = 2000;
+const GITHUB_ACTIONS_CACHE_BYTES = 10 * 1024 * 1024 * 1024;
+const GITHUB_PAGES_SITE_SIZE_BYTES = 1024 * 1024 * 1024;
+const GITHUB_PAGES_BANDWIDTH_MONTH_BYTES = 100 * 1024 * 1024 * 1024;
+const GITHUB_PAGES_BUILDS_PER_HOUR = 10;
 
 function todayUtcWindow() {
   const now = new Date();
@@ -3090,6 +3287,163 @@ async function fetchD1StorageUsage(env, period) {
     databaseSizes: databaseSizes.slice(0, 20),
     rows: Array.isArray(rows) ? rows.length : 0,
   };
+}
+
+function githubRepoEnv(env = {}) {
+  const combined = clean(env.GITHUB_REPOSITORY || '', 240);
+  const owner = clean(env.GITHUB_OWNER || (combined.includes('/') ? combined.split('/')[0] : ''), 120);
+  const repo = clean(env.GITHUB_REPO || env.GITHUB_REPOSITORY_NAME || (combined.includes('/') ? combined.split('/').slice(1).join('/') : ''), 160);
+  return { owner, repo };
+}
+
+function githubDurationMs(row = {}) {
+  const start = Date.parse(row.created_at || row.run_started_at || row.createdAt || '');
+  const end = Date.parse(row.updated_at || row.updatedAt || '');
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return 0;
+  return end - start;
+}
+
+async function callGithubApi(env, path = '') {
+  const token = clean(env.GITHUB_TOKEN || '', 4096);
+  if (!token) throw new Error('github_token_missing');
+  const safePath = String(path || '').startsWith('/') ? String(path || '') : `/${path || ''}`;
+  const response = await fetch(`${GITHUB_API_BASE_URL}${safePath}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'wasteland-king-defender-admin'
+    }
+  });
+  let data = null;
+  try { data = await response.json(); } catch { data = null; }
+  if (!response.ok) {
+    const message = clean(data?.message || `github_http_${response.status}`, 180);
+    throw new Error(message || `github_http_${response.status}`);
+  }
+  return data || {};
+}
+
+async function fetchGithubRepoUsage(env) {
+  const { owner, repo } = githubRepoEnv(env);
+  if (!owner || !repo) throw new Error('github_repo_missing');
+  const repoData = await callGithubApi(env, `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
+  return {
+    owner,
+    name: repo,
+    fullName: clean(repoData.full_name || `${owner}/${repo}`, 200),
+    defaultBranch: clean(repoData.default_branch || '', 120),
+    visibility: clean(repoData.visibility || (repoData.private ? 'private' : 'public'), 40),
+    private: Boolean(repoData.private),
+    htmlUrl: clean(repoData.html_url || '', 260),
+    sizeKb: numericMetric(repoData.size),
+    pushedAt: clean(repoData.pushed_at || '', 80),
+    updatedAt: clean(repoData.updated_at || '', 80)
+  };
+}
+
+async function fetchGithubPagesUsage(env, repoInfo = {}) {
+  const owner = repoInfo.owner;
+  const repo = repoInfo.name;
+  const pages = await callGithubApi(env, `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pages`);
+  const source = pages.source || {};
+  return {
+    status: clean(pages.status || '', 80),
+    htmlUrl: clean(pages.html_url || '', 260),
+    cname: clean(pages.cname || '', 180),
+    protectedDomainState: clean(pages.protected_domain_state || '', 80),
+    sourceBranch: clean(source.branch || '', 120),
+    sourcePath: clean(source.path || '', 160),
+    buildType: clean(pages.build_type || '', 80)
+  };
+}
+
+async function fetchGithubActionsUsage(env, repoInfo = {}) {
+  const owner = repoInfo.owner;
+  const repo = repoInfo.name;
+  const data = await callGithubApi(env, `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/actions/runs?per_page=5`);
+  const runs = Array.isArray(data.workflow_runs) ? data.workflow_runs : [];
+  const latest = runs[0] || {};
+  return {
+    enabled: true,
+    totalRuns: numericMetric(data.total_count),
+    latestStatus: clean(latest.status || '', 80),
+    latestConclusion: clean(latest.conclusion || '', 80),
+    latestName: clean(latest.name || latest.display_title || '', 160),
+    latestRunNumber: numericMetric(latest.run_number),
+    latestUrl: clean(latest.html_url || '', 260),
+    latestCreatedAt: clean(latest.created_at || '', 80),
+    latestUpdatedAt: clean(latest.updated_at || '', 80),
+    latestDurationMs: githubDurationMs(latest),
+    recentRuns: runs.map(row => ({
+      id: clean(row.id || '', 80),
+      name: clean(row.name || row.display_title || '', 160),
+      status: clean(row.status || '', 80),
+      conclusion: clean(row.conclusion || '', 80),
+      runNumber: numericMetric(row.run_number),
+      htmlUrl: clean(row.html_url || '', 260),
+      createdAt: clean(row.created_at || '', 80),
+      updatedAt: clean(row.updated_at || '', 80)
+    }))
+  };
+}
+
+async function handleGithubUsage(request, env) {
+  await requireAdminUser(request, env);
+  const partialErrors = [];
+  let repo = {};
+  let pages = {};
+  let actions = {};
+  const hasToken = Boolean(clean(env.GITHUB_TOKEN || '', 4096));
+  const { owner, repo: repoName } = githubRepoEnv(env);
+  if (!hasToken || !owner || !repoName) {
+    return json({
+      ok: true,
+      real: false,
+      source: 'github-static-limits',
+      repo: { owner, name: repoName, fullName: owner && repoName ? `${owner}/${repoName}` : '' },
+      pages: {},
+      actions: {},
+      limits: {
+        actionsMinutesMonth: GITHUB_FREE_ACTIONS_MINUTES_MONTH,
+        actionsCacheBytes: GITHUB_ACTIONS_CACHE_BYTES,
+        pagesSiteSizeBytes: GITHUB_PAGES_SITE_SIZE_BYTES,
+        pagesBandwidthMonthBytes: GITHUB_PAGES_BANDWIDTH_MONTH_BYTES,
+        pagesBuildsHour: GITHUB_PAGES_BUILDS_PER_HOUR
+      },
+      partialErrors: [{ source: 'github', error: hasToken ? 'github_repo_missing' : 'github_token_missing' }],
+      generatedAt: new Date().toISOString()
+    }, 200, 'private, no-store');
+  }
+  try {
+    repo = await fetchGithubRepoUsage(env);
+  } catch (error) {
+    partialErrors.push({ source: 'repo', error: clean(error?.message || 'github_repo_failed', 180) });
+  }
+  if (repo?.owner && repo?.name) {
+    try { pages = await fetchGithubPagesUsage(env, repo); }
+    catch (error) { partialErrors.push({ source: 'pages', error: clean(error?.message || 'github_pages_failed', 180) }); }
+    try { actions = await fetchGithubActionsUsage(env, repo); }
+    catch (error) { partialErrors.push({ source: 'actions', error: clean(error?.message || 'github_actions_failed', 180) }); }
+  }
+  return json({
+    ok: true,
+    real: Boolean(repo?.fullName),
+    source: 'github-rest-api',
+    repo,
+    pages,
+    actions,
+    limits: {
+      actionsMinutesMonth: GITHUB_FREE_ACTIONS_MINUTES_MONTH,
+      actionsCacheBytes: GITHUB_ACTIONS_CACHE_BYTES,
+      pagesSiteSizeBytes: GITHUB_PAGES_SITE_SIZE_BYTES,
+      pagesBandwidthMonthBytes: GITHUB_PAGES_BANDWIDTH_MONTH_BYTES,
+      pagesBuildsHour: GITHUB_PAGES_BUILDS_PER_HOUR
+    },
+    partialErrors,
+    generatedAt: new Date().toISOString()
+  }, 200, 'private, no-store');
 }
 
 async function handleCloudflareUsage(request, env) {
@@ -4110,6 +4464,10 @@ export default {
         return await handleCloudflareUsage(request, env);
       }
 
+      if (url.pathname === "/api/admin/usage/github" && request.method === "GET") {
+        return await handleGithubUsage(request, env);
+      }
+
 
       if (url.pathname === "/api/public-stats/player" && request.method === "POST") {
         return await handlePublicStatsPlayerUpsert(request, env);
@@ -4199,6 +4557,12 @@ export default {
         return await handleRegionSharesRotate(request, env);
       }
 
+      if (url.pathname === "/api/secret-links/inspect" && request.method === "POST") {
+        return await handleSecretLinksInspect(request, env);
+      }
+      if (url.pathname === "/api/secret-links/rotate" && request.method === "POST") {
+        return await handleSecretLinksRotate(request, env);
+      }
       if (url.pathname === "/api/d1-cleanup/inspect" && request.method === "POST") {
         return await handleD1StorageInspect(request, env);
       }
