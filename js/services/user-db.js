@@ -97,13 +97,12 @@ function buildSignInProfilePatch(user, profile = {}, main = {}, farms = [], now 
   const photoURL = compactAuthValue(user?.photoURL || profile?.photoURL || '');
   const authEmail = compactAuthValue(user?.email || '').slice(0, 180);
   const email = compactAuthValue(profile?.adminEmailOverride || authEmail || profile?.email || '').slice(0, 180);
-  // v227: login refresh must not try to rewrite provider/access fields.
-  // Those fields are protected by Firestore rules and are initialized only when
-  // the document is first created. Region access for the main profile is read
-  // from gameProfile.region, and extra access is handled by role/admin flows.
+  // v231: normal sign-in/profile touch must not try to rewrite protected email.
+  // Email is initialized on create and can be edited only by admin/server flows.
+  // This avoids owner profile saves being denied when an old Auth email differs.
   if (displayName !== compactAuthValue(profile?.displayName || '')) patch.displayName = displayName;
   if (photoURL !== compactAuthValue(profile?.photoURL || '')) patch.photoURL = photoURL;
-  if (email && email !== compactAuthValue(profile?.email || '').slice(0, 180)) patch.email = email;
+  if (!profile?.email && email) patch.email = email;
   if (authEmail && authEmail !== compactAuthValue(profile?.authEmail || '').slice(0, 180)) patch.authEmail = authEmail;
   if (isSignInTouchDue(profile)) patch.lastLoginAt = now;
   if (Object.keys(patch).length) patch.updatedAt = now;

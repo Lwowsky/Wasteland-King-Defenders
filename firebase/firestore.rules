@@ -218,7 +218,19 @@ service cloud.firestore {
 
     function ownerKeepsProtectedFields() {
       return !request.resource.data.diff(resource.data).affectedKeys()
-        .hasAny(['role', 'createdAt', 'uid', 'email', 'providerId', 'regionAccess', 'allianceAccess', 'regionRoles']);
+        .hasAny(['role', 'createdAt', 'uid', 'email', 'providerId', 'providerIds', 'regionAccess', 'allianceAccess', 'regionRoles', 'blocked', 'deleted', 'adminEmailOverride']);
+    }
+
+    function ownerOwnProfilePatchSafe(userId) {
+      return isOwner(userId)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'uid', 'email', 'role', 'createdAt', 'providerId', 'providerIds',
+          'regionAccess', 'allianceAccess', 'regionRoles',
+          'blocked', 'deleted', 'adminEmailOverride'
+        ])
+        && (!request.resource.data.keys().hasAny(['uid']) || request.resource.data.uid == userId)
+        && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == resource.data.role || request.resource.data.role == 'player')
+        && (!request.resource.data.keys().hasAny(['email']) || !resource.data.keys().hasAny(['email']) || request.resource.data.email == resource.data.email);
     }
 
     function ownerProfileUpdateSafe(userId) {
@@ -716,7 +728,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow create: if ownerEmail() || ownerProfileCreateSafe(userId);
       allow read: if canReadUser(userId);
-      allow update: if ownerEmail() || managerUpdateSafe() || ownerProfileUpdateSafe(userId) || ownerSelfUserWriteSafe(userId) || ownerRegionRoleDowngradeSafe(userId) || (isOwner(userId) && ownerKeepsProtectedFields());
+      allow update: if ownerEmail() || managerUpdateSafe() || ownerOwnProfilePatchSafe(userId) || ownerRegionRoleDowngradeSafe(userId);
       allow delete: if ownerEmail() || isAdmin();
 
       match /notifications/{notificationId} {
