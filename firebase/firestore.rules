@@ -290,9 +290,12 @@ service cloud.firestore {
 
     function ownerRoleRequestSafe(requestId) {
       return signedIn()
+        && requestId == request.auth.uid
         && request.resource.data.uid == request.auth.uid
-        && requestableRole()
-        && request.resource.data.status in ['pending', 'cancelled'];
+        && (
+          (request.resource.data.status == 'cancelled')
+          || (requestableRole() && request.resource.data.status == 'pending')
+        );
     }
 
     function ownerCanReadRoleRequest() {

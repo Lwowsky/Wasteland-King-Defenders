@@ -1560,8 +1560,7 @@ export async function saveGameRegistration(user, values) {
     // v227 fallback for projects where older Firestore rules are still active:
     // save the mandatory game profile fields without optional visibility/country/roleRequest.
     if (!String(error?.code || '').includes('permission-denied')) throw error;
-    await firestoreMod.setDoc(userRef, {
-      ...nextRolePatch,
+    const minimalPatch = {
       profileComplete,
       gameNick: mainGame.nickname,
       region: mainGame.region,
@@ -1573,10 +1572,31 @@ export async function saveGameRegistration(user, values) {
       farmCount: getFarmCount({ gameProfile: mainGame, farms: nextFarms, profileComplete }),
       activeFarmId: farmId,
       updatedAt: now
-    }, { merge: true });
+    };
+    if (Object.keys(nextRolePatch || {}).length) Object.assign(minimalPatch, nextRolePatch);
+    try {
+      await firestoreMod.setDoc(userRef, minimalPatch, { merge: true });
+    } catch (fallbackError) {
+      if (!String(fallbackError?.code || '').includes('permission-denied')) throw fallbackError;
+      // v229 final fallback: update only existing own profile fields.
+      // This avoids create/protected-field paths and gives a clean console marker if rules still block users/{uid}.
+      try {
+        await firestoreMod.updateDoc(userRef, minimalPatch);
+      } catch (updateError) {
+        console.error('[WKD] users profile write denied at users/{uid}:', updateError?.code || updateError?.message || updateError);
+        throw updateError;
+      }
+    }
   }
 
-  await Promise.all(roleRequestWrites.map(write => write()));
+  // v229: role request writes are secondary. A permission issue in roleRequests
+  // must not block saving the player's own profile data.
+  const roleRequestResults = await Promise.allSettled(roleRequestWrites.map(write => write()));
+  roleRequestResults.forEach(result => {
+    if (result.status === 'rejected') {
+      console.warn('[WKD] role request sync skipped after profile save:', result.reason?.code || result.reason?.message || result.reason);
+    }
+  });
 
   removeUserProfileCache(uid);
   const savedProfile = await getUserProfile(uid, { forceRefresh: true });
