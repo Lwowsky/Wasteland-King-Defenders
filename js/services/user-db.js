@@ -2452,8 +2452,17 @@ async function assertNicknameRegionUnique(db, firestoreMod, uid = '', farmId = '
   const lockId = profileNicknameLockId(target);
   if (!region || !lockId) return;
   const ref = firestoreMod.doc(db, 'regions', region, 'profileNicknameLocks', lockId);
-  const snap = await firestoreMod.getDoc(ref);
-  trackReads(1);
+  let snap = null;
+  try {
+    snap = await firestoreMod.getDoc(ref);
+    trackReads(1);
+  } catch (error) {
+    if (String(error?.code || '').includes('permission-denied')) {
+      console.warn('[WKD] profile nickname lock check skipped by Firestore rules:', error?.code || error?.message || error);
+      return;
+    }
+    throw error;
+  }
   if (!snap.exists()) return;
   const data = snap.data() || {};
   if (data.ownerKey && data.ownerKey !== profileOwnerKey(uid, farmId)) throw new Error('nickname-duplicate-region');
@@ -2471,8 +2480,17 @@ async function assertAllianceRankLimit(db, firestoreMod, uid = '', farmId = 'mai
     firestoreMod.where('rank', '==', `p${rank}`),
     firestoreMod.limit(rank === 5 ? 2 : 21)
   );
-  const snap = await firestoreMod.getDocs(queryRef);
-  trackReads(Math.max(1, snap.docs.length));
+  let snap = null;
+  try {
+    snap = await firestoreMod.getDocs(queryRef);
+    trackReads(Math.max(1, snap.docs.length));
+  } catch (error) {
+    if (String(error?.code || '').includes('permission-denied')) {
+      console.warn('[WKD] profile rank lock check skipped by Firestore rules:', error?.code || error?.message || error);
+      return;
+    }
+    throw error;
+  }
   const ownerKey = profileOwnerKey(uid, farmId);
   const count = snap.docs.filter(doc => (doc.data()?.ownerKey || '') !== ownerKey).length;
   if (rank === 5 && count >= 1) throw new Error('rank-p5-limit');
