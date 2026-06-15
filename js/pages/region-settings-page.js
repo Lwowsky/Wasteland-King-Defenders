@@ -27,6 +27,7 @@ import {
   getRegionActorName
 } from '../services/region-db.js?v=213';
 import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1 } from '../services/region-table-cache.js?v=213';
+import { makePublicShareUrl } from '../core/share-links.js?v=216';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -587,28 +588,18 @@ async function saveManualRegionFromSettings(event) {
   }
 }
 
-function buildFullShareLink(region) {
-  if (!currentShareCode || !region) return '';
-  const url = new URL('region-form.html', window.location.href);
-  url.searchParams.set('s', currentShareCode);
-  return url.toString();
-}
-
 function buildShareLink(region) {
   if (!currentShareCode || !region) return '';
-  return new URL(`./f/${encodeURIComponent(currentShareCode)}`, window.location.href).toString();
+  return makePublicShareUrl('./region-form.html', currentShareCode);
 }
 
 function updateShareLink() {
   const shortInput = $('#regionShareLink');
-  const fullInput = $('#regionShareLinkFull');
   const shortLink = buildShareLink(currentRegion);
-  const fullLink = buildFullShareLink(currentRegion);
-  [shortInput, fullInput].forEach(input => {
-    if (!input) return;
-    input.value = input === shortInput ? shortLink : fullLink;
-    input.placeholder = input.value ? '' : t('region.shortLinkAfterSave', 'A secret short link will be created after saving the form');
-  });
+  if (shortInput) {
+    shortInput.value = shortLink;
+    shortInput.placeholder = shortInput.value ? '' : t('region.shortLinkAfterSave', 'A secret short link will be created after saving the form');
+  }
   if (shortLink && currentShareCode) {
     try {
       sessionStorage.setItem('wkd.regionForm.shortCode', currentShareCode);
@@ -1280,7 +1271,6 @@ function bind() {
     rotationDragIndex = null;
   });
   $('#copyRegionShareBtn')?.addEventListener('click', () => copyShareLink('regionShareLink'));
-  $('#copyRegionFullShareBtn')?.addEventListener('click', () => copyShareLink('regionShareLinkFull'));
   $('#openRegionTableFromSettingsBtn')?.addEventListener('click', () => { if (currentCanViewAnyRegion) window.location.href = `region-table.html?region=${currentRegion}`; });
   $('#regionAllianceList')?.addEventListener('click', event => {
     const editId = event.target.closest('[data-edit-alliance]')?.dataset.editAlliance;

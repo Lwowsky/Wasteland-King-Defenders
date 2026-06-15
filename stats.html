@@ -12,31 +12,31 @@
   <link rel="stylesheet" href="css/auth-page.css" />
   <link rel="stylesheet" href="css/profile-page.css" />
   <link rel="stylesheet" href="css/admin-page.css" />
-  <link rel="stylesheet" href="css/stats-page.css?v=215" />
+  <link rel="stylesheet" href="css/stats-page.css?v=216" />
   <link rel="stylesheet" href="css/responsive.css" />
   <script defer src="js/i18n.js?v=213"></script>
-  <script defer src="js/i18n-uk.js?v=215"></script>
-  <script defer src="js/i18n-en.js?v=215"></script>
-  <script defer src="js/i18n-ru.js?v=215"></script>
-  <script defer src="js/i18n-pl.js?v=215"></script>
-  <script defer src="js/i18n-de.js?v=215"></script>
-  <script defer src="js/i18n-ja.js?v=215"></script>
-  <script defer src="js/i18n-zh.js?v=215"></script>
-  <script defer src="js/i18n-ko.js?v=215"></script>
-  <script defer src="js/i18n-vi.js?v=215"></script>
-  <script defer src="js/i18n-ar.js?v=215"></script>
-  <script defer src="js/i18n-autokeys.js?v=215"></script>
+  <script defer src="js/i18n-uk.js?v=216"></script>
+  <script defer src="js/i18n-en.js?v=216"></script>
+  <script defer src="js/i18n-ru.js?v=216"></script>
+  <script defer src="js/i18n-pl.js?v=216"></script>
+  <script defer src="js/i18n-de.js?v=216"></script>
+  <script defer src="js/i18n-ja.js?v=216"></script>
+  <script defer src="js/i18n-zh.js?v=216"></script>
+  <script defer src="js/i18n-ko.js?v=216"></script>
+  <script defer src="js/i18n-vi.js?v=216"></script>
+  <script defer src="js/i18n-ar.js?v=216"></script>
+  <script defer src="js/i18n-autokeys.js?v=216"></script>
   <script defer src="js/core/dom.js"></script>
   <script defer src="js/core/assets-loader.js"></script>
   <script defer src="js/badges.js?v=213"></script>
   <script defer src="js/core/partials.js"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/core/state.js"></script>
-  <script defer src="js/core/app-boot.js?v=215"></script>
+  <script defer src="js/core/app-boot.js?v=216"></script>
   <script defer src="js/app-login-shell.js"></script>
   <script type="module" src="js/auth-google.js?v=213"></script>
   <script type="module" src="js/notifications.js?v=213"></script>
-  <script type="module" src="js/pages/stats-page.js?v=215"></script>
+  <script type="module" src="js/pages/stats-page.js?v=216"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -62,19 +62,19 @@
       </div>
 
       <div class="admin-toolbar admin-toolbar--grid stats-toolbar">
-        <label>
+        <label class="stats-field stats-field--nick">
           <span data-i18n="account.nickname">Нік</span>
           <input id="statsNickSearch" type="search" placeholder="Lwowsky" />
         </label>
-        <label>
+        <label class="stats-field stats-field--alliance">
           <span data-i18n="account.alliance">Альянс</span>
           <input id="statsAllianceSearch" type="search" placeholder="YYY" maxlength="3" />
         </label>
-        <label>
+        <label class="stats-field stats-field--region">
           <span data-i18n="account.region">Регіон</span>
           <input id="statsRegionSearch" type="search" inputmode="numeric" placeholder="987" />
         </label>
-        <label>
+        <label class="stats-field stats-field--role">
           <span data-i18n="account.role">Роль</span>
           <select id="statsRoleFilter">
             <option value="all" data-i18n="common.all">Усі</option>
@@ -85,7 +85,7 @@
             <option value="player" data-i18n="role.player">Гравець</option>
           </select>
         </label>
-        <label>
+        <label class="stats-field stats-field--rows">
           <span data-i18n="stats.rows">Рядків</span>
           <select id="statsRowsFilter">
             <option value="10">10</option>

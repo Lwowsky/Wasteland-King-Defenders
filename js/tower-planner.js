@@ -1584,9 +1584,7 @@ window.WKD = window.WKD || {};
     const languageButton = `<button class="btn btn-sm tower-final-lang-trigger board-lang-trigger" type="button" data-final-lang-open>${esc(tr('finalPlan.langButton', 'Мова плану'))}</button>`;
     const exportButtons = `
       <button class="btn btn-sm" type="button" data-final-download>${esc(tr('finalPlan.downloadPng', 'Завантажити PNG'))}</button>
-      <button class="btn btn-sm" type="button" data-final-txt>TXT</button>
-      <button class="btn btn-sm" type="button" data-final-share>${esc(tr('finalPlan.share', 'Поділитися'))}</button>
-      <button class="btn btn-sm" type="button" data-final-copy-link>${esc(window.WKD_t?.('finalPlan.copyLink') || tr('finalPlan.copyLink', 'Копіювати посилання'))}</button>`;
+      <button class="btn btn-sm" type="button" data-final-txt>TXT</button>`;
     if (info.mode !== 'region') {
       root.classList.add('is-local-mode');
       root.classList.remove('is-region-mode');
@@ -1600,7 +1598,6 @@ window.WKD = window.WKD || {};
       <span class="tower-final-more-wrap">
         <button class="btn btn-sm" type="button" data-final-more-toggle aria-haspopup="true" aria-expanded="false">${esc(tr('tower.moreActions', 'Ще'))} ▾</button>
         <span class="tower-final-more-menu" data-final-more-menu hidden>
-          <button type="button" data-tower-scope-open>${esc(tr('tower.changeSource', 'Переключити регіон'))}</button>
           ${hasDraft ? `<button type="button" data-tower-load-published>${esc(tr('tower.loadPublishedPlan', 'Повернути опублікований'))}</button>` : ''}
           <button type="button" data-final-download>${esc(tr('finalPlan.downloadPng', 'Завантажити PNG'))}</button>
           <button type="button" data-final-txt>TXT</button>

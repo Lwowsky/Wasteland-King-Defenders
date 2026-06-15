@@ -1,6 +1,6 @@
 import { troopLabel, shiftLabel } from '../services/region-db.js?v=213';
-import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=213';
-import { isRegionTableCacheEnabled, readRegionTableShare } from '../services/region-table-cache.js?v=215';
+import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=216';
+import { isRegionTableCacheEnabled, readRegionTableShare } from '../services/region-table-cache.js?v=216';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -181,7 +181,8 @@ async function init() {
   if (!code) { setStatus(t('region.publicTableMissing', 'Секретне посилання неправильне або неповне.'), 'error'); return; }
   try {
     if (!isRegionTableCacheEnabled()) throw new Error('region-table-d1-disabled');
-    const data = await readRegionTableShare(code, { force: true }).catch(error => {
+    const forceRefresh = new URLSearchParams(location.search).has('refresh');
+    const data = await readRegionTableShare(code, { force: forceRefresh }).catch(error => {
       error.message = error.message || 'region-table-d1-share-missing';
       throw error;
     });
@@ -193,6 +194,11 @@ async function init() {
     $('#publicRegionTableFilters') && ($('#publicRegionTableFilters').hidden = false);
     $('#publicRegionTablePagination') && ($('#publicRegionTablePagination').hidden = false);
     renderTable();
+    if (new URLSearchParams(location.search).has('refresh') && window.history?.replaceState) {
+      const url = new URL(location.href);
+      url.searchParams.delete('refresh');
+      window.history.replaceState(window.history.state, document.title, url.toString());
+    }
     setStatus(t('region.publicTableReady', 'Таблицю регіону відкрито за секретним посиланням.'), 'success');
   } catch (error) {
     console.error(error);
@@ -201,7 +207,12 @@ async function init() {
 }
 document.addEventListener('wkd:partials-ready', init);
 document.addEventListener('click', event => {
-  if (event.target?.closest?.('#refreshPublicRegionTableBtn')) window.location.reload();
+  if (event.target?.closest?.('#refreshPublicRegionTableBtn')) {
+    event.preventDefault();
+    const url = new URL(location.href);
+    url.searchParams.set('refresh', String(Date.now()));
+    location.href = url.toString();
+  }
 });
 if (document.readyState !== 'loading') window.setTimeout(init, 0);
 else document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));

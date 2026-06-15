@@ -88,23 +88,39 @@ export function readShareCode(type, options = {}) {
   return '';
 }
 
+function isLocalDevBase(base = window.location.href) {
+  try {
+    const url = new URL(base, window.location.href);
+    return /^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/i.test(url.hostname) || url.protocol === 'file:';
+  } catch (_error) {
+    return false;
+  }
+}
+
+function makeQueryShareUrl(target, codeValue, base = window.location.href) {
+  const code = cleanShareCode(codeValue);
+  const url = new URL(target, base);
+  if (code) url.searchParams.set('s', code);
+  url.hash = '';
+  return url.toString();
+}
+
 export function makePublicShareUrl(target, codeValue, base = window.location.href) {
   const code = cleanShareCode(codeValue);
   const url = new URL(target, base);
   if (!code) return url.toString();
   const path = String(url.pathname || '').toLowerCase();
+  const localDev = isLocalDevBase(base);
   if (path.endsWith('/public-plan.html') || path.endsWith('/p.html')) {
-    return new URL(`./p/${encodeURIComponent(code)}`, base).toString();
+    return localDev ? makeQueryShareUrl('public-plan.html', code, base) : new URL(`./p/${encodeURIComponent(code)}`, base).toString();
   }
   if (path.endsWith('/public-region-table.html') || path.endsWith('/rt.html')) {
-    return new URL(`./rt/${encodeURIComponent(code)}`, base).toString();
+    return localDev ? makeQueryShareUrl('public-region-table.html', code, base) : new URL(`./rt/${encodeURIComponent(code)}`, base).toString();
   }
   if (path.endsWith('/region-form.html') || path.endsWith('/f.html')) {
-    return new URL(`./f/${encodeURIComponent(code)}`, base).toString();
+    return localDev ? makeQueryShareUrl('region-form.html', code, base) : new URL(`./f/${encodeURIComponent(code)}`, base).toString();
   }
-  url.searchParams.set('s', code);
-  url.hash = '';
-  return url.toString();
+  return makeQueryShareUrl(target, code, base);
 }
 
 export function keepShareCodeInUrl(type, codeValue) {

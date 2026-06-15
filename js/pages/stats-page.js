@@ -1,6 +1,6 @@
 import { formatUserDate, getUserProfile, makePublicPlayer, roleLabel } from '../services/user-db.js';
 import { watchAuth } from '../services/firebase-service.js';
-import { troopLabel } from '../services/region-db.js?v=213';
+import { troopLabel } from '../services/region-db.js?v=216';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -37,7 +37,7 @@ function locale() {
 
 
 
-const STATS_CACHE_BUILD = 'v215-auto-public-stats';
+const STATS_CACHE_BUILD = 'v216-auto-public-stats';
 const PUBLIC_STATS_SUMMARY_FILE = 'stats-summary.json';
 const PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -341,7 +341,7 @@ function renderListLoading() {
 }
 
 function updateLoadListButtonState() {
-  // v215: the public list is loaded automatically. This function is kept as a no-op
+  // v216: the public list is loaded automatically. This function is kept as a no-op
   // so older markup or browser caches do not break the page while the new files roll out.
 }
 

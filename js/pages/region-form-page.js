@@ -1,4 +1,4 @@
-import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=213';
+import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=216';
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile, saveFarmWastelandProfile } from '../services/user-db.js';
 import {
@@ -454,7 +454,7 @@ function buildShortPlayerLink(code = shortCodeFromLink || '', region = currentRe
   const safeRegion = String(region || '').trim();
   const safeCode = String(code || '').trim();
   if (!safeRegion || !safeCode) return '';
-  return new URL(`./f/${encodeURIComponent(safeCode)}`, window.location.href).toString();
+  return makePublicShareUrl('./region-form.html', safeCode);
 }
 async function updatePlayerShortLinkPanel() {
   const panel = $('#regionPlayerShortLinkPanel');
