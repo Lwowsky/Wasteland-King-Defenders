@@ -1584,7 +1584,8 @@ window.WKD = window.WKD || {};
     const languageButton = `<button class="btn btn-sm tower-final-lang-trigger board-lang-trigger" type="button" data-final-lang-open>${esc(tr('finalPlan.langButton', 'Мова плану'))}</button>`;
     const exportButtons = `
       <button class="btn btn-sm" type="button" data-final-download>${esc(tr('finalPlan.downloadPng', 'Завантажити PNG'))}</button>
-      <button class="btn btn-sm" type="button" data-final-txt>TXT</button>`;
+      <button class="btn btn-sm" type="button" data-final-txt>TXT</button>
+      <button class="btn btn-sm" type="button" data-final-share>${esc(tr('finalPlan.share', 'Поділитися'))}</button>`;
     if (info.mode !== 'region') {
       root.classList.add('is-local-mode');
       root.classList.remove('is-region-mode');
@@ -2497,6 +2498,8 @@ window.WKD = window.WKD || {};
   }
   async function copyFinalShareLink() {
     try {
+      const info = sourceInfo();
+      if (info.mode !== 'region') throw new Error('share-link-region-only');
       const { shareUrl } = await makeFinalShareData();
       if (!shareUrl) throw new Error('share-url-empty');
       await navigator.clipboard.writeText(shareUrl);

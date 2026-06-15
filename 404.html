@@ -7,21 +7,31 @@
   <script>
     (function () {
       var path = window.location.pathname || '';
-      var form = path.match(/^\/f\/(\d{1,8})\/([A-Za-z0-9_-]{6,120})\/?$/);
-      if (form) {
-        window.location.replace('/region-form.html?r=' + encodeURIComponent(form[1]) + '&s=' + encodeURIComponent(form[2]));
+
+      var formShort = path.match(/^\/f\/([A-Za-z0-9_-]{6,160})\/?$/);
+      if (formShort) {
+        window.location.replace('/region-form.html?s=' + encodeURIComponent(formShort[1]));
         return;
       }
-      var plan = path.match(/^\/plan\/([A-Za-z0-9_-]{6,160})\/?$/);
+
+      var formWithRegion = path.match(/^\/f\/(\d{1,8})\/([A-Za-z0-9_-]{6,160})\/?$/);
+      if (formWithRegion) {
+        window.location.replace('/region-form.html?r=' + encodeURIComponent(formWithRegion[1]) + '&s=' + encodeURIComponent(formWithRegion[2]));
+        return;
+      }
+
+      var plan = path.match(/^\/(?:p|plan)\/([A-Za-z0-9_-]{6,160})\/?$/);
       if (plan) {
         window.location.replace('/public-plan.html?s=' + encodeURIComponent(plan[1]));
         return;
       }
+
       var table = path.match(/^\/rt\/([A-Za-z0-9_-]{6,160})\/?$/);
       if (table) {
         window.location.replace('/public-region-table.html?s=' + encodeURIComponent(table[1]));
         return;
       }
+
       window.location.replace('/index.html');
     })();
   </script>
