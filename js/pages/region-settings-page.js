@@ -220,12 +220,22 @@ function updateRotationSummary(settings = currentSettings || {}) {
   const box = $('#rotationSummary');
   if (!box) return;
   const list = normalizeRotation(settings.rotationAlliances || rotationDraft.alliances || []);
-  const active = list[Math.max(0, Math.min(list.length - 1, Number(settings.rotationActiveIndex ?? rotationDraft.activeIndex) || 0))];
-  if (!settings.rotationEnabled || !list.length) {
-    box.textContent = t('regionSettings.rotationSummaryEmpty', 'Rotation is not configured.');
+  const index = Math.max(0, Math.min(Math.max(0, list.length - 1), Number(settings.rotationActiveIndex ?? rotationDraft.activeIndex) || 0));
+  const active = list[index] || null;
+  const fallbackHost = normalizeAllianceTag(settings.hostAlliance || settings.activeHostAlliance || $('#settingsHostAlliance')?.value || '');
+  if (list.length) {
+    const activeTag = active?.tag || fallbackHost || '—';
+    const state = settings.rotationEnabled
+      ? tv('regionSettings.rotationSummaryActive', 'Активний: {tag} · {count} альянсів', { tag: activeTag, count: list.length })
+      : tv('regionSettings.rotationSummaryPaused', 'Список ротації: {count} · поточний {tag} · ротація вимкнена', { tag: activeTag, count: list.length });
+    box.textContent = state;
     return;
   }
-  box.textContent = tv('regionSettings.rotationSummaryActive', 'Active: {tag} · {count} alliances', { tag: active?.tag || '—', count: list.length });
+  if (fallbackHost) {
+    box.textContent = tv('regionSettings.rotationSummaryHostOnly', 'Активний альянс: {tag} · список ротації ще не налаштований', { tag: fallbackHost });
+    return;
+  }
+  box.textContent = t('regionSettings.rotationSummaryEmpty', 'Ротація не налаштована.');
 }
 
 
@@ -1147,6 +1157,7 @@ function addRotationAlliance() {
     updateHostAllianceDatalist();
   }
   rotationDraft.alliances.push({ tag, name: trim(record?.name || tag) });
+  rotationDraft.enabled = true;
   if ($('#rotationManualTag')) $('#rotationManualTag').value = '';
   if (rotationDraft.alliances.length === 1) rotationDraft.activeIndex = 0;
   renderRotationModal();
@@ -1205,7 +1216,13 @@ async function saveRotationDraft(event) {
     if (saveBtn) saveBtn.disabled = true;
     setStatus(t('regionSettings.rotationSaving', 'Зберігаю ротацію альянсів...'), 'muted');
     await save({ preventDefault() {} }, overrides);
-    updateRotationSummary({ ...currentSettings, ...overrides });
+    rotationDraft = {
+      enabled: Boolean(currentSettings?.rotationEnabled ?? overrides.rotationEnabled),
+      loop: 'rotationLoop' in (currentSettings || {}) ? Boolean(currentSettings.rotationLoop) : Boolean(overrides.rotationLoop),
+      activeIndex: Number(currentSettings?.rotationActiveIndex ?? overrides.rotationActiveIndex) || 0,
+      alliances: normalizeRotation(currentSettings?.rotationAlliances || overrides.rotationAlliances || [])
+    };
+    updateRotationSummary(currentSettings || overrides);
     closeRotationModal();
     setStatus(t('regionSettings.rotationSaved', 'Ротацію альянсів збережено в базі.'), 'success');
   } catch (error) {

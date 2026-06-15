@@ -1645,23 +1645,41 @@ export async function saveRegionSettings(user, region, settings) {
   const autoOpenTime = /^\d{2}:\d{2}$/.test(trim(settings.autoOpenTime)) ? trim(settings.autoOpenTime) : DEFAULT_REGION_FORM.autoOpenTime;
   const openAtMs = forceCloseNow ? 0 : (forceOpenNow ? Math.max(0, nowMs - 1000) : computeOpenAtMs(eventStartAtMs, autoOpenEnabled, autoOpenDay, autoOpenTime));
   const rotationAlliances = normalizeRotationAlliances(settings.rotationAlliances);
-  const rotationActiveIndex = Math.max(0, Math.min(Math.max(0, rotationAlliances.length - 1), Number(settings.rotationActiveIndex) || 0));
+  const rotationEnabled = Boolean(settings.rotationEnabled);
+  const rotationLoop = 'rotationLoop' in settings ? Boolean(settings.rotationLoop) : DEFAULT_REGION_FORM.rotationLoop;
+  let rotationActiveIndex = Math.max(0, Math.min(Math.max(0, rotationAlliances.length - 1), Number(settings.rotationActiveIndex) || 0));
   const enabledNow = forceCloseNow ? false : (forceOpenNow ? true : Boolean(settings.enabled));
   const justOpened = forceOpenNow || Boolean(settings.openNewCycle) || (!oldSettings.enabled && enabledNow);
   const openNewCycle = !forceCloseNow && (Boolean(settings.openNewCycle) || (!oldSettings.enabled && enabledNow));
+  const previousHostAlliance = normalizeAllianceTag(oldSettings.activeHostAlliance || oldSettings.hostAlliance || '');
+  const shouldAdvanceRotation = Boolean(
+    openNewCycle
+    && rotationEnabled
+    && rotationAlliances.length > 1
+    && previousHostAlliance
+  );
+  if (shouldAdvanceRotation) {
+    const nextIndex = rotationActiveIndex + 1;
+    rotationActiveIndex = nextIndex < rotationAlliances.length
+      ? nextIndex
+      : (rotationLoop ? 0 : rotationActiveIndex);
+  }
   const baseCycleId = makeCycleId(eventStartAtMs);
   const currentCycleId = openNewCycle ? `${baseCycleId}-${Date.now()}` : (oldSettings.currentCycleId || baseCycleId);
   const now = firestoreMod.serverTimestamp();
   const actorName = getRegionActorName(profile || {}, safeRegion, user);
   const actorEmail = ''; // do not expose account email in public region documents
   const requestedHostAlliance = normalizeAllianceTag(settings.hostAlliance || '');
+  const rotationHostAlliance = rotationEnabled && rotationAlliances[rotationActiveIndex]
+    ? normalizeAllianceTag(rotationAlliances[rotationActiveIndex].tag)
+    : '';
   const activeHostBeforeClose = normalizeAllianceTag(oldSettings.hostAlliance || oldSettings.activeHostAlliance || requestedHostAlliance || '');
   const visibleHostAlliance = forceCloseNow
     ? ''
-    : ((Boolean(settings.rotationEnabled) && rotationAlliances[rotationActiveIndex]) ? rotationAlliances[rotationActiveIndex].tag : requestedHostAlliance);
+    : (rotationHostAlliance || requestedHostAlliance);
   const activeHostAlliance = forceCloseNow
     ? activeHostBeforeClose
-    : (openNewCycle || forceOpenNow || enabledNow ? '' : normalizeAllianceTag(oldSettings.activeHostAlliance || ''));
+    : (enabledNow ? visibleHostAlliance : normalizeAllianceTag(oldSettings.activeHostAlliance || visibleHostAlliance || ''));
 
   const clean = {
     enabled: enabledNow,
@@ -1684,7 +1702,7 @@ export async function saveRegionSettings(user, region, settings) {
     autoOpenTime,
     openAtMs,
     rotationEnabled: Boolean(settings.rotationEnabled),
-    rotationLoop: 'rotationLoop' in settings ? Boolean(settings.rotationLoop) : DEFAULT_REGION_FORM.rotationLoop,
+    rotationLoop,
     rotationActiveIndex,
     rotationAlliances,
     eventStartAtMs,
