@@ -1,16 +1,63 @@
-/* v236 — staff panel tabs inside one page, compact header and embedded tools. */
+/* v237 — compact staff shell with real header/footer and 4 inner tabs. */
+
+
+body.staff-shell .app-header {
+  margin-top: 8px;
+}
+
+body.staff-shell .header-inner {
+  min-height: 96px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+body.staff-shell .brand-logo {
+  width: 96px;
+  height: 96px;
+}
+
+body.staff-shell .brand-text h1 {
+  font-size: 20px;
+}
+
+body.staff-shell .brand-text p {
+  font-size: 11.5px;
+}
+
+body.staff-shell .site-footer {
+  margin-top: 10px;
+  padding: 10px 16px;
+  border-radius: 18px;
+}
+
+body.staff-shell .footer-cards {
+  display: none;
+}
+
+body.staff-shell .footer-copy {
+  padding-top: 0;
+  border-top: 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+body.staff-shell .footer-copy strong {
+  display: inline;
+  margin-right: 8px;
+}
+
 
 .staff-page {
-  min-height: calc(100dvh - 120px);
-  padding: clamp(14px, 2vw, 26px) 0 56px;
+  min-height: 0;
+  padding: 10px 0 10px;
 }
 
 .staff-panel {
-  width: min(1540px, calc(100vw - 24px));
+  width: min(1540px, calc(100vw - 18px));
   margin: 0 auto;
-  padding: clamp(16px, 2vw, 28px);
+  padding: clamp(14px, 1.6vw, 20px);
   border: 1px solid rgba(145, 170, 255, .18);
-  border-radius: 28px;
+  border-radius: 24px;
   background:
     radial-gradient(900px 460px at 8% 0%, rgba(79, 140, 255, .20), transparent 64%),
     radial-gradient(740px 420px at 92% 4%, rgba(141, 107, 255, .16), transparent 62%),
@@ -21,18 +68,18 @@
 .staff-panel .admin-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 18px;
+  gap: 14px;
   align-items: start;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
 }
 
 .staff-panel .eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: #aeb9d3;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 900;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -41,18 +88,18 @@
 .staff-panel .admin-hero h1 {
   margin: 0;
   color: #fff;
-  font-size: clamp(30px, 3vw, 42px);
+  font-size: clamp(28px, 2.6vw, 38px);
   line-height: 1.02;
   font-weight: 1000;
   letter-spacing: -.03em;
 }
 
 .staff-panel .admin-hero p {
-  width: min(820px, 100%);
-  margin: 10px 0 0;
+  width: min(860px, 100%);
+  margin: 8px 0 0;
   color: #b9c4df;
-  font-size: clamp(14px, 1.1vw, 16px);
-  line-height: 1.48;
+  font-size: clamp(13px, 1vw, 15px);
+  line-height: 1.35;
 }
 
 .staff-badge {
@@ -99,12 +146,12 @@
 
 .staff-tabs {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-  margin: 16px 0 18px;
-  padding: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 12px;
+  padding: 7px;
   border: 1px solid rgba(255,255,255,.10);
-  border-radius: 22px;
+  border-radius: 20px;
   background: rgba(5, 12, 25, .54);
 }
 
@@ -124,11 +171,11 @@
 }
 
 .staff-tab-link {
-  min-height: 76px;
+  min-height: 58px;
   display: grid;
   align-content: center;
-  gap: 4px;
-  padding: 12px 14px;
+  gap: 3px;
+  padding: 10px 12px;
   color: inherit;
   text-align: left;
   font: inherit;
@@ -152,14 +199,14 @@
 
 .staff-tab-link b {
   color: #fff;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 1000;
 }
 
 .staff-tab-link span {
   color: #aeb9d3;
-  line-height: 1.35;
-  font-size: 12px;
+  line-height: 1.22;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -170,22 +217,22 @@
 .staff-page section.admin-card {
   width: 100%;
   max-width: none;
-  padding: clamp(16px, 2vw, 26px);
+  padding: clamp(12px, 1.5vw, 18px);
 }
 
 .staff-page .admin-section-head {
   display: flex;
   align-items: start;
   justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 18px;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
 .staff-page .admin-section-head h2 {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   color: #fff;
-  font-size: clamp(22px, 2.1vw, 30px);
-  line-height: 1.08;
+  font-size: clamp(22px, 2vw, 28px);
+  line-height: 1.05;
   font-weight: 1000;
 }
 
@@ -198,18 +245,19 @@
 
 .staff-filters {
   display: grid;
-  grid-template-columns: minmax(150px, .7fr) minmax(180px, .8fr) minmax(320px, 1.6fr) minmax(150px, .6fr);
-  gap: 12px;
-  align-items: end;
-  margin: 12px 0 18px;
+  grid-template-columns: minmax(130px, .65fr) minmax(160px, .75fr) minmax(260px, 1.45fr) minmax(120px, .55fr);
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .staff-filters label {
   display: grid;
-  gap: 7px;
-  min-width: 0;
-  color: #f4f7ff;
-  font-weight: 950;
+  gap: 5px;
+  color: #aeb9d3;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .04em;
 }
 
 .staff-filters label span {
@@ -300,6 +348,19 @@
   font-weight: 1000;
 }
 
+
+.staff-table th,
+.staff-table td {
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
+
+.staff-table .btn-sm {
+  min-height: 34px;
+  padding: 7px 10px;
+  border-radius: 12px;
+}
+
 .staff-table .badge-chip {
   display: inline-flex;
   align-items: center;
@@ -373,9 +434,10 @@
 .staff-frame {
   display: block;
   width: 100%;
-  min-height: min(76dvh, 980px);
+  height: clamp(430px, calc(100dvh - 430px), 760px);
+  min-height: 0;
   border: 1px solid rgba(255,255,255,.10);
-  border-radius: 24px;
+  border-radius: 22px;
   background: rgba(5, 12, 25, .62);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
 }
@@ -474,16 +536,65 @@
 
 @media (max-width: 1180px) {
   .staff-tabs {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .staff-filters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 12px;
+  padding: 7px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 20px;
+  background: rgba(5, 12, 25, .54);
 }
 
 @media (max-width: 760px) {
-  .staff-page {
+  
+body.staff-shell .app-header {
+  margin-top: 8px;
+}
+
+body.staff-shell .header-inner {
+  min-height: 96px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+body.staff-shell .brand-logo {
+  width: 96px;
+  height: 96px;
+}
+
+body.staff-shell .brand-text h1 {
+  font-size: 20px;
+}
+
+body.staff-shell .brand-text p {
+  font-size: 11.5px;
+}
+
+body.staff-shell .site-footer {
+  margin-top: 10px;
+  padding: 10px 16px;
+  border-radius: 18px;
+}
+
+body.staff-shell .footer-cards {
+  display: none;
+}
+
+body.staff-shell .footer-copy {
+  padding-top: 0;
+  border-top: 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+body.staff-shell .footer-copy strong {
+  display: inline;
+  margin-right: 8px;
+}
+
+
+.staff-page {
     padding: 14px 0 54px;
   }
 
@@ -494,29 +605,33 @@
   }
 
   .staff-panel .admin-hero {
-    grid-template-columns: 1fr;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 10px;
+}
+
+
+@media (max-width: 760px) {
+  body.staff-shell .header-inner {
+    min-height: 74px;
   }
 
-  .staff-badge {
-    justify-content: flex-start;
-    width: 100%;
-    white-space: normal;
+  body.staff-shell .brand-logo {
+    width: 72px;
+    height: 72px;
   }
 
-  .staff-tabs,
-  .staff-filters {
-    grid-template-columns: 1fr;
+  body.staff-shell .brand-text {
+    display: none;
   }
 
-  .staff-page .admin-section-head {
-    display: grid;
+  .staff-panel {
+    border-radius: 20px;
   }
 
-  .staff-page .admin-section-head .btn {
-    width: 100%;
-  }
-
-  .staff-tab-link {
-    min-height: 58px;
+  .staff-page {
+    padding-top: 8px;
   }
 }

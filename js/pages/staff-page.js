@@ -23,8 +23,7 @@ const STAFF_TABS = {
   players: { labelKey: 'staff.playersTitle', label: 'Гравці регіону' },
   'region-table': { labelKey: 'region.table', label: 'Таблиця регіону' },
   'region-settings': { labelKey: 'region.settings', label: 'Форма регіону' },
-  'action-log': { labelKey: 'actionLog.title', label: 'Журнал дій' },
-  notifications: { labelKey: 'notifications.title', label: 'Сповіщення' }
+  'action-log': { labelKey: 'actionLog.title', label: 'Журнал дій' }
 };
 
 function badge(name, value, fallback = '') {

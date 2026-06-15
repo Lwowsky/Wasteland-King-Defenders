@@ -9,33 +9,34 @@
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/header.css" />
-  <link rel="stylesheet" href="css/admin-page.css?v=236" />
-  <link rel="stylesheet" href="css/staff-page.css?v=236" />
+  <link rel="stylesheet" href="css/admin-page.css?v=237" />
+  <link rel="stylesheet" href="css/staff-page.css?v=237" />
   <link rel="stylesheet" href="css/confirm-modal.css" />
   <link rel="stylesheet" href="css/contact-modal.css" />
   <link rel="stylesheet" href="css/responsive.css" />
-  <script defer src="js/i18n.js?v=236"></script>
-  <script defer src="js/i18n-uk.js?v=236"></script>
-  <script defer src="js/i18n-en.js?v=236"></script>
-  <script defer src="js/i18n-ru.js?v=236"></script>
-  <script defer src="js/i18n-pl.js?v=236"></script>
-  <script defer src="js/i18n-de.js?v=236"></script>
-  <script defer src="js/i18n-ja.js?v=236"></script>
-  <script defer src="js/i18n-zh.js?v=236"></script>
-  <script defer src="js/i18n-ko.js?v=236"></script>
-  <script defer src="js/i18n-vi.js?v=236"></script>
-  <script defer src="js/i18n-ar.js?v=236"></script>
-  <script defer src="js/i18n-autokeys.js?v=236"></script>
+  <script defer src="js/i18n.js?v=237"></script>
+  <script defer src="js/i18n-uk.js?v=237"></script>
+  <script defer src="js/i18n-en.js?v=237"></script>
+  <script defer src="js/i18n-ru.js?v=237"></script>
+  <script defer src="js/i18n-pl.js?v=237"></script>
+  <script defer src="js/i18n-de.js?v=237"></script>
+  <script defer src="js/i18n-ja.js?v=237"></script>
+  <script defer src="js/i18n-zh.js?v=237"></script>
+  <script defer src="js/i18n-ko.js?v=237"></script>
+  <script defer src="js/i18n-vi.js?v=237"></script>
+  <script defer src="js/i18n-ar.js?v=237"></script>
+  <script defer src="js/i18n-autokeys.js?v=237"></script>
   <script defer src="js/core/dom.js"></script>
-  <script defer src="js/core/partials.js?v=236"></script>
+  <script defer src="js/core/partials.js?v=237"></script>
   <script defer src="js/core/assets-loader.js"></script>
-  <script defer src="js/badges.js?v=236"></script>
-  <script defer src="js/core/app-boot.js?v=236"></script>
-  <script type="module" src="js/auth-google.js?v=236"></script>
-  <script type="module" src="js/notifications.js?v=236"></script>
-  <script type="module" src="js/pages/staff-page.js?v=236"></script>
+  <script defer src="js/badges.js?v=237"></script>
+  <script defer src="js/core/app-boot.js?v=237"></script>
+  <script defer src="js/app-login-shell.js?v=237"></script>
+  <script type="module" src="js/auth-google.js?v=237"></script>
+  <script type="module" src="js/notifications.js?v=237"></script>
+  <script type="module" src="js/pages/staff-page.js?v=237"></script>
 </head>
-<body>
+<body class="staff-shell">
   <div data-include="partials/header.html"></div>
 
   <main class="page-shell staff-page">
@@ -67,10 +68,6 @@
         <button class="staff-tab-link" type="button" role="tab" aria-selected="false" data-staff-tab="action-log">
           <b data-i18n="actionLog.title">Журнал дій</b>
           <span data-i18n="staff.logHelp">Перевірка змін у своєму регіоні або альянсі.</span>
-        </button>
-        <button class="staff-tab-link" type="button" role="tab" aria-selected="false" data-staff-tab="notifications">
-          <b data-i18n="notifications.title">Сповіщення</b>
-          <span data-i18n="staff.notificationsHelp">Повідомлення для гравців, регіону або альянсу за правами ролі.</span>
         </button>
       </div>
 
@@ -140,15 +137,6 @@
         <iframe class="staff-frame" title="Журнал дій" data-i18n-title="actionLog.title" data-staff-frame="action-log" data-staff-src="action-log.html?staffEmbed=1"></iframe>
       </section>
 
-      <section class="admin-card staff-tab-panel" data-staff-panel="notifications" hidden>
-        <div class="staff-embed-head">
-          <div>
-            <h2 data-i18n="notifications.title">Сповіщення</h2>
-            <p data-i18n="staff.notificationsHelp">Повідомлення для гравців, регіону або альянсу за правами ролі.</p>
-          </div>
-        </div>
-        <iframe class="staff-frame" title="Сповіщення" data-i18n-title="notifications.title" data-staff-frame="notifications" data-staff-src="notifications.html?staffEmbed=1"></iframe>
-      </section>
     </section>
   </main>
 
