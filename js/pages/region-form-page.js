@@ -60,7 +60,7 @@ function translatedDefaultText(value, key, fallback) {
   if (!raw || raw === fallback || defaults.includes(raw)) return t(key, fallback);
   return raw;
 }
-function settingsTitle(settings = {}) { return translatedDefaultText(settings.title, 'region.formTitle', 'Реєстрація на пустош'); }
+function settingsTitle(_settings = {}) { return t('region.formTitle', 'Реєстрація на пустош'); }
 function settingsDescription(settings = {}) { return translatedDefaultText(settings.description, 'region.formDefaultDescription', 'Заповни заявку для свого регіону. Консул або офіцер побачить її в таблиці регіону.'); }
 const tiers = Array.from({ length: 14 }, (_, i) => `T${14 - i}`);
 const readFarmFromUrl = () => new URLSearchParams(window.location.search).get('farm') || '';

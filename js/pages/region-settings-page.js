@@ -799,7 +799,6 @@ function startPreviewTimer() {
 function fill(settings) {
   currentSettings = settings;
   $('#settingsEnabled').value = String(Boolean(settings.enabled));
-  $('#settingsTitle').value = localizedDefaultText(settings.title, 'region.formTitle', 'Реєстрація на пустош');
   $('#settingsHostAlliance') && ($('#settingsHostAlliance').value = settings.hostAlliance || '');
   updateHostAllianceDatalist();
   $('#settingsGovernor') && ($('#settingsGovernor').value = settings.governor || '');
@@ -830,7 +829,7 @@ function fill(settings) {
 function read() {
   return {
     enabled: $('#settingsEnabled').value === 'true',
-    title: cleanDefaultText($('#settingsTitle').value, 'region.formTitle', 'Реєстрація на пустош'),
+    title: '',
     description: cleanDefaultText($('#settingsDescription').value, 'region.formDefaultDescription', 'Заповни заявку для свого регіону. Консул або офіцер побачить її в таблиці регіону.'),
     hostAlliance: $('#settingsHostAlliance')?.value || '',
     governor: $('#settingsGovernor')?.value || '',
@@ -1141,8 +1140,13 @@ function addRotationAlliance() {
   const manual = normalizeAllianceTag($('#rotationManualTag')?.value);
   const tag = manual || picked;
   if (!tag || rotationDraft.alliances.some(item => item.tag === tag)) return;
-  const record = allianceRecord(tag);
-  rotationDraft.alliances.push({ tag, name: trim(record?.name || '') });
+  let record = allianceRecord(tag);
+  if (!record) {
+    record = { id: tag, tag, name: tag, note: '' };
+    currentAlliances = [...currentAlliances, record].filter(Boolean);
+    updateHostAllianceDatalist();
+  }
+  rotationDraft.alliances.push({ tag, name: trim(record?.name || tag) });
   if ($('#rotationManualTag')) $('#rotationManualTag').value = '';
   if (rotationDraft.alliances.length === 1) rotationDraft.activeIndex = 0;
   renderRotationModal();
@@ -1174,16 +1178,42 @@ async function deleteRotationAlliance(index) {
   rotationDraft.activeIndex = Math.max(0, Math.min(rotationDraft.activeIndex, rotationDraft.alliances.length - 1));
   renderRotationModal();
 }
-function saveRotationDraft() {
+async function saveRotationDraft(event) {
+  event?.preventDefault?.();
   if (!canManageRotationSettings()) return;
+
+  const saveBtn = $('#saveRotationModalBtn');
+  if (saveBtn?.disabled) return;
+
   rotationDraft.enabled = $('#rotationEnabled')?.checked ?? rotationDraft.enabled;
   rotationDraft.loop = $('#rotationLoop')?.checked ?? rotationDraft.loop;
   rotationDraft.alliances = normalizeRotation(rotationDraft.alliances);
   rotationDraft.activeIndex = Math.max(0, Math.min(Math.max(0, rotationDraft.alliances.length - 1), Number(rotationDraft.activeIndex) || 0));
-  const active = rotationDraft.alliances[rotationDraft.activeIndex];
+
+  const active = rotationDraft.alliances[rotationDraft.activeIndex] || null;
   if (active && $('#settingsHostAlliance')) $('#settingsHostAlliance').value = active.tag;
-  updateRotationSummary({ ...currentSettings, rotationEnabled: rotationDraft.enabled, rotationLoop: rotationDraft.loop, rotationActiveIndex: rotationDraft.activeIndex, rotationAlliances: rotationDraft.alliances });
-  closeRotationModal();
+
+  const overrides = {
+    rotationEnabled: Boolean(rotationDraft.enabled),
+    rotationLoop: Boolean(rotationDraft.loop),
+    rotationActiveIndex: Number(rotationDraft.activeIndex) || 0,
+    rotationAlliances: normalizeRotation(rotationDraft.alliances),
+    hostAlliance: active?.tag || $('#settingsHostAlliance')?.value || ''
+  };
+
+  try {
+    if (saveBtn) saveBtn.disabled = true;
+    setStatus(t('regionSettings.rotationSaving', 'Зберігаю ротацію альянсів...'), 'muted');
+    await save({ preventDefault() {} }, overrides);
+    updateRotationSummary({ ...currentSettings, ...overrides });
+    closeRotationModal();
+    setStatus(t('regionSettings.rotationSaved', 'Ротацію альянсів збережено в базі.'), 'success');
+  } catch (error) {
+    console.error('[WKD] rotation save failed:', error);
+    setStatus(t('regionSettings.rotationSaveFailed', 'Не вдалося зберегти ротацію. Перевір права доступу.'), 'error');
+  } finally {
+    if (saveBtn) saveBtn.disabled = false;
+  }
 }
 
 async function copyShareLink(inputId = 'regionShareLink') {
@@ -1390,7 +1420,6 @@ document.addEventListener('wkd:language-changed', () => {
   if (currentUser && currentRegion) setStatus(t('regionSettings.readyStatus', 'Configure the form, close time and secret link for players in your region.'), 'success');
   if (editingAllianceId) setAllianceStatus(tv('regionSettings.editingAlliance', 'Editing alliance {tag}.', { tag: $('#allianceTag')?.value || editingAllianceId }), 'muted');
   if (currentSettings) {
-    $('#settingsTitle') && ($('#settingsTitle').value = localizedDefaultText(currentSettings.title, 'region.formTitle', 'Реєстрація на пустош'));
     $('#settingsDescription') && ($('#settingsDescription').value = localizedDefaultText(currentSettings.description, 'region.formDefaultDescription', 'Заповни заявку для свого регіону. Консул або офіцер побачить її в таблиці регіону.'));
   }
   renderRuleLists();
