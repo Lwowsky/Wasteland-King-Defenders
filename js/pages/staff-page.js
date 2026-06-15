@@ -19,10 +19,92 @@ const normalizeRegion = value => String(value || '').replace(/[^0-9]/g, '');
 const normalizeAlliance = value => String(value || '').trim().toUpperCase().slice(0, 3);
 const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 
-function openStaffNav(target) {
-  const href = String(target || '').trim();
-  if (!href) return;
-  window.location.assign(href);
+const STAFF_TABS = {
+  players: { labelKey: 'staff.playersTitle', label: 'Гравці регіону' },
+  'region-table': { labelKey: 'region.table', label: 'Таблиця регіону' },
+  'region-settings': { labelKey: 'region.settings', label: 'Форма регіону' },
+  'action-log': { labelKey: 'actionLog.title', label: 'Журнал дій' },
+  notifications: { labelKey: 'notifications.title', label: 'Сповіщення' }
+};
+
+function badge(name, value, fallback = '') {
+  const badges = window.WKD?.Badges || {};
+  if (typeof badges[name] === 'function') return badges[name](value);
+  return fallback || esc(value || '—');
+}
+
+function normalizeEmbedUrl(url = '') {
+  const value = String(url || '').trim();
+  if (!value) return '';
+  return value.includes('?') ? value : `${value}?staffEmbed=1`;
+}
+
+function decorateFrame(iframe) {
+  try {
+    const doc = iframe.contentDocument;
+    if (!doc?.head || !doc?.body) return;
+    doc.body.classList.add('staff-embedded-page');
+    if (!doc.getElementById('staffEmbedStyle')) {
+      const style = doc.createElement('style');
+      style.id = 'staffEmbedStyle';
+      style.textContent = `
+        .app-header, .site-footer, .drawer, [data-include*="partials/header"], [data-include*="partials/footer"] { display: none !important; }
+        html, body { background: transparent !important; }
+        body { margin: 0 !important; overflow: auto !important; }
+        main, .page-shell { padding-top: 0 !important; padding-bottom: 0 !important; }
+        .container, .admin-card, .stats-card, .profile-card { max-width: none !important; width: 100% !important; }
+      `;
+      doc.head.appendChild(style);
+    }
+  } catch (error) {
+    console.warn('[WKD] staff embed styling skipped:', error);
+  }
+}
+
+function loadFrameForTab(tab) {
+  const iframe = document.querySelector(`[data-staff-panel="${tab}"] [data-staff-frame]`);
+  if (!iframe) return;
+  if (!iframe.dataset.loaded) {
+    iframe.src = normalizeEmbedUrl(iframe.dataset.staffSrc);
+    iframe.dataset.loaded = '1';
+  }
+  iframe.addEventListener('load', () => decorateFrame(iframe), { once: false });
+}
+
+function switchStaffTab(tab = 'players') {
+  const safeTab = STAFF_TABS[tab] ? tab : 'players';
+  document.querySelectorAll('[data-staff-tab]').forEach(button => {
+    const active = button.dataset.staffTab === safeTab;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  document.querySelectorAll('[data-staff-panel]').forEach(panel => {
+    const active = panel.dataset.staffPanel === safeTab;
+    panel.hidden = !active;
+    panel.classList.toggle('is-active', active);
+  });
+  if (safeTab !== 'players') loadFrameForTab(safeTab);
+}
+
+function injectStaffDrawerTabs() {
+  const drawerBody = document.querySelector('.drawer-body');
+  if (!drawerBody || drawerBody.querySelector('.staff-drawer-tabs')) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'staff-drawer-tabs';
+  wrap.innerHTML = `<strong>${esc(t('staff.title', 'Панель регіону'))}</strong>` + Object.entries(STAFF_TABS).map(([key, meta]) => (
+    `<button class="staff-drawer-tab" type="button" data-staff-tab="${esc(key)}">${esc(t(meta.labelKey, meta.label))}</button>`
+  )).join('');
+  const afterAuth = drawerBody.querySelector('.drawer-auth');
+  if (afterAuth?.nextSibling) drawerBody.insertBefore(wrap, afterAuth.nextSibling);
+  else drawerBody.prepend(wrap);
+  wrap.querySelectorAll('[data-staff-tab]').forEach(button => {
+    button.addEventListener('click', () => {
+      switchStaffTab(button.dataset.staffTab);
+      document.getElementById('drawer')?.classList.remove('open');
+      document.getElementById('drawer')?.setAttribute('aria-hidden', 'true');
+      document.getElementById('burgerBtn')?.setAttribute('aria-expanded', 'false');
+    });
+  });
 }
 
 let ready = false;
@@ -89,12 +171,12 @@ function renderRows() {
   body.innerHTML = currentRows.map(row => {
     const canEdit = canStaffEditPlayer(currentUser, currentProfile, row);
     return `<tr>
-      <td>${esc(row.nickname || row.gameNick || '—')}</td>
-      <td><span class="badge-chip badge-region">${esc(row.region || '—')}</span></td>
-      <td><span class="badge-chip badge-alliance">${esc(row.alliance || '—')}</span></td>
-      <td><span class="badge-chip badge-rank">${esc(String(row.rank || 'p1').toUpperCase())}</span></td>
-      <td>${esc(row.shk || '—')}</td>
-      <td>${esc(roleLabel(row.role || 'player'))}</td>
+      <td><strong>${esc(row.nickname || row.gameNick || '—')}</strong></td>
+      <td>${badge('region', row.region || '—')}</td>
+      <td>${badge('alliance', row.alliance || '—')}</td>
+      <td>${badge('rank', row.rank || 'p1')}</td>
+      <td>${badge('shk', row.shk || '')}</td>
+      <td>${badge('role', row.role || 'player')}</td>
       <td>${canEdit ? `<button class="btn btn-sm" type="button" data-edit-staff="${esc(row.uid || row.id)}">${esc(t('common.edit', 'Редагувати'))}</button>` : `<span class="staff-no-action">${esc(t('staff.viewOnly', 'Перегляд'))}</span>`}</td>
     </tr>`;
   }).join('');
@@ -151,9 +233,10 @@ async function saveEdit() {
 }
 
 function bindControls() {
-  document.querySelectorAll('[data-staff-nav]').forEach(button => {
-    button.addEventListener('click', () => openStaffNav(button.dataset.staffNav));
+  document.querySelectorAll('[data-staff-tab]').forEach(button => {
+    button.addEventListener('click', () => switchStaffTab(button.dataset.staffTab));
   });
+  injectStaffDrawerTabs();
   $('#staffRefreshBtn')?.addEventListener('click', loadRows);
   $('#staffRegionSelect')?.addEventListener('change', loadRows);
   $('#staffAllianceFilter')?.addEventListener('change', loadRows);
@@ -170,6 +253,7 @@ async function initStaffPage() {
   if (ready || !$('#staffPlayersBody')) return;
   ready = true;
   bindControls();
+  switchStaffTab('players');
 
   await watchAuth(async user => {
     currentUser = user;
@@ -193,9 +277,14 @@ async function initStaffPage() {
   });
 }
 
-document.addEventListener('wkd:partials-ready', initStaffPage);
+document.addEventListener('wkd:partials-ready', () => {
+  injectStaffDrawerTabs();
+  initStaffPage();
+});
 document.addEventListener('DOMContentLoaded', () => setTimeout(initStaffPage, 0));
 document.addEventListener('wkd:language-changed', () => {
+  document.querySelectorAll('.staff-drawer-tabs').forEach(node => node.remove());
+  injectStaffDrawerTabs();
   scopeBadge();
   renderRows();
 });

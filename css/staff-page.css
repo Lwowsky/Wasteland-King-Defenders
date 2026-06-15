@@ -1,16 +1,16 @@
-/* v235 — full-width staff panel with internal same-tab navigation. */
+/* v236 — staff panel tabs inside one page, compact header and embedded tools. */
 
 .staff-page {
   min-height: calc(100dvh - 120px);
-  padding: clamp(18px, 2.4vw, 38px) 0 72px;
+  padding: clamp(14px, 2vw, 26px) 0 56px;
 }
 
 .staff-panel {
-  width: min(1540px, calc(100vw - 32px));
+  width: min(1540px, calc(100vw - 24px));
   margin: 0 auto;
-  padding: clamp(18px, 2.3vw, 34px);
+  padding: clamp(16px, 2vw, 28px);
   border: 1px solid rgba(145, 170, 255, .18);
-  border-radius: 34px;
+  border-radius: 28px;
   background:
     radial-gradient(900px 460px at 8% 0%, rgba(79, 140, 255, .20), transparent 64%),
     radial-gradient(740px 420px at 92% 4%, rgba(141, 107, 255, .16), transparent 62%),
@@ -30,10 +30,10 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: #aeb9d3;
-  font-size: 13px;
-  font-weight: 950;
+  font-size: 11px;
+  font-weight: 900;
   letter-spacing: .12em;
   text-transform: uppercase;
 }
@@ -41,18 +41,18 @@
 .staff-panel .admin-hero h1 {
   margin: 0;
   color: #fff;
-  font-size: clamp(34px, 4.2vw, 58px);
-  line-height: .96;
+  font-size: clamp(30px, 3vw, 42px);
+  line-height: 1.02;
   font-weight: 1000;
-  letter-spacing: -.035em;
+  letter-spacing: -.03em;
 }
 
 .staff-panel .admin-hero p {
-  width: min(860px, 100%);
-  margin: 12px 0 0;
+  width: min(820px, 100%);
+  margin: 10px 0 0;
   color: #b9c4df;
-  font-size: clamp(15px, 1.45vw, 19px);
-  line-height: 1.55;
+  font-size: clamp(14px, 1.1vw, 16px);
+  line-height: 1.48;
 }
 
 .staff-badge {
@@ -99,17 +99,21 @@
 
 .staff-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin: 18px 0 22px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0 18px;
+  padding: 8px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 22px;
+  background: rgba(5, 12, 25, .54);
 }
 
 .staff-tab-link,
 .staff-page .admin-card {
   border: 1px solid rgba(255,255,255,.11);
-  border-radius: 24px;
+  border-radius: 22px;
   background:
-    radial-gradient(420px 180px at 0% 0%, rgba(83, 109, 255, .14), transparent 58%),
+    radial-gradient(420px 180px at 0% 0%, rgba(83, 109, 255, .12), transparent 58%),
     linear-gradient(180deg, rgba(20, 31, 56, .94), rgba(8, 15, 31, .96));
   box-shadow: 0 18px 50px rgba(0,0,0,.22);
 }
@@ -120,47 +124,47 @@
 }
 
 .staff-tab-link {
-  min-height: 120px;
+  min-height: 76px;
   display: grid;
-  align-content: start;
-  gap: 8px;
-  padding: 18px 20px;
+  align-content: center;
+  gap: 4px;
+  padding: 12px 14px;
   color: inherit;
   text-align: left;
   font: inherit;
   cursor: pointer;
-  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
-}
-
-.staff-tab-link::before {
-  content: "";
-  width: 42px;
-  height: 42px;
-  border-radius: 15px;
-  background:
-    radial-gradient(circle at 35% 30%, rgba(255,255,255,.85), transparent 18%),
-    linear-gradient(135deg, #4f8cff, #8d6bff);
-  box-shadow: 0 12px 24px rgba(86, 112, 255, .25);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
 }
 
 .staff-tab-link:hover,
 .staff-tab-link:focus-visible {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   border-color: rgba(142, 161, 255, .42);
-  box-shadow: 0 24px 70px rgba(0,0,0,.30);
+  box-shadow: 0 18px 46px rgba(0,0,0,.28);
   outline: none;
+}
+
+.staff-tab-link.is-active {
+  border-color: rgba(139, 160, 255, .62);
+  background: linear-gradient(135deg, rgba(83, 109, 255, .70), rgba(134, 105, 255, .74));
+  box-shadow: 0 18px 48px rgba(93, 114, 255, .26);
 }
 
 .staff-tab-link b {
   color: #fff;
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 1000;
 }
 
 .staff-tab-link span {
   color: #aeb9d3;
-  line-height: 1.45;
-  font-weight: 650;
+  line-height: 1.35;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.staff-tab-link.is-active span {
+  color: rgba(255,255,255,.82);
 }
 
 .staff-page section.admin-card {
@@ -178,10 +182,10 @@
 }
 
 .staff-page .admin-section-head h2 {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   color: #fff;
-  font-size: clamp(24px, 2.4vw, 34px);
-  line-height: 1.05;
+  font-size: clamp(22px, 2.1vw, 30px);
+  line-height: 1.08;
   font-weight: 1000;
 }
 
@@ -334,6 +338,82 @@
   display: none;
 }
 
+
+.staff-tab-panel[hidden] {
+  display: none !important;
+}
+
+.staff-tab-panel.is-active {
+  display: block;
+}
+
+.staff-embed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.staff-embed-head h2 {
+  margin: 0 0 6px;
+  color: #fff;
+  font-size: clamp(22px, 2vw, 30px);
+  line-height: 1.08;
+  font-weight: 1000;
+}
+
+.staff-embed-head p {
+  margin: 0;
+  color: #aeb9d3;
+  font-weight: 650;
+  line-height: 1.42;
+}
+
+.staff-frame {
+  display: block;
+  width: 100%;
+  min-height: min(76dvh, 980px);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 24px;
+  background: rgba(5, 12, 25, .62);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+.staff-drawer-tabs {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 16px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 18px;
+  background: rgba(5, 12, 25, .48);
+}
+
+.staff-drawer-tabs strong {
+  color: #f5f7ff;
+  font-size: 13px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.staff-drawer-tab {
+  min-height: 42px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px;
+  background: #07101f;
+  color: #dce6ff;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.staff-drawer-tab.is-active {
+  background: linear-gradient(135deg, #536dff, #8669ff);
+  color: #fff;
+  border-color: rgba(154,168,255,.40);
+}
+
 .staff-modal {
   position: fixed;
   inset: 0;
@@ -392,9 +472,9 @@
   margin-top: 18px;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1180px) {
   .staff-tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .staff-filters {
@@ -437,6 +517,6 @@
   }
 
   .staff-tab-link {
-    min-height: auto;
+    min-height: 58px;
   }
 }

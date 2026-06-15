@@ -929,5 +929,8 @@ window.WKD_I18N_AUTO_ATTR = {
   "profile.needGoogle": "You need to sign in.",
   "account.rankRestricted": "P4/P5 can be assigned only by alliance or region leadership. Choose P1–P3.",
   "account.rankManaged": "managed rank",
-  "admin.rankNotAllowed": "You cannot assign this rank. P5/P4 is assigned by admin, moderator, or consul; alliance P5 can assign P4 only."
+  "admin.rankNotAllowed": "You cannot assign this rank. P5/P4 is assigned by admin, moderator, or consul; alliance P5 can assign P4 only.",
+  "staff.playersTitle": "Region players",
+  "staff.playersHelp": "Consuls see the region. Officers and R5 work with their alliance.",
+  "staff.title": "Region panel"
 };
