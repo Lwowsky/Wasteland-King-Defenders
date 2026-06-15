@@ -203,6 +203,16 @@ service cloud.firestore {
       return request.resource.data.role == 'player';
     }
 
+    function ownerProfileCreateSafe(userId) {
+      return isOwner(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role == 'player'
+        && (!request.resource.data.keys().hasAny(['regionAccess']) || request.resource.data.regionAccess is list)
+        && (!request.resource.data.keys().hasAny(['allianceAccess']) || request.resource.data.allianceAccess is list)
+        && (!request.resource.data.keys().hasAny(['regionRoles']) || request.resource.data.regionRoles is map);
+    }
+
     function ownerKeepsProtectedFields() {
       return !request.resource.data.diff(resource.data).affectedKeys()
         .hasAny(['role', 'createdAt', 'uid', 'email', 'providerId', 'regionAccess', 'allianceAccess', 'regionRoles']);
@@ -218,7 +228,7 @@ service cloud.firestore {
           'displayName', 'photoURL', 'lastLoginAt', 'updatedAt',
           'country', 'countryCode', 'regionAccess', 'allianceAccess', 'regionRoles',
           'profileComplete', 'gameNick', 'nickname', 'region', 'alliance', 'rank', 'shk',
-          'gameProfile', 'farms', 'farmCount', 'activeFarmId', 'roleRequest', 'profileVisibility'
+          'gameProfile', 'farms', 'farmCount', 'activeFarmId', 'roleRequest', 'roleLabel', 'profileVisibility'
         ])
         && profileAccessFieldsSafe();
     }
@@ -677,7 +687,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow create: if ownerEmail() || (isOwner(userId) && roleIsSafeOnCreate());
+      allow create: if ownerEmail() || ownerProfileCreateSafe(userId);
       allow read: if canReadUser(userId);
       allow update: if ownerEmail() || managerUpdateSafe() || ownerProfileUpdateSafe(userId) || ownerRegionRoleDowngradeSafe(userId) || (isOwner(userId) && ownerKeepsProtectedFields());
       allow delete: if ownerEmail() || isAdmin();
