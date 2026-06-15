@@ -38,9 +38,33 @@ function normalizeEmbedUrl(url = '') {
   return value.includes('?') ? value : `${value}?staffEmbed=1`;
 }
 
-function setFrameHeight(iframe) {
-  const desired = Number(iframe?.dataset?.staffHeight || 0) || 1100;
-  iframe.style.height = `${Math.max(720, desired)}px`;
+function getFrameDocumentHeight(iframe) {
+  try {
+    const doc = iframe?.contentDocument;
+    if (!doc) return 0;
+    const html = doc.documentElement;
+    const body = doc.body;
+    return Math.max(
+      html?.scrollHeight || 0,
+      body?.scrollHeight || 0,
+      html?.offsetHeight || 0,
+      body?.offsetHeight || 0
+    );
+  } catch {
+    return 0;
+  }
+}
+
+function setFrameHeight(iframe, measuredHeight = 0) {
+  const fallback = Number(iframe?.dataset?.staffHeight || 0) || 1100;
+  const desired = Math.max(Number(measuredHeight) || 0, fallback);
+  iframe.style.height = `${Math.max(720, Math.min(6200, desired + 24))}px`;
+}
+
+function scheduleFrameHeight(iframe) {
+  [0, 120, 450, 900, 1800, 3200].forEach(delay => {
+    window.setTimeout(() => setFrameHeight(iframe, getFrameDocumentHeight(iframe)), delay);
+  });
 }
 
 function decorateFrame(iframe) {
@@ -49,24 +73,26 @@ function decorateFrame(iframe) {
     if (!doc?.head || !doc?.body) return;
     doc.documentElement.classList.add('staff-embedded-page');
     doc.body.classList.add('staff-embedded-page');
+    doc.documentElement.style.overflowY = 'hidden';
+    doc.body.style.overflowY = 'hidden';
     if (!doc.getElementById('staffEmbedStyle')) {
       const style = doc.createElement('style');
       style.id = 'staffEmbedStyle';
       style.textContent = `
         .app-header, .site-footer, .drawer, [data-include*="partials/header"], [data-include*="partials/footer"], [data-include*="contact-modal"] { display: none !important; }
-        html, body { width: 100% !important; max-width: 100% !important; min-height: 0 !important; background: transparent !important; overflow-x: hidden !important; }
-        body { margin: 0 !important; padding: 0 !important; background: transparent !important; }
-        main, main.container, .page-shell, .container, .profile-page.container, .region-page.container, .public-region-table-page.container, .admin-page.container, .stats-page.container {
+        html, body { width: 100% !important; max-width: none !important; min-width: 0 !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; background: transparent !important; overflow-x: hidden !important; overflow-y: hidden !important; }
+        main, main.container, .page-shell, .profile-page, .profile-page.container, .container {
           width: 100% !important;
           max-width: none !important;
           min-width: 0 !important;
+          min-height: 0 !important;
+          display: block !important;
+          place-items: initial !important;
           margin: 0 !important;
-          padding-left: 0 !important;
-          padding-right: 0 !important;
-          padding-top: 0 !important;
+          padding: 0 !important;
           box-sizing: border-box !important;
         }
-        .profile-card, .region-card, .region-table-card, .region-settings-page, .admin-card, .admin-panel, .stats-card, .profile-card--tabs, .region-form-shell, .region-shell {
+        .profile-card, .region-card, .region-table-card, .region-settings-page, .action-log-page, .admin-card, .admin-panel, .region-form-shell, .region-shell {
           width: 100% !important;
           max-width: none !important;
           min-width: 0 !important;
@@ -74,12 +100,15 @@ function decorateFrame(iframe) {
           margin-right: 0 !important;
           box-sizing: border-box !important;
         }
-        .region-card.region-table-card, .profile-card.region-card, .region-settings-page { padding-left: clamp(18px, 2vw, 30px) !important; padding-right: clamp(18px, 2vw, 30px) !important; }
-        .region-table-wrap, .admin-table-wrap, .table-scroll, .players-table-wrap { max-width: 100% !important; }
+        .region-card.region-table-card, .region-settings-page, .action-log-page {
+          padding-left: clamp(18px, 2vw, 30px) !important;
+          padding-right: clamp(18px, 2vw, 30px) !important;
+        }
+        .region-table-wrap, .action-log-table-wrap, .admin-table-wrap, .table-scroll, .players-table-wrap { width: 100% !important; max-width: none !important; min-width: 0 !important; overflow-x: auto !important; }
       `;
       doc.head.appendChild(style);
     }
-    setFrameHeight(iframe);
+    scheduleFrameHeight(iframe);
   } catch (error) {
     console.warn('[WKD] staff embed styling skipped:', error);
   }
@@ -88,12 +117,19 @@ function decorateFrame(iframe) {
 function loadFrameForTab(tab) {
   const iframe = document.querySelector(`[data-staff-panel="${tab}"] [data-staff-frame]`);
   if (!iframe) return;
+  iframe.setAttribute('scrolling', 'no');
+  iframe.style.overflow = 'hidden';
   setFrameHeight(iframe);
+  if (!iframe.dataset.bound) {
+    iframe.addEventListener('load', () => decorateFrame(iframe), { once: false });
+    iframe.dataset.bound = '1';
+  }
   if (!iframe.dataset.loaded) {
     iframe.src = normalizeEmbedUrl(iframe.dataset.staffSrc);
     iframe.dataset.loaded = '1';
+  } else {
+    decorateFrame(iframe);
   }
-  iframe.addEventListener('load', () => decorateFrame(iframe), { once: false });
 }
 
 function switchStaffTab(tab = 'players') {

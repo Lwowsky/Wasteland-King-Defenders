@@ -1,3 +1,17 @@
+// WKD_STAFF_EMBED_MARKER_V240
+(function markStaffEmbedMode() {
+  try {
+    const params = new URLSearchParams(window.location.search || '');
+    if (params.get('staffEmbed') !== '1') return;
+    document.documentElement.classList.add('staff-embedded-page');
+    const markBody = () => document.body?.classList.add('staff-embedded-page');
+    if (document.body) markBody();
+    else document.addEventListener('DOMContentLoaded', markBody, { once: true });
+  } catch (error) {
+    console.warn('[WKD] staff embed mode skipped:', error);
+  }
+})();
+
 window.WKD = window.WKD || {};
 
 WKD.bootAppShell = async function bootAppShell(options = {}) {
