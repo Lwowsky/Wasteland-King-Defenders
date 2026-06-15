@@ -1,4 +1,4 @@
-// WKD_STAFF_EMBED_MARKER_V241
+// WKD_STAFF_EMBED_MARKER_V243
 (function markStaffEmbedMode() {
   try {
     const params = new URLSearchParams(window.location.search || '');
@@ -16,6 +16,7 @@ window.WKD = window.WKD || {};
 
 WKD.bootAppShell = async function bootAppShell(options = {}) {
   const readyKey = options.readyKey || 'wkdAppShellReady';
+  const staffEmbedMode = new URLSearchParams(window.location.search || '').get('staffEmbed') === '1';
   if (document.documentElement.dataset[readyKey] === '1') return;
   document.documentElement.dataset[readyKey] = '1';
 
@@ -50,8 +51,8 @@ WKD.bootAppShell = async function bootAppShell(options = {}) {
     console.warn('[WKD] i18n skipped:', error);
   }
 
-  safeInit('header', WKD.initHeader);
-  safeInit('notifications', WKD.initNotifications);
+  if (!staffEmbedMode) safeInit('header', WKD.initHeader);
+  if (!staffEmbedMode) safeInit('notifications', WKD.initNotifications);
   safeInit('import modal', WKD.initImportModal);
   safeInit('import regions', WKD.initImportRegions);
   safeInit('import file', WKD.initImportFile);
@@ -68,7 +69,7 @@ WKD.bootAppShell = async function bootAppShell(options = {}) {
   safeInit('player edit modal', WKD.initPlayerEditModal);
   safeInit('player manager modal', WKD.initPlayerManagerModal);
   safeInit('tower planner', WKD.initTowerPlanner);
-  safeInit('contact modal', WKD.initContactModal);
+  if (!staffEmbedMode) safeInit('contact modal', WKD.initContactModal);
   safeInit('import modal content refresh', WKD.refreshImportModalContent);
 
   if (options.openImportHash && window.location.hash === '#import' && typeof WKD.openImportModal === 'function') {

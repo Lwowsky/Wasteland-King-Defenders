@@ -1,4 +1,4 @@
-/* v242 — staff panel tabs without registration; registration returned to account menu. */
+/* v243 — staff panel without duplicated embedded headers; registration is in account menu. */
 
 .staff-page {
   min-height: auto;
@@ -529,7 +529,8 @@
 
 
 
-/* STAFF_STABLE_FRAME_V242 */
+
+/* STAFF_STABLE_FRAME_V243 */
 .staff-tabs {
   width: 100%;
   grid-template-columns: repeat(4, minmax(0, 1fr));
