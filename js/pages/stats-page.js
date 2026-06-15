@@ -37,7 +37,7 @@ function locale() {
 
 
 
-const STATS_CACHE_BUILD = 'v214-lazy-public-stats';
+const STATS_CACHE_BUILD = 'v215-auto-public-stats';
 const PUBLIC_STATS_SUMMARY_FILE = 'stats-summary.json';
 const PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -330,24 +330,19 @@ function renderSummaryStats(summary = statsSummaryCache) {
   setSummary(tv('stats.publicCacheSummary', '{mode}: {count}. Updated: {updated}', { mode, count: values[0], updated }));
   return true;
 }
-function renderListNotLoaded() {
+function renderListMessage(text) {
   const body = $('#publicPlayersBody');
   if (!body) return;
-  body.innerHTML = `<tr><td colspan="8" class="stats-empty-note">
-    <div class="stats-lazy-list-note">
-      <p>${escapeHtml(t('stats.listNotLoaded', 'Summary is loaded. The player list will load only after you press Show list, search, sort, or enable farms.'))}</p>
-      <button class="btn btn-secondary" type="button" data-load-stats-list>${escapeHtml(t('stats.loadPlayerList', 'Show list'))}</button>
-    </div>
-  </td></tr>`;
+  body.innerHTML = `<tr><td colspan="8" class="stats-empty-note">${escapeHtml(text)}</td></tr>`;
 }
 
-function updateLoadListButtonState(loading = false) {
-  const button = $('#loadStatsListBtn');
-  if (!button) return;
-  button.disabled = Boolean(loading || detailsLoaded);
-  button.textContent = loading
-    ? t('stats.loadingPlayers', 'Loading players...')
-    : (detailsLoaded ? t('stats.listLoaded', 'List loaded') : t('stats.loadPlayerList', 'Show list'));
+function renderListLoading() {
+  renderListMessage(t('stats.loadingPlayers', 'Loading players...'));
+}
+
+function updateLoadListButtonState() {
+  // v215: the public list is loaded automatically. This function is kept as a no-op
+  // so older markup or browser caches do not break the page while the new files roll out.
 }
 
 async function ensurePlayersLoaded({ force = false } = {}) {
@@ -370,7 +365,6 @@ async function ensurePlayersLoaded({ force = false } = {}) {
     renderStats();
     renderPlayers();
     if (isPublicPlayersJsonMissing(statsSummaryCache, publicPlayers)) {
-      renderListNotLoaded();
       setStatus(t('stats.playersJsonMismatch', 'stats-summary.json has numbers, but stats-players.json is empty. Replace the local public-cache with the latest generated JSON files.'), 'warning');
       return players;
     }
@@ -387,7 +381,7 @@ async function ensurePlayersLoaded({ force = false } = {}) {
 
 async function loadSummaryOnly(options = {}) {
   const force = Boolean(options?.force);
-  const shouldReloadDetails = Boolean(options?.loadDetails || (force && detailsLoaded));
+  const shouldReloadDetails = options?.loadDetails !== false;
   if (force) {
     if (!manualRefreshAllowed()) return;
     clearStatsLocalCache();
@@ -409,15 +403,24 @@ async function loadSummaryOnly(options = {}) {
       setStatus(t('stats.cacheEmpty', 'Public JSON cache is empty. Check or replace public-cache/stats-players.json.'), 'warning');
       return;
     }
-    setStatus(t('stats.summaryOnlyLoaded', 'Summary loaded. Player list is lazy-loaded to save traffic.'), 'success');
-    if (shouldReloadDetails) await ensurePlayersLoaded({ force });
+    setStatus(t('stats.loadingPlayers', 'Loading players...'), 'muted');
+    if (shouldReloadDetails) {
+      renderListLoading();
+      try {
+        await ensurePlayersLoaded({ force });
+      } catch (error) {
+        console.warn('[WKD] stats players load failed:', error);
+        renderListMessage(t('stats.playersLoadFailed', 'Player list is unavailable. Try Refresh cache.'));
+        setStatus(t('stats.playersLoadFailed', 'Player list is unavailable. Try Refresh cache.'), 'warning');
+      }
+    }
   } catch (error) {
     console.warn('[WKD] public stats JSON failed:', error);
     statsSummaryCache = null;
     detailsLoaded = false;
     players = [];
     renderStats();
-    renderListNotLoaded();
+    renderListLoading();
     setStatus(t('stats.cacheFailed', 'Public statistics JSON files are not available. Check public-cache/stats-summary.json and stats-players.json.'), 'error');
   }
 }
@@ -604,7 +607,7 @@ function renderPlayers() {
   const body = $('#publicPlayersBody');
   if (!body) return;
   if (!detailsLoaded) {
-    renderListNotLoaded();
+    renderListLoading();
     return;
   }
   const visible = filteredPlayers();
@@ -742,18 +745,13 @@ function closePlayerModal() {
 }
 
 function bindControls() {
-  $('#refreshStatsBtn')?.addEventListener('click', () => loadSummaryOnly({ force: true, loadDetails: detailsLoaded }));
-  $('#loadStatsListBtn')?.addEventListener('click', () => ensurePlayersLoaded().catch(error => {
-    console.warn('[WKD] stats players load failed:', error);
-    setStatus(t('stats.playersLoadFailed', 'Player list is unavailable. Try Refresh cache.'), 'warning');
-    renderListNotLoaded();
-  }));
+  $('#refreshStatsBtn')?.addEventListener('click', () => loadSummaryOnly({ force: true, loadDetails: true }));
   const loadThenRender = () => {
     if (!detailsLoaded) {
       ensurePlayersLoaded().catch(error => {
         console.warn('[WKD] stats players load failed:', error);
         setStatus(t('stats.playersLoadFailed', 'Player list is unavailable. Try Refresh cache.'), 'warning');
-        renderListNotLoaded();
+        renderListLoading();
       });
       return;
     }
@@ -782,15 +780,6 @@ function bindControls() {
     renderPlayers();
   });
   $('#publicPlayersBody')?.addEventListener('click', event => {
-    const loadButton = event.target.closest('[data-load-stats-list]');
-    if (loadButton) {
-      ensurePlayersLoaded().catch(error => {
-        console.warn('[WKD] stats players load failed:', error);
-        setStatus(t('stats.playersLoadFailed', 'Player list is unavailable. Try Refresh cache.'), 'warning');
-        renderListNotLoaded();
-      });
-      return;
-    }
     const button = event.target.closest('[data-player-id]');
     if (!button) return;
     const player = players.find(item => (item.publicKey || item.uid || item.id || '') === button.dataset.playerId);

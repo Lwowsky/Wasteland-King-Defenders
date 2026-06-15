@@ -1,4 +1,4 @@
-const WKD_SW_VERSION = 'wkd-sw-v214';
+const WKD_SW_VERSION = 'wkd-sw-v215';
 const STATIC_CACHE = `${WKD_SW_VERSION}-static`;
 const RUNTIME_CACHE = `${WKD_SW_VERSION}-runtime`;
 const STATIC_ASSET_RE = /\.(?:html|css|js|mjs|png|webp|svg|ico|json)$/i;
@@ -47,6 +47,9 @@ self.addEventListener('fetch', event => {
       }
     }
     if (cached) {
+      // Public JSON snapshots can be large. Do not re-download them on every refresh.
+      // Fresh files are fetched only by the app with ?t=... when the user presses Refresh cache.
+      if (isPublicCache) return cached;
       event.waitUntil(fetch(request).then(response => {
         if (response && response.ok) cache.put(request, response.clone()).catch(() => null);
       }).catch(() => null));
