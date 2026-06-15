@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="uk" translate="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="google" content="notranslate" />
+  <title data-i18n="staff.pageTitle">Панель регіону — Wasteland King Defenders</title>
+  <link rel="icon" href="favicon.png" type="image/png" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/header.css" />
+  <link rel="stylesheet" href="css/admin-page.css?v=233" />
+  <link rel="stylesheet" href="css/staff-page.css?v=233" />
+  <link rel="stylesheet" href="css/confirm-modal.css" />
+  <link rel="stylesheet" href="css/contact-modal.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script defer src="js/i18n.js?v=233"></script>
+  <script defer src="js/i18n-uk.js?v=233"></script>
+  <script defer src="js/i18n-en.js?v=233"></script>
+  <script defer src="js/i18n-ru.js?v=233"></script>
+  <script defer src="js/i18n-pl.js?v=233"></script>
+  <script defer src="js/i18n-de.js?v=233"></script>
+  <script defer src="js/i18n-ja.js?v=233"></script>
+  <script defer src="js/i18n-zh.js?v=233"></script>
+  <script defer src="js/i18n-ko.js?v=233"></script>
+  <script defer src="js/i18n-vi.js?v=233"></script>
+  <script defer src="js/i18n-ar.js?v=233"></script>
+  <script defer src="js/i18n-autokeys.js?v=233"></script>
+  <script defer src="js/core/dom.js"></script>
+  <script defer src="js/core/partials.js?v=233"></script>
+  <script defer src="js/core/assets-loader.js"></script>
+  <script defer src="js/core/badges.js?v=233"></script>
+  <script defer src="js/core/app-boot.js?v=233"></script>
+  <script type="module" src="js/auth-google.js?v=233"></script>
+  <script type="module" src="js/notifications.js?v=233"></script>
+  <script type="module" src="js/pages/staff-page.js?v=233"></script>
+</head>
+<body>
+  <div data-include="partials/header.html"></div>
+
+  <main class="page-shell staff-page">
+    <section class="container admin-panel staff-panel">
+      <div class="admin-hero">
+        <div>
+          <span class="eyebrow" data-i18n="staff.eyebrow">Командний доступ</span>
+          <h1 data-i18n="staff.heading">Панель регіону</h1>
+          <p data-i18n="staff.help">Окрема сторінка для консулів, офіцерів і R5. Адмінка залишається тільки для адміна та модератора.</p>
+        </div>
+        <div class="staff-badge" id="staffScopeBadge">—</div>
+      </div>
+
+      <div class="auth-status" id="staffStatus" data-i18n="staff.loading">Завантажую доступ...</div>
+
+      <div class="staff-quick-grid">
+        <a class="admin-card staff-link-card" href="region-table.html">
+          <b data-i18n="region.table">Таблиця регіону</b>
+          <span data-i18n="staff.regionTableHelp">Редагування таблиці, заявки та гравці регіону.</span>
+        </a>
+        <a class="admin-card staff-link-card" href="region-settings.html">
+          <b data-i18n="region.settings">Форма регіону</b>
+          <span data-i18n="staff.settingsHelp">Ротація, альянс проводить Пустош, відкриття і закриття заявки.</span>
+        </a>
+        <a class="admin-card staff-link-card" href="action-log.html">
+          <b data-i18n="actionLog.title">Журнал дій</b>
+          <span data-i18n="staff.logHelp">Перевірка змін у своєму регіоні або альянсі.</span>
+        </a>
+        <a class="admin-card staff-link-card" href="notifications.html">
+          <b data-i18n="notifications.title">Сповіщення</b>
+          <span data-i18n="staff.notificationsHelp">Повідомлення для гравців, регіону або альянсу за правами ролі.</span>
+        </a>
+      </div>
+
+      <section class="admin-card">
+        <div class="admin-section-head">
+          <div>
+            <h2 data-i18n="staff.playersTitle">Гравці регіону</h2>
+            <p data-i18n="staff.playersHelp">Консул бачить регіон. Офіцер і R5 працюють зі своїм альянсом.</p>
+          </div>
+          <button class="btn btn-primary" id="staffRefreshBtn" type="button" data-i18n="common.refresh">Оновити</button>
+        </div>
+
+        <div class="admin-filters staff-filters">
+          <label><span data-i18n="account.region">Регіон</span><select id="staffRegionSelect"></select></label>
+          <label><span data-i18n="account.alliance">Альянс</span><input id="staffAllianceFilter" type="text" maxlength="3" placeholder="YYY" /></label>
+          <label><span data-i18n="account.nickname">Нік</span><input id="staffNickFilter" type="search" placeholder="Пошук по ніку" data-i18n-placeholder="admin.searchNick" /></label>
+          <label><span data-i18n="account.rank">Ранг</span><select id="staffRankFilter"><option value="all" data-i18n="common.all">Усі</option><option value="p1">P1</option><option value="p2">P2</option><option value="p3">P3</option><option value="p4">P4</option><option value="p5">P5</option></select></label>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table staff-table">
+            <thead>
+              <tr>
+                <th data-i18n="account.nickname">Нік</th>
+                <th data-i18n="account.region">Регіон</th>
+                <th data-i18n="account.alliance">Альянс</th>
+                <th data-i18n="account.rank">Ранг</th>
+                <th data-i18n="account.shk">ШК</th>
+                <th data-i18n="account.role">Роль</th>
+                <th data-i18n="admin.actions">Дії</th>
+              </tr>
+            </thead>
+            <tbody id="staffPlayersBody">
+              <tr><td colspan="7" data-i18n="staff.loading">Завантажую доступ...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div class="staff-modal" id="staffEditModal" hidden>
+    <div class="staff-modal__backdrop" data-staff-close></div>
+    <section class="staff-modal__panel" role="dialog" aria-modal="true" aria-labelledby="staffEditTitle">
+      <button class="staff-modal__close" type="button" data-staff-close aria-label="Закрити" data-i18n-aria-label="common.close">×</button>
+      <h2 id="staffEditTitle" data-i18n="staff.editTitle">Редагувати гравця</h2>
+      <p id="staffEditName" class="muted"></p>
+      <label class="profile-field"><span data-i18n="account.rank">Ранг</span><select id="staffEditRank"></select></label>
+      <label class="profile-field"><span data-i18n="account.role">Роль</span><select id="staffEditRole"></select></label>
+      <div class="profile-actions">
+        <button class="btn btn-primary" id="staffSaveEditBtn" type="button" data-i18n="common.save">Зберегти</button>
+        <button class="btn" type="button" data-staff-close data-i18n="common.cancel">Скасувати</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="container"><div data-include="partials/footer.html"></div></div>
+  <div data-include="partials/contact-modal.html"></div>
+</body>
+</html>

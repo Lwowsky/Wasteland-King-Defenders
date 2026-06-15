@@ -268,6 +268,15 @@ export function canUseAdminPanel(user, profile = null) {
   return isOwnerUser(user, profile) || profile?.role === 'admin' || profile?.role === 'moderator';
 }
 
+export function canUseStaffPanel(user, profile = null) {
+  if (!user || !profile || profile?.blocked || profile?.deleted) return false;
+  if (canUseAdminPanel(user, profile)) return true;
+  return allActorGames(profile).some(game => {
+    const role = normalizeRole(game.role || profile.role || 'player');
+    return ['consul', 'officer'].includes(role) || rankNum(game.rank) === 5;
+  });
+}
+
 export function assignableRolesForActor(user, profile = null) {
   if (isOwnerUser(user, profile)) return ['admin', 'moderator', 'consul', 'officer', 'player'];
   if (profile?.role === 'admin') return ['moderator', 'consul', 'officer', 'player'];
@@ -2803,6 +2812,148 @@ export async function updateUserByAdmin(uid, values) {
   const savedProfile = await getUserProfile(uid, { forceRefresh: true });
   await syncProfileIndexLocks(db, firestoreMod, uid, oldProfile || {}, savedProfile || {}).catch(error => console.warn('Profile index sync failed after admin main update', error));
   return savedProfile;
+}
+
+
+
+function staffActorGameForRegion(actorProfile = {}, region = '', targetAlliance = '') {
+  const safeRegion = normalizeText(region).replace(/[^0-9]/g, '');
+  const alliance = normalizeAllianceTag(targetAlliance);
+  return allActorGames(actorProfile || {}).find(game => gameRegion(game) === safeRegion && (!alliance || normalizeAllianceTag(game.alliance) === alliance))
+    || allActorGames(actorProfile || {}).find(game => gameRegion(game) === safeRegion)
+    || null;
+}
+
+export function canStaffEditPlayer(user = null, actorProfile = null, target = {}) {
+  if (isGlobalAdminActor(user, actorProfile)) return true;
+  const targetRegion = gameRegion(target);
+  const targetAlliance = normalizeAllianceTag(target.alliance);
+  const actorGame = staffActorGameForRegion(actorProfile || {}, targetRegion, targetAlliance);
+  if (!actorGame) return false;
+  const actorRole = normalizeRole(actorGame.role || actorProfile?.role || 'player');
+  const actorRank = rankNum(actorGame.rank);
+  const sameAlliance = normalizeAllianceTag(actorGame.alliance) === targetAlliance;
+  if (actorRole === 'consul' && gameRegion(actorGame) === targetRegion) return true;
+  if (sameAlliance && actorRole === 'officer') return true;
+  if (sameAlliance && actorRank === 5) return true;
+  return false;
+}
+
+export function staffRankOptionsForTarget(user = null, actorProfile = null, target = {}) {
+  if (isGlobalAdminActor(user, actorProfile)) return ['p1', 'p2', 'p3', 'p4', 'p5'];
+  const targetRegion = gameRegion(target);
+  const targetAlliance = normalizeAllianceTag(target.alliance);
+  const actorGame = staffActorGameForRegion(actorProfile || {}, targetRegion, targetAlliance);
+  if (!actorGame) return ['p1', 'p2', 'p3'];
+  const actorRole = normalizeRole(actorGame.role || actorProfile?.role || 'player');
+  const actorRank = rankNum(actorGame.rank);
+  const sameAlliance = normalizeAllianceTag(actorGame.alliance) === targetAlliance;
+  if (actorRole === 'consul' && gameRegion(actorGame) === targetRegion) return ['p1', 'p2', 'p3', 'p4', 'p5'];
+  if (sameAlliance && actorRank === 5) return ['p1', 'p2', 'p3', 'p4'];
+  return ['p1', 'p2', 'p3'];
+}
+
+export function staffRoleOptionsForTarget(user = null, actorProfile = null, target = {}) {
+  if (isGlobalAdminActor(user, actorProfile)) return ['player', 'officer', 'consul'];
+  const targetRegion = gameRegion(target);
+  const actorGame = staffActorGameForRegion(actorProfile || {}, targetRegion, target.alliance);
+  const actorRole = normalizeRole(actorGame?.role || actorProfile?.role || 'player');
+  if (actorRole === 'consul' && gameRegion(actorGame) === targetRegion) return ['player', 'officer'];
+  return [normalizeRole(target.role || 'player')];
+}
+
+export async function listStaffRegionPlayers(options = {}) {
+  const firebase = await getFirebase();
+  if (!firebase) return { users: [], reads: 0, region: '', allianceLocked: false };
+  const { db, firestoreMod } = firebase;
+  const actor = firebase.auth?.currentUser || null;
+  const actorProfile = actor ? await getUserProfile(actor.uid, { forceRefresh: true }).catch(() => null) : null;
+  if (!canUseStaffPanel(actor, actorProfile)) throw new Error('staff-only');
+
+  const requestedRegion = normalizeText(options.region || '').replace(/[^0-9]/g, '');
+  const actorGames = allActorGames(actorProfile || {});
+  const fallbackRegion = gameRegion(actorGames[0] || getGameProfile(actorProfile || {}));
+  const region = requestedRegion || fallbackRegion;
+  if (!region) return { users: [], reads: 0, region: '', allianceLocked: false };
+
+  const scopeGame = staffActorGameForRegion(actorProfile || {}, region, '');
+  const scopeRole = normalizeRole(scopeGame?.role || actorProfile?.role || 'player');
+  const global = isGlobalAdminActor(actor, actorProfile);
+  const consul = scopeRole === 'consul';
+  const ownAlliance = normalizeAllianceTag(scopeGame?.alliance || '');
+  const allianceLocked = !global && !consul;
+  const allianceFilter = allianceLocked ? ownAlliance : normalizeAllianceTag(options.alliance || '');
+
+  const snap = await firestoreMod.getDocs(firestoreMod.query(
+    firestoreMod.collection(db, 'regions', region, 'players'),
+    firestoreMod.limit(Math.max(1, Math.min(500, Number(options.limitCount || 250))))
+  ));
+  trackReads(Math.max(1, snap.docs.length));
+  let users = snap.docs.map(doc => ({ id: doc.id, uid: doc.id, ...(doc.data?.() || {}) })).filter(user => !user.deleted && !user.blocked);
+  if (allianceFilter) users = users.filter(user => normalizeAllianceTag(user.alliance) === allianceFilter);
+  const nickFilter = normalizeText(options.nick || '').toLowerCase();
+  if (nickFilter) users = users.filter(user => normalizeText(user.nickname || user.gameNick || '').toLowerCase().includes(nickFilter));
+  const rankFilter = normalizeText(options.rank || '').toLowerCase();
+  if (rankFilter && rankFilter !== 'all') users = users.filter(user => normalizeText(user.rank || '').toLowerCase() === rankFilter);
+  users.sort((a, b) => normalizeText(a.nickname || a.gameNick).localeCompare(normalizeText(b.nickname || b.gameNick), undefined, { sensitivity: 'base' }));
+  return { users, reads: Math.max(1, snap.docs.length), region, allianceLocked, alliance: allianceFilter };
+}
+
+export async function updateRegionPlayerByStaff(uid, values = {}) {
+  if (!uid) throw new Error('missing-user-id');
+  const firebase = await getFirebase();
+  if (!firebase) throw new Error('firebase-not-configured');
+  const { db, firestoreMod } = firebase;
+  const actor = firebase.auth?.currentUser || null;
+  const actorProfile = actor ? await getUserProfile(actor.uid, { forceRefresh: true }).catch(() => null) : null;
+  if (!canUseStaffPanel(actor, actorProfile)) throw new Error('staff-only');
+
+  const region = normalizeText(values.region || '').replace(/[^0-9]/g, '');
+  if (!region) throw new Error('missing-region');
+  const publicRef = firestoreMod.doc(db, 'regions', region, 'players', uid);
+  const publicSnap = await firestoreMod.getDoc(publicRef);
+  trackReads(1);
+  if (!publicSnap.exists()) throw new Error('player-not-found');
+
+  const oldPublic = { uid, ...(publicSnap.data() || {}) };
+  const nextRank = normalizeText(values.rank || oldPublic.rank || 'p1').toLowerCase();
+  const nextRole = normalizeRole(values.role || oldPublic.role || 'player');
+  const target = { ...oldPublic, rank: nextRank, role: nextRole, region: oldPublic.region || region };
+  if (!canStaffEditPlayer(actor, actorProfile, oldPublic)) throw new Error('staff-target-not-allowed');
+  if (!staffRankOptionsForTarget(actor, actorProfile, oldPublic).includes(nextRank)) throw new Error('rank-not-allowed');
+  if (!staffRoleOptionsForTarget(actor, actorProfile, oldPublic).includes(nextRole)) throw new Error('role-not-allowed');
+
+  const now = firestoreMod.serverTimestamp();
+  const roleText = roleLabel(nextRole);
+  const userRef = firestoreMod.doc(db, 'users', uid);
+  const publicPlayerRef = firestoreMod.doc(db, 'publicPlayers', uid);
+  const patch = {
+    rank: nextRank,
+    role: nextRole,
+    roleLabel: roleText,
+    updatedAt: now
+  };
+  const batch = firestoreMod.writeBatch(db);
+  batch.update(userRef, {
+    rank: nextRank,
+    role: nextRole,
+    roleLabel: roleText,
+    'gameProfile.rank': nextRank,
+    updatedAt: now
+  });
+  batch.set(publicPlayerRef, patch, { merge: true });
+  batch.set(publicRef, patch, { merge: true });
+  await batch.commit();
+  trackWrites(3);
+  await createUserNotification(uid, {
+    type: 'profile_changed',
+    title: serviceT('notifications.profileChanged', 'Профіль оновлено'),
+    message: `${serviceT('account.rank','Ранг')}: ${nextRank.toUpperCase()} · ${serviceT('account.role','Роль')}: ${roleText}`,
+    region,
+    alliance: oldPublic.alliance || ''
+  }).catch(() => null);
+  await markStatsChanged(db, firestoreMod, uid, 'profile_changed', 'staff-panel').catch(() => null);
+  return { ...oldPublic, ...patch, updatedAt: Date.now() };
 }
 
 

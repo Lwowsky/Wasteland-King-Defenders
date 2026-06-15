@@ -1,5 +1,5 @@
 import { isFirebaseConfigured, getFirebase, watchAuth } from './services/firebase-service.js';
-import { canUseAdminPanel, getUserProfile, isProfileComplete } from './services/user-db.js';
+import { canUseAdminPanel, canUseStaffPanel, getUserProfile, isProfileComplete } from './services/user-db.js';
 import { canOpenRegionTools } from './services/region-db.js?v=213';
 
 const $ = selector => document.querySelector(selector);
@@ -18,6 +18,7 @@ function setUserShell(user, profile = null) {
   const guestLabel = shellT('role.guest', 'Гість');
   const name = gameNick || user?.displayName || user?.email || accountLabel;
   const admin = signedIn && canUseAdminPanel(user, profile);
+  const staff = signedIn && canUseStaffPanel(user, profile);
   const profileReady = signedIn && isProfileComplete(profile);
   const regionManager = profileReady && canOpenRegionTools(profile || {});
   const regionTablePageAllowed = profileReady;
@@ -33,6 +34,8 @@ function setUserShell(user, profile = null) {
   const drawerStatsNav = $('#drawerStatsNavBtn');
   const adminBtn = $('#adminBtn');
   const drawerAdminBtn = $('#drawerAdminBtn');
+  const staffBtn = $('#staffBtn');
+  const drawerStaffBtn = $('#drawerStaffBtn');
   const actionLogBtn = $('#actionLogBtn');
   const drawerActionLogBtn = $('#drawerActionLogBtn');
   const regionFormBtn = $('#regionFormBtn');
@@ -60,6 +63,8 @@ function setUserShell(user, profile = null) {
   if (drawerRegionSettingsBtn) drawerRegionSettingsBtn.hidden = !regionManager;
   if (actionLogBtn) actionLogBtn.hidden = !regionManager && !admin;
   if (drawerActionLogBtn) drawerActionLogBtn.hidden = !regionManager && !admin;
+  if (staffBtn) staffBtn.hidden = !staff;
+  if (drawerStaffBtn) drawerStaffBtn.hidden = !staff;
   if (adminBtn) adminBtn.hidden = !admin;
   if (drawerAdminBtn) drawerAdminBtn.hidden = !admin;
 }
@@ -78,6 +83,10 @@ function openStatsPage() {
 
 function openAdminPage() {
   window.location.href = 'admin.html';
+}
+
+function openStaffPage() {
+  window.location.href = 'staff.html';
 }
 
 function openActionLogPage() {
@@ -122,6 +131,8 @@ async function initAuthGoogle() {
   $('#drawerRegionSettingsBtn')?.addEventListener('click', openRegionSettingsPage);
   $('#actionLogBtn')?.addEventListener('click', openActionLogPage);
   $('#drawerActionLogBtn')?.addEventListener('click', openActionLogPage);
+  $('#staffBtn')?.addEventListener('click', openStaffPage);
+  $('#drawerStaffBtn')?.addEventListener('click', openStaffPage);
   $('#adminBtn')?.addEventListener('click', openAdminPage);
   $('#drawerAdminBtn')?.addEventListener('click', openAdminPage);
 
