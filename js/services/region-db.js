@@ -1590,6 +1590,30 @@ export async function ensureRegionRegistrationRunInfo(user, regionOverride = '')
   return getRegionSettings(safeRegion).then(getRegionFormStatus).catch(() => status);
 }
 
+
+function settingsAllianceTags(settings = {}) {
+  const tags = [
+    normalizeAllianceTag(settings.hostAlliance || ''),
+    ...(Array.isArray(settings.rotationAlliances) ? settings.rotationAlliances.map(item => normalizeAllianceTag(item?.tag || item?.id || item)) : [])
+  ].filter(tag => tag && Array.from(tag).length === 3);
+  return [...new Set(tags)];
+}
+
+async function ensureSettingsAlliancesInD1(user, region, settings = {}) {
+  const safeRegion = normalizeRegion(region);
+  const tags = settingsAllianceTags(settings);
+  if (!user || !safeRegion || !tags.length) return;
+  try {
+    const existing = await listRegionAlliances(safeRegion).catch(() => []);
+    const existingTags = new Set((Array.isArray(existing) ? existing : []).map(item => normalizeAllianceTag(item.tag || item.id)).filter(Boolean));
+    const missing = tags.filter(tag => !existingTags.has(tag));
+    if (!missing.length) return;
+    await Promise.allSettled(missing.map(tag => saveRegionAllianceD1(user, safeRegion, { tag, name: tag, note: '', updatedAtMs: Date.now() })));
+  } catch (error) {
+    console.warn('[WKD] settings alliance persistence skipped:', error?.message || error);
+  }
+}
+
 export async function saveRegionSettings(user, region, settings) {
   if (!user) throw new Error('auth-required');
   const { db, firestoreMod } = await getFirebaseParts();
@@ -1672,6 +1696,8 @@ export async function saveRegionSettings(user, region, settings) {
     updatedByName: actorName,
     updatedByEmail: actorEmail
   };
+
+  await ensureSettingsAlliancesInD1(user, safeRegion, clean);
 
   const regionPatch = {
     region: safeRegion,
@@ -1766,12 +1792,14 @@ export async function listRegionAlliances(region) {
   if (!safeRegion) throw new Error('region-required');
 
   const actor = await getCurrentFirebaseUser();
+  let d1WasEmpty = false;
   if (actor) {
     try {
       const result = await readRegionAlliancesD1(actor, safeRegion);
-      if (Array.isArray(result?.items)) return result.items;
+      if (Array.isArray(result?.items) && result.items.length) return result.items;
+      d1WasEmpty = Array.isArray(result?.items) && result.items.length === 0;
     } catch (error) {
-      console.warn('[WKD] D1 alliance colors unavailable, using Firebase fallback:', error?.message || error);
+      console.warn('[WKD] D1 alliance list unavailable, using legacy fallback:', error?.message || error);
     }
   }
 
@@ -1789,7 +1817,17 @@ export async function listRegionAlliances(region) {
       seen.set(key, { ...data, ...current, id: key, tag: key, name: current.name || data.name || key });
     }
   });
-  return [...seen.values()].sort((a, b) => String(a.tag || a.id).localeCompare(String(b.tag || b.id), 'uk'));
+  const items = [...seen.values()].sort((a, b) => String(a.tag || a.id).localeCompare(String(b.tag || b.id), 'uk'));
+  if (actor && items.length && d1WasEmpty) {
+    Promise.allSettled(items.map(item => saveRegionAllianceD1(actor, safeRegion, {
+      tag: item.tag || item.id,
+      name: item.name || item.tag || item.id,
+      note: item.note || '',
+      colorHue: item.colorHue ?? null,
+      colorMode: item.colorMode || (item.colorHue == null ? 'auto' : 'manual')
+    }))).catch(error => console.warn('[WKD] legacy alliances D1 migration skipped:', error));
+  }
+  return items;
 }
 
 
@@ -1798,11 +1836,21 @@ export function canManageAllianceColors(profile = {}, region = '', tag = '', act
   const role = roleForRegion(profile, safeRegion, actor);
   const game = gameForRegion(profile || {}, safeRegion) || bestRegionGame(profile || {});
   const wanted = normalizeAllianceTag(tag);
-  if (role === 'admin' || role === 'moderator') return true;
-  if (role === 'consul' && canViewRegion(profile, safeRegion, actor)) return true;
+  const sameRegion = canViewRegion(profile, safeRegion, actor);
+  const ownAlliance = wanted && normalizeAllianceTag(game.alliance) === wanted;
   const rank = trim(game.rank).toLowerCase();
-  if (role === 'officer' && canViewRegion(profile, safeRegion, actor) && normalizeAllianceTag(game.alliance) === wanted && ['p4', 'p5', 'r4', 'r5', '4', '5'].includes(rank)) return true;
+  if (role === 'admin' || role === 'moderator') return true;
+  if (role === 'consul' && sameRegion) return true;
+  if (role === 'officer' && sameRegion && ownAlliance && ['p4', 'p5', 'r4', 'r5', '4', '5'].includes(rank)) return true;
+  // R5/P5 can edit only their own alliance record. They still cannot delete alliances.
+  if (sameRegion && ownAlliance && ['p5', 'r5', '5'].includes(rank)) return true;
   return false;
+}
+
+export function canDeleteRegionAllianceTag(profile = {}, region = '', actor = null) {
+  const safeRegion = normalizeRegion(region);
+  const role = roleForRegion(profile, safeRegion, actor);
+  return ['admin', 'moderator', 'consul'].includes(role) && canViewRegion(profile, safeRegion, actor);
 }
 
 export async function saveRegionAllianceColor(user, region, tagValue, hueValue = null) {
@@ -1894,7 +1942,7 @@ export async function deleteRegionAlliance(user, region, allianceId) {
   const safeRegion = normalizeRegion(region);
   const tag = normalizeAllianceTag(allianceId);
   if (!tag) throw new Error('alliance-tag-required');
-  if (!canManageAllianceColors(profile, safeRegion, tag, user)) throw new Error('region-access-denied');
+  if (!canDeleteRegionAllianceTag(profile, safeRegion, user)) throw new Error('region-access-denied');
   try {
     const result = await deleteRegionAllianceD1(user, safeRegion, tag);
     if (result?.ok !== false) {

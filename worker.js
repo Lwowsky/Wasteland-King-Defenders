@@ -28,7 +28,7 @@ function json(data, status = 200, cache = "no-store") {
 }
 
 
-const PUBLIC_SHARE_CACHE_VERSION = "v216";
+const PUBLIC_SHARE_CACHE_VERSION = "v218";
 
 function envNumber(value, fallback = 0, min = 0, max = Number.MAX_SAFE_INTEGER) {
   const num = Number(value);

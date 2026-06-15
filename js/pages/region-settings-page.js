@@ -162,10 +162,15 @@ function canEditRegionAllianceColor(tag = '') {
   const wanted = normalizeAllianceTag(tag);
   if (!wanted || !currentUser) return false;
   if (canEditAllAllianceColors()) return true;
-  return currentRole() === 'officer'
-    && normalizeRegion(currentGame().region) === normalizeRegion(currentRegion)
-    && ownAlliance() === wanted
-    && isRankR4R5();
+  const sameRegion = normalizeRegion(currentGame().region) === normalizeRegion(currentRegion);
+  const ownTag = ownAlliance() === wanted;
+  const rank = ownRank();
+  if (!sameRegion || !ownTag) return false;
+  if (currentRole() === 'officer' && isRankR4R5(rank)) return true;
+  return ['p5', 'r5', '5'].includes(rank);
+}
+function canDeleteRegionAlliance(tag = '') {
+  return canEditAllAllianceColors();
 }
 function canManageRotationSettings() {
   const role = currentRole();
@@ -179,6 +184,25 @@ function collectAllianceTags() {
   const fromData = currentAlliances.map(item => normalizeAllianceTag(item.tag || item.id)).filter(Boolean);
   const fromDom = $$('[data-edit-alliance]').map(item => normalizeAllianceTag(item.dataset.editAlliance)).filter(Boolean);
   return [...new Set([...fromData, ...fromDom])];
+}
+function mergeAllianceLists(base = [], extra = []) {
+  const map = new Map();
+  [...base, ...extra].forEach(item => {
+    const tag = normalizeAllianceTag(item?.tag || item?.id || item);
+    if (!tag) return;
+    const previous = map.get(tag) || {};
+    map.set(tag, { id: tag, tag, ...previous, ...(typeof item === 'string' ? { name: tag } : item), id: tag, tag });
+  });
+  return [...map.values()];
+}
+function configuredAllianceItems(settings = currentSettings || {}) {
+  const items = [];
+  const host = normalizeAllianceTag(settings.hostAlliance || '');
+  if (host) items.push({ id: host, tag: host, name: host, source: 'settings-host' });
+  normalizeRotation(settings.rotationAlliances || []).forEach(item => {
+    if (item.tag) items.push({ id: item.tag, tag: item.tag, name: item.name || item.tag, source: 'settings-rotation' });
+  });
+  return items;
 }
 function normalizeRotation(items = []) {
   return (Array.isArray(items) ? items : [])
@@ -851,6 +875,7 @@ async function save(event, overrides = {}) {
       document.dispatchEvent(new CustomEvent('wkd:tower-plan-hard-reset', { detail: { source: 'registration-form-new-cycle' } }));
     }
     fill(currentSettings);
+    await refreshAlliances().catch(error => console.warn('Alliance refresh skipped after settings save', error));
     const note = openedNewCycle ? ` ${t('regionSettings.newCycleSavedNote', 'New cycle opened: the table shows a clean list, and old requests remain in the previous cycle.')}` : '';
     const cleanupNote = '';
     setStatus(`${t('regionSettings.formSaved', 'Region form saved.')}${note}${cleanupNote}`, 'success');
@@ -946,8 +971,8 @@ function renderAlliances() {
     return `<article class="region-alliance-card ${invalid ? 'is-invalid' : 'is-ok'}">
       <div class="region-alliance-card-main">${allianceBadge(tag, index)}<span>${escapeHtml(alliance.name || tag || alliance.id)}</span>${status}${alliance.note ? `<small>${escapeHtml(alliance.note)}</small>` : ''}</div>
       <div class="region-alliance-actions">
-        <button class="btn" type="button" data-edit-alliance="${escapeHtml(alliance.id)}">${escapeHtml(t('common.edit', 'Edit'))}</button>
-        <button class="btn farm-delete" type="button" data-delete-alliance="${escapeHtml(alliance.id)}">${escapeHtml(t('common.delete', 'Delete'))}</button>
+        ${canEditRegionAllianceColor(tag) ? `<button class="btn" type="button" data-edit-alliance="${escapeHtml(alliance.id)}">${escapeHtml(t('common.edit', 'Edit'))}</button>` : ''}
+        ${canDeleteRegionAlliance(tag) ? `<button class="btn farm-delete" type="button" data-delete-alliance="${escapeHtml(alliance.id)}">${escapeHtml(t('common.delete', 'Delete'))}</button>` : ''}
       </div>
     </article>`;
   }).join('');
@@ -956,7 +981,8 @@ function renderAlliances() {
 
 async function refreshAlliances() {
   if (!currentRegion) return;
-  currentAlliances = await listRegionAlliances(currentRegion);
+  const stored = await listRegionAlliances(currentRegion);
+  currentAlliances = mergeAllianceLists(stored, configuredAllianceItems(currentSettings));
   window.WKD = window.WKD || {};
   window.WKD.regionAllianceColorMap = Object.fromEntries(currentAlliances.map(item => [normalizeAllianceTag(item.tag || item.id), hueFromValue(item.colorHue)]).filter(([, hue]) => hue !== null));
   document.dispatchEvent(new CustomEvent('wkd:alliance-colors-updated', { detail: { source: 'region-settings-load', region: currentRegion } }));
@@ -976,6 +1002,10 @@ async function saveAlliance(event) {
   }
   if (isAllianceInvalid(tag)) {
     setAllianceStatus(t('region.allianceTagLengthRequired', 'Alliance tag must contain exactly 3 symbols.'), 'error');
+    return;
+  }
+  if (!canEditRegionAllianceColor(tag)) {
+    setAllianceStatus(t('regionSettings.allianceSaveFailed', 'Could not save alliance. Check access rights.'), 'error');
     return;
   }
   try {
@@ -1017,6 +1047,10 @@ function editAlliance(id) {
 
 async function removeAlliance(id) {
   const alliance = currentAlliances.find(item => item.id === id);
+  if (!canDeleteRegionAlliance(alliance?.tag || id)) {
+    setAllianceStatus(t('regionSettings.allianceDeleteFailed', 'Could not delete alliance.'), 'error');
+    return;
+  }
   const ok = window.WKD?.confirmDialog
     ? await window.WKD.confirmDialog({
       title: t('regionSettings.deleteAllianceTitle', 'Delete alliance?'),
@@ -1187,11 +1221,7 @@ async function load(user) {
   $('#regionSettingsForm').hidden = false;
   await refreshAlliances().catch(error => {
     console.warn('Alliance list failed', error);
-    currentAlliances = normalizeRotation(settings.rotationAlliances || [])
-      .map(item => ({ id: item.tag, tag: item.tag, name: item.name || item.tag }));
-    if (settings.hostAlliance && !currentAlliances.some(item => normalizeAllianceTag(item.tag) === normalizeAllianceTag(settings.hostAlliance))) {
-      currentAlliances.push({ id: normalizeAllianceTag(settings.hostAlliance), tag: normalizeAllianceTag(settings.hostAlliance), name: settings.hostAlliance });
-    }
+    currentAlliances = configuredAllianceItems(settings);
     renderAlliances();
   });
   setStatus(t('regionSettings.readyStatus', 'Configure the form, close time and secret link for players in your region.'), 'success');
