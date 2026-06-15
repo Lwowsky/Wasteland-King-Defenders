@@ -4,25 +4,25 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="google" content="notranslate" />
-  <title>Google вхід — Wasteland King Defenders</title>
+  <title data-i18n="login.pageTitle">Вхід — Wasteland King Defenders</title>
   <link rel="icon" href="favicon.png" type="image/png" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/header.css" />
-  <link rel="stylesheet" href="css/auth-page.css" />
+  <link rel="stylesheet" href="css/auth-page.css?v=223" />
   <link rel="stylesheet" href="css/responsive.css" />
   <script defer src="js/i18n.js?v=213"></script>
-  <script defer src="js/i18n-uk.js"></script>
-  <script defer src="js/i18n-en.js"></script>
-  <script defer src="js/i18n-ru.js"></script>
-  <script defer src="js/i18n-pl.js"></script>
-  <script defer src="js/i18n-de.js"></script>
-  <script defer src="js/i18n-ja.js"></script>
-  <script defer src="js/i18n-zh.js"></script>
-  <script defer src="js/i18n-ko.js"></script>
-  <script defer src="js/i18n-vi.js"></script>
-  <script defer src="js/i18n-ar.js"></script>
-  <script defer src="js/i18n-autokeys.js"></script>
+  <script defer src="js/i18n-uk.js?v=223"></script>
+  <script defer src="js/i18n-en.js?v=223"></script>
+  <script defer src="js/i18n-ru.js?v=223"></script>
+  <script defer src="js/i18n-pl.js?v=223"></script>
+  <script defer src="js/i18n-de.js?v=223"></script>
+  <script defer src="js/i18n-ja.js?v=223"></script>
+  <script defer src="js/i18n-zh.js?v=223"></script>
+  <script defer src="js/i18n-ko.js?v=223"></script>
+  <script defer src="js/i18n-vi.js?v=223"></script>
+  <script defer src="js/i18n-ar.js?v=223"></script>
+  <script defer src="js/i18n-autokeys.js?v=223"></script>
   <script defer src="js/core/dom.js"></script>
   <script defer src="js/badges.js?v=213"></script>
   <script defer src="js/core/partials.js"></script>
@@ -30,29 +30,48 @@
   <script defer src="js/core/state.js"></script>
   <script defer src="js/core/app-boot.js?v=215"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/auth-google.js?v=213"></script>
+  <script type="module" src="js/auth-google.js?v=223"></script>
   <script type="module" src="js/notifications.js?v=213"></script>
-  <script type="module" src="js/pages/login-page.js"></script>
+  <script type="module" src="js/pages/login-page.js?v=223"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
 
   <main class="auth-page container">
-    <section class="auth-card">
+    <section class="auth-card auth-card--wide">
       <div class="auth-card-top">
         <img class="auth-card-logo" src="img/logo.webp" alt="Wasteland King Defenders" />
         <div>
-          <p class="auth-eyebrow" data-i18n="login.googleAccount">Обліковий запис Google</p>
+          <p class="auth-eyebrow" data-i18n="login.accountAccess">Безпечний акаунт</p>
           <h2 data-i18n="login.title">Вхід для гравців</h2>
-          <p data-i18n="login.lead">Увійди через Google, щоб зберегти свій ігровий профіль, регіон і заявку на роль. Гостьовий режим залишився для швидкого перегляду сайту.</p>
+          <p data-i18n="login.leadMulti">Увійди через Google, Apple ID або Email + пароль. Після входу можна зв’язати кілька способів входу з одним профілем гравця.</p>
         </div>
       </div>
 
-      <div class="auth-actions">
-        <button class="btn auth-google-main" id="loginGoogleBtn" type="button" data-i18n="login.googleButton">Увійти через Google</button>
-        <button class="btn auth-guest" id="guestBtn" type="button" data-i18n="login.guestButton">Продовжити як гість</button>
-        <button class="btn auth-guest" id="goAppBtn" type="button" data-i18n="login.goSite" hidden>Перейти на сайт</button>
-        <button class="btn auth-guest" id="loginLogoutBtn" type="button" data-i18n="common.signOut" hidden>Вийти</button>
+      <div class="login-layout">
+        <section class="login-panel">
+          <h3 data-i18n="login.quickProviders">Швидкий вхід</h3>
+          <div class="auth-actions auth-actions--stack">
+            <button class="btn auth-google-main" id="loginGoogleBtn" type="button" data-i18n="login.googleButton">Увійти через Google</button>
+            <button class="btn auth-apple-main" id="loginAppleBtn" type="button" data-i18n="login.appleButton">Увійти через Apple ID</button>
+            <button class="btn auth-guest" id="guestBtn" type="button" data-i18n="login.guestButton">Продовжити як гість</button>
+            <button class="btn auth-guest" id="goAppBtn" type="button" data-i18n="login.goSite" hidden>Перейти на сайт</button>
+            <button class="btn auth-guest" id="loginLogoutBtn" type="button" data-i18n="common.signOut" hidden>Вийти</button>
+          </div>
+        </section>
+
+        <section class="login-panel">
+          <h3 data-i18n="login.emailPasswordTitle">Email + пароль</h3>
+          <form class="login-email-form" id="emailLoginForm">
+            <label><span data-i18n="login.emailLabel">Email</span><input id="loginEmailInput" type="email" autocomplete="email" placeholder="name@example.com" required /></label>
+            <label><span data-i18n="login.passwordLabel">Пароль</span><input id="loginPasswordInput" type="password" autocomplete="current-password" minlength="6" required /></label>
+            <div class="login-email-actions">
+              <button class="btn btn-primary" id="emailSignInBtn" type="submit" data-i18n="login.emailSignIn">Увійти</button>
+              <button class="btn" id="emailCreateBtn" type="button" data-i18n="login.emailCreate">Створити акаунт</button>
+              <button class="btn auth-link-button" id="emailResetBtn" type="button" data-i18n="login.forgotPassword">Забув пароль?</button>
+            </div>
+          </form>
+        </section>
       </div>
 
       <div class="auth-status" id="loginStatus" data-i18n="login.checkingFirebase">Готую вхід...</div>
@@ -60,20 +79,46 @@
       <div class="login-user-card is-hidden" id="loginUserCard">
         <img id="loginAvatar" src="img/logo.webp" alt="Avatar" />
         <div>
-          <strong id="loginName" data-i18n="profile.googleUser">Користувач Google</strong>
+          <strong id="loginName" data-i18n="profile.googleUser">Користувач</strong>
           <span id="loginEmail"></span>
+          <small id="loginProviders"></small>
         </div>
       </div>
+
+      <section class="login-link-panel is-hidden" id="accountLinkPanel">
+        <div>
+          <h3 data-i18n="login.linkTitle">Зв’язування акаунтів</h3>
+          <p data-i18n="login.linkHelp">Підключи Google, Apple ID або Email + пароль до цього самого профілю. UID і всі ігрові дані залишаться одні.</p>
+        </div>
+        <div class="login-link-grid">
+          <button class="btn" id="linkGoogleBtn" type="button" data-i18n="login.linkGoogle">Підключити Google</button>
+          <button class="btn" id="linkAppleBtn" type="button" data-i18n="login.linkApple">Підключити Apple ID</button>
+          <form id="linkEmailForm" class="login-link-email">
+            <input id="linkEmailInput" type="email" autocomplete="email" placeholder="email" />
+            <input id="linkPasswordInput" type="password" autocomplete="new-password" minlength="6" placeholder="password" />
+            <button class="btn" type="submit" data-i18n="login.linkEmail">Підключити Email</button>
+          </form>
+        </div>
+      </section>
 
       <div class="auth-info-grid">
         <article>
           <strong data-i18n="login.firstLoginTitle">Перший вхід</strong>
-          <span data-i18n="login.firstLoginText">Після Google-входу сайт попросить заповнити нік у грі, регіон, альянс, ранг і ШК.</span>
+          <span data-i18n="login.firstLoginText">Після входу сайт попросить заповнити нік у грі, регіон, альянс, ранг і ШК.</span>
         </article>
         <article>
           <strong data-i18n="login.roleRequestTitle">Заявка на роль</strong>
           <span data-i18n="login.roleRequestText">Офіцера або консула можна запросити у профілі. Роль підтвердить адмін.</span>
         </article>
+      </div>
+
+      <div class="auth-setup">
+        <h3 data-i18n="login.providerSetupTitle">Що треба включити у Firebase</h3>
+        <ol>
+          <li data-i18n="login.providerSetupEmail">Authentication → Sign-in method → Email/Password → Enable.</li>
+          <li data-i18n="login.providerSetupApple">Authentication → Sign-in method → Apple → Enable і додати Apple Services ID.</li>
+          <li data-i18n="login.providerSetupLinking">Для зв’язування акаунтів користувач має бути увійшов у поточний профіль.</li>
+        </ol>
       </div>
     </section>
   </main>

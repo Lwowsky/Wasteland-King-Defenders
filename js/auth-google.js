@@ -136,6 +136,12 @@ async function initAuthGoogle() {
       return;
     }
     const profile = await getUserProfile(user.uid).catch(() => null);
+    if (profile?.blocked) {
+      try { await (await getFirebase())?.authMod?.signOut((await getFirebase())?.auth); } catch (_error) {}
+      window.WKD?.showNotice?.(shellT('login.blockedAccount', 'Акаунт у чорному списку.'));
+      setUserShell(null, null);
+      return;
+    }
     setUserShell(user, profile);
   });
 }

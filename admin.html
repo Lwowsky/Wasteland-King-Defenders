@@ -16,16 +16,16 @@
   <link rel="stylesheet" href="css/confirm-modal.css" />
   <link rel="stylesheet" href="css/responsive.css" />
   <script defer src="js/i18n.js?v=213"></script>
-  <script defer src="js/i18n-uk.js"></script>
-  <script defer src="js/i18n-en.js"></script>
-  <script defer src="js/i18n-ru.js"></script>
-  <script defer src="js/i18n-pl.js"></script>
-  <script defer src="js/i18n-de.js"></script>
-  <script defer src="js/i18n-ja.js"></script>
-  <script defer src="js/i18n-zh.js"></script>
-  <script defer src="js/i18n-ko.js"></script>
-  <script defer src="js/i18n-vi.js"></script>
-  <script defer src="js/i18n-ar.js"></script>
+  <script defer src="js/i18n-uk.js?v=223"></script>
+  <script defer src="js/i18n-en.js?v=223"></script>
+  <script defer src="js/i18n-ru.js?v=223"></script>
+  <script defer src="js/i18n-pl.js?v=223"></script>
+  <script defer src="js/i18n-de.js?v=223"></script>
+  <script defer src="js/i18n-ja.js?v=223"></script>
+  <script defer src="js/i18n-zh.js?v=223"></script>
+  <script defer src="js/i18n-ko.js?v=223"></script>
+  <script defer src="js/i18n-vi.js?v=223"></script>
+  <script defer src="js/i18n-ar.js?v=223"></script>
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
   <script defer src="js/core/assets-loader.js"></script>
@@ -36,9 +36,9 @@
   <script defer src="js/confirm-modal.js"></script>
   <script defer src="js/core/app-boot.js?v=215"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/auth-google.js?v=213"></script>
+  <script type="module" src="js/auth-google.js?v=223"></script>
   <script type="module" src="js/notifications.js?v=213"></script>
-  <script type="module" src="js/pages/admin-page.js?v=213"></script>
+  <script type="module" src="js/pages/admin-page.js?v=223"></script>
   <script type="module" src="js/pages/security-page.js?v=213"></script>
 </head>
 <body class="notranslate">
@@ -66,8 +66,11 @@
         <div class="admin-stat-card"><span data-i18n="admin.requests">Заявок</span><b>0</b></div>
       </div>
 
+      <div class="admin-profile-status-grid" id="adminProfileStatus" aria-live="polite"></div>
+
       <div class="admin-tabs" role="tablist" aria-label="Адмінка">
         <button class="admin-tab is-active" type="button" data-admin-tab="players" data-i18n="admin.registeredPlayers">Зареєстровані гравці</button>
+        <button class="admin-tab admin-limits-only" type="button" data-admin-tab="incomplete" data-i18n="admin.incompleteProfiles">Неповні профілі</button>
         <button class="admin-tab" type="button" data-admin-tab="requests" data-i18n="admin.roleRequests">Заявки на ролі</button>
         <button class="admin-tab" type="button" data-admin-tab="regions" data-i18n="admin.regionsTab">Регіони</button>
         <button class="admin-tab" type="button" data-admin-tab="security" data-i18n="security.title">Безпека</button>
@@ -131,6 +134,38 @@
           <button class="btn" type="button" id="adminPlayersPrev" data-i18n="common.back">Назад</button>
           <span id="adminPlayersPageInfo">1 / 1</span>
           <button class="btn" type="button" id="adminPlayersNext" data-i18n="common.next">Вперед</button>
+        </div>
+      </section>
+
+      <section class="admin-section" id="adminIncompleteSection" data-admin-panel="incomplete">
+        <div class="admin-toolbar">
+          <label>
+            <span data-i18n="admin.profileStatus">Статус профілю</span>
+            <select id="incompleteStatusFilter">
+              <option value="incomplete" data-i18n="admin.incompleteProfiles">Неповні профілі</option>
+              <option value="blocked" data-i18n="admin.blacklist">Чорний список</option>
+              <option value="all" data-i18n="common.all">Усі</option>
+            </select>
+          </label>
+          <button class="btn btn-primary" id="refreshIncompleteProfilesBtn" type="button" data-i18n="common.refresh">Оновити</button>
+        </div>
+        <div class="region-note admin-usage-note" data-type="warning" data-i18n="admin.authDeleteNote">Firebase Auth акаунти не видаляються з браузера. Тут видаляється профіль сайту; Auth акаунт видаляй у Firebase Console.</div>
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="incompleteProfilesTable">
+            <thead>
+              <tr>
+                <th data-i18n="admin.account">Акаунт</th>
+                <th data-i18n="admin.providers">Провайдери</th>
+                <th data-i18n="account.nickname">Нік</th>
+                <th data-i18n="account.region">Регіон</th>
+                <th data-i18n="admin.updatedAt">Оновлено</th>
+                <th data-i18n="admin.actions">Дії</th>
+              </tr>
+            </thead>
+            <tbody id="incompleteProfilesBody">
+              <tr><td colspan="6" data-i18n="admin.loadingProfiles">Завантажую профілі...</td></tr>
+            </tbody>
+          </table>
         </div>
       </section>
 

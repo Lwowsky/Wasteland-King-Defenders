@@ -21,9 +21,12 @@ import {
   roleLabel,
   updateUserByAdmin,
   updateFarmByAdmin,
+  listUserProfilesPage,
+  setUserBlockedByAdmin,
+  deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=213';
+} from '../services/user-db.js?v=223';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -48,6 +51,7 @@ let adminReady = false;
 let currentUser = null;
 let currentProfile = null;
 let users = [];
+let incompleteProfiles = [];
 let requests = [];
 let requestsLoaded = false;
 let adminCounters = null;
@@ -1315,11 +1319,29 @@ function renderStats() {
   const cards = $('#adminStats')?.querySelectorAll('.admin-stat-card b') || [];
   const values = [includeAdminFarmRows() ? rowCount : mainCount, regionTotal, leaders, pending];
   cards.forEach((card, index) => { card.textContent = formatCompactNumber(values[index] ?? 0); });
+  const profileBox = $('#adminProfileStatus');
+  if (profileBox) {
+    const profiles = counterValue('profilesTotal', mainCount);
+    const complete = counterValue('completeProfilesTotal', mainCount);
+    const incomplete = counterValue('incompleteProfilesTotal', 0);
+    const blocked = counterValue('blockedProfilesTotal', 0);
+    profileBox.innerHTML = [
+      profileStatusCard(t('admin.authAccounts', 'Auth акаунти'), t('admin.authAccountsConsole', 'дивись Firebase Console'), t('admin.authAccountsHelp', 'Firebase Auth не дає клієнту читати повний список акаунтів.')),
+      profileStatusCard(t('admin.siteProfiles', 'Профілі сайту'), profiles, t('admin.siteProfilesHelp', 'Документи users/{uid}.')),
+      profileStatusCard(t('admin.completeProfiles', 'Повні профілі'), complete, t('admin.completeProfilesHelp', 'Заповнили нік, регіон, альянс, ранг і ШК.')),
+      profileStatusCard(t('admin.incompleteProfiles', 'Неповні профілі'), incomplete, t('admin.incompleteProfilesHelp', 'Увійшли, але ще не завершили реєстрацію.')),
+      profileStatusCard(t('admin.blacklist', 'Чорний список'), blocked, t('admin.blacklistHelp', 'Заблоковані профілі не потрапляють у статистику.'))
+    ].join('');
+  }
   setSummary(tv('admin.summaryOptimized', '{players} гравців завантажено • {shown} рядків показано зараз • {requests} заявок', {
     players: pageMainCount,
     shown: shownRows,
     requests: requestsLoaded ? pending : '—'
   }));
+}
+
+function profileStatusCard(label, value, help) {
+  return `<article class="admin-profile-status-card"><span>${escapeHtml(label)}</span><b>${escapeHtml(String(value))}</b><small>${escapeHtml(help || '')}</small></article>`;
 }
 
 
@@ -1342,8 +1364,12 @@ function userRow(row) {
   const labels = adminTableLabels();
   const rowAttrs = `data-uid="${escapeHtml(user.uid)}" data-row-id="${escapeHtml(row.rowId)}" data-farm-id="${escapeHtml(row.farmId || 'main')}" data-farm-label="${escapeHtml(t('account.farm', 'Farm'))}"`;
   if (editing) {
+    const accountFields = row.isFarmRow ? '' : `<small class="admin-edit-account">
+        <label>${escapeHtml(t('admin.emailInProfile', 'Email у профілі'))}${editCell('accountEmail', user.adminEmailOverride || user.email || '')}</label>
+        <label>${escapeHtml(t('admin.displayName', 'Display name'))}${editCell('displayName', user.displayName || '')}</label>
+      </small>`;
     return `<tr ${rowAttrs} class="is-editing ${row.isFarmRow ? 'is-farm-row' : 'is-main-row'}">
-      <td data-label="${labels.nickname}">${editCell('nickname', game.nickname)}</td>
+      <td data-label="${labels.nickname}">${editCell('nickname', game.nickname)}${accountFields}</td>
       <td data-label="${labels.region}">${editCell('region', game.region, 'number')}</td>
       <td data-label="${labels.alliance}">${editCell('alliance', game.alliance, 'text')}</td>
       <td data-label="${labels.rank}">${editSelect('rank', game.rank || 'p1', rankOptions)}</td>
@@ -1370,6 +1396,8 @@ function userRow(row) {
     <td data-label="${labels.registered}">${formatUserDate(user.createdAt)}</td>
     <td class="admin-row-actions" data-label="${labels.actions}">
       <button class="btn" type="button" data-action="edit-user" data-uid="${escapeHtml(user.uid)}" data-row-id="${escapeHtml(row.rowId)}" data-farm-id="${escapeHtml(row.farmId || 'main')}">${escapeHtml(t('common.edit', 'Edit'))}</button>
+      ${!row.isFarmRow && actorIsGlobalManager() ? `<button class="btn" type="button" data-action="${user.blocked ? 'unblock-user' : 'block-user'}" data-uid="${escapeHtml(user.uid)}">${escapeHtml(user.blocked ? t('admin.unblock', 'Розблокувати') : t('admin.block', 'Чорний список'))}</button>
+      ${canUseLimitsPanel() ? `<button class="btn btn-danger" type="button" data-action="delete-user-profile" data-uid="${escapeHtml(user.uid)}">${escapeHtml(t('common.delete', 'Видалити'))}</button>` : ''}` : ''}
     </td>
   </tr>`;
 }
@@ -1408,6 +1436,51 @@ function renderUsers() {
   body.innerHTML = visible.map(userRow).join('');
   body.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', handleUserAction));
 }
+
+
+function profileMiniRow(user = {}) {
+  const game = getGameProfile(user);
+  const providerText = Array.isArray(user.providerIds) && user.providerIds.length ? user.providerIds.join(' · ') : (user.providerId || '—');
+  return `<tr data-uid="${escapeHtml(user.uid)}">
+    <td><strong>${escapeHtml(user.displayName || user.email || user.uid || '—')}</strong><small>${escapeHtml(user.email || user.authEmail || '')}</small></td>
+    <td>${escapeHtml(providerText)}</td>
+    <td>${escapeHtml(game.nickname || '—')}</td>
+    <td>${escapeHtml(game.region || '—')}</td>
+    <td>${escapeHtml(formatUserDate(user.updatedAt || user.lastLoginAt || user.createdAt))}</td>
+    <td class="admin-row-actions">
+      <button class="btn" type="button" data-action="${user.blocked ? 'unblock-user' : 'block-user'}" data-uid="${escapeHtml(user.uid)}">${escapeHtml(user.blocked ? t('admin.unblock', 'Розблокувати') : t('admin.block', 'Чорний список'))}</button>
+      <button class="btn btn-danger" type="button" data-action="delete-user-profile" data-uid="${escapeHtml(user.uid)}">${escapeHtml(t('common.delete', 'Видалити'))}</button>
+    </td>
+  </tr>`;
+}
+
+function renderIncompleteProfiles() {
+  const body = $('#incompleteProfilesBody');
+  if (!body) return;
+  if (!incompleteProfiles.length) {
+    body.innerHTML = `<tr><td colspan="6">${escapeHtml(t('admin.noIncompleteProfiles', 'Неповних профілів немає.'))}</td></tr>`;
+    return;
+  }
+  body.innerHTML = incompleteProfiles.map(profileMiniRow).join('');
+  body.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', handleUserAction));
+}
+
+async function loadIncompleteProfiles(status = 'incomplete') {
+  if (!currentUser || !canUseLimitsPanel()) return;
+  const body = $('#incompleteProfilesBody');
+  if (body) body.innerHTML = `<tr><td colspan="6">${escapeHtml(t('admin.loadingProfiles', 'Завантажую профілі...'))}</td></tr>`;
+  try {
+    const result = await listUserProfilesPage({ status, limit: 100 });
+    incompleteProfiles = Array.isArray(result.users) ? result.users : [];
+    renderIncompleteProfiles();
+    setStatus(tv('admin.incompleteLoaded', 'Завантажено {count} профілів. Firebase reads≈{reads}.', { count: incompleteProfiles.length, reads: result.reads || 0 }), 'success');
+  } catch (error) {
+    console.error(error);
+    if (body) body.innerHTML = `<tr><td colspan="6">${escapeHtml(t('admin.incompleteLoadFailed', 'Не вдалося завантажити профілі.'))}</td></tr>`;
+    setStatus(t('admin.incompleteLoadFailed', 'Не вдалося завантажити профілі.'), 'error');
+  }
+}
+
 
 function requestCard(request) {
   const role = roleLabel(request.requestedRole || 'player');
@@ -1593,6 +1666,49 @@ async function handleUserAction(event) {
     renderUsers();
     return;
   }
+  if ((action === 'block-user' || action === 'unblock-user') && uid) {
+    const blocked = action === 'block-user';
+    const ok = await confirmAction({
+      title: blocked ? t('admin.blockTitle', 'Додати в чорний список?') : t('admin.unblockTitle', 'Прибрати з чорного списку?'),
+      message: blocked ? t('admin.blockMessage', 'Гравець не буде показуватись у публічній статистиці і регіональних списках.') : t('admin.unblockMessage', 'Профіль знову можна буде показувати після оновлення індексу/кешу.'),
+      icon: blocked ? '⛔' : '✓',
+      acceptText: blocked ? t('admin.block', 'Чорний список') : t('admin.unblock', 'Розблокувати')
+    });
+    if (!ok) return;
+    try {
+      setStatus(blocked ? t('admin.blockingUser', 'Блокую профіль...') : t('admin.unblockingUser', 'Розблоковую профіль...'), 'muted');
+      await setUserBlockedByAdmin(uid, blocked);
+      await Promise.all([loadPlayersPage({ reset: false }), loadAdminCounters(true)]);
+      if ($('#adminIncompleteSection')?.classList.contains('is-active')) await loadIncompleteProfiles($('#incompleteStatusFilter')?.value || 'incomplete');
+      setStatus(blocked ? t('admin.userBlocked', 'Профіль додано в чорний список.') : t('admin.userUnblocked', 'Профіль розблоковано.'), 'success');
+    } catch (error) {
+      console.error(error);
+      setStatus(t('admin.statusChangeFailed', 'Не вдалося змінити статус профілю.'), 'error');
+    }
+    return;
+  }
+
+  if (action === 'delete-user-profile' && uid) {
+    const ok = await confirmAction({
+      title: t('admin.deleteProfileTitle', 'Видалити профіль сайту?'),
+      message: t('admin.deleteProfileMessage', 'Буде видалено документ users/{uid}, індекс і публічні записи. Firebase Auth акаунт у Console не видаляється.'),
+      icon: '🗑',
+      acceptText: t('common.delete', 'Видалити')
+    });
+    if (!ok) return;
+    try {
+      setStatus(t('admin.deletingProfile', 'Видаляю профіль...'), 'muted');
+      await deleteUserProfileByAdmin(uid);
+      await Promise.all([loadPlayersPage({ reset: true }), loadAdminCounters(true)]);
+      if ($('#adminIncompleteSection')?.classList.contains('is-active')) await loadIncompleteProfiles($('#incompleteStatusFilter')?.value || 'incomplete');
+      setStatus(t('admin.profileDeleted', 'Профіль сайту видалено. Auth акаунт треба видаляти окремо у Firebase Console.'), 'success');
+    } catch (error) {
+      console.error(error);
+      setStatus(t('admin.deleteProfileFailed', 'Не вдалося видалити профіль.'), 'error');
+    }
+    return;
+  }
+
   if (action !== 'save-user' || !uid) return;
 
   const row = button.closest('tr');
@@ -1782,6 +1898,7 @@ function switchTab(tab) {
   if (safeTab === 'clean') loadCleanPanel().catch(console.error);
   if (safeTab === 'requests' && !requestsLoaded) loadRoleRequests().catch(console.error);
   if (safeTab === 'regions') loadRegionsCatalog().catch(console.error);
+  if (safeTab === 'incomplete') loadIncompleteProfiles($('#incompleteStatusFilter')?.value || 'incomplete').catch(console.error);
   if (safeTab === 'security') document.dispatchEvent(new CustomEvent('wkd:security-load'));
   if (window.location.hash.replace('#','') !== safeTab && safeTab !== 'players') history.replaceState(null, '', `#${safeTab}`);
 }
@@ -1811,6 +1928,8 @@ function bindAdminControls() {
   $('#refreshRequestsBtn')?.addEventListener('click', () => loadRoleRequests().catch(console.error));
   $('#refreshPlayersBtn')?.addEventListener('click', () => runPlayerSearchNow());
   $('#rebuildAdminIndexBtn')?.addEventListener('click', () => rebuildPlayersIndex().catch(console.error));
+  $('#refreshIncompleteProfilesBtn')?.addEventListener('click', () => loadIncompleteProfiles($('#incompleteStatusFilter')?.value || 'incomplete').catch(console.error));
+  $('#incompleteStatusFilter')?.addEventListener('change', () => loadIncompleteProfiles($('#incompleteStatusFilter')?.value || 'incomplete').catch(console.error));
   $('#refreshUsageBtn')?.addEventListener('click', () => { renderUsage(); setStatus(t('admin.firebaseEstimateRefreshed', 'Оцінку Firebase оновлено локально.'), 'success'); });
   $('#refreshCloudflareUsageBtn')?.addEventListener('click', () => refreshRealCloudflareUsage().catch(console.error));
   $('#resetUsageEstimateBtn')?.addEventListener('click', () => { resetUsageEstimate(); renderUsage(); setStatus(t('admin.firebaseEstimateReset', 'Оцінку Firebase скинуто.'), 'success'); });

@@ -63,3 +63,15 @@
 .github-usage-card small,.admin-usage-card small{overflow-wrap:anywhere;word-break:break-word;line-height:1.35}
 .github-usage-card span{overflow-wrap:anywhere;word-break:break-word}
 @media (min-width:1100px){.admin-usage-grid{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}.github-usage-card .github-card-value{font-size:clamp(1rem,1.6vw,1.25rem)}}
+
+/* v223 admin profile status and account controls */
+.admin-profile-status-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:14px 0 18px}
+.admin-profile-status-card{padding:14px 16px;border:1px solid var(--panel-border);border-radius:18px;background:linear-gradient(180deg,#111a31,#08101f)}
+.admin-profile-status-card span{display:block;color:#aeb9d3;font-weight:900;font-size:13px}
+.admin-profile-status-card b{display:block;color:#fff;font-size:22px;margin:4px 0}
+.admin-profile-status-card small{display:block;color:#8ea0c6;line-height:1.35}
+.admin-edit-account{display:grid;gap:8px;margin-top:8px}
+.admin-edit-account label{display:grid;gap:4px;color:#9fb0d7;font-size:11px;font-weight:900}
+.admin-row-actions .btn-danger{border-color:#ff6f7e66;background:#31101a;color:#ffd7dc}
+@media(max-width:900px){.admin-profile-status-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.admin-profile-status-grid{grid-template-columns:1fr}}

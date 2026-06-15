@@ -95,8 +95,10 @@ function buildSignInProfilePatch(user, profile = {}, main = {}, farms = [], now 
   const patch = {};
   const displayName = compactAuthValue(user?.displayName || profile?.displayName || '');
   const photoURL = compactAuthValue(user?.photoURL || profile?.photoURL || '');
-  const email = compactAuthValue(user?.email || profile?.email || '').slice(0, 180);
-  const providerId = compactAuthValue(user?.providerData?.[0]?.providerId || profile?.providerId || 'google.com').slice(0, 80);
+  const authEmail = compactAuthValue(user?.email || '').slice(0, 180);
+  const email = compactAuthValue(profile?.adminEmailOverride || authEmail || profile?.email || '').slice(0, 180);
+  const providerIds = [...new Set((user?.providerData || []).map(item => compactAuthValue(item.providerId)).filter(Boolean))].slice(0, 12);
+  const providerId = compactAuthValue(providerIds[0] || profile?.providerId || 'password').slice(0, 80);
   const regionAccess = buildRegionAccess(main, farms);
   const allianceAccess = buildAllianceAccess(main, farms);
   const regionRoles = buildRegionRoles(main, farms);
@@ -104,7 +106,9 @@ function buildSignInProfilePatch(user, profile = {}, main = {}, farms = [], now 
   if (displayName !== compactAuthValue(profile?.displayName || '')) patch.displayName = displayName;
   if (photoURL !== compactAuthValue(profile?.photoURL || '')) patch.photoURL = photoURL;
   if (email && email !== compactAuthValue(profile?.email || '').slice(0, 180)) patch.email = email;
-  if (providerId && providerId !== compactAuthValue(profile?.providerId || 'google.com').slice(0, 80)) patch.providerId = providerId;
+  if (authEmail && authEmail !== compactAuthValue(profile?.authEmail || '').slice(0, 180)) patch.authEmail = authEmail;
+  if (providerId && providerId !== compactAuthValue(profile?.providerId || 'password').slice(0, 80)) patch.providerId = providerId;
+  if (!sameJsonValue(providerIds, Array.isArray(profile?.providerIds) ? profile.providerIds : [])) patch.providerIds = providerIds;
   if (!sameJsonValue(regionAccess, Array.isArray(profile?.regionAccess) ? profile.regionAccess : [])) patch.regionAccess = regionAccess;
   if (!sameJsonValue(allianceAccess, Array.isArray(profile?.allianceAccess) ? profile.allianceAccess : [])) patch.allianceAccess = allianceAccess;
   if (!sameJsonValue(regionRoles, profile?.regionRoles || {})) patch.regionRoles = regionRoles;
@@ -1004,6 +1008,12 @@ export function makeAdminUserIndex(data = {}) {
     email: normalizeText(data.email).slice(0, 180),
     displayName: normalizeText(data.displayName).slice(0, 160),
     photoURL: normalizeText(data.photoURL).slice(0, 300),
+    authEmail: normalizeText(data.authEmail || '').slice(0, 180),
+    adminEmailOverride: normalizeText(data.adminEmailOverride || '').slice(0, 180),
+    providerId: normalizeText(data.providerId || '').slice(0, 80),
+    providerIds: Array.isArray(data.providerIds) ? data.providerIds.map(normalizeText).filter(Boolean).slice(0, 12) : [],
+    blocked: Boolean(data.blocked),
+    deleted: Boolean(data.deleted),
     nickname: main.nickname,
     gameNick: main.nickname,
     region: gameRegion(main),
@@ -1053,7 +1063,7 @@ async function writeAdminUserIndexesForDocs(db, firestoreMod, docs = []) {
   for (const doc of safeDocs) {
     const profile = { id: doc.id, ...(doc.data?.() || {}), uid: doc.data?.()?.uid || doc.id };
     const payload = makeAdminUserIndex(profile);
-    if (!payload.uid || !payload.profileComplete) continue;
+    if (!payload.uid || payload.deleted) continue;
     payloads.push(payload);
     batch.set(firestoreMod.doc(db, ADMIN_USERS_INDEX_COLLECTION, payload.uid), payload);
     count += 1;
@@ -1077,6 +1087,10 @@ function emptyAdminCounters() {
     alliancesTotal: 0,
     leadershipRolesTotal: 0,
     pendingRequestsTotal: 0,
+    profilesTotal: 0,
+    completeProfilesTotal: 0,
+    incompleteProfilesTotal: 0,
+    blockedProfilesTotal: 0,
     adminCount: 0,
     moderatorCount: 0,
     consulCount: 0,
@@ -1095,7 +1109,12 @@ function buildAdminCountersFromIndexes(indexes = []) {
   const counters = emptyAdminCounters();
   const regions = new Set();
   const alliances = new Set();
-  const safeIndexes = (Array.isArray(indexes) ? indexes : []).filter(index => index?.uid && index.profileComplete !== false);
+  const allIndexes = (Array.isArray(indexes) ? indexes : []).filter(index => index?.uid && !index.deleted);
+  counters.profilesTotal = allIndexes.length;
+  counters.completeProfilesTotal = allIndexes.filter(index => index.profileComplete !== false).length;
+  counters.incompleteProfilesTotal = allIndexes.filter(index => index.profileComplete === false).length;
+  counters.blockedProfilesTotal = allIndexes.filter(index => index.blocked).length;
+  const safeIndexes = allIndexes.filter(index => index.profileComplete !== false && !index.blocked);
   counters.playersTotal = safeIndexes.length;
   safeIndexes.forEach(index => {
     const role = normalizeRole(index.role || 'player');
@@ -1318,7 +1337,10 @@ export async function saveSignedInUser(user) {
       photoURL: user.photoURL || '',
       country: '',
       countryCode: '',
-      providerId: user.providerData?.[0]?.providerId || 'google.com',
+      providerId: user.providerData?.[0]?.providerId || 'password',
+      providerIds: [...new Set((user.providerData || []).map(item => item.providerId).filter(Boolean))],
+      blocked: false,
+      deleted: false,
       role: 'player',
       roleRequest: { requestedRole: 'player', status: 'none' },
       profileComplete: false,
@@ -1915,14 +1937,14 @@ async function loadAdminUsersFromPublicPlayers(db, firestoreMod, publicDocs = []
 function mapAdminIndexDocs(rawDocs = [], filters = {}) {
   return rawDocs
     .map(doc => ({ id: doc.id, ...doc.data(), uid: doc.data()?.uid || doc.id, __doc: doc }))
-    .filter(user => user.profileComplete !== false)
+    .filter(user => user.profileComplete !== false && !user.blocked && !user.deleted)
     .filter(user => adminUserMatchesFilters(user, filters))
     .sort((a, b) => Number(b.createdAtMs || timestampToMs(b.createdAt || b.updatedAt || b.lastLoginAt)) - Number(a.createdAtMs || timestampToMs(a.createdAt || a.updatedAt || a.lastLoginAt)));
 }
 function mapAdminUserDocs(rawDocs = [], filters = {}) {
   return rawDocs
     .map(doc => ({ id: doc.id, ...doc.data(), uid: doc.data()?.uid || doc.id, __doc: doc }))
-    .filter(user => user.profileComplete !== false)
+    .filter(user => user.profileComplete !== false && !user.blocked && !user.deleted)
     .filter(user => adminUserMatchesFilters(user, filters))
     .sort((a, b) => timestampToMs(b.createdAt || b.updatedAt || b.lastLoginAt) - timestampToMs(a.createdAt || a.updatedAt || a.lastLoginAt));
 }
@@ -2094,7 +2116,7 @@ export async function rebuildAdminUsersIndex(options = {}) {
   trackReads(readCount);
   const indexPayloads = snap.docs
     .map(doc => makeAdminUserIndex({ id: doc.id, ...(doc.data?.() || {}), uid: doc.data?.()?.uid || doc.id }))
-    .filter(index => index.uid && index.profileComplete);
+    .filter(index => index.uid && !index.deleted);
   const indexed = await writeAdminUserIndexesForDocs(db, firestoreMod, snap.docs);
   const countersPayload = buildAdminCountersFromIndexes(indexPayloads);
   try {
@@ -2624,8 +2646,19 @@ export async function updateUserByAdmin(uid, values) {
   }
   await assertNicknameRegionUnique(db, firestoreMod, uid, 'main', clean);
   await assertAllianceRankLimit(db, firestoreMod, uid, 'main', clean);
+  const canEditAccountFields = isOwnerUser(actor, actorProfile) || ['admin', 'moderator'].includes(normalizeRole(actorProfile?.role || 'player'));
+  const emailOverride = normalizeText(values.accountEmail || values.email || oldProfile.adminEmailOverride || oldProfile.email || '').slice(0, 180);
+  const displayName = normalizeText(values.displayName || oldProfile.displayName || '').slice(0, 160);
+  const photoURL = normalizeText(values.photoURL || oldProfile.photoURL || '').slice(0, 300);
   const fullUser = {
     uid,
+    ...(canEditAccountFields ? {
+      email: emailOverride || oldProfile.email || '',
+      adminEmailOverride: emailOverride || '',
+      displayName,
+      photoURL,
+      blocked: Boolean(values.blocked === true || values.blocked === 'true' || oldProfile.blocked)
+    } : {}),
     gameNick: clean.nickname,
     nickname: clean.nickname,
     region: clean.region,
@@ -2651,8 +2684,13 @@ export async function updateUserByAdmin(uid, values) {
   const batch = firestoreMod.writeBatch(db);
   batch.set(firestoreMod.doc(db, 'users', uid), fullUser, { merge: true });
   await writeAdminUserIndexDoc(db, firestoreMod, { ...oldProfile, ...fullUser, uid, createdAt: oldProfile.createdAt || now, updatedAt: now }, batch);
-  batch.set(firestoreMod.doc(db, 'publicPlayers', uid), publicPlayer, { merge: true });
-  batch.set(firestoreMod.doc(db, 'regions', clean.region, 'players', uid), publicPlayer, { merge: true });
+  if (Boolean(fullUser.blocked)) {
+    batch.delete(firestoreMod.doc(db, 'publicPlayers', uid));
+    batch.delete(firestoreMod.doc(db, 'regions', clean.region, 'players', uid));
+  } else {
+    batch.set(firestoreMod.doc(db, 'publicPlayers', uid), publicPlayer, { merge: true });
+    batch.set(firestoreMod.doc(db, 'regions', clean.region, 'players', uid), publicPlayer, { merge: true });
+  }
   if (oldGame.region && oldGame.region !== clean.region) {
     batch.delete(firestoreMod.doc(db, 'regions', oldGame.region, 'players', uid));
   }
@@ -2668,6 +2706,90 @@ export async function updateUserByAdmin(uid, values) {
   await syncProfileIndexLocks(db, firestoreMod, uid, oldProfile || {}, savedProfile || {}).catch(error => console.warn('Profile index sync failed after admin main update', error));
   return savedProfile;
 }
+
+
+export async function listUserProfilesPage(options = {}) {
+  const firebase = await getFirebase();
+  if (!firebase) return { users: [], reads: 0, total: 0 };
+  const { db, firestoreMod } = firebase;
+  const actor = firebase.auth?.currentUser || null;
+  const actorProfile = actor ? await getUserProfile(actor.uid, { forceRefresh: true }).catch(() => null) : null;
+  if (!(isOwnerUser(actor, actorProfile) || ['admin', 'moderator'].includes(normalizeRole(actorProfile?.role || 'player')))) throw new Error('admin-only');
+  const limitCount = Math.max(1, Math.min(500, Number(options.limitCount || options.limit || 100)));
+  const status = normalizeText(options.status || 'incomplete');
+  const snap = await firestoreMod.getDocs(firestoreMod.query(firestoreMod.collection(db, 'users'), firestoreMod.limit(limitCount)));
+  trackReads(Math.max(1, snap.docs.length));
+  let users = snap.docs.map(doc => ({ id: doc.id, ...(doc.data?.() || {}), uid: doc.data?.()?.uid || doc.id }));
+  if (status === 'incomplete') users = users.filter(user => !isProfileComplete(user) && !user.deleted);
+  if (status === 'blocked') users = users.filter(user => Boolean(user.blocked) && !user.deleted);
+  if (status === 'all') users = users.filter(user => !user.deleted);
+  users.sort((a, b) => timestampToMs(b.updatedAt || b.lastLoginAt || b.createdAt) - timestampToMs(a.updatedAt || a.lastLoginAt || a.createdAt));
+  return { users: users.slice(0, limitCount), reads: Math.max(1, snap.docs.length), total: users.length, status };
+}
+
+export async function setUserBlockedByAdmin(uid, blocked = true, reason = '') {
+  if (!uid) throw new Error('missing-user-id');
+  const firebase = await getFirebase();
+  if (!firebase) throw new Error('firebase-not-configured');
+  const { db, firestoreMod } = firebase;
+  const actor = firebase.auth?.currentUser || null;
+  const actorProfile = actor ? await getUserProfile(actor.uid, { forceRefresh: true }).catch(() => null) : null;
+  if (!(isOwnerUser(actor, actorProfile) || ['admin', 'moderator'].includes(normalizeRole(actorProfile?.role || 'player')))) throw new Error('admin-only');
+  if (actor?.uid === uid && blocked) throw new Error('cannot-block-self');
+  const profile = await getUserProfile(uid, { forceRefresh: true });
+  if (!profile) throw new Error('user-not-found');
+  const now = firestoreMod.serverTimestamp();
+  const game = getGameProfile(profile);
+  const batch = firestoreMod.writeBatch(db);
+  const patch = {
+    blocked: Boolean(blocked),
+    blockedReason: normalizeText(reason).slice(0, 300),
+    blockedAt: blocked ? now : null,
+    blockedBy: blocked ? actor.uid : '',
+    updatedAt: now
+  };
+  batch.set(firestoreMod.doc(db, 'users', uid), patch, { merge: true });
+  const updated = { ...profile, ...patch, uid, updatedAt: now };
+  await writeAdminUserIndexDoc(db, firestoreMod, updated, batch);
+  if (blocked) {
+    batch.delete(firestoreMod.doc(db, 'publicPlayers', uid));
+    if (game.region) batch.delete(firestoreMod.doc(db, 'regions', game.region, 'players', uid));
+  } else if (isProfileComplete(profile)) {
+    const publicPlayer = makePublicPlayer({ ...profile, blocked: false, updatedAt: now });
+    batch.set(firestoreMod.doc(db, 'publicPlayers', uid), publicPlayer, { merge: true });
+    if (game.region) batch.set(firestoreMod.doc(db, 'regions', game.region, 'players', uid), publicPlayer, { merge: true });
+  }
+  await batch.commit();
+  trackWrites(2);
+  removeUserProfileCache(uid);
+  await markStatsChanged(db, firestoreMod, uid, blocked ? 'admin_blocked' : 'admin_unblocked', 'admin-status').catch(() => null);
+  return { uid, blocked: Boolean(blocked) };
+}
+
+export async function deleteUserProfileByAdmin(uid) {
+  if (!uid) throw new Error('missing-user-id');
+  const firebase = await getFirebase();
+  if (!firebase) throw new Error('firebase-not-configured');
+  const { db, firestoreMod } = firebase;
+  const actor = firebase.auth?.currentUser || null;
+  const actorProfile = actor ? await getUserProfile(actor.uid, { forceRefresh: true }).catch(() => null) : null;
+  if (!(isOwnerUser(actor, actorProfile) || normalizeRole(actorProfile?.role || 'player') === 'admin')) throw new Error('admin-only');
+  if (actor?.uid === uid) throw new Error('cannot-delete-self');
+  const profile = await getUserProfile(uid, { forceRefresh: true });
+  if (!profile) throw new Error('user-not-found');
+  const game = getGameProfile(profile);
+  const batch = firestoreMod.writeBatch(db);
+  batch.delete(firestoreMod.doc(db, 'users', uid));
+  batch.delete(firestoreMod.doc(db, ADMIN_USERS_INDEX_COLLECTION, uid));
+  batch.delete(firestoreMod.doc(db, 'publicPlayers', uid));
+  if (game.region) batch.delete(firestoreMod.doc(db, 'regions', game.region, 'players', uid));
+  await batch.commit();
+  trackDeletes(4);
+  removeUserProfileCache(uid);
+  await markStatsChanged(db, firestoreMod, uid, 'admin_deleted_profile', 'admin-status').catch(() => null);
+  return { uid, deleted: true, authUserDeleted: false };
+}
+
 
 export async function updateFarmByAdmin(uid, farmId, values) {
   if (!uid || !farmId || farmId === 'main') throw new Error('missing-farm-id');
