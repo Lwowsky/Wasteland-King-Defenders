@@ -17,6 +17,8 @@ let liveStatsPatchReady = false;
 let statsFarms = [];
 let statsFarmsLoaded = false;
 let statsVersionInfo = null;
+let detailsLoadingPromise = null;
+let farmsLoadingPromise = null;
 
 function t(key, fallback = '') {
   const value = window.WKD_t ? window.WKD_t(key) : '';
@@ -35,7 +37,7 @@ function locale() {
 
 
 
-const STATS_CACHE_BUILD = 'v162';
+const STATS_CACHE_BUILD = 'v214-lazy-public-stats';
 const PUBLIC_STATS_SUMMARY_FILE = 'stats-summary.json';
 const PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -199,10 +201,18 @@ function attachStatsFarmsToPlayers(farmRows = statsFarms) {
 async function ensureFarmsLoaded({ force = false } = {}) {
   if (!includeFarmRows()) return [];
   if (statsFarmsLoaded && !force) return statsFarms;
-  statsFarms = await fetchPublicStatsFarms({ force });
-  statsFarmsLoaded = true;
-  attachStatsFarmsToPlayers(statsFarms);
-  return statsFarms;
+  if (farmsLoadingPromise && !force) return farmsLoadingPromise;
+  farmsLoadingPromise = (async () => {
+    statsFarms = await fetchPublicStatsFarms({ force });
+    statsFarmsLoaded = true;
+    attachStatsFarmsToPlayers(statsFarms);
+    return statsFarms;
+  })();
+  try {
+    return await farmsLoadingPromise;
+  } finally {
+    farmsLoadingPromise = null;
+  }
 }
 
 
@@ -323,41 +333,84 @@ function renderSummaryStats(summary = statsSummaryCache) {
 function renderListNotLoaded() {
   const body = $('#publicPlayersBody');
   if (!body) return;
-  body.innerHTML = `<tr><td colspan="8" class="stats-empty-note">${escapeHtml(t('stats.listNotLoaded', 'The public player JSON is not loaded yet. Check public-cache/stats-players.json.'))}</td></tr>`;
+  body.innerHTML = `<tr><td colspan="8" class="stats-empty-note">
+    <div class="stats-lazy-list-note">
+      <p>${escapeHtml(t('stats.listNotLoaded', 'Summary is loaded. The player list will load only after you press Show list, search, sort, or enable farms.'))}</p>
+      <button class="btn btn-secondary" type="button" data-load-stats-list>${escapeHtml(t('stats.loadPlayerList', 'Show list'))}</button>
+    </div>
+  </td></tr>`;
 }
-async function loadSummaryOnly(options = {}) {
-  const force = Boolean(options?.force);
-  if (force) {
-    if (!manualRefreshAllowed()) return;
-    clearStatsLocalCache();
-    statsFarmsLoaded = false;
-    statsFarms = [];
-  }
-  setStatus(t('stats.loadingSummary', 'Loading public statistics cache...'), 'muted');
-  try {
-    statsVersionInfo = await fetchPublicStatsVersion({ force });
-    const [summary, publicPlayers] = await Promise.all([
-      fetchPublicStatsSummary({ force }),
-      fetchPublicStatsPlayers({ force })
-    ]);
-    statsSummaryCache = hasUsableStatsSummary(summary) ? summary : null;
+
+function updateLoadListButtonState(loading = false) {
+  const button = $('#loadStatsListBtn');
+  if (!button) return;
+  button.disabled = Boolean(loading || detailsLoaded);
+  button.textContent = loading
+    ? t('stats.loadingPlayers', 'Loading players...')
+    : (detailsLoaded ? t('stats.listLoaded', 'List loaded') : t('stats.loadPlayerList', 'Show list'));
+}
+
+async function ensurePlayersLoaded({ force = false } = {}) {
+  if (detailsLoaded && !force) return players;
+  if (detailsLoadingPromise && !force) return detailsLoadingPromise;
+  detailsLoadingPromise = (async () => {
+    updateLoadListButtonState(true);
+    setStatus(t('stats.loadingPlayers', 'Loading players...'), 'muted');
+    const publicPlayers = await fetchPublicStatsPlayers({ force });
     players = dedupePublicPlayersList(Array.isArray(publicPlayers) ? publicPlayers : []);
     detailsLoaded = true;
-    if (includeFarmRows()) await ensureFarmsLoaded({ force }).catch(error => console.warn('[WKD] stats farms not loaded:', error));
+    if (includeFarmRows()) {
+      setStatus(t('stats.loadingFarms', 'Loading farm statistics...'), 'muted');
+      await ensureFarmsLoaded({ force }).catch(error => {
+        console.warn('[WKD] stats farms not loaded:', error);
+        setStatus(t('stats.farmsLoadFailed', 'Farm statistics are unavailable. Try Refresh cache.'), 'warning');
+      });
+    }
     await refreshCurrentUserLiveStats({ rerender: false });
     renderStats();
     renderPlayers();
-    if (isPublicStatsJsonEmpty(summary, publicPlayers)) {
+    if (isPublicPlayersJsonMissing(statsSummaryCache, publicPlayers)) {
+      renderListNotLoaded();
+      setStatus(t('stats.playersJsonMismatch', 'stats-summary.json has numbers, but stats-players.json is empty. Replace the local public-cache with the latest generated JSON files.'), 'warning');
+      return players;
+    }
+    setStatus(t('stats.listLoadedStatus', 'Player list loaded from public JSON cache.'), 'success');
+    return players;
+  })();
+  try {
+    return await detailsLoadingPromise;
+  } finally {
+    detailsLoadingPromise = null;
+    updateLoadListButtonState(false);
+  }
+}
+
+async function loadSummaryOnly(options = {}) {
+  const force = Boolean(options?.force);
+  const shouldReloadDetails = Boolean(options?.loadDetails || (force && detailsLoaded));
+  if (force) {
+    if (!manualRefreshAllowed()) return;
+    clearStatsLocalCache();
+    detailsLoaded = false;
+    players = [];
+    statsFarmsLoaded = false;
+    statsFarms = [];
+  }
+  updateLoadListButtonState(false);
+  setStatus(t('stats.loadingSummary', 'Loading public statistics cache...'), 'muted');
+  try {
+    statsVersionInfo = await fetchPublicStatsVersion({ force });
+    const summary = await fetchPublicStatsSummary({ force });
+    statsSummaryCache = hasUsableStatsSummary(summary) ? summary : null;
+    renderStats();
+    renderPlayers();
+    if (isPublicStatsJsonEmpty(summary, [])) {
       setSummary(t('stats.cacheEmpty', 'Public JSON cache is empty. Check or replace public-cache/stats-players.json.'));
       setStatus(t('stats.cacheEmpty', 'Public JSON cache is empty. Check or replace public-cache/stats-players.json.'), 'warning');
       return;
     }
-    if (isPublicPlayersJsonMissing(summary, publicPlayers)) {
-      renderListNotLoaded();
-      setStatus(t('stats.playersJsonMismatch', 'stats-summary.json has numbers, but stats-players.json is empty. Replace the local public-cache with the latest generated JSON files.'), 'warning');
-      return;
-    }
-    setStatus(t('stats.cacheUpdated', 'Statistics loaded from public JSON cache.'), 'success');
+    setStatus(t('stats.summaryOnlyLoaded', 'Summary loaded. Player list is lazy-loaded to save traffic.'), 'success');
+    if (shouldReloadDetails) await ensurePlayersLoaded({ force });
   } catch (error) {
     console.warn('[WKD] public stats JSON failed:', error);
     statsSummaryCache = null;
@@ -689,14 +742,36 @@ function closePlayerModal() {
 }
 
 function bindControls() {
-  $('#refreshStatsBtn')?.addEventListener('click', () => loadSummaryOnly({ force: true }));
-  $('#statsNickSearch')?.addEventListener('input', renderPlayers);
-  $('#statsAllianceSearch')?.addEventListener('input', renderPlayers);
-  $('#statsRegionSearch')?.addEventListener('input', renderPlayers);
-  $('#statsRoleFilter')?.addEventListener('change', renderPlayers);
-  $('#statsRowsFilter')?.addEventListener('change', renderPlayers);
+  $('#refreshStatsBtn')?.addEventListener('click', () => loadSummaryOnly({ force: true, loadDetails: detailsLoaded }));
+  $('#loadStatsListBtn')?.addEventListener('click', () => ensurePlayersLoaded().catch(error => {
+    console.warn('[WKD] stats players load failed:', error);
+    setStatus(t('stats.playersLoadFailed', 'Player list is unavailable. Try Refresh cache.'), 'warning');
+    renderListNotLoaded();
+  }));
+  const loadThenRender = () => {
+    if (!detailsLoaded) {
+      ensurePlayersLoaded().catch(error => {
+        console.warn('[WKD] stats players load failed:', error);
+        setStatus(t('stats.playersLoadFailed', 'Player list is unavailable. Try Refresh cache.'), 'warning');
+        renderListNotLoaded();
+      });
+      return;
+    }
+    renderPlayers();
+  };
+  $('#statsNickSearch')?.addEventListener('input', loadThenRender);
+  $('#statsAllianceSearch')?.addEventListener('input', loadThenRender);
+  $('#statsRegionSearch')?.addEventListener('input', loadThenRender);
+  $('#statsRoleFilter')?.addEventListener('change', loadThenRender);
+  $('#statsRowsFilter')?.addEventListener('change', loadThenRender);
   $('#statsIncludeFarmsToggle')?.addEventListener('change', async () => {
     if (includeFarmRows()) {
+      if (!detailsLoaded) {
+        await ensurePlayersLoaded().catch(error => {
+          console.warn('[WKD] stats players load failed:', error);
+          setStatus(t('stats.playersLoadFailed', 'Player list is unavailable. Try Refresh cache.'), 'warning');
+        });
+      }
       setStatus(t('stats.loadingFarms', 'Loading farm statistics...'), 'muted');
       await ensureFarmsLoaded().catch(error => {
         console.warn('[WKD] stats farms load failed:', error);
@@ -707,6 +782,15 @@ function bindControls() {
     renderPlayers();
   });
   $('#publicPlayersBody')?.addEventListener('click', event => {
+    const loadButton = event.target.closest('[data-load-stats-list]');
+    if (loadButton) {
+      ensurePlayersLoaded().catch(error => {
+        console.warn('[WKD] stats players load failed:', error);
+        setStatus(t('stats.playersLoadFailed', 'Player list is unavailable. Try Refresh cache.'), 'warning');
+        renderListNotLoaded();
+      });
+      return;
+    }
     const button = event.target.closest('[data-player-id]');
     if (!button) return;
     const player = players.find(item => (item.publicKey || item.uid || item.id || '') === button.dataset.playerId);
@@ -715,7 +799,7 @@ function bindControls() {
   document.querySelectorAll('#publicPlayersTable [data-sort]').forEach(button => button.addEventListener('click', () => {
     const key = button.dataset.sort;
     sortState = { key, dir: sortState.key === key && sortState.dir === 'asc' ? 'desc' : 'asc' };
-    renderPlayers();
+    loadThenRender();
   }));
   document.querySelectorAll('[data-close-stats-modal]').forEach(button => button.addEventListener('click', closePlayerModal));
   document.querySelectorAll('.stats-modal-tab').forEach(button => button.addEventListener('click', () => activateModalTab(button.dataset.statsTab)));

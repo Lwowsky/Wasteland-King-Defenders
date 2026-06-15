@@ -3,7 +3,7 @@ import { trackCloudflareUsage } from './usage-tracker.js?v=213';
 
 const MAX_ROWS = 2000;
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
-const SHARE_TABLE_CACHE_TTL_MS = 60 * 1000;
+const SHARE_TABLE_CACHE_TTL_MS = 10 * 60 * 1000;
 const REGION_FORM_SETTINGS_TTL_MS = 5 * 60 * 1000;
 const TOWER_PLAN_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 

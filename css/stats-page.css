@@ -23,3 +23,9 @@
 .stats-pagination__buttons .btn{min-height:38px;padding:0 14px;border-radius:12px}
 .stats-pagination__buttons .btn:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.45)}
 @media (max-width:620px){.stats-pagination{display:grid;grid-template-columns:1fr}.stats-pagination__buttons{justify-content:space-between}.stats-pagination__buttons .btn{flex:1}}
+.stats-lazy-list-note{display:grid;gap:12px;justify-items:start;align-items:start}
+.stats-lazy-list-note p{margin:0;color:#b8c4df;line-height:1.45}
+.stats-lazy-list-note .btn{min-height:42px;padding:0 16px;border-radius:14px}
+.stats-toolbar{grid-template-columns:minmax(130px,1fr) minmax(105px,.7fr) minmax(95px,.55fr) 150px 110px minmax(155px,.65fr) max-content max-content}
+@media (max-width:1180px){.stats-toolbar{grid-template-columns:repeat(3,minmax(120px,1fr)) 150px 110px minmax(150px,1fr)}}
+@media (max-width:760px){.stats-lazy-list-note{justify-items:stretch}.stats-lazy-list-note .btn{width:100%}}

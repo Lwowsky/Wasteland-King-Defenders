@@ -1,4 +1,4 @@
-const WKD_SW_VERSION = 'wkd-sw-v213';
+const WKD_SW_VERSION = 'wkd-sw-v214';
 const STATIC_CACHE = `${WKD_SW_VERSION}-static`;
 const RUNTIME_CACHE = `${WKD_SW_VERSION}-runtime`;
 const STATIC_ASSET_RE = /\.(?:html|css|js|mjs|png|webp|svg|ico|json)$/i;
@@ -32,8 +32,20 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   if (!shouldCache(request)) return;
   event.respondWith((async () => {
-    const cache = await caches.open(request.url.includes('/public-cache/') ? RUNTIME_CACHE : STATIC_CACHE);
+    const url = new URL(request.url);
+    const isPublicCache = url.pathname.startsWith('/public-cache/');
+    const forcePublicCacheRefresh = isPublicCache && url.searchParams.has('t');
+    const cache = await caches.open(isPublicCache ? RUNTIME_CACHE : STATIC_CACHE);
     const cached = await cache.match(request, { ignoreSearch: true });
+    if (forcePublicCacheRefresh) {
+      try {
+        const response = await fetch(request, { cache: 'no-store' });
+        if (response && response.ok) cache.put(request, response.clone()).catch(() => null);
+        return response;
+      } catch (error) {
+        return cached || Response.error();
+      }
+    }
     if (cached) {
       event.waitUntil(fetch(request).then(response => {
         if (response && response.ok) cache.put(request, response.clone()).catch(() => null);
