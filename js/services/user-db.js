@@ -197,6 +197,25 @@ function bestActorGameForTarget(actorProfile = {}, target = {}) {
 function isGlobalAdminActor(actor = null, actorProfile = null) {
   return isOwnerUser(actor, actorProfile) || ['admin', 'moderator'].includes(normalizeRole(actorProfile?.role || 'player'));
 }
+function selfRankChangeAllowed(oldRank = 'p1', nextRank = 'p1') {
+  const before = rankNum(oldRank || 'p1');
+  const after = rankNum(nextRank || 'p1');
+  // Players may freely set P1-P3. P4/P5 can only stay if it was already assigned
+  // by an authorized manager. A normal profile save must not self-promote to P4/P5.
+  return after <= 3 || after === before;
+}
+function canAssignRankForTarget(actor = null, actorProfile = null, target = {}, oldTarget = {}) {
+  const wantedRank = rankNum(target.rank || oldTarget.rank || 'p1');
+  if (isGlobalAdminActor(actor, actorProfile)) return true;
+  const actorGame = bestActorGameForTarget(actorProfile || {}, target);
+  if (!actorGame) return wantedRank <= 3;
+  const actorRole = normalizeRole(actorGame.role || 'player');
+  const actorRank = rankNum(actorGame.rank);
+  const sameAlliance = normalizeAllianceTag(actorGame.alliance) === normalizeAllianceTag(target.alliance);
+  if (actorRole === 'consul' && gameRegion(actorGame) === gameRegion(target)) return true;
+  if (sameAlliance && actorRank === 5) return wantedRank <= 4;
+  return wantedRank <= 3;
+}
 function canRegionalEditTarget(actor = null, actorProfile = null, target = {}, oldTarget = {}) {
   if (isGlobalAdminActor(actor, actorProfile)) return true;
   const actorGame = bestActorGameForTarget(actorProfile || {}, target);
@@ -205,12 +224,15 @@ function canRegionalEditTarget(actor = null, actorProfile = null, target = {}, o
   const actorRank = rankNum(actorGame.rank);
   const sameAlliance = normalizeAllianceTag(actorGame.alliance) === normalizeAllianceTag(target.alliance);
   const wantedRole = normalizeRole(target.role || oldTarget.role || 'player');
-  const wantedRank = rankNum(target.rank || oldTarget.rank || 'p1');
   if (actorRole === 'consul' && gameRegion(actorGame) === gameRegion(target)) {
-    return ['player', 'officer'].includes(wantedRole) && wantedRank <= 5;
+    return ['player', 'officer'].includes(wantedRole) && canAssignRankForTarget(actor, actorProfile, target, oldTarget);
   }
-  if (sameAlliance && actorRole === 'officer') return wantedRole === normalizeRole(oldTarget.role || 'player');
-  if (sameAlliance && actorRank === 5) return wantedRole === normalizeRole(oldTarget.role || 'player') && wantedRank <= 4;
+  if (sameAlliance && actorRole === 'officer') {
+    return wantedRole === normalizeRole(oldTarget.role || 'player') && canAssignRankForTarget(actor, actorProfile, target, oldTarget);
+  }
+  if (sameAlliance && actorRank === 5) {
+    return wantedRole === normalizeRole(oldTarget.role || 'player') && canAssignRankForTarget(actor, actorProfile, target, oldTarget);
+  }
   return false;
 }
 
@@ -1491,6 +1513,10 @@ export async function saveGameRegistration(user, values) {
     clean.roleLabel = roleLabel('player');
   }
 
+  if (!selfRankChangeAllowed(oldSelectedFarm.rank || 'p1', clean.rank || 'p1')) {
+    throw new Error('rank-restricted');
+  }
+
   await assertNicknameRegionUnique(db, firestoreMod, uid, farmId, clean);
   await assertAllianceRankLimit(db, firestoreMod, uid, farmId, clean);
 
@@ -2713,6 +2739,9 @@ export async function updateUserByAdmin(uid, values) {
   if (!canAssignRole(actor, actorProfile, role) || !canRegionalEditTarget(actor, actorProfile, requestedTarget, { ...oldGame, role: oldProfile.role || 'player' })) {
     throw new Error('role-not-allowed');
   }
+  if (!canAssignRankForTarget(actor, actorProfile, requestedTarget, { ...oldGame, role: oldProfile.role || 'player' })) {
+    throw new Error('rank-not-allowed');
+  }
   await assertNicknameRegionUnique(db, firestoreMod, uid, 'main', clean);
   await assertAllianceRankLimit(db, firestoreMod, uid, 'main', clean);
   const canEditAccountFields = isOwnerUser(actor, actorProfile) || ['admin', 'moderator'].includes(normalizeRole(actorProfile?.role || 'player'));
@@ -2876,6 +2905,7 @@ export async function updateFarmByAdmin(uid, farmId, values) {
   const role = normalizeRole(values.role || farms[index].role || 'player');
   const targetPreview = { ...farms[index], ...values, role, region: normalizeText(values.region || farms[index].region).replace(/[^0-9]/g, ''), alliance: normalizeAllianceTag(values.alliance || farms[index].alliance), rank: normalizeText(values.rank || farms[index].rank || 'p1').toLowerCase() };
   if (!canAssignRole(actor, actorProfile, role) || !canRegionalEditTarget(actor, actorProfile, targetPreview, farms[index])) throw new Error('role-not-allowed');
+  if (!canAssignRankForTarget(actor, actorProfile, targetPreview, farms[index])) throw new Error('rank-not-allowed');
   await assertNicknameRegionUnique(db, firestoreMod, uid, farmId, targetPreview);
   await assertAllianceRankLimit(db, firestoreMod, uid, farmId, targetPreview);
 

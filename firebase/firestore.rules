@@ -199,11 +199,8 @@ service cloud.firestore {
         || (isModerator() && role in ['consul', 'officer', 'player']);
     }
 
-    function roleIsSafeOnCreate() {
-      return request.resource.data.role == 'player';
-    }
 
-    function ownerProfileCreateSafe(userId) {
+function ownerProfileCreateSafe(userId) {
       return isOwner(userId)
         && (!request.resource.data.keys().hasAny(['uid']) || request.resource.data.uid == userId)
         && (!request.resource.data.keys().hasAny(['email']) || request.resource.data.email is string)
@@ -216,12 +213,8 @@ service cloud.firestore {
         && (!request.resource.data.keys().hasAny(['regionRoles']) || (request.resource.data.regionRoles is map && request.resource.data.regionRoles.keys().size() == 0));
     }
 
-    function ownerKeepsProtectedFields() {
-      return !request.resource.data.diff(resource.data).affectedKeys()
-        .hasAny(['role', 'createdAt', 'uid', 'email', 'providerId', 'providerIds', 'regionAccess', 'allianceAccess', 'regionRoles', 'blocked', 'deleted', 'adminEmailOverride']);
-    }
 
-    function ownerOwnProfilePatchSafe(userId) {
+function ownerOwnProfilePatchSafe(userId) {
       return isOwner(userId)
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
           'uid', 'email', 'role', 'createdAt', 'providerId', 'providerIds',
@@ -233,44 +226,7 @@ service cloud.firestore {
         && (!request.resource.data.keys().hasAny(['email']) || !resource.data.keys().hasAny(['email']) || request.resource.data.email == resource.data.email);
     }
 
-    function ownerProfileUpdateSafe(userId) {
-      return isOwner(userId)
-        && request.resource.data.uid == resource.data.uid
-        && request.resource.data.email == resource.data.email
-        && request.resource.data.role == resource.data.role
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'displayName', 'photoURL', 'lastLoginAt', 'updatedAt',
-          'country', 'countryCode', 'regionAccess', 'allianceAccess', 'regionRoles',
-          'profileComplete', 'gameNick', 'nickname', 'region', 'alliance', 'rank', 'shk',
-          'gameProfile', 'farms', 'farmCount', 'activeFarmId', 'roleRequest', 'roleLabel', 'profileVisibility'
-        ])
-        && profileAccessFieldsSafe();
-    }
-
-    function ownerSelfUserWriteSafe(userId) {
-      return isOwner(userId)
-        && (!request.resource.data.keys().hasAny(['uid']) || request.resource.data.uid == userId)
-        && (!resource.data.keys().hasAny(['uid']) || !request.resource.data.keys().hasAny(['uid']) || request.resource.data.uid == resource.data.uid)
-        && (!resource.data.keys().hasAny(['email']) || !request.resource.data.keys().hasAny(['email']) || request.resource.data.email == resource.data.email)
-        && (!resource.data.keys().hasAny(['createdAt']) || !request.resource.data.keys().hasAny(['createdAt']) || request.resource.data.createdAt == resource.data.createdAt)
-        && (!resource.data.keys().hasAny(['role']) || !request.resource.data.keys().hasAny(['role']) || request.resource.data.role == resource.data.role)
-        && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role in ['player', resource.data.role])
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['blocked', 'deleted', 'adminEmailOverride']))
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['regionRoles'])
-          || request.resource.data.regionRoles == resource.data.regionRoles
-          || (!resource.data.keys().hasAny(['regionRoles']) && request.resource.data.regionRoles.keys().size() == 0))
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['regionAccess'])
-          || request.resource.data.regionAccess == resource.data.regionAccess
-          || (!resource.data.keys().hasAny(['regionAccess']) && request.resource.data.regionAccess is list && request.resource.data.regionAccess.size() == 0))
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['allianceAccess'])
-          || request.resource.data.allianceAccess == resource.data.allianceAccess
-          || (!resource.data.keys().hasAny(['allianceAccess']) && request.resource.data.allianceAccess is list && request.resource.data.allianceAccess.size() == 0));
-    }
-
-
-
-    function ownerRegionRoleDowngradeSafe(userId) {
+function ownerRegionRoleDowngradeSafe(userId) {
       return isOwner(userId)
         && resource.data.role in ['consul', 'officer']
         && request.resource.data.role == 'player'

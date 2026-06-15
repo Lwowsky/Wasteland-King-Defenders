@@ -2436,5 +2436,8 @@ window.WKD_TRANSLATIONS.uk = {
   "admin.profileDeleted": "Профіль сайту видалено. Auth акаунт треба видаляти окремо у Firebase Console.",
   "admin.deleteProfileFailed": "Не вдалося видалити профіль.",
   "account.savePermissionDenied": "Не вдалося зберегти профіль: Firestore rules не дозволили запис. Онови правила Firestore і спробуй ще раз.",
-  "account.profileBootstrapFailed": "Не вдалося створити профіль акаунта. Перевір Firestore rules і спробуй ще раз."
+  "account.profileBootstrapFailed": "Не вдалося створити профіль акаунта. Перевір Firestore rules і спробуй ще раз.",
+  "account.rankRestricted": "P4/P5 може видати тільки керівництво альянсу або регіону. Вибери P1–P3.",
+  "account.rankManaged": "керівний ранг",
+  "admin.rankNotAllowed": "Ти не можеш видати цей ранг. P5/P4 видає адмін, модератор або консул; P5 свого альянсу може видати тільки P4."
 };

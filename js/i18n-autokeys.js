@@ -926,5 +926,8 @@ window.WKD_I18N_AUTO_ATTR = {
   "account.savePermissionDenied": "Could not save the profile: Firestore rules denied the write. Deploy Firestore rules and try again.",
   "account.profileBootstrapFailed": "Could not create the account profile. Check Firestore rules and try again.",
   "account.signInRequired": "You need to sign in.",
-  "profile.needGoogle": "You need to sign in."
+  "profile.needGoogle": "You need to sign in.",
+  "account.rankRestricted": "P4/P5 can be assigned only by alliance or region leadership. Choose P1–P3.",
+  "account.rankManaged": "managed rank",
+  "admin.rankNotAllowed": "You cannot assign this rank. P5/P4 is assigned by admin, moderator, or consul; alliance P5 can assign P4 only."
 };

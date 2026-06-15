@@ -1734,6 +1734,7 @@ async function handleUserAction(event) {
     console.error(error);
     let message = t('admin.saveFailed', 'Could not save player. Check access rights.');
     if (error?.message === 'role-not-allowed') message = t('admin.roleNotAllowed', 'You cannot assign this role with your permissions.');
+    if (error?.message === 'rank-not-allowed') message = t('admin.rankNotAllowed', 'Ти не можеш видати цей ранг. P5/P4 видає адмін, модератор або консул; P5 свого альянсу може видати тільки P4.');
     if (error?.message === 'nickname-duplicate-region') message = t('account.nicknameDuplicateRegion', 'У цьому регіоні вже є гравець з таким нікнеймом.');
     if (error?.message === 'rank-p5-limit') message = t('account.rankP5Limit', 'У цьому альянсі вже є P5. Можна мати тільки одного P5.');
     if (error?.message === 'rank-p4-limit') message = t('account.rankP4Limit', 'У цьому альянсі вже є 20 гравців P4. Ліміт P4 заповнений.');

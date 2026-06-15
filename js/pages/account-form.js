@@ -116,6 +116,26 @@ function selectedFarmRole(profile = currentProfile) {
   return selectedFarm(profile)?.role || 'player';
 }
 
+function renderRankOptions(farm = selectedFarm()) {
+  const rank = String(farm?.rank || 'p1').toLowerCase();
+  const allowed = ['p1', 'p2', 'p3'];
+  const options = allowed.includes(rank) ? allowed : [...allowed, rank];
+  const select = $('#rank');
+  if (!select) return;
+  select.innerHTML = options.map(option => `<option value="${option}">${option.toUpperCase()}${['p4','p5'].includes(option) ? ' · ' + t('account.rankManaged', 'керівний ранг') : ''}</option>`).join('');
+  select.value = options.includes(rank) ? rank : 'p1';
+}
+
+function selfRankChangeAllowed(oldRank = 'p1', nextRank = 'p1') {
+  const rankNumber = value => {
+    const match = String(value || '').match(/[1-5]/);
+    return match ? Number(match[0]) : 1;
+  };
+  const before = rankNumber(oldRank || 'p1');
+  const after = rankNumber(nextRank || 'p1');
+  return after <= 3 || after === before;
+}
+
 function selectableRoleIds(currentRole = 'player') {
   const role = currentRole || 'player';
   const owner = isOwnerUser(currentUser, currentProfile);
@@ -201,6 +221,7 @@ function fillFarmFields(farm = {}) {
   set('#nickname', farm.nickname || '');
   set('#region', farm.region || '');
   set('#alliance', farm.alliance || '');
+  renderRankOptions(farm);
   set('#rank', farm.rank || 'p1');
   set('#shk', farm.shk || '');
 }
@@ -262,6 +283,7 @@ function validate(values) {
   }
   if (!values.alliance) errors.push(t('account.errorAlliance', 'Enter your alliance.'));
   if (!['p1', 'p2', 'p3', 'p4', 'p5'].includes(values.rank)) errors.push(t('account.errorRank', 'Choose rank P1–P5.'));
+  if (!selfRankChangeAllowed(selectedFarm()?.rank || 'p1', values.rank)) errors.push(t('account.rankRestricted', 'P4/P5 може видати тільки керівництво альянсу або регіону. Вибери P1–P3.'));
   if (!values.shk) errors.push(t('account.errorShk', 'Enter HQ level.'));
   if (values.shk && (!/^\d{1,2}$/.test(values.shk) || Number(values.shk) < 1 || Number(values.shk) > 45)) {
     errors.push(t('account.errorShkRange', 'HQ must be a number from 1 to 45.'));
@@ -341,6 +363,10 @@ async function handleSave(event) {
     console.error('[WKD] account profile save failed:', error?.code || error?.message || error, error);
     if (error?.message === 'nickname-duplicate-region') {
       setStatus(t('account.nicknameDuplicateRegion', 'У цьому регіоні вже є гравець з таким нікнеймом.'), 'error');
+      return;
+    }
+    if (error?.message === 'rank-restricted') {
+      setStatus(t('account.rankRestricted', 'P4/P5 може видати тільки керівництво альянсу або регіону. Вибери P1–P3.'), 'error');
       return;
     }
     if (error?.message === 'rank-p5-limit') {
