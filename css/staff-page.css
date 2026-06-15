@@ -1,4 +1,4 @@
-/* v238 — staff panel uses the normal site header/footer and iframe tabs without inner scroll. */
+/* v239 — stable full-width staff tabs without iframe auto-growth loops. */
 
 .staff-page {
   min-height: auto;
@@ -6,7 +6,7 @@
 }
 
 .staff-panel {
-  width: min(1540px, calc(100vw - 32px));
+  width: min(1680px, calc(100vw - 22px));
   margin: 0 auto;
   padding: clamp(18px, 2.1vw, 30px);
   border: 1px solid rgba(145, 170, 255, .18);
@@ -309,6 +309,17 @@
   font-weight: 850;
 }
 
+
+.staff-tab-panel {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+.staff-tab-panel:not([data-staff-panel="players"]) {
+  padding: clamp(14px, 1.6vw, 22px);
+}
+
 .staff-tab-panel[hidden],
 .staff-modal[hidden] {
   display: none !important;
@@ -319,6 +330,7 @@
 }
 
 .staff-embed-head {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -344,8 +356,9 @@
 .staff-frame {
   display: block;
   width: 100%;
+  max-width: 100%;
   min-height: 720px;
-  height: 720px;
+  height: 1100px;
   overflow: hidden;
   border: 0;
   border-radius: 22px;
@@ -488,8 +501,26 @@
   }
 
   .staff-frame {
-    min-height: 620px;
-    height: 620px;
+    min-height: 720px;
+    height: 900px;
     border-radius: 18px;
   }
+}
+
+
+/* v239: embedded tabs must use the same full width as the players tab. */
+.staff-page .staff-tab-panel.admin-card,
+.staff-page section.staff-tab-panel.admin-card {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.staff-page .staff-tab-panel[data-staff-panel="region-table"],
+.staff-page .staff-tab-panel[data-staff-panel="region-settings"],
+.staff-page .staff-tab-panel[data-staff-panel="action-log"] {
+  overflow: visible;
 }

@@ -38,47 +38,48 @@ function normalizeEmbedUrl(url = '') {
   return value.includes('?') ? value : `${value}?staffEmbed=1`;
 }
 
-function resizeFrameToContent(iframe) {
-  try {
-    const doc = iframe.contentDocument;
-    if (!doc?.body || !doc?.documentElement) return;
-    const height = Math.max(
-      720,
-      doc.body.scrollHeight,
-      doc.body.offsetHeight,
-      doc.documentElement.scrollHeight,
-      doc.documentElement.offsetHeight
-    );
-    iframe.style.height = `${height + 24}px`;
-  } catch (error) {
-    console.warn('[WKD] staff iframe resize skipped:', error);
-  }
+function setFrameHeight(iframe) {
+  const desired = Number(iframe?.dataset?.staffHeight || 0) || 1100;
+  iframe.style.height = `${Math.max(720, desired)}px`;
 }
 
 function decorateFrame(iframe) {
   try {
     const doc = iframe.contentDocument;
     if (!doc?.head || !doc?.body) return;
+    doc.documentElement.classList.add('staff-embedded-page');
     doc.body.classList.add('staff-embedded-page');
     if (!doc.getElementById('staffEmbedStyle')) {
       const style = doc.createElement('style');
       style.id = 'staffEmbedStyle';
       style.textContent = `
-        .app-header, .site-footer, .drawer, [data-include*="partials/header"], [data-include*="partials/footer"] { display: none !important; }
-        html, body { background: transparent !important; overflow: hidden !important; }
-        body { margin: 0 !important; overflow: hidden !important; }
-        main, .page-shell { padding-top: 0 !important; padding-bottom: 0 !important; }
-        .container, .admin-panel, .admin-card, .stats-card, .profile-card, .region-shell { max-width: none !important; width: 100% !important; }
+        .app-header, .site-footer, .drawer, [data-include*="partials/header"], [data-include*="partials/footer"], [data-include*="contact-modal"] { display: none !important; }
+        html, body { width: 100% !important; max-width: 100% !important; min-height: 0 !important; background: transparent !important; overflow-x: hidden !important; }
+        body { margin: 0 !important; padding: 0 !important; background: transparent !important; }
+        main, main.container, .page-shell, .container, .profile-page.container, .region-page.container, .public-region-table-page.container, .admin-page.container, .stats-page.container {
+          width: 100% !important;
+          max-width: none !important;
+          min-width: 0 !important;
+          margin: 0 !important;
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+          padding-top: 0 !important;
+          box-sizing: border-box !important;
+        }
+        .profile-card, .region-card, .region-table-card, .region-settings-page, .admin-card, .admin-panel, .stats-card, .profile-card--tabs, .region-form-shell, .region-shell {
+          width: 100% !important;
+          max-width: none !important;
+          min-width: 0 !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          box-sizing: border-box !important;
+        }
+        .region-card.region-table-card, .profile-card.region-card, .region-settings-page { padding-left: clamp(18px, 2vw, 30px) !important; padding-right: clamp(18px, 2vw, 30px) !important; }
+        .region-table-wrap, .admin-table-wrap, .table-scroll, .players-table-wrap { max-width: 100% !important; }
       `;
       doc.head.appendChild(style);
     }
-    resizeFrameToContent(iframe);
-    setTimeout(() => resizeFrameToContent(iframe), 120);
-    setTimeout(() => resizeFrameToContent(iframe), 600);
-    if (!iframe.__wkdResizeObserver && window.ResizeObserver) {
-      iframe.__wkdResizeObserver = new ResizeObserver(() => resizeFrameToContent(iframe));
-      iframe.__wkdResizeObserver.observe(doc.body);
-    }
+    setFrameHeight(iframe);
   } catch (error) {
     console.warn('[WKD] staff embed styling skipped:', error);
   }
@@ -87,6 +88,7 @@ function decorateFrame(iframe) {
 function loadFrameForTab(tab) {
   const iframe = document.querySelector(`[data-staff-panel="${tab}"] [data-staff-frame]`);
   if (!iframe) return;
+  setFrameHeight(iframe);
   if (!iframe.dataset.loaded) {
     iframe.src = normalizeEmbedUrl(iframe.dataset.staffSrc);
     iframe.dataset.loaded = '1';
