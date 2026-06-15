@@ -2460,5 +2460,7 @@ window.WKD_TRANSLATIONS.ar = {
   "staff.saveFailed": "Could not save. Check permissions for this player.",
   "staff.loginRequired": "You need to sign in.",
   "staff.noAccess": "This page is available only to a consul, officer or R5.",
-  "staff.loadFailed": "Could not load the region panel."
+  "staff.loadFailed": "Could not load the region panel.",
+  "staff.requestTitle": "Registration",
+  "staff.requestHelp": "Player Wasteland request through the region form."
 };

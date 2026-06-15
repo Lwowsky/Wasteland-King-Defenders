@@ -25,7 +25,9 @@ function setUserShell(user, profile = null) {
   const login = $('#googleLoginBtn');
   const logout = $('#googleLogoutBtn');
   const profileBtn = $('#profileBtn');
+  const regionFormBtn = $('#regionFormBtn');
   const drawerProfileBtn = $('#drawerProfileBtn');
+  const drawerRegionFormBtn = $('#drawerRegionFormBtn');
   const drawerLogin = $('#drawerGoogleLoginBtn');
   const drawerLogout = $('#drawerGoogleLogoutBtn');
   const drawerStatsNav = $('#drawerStatsNavBtn');
@@ -58,6 +60,11 @@ function openProfilePage() {
   window.location.href = isProfileComplete(currentProfile) ? 'profile.html' : 'register.html';
 }
 
+function openRegionFormPage() {
+  window.location.href = isProfileComplete(currentProfile) ? 'region-form.html' : 'register.html';
+}
+
+
 function openStatsPage() {
   window.location.href = 'stats.html';
 }
@@ -87,7 +94,9 @@ async function initAuthGoogle() {
   $('#statsBtn')?.addEventListener('click', openStatsPage);
   $('#drawerStatsNavBtn')?.addEventListener('click', openStatsPage);
   $('#profileBtn')?.addEventListener('click', openProfilePage);
+  $('#regionFormBtn')?.addEventListener('click', openRegionFormPage);
   $('#drawerProfileBtn')?.addEventListener('click', openProfilePage);
+  $('#drawerRegionFormBtn')?.addEventListener('click', openRegionFormPage);
   $('#staffBtn')?.addEventListener('click', openStaffPage);
   $('#drawerStaffBtn')?.addEventListener('click', openStaffPage);
   $('#adminBtn')?.addEventListener('click', openAdminPage);

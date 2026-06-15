@@ -1,4 +1,4 @@
-/* v240 — real full-width staff embeds with stable measured iframe height. */
+/* v242 — staff panel tabs without registration; registration returned to account menu. */
 
 .staff-page {
   min-height: auto;
@@ -527,16 +527,18 @@
 }
 
 
-/* STAFF_PARENT_EMBED_FULLWIDTH_V240 */
+
+
+/* STAFF_STABLE_FRAME_V242 */
+.staff-tabs {
+  width: 100%;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .staff-tab-panel:not([data-staff-panel="players"]) {
   width: 100%;
   max-width: none;
-}
-
-.staff-tab-panel:not([data-staff-panel="players"]) .staff-frame-shell,
-.staff-tab-panel:not([data-staff-panel="players"]) .staff-frame {
-  width: 100%;
-  max-width: none;
+  overflow: visible;
 }
 
 .staff-frame {
@@ -551,11 +553,19 @@
 }
 
 .staff-frame::-webkit-scrollbar {
-  display: none;
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
 }
 
-.staff-embed-head {
-  padding-left: 0;
-  padding-right: 0;
+@media (max-width: 1280px) {
+  .staff-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
+@media (max-width: 760px) {
+  .staff-tabs {
+    grid-template-columns: 1fr;
+  }
+}

@@ -932,5 +932,7 @@ window.WKD_I18N_AUTO_ATTR = {
   "admin.rankNotAllowed": "You cannot assign this rank. P5/P4 is assigned by admin, moderator, or consul; alliance P5 can assign P4 only.",
   "staff.playersTitle": "Region players",
   "staff.playersHelp": "Consuls see the region. Officers and R5 work with their alliance.",
-  "staff.title": "Region panel"
+  "staff.title": "Region panel",
+  "staff.requestTitle": "Registration",
+  "staff.requestHelp": "Player Wasteland request through the region form."
 };

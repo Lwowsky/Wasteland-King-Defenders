@@ -1,4 +1,4 @@
-// WKD_STAFF_EMBED_MARKER_V240
+// WKD_STAFF_EMBED_MARKER_V241
 (function markStaffEmbedMode() {
   try {
     const params = new URLSearchParams(window.location.search || '');

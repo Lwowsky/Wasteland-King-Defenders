@@ -2462,5 +2462,7 @@ window.WKD_TRANSLATIONS.uk = {
   "staff.saveFailed": "Не вдалося зберегти. Перевір права для цього гравця.",
   "staff.loginRequired": "Потрібно увійти в акаунт.",
   "staff.noAccess": "Ця сторінка доступна тільки консулу, офіцеру або R5.",
-  "staff.loadFailed": "Не вдалося завантажити панель регіону."
+  "staff.loadFailed": "Не вдалося завантажити панель регіону.",
+  "staff.requestTitle": "Реєстрація",
+  "staff.requestHelp": "Заявка гравця на Пустош через форму регіону."
 };
