@@ -1,4 +1,4 @@
-// WKD_STAFF_EMBED_MARKER_V244
+// WKD_STAFF_EMBED_MARKER_V245
 (function markStaffEmbedMode() {
   try {
     const params = new URLSearchParams(window.location.search || '');
@@ -38,7 +38,7 @@ WKD.bootAppShell = async function bootAppShell(options = {}) {
 
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     try {
-      navigator.serviceWorker.register('/sw.js?v=244').catch(error => console.warn('[WKD] service worker registration skipped:', error));
+      navigator.serviceWorker.register('/sw.js?v=245').catch(error => console.warn('[WKD] service worker registration skipped:', error));
     } catch (error) {
       console.warn('[WKD] service worker registration failed:', error);
     }

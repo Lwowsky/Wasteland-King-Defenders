@@ -1,4 +1,4 @@
-/* v244 — staff panel fixed embedded shell; no nested headers; registration returned to menu. */
+/* v245 — staff tabs load sanitized embedded pages; no nested header/footer. */
 
 .staff-page {
   min-height: auto;
@@ -509,34 +509,9 @@
 }
 
 
-/* v239: embedded tabs must use the same full width as the players tab. */
-.staff-page .staff-tab-panel.admin-card,
-.staff-page section.staff-tab-panel.admin-card {
-  width: 100% !important;
-  max-width: none !important;
-  min-width: 0 !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  box-sizing: border-box !important;
-}
 
-.staff-page .staff-tab-panel[data-staff-panel="region-table"],
-.staff-page .staff-tab-panel[data-staff-panel="region-settings"],
-.staff-page .staff-tab-panel[data-staff-panel="action-log"] {
-  overflow: visible;
-}
-
-
-
-
-
-
-/* STAFF_STABLE_FRAME_V244 */
-.staff-tabs {
-  width: 100%;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
+/* STAFF_EMBED_SRC_DOC_V245 */
+.staff-tabs { width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .staff-tab-panel:not([data-staff-panel="players"]) {
   width: 100%;
   max-width: none;
@@ -546,7 +521,6 @@
   box-shadow: none !important;
   overflow: visible;
 }
-
 .staff-frame {
   display: block;
   width: 100%;
@@ -556,17 +530,10 @@
   border: 0;
   border-radius: 22px;
   background: transparent;
+  opacity: 0;
+  transition: opacity .12s ease;
 }
-
-.staff-frame::-webkit-scrollbar {
-  width: 0 !important;
-  height: 0 !important;
-  display: none !important;
-}
-
-@media (max-width: 1280px) {
-  .staff-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 760px) {
-  .staff-tabs { grid-template-columns: 1fr; }
-}
+.staff-frame[data-ready="1"] { opacity: 1; }
+.staff-frame::-webkit-scrollbar { width: 0 !important; height: 0 !important; display: none !important; }
+@media (max-width: 1280px) { .staff-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .staff-tabs { grid-template-columns: 1fr; } }
