@@ -1537,10 +1537,19 @@ export async function saveGameRegistration(user, values) {
   const mainGame = farmId === 'main' ? clean : oldMain;
   const profileComplete = Boolean(mainGame.nickname && mainGame.region && mainGame.alliance && mainGame.rank && mainGame.shk);
 
-  // Не переписуємо захищені поля uid/email/role/createdAt.
-  // Так звичайний гравець може зберегти ферми без помилок права доступу.
+  // v226: не даємо звичайному клієнту переписувати службові access-поля.
+  // Доступ до основного регіону і так читається з region/gameProfile.region.
+  // Якщо старий профіль ще не має цих полів, додаємо тільки безпечні порожні значення,
+  // щоб Firestore rules могли пропустити оновлення профілю без ескалації доступу.
+  const accessBootstrapPatch = {};
+  if (!Array.isArray(oldProfile?.regionAccess)) accessBootstrapPatch.regionAccess = [];
+  if (!Array.isArray(oldProfile?.allianceAccess)) accessBootstrapPatch.allianceAccess = [];
+  if (!oldProfile?.regionRoles || typeof oldProfile.regionRoles !== 'object' || Array.isArray(oldProfile.regionRoles)) accessBootstrapPatch.regionRoles = {};
+
+  // Не переписуємо захищені поля uid/email/role/createdAt/providerId.
   await firestoreMod.setDoc(userRef, {
     ...nextRolePatch,
+    ...accessBootstrapPatch,
     roleRequest,
     country,
     countryCode,
@@ -1553,9 +1562,6 @@ export async function saveGameRegistration(user, values) {
     gameProfile: mainGame,
     farms: nextFarms,
     farmCount: getFarmCount({ gameProfile: mainGame, farms: nextFarms, profileComplete }),
-    regionAccess: buildRegionAccess(mainGame, nextFarms),
-    allianceAccess: buildAllianceAccess(mainGame, nextFarms),
-    regionRoles: buildRegionRoles(mainGame, nextFarms),
     activeFarmId: farmId,
     profileVisibility,
     updatedAt: now
@@ -1617,7 +1623,13 @@ export async function saveFarmWastelandProfile(user, farmId = 'main', values = {
   }
 
   const profileComplete = Boolean(nextMain.nickname && nextMain.region && nextMain.alliance && nextMain.rank && nextMain.shk);
+  const accessBootstrapPatch = {};
+  if (!Array.isArray(oldProfile?.regionAccess)) accessBootstrapPatch.regionAccess = [];
+  if (!Array.isArray(oldProfile?.allianceAccess)) accessBootstrapPatch.allianceAccess = [];
+  if (!oldProfile?.regionRoles || typeof oldProfile.regionRoles !== 'object' || Array.isArray(oldProfile.regionRoles)) accessBootstrapPatch.regionRoles = {};
+
   await firestoreMod.setDoc(firestoreMod.doc(db, 'users', user.uid), {
+    ...accessBootstrapPatch,
     profileComplete,
     gameNick: nextMain.nickname,
     region: nextMain.region,
@@ -1627,9 +1639,6 @@ export async function saveFarmWastelandProfile(user, farmId = 'main', values = {
     gameProfile: nextMain,
     farms: nextFarms,
     farmCount: getFarmCount({ gameProfile: nextMain, farms: nextFarms, profileComplete }),
-    regionAccess: buildRegionAccess(nextMain, nextFarms),
-    allianceAccess: buildAllianceAccess(nextMain, nextFarms),
-    regionRoles: buildRegionRoles(nextMain, nextFarms),
     activeFarmId: safeFarmId,
     updatedAt: now
   }, { merge: true });

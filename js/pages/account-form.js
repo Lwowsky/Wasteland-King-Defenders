@@ -338,7 +338,7 @@ async function handleSave(event) {
       setTimeout(() => { window.location.href = 'profile.html'; }, 900);
     }
   } catch (error) {
-    console.error(error);
+    console.error('[WKD] account profile save failed:', error?.code || error?.message || error, error);
     if (error?.message === 'nickname-duplicate-region') {
       setStatus(t('account.nicknameDuplicateRegion', 'У цьому регіоні вже є гравець з таким нікнеймом.'), 'error');
       return;

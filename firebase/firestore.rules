@@ -129,12 +129,12 @@ service cloud.firestore {
     }
 
     function profileAccessFieldsSafe() {
-      return request.resource.data.keys().hasAny(['regionAccess'])
-        && request.resource.data.keys().hasAny(['allianceAccess'])
-        && request.resource.data.regionAccess is list
-        && request.resource.data.allianceAccess is list
-        && request.resource.data.regionAccess.hasOnly(profileRegionAllowList())
-        && request.resource.data.allianceAccess.hasOnly(profileAllianceAllowList())
+      return (!request.resource.data.keys().hasAny(['regionAccess'])
+          || (request.resource.data.regionAccess is list
+            && request.resource.data.regionAccess.hasOnly(profileRegionAllowList())))
+        && (!request.resource.data.keys().hasAny(['allianceAccess'])
+          || (request.resource.data.allianceAccess is list
+            && request.resource.data.allianceAccess.hasOnly(profileAllianceAllowList())))
         && regionRolesWriteSafe();
     }
 
@@ -206,8 +206,10 @@ service cloud.firestore {
     function ownerProfileCreateSafe(userId) {
       return isOwner(userId)
         && request.resource.data.uid == userId
-        && request.resource.data.email == request.auth.token.email
         && request.resource.data.role == 'player'
+        && (!request.resource.data.keys().hasAny(['email']) || request.resource.data.email is string)
+        && (!request.resource.data.keys().hasAny(['blocked']) || request.resource.data.blocked == false)
+        && (!request.resource.data.keys().hasAny(['deleted']) || request.resource.data.deleted == false)
         && (!request.resource.data.keys().hasAny(['regionAccess']) || request.resource.data.regionAccess is list)
         && (!request.resource.data.keys().hasAny(['allianceAccess']) || request.resource.data.allianceAccess is list)
         && (!request.resource.data.keys().hasAny(['regionRoles']) || request.resource.data.regionRoles is map);
