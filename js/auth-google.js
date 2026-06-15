@@ -1,6 +1,5 @@
 import { isFirebaseConfigured, getFirebase, watchAuth } from './services/firebase-service.js';
 import { canUseAdminPanel, canUseStaffPanel, getUserProfile, isProfileComplete } from './services/user-db.js';
-import { canOpenRegionTools } from './services/region-db.js?v=213';
 
 const $ = selector => document.querySelector(selector);
 const shellT = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : fallback;
@@ -20,8 +19,6 @@ function setUserShell(user, profile = null) {
   const admin = signedIn && canUseAdminPanel(user, profile);
   const staff = signedIn && canUseStaffPanel(user, profile);
   const profileReady = signedIn && isProfileComplete(profile);
-  const regionManager = profileReady && canOpenRegionTools(profile || {});
-  const regionTablePageAllowed = profileReady;
   const drawer = $('#drawer');
   const userText = $('#authUserText');
   const drawerAccountLabel = $('#drawerAccountLabel');
@@ -36,14 +33,6 @@ function setUserShell(user, profile = null) {
   const drawerAdminBtn = $('#drawerAdminBtn');
   const staffBtn = $('#staffBtn');
   const drawerStaffBtn = $('#drawerStaffBtn');
-  const actionLogBtn = $('#actionLogBtn');
-  const drawerActionLogBtn = $('#drawerActionLogBtn');
-  const regionFormBtn = $('#regionFormBtn');
-  const regionTableBtn = $('#regionTableBtn');
-  const regionSettingsBtn = $('#regionSettingsBtn');
-  const drawerRegionFormBtn = $('#drawerRegionFormBtn');
-  const drawerRegionTableBtn = $('#drawerRegionTableBtn');
-  const drawerRegionSettingsBtn = $('#drawerRegionSettingsBtn');
 
   if (drawer) drawer.classList.toggle('is-guest', !signedIn);
   if (userText) userText.textContent = signedIn ? name : accountLabel;
@@ -55,14 +44,6 @@ function setUserShell(user, profile = null) {
   if (logout) logout.hidden = !signedIn;
   if (profileBtn) profileBtn.hidden = !signedIn;
   if (drawerProfileBtn) drawerProfileBtn.hidden = !signedIn;
-  if (regionFormBtn) regionFormBtn.hidden = !profileReady;
-  if (regionTableBtn) regionTableBtn.hidden = !regionTablePageAllowed;
-  if (regionSettingsBtn) regionSettingsBtn.hidden = !regionManager;
-  if (drawerRegionFormBtn) drawerRegionFormBtn.hidden = !profileReady;
-  if (drawerRegionTableBtn) drawerRegionTableBtn.hidden = !regionTablePageAllowed;
-  if (drawerRegionSettingsBtn) drawerRegionSettingsBtn.hidden = !regionManager;
-  if (actionLogBtn) actionLogBtn.hidden = !regionManager && !admin;
-  if (drawerActionLogBtn) drawerActionLogBtn.hidden = !regionManager && !admin;
   if (staffBtn) staffBtn.hidden = !staff;
   if (drawerStaffBtn) drawerStaffBtn.hidden = !staff;
   if (adminBtn) adminBtn.hidden = !admin;
@@ -89,22 +70,6 @@ function openStaffPage() {
   window.location.href = 'staff.html';
 }
 
-function openActionLogPage() {
-  window.location.href = 'action-log.html';
-}
-
-function openRegionFormPage() {
-  window.location.href = isProfileComplete(currentProfile) ? 'region-form.html' : 'register.html';
-}
-
-function openRegionTablePage() {
-  window.location.href = isProfileComplete(currentProfile) ? 'region-table.html' : 'register.html';
-}
-
-function openRegionSettingsPage() {
-  window.location.href = isProfileComplete(currentProfile) ? 'region-settings.html' : 'register.html';
-}
-
 async function logoutGoogle() {
   const firebase = await getFirebase();
   if (firebase) await firebase.authMod.signOut(firebase.auth);
@@ -123,14 +88,6 @@ async function initAuthGoogle() {
   $('#drawerStatsNavBtn')?.addEventListener('click', openStatsPage);
   $('#profileBtn')?.addEventListener('click', openProfilePage);
   $('#drawerProfileBtn')?.addEventListener('click', openProfilePage);
-  $('#regionFormBtn')?.addEventListener('click', openRegionFormPage);
-  $('#drawerRegionFormBtn')?.addEventListener('click', openRegionFormPage);
-  $('#regionTableBtn')?.addEventListener('click', openRegionTablePage);
-  $('#drawerRegionTableBtn')?.addEventListener('click', openRegionTablePage);
-  $('#regionSettingsBtn')?.addEventListener('click', openRegionSettingsPage);
-  $('#drawerRegionSettingsBtn')?.addEventListener('click', openRegionSettingsPage);
-  $('#actionLogBtn')?.addEventListener('click', openActionLogPage);
-  $('#drawerActionLogBtn')?.addEventListener('click', openActionLogPage);
   $('#staffBtn')?.addEventListener('click', openStaffPage);
   $('#drawerStaffBtn')?.addEventListener('click', openStaffPage);
   $('#adminBtn')?.addEventListener('click', openAdminPage);

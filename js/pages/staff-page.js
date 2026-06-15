@@ -19,6 +19,12 @@ const normalizeRegion = value => String(value || '').replace(/[^0-9]/g, '');
 const normalizeAlliance = value => String(value || '').trim().toUpperCase().slice(0, 3);
 const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 
+function openStaffNav(target) {
+  const href = String(target || '').trim();
+  if (!href) return;
+  window.location.assign(href);
+}
+
 let ready = false;
 let currentUser = null;
 let currentProfile = null;
@@ -145,6 +151,9 @@ async function saveEdit() {
 }
 
 function bindControls() {
+  document.querySelectorAll('[data-staff-nav]').forEach(button => {
+    button.addEventListener('click', () => openStaffNav(button.dataset.staffNav));
+  });
   $('#staffRefreshBtn')?.addEventListener('click', loadRows);
   $('#staffRegionSelect')?.addEventListener('change', loadRows);
   $('#staffAllianceFilter')?.addEventListener('change', loadRows);
