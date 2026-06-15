@@ -731,7 +731,7 @@ window.WKD_TRANSLATIONS.pl = {
   "profile.formDataSaved": "Dane formularza zapisano w profilu. Teraz można je przenieść do zgłoszenia z linku.",
   "profile.loadError": "Nie udało się odczytać profilu.",
   "profile.mainPlayer": "Główny gracz",
-  "profile.needGoogle": "Musisz zalogować się przez Google.",
+  "profile.needGoogle": "You need to sign in.",
   "profile.openThisRegionForm": "Otwórz formularz tego regionu",
   "profile.profileDataCopied": "Dane z profilu przeniesiono do zgłoszenia.",
   "profile.regionFormDataHelp": "Te dane zapisują się w profilu wybranego gracza lub farmy. Potem w formularzu z linku kliknij „Wypełnij z profilu”.",
@@ -1417,9 +1417,9 @@ window.WKD_TRANSLATIONS.pl = {
   "account.editingMainPlayer": "Edytujesz głównego gracza.",
   "account.editingFarm": "Edytujesz dodatkową farmę.",
   "account.saving": "Zapisywanie danych...",
-  "account.saveFailed": "Nie udało się zapisać profilu. Sprawdź uprawnienia i logowanie Google.",
+  "account.saveFailed": "Could not save the profile. Check account sign-in and access rights.",
   "account.nicknameDuplicateRegion": "Gracz z tym nickiem już istnieje w tym regionie.",
-  "account.signInRequired": "Musisz zalogować się przez Google.",
+  "account.signInRequired": "You need to sign in.",
   "account.readFailed": "Nie udało się odczytać profilu.",
   "account.completeMainFirst": "Najpierw dokończ rejestrację głównego gracza.",
   "account.fillMainFirst": "Wypełnij dane głównego gracza przy pierwszej rejestracji.",
@@ -2435,5 +2435,6 @@ window.WKD_TRANSLATIONS.pl = {
   "admin.deletingProfile": "Deleting profile...",
   "admin.profileDeleted": "Site profile deleted. Delete the Auth account separately in Firebase Console.",
   "admin.deleteProfileFailed": "Could not delete profile.",
-
+  "account.savePermissionDenied": "Could not save the profile: Firestore rules denied the write. Deploy Firestore rules and try again.",
+  "account.profileBootstrapFailed": "Could not create the account profile. Check Firestore rules and try again."
 };

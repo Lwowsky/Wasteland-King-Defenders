@@ -731,7 +731,7 @@ window.WKD_TRANSLATIONS.ru = {
   "profile.formDataSaved": "Данные формы сохранены в профиле. Теперь их можно перенести в заявку по ссылке.",
   "profile.loadError": "Не удалось прочитать профиль.",
   "profile.mainPlayer": "Основной игрок",
-  "profile.needGoogle": "Нужно войти через Google.",
+  "profile.needGoogle": "You need to sign in.",
   "profile.openThisRegionForm": "Открыть форму этого региона",
   "profile.profileDataCopied": "Данные из профиля перенесены в заявку.",
   "profile.regionFormDataHelp": "Эти данные сохраняются в профиле выбранного игрока или фермы. Потом в форме по ссылке нажми «Заполнить из профиля».",
@@ -1417,9 +1417,9 @@ window.WKD_TRANSLATIONS.ru = {
   "account.editingMainPlayer": "Редактируешь основного игрока.",
   "account.editingFarm": "Редактируешь дополнительную ферму.",
   "account.saving": "Сохраняю данные...",
-  "account.saveFailed": "Не удалось сохранить профиль. Проверь права доступа и вход через Google.",
+  "account.saveFailed": "Could not save the profile. Check account sign-in and access rights.",
   "account.nicknameDuplicateRegion": "В этом регионе уже есть игрок с таким никнеймом.",
-  "account.signInRequired": "Нужно войти через Google.",
+  "account.signInRequired": "You need to sign in.",
   "account.readFailed": "Не удалось прочитать профиль.",
   "account.completeMainFirst": "Сначала заверши регистрацию основного игрока.",
   "account.fillMainFirst": "Заполни данные основного игрока для первой регистрации.",
@@ -2435,5 +2435,6 @@ window.WKD_TRANSLATIONS.ru = {
   "admin.deletingProfile": "Deleting profile...",
   "admin.profileDeleted": "Site profile deleted. Delete the Auth account separately in Firebase Console.",
   "admin.deleteProfileFailed": "Could not delete profile.",
-
+  "account.savePermissionDenied": "Could not save the profile: Firestore rules denied the write. Deploy Firestore rules and try again.",
+  "account.profileBootstrapFailed": "Could not create the account profile. Check Firestore rules and try again."
 };

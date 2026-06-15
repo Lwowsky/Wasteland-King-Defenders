@@ -731,7 +731,7 @@ window.WKD_TRANSLATIONS.ja = {
   "profile.formDataSaved": "フォームデータをプロフィールに保存しました。リンク先の申請に転送できます。",
   "profile.loadError": "プロフィールを読み込めませんでした。",
   "profile.mainPlayer": "メインプレイヤー",
-  "profile.needGoogle": "Googleでログインが必要です。",
+  "profile.needGoogle": "You need to sign in.",
   "profile.openThisRegionForm": "この地域フォームを開く",
   "profile.profileDataCopied": "プロフィールデータを申請に入力しました。",
   "profile.regionFormDataHelp": "このデータは選択したプレイヤーまたはファームのプロフィールに保存されます。リンク先フォームで「プロフィールから入力」を押してください。",
@@ -1417,9 +1417,9 @@ window.WKD_TRANSLATIONS.ja = {
   "account.editingMainPlayer": "メインプレイヤーを編集中です。",
   "account.editingFarm": "追加ファームを編集中です。",
   "account.saving": "データを保存中...",
-  "account.saveFailed": "プロフィールを保存できませんでした。権限とGoogleログインを確認してください。",
+  "account.saveFailed": "Could not save the profile. Check account sign-in and access rights.",
   "account.nicknameDuplicateRegion": "この地域には同じニックネームのプレイヤーがすでにいます。",
-  "account.signInRequired": "Googleでログインする必要があります。",
+  "account.signInRequired": "You need to sign in.",
   "account.readFailed": "プロフィールを読み込めませんでした。",
   "account.completeMainFirst": "先にメインプレイヤーの登録を完了してください。",
   "account.fillMainFirst": "初回登録のためにメインプレイヤー情報を入力してください。",
@@ -2435,5 +2435,6 @@ window.WKD_TRANSLATIONS.ja = {
   "admin.deletingProfile": "Deleting profile...",
   "admin.profileDeleted": "Site profile deleted. Delete the Auth account separately in Firebase Console.",
   "admin.deleteProfileFailed": "Could not delete profile.",
-
+  "account.savePermissionDenied": "Could not save the profile: Firestore rules denied the write. Deploy Firestore rules and try again.",
+  "account.profileBootstrapFailed": "Could not create the account profile. Check Firestore rules and try again."
 };

@@ -731,7 +731,7 @@ window.WKD_TRANSLATIONS.en = {
   "profile.formDataSaved": "Form data saved to profile. Now it can be transferred into the request by link.",
   "profile.loadError": "Could not read the profile.",
   "profile.mainPlayer": "Main player",
-  "profile.needGoogle": "You need to sign in with Google.",
+  "profile.needGoogle": "You need to sign in.",
   "profile.openThisRegionForm": "Open this region form",
   "profile.profileDataCopied": "Profile data copied into the request.",
   "profile.regionFormDataHelp": "This data is saved in the selected player or farm profile. Then press “Fill from profile” in the linked form.",
@@ -1417,9 +1417,9 @@ window.WKD_TRANSLATIONS.en = {
   "account.editingMainPlayer": "Editing the main player.",
   "account.editingFarm": "Editing an extra farm.",
   "account.saving": "Saving data...",
-  "account.saveFailed": "Could not save the profile. Check access rights and Google sign-in.",
+  "account.saveFailed": "Could not save the profile. Check account sign-in and access rights.",
   "account.nicknameDuplicateRegion": "A player with this nickname already exists in this region.",
-  "account.signInRequired": "You need to sign in with Google.",
+  "account.signInRequired": "You need to sign in.",
   "account.readFailed": "Could not read the profile.",
   "account.completeMainFirst": "Complete the main player registration first.",
   "account.fillMainFirst": "Fill in the main player data for the first registration.",
@@ -2435,5 +2435,6 @@ window.WKD_TRANSLATIONS.en = {
   "admin.deletingProfile": "Deleting profile...",
   "admin.profileDeleted": "Site profile deleted. Delete the Auth account separately in Firebase Console.",
   "admin.deleteProfileFailed": "Could not delete profile.",
-
+  "account.savePermissionDenied": "Could not save the profile: Firestore rules denied the write. Deploy Firestore rules and try again.",
+  "account.profileBootstrapFailed": "Could not create the account profile. Check Firestore rules and try again."
 };

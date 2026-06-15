@@ -1446,7 +1446,15 @@ export async function saveGameRegistration(user, values) {
   const { db, firestoreMod } = firebase;
   const uid = user.uid;
   const userRef = firestoreMod.doc(db, 'users', uid);
-  const oldProfile = await getUserProfile(uid);
+  let oldProfile = await getUserProfile(uid);
+  if (!oldProfile) {
+    // v224: email/password accounts can reach registration before the first profile
+    // document is available in cache. Bootstrap the protected users/{uid} document
+    // first, then save the game profile as an update instead of an incomplete create.
+    await saveSignedInUser(user);
+    oldProfile = await getUserProfile(uid, { forceRefresh: true });
+  }
+  if (!oldProfile) throw new Error('profile-bootstrap-failed');
   const now = firestoreMod.serverTimestamp();
   const currentRole = normalizeRole(oldProfile?.role || 'player');
   let requestedRole = normalizeRole(values.requestedRole || 'player');

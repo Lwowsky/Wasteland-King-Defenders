@@ -922,4 +922,9 @@ window.WKD_I18N_AUTO_ATTR = {
   'admin.github.pagesSize.detail': 'Published GitHub Pages site size',
   'admin.githubUnitMinutes': 'min',
   'admin.githubUnitBuilds': 'builds',
+  "account.saveFailed": "Could not save the profile. Check account sign-in and access rights.",
+  "account.savePermissionDenied": "Could not save the profile: Firestore rules denied the write. Deploy Firestore rules and try again.",
+  "account.profileBootstrapFailed": "Could not create the account profile. Check Firestore rules and try again.",
+  "account.signInRequired": "You need to sign in.",
+  "profile.needGoogle": "You need to sign in."
 };

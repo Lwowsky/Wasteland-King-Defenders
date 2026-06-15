@@ -731,7 +731,7 @@ window.WKD_TRANSLATIONS.vi = {
   "profile.formDataSaved": "Đã lưu dữ liệu biểu mẫu vào hồ sơ. Bây giờ có thể chuyển vào yêu cầu bằng liên kết.",
   "profile.loadError": "Không thể đọc hồ sơ.",
   "profile.mainPlayer": "Người chơi chính",
-  "profile.needGoogle": "Bạn cần đăng nhập bằng Google.",
+  "profile.needGoogle": "You need to sign in.",
   "profile.openThisRegionForm": "Mở biểu mẫu khu vực này",
   "profile.profileDataCopied": "Đã đưa dữ liệu hồ sơ vào yêu cầu.",
   "profile.regionFormDataHelp": "Dữ liệu này được lưu trong hồ sơ người chơi hoặc farm đã chọn. Sau đó trong biểu mẫu theo liên kết bấm “Điền từ hồ sơ”.",
@@ -1417,9 +1417,9 @@ window.WKD_TRANSLATIONS.vi = {
   "account.editingMainPlayer": "Đang chỉnh sửa người chơi chính.",
   "account.editingFarm": "Đang chỉnh sửa farm phụ.",
   "account.saving": "Đang lưu dữ liệu...",
-  "account.saveFailed": "Không thể lưu hồ sơ. Kiểm tra quyền truy cập và đăng nhập Google.",
+  "account.saveFailed": "Could not save the profile. Check account sign-in and access rights.",
   "account.nicknameDuplicateRegion": "Khu vực này đã có người chơi dùng biệt danh này.",
-  "account.signInRequired": "Bạn cần đăng nhập bằng Google.",
+  "account.signInRequired": "You need to sign in.",
   "account.readFailed": "Không thể đọc hồ sơ.",
   "account.completeMainFirst": "Hãy hoàn tất đăng ký người chơi chính trước.",
   "account.fillMainFirst": "Điền dữ liệu người chơi chính cho lần đăng ký đầu tiên.",
@@ -2435,5 +2435,6 @@ window.WKD_TRANSLATIONS.vi = {
   "admin.deletingProfile": "Deleting profile...",
   "admin.profileDeleted": "Site profile deleted. Delete the Auth account separately in Firebase Console.",
   "admin.deleteProfileFailed": "Could not delete profile.",
-
+  "account.savePermissionDenied": "Could not save the profile: Firestore rules denied the write. Deploy Firestore rules and try again.",
+  "account.profileBootstrapFailed": "Could not create the account profile. Check Firestore rules and try again."
 };

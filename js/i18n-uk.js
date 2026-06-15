@@ -731,7 +731,7 @@ window.WKD_TRANSLATIONS.uk = {
   "profile.formDataSaved": "Дані форми збережено у профілі. Тепер їх можна перенести у заявку за посиланням.",
   "profile.loadError": "Не вдалося прочитати профіль.",
   "profile.mainPlayer": "Основний гравець",
-  "profile.needGoogle": "Потрібно увійти через Google.",
+  "profile.needGoogle": "Потрібно увійти в акаунт.",
   "profile.openThisRegionForm": "Відкрити форму цього регіону",
   "profile.profileDataCopied": "Дані з профілю перенесено у заявку.",
   "profile.regionFormDataHelp": "Ці дані зберігаються у профілі вибраного гравця або ферми. Потім у формі за посиланням натисни «Заповнити з профілю».",
@@ -1417,9 +1417,9 @@ window.WKD_TRANSLATIONS.uk = {
   "account.editingMainPlayer": "Редагуєш основного гравця.",
   "account.editingFarm": "Редагуєш додаткову ферму.",
   "account.saving": "Зберігаю дані...",
-  "account.saveFailed": "Не вдалося зберегти профіль. Перевір права доступу і Google-вхід.",
+  "account.saveFailed": "Не вдалося зберегти профіль. Перевір вхід у акаунт і права доступу.",
   "account.nicknameDuplicateRegion": "У цьому регіоні вже є гравець з таким нікнеймом.",
-  "account.signInRequired": "Потрібно увійти через Google.",
+  "account.signInRequired": "Потрібно увійти в акаунт.",
   "account.readFailed": "Не вдалося прочитати профіль.",
   "account.completeMainFirst": "Спочатку заверши реєстрацію основного гравця.",
   "account.fillMainFirst": "Заповни дані основного гравця для першої реєстрації.",
@@ -2435,5 +2435,6 @@ window.WKD_TRANSLATIONS.uk = {
   "admin.deletingProfile": "Видаляю профіль...",
   "admin.profileDeleted": "Профіль сайту видалено. Auth акаунт треба видаляти окремо у Firebase Console.",
   "admin.deleteProfileFailed": "Не вдалося видалити профіль.",
-
+  "account.savePermissionDenied": "Не вдалося зберегти профіль: Firestore rules не дозволили запис. Онови правила Firestore і спробуй ще раз.",
+  "account.profileBootstrapFailed": "Не вдалося створити профіль акаунта. Перевір Firestore rules і спробуй ще раз."
 };

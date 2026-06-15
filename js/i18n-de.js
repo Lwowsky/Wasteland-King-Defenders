@@ -731,7 +731,7 @@ window.WKD_TRANSLATIONS.de = {
   "profile.formDataSaved": "Formulardaten im Profil gespeichert. Sie können jetzt per Link in die Anfrage übernommen werden.",
   "profile.loadError": "Profil konnte nicht gelesen werden.",
   "profile.mainPlayer": "Hauptspieler",
-  "profile.needGoogle": "Du musst dich mit Google anmelden.",
+  "profile.needGoogle": "You need to sign in.",
   "profile.openThisRegionForm": "Formular dieser Region öffnen",
   "profile.profileDataCopied": "Profildaten in die Anfrage übernommen.",
   "profile.regionFormDataHelp": "Diese Daten werden im Profil des gewählten Spielers oder der Farm gespeichert. Danach im Link-Formular „Aus Profil ausfüllen“ drücken.",
@@ -1417,9 +1417,9 @@ window.WKD_TRANSLATIONS.de = {
   "account.editingMainPlayer": "Hauptspieler wird bearbeitet.",
   "account.editingFarm": "Zusätzliche Farm wird bearbeitet.",
   "account.saving": "Daten werden gespeichert...",
-  "account.saveFailed": "Profil konnte nicht gespeichert werden. Prüfe Zugriffsrechte und Google-Anmeldung.",
+  "account.saveFailed": "Could not save the profile. Check account sign-in and access rights.",
   "account.nicknameDuplicateRegion": "Ein Spieler mit diesem Nicknamen existiert bereits in dieser Region.",
-  "account.signInRequired": "Du musst dich mit Google anmelden.",
+  "account.signInRequired": "You need to sign in.",
   "account.readFailed": "Profil konnte nicht gelesen werden.",
   "account.completeMainFirst": "Schließe zuerst die Registrierung des Hauptspielers ab.",
   "account.fillMainFirst": "Fülle die Daten des Hauptspielers für die erste Registrierung aus.",
@@ -2435,5 +2435,6 @@ window.WKD_TRANSLATIONS.de = {
   "admin.deletingProfile": "Deleting profile...",
   "admin.profileDeleted": "Site profile deleted. Delete the Auth account separately in Firebase Console.",
   "admin.deleteProfileFailed": "Could not delete profile.",
-
+  "account.savePermissionDenied": "Could not save the profile: Firestore rules denied the write. Deploy Firestore rules and try again.",
+  "account.profileBootstrapFailed": "Could not create the account profile. Check Firestore rules and try again."
 };

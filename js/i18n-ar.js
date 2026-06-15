@@ -731,7 +731,7 @@ window.WKD_TRANSLATIONS.ar = {
   "profile.formDataSaved": "تم حفظ بيانات النموذج في الملف. يمكن الآن نقلها إلى الطلب عبر الرابط.",
   "profile.loadError": "تعذرت قراءة الملف الشخصي.",
   "profile.mainPlayer": "اللاعب الرئيسي",
-  "profile.needGoogle": "يجب تسجيل الدخول عبر Google.",
+  "profile.needGoogle": "You need to sign in.",
   "profile.openThisRegionForm": "فتح نموذج هذه المنطقة",
   "profile.profileDataCopied": "تم نقل بيانات الملف إلى الطلب.",
   "profile.regionFormDataHelp": "تُحفظ هذه البيانات في ملف اللاعب أو المزرعة المحددة. ثم في النموذج عبر الرابط اضغط \"املأ من الملف\".",
@@ -1415,9 +1415,9 @@ window.WKD_TRANSLATIONS.ar = {
   "account.editingMainPlayer": "يتم تعديل اللاعب الرئيسي.",
   "account.editingFarm": "يتم تعديل مزرعة إضافية.",
   "account.saving": "جارٍ حفظ البيانات...",
-  "account.saveFailed": "تعذر حفظ الملف الشخصي. تحقق من الصلاحيات وتسجيل الدخول عبر Google.",
+  "account.saveFailed": "Could not save the profile. Check account sign-in and access rights.",
   "account.nicknameDuplicateRegion": "يوجد بالفعل لاعب بهذا الاسم في هذه المنطقة.",
-  "account.signInRequired": "يجب تسجيل الدخول عبر Google.",
+  "account.signInRequired": "You need to sign in.",
   "account.readFailed": "تعذر قراءة الملف الشخصي.",
   "account.completeMainFirst": "أكمل تسجيل اللاعب الرئيسي أولًا.",
   "account.fillMainFirst": "املأ بيانات اللاعب الرئيسي للتسجيل الأول.",
@@ -2433,5 +2433,6 @@ window.WKD_TRANSLATIONS.ar = {
   "admin.deletingProfile": "Deleting profile...",
   "admin.profileDeleted": "Site profile deleted. Delete the Auth account separately in Firebase Console.",
   "admin.deleteProfileFailed": "Could not delete profile.",
-
+  "account.savePermissionDenied": "Could not save the profile: Firestore rules denied the write. Deploy Firestore rules and try again.",
+  "account.profileBootstrapFailed": "Could not create the account profile. Check Firestore rules and try again."
 };

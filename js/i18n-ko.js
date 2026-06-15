@@ -731,7 +731,7 @@ window.WKD_TRANSLATIONS.ko = {
   "profile.formDataSaved": "양식 데이터가 프로필에 저장되었습니다. 이제 링크 요청으로 옮길 수 있습니다.",
   "profile.loadError": "프로필을 읽을 수 없습니다.",
   "profile.mainPlayer": "메인 플레이어",
-  "profile.needGoogle": "Google 로그인이 필요합니다.",
+  "profile.needGoogle": "You need to sign in.",
   "profile.openThisRegionForm": "이 지역 양식 열기",
   "profile.profileDataCopied": "프로필 데이터를 요청에 복사했습니다.",
   "profile.regionFormDataHelp": "이 데이터는 선택한 플레이어 또는 팜 프로필에 저장됩니다. 이후 링크 양식에서 “프로필에서 입력”을 누르세요.",
@@ -1417,9 +1417,9 @@ window.WKD_TRANSLATIONS.ko = {
   "account.editingMainPlayer": "메인 플레이어를 편집 중입니다.",
   "account.editingFarm": "추가 팜을 편집 중입니다.",
   "account.saving": "데이터 저장 중...",
-  "account.saveFailed": "프로필을 저장할 수 없습니다. 권한과 Google 로그인을 확인하세요.",
+  "account.saveFailed": "Could not save the profile. Check account sign-in and access rights.",
   "account.nicknameDuplicateRegion": "이 지역에는 이미 같은 닉네임의 플레이어가 있습니다.",
-  "account.signInRequired": "Google로 로그인해야 합니다.",
+  "account.signInRequired": "You need to sign in.",
   "account.readFailed": "프로필을 읽을 수 없습니다.",
   "account.completeMainFirst": "먼저 메인 플레이어 등록을 완료하세요.",
   "account.fillMainFirst": "첫 등록을 위해 메인 플레이어 정보를 입력하세요.",
@@ -2435,5 +2435,6 @@ window.WKD_TRANSLATIONS.ko = {
   "admin.deletingProfile": "Deleting profile...",
   "admin.profileDeleted": "Site profile deleted. Delete the Auth account separately in Firebase Console.",
   "admin.deleteProfileFailed": "Could not delete profile.",
-
+  "account.savePermissionDenied": "Could not save the profile: Firestore rules denied the write. Deploy Firestore rules and try again.",
+  "account.profileBootstrapFailed": "Could not create the account profile. Check Firestore rules and try again."
 };

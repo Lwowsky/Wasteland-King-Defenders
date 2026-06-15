@@ -351,7 +351,16 @@ async function handleSave(event) {
       setStatus(t('account.rankP4Limit', 'У цьому альянсі вже є 20 гравців P4. Ліміт P4 заповнений.'), 'error');
       return;
     }
-    setStatus(t('account.saveFailed', 'Could not save the profile. Check access rights and Google sign-in.'), 'error');
+    if (error?.message === 'profile-bootstrap-failed') {
+      setStatus(t('account.profileBootstrapFailed', 'Не вдалося створити профіль акаунта. Перевір Firestore rules і спробуй ще раз.'), 'error');
+      return;
+    }
+    const code = String(error?.code || '');
+    if (code.includes('permission-denied')) {
+      setStatus(t('account.savePermissionDenied', 'Не вдалося зберегти профіль: Firestore rules не дозволили запис. Онови правила Firestore і спробуй ще раз.'), 'error');
+      return;
+    }
+    setStatus(t('account.saveFailed', 'Не вдалося зберегти профіль. Перевір вхід у акаунт і права доступу.'), 'error');
   }
 }
 

@@ -731,7 +731,7 @@ window.WKD_TRANSLATIONS.zh = {
   "profile.formDataSaved": "表单数据已保存到资料。现在可以通过链接转入申请。",
   "profile.loadError": "无法读取资料。",
   "profile.mainPlayer": "主玩家",
-  "profile.needGoogle": "需要使用 Google 登录。",
+  "profile.needGoogle": "You need to sign in.",
   "profile.openThisRegionForm": "打开此地区表单",
   "profile.profileDataCopied": "资料数据已填入申请。",
   "profile.regionFormDataHelp": "这些数据会保存到所选玩家或小号资料中。之后在链接表单中点击“从资料填写”。",
@@ -1417,9 +1417,9 @@ window.WKD_TRANSLATIONS.zh = {
   "account.editingMainPlayer": "正在编辑主玩家。",
   "account.editingFarm": "正在编辑额外小号。",
   "account.saving": "正在保存数据...",
-  "account.saveFailed": "无法保存资料。请检查权限和 Google 登录。",
+  "account.saveFailed": "Could not save the profile. Check account sign-in and access rights.",
   "account.nicknameDuplicateRegion": "该地区已存在同名玩家。",
-  "account.signInRequired": "需要使用 Google 登录。",
+  "account.signInRequired": "You need to sign in.",
   "account.readFailed": "无法读取资料。",
   "account.completeMainFirst": "请先完成主玩家注册。",
   "account.fillMainFirst": "请填写主玩家数据以完成首次注册。",
@@ -2435,5 +2435,6 @@ window.WKD_TRANSLATIONS.zh = {
   "admin.deletingProfile": "Deleting profile...",
   "admin.profileDeleted": "Site profile deleted. Delete the Auth account separately in Firebase Console.",
   "admin.deleteProfileFailed": "Could not delete profile.",
-
+  "account.savePermissionDenied": "Could not save the profile: Firestore rules denied the write. Deploy Firestore rules and try again.",
+  "account.profileBootstrapFailed": "Could not create the account profile. Check Firestore rules and try again."
 };
