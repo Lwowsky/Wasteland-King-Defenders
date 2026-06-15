@@ -227,6 +227,18 @@ function updateRotationSummary(settings = currentSettings || {}) {
   }
   box.textContent = tv('regionSettings.rotationSummaryActive', 'Active: {tag} · {count} alliances', { tag: active?.tag || '—', count: list.length });
 }
+
+
+function updateHostAllianceDatalist() {
+  const list = $('#settingsHostAllianceList');
+  if (!list) return;
+  const tags = collectAllianceTags();
+  list.innerHTML = tags.map(tag => {
+    const record = allianceRecord(tag) || {};
+    const label = trim(record.name || record.note || '') || tag;
+    return `<option value="${escapeHtml(tag)}" label="${escapeHtml(label)}"></option>`;
+  }).join('');
+}
 function renderRegionColorBuilder() {
   const preview = $('#regionAllianceColorPreview');
   const palette = $('#regionAlliancePalette');
@@ -238,7 +250,7 @@ function renderRegionColorBuilder() {
   if (!selectedRegionColorTag || !list.includes(selectedRegionColorTag)) selectedRegionColorTag = list[0] || '';
   const canEditSelectedColor = selectedRegionColorTag && canEditRegionAllianceColor(selectedRegionColorTag);
   if (palette) {
-    const hues = [132,182,212,260,292,330,0,26,42,58,82,148,166,202];
+    const hues = [0,12,24,36,48,60,76,92,108,124,140,156,172,188,204,220,236,252,268,284,300,316,332,348,8,28,52,84,116,148,180,212,244,276,308,340];
     palette.innerHTML = hues.map((hue, index) => {
       const shifted = (hue + colorOffset() + index * 3) % 360;
       const disabled = !canEditSelectedColor ? ' disabled' : '';
@@ -789,6 +801,7 @@ function fill(settings) {
   $('#settingsEnabled').value = String(Boolean(settings.enabled));
   $('#settingsTitle').value = localizedDefaultText(settings.title, 'region.formTitle', 'Реєстрація на пустош');
   $('#settingsHostAlliance') && ($('#settingsHostAlliance').value = settings.hostAlliance || '');
+  updateHostAllianceDatalist();
   $('#settingsGovernor') && ($('#settingsGovernor').value = settings.governor || '');
   $('#settingsDescription').value = localizedDefaultText(settings.description, 'region.formDefaultDescription', 'Заповни заявку для свого регіону. Консул або офіцер побачить її в таблиці регіону.');
   $('#settingsExtraTroop').checked = Boolean(settings.allowExtraTroop);
@@ -806,7 +819,7 @@ function fill(settings) {
   $('#settingsAutoOpen') && ($('#settingsAutoOpen').checked = 'autoOpenEnabled' in settings ? Boolean(settings.autoOpenEnabled) : true);
   $('#settingsAutoOpenDay') && ($('#settingsAutoOpenDay').value = String(settings.autoOpenDay ?? 5));
   $('#settingsAutoOpenTime') && ($('#settingsAutoOpenTime').value = settings.autoOpenTime || '00:00')
-  $('#settingsNewCycle').checked = false;
+  $('#settingsNewCycle') && ($('#settingsNewCycle').checked = false);
   $$('input[name="settingsShift"]').forEach(input => {
     input.checked = settings.shifts?.includes(input.value);
   });
@@ -838,7 +851,7 @@ function read() {
     rotationLoop: Boolean(rotationDraft.loop),
     rotationActiveIndex: Number(rotationDraft.activeIndex) || 0,
     rotationAlliances: normalizeRotation(rotationDraft.alliances),
-    openNewCycle: $('#settingsNewCycle').checked
+    openNewCycle: false
   };
 }
 
@@ -901,10 +914,8 @@ async function startRegistrationNow() {
 
   const enabled = $('#settingsEnabled');
   const autoOpen = $('#settingsAutoOpen');
-  const newCycle = $('#settingsNewCycle');
   if (enabled) enabled.value = 'true';
   if (autoOpen) autoOpen.checked = false;
-  if (newCycle) newCycle.checked = true;
   updatePreview();
   await save({ preventDefault() {} }, { enabled: true, autoOpenEnabled: false, openNewCycle: true, forceOpenNow: true });
   if (currentRegion) {
@@ -934,10 +945,8 @@ async function closeRegistrationNow() {
 
   const enabled = $('#settingsEnabled');
   const autoOpen = $('#settingsAutoOpen');
-  const newCycle = $('#settingsNewCycle');
   if (enabled) enabled.value = 'false';
   if (autoOpen) autoOpen.checked = false;
-  if (newCycle) newCycle.checked = false;
   currentSettings = { ...(currentSettings || {}), enabled: false, autoOpenEnabled: false, openAtMs: 0, closeAtMs: Date.now(), closedAtMs: Date.now() };
   updatePreview();
   await save({ preventDefault() {} }, { enabled: false, autoOpenEnabled: false, openNewCycle: false, forceCloseNow: true });
@@ -987,6 +996,7 @@ async function refreshAlliances() {
   window.WKD.regionAllianceColorMap = Object.fromEntries(currentAlliances.map(item => [normalizeAllianceTag(item.tag || item.id), hueFromValue(item.colorHue)]).filter(([, hue]) => hue !== null));
   document.dispatchEvent(new CustomEvent('wkd:alliance-colors-updated', { detail: { source: 'region-settings-load', region: currentRegion } }));
   renderAlliances();
+  updateHostAllianceDatalist();
   renderRotationModal();
   updateRotationSummary();
 }

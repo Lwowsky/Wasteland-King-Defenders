@@ -166,9 +166,17 @@ function getAllianceBadge(alliance, region = '') {
 
 function getShkBadge(shk) { return window.WKD?.Badges?.shk ? window.WKD.Badges.shk(shk) : `<span class="shk-badge">${escapeHtml(shk || '—')}</span>`; }
 
-function roleOptionsFor(currentRole = 'player') {
+function roleOptionsFor(currentRole = 'player', row = {}) {
   const allowed = assignableRolesForActor(currentUser, currentProfile);
-  return [...new Set([currentRole || 'player', ...allowed])].filter(Boolean);
+  if (allowed.length) return [...new Set([currentRole || 'player', ...allowed])].filter(Boolean);
+  const target = row.game || row || {};
+  const regionalAllowed = [];
+  actorGames().forEach(game => {
+    const role = String(game.role || 'player').toLowerCase();
+    const sameRegion = String(game.region || '').replace(/[^0-9]/g, '') === String(target.region || '').replace(/[^0-9]/g, '');
+    if (role === 'consul' && sameRegion) regionalAllowed.push('officer', 'player');
+  });
+  return [...new Set([currentRole || 'player', ...regionalAllowed])].filter(Boolean);
 }
 
 function adminTableLabels() {
@@ -1340,7 +1348,7 @@ function userRow(row) {
       <td data-label="${labels.alliance}">${editCell('alliance', game.alliance, 'text')}</td>
       <td data-label="${labels.rank}">${editSelect('rank', game.rank || 'p1', rankOptions)}</td>
       <td data-label="${labels.shk}">${editCell('shk', game.shk, 'number')}</td>
-      <td data-label="${labels.role}">${editSelect('role', role || 'player', roleOptionsFor(role || 'player'), roleLabels())}</td>
+      <td data-label="${labels.role}">${editSelect('role', role || 'player', roleOptionsFor(role || 'player', row), roleLabels())}</td>
       <td data-label="${labels.registered}">${formatUserDate(user.createdAt)}</td>
       <td class="admin-row-actions" data-label="${labels.actions}">
         <button class="btn admin-save-row" type="button" data-action="save-user" data-uid="${escapeHtml(user.uid)}" data-row-id="${escapeHtml(row.rowId)}" data-farm-id="${escapeHtml(row.farmId || 'main')}">${escapeHtml(t('common.save', 'Save'))}</button>

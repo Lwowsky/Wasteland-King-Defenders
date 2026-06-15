@@ -312,9 +312,10 @@ export function canManageRegion(profile = {}, region = '', actor = null) {
 
 function activeRotationAlliance(settings = {}) {
   const list = normalizeRotationAlliances(settings.rotationAlliances || []);
-  if (!settings.rotationEnabled || !list.length) return normalizeAllianceTag(settings.hostAlliance || '');
+  const fallback = normalizeAllianceTag(settings.hostAlliance || settings.activeHostAlliance || '');
+  if (!settings.rotationEnabled || !list.length) return fallback;
   const index = Math.max(0, Math.min(list.length - 1, Number(settings.rotationActiveIndex) || 0));
-  return normalizeAllianceTag(list[index]?.tag || settings.hostAlliance || '');
+  return normalizeAllianceTag(list[index]?.tag || fallback || '');
 }
 
 function actorAllianceForRegion(profile = {}, region = '') {
@@ -1594,6 +1595,7 @@ export async function ensureRegionRegistrationRunInfo(user, regionOverride = '')
 function settingsAllianceTags(settings = {}) {
   const tags = [
     normalizeAllianceTag(settings.hostAlliance || ''),
+    normalizeAllianceTag(settings.activeHostAlliance || ''),
     ...(Array.isArray(settings.rotationAlliances) ? settings.rotationAlliances.map(item => normalizeAllianceTag(item?.tag || item?.id || item)) : [])
   ].filter(tag => tag && Array.from(tag).length === 3);
   return [...new Set(tags)];
@@ -1652,12 +1654,21 @@ export async function saveRegionSettings(user, region, settings) {
   const now = firestoreMod.serverTimestamp();
   const actorName = getRegionActorName(profile || {}, safeRegion, user);
   const actorEmail = ''; // do not expose account email in public region documents
+  const requestedHostAlliance = normalizeAllianceTag(settings.hostAlliance || '');
+  const activeHostBeforeClose = normalizeAllianceTag(oldSettings.hostAlliance || oldSettings.activeHostAlliance || requestedHostAlliance || '');
+  const visibleHostAlliance = forceCloseNow
+    ? ''
+    : ((Boolean(settings.rotationEnabled) && rotationAlliances[rotationActiveIndex]) ? rotationAlliances[rotationActiveIndex].tag : requestedHostAlliance);
+  const activeHostAlliance = forceCloseNow
+    ? activeHostBeforeClose
+    : (openNewCycle || forceOpenNow || enabledNow ? '' : normalizeAllianceTag(oldSettings.activeHostAlliance || ''));
 
   const clean = {
     enabled: enabledNow,
     title: trim(settings.title) || DEFAULT_REGION_FORM.title,
     description: trim(settings.description) || DEFAULT_REGION_FORM.description,
-    hostAlliance: (Boolean(settings.rotationEnabled) && rotationAlliances[rotationActiveIndex]) ? rotationAlliances[rotationActiveIndex].tag : trim(settings.hostAlliance),
+    hostAlliance: visibleHostAlliance,
+    activeHostAlliance,
     governor: trim(settings.governor),
     customShifts: normalizeCustomShifts(settings.customShifts),
     shifts: normalizeShiftValues(settings.shifts, normalizeCustomShifts(settings.customShifts)),
@@ -1862,7 +1873,16 @@ export async function saveRegionAllianceColor(user, region, tagValue, hueValue =
   if (!canManageAllianceColors(profile, safeRegion, tag, user)) throw new Error('alliance-color-access');
   const hueNumber = Number(hueValue);
   const hue = Number.isFinite(hueNumber) ? ((Math.round(hueNumber) % 360) + 360) % 360 : null;
-  const d1Patch = { tag, name: tag, colorHue: hue, colorMode: hue === null ? 'auto' : 'manual', updatedAtMs: Date.now() };
+  const existingAlliance = (await listRegionAlliances(safeRegion).catch(() => []))
+    .find(item => normalizeAllianceTag(item.tag || item.id) === tag) || {};
+  const d1Patch = {
+    tag,
+    name: trim(existingAlliance.name || tag),
+    note: trim(existingAlliance.note || ''),
+    colorHue: hue,
+    colorMode: hue === null ? 'auto' : 'manual',
+    updatedAtMs: Date.now()
+  };
   try {
     const result = await saveRegionAllianceD1(user, safeRegion, d1Patch);
     if (result?.ok !== false) return { id: tag, ...d1Patch, ...(result.item || {}), colorHue: hue, d1Only: true };
@@ -1888,12 +1908,19 @@ export async function saveRegionAlliance(user, region, values = {}) {
   if (!canManageAllianceColors(profile, safeRegion, tag, user)) throw new Error('region-access-denied');
   const hueValue = values.colorHue;
   const hueNumber = Number(hueValue);
+  const existingAlliance = (await listRegionAlliances(safeRegion).catch(() => []))
+    .find(item => normalizeAllianceTag(item.tag || item.id) === tag) || {};
   const clean = {
     tag,
-    name: trim(values.name || tag),
-    note: trim(values.note),
+    name: trim(values.name || existingAlliance.name || tag),
+    note: trim(values.note ?? existingAlliance.note ?? ''),
     updatedAtMs: Date.now()
   };
+  if (!('colorHue' in values) && existingAlliance && 'colorHue' in existingAlliance) {
+    const existingHueNumber = Number(existingAlliance.colorHue);
+    clean.colorHue = Number.isFinite(existingHueNumber) ? ((Math.round(existingHueNumber) % 360) + 360) % 360 : null;
+    clean.colorMode = clean.colorHue === null ? 'auto' : (existingAlliance.colorMode || 'manual');
+  }
   if ('colorHue' in values) {
     clean.colorHue = hueValue === null || hueValue === '' || hueValue === undefined
       ? null

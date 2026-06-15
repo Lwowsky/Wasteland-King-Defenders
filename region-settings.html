@@ -52,14 +52,14 @@
   <script defer src="js/confirm-modal.js"></script>
   <script defer src="js/player-edit-modal.js?v=213"></script>
   <script defer src="js/player-manager-modal.js?v=213"></script>
-  <script defer src="js/tower-planner.js?v=218"></script>
+  <script defer src="js/tower-planner.js?v=219"></script>
   <script defer src="js/contact-modal.js"></script>
-  <script defer src="js/core/app-boot.js?v=218"></script>
+  <script defer src="js/core/app-boot.js?v=219"></script>
   <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/player-manager-region-bridge.js?v=218"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=219"></script>
   <script type="module" src="js/auth-google.js?v=213"></script>
   <script type="module" src="js/notifications.js?v=213"></script>
-  <script type="module" src="js/pages/region-settings-page.js?v=218"></script>
+  <script type="module" src="js/pages/region-settings-page.js?v=219"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -123,7 +123,7 @@
           </div>
           <label class="region-field"><span data-i18n="regionSettings.formEnabled">Форма активна</span><select id="settingsEnabled"><option value="true" data-i18n="regionSettings.enabledOn">Включено</option><option value="false" data-i18n="regionSettings.enabledOff">Відключено</option></select></label>
           <label class="region-field"><span data-i18n="regionSettings.formName">Назва форми</span><input id="settingsTitle" /></label>
-          <label class="region-field"><span data-i18n="regionSettings.hostAlliance">Альянс проводить Пустош</span><input id="settingsHostAlliance" maxlength="3" placeholder="Наприклад: YYY" data-i18n-placeholder="region.exampleYYY" /></label>
+          <label class="region-field"><span data-i18n="regionSettings.hostAlliance">Альянс проводить Пустош</span><input id="settingsHostAlliance" maxlength="3" list="settingsHostAllianceList" placeholder="Наприклад: YYY" data-i18n-placeholder="region.exampleYYY" /><datalist id="settingsHostAllianceList"></datalist></label>
           <label class="region-field"><span data-i18n="regionSettings.governor">Губернатор</span><input id="settingsGovernor" maxlength="60" placeholder="Нік губернатора" data-i18n-placeholder="regionSettings.governorPlaceholder" /></label>
           <div class="region-field region-rotation-open-field"><span data-i18n="regionSettings.rotationTitle">Ротація альянсів</span><button class="btn" id="openRotationModalBtn" type="button" data-i18n="regionSettings.rotationButton">Ротація</button><small id="rotationSummary" data-i18n="regionSettings.rotationSummaryEmpty">Ротація не налаштована.</small></div>
           <div class="region-field region-field--full region-cycle-panel">
@@ -146,7 +146,6 @@
               <small id="settingsOpenedPreview" data-i18n="regionSettings.openedAtPlaceholder">Запущено: —</small>
               <small id="settingsOpenedByPreview" data-i18n="regionSettings.openedByPlaceholder">Запустив: —</small>
             </div>
-            <label class="region-check region-check--cycle"><input id="settingsNewCycle" type="checkbox" /> <span data-i18n="regionSettings.openNewCycle">Відкрити новий цикл реєстрації і показати чисту таблицю</span></label>
             <div class="region-cycle-actions">
               <button class="btn region-save" id="startRegistrationNowBtn" type="button" data-i18n="regionSettings.startNow">Запустити зараз</button>
               <button class="btn farm-delete" id="closeRegistrationNowBtn" type="button" data-i18n="regionSettings.closeNow">Закрити реєстрацію</button>
