@@ -38,6 +38,23 @@ function normalizeEmbedUrl(url = '') {
   return value.includes('?') ? value : `${value}?staffEmbed=1`;
 }
 
+function resizeFrameToContent(iframe) {
+  try {
+    const doc = iframe.contentDocument;
+    if (!doc?.body || !doc?.documentElement) return;
+    const height = Math.max(
+      720,
+      doc.body.scrollHeight,
+      doc.body.offsetHeight,
+      doc.documentElement.scrollHeight,
+      doc.documentElement.offsetHeight
+    );
+    iframe.style.height = `${height + 24}px`;
+  } catch (error) {
+    console.warn('[WKD] staff iframe resize skipped:', error);
+  }
+}
+
 function decorateFrame(iframe) {
   try {
     const doc = iframe.contentDocument;
@@ -48,12 +65,19 @@ function decorateFrame(iframe) {
       style.id = 'staffEmbedStyle';
       style.textContent = `
         .app-header, .site-footer, .drawer, [data-include*="partials/header"], [data-include*="partials/footer"] { display: none !important; }
-        html, body { background: transparent !important; }
-        body { margin: 0 !important; overflow: auto !important; }
+        html, body { background: transparent !important; overflow: hidden !important; }
+        body { margin: 0 !important; overflow: hidden !important; }
         main, .page-shell { padding-top: 0 !important; padding-bottom: 0 !important; }
-        .container, .admin-card, .stats-card, .profile-card { max-width: none !important; width: 100% !important; }
+        .container, .admin-panel, .admin-card, .stats-card, .profile-card, .region-shell { max-width: none !important; width: 100% !important; }
       `;
       doc.head.appendChild(style);
+    }
+    resizeFrameToContent(iframe);
+    setTimeout(() => resizeFrameToContent(iframe), 120);
+    setTimeout(() => resizeFrameToContent(iframe), 600);
+    if (!iframe.__wkdResizeObserver && window.ResizeObserver) {
+      iframe.__wkdResizeObserver = new ResizeObserver(() => resizeFrameToContent(iframe));
+      iframe.__wkdResizeObserver.observe(doc.body);
     }
   } catch (error) {
     console.warn('[WKD] staff embed styling skipped:', error);
