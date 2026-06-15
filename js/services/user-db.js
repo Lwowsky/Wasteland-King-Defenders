@@ -97,21 +97,14 @@ function buildSignInProfilePatch(user, profile = {}, main = {}, farms = [], now 
   const photoURL = compactAuthValue(user?.photoURL || profile?.photoURL || '');
   const authEmail = compactAuthValue(user?.email || '').slice(0, 180);
   const email = compactAuthValue(profile?.adminEmailOverride || authEmail || profile?.email || '').slice(0, 180);
-  const providerIds = [...new Set((user?.providerData || []).map(item => compactAuthValue(item.providerId)).filter(Boolean))].slice(0, 12);
-  const providerId = compactAuthValue(providerIds[0] || profile?.providerId || 'password').slice(0, 80);
-  const regionAccess = buildRegionAccess(main, farms);
-  const allianceAccess = buildAllianceAccess(main, farms);
-  const regionRoles = buildRegionRoles(main, farms);
-
+  // v227: login refresh must not try to rewrite provider/access fields.
+  // Those fields are protected by Firestore rules and are initialized only when
+  // the document is first created. Region access for the main profile is read
+  // from gameProfile.region, and extra access is handled by role/admin flows.
   if (displayName !== compactAuthValue(profile?.displayName || '')) patch.displayName = displayName;
   if (photoURL !== compactAuthValue(profile?.photoURL || '')) patch.photoURL = photoURL;
   if (email && email !== compactAuthValue(profile?.email || '').slice(0, 180)) patch.email = email;
   if (authEmail && authEmail !== compactAuthValue(profile?.authEmail || '').slice(0, 180)) patch.authEmail = authEmail;
-  if (providerId && providerId !== compactAuthValue(profile?.providerId || 'password').slice(0, 80)) patch.providerId = providerId;
-  if (!sameJsonValue(providerIds, Array.isArray(profile?.providerIds) ? profile.providerIds : [])) patch.providerIds = providerIds;
-  if (!sameJsonValue(regionAccess, Array.isArray(profile?.regionAccess) ? profile.regionAccess : [])) patch.regionAccess = regionAccess;
-  if (!sameJsonValue(allianceAccess, Array.isArray(profile?.allianceAccess) ? profile.allianceAccess : [])) patch.allianceAccess = allianceAccess;
-  if (!sameJsonValue(regionRoles, profile?.regionRoles || {})) patch.regionRoles = regionRoles;
   if (isSignInTouchDue(profile)) patch.lastLoginAt = now;
   if (Object.keys(patch).length) patch.updatedAt = now;
   return patch;
@@ -1334,6 +1327,7 @@ export async function saveSignedInUser(user) {
       uid: user.uid,
       displayName: user.displayName || '',
       email: user.email || '',
+      authEmail: user.email || '',
       photoURL: user.photoURL || '',
       country: '',
       countryCode: '',
@@ -1537,20 +1531,10 @@ export async function saveGameRegistration(user, values) {
   const mainGame = farmId === 'main' ? clean : oldMain;
   const profileComplete = Boolean(mainGame.nickname && mainGame.region && mainGame.alliance && mainGame.rank && mainGame.shk);
 
-  // v226: не даємо звичайному клієнту переписувати службові access-поля.
-  // Доступ до основного регіону і так читається з region/gameProfile.region.
-  // Якщо старий профіль ще не має цих полів, додаємо тільки безпечні порожні значення,
-  // щоб Firestore rules могли пропустити оновлення профілю без ескалації доступу.
-  const accessBootstrapPatch = {};
-  if (!Array.isArray(oldProfile?.regionAccess)) accessBootstrapPatch.regionAccess = [];
-  if (!Array.isArray(oldProfile?.allianceAccess)) accessBootstrapPatch.allianceAccess = [];
-  if (!oldProfile?.regionRoles || typeof oldProfile.regionRoles !== 'object' || Array.isArray(oldProfile.regionRoles)) accessBootstrapPatch.regionRoles = {};
-
-  // Не переписуємо захищені поля uid/email/role/createdAt/providerId.
-  await firestoreMod.setDoc(userRef, {
+  // v227: keep the profile save patch small and safe.
+  // Do not send protected access/provider fields from the client here.
+  const profilePatch = {
     ...nextRolePatch,
-    ...accessBootstrapPatch,
-    roleRequest,
     country,
     countryCode,
     profileComplete,
@@ -1565,7 +1549,32 @@ export async function saveGameRegistration(user, values) {
     activeFarmId: farmId,
     profileVisibility,
     updatedAt: now
-  }, { merge: true });
+  };
+  const oldRoleRequestKey = JSON.stringify(oldProfile?.roleRequest || {});
+  const nextRoleRequestKey = JSON.stringify(roleRequest || {});
+  if (oldRoleRequestKey !== nextRoleRequestKey || roleRequest?.status === 'pending') profilePatch.roleRequest = roleRequest;
+
+  try {
+    await firestoreMod.setDoc(userRef, profilePatch, { merge: true });
+  } catch (error) {
+    // v227 fallback for projects where older Firestore rules are still active:
+    // save the mandatory game profile fields without optional visibility/country/roleRequest.
+    if (!String(error?.code || '').includes('permission-denied')) throw error;
+    await firestoreMod.setDoc(userRef, {
+      ...nextRolePatch,
+      profileComplete,
+      gameNick: mainGame.nickname,
+      region: mainGame.region,
+      alliance: mainGame.alliance,
+      rank: mainGame.rank,
+      shk: mainGame.shk,
+      gameProfile: mainGame,
+      farms: nextFarms,
+      farmCount: getFarmCount({ gameProfile: mainGame, farms: nextFarms, profileComplete }),
+      activeFarmId: farmId,
+      updatedAt: now
+    }, { merge: true });
+  }
 
   await Promise.all(roleRequestWrites.map(write => write()));
 
