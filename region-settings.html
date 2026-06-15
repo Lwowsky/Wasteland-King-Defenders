@@ -5,23 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="google" content="notranslate" />
   <title data-i18n="regionSettings.pageTitle">Форма регіону — Wasteland King Defenders</title>
+<link rel="icon" href="favicon.png" type="image/png" />
   <script>
     (function () {
       try {
         if (new URLSearchParams(location.search).get('staffEmbed') === '1') {
           document.documentElement.classList.add('staff-embedded-page');
+          var style = document.createElement('style');
+          style.id = 'staffEmbedEarlyStyle';
+          style.textContent = [
+            'html.staff-embedded-page,html.staff-embedded-page body{margin:0!important;padding:0!important;background:transparent!important;overflow-x:hidden!important;}',
+            'html.staff-embedded-page .app-header,html.staff-embedded-page .site-footer,html.staff-embedded-page .drawer,html.staff-embedded-page [data-include*="partials/header"],html.staff-embedded-page [data-include*="partials/footer"],html.staff-embedded-page [data-include*="contact-modal"]{display:none!important;}',
+            'html.staff-embedded-page main,html.staff-embedded-page main.container,html.staff-embedded-page .container,html.staff-embedded-page .profile-page,html.staff-embedded-page .page-shell{width:100%!important;max-width:none!important;margin:0!important;padding:0!important;display:block!important;place-items:initial!important;}',
+            'html.staff-embedded-page .profile-card,html.staff-embedded-page .region-card,html.staff-embedded-page .region-table-card,html.staff-embedded-page .region-settings-page,html.staff-embedded-page .action-log-page,html.staff-embedded-page .admin-card,html.staff-embedded-page .admin-panel{width:100%!important;max-width:none!important;margin:0!important;}'
+          ].join('');
+          document.head.appendChild(style);
         }
       } catch (error) {}
     })();
   </script>
-  <link rel="icon" href="favicon.png" type="image/png" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/header.css" />
   <link rel="stylesheet" href="css/auth-page.css" />
-  <link rel="stylesheet" href="css/profile-page.css" />
-  <link rel="stylesheet" href="css/admin-page.css" />
-  <link rel="stylesheet" href="css/region-page.css" />
+  <link rel="stylesheet" href="css/profile-page.css?v=244" />
+  <link rel="stylesheet" href="css/admin-page.css?v=244" />
+  <link rel="stylesheet" href="css/region-page.css?v=244" />
   <link rel="stylesheet" href="css/modal-import.css" />
   <link rel="stylesheet" href="css/modal-regions.css" />
   <link rel="stylesheet" href="css/modal-tiers.css" />
@@ -47,8 +56,8 @@
   <script defer src="js/i18n-autokeys.js"></script>
   <script defer src="js/core/dom.js"></script>
   <script defer src="js/core/assets-loader.js"></script>
-  <script defer src="js/badges.js?v=213"></script>
-  <script defer src="js/core/partials.js"></script>
+  <script defer src="js/badges.js?v=244"></script>
+  <script defer src="js/core/partials.js?v=244"></script>
   <script defer src="js/header.js"></script>
   <script defer src="js/core/state.js"></script>
   <script defer src="js/import-modal.js"></script>
@@ -61,14 +70,14 @@
   <script defer src="js/confirm-modal.js"></script>
   <script defer src="js/player-edit-modal.js?v=213"></script>
   <script defer src="js/player-manager-modal.js?v=213"></script>
-  <script defer src="js/tower-planner.js?v=243"></script>
+  <script defer src="js/tower-planner.js?v=244"></script>
   <script defer src="js/contact-modal.js"></script>
-  <script defer src="js/core/app-boot.js?v=243"></script>
-  <script defer src="js/app-login-shell.js"></script>
-  <script type="module" src="js/player-manager-region-bridge.js?v=243"></script>
-  <script type="module" src="js/auth-google.js?v=213"></script>
+  <script defer src="js/core/app-boot.js?v=244"></script>
+  <script defer src="js/app-login-shell.js?v=244"></script>
+  <script type="module" src="js/player-manager-region-bridge.js?v=244"></script>
+  <script type="module" src="js/auth-google.js?v=244"></script>
   <script type="module" src="js/notifications.js?v=213"></script>
-  <script type="module" src="js/pages/region-settings-page.js?v=243"></script>
+  <script type="module" src="js/pages/region-settings-page.js?v=244"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>

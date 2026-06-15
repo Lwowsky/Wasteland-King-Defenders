@@ -1,4 +1,4 @@
-/* v243 — staff panel without duplicated embedded headers; registration is in account menu. */
+/* v244 — staff panel fixed embedded shell; no nested headers; registration returned to menu. */
 
 .staff-page {
   min-height: auto;
@@ -530,7 +530,8 @@
 
 
 
-/* STAFF_STABLE_FRAME_V243 */
+
+/* STAFF_STABLE_FRAME_V244 */
 .staff-tabs {
   width: 100%;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -539,6 +540,10 @@
 .staff-tab-panel:not([data-staff-panel="players"]) {
   width: 100%;
   max-width: none;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
   overflow: visible;
 }
 
@@ -560,13 +565,8 @@
 }
 
 @media (max-width: 1280px) {
-  .staff-tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  .staff-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-
 @media (max-width: 760px) {
-  .staff-tabs {
-    grid-template-columns: 1fr;
-  }
+  .staff-tabs { grid-template-columns: 1fr; }
 }

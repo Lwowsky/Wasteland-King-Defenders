@@ -14,8 +14,12 @@ function WKD_isStaffEmbedHost(host) {
 }
 
 WKD.loadPartials = async () => {
-  const hosts = [...document.querySelectorAll('[data-include]')].filter(host => !WKD_isStaffEmbedHost(host));
+  const hosts = [...document.querySelectorAll('[data-include]')];
   await Promise.all(hosts.map(async host => {
+    if (WKD_isStaffEmbedHost(host)) {
+      host.remove();
+      return;
+    }
     const path = host.dataset.include;
     if (!path) return;
     const response = await fetch(path, { cache: 'no-cache' });
