@@ -1,14 +1,14 @@
 {
-  "version": "1781520837328",
-  "generatedAt": "2026-06-15T10:55:18.041Z",
-  "updatedAt": "2026-06-15T10:55:18.041Z",
+  "version": "1781130303328",
+  "generatedAt": "2026-06-11T18:13:48.339Z",
+  "updatedAt": "2026-06-11T18:13:48.339Z",
   "source": "cloudflare-d1-public-stats",
   "playersFile": "stats-players.json",
   "farmsFile": "stats-farms.json",
   "summaryFile": "stats-summary.json",
-  "totalPlayers": 2,
+  "totalPlayers": 1,
   "totalFarms": 3,
-  "totalRows": 5,
-  "playersRows": 2,
+  "totalRows": 4,
+  "playersRows": 1,
   "farmRows": 3
 }
