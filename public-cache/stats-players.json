@@ -15,5 +15,22 @@
       "showWastelandInfo": false,
       "showFarmsInfo": true
     }
+  },
+  {
+    "publicKey": "cf2d00338f78d42530684d04",
+    "nickname": "アユシュカさん",
+    "region": "987",
+    "alliance": "YYY",
+    "rank": "P1",
+    "shk": "26",
+    "role": "player",
+    "countryCode": "JP",
+    "farmCount": 0,
+    "createdAt": "2026-06-15T08:40:15.270Z",
+    "updatedAt": "2026-06-15T10:53:55.875Z",
+    "profileVisibility": {
+      "showWastelandInfo": false,
+      "showFarmsInfo": false
+    }
   }
 ]
