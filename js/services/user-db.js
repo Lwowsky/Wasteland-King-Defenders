@@ -1296,14 +1296,16 @@ export async function getUserProfile(uid, options = {}) {
   return profile;
 }
 
-export async function saveSignedInUser(user) {
+export async function saveSignedInUser(user, options = {}) {
   if (!user) return null;
+  const forceRefresh = Boolean(options.forceRefresh);
 
   // v154: when the browser already has a fresh profile, a page refresh should not
   // spend a Firestore read just to discover that nothing changed. A Firestore touch
   // is still allowed when auth fields changed, the profile is missing/stale, or the
   // 24-hour lastLoginAt window is due.
-  const cachedProfile = readCachedUserProfile(user.uid, PROFILE_CACHE_TTL_MS);
+  // v230: registration/profile save must be able to bypass stale local cache.
+  const cachedProfile = forceRefresh ? null : readCachedUserProfile(user.uid, PROFILE_CACHE_TTL_MS);
   if (cachedProfile) {
     const cachedPatch = buildSignInProfilePatch(user, cachedProfile, getGameProfile(cachedProfile), getUserFarms(cachedProfile), null);
     const hasOnlyDueTouch = Object.keys(cachedPatch).length === 2 && Object.hasOwn(cachedPatch, 'lastLoginAt') && Object.hasOwn(cachedPatch, 'updatedAt');
@@ -1440,12 +1442,16 @@ export async function saveGameRegistration(user, values) {
   const { db, firestoreMod } = firebase;
   const uid = user.uid;
   const userRef = firestoreMod.doc(db, 'users', uid);
-  let oldProfile = await getUserProfile(uid);
+  // v230: always verify the real Firestore users/{uid} document before saving.
+  // A stale local cached profile can make the app try to create users/{uid} with
+  // a partial game-profile patch, which Firestore rules correctly deny.
+  removeUserProfileCache(uid);
+  let oldProfile = await getUserProfile(uid, { forceRefresh: true });
   if (!oldProfile) {
-    // v224: email/password accounts can reach registration before the first profile
-    // document is available in cache. Bootstrap the protected users/{uid} document
-    // first, then save the game profile as an update instead of an incomplete create.
-    await saveSignedInUser(user);
+    // Email/password accounts can reach registration before the first profile
+    // document exists. Bootstrap the protected users/{uid} document first,
+    // then save the game profile as an update instead of an incomplete create.
+    await saveSignedInUser(user, { forceRefresh: true });
     oldProfile = await getUserProfile(uid, { forceRefresh: true });
   }
   if (!oldProfile) throw new Error('profile-bootstrap-failed');
