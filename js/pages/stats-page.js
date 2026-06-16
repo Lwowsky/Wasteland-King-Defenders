@@ -1,5 +1,5 @@
 import { formatUserDate, roleLabel } from '../services/user-db.js';
-import { troopLabel } from '../services/region-db.js?v=252';
+import { troopLabel } from '../services/region-db.js?v=253';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -35,7 +35,7 @@ function locale() {
 
 
 
-const STATS_CACHE_BUILD = 'v252-snapshot-only-public-stats';
+const STATS_CACHE_BUILD = 'v253-snapshot-only-public-stats';
 const PUBLIC_STATS_SUMMARY_FILE = 'stats-summary.json';
 const PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -43,6 +43,7 @@ const PUBLIC_STATS_VERSION_FILE = 'stats-version.json';
 const STATS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const STATS_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STATS_REFRESH_LIMIT = 3;
+const STATS_STALE_MS = 24 * 60 * 60 * 1000;
 const STATS_SUMMARY_CACHE_KEY = `wkd.publicStatsSummary.${STATS_CACHE_BUILD}`;
 const STATS_PLAYERS_CACHE_KEY = `wkd.publicStatsPlayers.${STATS_CACHE_BUILD}`;
 const STATS_FARMS_CACHE_KEY = `wkd.publicStatsFarms.${STATS_CACHE_BUILD}`;
@@ -118,6 +119,27 @@ function formatSummaryUpdatedAt(value) {
   if (!value) return t('common.unknown', 'Unknown');
   const date = new Date(value);
   return Number.isFinite(date.getTime()) ? date.toLocaleString(locale()) : String(value);
+}
+
+function statsSnapshotGeneratedAtMs(summary = statsSummaryCache) {
+  const raw = summary?.generatedAt || summary?.updatedAt || summary?.d1UpdatedAtMs || summary?.lastFullRebuildDate || '';
+  if (!raw) return 0;
+  if (typeof raw === 'number') return Number(raw) || 0;
+  const parsed = Date.parse(String(raw));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+function isStatsSnapshotStale(summary = statsSummaryCache) {
+  const generatedAt = statsSnapshotGeneratedAtMs(summary);
+  return Boolean(generatedAt && Date.now() - generatedAt > STATS_STALE_MS);
+}
+function setStatsSnapshotLoadedStatus() {
+  if (isStatsSnapshotStale(statsSummaryCache)) {
+    setStatus(tv('stats.snapshotStale', 'Увага: public-cache snapshot застарілий. Останнє оновлення: {date}. Дані можуть не збігатися з адмінкою, поки не спрацює export.', {
+      date: formatSummaryUpdatedAt(statsSummaryCache?.generatedAt || statsSummaryCache?.updatedAt || statsSummaryCache?.d1UpdatedAtMs || statsSummaryCache?.lastFullRebuildDate)
+    }), 'warning');
+    return;
+  }
+  setStatsSnapshotLoadedStatus();
 }
 async function fetchPublicStatsVersion({ force = false } = {}) {
   if (!force) {
@@ -350,7 +372,7 @@ async function ensurePlayersLoaded({ force = false } = {}) {
       setStatus(t('stats.playersJsonMismatch', 'stats-summary.json has numbers, but stats-players.json is empty. Replace the local public-cache with the latest generated JSON files.'), 'warning');
       return players;
     }
-    setStatus(t('stats.listLoadedStatus', 'Player list loaded from public JSON cache.'), 'success');
+    setStatsSnapshotLoadedStatus();
     return players;
   })();
   try {

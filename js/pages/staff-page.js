@@ -5,15 +5,20 @@ import {
   getGameProfile,
   getUserFarms,
   getUserProfile,
+  listStaffRegionPlayers,
   roleLabel,
   staffRankOptionsForTarget,
   staffRoleOptionsForTarget,
   updateRegionPlayerByStaff
 } from '../services/user-db.js';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot } from '../services/region-table-cache.js?v=252';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : fallback;
+function tv(key, fallback = '', vars = {}) {
+  let text = t(key, fallback);
+  Object.entries(vars || {}).forEach(([name, value]) => { text = text.replaceAll(`{${name}}`, String(value)); });
+  return text;
+}
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'": '&#39;' }[char]));
 const normalizeRegion = value => String(value || '').replace(/[^0-9]/g, '');
 const normalizeAlliance = value => String(value || '').trim().toUpperCase().slice(0, 3);
@@ -21,7 +26,7 @@ const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
 const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STAFF_REFRESH_LIMIT = 5;
-const STAFF_CACHE_BUILD = 'v252-d1-snapshot-local';
+const STAFF_CACHE_BUILD = 'v253-region-players-local';
 
 const STAFF_TABS = {
   players: { labelKey: 'staff.playersTitle', label: 'Гравці регіону' },
@@ -37,9 +42,9 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=252',
-  'region-settings': './region-settings-page.js?v=252',
-  'action-log': './action-log-page.js?v=252'
+  'region-table': './region-table-page.js?v=253',
+  'region-settings': './region-settings-page.js?v=253',
+  'action-log': './action-log-page.js?v=253'
 };
 const loadedStaffToolTabs = new Set();
 
@@ -226,16 +231,29 @@ function applyLocalStaffFilters({ statusMessage = '' } = {}) {
   scopeBadge();
   if (statusMessage) setStatus(statusMessage, 'success');
 }
-async function readStaffSnapshotRows(region = '', { force = false } = {}) {
+async function readStaffRegionPlayerRows(region = '', { force = false } = {}) {
   const safeRegion = normalizeRegion(region);
   if (!safeRegion) return { rows: [], region: '', source: 'no-region' };
-  if (!isRegionTableCacheEnabled()) throw new Error('staff-d1-snapshot-disabled');
-  const result = await readRegionTableSnapshot(currentUser, safeRegion, {
-    force,
-    ttlMs: force ? 0 : STAFF_CACHE_TTL_MS
+  const scope = syncAllianceLockForStaff(safeRegion);
+  const alliance = scope.allianceLocked ? scope.alliance : '';
+  const result = await listStaffRegionPlayers({
+    region: safeRegion,
+    alliance,
+    nick: '',
+    rank: 'all',
+    limitCount: 2000
   });
-  const rows = (result.rows || []).map(normalizeStaffSnapshotRow).filter(row => normalizeRegion(row.region || safeRegion) === safeRegion || !row.region);
-  return { ...result, region: safeRegion, rows };
+  const rows = (result.users || [])
+    .map(normalizeStaffSnapshotRow)
+    .filter(row => normalizeRegion(row.region || safeRegion) === safeRegion || !row.region);
+  return {
+    ...result,
+    source: result.source || 'regions-players-profile-mirror',
+    region: safeRegion,
+    rows,
+    totalRows: Number(result.totalRows || result.users?.length || rows.length || 0),
+    reads: Number(result.reads || rows.length || 0)
+  };
 }
 async function loadRows(options = {}) {
   const force = Boolean(options?.force);
@@ -254,17 +272,20 @@ async function loadRows(options = {}) {
   const cached = !force ? readStaffRowsCache(region) : null;
   if (cached?.rows?.length) {
     staffSnapshotRows = cached.rows.map(normalizeStaffSnapshotRow);
-    applyLocalStaffFilters({ statusMessage: t('staff.loadedFromLocalCache', 'Гравці показані з локального кешу. Натисни Оновити для ручного оновлення D1 snapshot.') });
+    applyLocalStaffFilters({ statusMessage: t('staff.loadedFromLocalCache', 'Гравці показані з локального кешу. Натисни Оновити, щоб перечитати профільний індекс.') });
     return;
   }
-  setStatus(t('staff.loadingPlayers', 'Завантажую гравців регіону з D1 snapshot...'), 'muted');
+  setStatus(t('staff.loadingPlayers', 'Завантажую гравців регіону з профільного індексу...'), 'muted');
   try {
-    const result = await readStaffSnapshotRows(region, { force });
+    const result = await readStaffRegionPlayerRows(region, { force });
     staffSnapshotRows = result.rows || [];
-    writeStaffRowsCache(region, staffSnapshotRows, { source: result.source || 'cloudflare-d1-region-table', totalRows: result.totalRows || staffSnapshotRows.length });
-    applyLocalStaffFilters({ statusMessage: t('staff.loaded', 'Панель регіону готова.') });
+    writeStaffRowsCache(region, staffSnapshotRows, { source: result.source || 'regions-players-profile-mirror', totalRows: result.totalRows || staffSnapshotRows.length });
+    applyLocalStaffFilters({ statusMessage: tv('staff.loadedRowsFromIndex', 'Панель регіону готова: {count} гравців. Firestore reads≈{reads}.', {
+      count: staffSnapshotRows.length,
+      reads: result.reads || staffSnapshotRows.length || 0
+    }) });
   } catch (error) {
-    console.error('[WKD] staff D1 snapshot load failed:', error);
+    console.error('[WKD] staff region players load failed:', error);
     const fallback = readStaffRowsCache(region);
     if (fallback?.rows?.length) {
       staffSnapshotRows = fallback.rows.map(normalizeStaffSnapshotRow);
@@ -274,7 +295,7 @@ async function loadRows(options = {}) {
     staffSnapshotRows = [];
     currentRows = [];
     renderRows();
-    setStatus(t('staff.loadFailed', 'Не вдалося завантажити D1 snapshot для панелі регіону.'), 'error');
+    setStatus(t('staff.loadFailed', 'Не вдалося завантажити профільний індекс регіону.'), 'error');
   }
 }
 

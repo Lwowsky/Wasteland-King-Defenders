@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=252';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=252';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=252';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=253';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=253';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=253';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -18,7 +18,7 @@ import {
   readNotificationBellD1,
   setNotificationSummaryD1,
   upsertNotificationDirectoryD1
-} from './notifications-d1.js?v=252';
+} from './notifications-d1.js?v=253';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -2886,7 +2886,7 @@ export async function listStaffRegionPlayers(options = {}) {
 
   const snap = await firestoreMod.getDocs(firestoreMod.query(
     firestoreMod.collection(db, 'regions', region, 'players'),
-    firestoreMod.limit(Math.max(1, Math.min(500, Number(options.limitCount || 250))))
+    firestoreMod.limit(Math.max(1, Math.min(2000, Number(options.limitCount || 250))))
   ));
   trackReads(Math.max(1, snap.docs.length));
   let users = snap.docs.map(doc => ({ id: doc.id, uid: doc.id, ...(doc.data?.() || {}) })).filter(user => !user.deleted && !user.blocked);
@@ -2896,7 +2896,7 @@ export async function listStaffRegionPlayers(options = {}) {
   const rankFilter = normalizeText(options.rank || '').toLowerCase();
   if (rankFilter && rankFilter !== 'all') users = users.filter(user => normalizeText(user.rank || '').toLowerCase() === rankFilter);
   users.sort((a, b) => normalizeText(a.nickname || a.gameNick).localeCompare(normalizeText(b.nickname || b.gameNick), undefined, { sensitivity: 'base' }));
-  return { users, reads: Math.max(1, snap.docs.length), region, allianceLocked, alliance: allianceFilter };
+  return { users, reads: Math.max(1, snap.docs.length), totalRows: users.length, source: 'regions-players-profile-mirror', region, allianceLocked, alliance: allianceFilter };
 }
 
 export async function updateRegionPlayerByStaff(uid, values = {}) {
