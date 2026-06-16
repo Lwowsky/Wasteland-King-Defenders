@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=260';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=260';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=260';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=260';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=261';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=261';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=261';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=261';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=260';
+} from '../services/user-db.js?v=261';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -35,7 +35,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=260';
+} from '../services/region-db.js?v=261';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -51,7 +51,7 @@ const rankOptions = ['p1', 'p2', 'p3', 'p4', 'p5'];
 
 const ADMIN_PUBLIC_PLAYERS_FILE = 'stats-players.json';
 const ADMIN_PUBLIC_FARMS_FILE = 'stats-farms.json';
-const ADMIN_PUBLIC_CACHE_BUILD = 'v260-admin-public-cache-edit-resolve';
+const ADMIN_PUBLIC_CACHE_BUILD = 'v261-admin-dedupe-self-edit';
 
 function adminPublicCacheUrls(file, force = false) {
   const clean = String(file || '').replace(/^\/+/, '');
@@ -237,31 +237,71 @@ function adminPlayerIdentity(user = {}) {
   return uid ? `uid:${uid}` : `fallback:${nickname}|${region}|${alliance}`;
 }
 
+function preferEditableAdminUser(a = null, b = null) {
+  if (!a) return b;
+  if (!b) return a;
+  const aPublic = Boolean(a.__publicCacheOnly || String(a.uid || a.id || '').startsWith('public:'));
+  const bPublic = Boolean(b.__publicCacheOnly || String(b.uid || b.id || '').startsWith('public:'));
+  if (aPublic !== bPublic) return aPublic ? b : a;
+  const aFarms = getUserFarms(a).length;
+  const bFarms = getUserFarms(b).length;
+  if (aFarms !== bFarms) return aFarms > bFarms ? a : b;
+  return adminRowTimeMs(a) >= adminRowTimeMs(b) ? a : b;
+}
+
+function currentAdminSelfUser() {
+  if (!currentUser?.uid || !currentProfile) return null;
+  return {
+    ...currentProfile,
+    id: currentUser.uid,
+    uid: currentUser.uid,
+    email: currentUser.email || currentProfile.email || currentProfile.authEmail || '',
+    __publicCacheOnly: false,
+    source: 'current-user-profile'
+  };
+}
+
 function mergeAdminUsersWithPublicCache(indexUsers = [], publicUsers = []) {
-  const map = new Map();
+  const byIdentity = new Map();
+  const byUid = new Map();
   const put = user => {
     if (!user) return;
-    const key = adminPlayerIdentity(user);
     const uid = normalizeText(user.uid || user.id || '');
-    const existing = map.get(key) || (uid && map.get(`uid:${uid}`));
-    const existingIsPublicOnly = Boolean(existing?.__publicCacheOnly);
-    const userIsPublicOnly = Boolean(user.__publicCacheOnly);
-    const merged = existing
+    const identity = adminPlayerIdentity(user);
+    const uidKey = uid ? `uid:${uid}` : '';
+    const old = byIdentity.get(identity) || (uidKey ? byUid.get(uidKey) : null);
+    const merged = old
       ? (() => {
-        const userFarms = Array.isArray(user.farms) ? user.farms : [];
-        const existingFarms = Array.isArray(existing.farms) ? existing.farms : [];
-        const farms = userFarms.length ? userFarms : existingFarms;
-        return existingIsPublicOnly && !userIsPublicOnly
-          ? { ...existing, ...user, farms, farmCount: Math.max(Number(existing.farmCount || 0), Number(user.farmCount || 0), farms.length), __publicCacheOnly: false }
-          : { ...user, ...existing, farms, farmCount: Math.max(Number(existing.farmCount || 0), Number(user.farmCount || 0), farms.length), ...(!existingIsPublicOnly && userIsPublicOnly ? { farmCount: Math.max(Number(user.farmCount || 0), Number(existing.farmCount || 0), farms.length) } : {}) };
+        const oldFarms = getUserFarms(old);
+        const userFarms = getUserFarms(user);
+        const farms = userFarms.length ? userFarms : oldFarms;
+        const preferred = preferEditableAdminUser(old, user);
+        const other = preferred === old ? user : old;
+        const publicOnly = Boolean(preferred.__publicCacheOnly || String(preferred.uid || preferred.id || '').startsWith('public:'))
+          && Boolean(other.__publicCacheOnly || String(other.uid || other.id || '').startsWith('public:'));
+        return {
+          ...other,
+          ...preferred,
+          farms,
+          farmCount: Math.max(Number(old.farmCount || 0), Number(user.farmCount || 0), farms.length),
+          __publicCacheOnly: publicOnly
+        };
       })()
       : user;
-    map.set(key, merged);
-    if (uid) map.set(`uid:${uid}`, merged);
+    byIdentity.set(identity, merged);
+    const mergedUid = normalizeText(merged.uid || merged.id || uid);
+    if (mergedUid) byUid.set(`uid:${mergedUid}`, merged);
   };
   (Array.isArray(publicUsers) ? publicUsers : []).forEach(put);
   (Array.isArray(indexUsers) ? indexUsers : []).forEach(put);
-  return [...new Set([...map.values()])]
+
+  // Final compact pass removes stale public uid entries after a real uid was resolved.
+  const compact = new Map();
+  [...byIdentity.values(), ...byUid.values()].forEach(user => {
+    const identity = adminPlayerIdentity(user);
+    compact.set(identity, preferEditableAdminUser(compact.get(identity), user));
+  });
+  return [...compact.values()]
     .filter(user => !user.deleted && !user.blocked)
     .sort((a, b) => timestampToMsSafe(b.createdAt || b.updatedAt || b.lastLoginAt) - timestampToMsSafe(a.createdAt || a.updatedAt || a.lastLoginAt));
 }
@@ -1590,21 +1630,61 @@ function userRow(row) {
   const labels = adminTableLabels();
   const rowAttrs = `data-uid="${escapeHtml(user.uid)}" data-row-id="${escapeHtml(row.rowId)}" data-farm-id="${escapeHtml(row.farmId || 'main')}" data-farm-label="${escapeHtml(t('account.farm', 'Farm'))}"`;
   if (editing) {
-    const accountFields = row.isFarmRow ? '' : `<small class="admin-edit-account">
-        <label>${escapeHtml(t('admin.emailInProfile', 'Email у профілі'))}${editCell('accountEmail', user.adminEmailOverride || user.email || '')}</label>
-        <label>${escapeHtml(t('admin.displayName', 'Display name'))}${editCell('displayName', user.displayName || '')}</label>
-      </small>`;
-    return `<tr ${rowAttrs} class="is-editing ${row.isFarmRow ? 'is-farm-row' : 'is-main-row'}">
-      <td data-label="${labels.nickname}">${editCell('nickname', game.nickname)}${accountFields}</td>
-      <td data-label="${labels.region}">${editCell('region', game.region, 'number')}</td>
-      <td data-label="${labels.alliance}">${editCell('alliance', game.alliance, 'text')}</td>
-      <td data-label="${labels.rank}">${editSelect('rank', game.rank || 'p1', rankOptions)}</td>
-      <td data-label="${labels.shk}">${editCell('shk', game.shk, 'number')}</td>
-      <td data-label="${labels.role}">${editSelect('role', role || 'player', roleOptionsFor(role || 'player', row), roleLabels())}</td>
-      <td data-label="${labels.registered}">${formatUserDate(user.createdAt)}</td>
-      <td class="admin-row-actions" data-label="${labels.actions}">
-        <button class="btn admin-save-row" type="button" data-action="save-user" data-uid="${escapeHtml(user.uid)}" data-row-id="${escapeHtml(row.rowId)}" data-farm-id="${escapeHtml(row.farmId || 'main')}">${escapeHtml(t('common.save', 'Save'))}</button>
-        <button class="btn" type="button" data-action="cancel-edit">${escapeHtml(t('common.cancel', 'Cancel'))}</button>
+    const accountFields = row.isFarmRow ? '' : `
+        <label class="admin-edit-field admin-edit-field--wide">
+          <span>${escapeHtml(t('admin.emailInProfile', 'Email у профілі'))}</span>
+          ${editCell('accountEmail', user.adminEmailOverride || user.email || '')}
+        </label>
+        <label class="admin-edit-field admin-edit-field--wide">
+          <span>${escapeHtml(t('admin.displayName', 'Display name'))}</span>
+          ${editCell('displayName', user.displayName || '')}
+        </label>`;
+    const title = row.isFarmRow
+      ? `${t('account.farm', 'Ферма')}: ${game.nickname || '—'} · ${t('account.mainPlayer', 'Основний гравець')}: ${row.mainNickname || '—'}`
+      : `${t('account.mainPlayer', 'Основний гравець')}: ${game.nickname || '—'}`;
+    return `<tr ${rowAttrs} class="is-editing-summary ${row.isFarmRow ? 'is-farm-row' : 'is-main-row'}">
+      <td colspan="8">
+        <div class="admin-edit-panel">
+          <div class="admin-edit-panel-head">
+            <strong>${escapeHtml(title)}</strong>
+            <span>${row.isFarmRow ? escapeHtml(t('admin.editingFarm', 'Редагування ферми')) : escapeHtml(t('admin.editingPlayer', 'Редагування гравця'))}</span>
+          </div>
+          <div class="admin-edit-grid">
+            <label class="admin-edit-field admin-edit-field--wide">
+              <span>${labels.nickname}</span>
+              ${editCell('nickname', game.nickname)}
+            </label>
+            ${accountFields}
+            <label class="admin-edit-field">
+              <span>${labels.region}</span>
+              ${editCell('region', game.region, 'number')}
+            </label>
+            <label class="admin-edit-field">
+              <span>${labels.alliance}</span>
+              ${editCell('alliance', game.alliance, 'text')}
+            </label>
+            <label class="admin-edit-field admin-edit-field--small">
+              <span>${labels.rank}</span>
+              ${editSelect('rank', game.rank || 'p1', rankOptions)}
+            </label>
+            <label class="admin-edit-field admin-edit-field--small">
+              <span>${labels.shk}</span>
+              ${editCell('shk', game.shk, 'number')}
+            </label>
+            <label class="admin-edit-field">
+              <span>${labels.role}</span>
+              ${editSelect('role', role || 'player', roleOptionsFor(role || 'player', row), roleLabels())}
+            </label>
+            <div class="admin-edit-date">
+              <span>${labels.registered}</span>
+              <b>${escapeHtml(formatUserDate(user.createdAt))}</b>
+            </div>
+          </div>
+          <div class="admin-edit-actions">
+            <button class="btn admin-save-row" type="button" data-action="save-user" data-uid="${escapeHtml(user.uid)}" data-row-id="${escapeHtml(row.rowId)}" data-farm-id="${escapeHtml(row.farmId || 'main')}">${escapeHtml(t('common.save', 'Зберегти'))}</button>
+            <button class="btn" type="button" data-action="cancel-edit">${escapeHtml(t('common.cancel', 'Скасувати'))}</button>
+          </div>
+        </div>
       </td>
     </tr>`;
   }
@@ -1986,7 +2066,7 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
   });
 
   // Cheap full display source: show public-cache immediately, then resolve editable uid rows below.
-  users = mergeAdminUsersWithPublicCache([], publicCacheUsers);
+  users = mergeAdminUsersWithPublicCache([currentAdminSelfUser()].filter(Boolean), publicCacheUsers);
   playersPageMeta = {
     hasNext: false,
     reads: 0,
@@ -2019,7 +2099,7 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
 
     const indexedUsers = Array.isArray(result.users) ? result.users : [];
     if (indexedUsers.length || !users.length) {
-      users = mergeAdminUsersWithPublicCache(indexedUsers, publicCacheUsers);
+      users = mergeAdminUsersWithPublicCache([currentAdminSelfUser(), ...indexedUsers].filter(Boolean), publicCacheUsers);
       playersPageMeta = {
         hasNext: Boolean(result.hasNext),
         reads: Number(result.reads || 0),
