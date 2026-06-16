@@ -2481,5 +2481,7 @@ window.WKD_TRANSLATIONS.zh = {
   "stats.loadingSummary": "正在加载统计 public-cache...",
   "stats.playersUnavailable": "玩家列表不可用。请点击“刷新缓存”。",
   "admin.publicCacheOnly": "公共缓存",
-  "admin.playersLoadedPublicCache": "已加载 {count} 名玩家。可编辑：{editable}。仅 public-cache：{publicOnly}。Firebase reads≈{reads}。"
+  "admin.playersLoadedPublicCache": "已加载 {count} 名玩家。可编辑：{editable}。仅 public-cache：{publicOnly}。Firebase reads≈{reads}。",
+  "admin.publicPlayerResolveFailed": "找不到这一行对应的真实资料。请点击“刷新”后再试。",
+  "admin.refreshingPlayers": "正在刷新玩家列表..."
 };

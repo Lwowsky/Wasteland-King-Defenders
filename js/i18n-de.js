@@ -2481,5 +2481,7 @@ window.WKD_TRANSLATIONS.de = {
   "stats.loadingSummary": "Lade public-cache Statistiken...",
   "stats.playersUnavailable": "Spielerliste nicht verfügbar. Klicke auf „Cache aktualisieren”.",
   "admin.publicCacheOnly": "Öffentlicher Cache",
-  "admin.playersLoadedPublicCache": "{count} Spieler geladen. Bearbeitbar: {editable}. Nur public-cache: {publicOnly}. Firebase reads≈{reads}."
+  "admin.playersLoadedPublicCache": "{count} Spieler geladen. Bearbeitbar: {editable}. Nur public-cache: {publicOnly}. Firebase reads≈{reads}.",
+  "admin.publicPlayerResolveFailed": "Das echte Profil für diese Zeile wurde nicht gefunden. Klicke auf „Aktualisieren“ und versuche es erneut.",
+  "admin.refreshingPlayers": "Spielerliste wird aktualisiert..."
 };

@@ -7,6 +7,7 @@ import {
   getUserProfile,
   listStaffRegionPlayers,
   roleLabel,
+  resolvePublicPlayerUidForEdit,
   staffRankOptionsForTarget,
   staffRoleOptionsForTarget,
   updateRegionPlayerByStaff
@@ -26,7 +27,7 @@ const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
 const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STAFF_REFRESH_LIMIT = 5;
-const STAFF_CACHE_BUILD = 'v263-staff-versioned-public-cache';
+const STAFF_CACHE_BUILD = 'v264-staff-edit-public-cache-rows';
 
 const STAFF_PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const STAFF_PUBLIC_STATS_VERSION_FILE = 'stats-version.json';
@@ -132,9 +133,9 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=262',
-  'region-settings': './region-settings-page.js?v=262',
-  'action-log': './action-log-page.js?v=262'
+  'region-table': './region-table-page.js?v=264',
+  'region-settings': './region-settings-page.js?v=264',
+  'action-log': './action-log-page.js?v=264'
 };
 const loadedStaffToolTabs = new Set();
 
@@ -467,7 +468,7 @@ function renderRows() {
     return;
   }
   body.innerHTML = currentRows.map(row => {
-    const canEdit = Boolean(row.uid && !row.__publicSnapshotOnly && canStaffEditPlayer(currentUser, currentProfile, row));
+    const canEdit = Boolean(canStaffEditPlayer(currentUser, currentProfile, row));
     return `<tr>
       <td><strong>${esc(row.nickname || row.gameNick || '—')}</strong></td>
       <td>${badge('region', row.region || '—')}</td>
@@ -516,7 +517,9 @@ async function saveEdit() {
   if (!editRow) return;
   try {
     setStatus(t('staff.saving', 'Зберігаю зміни...'), 'muted');
-    await updateRegionPlayerByStaff(editRow.uid || editRow.id, {
+    const editableUid = editRow.uid || await resolvePublicPlayerUidForEdit(editRow);
+    if (!editableUid) throw new Error('public-player-not-found');
+    await updateRegionPlayerByStaff(editableUid, {
       region: editRow.region,
       rank: $('#staffEditRank')?.value || editRow.rank || 'p1',
       role: $('#staffEditRole')?.value || editRow.role || 'player'

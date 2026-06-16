@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=263';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=263';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=263';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=263';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=264';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=264';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=264';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=264';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -16,7 +16,7 @@ import {
   getAdminCounters,
   isOwnerUser,
   listPublicPlayersForAdmin,
-  rebuildAdminUsersIndex,
+  resolvePublicPlayerUidForEdit,
   listRoleRequests,
   roleLabel,
   updateUserByAdmin,
@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=263';
+} from '../services/user-db.js?v=264';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -35,7 +35,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=263';
+} from '../services/region-db.js?v=264';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -51,7 +51,7 @@ const rankOptions = ['p1', 'p2', 'p3', 'p4', 'p5'];
 
 const ADMIN_PUBLIC_PLAYERS_FILE = 'stats-players.json';
 const ADMIN_PUBLIC_FARMS_FILE = 'stats-farms.json';
-const ADMIN_PUBLIC_CACHE_BUILD = 'v263-admin-publicplayers-stable-list';
+const ADMIN_PUBLIC_CACHE_BUILD = 'v264-admin-edit-public-cache-rows';
 
 function adminPublicCacheUrls(file, force = false) {
   const clean = String(file || '').replace(/^\/+/, '');
@@ -205,7 +205,7 @@ async function loadAdminPublicCacheUsers({ force = false } = {}) {
   const cacheKey = `adminPublicPlayers.${ADMIN_PUBLIC_CACHE_BUILD}`;
   if (!force) {
     const cached = readAdminJsonCache(cacheKey);
-    if (Array.isArray(cached)) return cached;
+    if (Array.isArray(cached) && cached.length) return cached;
   }
   try {
     const [playersRaw, farmsRaw] = await Promise.all([
@@ -485,6 +485,35 @@ function farmRowsForUser(user = {}, main = mainRowForUser(user)) {
       farmId: farm.farmId || farm.id || `farm-${index + 1}`,
       mainNickname: main.mainNickname
     }));
+}
+
+function findAdminRow(rowId = '', uid = '') {
+  const id = normalizeText(rowId);
+  const cleanUid = normalizeText(uid);
+  return pagedPlayersState().rows.find(row => row.rowId === id || (cleanUid && String(row.uid || row.user?.uid || '') === cleanUid)) || null;
+}
+
+function adminResolveTargetForRow(row = null) {
+  if (!row) return null;
+  if (row.isFarmRow) return row.user || row;
+  return { ...(row.user || {}), ...(row.game || {}) };
+}
+
+async function resolveAdminEditableUid(row = null, fallbackUid = '') {
+  const cleanUid = normalizeText(fallbackUid || row?.uid || row?.user?.uid || '');
+  if (cleanUid && !cleanUid.startsWith('public:')) return cleanUid;
+  const target = adminResolveTargetForRow(row);
+  const resolved = await resolvePublicPlayerUidForEdit(target).catch(error => {
+    console.warn('[WKD] admin uid resolve failed:', error?.code || error?.message || error);
+    return '';
+  });
+  if (resolved && row?.user) {
+    row.user.uid = resolved;
+    row.user.id = resolved;
+    row.user.__publicCacheOnly = false;
+    if (row.uid) row.uid = resolved;
+  }
+  return resolved || '';
 }
 
 function allRowsForUser(user = {}) {
@@ -1693,11 +1722,15 @@ function userRow(row) {
     ? `${t('account.farm', 'Farm')} · ${t('account.mainPlayer', 'Main player')}: ${row.mainNickname || '—'}`
     : (includeAdminFarmRows() ? `${t('account.mainPlayer', 'Main player')} · ${tv('stats.farmCountShort', '{count} farms', { count: getUserFarms(user).length })}` : (user.email || ''));
   const publicOnly = Boolean(user.__publicCacheOnly || String(user.uid || '').startsWith('public:'));
-  const actionsHtml = publicOnly
-    ? `<span class="admin-muted">${escapeHtml(t('admin.publicCacheOnly', 'Публічний кеш'))}</span>`
-    : `<button class="btn" type="button" data-action="edit-user" data-uid="${escapeHtml(user.uid)}" data-row-id="${escapeHtml(row.rowId)}" data-farm-id="${escapeHtml(row.farmId || 'main')}">${escapeHtml(t('common.edit', 'Edit'))}</button>
-      ${!row.isFarmRow && actorIsGlobalManager() ? `<button class="btn" type="button" data-action="${user.blocked ? 'unblock-user' : 'block-user'}" data-uid="${escapeHtml(user.uid)}">${escapeHtml(user.blocked ? t('admin.unblock', 'Розблокувати') : t('admin.block', 'Чорний список'))}</button>
-      ${canUseLimitsPanel() ? `<button class="btn btn-danger" type="button" data-action="delete-user-profile" data-uid="${escapeHtml(user.uid)}">${escapeHtml(t('common.delete', 'Видалити'))}</button>` : ''}` : ''}`;
+  const canEditRow = !publicOnly || actorIsGlobalManager();
+  const editButton = canEditRow
+    ? `<button class="btn" type="button" data-action="edit-user" data-uid="${escapeHtml(user.uid)}" data-row-id="${escapeHtml(row.rowId)}" data-farm-id="${escapeHtml(row.farmId || 'main')}">${escapeHtml(t('common.edit', 'Редагувати'))}</button>`
+    : `<span class="admin-muted">${escapeHtml(t('admin.publicCacheOnly', 'Публічний кеш'))}</span>`;
+  const manageButtons = (!publicOnly && !row.isFarmRow && actorIsGlobalManager())
+    ? `<button class="btn" type="button" data-action="${user.blocked ? 'unblock-user' : 'block-user'}" data-uid="${escapeHtml(user.uid)}">${escapeHtml(user.blocked ? t('admin.unblock', 'Розблокувати') : t('admin.block', 'Чорний список'))}</button>
+      ${canUseLimitsPanel() ? `<button class="btn btn-danger" type="button" data-action="delete-user-profile" data-uid="${escapeHtml(user.uid)}">${escapeHtml(t('common.delete', 'Видалити'))}</button>` : ''}`
+    : '';
+  const actionsHtml = `${editButton}${manageButtons}`;
   return `<tr ${rowAttrs} class="${row.isFarmRow ? 'is-farm-row' : 'is-main-row'} ${publicOnly ? 'is-public-cache-row' : ''}">
     <td data-label="${labels.nickname}"><strong>${escapeHtml(game.nickname || '—')}</strong><small>${escapeHtml(sub || '')}</small></td>
     <td data-label="${labels.region}">${getRegionBadge(game.region)}</td>
@@ -2022,6 +2055,7 @@ async function handleUserAction(event) {
   const row = button.closest('tr');
   const values = Object.fromEntries([...row.querySelectorAll('[data-edit]')].map(input => [input.dataset.edit, input.value]));
   const farmId = button.dataset.farmId || row?.dataset.farmId || 'main';
+  const targetRow = findAdminRow(button.dataset.rowId || row?.dataset.rowId || '', uid);
   const ok = await confirmAction({
     title: t('admin.savePlayerTitle', 'Save player changes?'),
     message: t('admin.savePlayerMessage', 'Data will update in profile, public statistics and region.'),
@@ -2032,9 +2066,11 @@ async function handleUserAction(event) {
   if (!ok) return;
 
   try {
-    setStatus(t('admin.savingPlayer', 'Saving player...'), 'muted');
-    if (farmId && farmId !== 'main') await updateFarmByAdmin(uid, farmId, values);
-    else await updateUserByAdmin(uid, values);
+    setStatus(t('admin.savingPlayer', 'Зберігаю гравця...'), 'muted');
+    const editableUid = await resolveAdminEditableUid(targetRow, uid);
+    if (!editableUid) throw new Error('public-player-not-found');
+    if (farmId && farmId !== 'main') await updateFarmByAdmin(editableUid, farmId, values);
+    else await updateUserByAdmin(editableUid, values);
     editUid = null;
     await loadPlayersPage({ reset: false });
     setStatus(t('admin.playerUpdated', 'Player updated.'), 'success');
@@ -2046,6 +2082,7 @@ async function handleUserAction(event) {
     if (error?.message === 'nickname-duplicate-region') message = t('account.nicknameDuplicateRegion', 'У цьому регіоні вже є гравець з таким нікнеймом.');
     if (error?.message === 'rank-p5-limit') message = t('account.rankP5Limit', 'У цьому альянсі вже є P5. Можна мати тільки одного P5.');
     if (error?.message === 'rank-p4-limit') message = t('account.rankP4Limit', 'У цьому альянсі вже є 20 гравців P4. Ліміт P4 заповнений.');
+    if (error?.message === 'public-player-not-found') message = t('admin.publicPlayerResolveFailed', 'Не знайшов реальний профіль для цього рядка. Натисни “Оновити”, потім спробуй ще раз.');
     setStatus(message, 'error');
   }
 }
@@ -2058,7 +2095,7 @@ function setPlayersLoading() {
 async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
   if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
   if (reset) resetPlayersPage();
-  setPlayersLoading();
+  if (!users.length) setPlayersLoading();
 
   const publicCacheUsers = await withAdminTimeout(
     loadAdminPublicCacheUsers({ force: reset }),
@@ -2121,42 +2158,10 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
 }
 
 async function rebuildPlayersIndex() {
-  if (!currentUser || !canRebuildAdminIndex(currentUser, currentProfile)) {
-    setStatus(t('admin.rebuildIndexDenied', 'Оновити індекс може тільки Admin.'), 'error');
-    return;
-  }
-  const ok = await confirmAction({
-    title: t('admin.rebuildIndexTitle', 'Оновити індекс гравців?'),
-    message: t('admin.rebuildIndexMessage', 'Сайт один раз прочитає до 5000 профілів і створить легкий індекс для дешевого пошуку. Це потрібно після старих версій або якщо пошук не знаходить гравця.'),
-    icon: '⚡',
-    acceptText: t('admin.rebuildIndexAccept', 'Оновити індекс')
-  });
-  if (!ok) return;
-  try {
-    setStatus(t('admin.rebuildIndexRunning', 'Оновлюю індекс гравців...'), 'muted');
-    const result = await rebuildAdminUsersIndex({ limitCount: 5000 });
-    if (result?.counters) {
-      adminCounters = result.counters;
-      writeAdminObjectCache('adminCounters', adminCounters);
-    } else {
-      await loadAdminCounters(true);
-    }
-    resetPlayersPage();
-    await loadPlayersPage({ reset: true });
-    setStatus(tv('admin.rebuildIndexDone', 'Індекс оновлено: перевірено {scanned}, записано {indexed}. Firebase reads≈{reads}, writes≈{writes}.', {
-      scanned: result.scanned || 0,
-      indexed: result.indexed || 0,
-      reads: result.reads || 0,
-      writes: result.writes || 0
-    }), 'success');
-  } catch (error) {
-    console.error(error);
-    const msg = error?.message === 'admin-only'
-      ? t('admin.rebuildIndexDenied', 'Оновити індекс може тільки Admin.')
-      : t('admin.rebuildIndexFailed', 'Не вдалося оновити індекс гравців. Перевір правила Firestore і права доступу.');
-    await loadPlayersPage({ reset: true }).catch(() => null);
-    setStatus(msg, 'error');
-  }
+  if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  setStatus(t('admin.refreshingPlayers', 'Оновлюю список гравців...'), 'muted');
+  clearAdminJsonCache(`adminPublicPlayers.${ADMIN_PUBLIC_CACHE_BUILD}`);
+  await loadPlayersPage({ reset: true });
 }
 
 async function loadNextPlayersPage() {

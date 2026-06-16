@@ -2052,6 +2052,34 @@ function mergeAdminUserRows(...groups) {
 }
 
 
+
+export async function resolvePublicPlayerUidForEdit(row = {}) {
+  const firebase = await getFirebase();
+  if (!firebase) return '';
+  const { db, firestoreMod } = firebase;
+  const directUid = normalizeText(row.uid || row.id || '');
+  if (directUid && !directUid.startsWith('public:')) return directUid;
+
+  const region = normalizeText(row.region || row.gameProfile?.region || '').replace(/[^0-9]/g, '');
+  const alliance = normalizeAllianceTag(row.alliance || row.gameProfile?.alliance || '');
+  const nickname = adminSearchKey(row.nickname || row.gameNick || row.name || row.gameProfile?.nickname || '');
+  if (!region || !nickname) return '';
+
+  const snap = await firestoreMod.getDocs(firestoreMod.query(
+    firestoreMod.collection(db, 'publicPlayers'),
+    firestoreMod.where('region', '==', region),
+    firestoreMod.limit(250)
+  ));
+  trackReads(Math.max(1, snap.docs.length));
+  const match = (snap.docs || []).find(doc => {
+    const data = doc.data?.() || {};
+    const docNick = adminSearchKey(data.nickname || data.gameNick || data.displayName || '');
+    const docAlliance = normalizeAllianceTag(data.alliance || '');
+    return docNick === nickname && (!alliance || docAlliance === alliance);
+  });
+  return match ? normalizeText(match.id) : '';
+}
+
 export async function listPublicPlayersForAdmin(options = {}) {
   const firebase = await getFirebase();
   if (!firebase) return { users: [], reads: 0, pageSize: 0, filters: {}, queryMode: 'no-firebase' };

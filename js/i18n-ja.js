@@ -2481,5 +2481,7 @@ window.WKD_TRANSLATIONS.ja = {
   "stats.loadingSummary": "統計 public-cache を読み込み中...",
   "stats.playersUnavailable": "プレイヤー一覧を読み込めません。「キャッシュ更新」を押してください。",
   "admin.publicCacheOnly": "公開キャッシュ",
-  "admin.playersLoadedPublicCache": "{count} 人を読み込みました。編集可能: {editable}。public-cacheのみ: {publicOnly}。Firebase reads≈{reads}。"
+  "admin.playersLoadedPublicCache": "{count} 人を読み込みました。編集可能: {editable}。public-cacheのみ: {publicOnly}。Firebase reads≈{reads}。",
+  "admin.publicPlayerResolveFailed": "この行の実プロフィールが見つかりません。「更新」を押してからもう一度試してください。",
+  "admin.refreshingPlayers": "プレイヤー一覧を更新中..."
 };
