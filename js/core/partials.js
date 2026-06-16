@@ -1,6 +1,6 @@
 window.WKD = window.WKD || {};
 
-function WKD_isStaffEmbedHost(host) {
+function WKD_isStaffEmbedShellPartial(host) {
   try {
     const params = new URLSearchParams(window.location.search || '');
     if (params.get('staffEmbed') !== '1') return false;
@@ -16,7 +16,7 @@ function WKD_isStaffEmbedHost(host) {
 WKD.loadPartials = async () => {
   const hosts = [...document.querySelectorAll('[data-include]')];
   await Promise.all(hosts.map(async host => {
-    if (WKD_isStaffEmbedHost(host)) {
+    if (WKD_isStaffEmbedShellPartial(host)) {
       host.remove();
       return;
     }

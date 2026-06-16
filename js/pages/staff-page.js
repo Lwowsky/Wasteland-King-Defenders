@@ -37,7 +37,7 @@ function normalizeEmbedUrl(url = '') {
   if (!value) return '';
   const resolved = new URL(value, window.location.href);
   resolved.searchParams.set('staffEmbed', '1');
-  resolved.searchParams.set('staffv', '245');
+  resolved.searchParams.set('staffv', '246');
   return resolved.toString();
 }
 
@@ -46,58 +46,18 @@ function setFrameHeight(iframe) {
   iframe.style.height = `${Math.max(720, desired)}px`;
 }
 
-function stripShellFromHtml(html = '') {
-  return String(html || '')
-    .replace(/<div\s+data-include=["']partials\/header\.html["']\s*><\/div>/gi, '')
-    .replace(/<div\s+class=["']container["']>\s*<div\s+data-include=["']partials\/footer\.html["']\s*><\/div>\s*<\/div>/gi, '')
-    .replace(/<div\s+data-include=["']partials\/footer\.html["']\s*><\/div>/gi, '')
-    .replace(/<div\s+data-include=["']partials\/contact-modal\.html["']\s*><\/div>/gi, '');
-}
-
-function buildEmbedSrcdoc(html = '') {
-  const baseHref = new URL('./', window.location.href).href;
-  const embedStyle = `
-    <style id="staffEmbedSrcdocStyle">
-      html, body { width:100% !important; max-width:none !important; min-width:0 !important; margin:0 !important; padding:0 !important; background:transparent !important; overflow-x:hidden !important; }
-      .app-header, .site-footer, .drawer, [data-include*="partials/header"], [data-include*="partials/footer"], [data-include*="contact-modal"] { display:none !important; }
-      main, main.container, .container, .profile-page, .profile-page.container, .page-shell { width:100% !important; max-width:none !important; min-width:0 !important; margin:0 !important; padding:0 !important; display:block !important; place-items:initial !important; box-sizing:border-box !important; }
-      .profile-card, .region-card, .region-table-card, .region-settings-page, .action-log-page, .admin-card, .admin-panel, .region-shell, .region-form-shell { width:100% !important; max-width:none !important; min-width:0 !important; margin:0 !important; box-sizing:border-box !important; }
-      .region-card.region-table-card, .region-settings-page, .action-log-page { padding-left:clamp(18px,2vw,30px) !important; padding-right:clamp(18px,2vw,30px) !important; }
-      .admin-table-wrap, .region-table-wrap, .action-log-table-wrap, .table-scroll, .players-table-wrap { width:100% !important; max-width:none !important; min-width:0 !important; }
-    </style>`;
-  let output = stripShellFromHtml(html);
-  output = output.replace(/<html([^>]*)>/i, '<html$1 class="staff-embedded-page">');
-  output = output.replace(/<body([^>]*)>/i, '<body$1 class="staff-embedded-page">');
-  if (/<head[^>]*>/i.test(output)) {
-    output = output.replace(/<head([^>]*)>/i, `<head$1><base href="${baseHref}">${embedStyle}`);
-  } else {
-    output = `<base href="${baseHref}">${embedStyle}${output}`;
-  }
-  return output;
-}
-
-async function loadFrameForTab(tab) {
+function loadFrameForTab(tab) {
   const iframe = document.querySelector(`[data-staff-panel="${tab}"] [data-staff-frame]`);
   if (!iframe) return;
   iframe.setAttribute('scrolling', 'no');
   iframe.style.overflow = 'hidden';
   setFrameHeight(iframe);
-  if (iframe.dataset.loaded) return;
-  iframe.dataset.ready = '0';
-  iframe.dataset.loaded = '1';
-  const url = normalizeEmbedUrl(iframe.dataset.staffSrc);
-  try {
-    const response = await fetch(url, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    iframe.srcdoc = buildEmbedSrcdoc(await response.text());
-    iframe.addEventListener('load', () => { iframe.dataset.ready = '1'; }, { once: true });
-  } catch (error) {
-    console.error('[WKD] staff embedded tab failed:', error);
-    iframe.dataset.ready = '1';
-    const message = esc(t('staff.embedLoadFailed', 'Не вдалося завантажити вкладку.'));
-    iframe.srcdoc = `<div style="padding:24px;color:#ff9aa8;font:700 16px system-ui;background:#080f1f;border-radius:22px">${message}</div>`;
+  if (!iframe.dataset.loaded) {
+    iframe.src = normalizeEmbedUrl(iframe.dataset.staffSrc);
+    iframe.dataset.loaded = '1';
   }
 }
+
 
 function switchStaffTab(tab = 'players') {
   const safeTab = STAFF_TABS[tab] ? tab : 'players';

@@ -1,4 +1,4 @@
-// WKD_STAFF_EMBED_MARKER_V245
+// WKD_STAFF_EMBED_MARKER_V246
 (function markStaffEmbedMode() {
   try {
     const params = new URLSearchParams(window.location.search || '');
@@ -38,7 +38,7 @@ WKD.bootAppShell = async function bootAppShell(options = {}) {
 
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     try {
-      navigator.serviceWorker.register('/sw.js?v=245').catch(error => console.warn('[WKD] service worker registration skipped:', error));
+      navigator.serviceWorker.register('/sw.js?v=246').catch(error => console.warn('[WKD] service worker registration skipped:', error));
     } catch (error) {
       console.warn('[WKD] service worker registration failed:', error);
     }
@@ -50,7 +50,6 @@ WKD.bootAppShell = async function bootAppShell(options = {}) {
   } catch (error) {
     console.warn('[WKD] i18n skipped:', error);
   }
-
   if (!staffEmbedMode) safeInit('header', WKD.initHeader);
   if (!staffEmbedMode) safeInit('notifications', WKD.initNotifications);
   safeInit('import modal', WKD.initImportModal);
