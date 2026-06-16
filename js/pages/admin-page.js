@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=258';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=258';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=258';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=258';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=259';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=259';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=259';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=259';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=258';
+} from '../services/user-db.js?v=259';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -35,7 +35,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=258';
+} from '../services/region-db.js?v=259';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -50,7 +50,8 @@ const rankOptions = ['p1', 'p2', 'p3', 'p4', 'p5'];
 
 
 const ADMIN_PUBLIC_PLAYERS_FILE = 'stats-players.json';
-const ADMIN_PUBLIC_CACHE_BUILD = 'v258-admin-public-cache-normalized';
+const ADMIN_PUBLIC_FARMS_FILE = 'stats-farms.json';
+const ADMIN_PUBLIC_CACHE_BUILD = 'v259-admin-public-cache-with-farms';
 
 function adminPublicCacheUrls(file, force = false) {
   const clean = String(file || '').replace(/^\/+/, '');
@@ -137,6 +138,69 @@ function adminPublicPlayerToUser(row = {}) {
   };
 }
 
+function adminPublicFarmToFarm(row = {}) {
+  return {
+    farmId: normalizeText(row.farmKey || row.farmId || row.id || ''),
+    id: normalizeText(row.farmKey || row.farmId || row.id || ''),
+    ownerPublicKey: normalizeText(row.ownerPublicKey || row.publicKey || ''),
+    ownerUid: normalizeText(row.ownerUid || row.uid || ''),
+    ownerNickname: normalizeText(row.ownerNickname || row.mainNickname || ''),
+    nickname: normalizeText(row.nickname || row.gameNick || row.name || ''),
+    region: normalizeText(row.region || '').replace(/[^0-9]/g, ''),
+    alliance: allianceTag3(row.alliance || ''),
+    rank: normalizeText(row.rank || 'p1').toLowerCase(),
+    shk: normalizeText(row.shk || ''),
+    role: normalizeText(row.role || 'player').toLowerCase(),
+    createdAt: row.createdAt || row.updatedAt || null,
+    updatedAt: row.updatedAt || row.createdAt || null,
+    __publicCacheFarm: true
+  };
+}
+
+function attachAdminPublicFarmsToUsers(usersFromCache = [], farmsFromCache = []) {
+  const farms = (Array.isArray(farmsFromCache) ? farmsFromCache : [])
+    .map(adminPublicFarmToFarm)
+    .filter(farm => farm.nickname || farm.region || farm.alliance);
+  if (!farms.length) return usersFromCache.map(user => ({ ...user, farms: Array.isArray(user.farms) ? user.farms : [] }));
+
+  const byOwnerKey = new Map();
+  const add = (key, farm) => {
+    const clean = normalizeText(key);
+    if (!clean) return;
+    if (!byOwnerKey.has(clean)) byOwnerKey.set(clean, []);
+    byOwnerKey.get(clean).push(farm);
+  };
+
+  farms.forEach(farm => {
+    add(`publicKey:${farm.ownerPublicKey}`, farm);
+    add(`uid:${farm.ownerUid}`, farm);
+    add(`nickname:${farm.ownerNickname.toLowerCase()}`, farm);
+  });
+
+  return usersFromCache.map(user => {
+    const publicKey = normalizeText(user.publicKey || '');
+    const uid = normalizeText(user.uid || user.id || '');
+    const nickname = normalizeText(user.nickname || user.gameNick || '').toLowerCase();
+    const matched = [
+      ...byOwnerKey.get(`publicKey:${publicKey}`) || [],
+      ...byOwnerKey.get(`uid:${uid}`) || [],
+      ...byOwnerKey.get(`nickname:${nickname}`) || []
+    ];
+    const seen = new Set();
+    const mergedFarms = [...(Array.isArray(user.farms) ? user.farms : []), ...matched].filter(farm => {
+      const key = normalizeText(farm.farmId || farm.id || farm.nickname || `${farm.region}:${farm.alliance}`);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return {
+      ...user,
+      farmCount: Math.max(Number(user.farmCount || 0), mergedFarms.length),
+      farms: mergedFarms
+    };
+  });
+}
+
 async function loadAdminPublicCacheUsers({ force = false } = {}) {
   const cacheKey = `adminPublicPlayers.${ADMIN_PUBLIC_CACHE_BUILD}`;
   if (!force) {
@@ -144,10 +208,17 @@ async function loadAdminPublicCacheUsers({ force = false } = {}) {
     if (Array.isArray(cached)) return cached;
   }
   try {
-    const raw = await fetchAdminPublicCacheJson(ADMIN_PUBLIC_PLAYERS_FILE, { force });
-    const usersFromCache = (Array.isArray(raw) ? raw : [])
+    const [playersRaw, farmsRaw] = await Promise.all([
+      fetchAdminPublicCacheJson(ADMIN_PUBLIC_PLAYERS_FILE, { force }),
+      fetchAdminPublicCacheJson(ADMIN_PUBLIC_FARMS_FILE, { force }).catch(error => {
+        console.warn('[WKD] admin public-cache farms unavailable:', error?.message || error);
+        return [];
+      })
+    ]);
+    const usersWithoutFarms = (Array.isArray(playersRaw) ? playersRaw : [])
       .map(adminPublicPlayerToUser)
       .filter(user => user.nickname && user.region && !user.deleted && !user.blocked);
+    const usersFromCache = attachAdminPublicFarmsToUsers(usersWithoutFarms, Array.isArray(farmsRaw) ? farmsRaw : []);
     writeAdminJsonCache(cacheKey, usersFromCache);
     return usersFromCache;
   } catch (error) {
@@ -176,7 +247,14 @@ function mergeAdminUsersWithPublicCache(indexUsers = [], publicUsers = []) {
     const existingIsPublicOnly = Boolean(existing?.__publicCacheOnly);
     const userIsPublicOnly = Boolean(user.__publicCacheOnly);
     const merged = existing
-      ? (existingIsPublicOnly && !userIsPublicOnly ? { ...existing, ...user, __publicCacheOnly: false } : { ...user, ...existing, ...(!existingIsPublicOnly && userIsPublicOnly ? { farmCount: user.farmCount ?? existing.farmCount } : {}) })
+      ? (() => {
+        const userFarms = Array.isArray(user.farms) ? user.farms : [];
+        const existingFarms = Array.isArray(existing.farms) ? existing.farms : [];
+        const farms = userFarms.length ? userFarms : existingFarms;
+        return existingIsPublicOnly && !userIsPublicOnly
+          ? { ...existing, ...user, farms, farmCount: Math.max(Number(existing.farmCount || 0), Number(user.farmCount || 0), farms.length), __publicCacheOnly: false }
+          : { ...user, ...existing, farms, farmCount: Math.max(Number(existing.farmCount || 0), Number(user.farmCount || 0), farms.length), ...(!existingIsPublicOnly && userIsPublicOnly ? { farmCount: Math.max(Number(user.farmCount || 0), Number(existing.farmCount || 0), farms.length) } : {}) };
+      })()
       : user;
     map.set(key, merged);
     if (uid) map.set(`uid:${uid}`, merged);
@@ -1536,7 +1614,7 @@ function userRow(row) {
     : (includeAdminFarmRows() ? `${t('account.mainPlayer', 'Main player')} · ${tv('stats.farmCountShort', '{count} farms', { count: getUserFarms(user).length })}` : (user.email || ''));
   const publicOnly = Boolean(user.__publicCacheOnly || String(user.uid || '').startsWith('public:'));
   const actionsHtml = publicOnly
-    ? `<span class="admin-muted">${escapeHtml(t('admin.publicCacheOnly', 'Публічний кеш · натисни “Оновити індекс”, щоб редагувати'))}</span>`
+    ? `<span class="admin-muted">${escapeHtml(t('admin.publicCacheOnly', 'Публічний кеш'))}</span>`
     : `<button class="btn" type="button" data-action="edit-user" data-uid="${escapeHtml(user.uid)}" data-row-id="${escapeHtml(row.rowId)}" data-farm-id="${escapeHtml(row.farmId || 'main')}">${escapeHtml(t('common.edit', 'Edit'))}</button>
       ${!row.isFarmRow && actorIsGlobalManager() ? `<button class="btn" type="button" data-action="${user.blocked ? 'unblock-user' : 'block-user'}" data-uid="${escapeHtml(user.uid)}">${escapeHtml(user.blocked ? t('admin.unblock', 'Розблокувати') : t('admin.block', 'Чорний список'))}</button>
       ${canUseLimitsPanel() ? `<button class="btn btn-danger" type="button" data-action="delete-user-profile" data-uid="${escapeHtml(user.uid)}">${escapeHtml(t('common.delete', 'Видалити'))}</button>` : ''}` : ''}`;
