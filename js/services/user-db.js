@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=213';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=213';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=213';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=252';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=252';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=252';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -18,7 +18,7 @@ import {
   readNotificationBellD1,
   setNotificationSummaryD1,
   upsertNotificationDirectoryD1
-} from './notifications-d1.js?v=213';
+} from './notifications-d1.js?v=252';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -2867,7 +2867,7 @@ export async function listStaffRegionPlayers(options = {}) {
   if (!firebase) return { users: [], reads: 0, region: '', allianceLocked: false };
   const { db, firestoreMod } = firebase;
   const actor = firebase.auth?.currentUser || null;
-  const actorProfile = actor ? await getUserProfile(actor.uid, { forceRefresh: true }).catch(() => null) : null;
+  const actorProfile = actor ? await getUserProfile(actor.uid).catch(() => null) : null;
   if (!canUseStaffPanel(actor, actorProfile)) throw new Error('staff-only');
 
   const requestedRegion = normalizeText(options.region || '').replace(/[^0-9]/g, '');

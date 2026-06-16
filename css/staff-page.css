@@ -1,4 +1,4 @@
-/* v248 — no iframe staff tabs; tools are integrated into the panel. */
+/* v251 — normal staff container width, inner tabs full width, no staff drawer tabs. */
 
 .staff-page {
   min-height: auto;
@@ -6,7 +6,8 @@
 }
 
 .staff-panel {
-  width: min(1780px, calc(100vw - 18px));
+  width: 100%;
+  max-width: var(--app-max);
   margin: 0 auto;
   padding: clamp(18px, 2.1vw, 30px);
   border: 1px solid rgba(145, 170, 255, .18);
@@ -354,39 +355,13 @@
   line-height: 1.42;
 }
 
-.staff-drawer-tabs {
-  display: grid;
-  gap: 8px;
-  margin: 10px 0 16px;
-  padding: 12px;
-  border: 1px solid rgba(255,255,255,.10);
-  border-radius: 18px;
-  background: rgba(5, 12, 25, .48);
-}
 
-.staff-drawer-tabs strong {
-  color: #f5f7ff;
-  font-size: 13px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
 
-.staff-drawer-tab {
-  min-height: 42px;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 14px;
-  background: #07101f;
-  color: #dce6ff;
-  font: inherit;
-  font-weight: 900;
-  cursor: pointer;
-}
 
-.staff-drawer-tab.is-active {
-  background: linear-gradient(135deg, #536dff, #8669ff);
-  color: #fff;
-  border-color: rgba(154,168,255,.40);
-}
+
+
+
+
 
 .staff-modal {
   position: fixed;
@@ -496,66 +471,122 @@
 
 
 
-/* STAFF_INTEGRATED_TABS_V248 */
-.staff-tabs {
-  width: 100%;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+
+/* STAFF_CONTAINER_NORMAL_V251 */
+body.staff-shell .app-header {
+  position: relative;
+  z-index: 5000 !important;
 }
 
-.staff-tool-panel {
+body.staff-shell .account-nav,
+body.staff-shell .lang-switcher,
+body.staff-shell .header-tools,
+body.staff-shell .burger-btn {
+  position: relative;
+  z-index: 5010 !important;
+  pointer-events: auto !important;
+}
+
+body.staff-shell .account-menu,
+body.staff-shell .lang-menu,
+body.staff-shell .notify-menu {
+  z-index: 7000 !important;
+  pointer-events: auto !important;
+}
+
+body.staff-shell .drawer {
+  z-index: 8000 !important;
+}
+
+body.staff-shell .staff-page {
   width: 100%;
   max-width: none;
+  position: relative;
+  z-index: 1;
+}
+
+body.staff-shell .staff-panel.container,
+body.staff-shell .staff-panel {
+  width: 100% !important;
+  max-width: var(--app-max) !important;
+  margin-inline: auto !important;
+  box-sizing: border-box !important;
+}
+
+body.staff-shell .staff-tabs,
+body.staff-shell .staff-tab-panel,
+body.staff-shell .staff-tool-panel,
+body.staff-shell .staff-tool-panel > .staff-integrated-tool,
+body.staff-shell .staff-tool-panel > .profile-card,
+body.staff-shell .staff-tool-panel > .region-card,
+body.staff-shell .staff-tool-panel > .region-table-card,
+body.staff-shell .staff-tool-panel > .region-settings-page,
+body.staff-shell .staff-tool-panel > .action-log-page,
+body.staff-shell .staff-tool-panel .profile-card.region-card,
+body.staff-shell .staff-tool-panel .region-card.region-table-card,
+body.staff-shell .staff-tool-panel .region-card.region-settings-page,
+body.staff-shell .staff-tool-panel .region-card.action-log-page {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+body.staff-shell .staff-tool-panel {
   padding: 0 !important;
   border: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-  overflow: visible;
+  overflow: visible !important;
 }
 
-.staff-tool-panel > .profile-card,
-.staff-tool-panel > .region-card,
-.staff-tool-panel > .staff-integrated-tool {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  box-sizing: border-box;
+body.staff-shell .staff-tool-panel > .staff-integrated-tool,
+body.staff-shell .staff-tool-panel > .profile-card,
+body.staff-shell .staff-tool-panel > .region-card {
+  margin: 0 !important;
 }
 
-.staff-tool-panel .profile-page,
-.staff-tool-panel .container {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 0;
+body.staff-shell .staff-tool-panel .profile-page,
+body.staff-shell .staff-tool-panel .profile-page.container,
+body.staff-shell .staff-tool-panel .container {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  place-items: initial !important;
+  box-sizing: border-box !important;
 }
 
-.staff-tool-panel .profile-card.region-card,
-.staff-tool-panel .region-table-card,
-.staff-tool-panel .region-settings-page,
-.staff-tool-panel .action-log-page {
-  border-radius: 22px;
+body.staff-shell .staff-tool-panel .admin-table-wrap,
+body.staff-shell .staff-tool-panel .region-table-wrap,
+body.staff-shell .staff-tool-panel .region-table-controls,
+body.staff-shell .staff-tool-panel .region-form-block,
+body.staff-shell .staff-tool-panel .region-grid,
+body.staff-shell .staff-tool-panel .region-cycle-panel,
+body.staff-shell .staff-tool-panel .region-settings-tabs,
+body.staff-shell .staff-tool-panel .action-log-cleanup,
+body.staff-shell .staff-tool-panel table {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
 }
 
-.staff-tool-panel .region-head-actions {
-  max-width: 100%;
-}
-
-.staff-tool-panel .admin-table-wrap,
-.staff-tool-panel .region-table-controls,
-.staff-tool-panel .region-form-block,
-.staff-tool-panel .region-grid {
-  width: 100%;
-  max-width: 100%;
+body.staff-shell .staff-drawer-tabs {
+  display: none !important;
 }
 
 @media (max-width: 1280px) {
-  .staff-tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  body.staff-shell .staff-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
 @media (max-width: 760px) {
-  .staff-tabs {
-    grid-template-columns: 1fr;
+  body.staff-shell .staff-tabs {
+    grid-template-columns: 1fr !important;
   }
 }

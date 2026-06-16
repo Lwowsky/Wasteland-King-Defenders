@@ -1,6 +1,5 @@
-import { formatUserDate, getUserProfile, makePublicPlayer, roleLabel } from '../services/user-db.js';
-import { watchAuth } from '../services/firebase-service.js';
-import { troopLabel } from '../services/region-db.js?v=216';
+import { formatUserDate, roleLabel } from '../services/user-db.js';
+import { troopLabel } from '../services/region-db.js?v=252';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -12,8 +11,7 @@ let sortState = { key: 'region', dir: 'asc' };
 let statsReady = false;
 let activeModalPlayer = null;
 let activeModalTab = 'profile';
-let currentUser = null;
-let liveStatsPatchReady = false;
+const STATS_FILTER_STATE_KEY = 'wkd.publicStats.filters.v252';
 let statsFarms = [];
 let statsFarmsLoaded = false;
 let statsVersionInfo = null;
@@ -37,7 +35,7 @@ function locale() {
 
 
 
-const STATS_CACHE_BUILD = 'v216-auto-public-stats';
+const STATS_CACHE_BUILD = 'v252-snapshot-only-public-stats';
 const PUBLIC_STATS_SUMMARY_FILE = 'stats-summary.json';
 const PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -271,24 +269,9 @@ function mergeLivePublicPlayer(livePlayer = null) {
   return true;
 }
 
-async function refreshCurrentUserLiveStats({ rerender = true } = {}) {
-  if (!currentUser?.uid || !detailsLoaded) return;
-  try {
-    const profile = await getUserProfile(currentUser.uid);
-    if (!profile?.profileComplete) return;
-    const livePlayer = makePublicPlayer({ ...profile, uid: currentUser.uid });
-    if (mergeLivePublicPlayer(livePlayer) && rerender) {
-      renderStats();
-      renderPlayers();
-      if (activeModalPlayer) {
-        const activeKey = activeModalPlayer.publicKey || activeModalPlayer.uid || playerIdentityKey(activeModalPlayer);
-        const fresh = players.find(item => (item.publicKey || item.uid || playerIdentityKey(item)) === activeKey) || livePlayer;
-        openPlayerModal(fresh, activeModalTab);
-      }
-    }
-  } catch (error) {
-    console.warn('[WKD] live current user stats patch failed:', error);
-  }
+function refreshCurrentUserLiveStats() {
+  // v252: public statistics page uses only public-cache JSON snapshots.
+  return Promise.resolve();
 }
 
 function hasUsableStatsSummary(summary = {}) {
@@ -361,7 +344,6 @@ async function ensurePlayersLoaded({ force = false } = {}) {
         setStatus(t('stats.farmsLoadFailed', 'Farm statistics are unavailable. Try Refresh cache.'), 'warning');
       });
     }
-    await refreshCurrentUserLiveStats({ rerender: false });
     renderStats();
     renderPlayers();
     if (isPublicPlayersJsonMissing(statsSummaryCache, publicPlayers)) {
@@ -744,9 +726,35 @@ function closePlayerModal() {
   activeModalPlayer = null;
 }
 
+
+function readStatsFilterState() {
+  try { return JSON.parse(localStorage.getItem(STATS_FILTER_STATE_KEY) || '{}') || {}; } catch { return {}; }
+}
+function writeStatsFilterState() {
+  try {
+    localStorage.setItem(STATS_FILTER_STATE_KEY, JSON.stringify({
+      nick: $('#statsNickSearch')?.value || '',
+      alliance: $('#statsAllianceSearch')?.value || '',
+      region: $('#statsRegionSearch')?.value || '',
+      role: $('#statsRoleFilter')?.value || 'all',
+      rows: $('#statsRowsFilter')?.value || '10',
+      includeFarms: Boolean($('#statsIncludeFarmsToggle')?.checked)
+    }));
+  } catch {}
+}
+function restoreStatsFilterState() {
+  const state = readStatsFilterState();
+  if ($('#statsNickSearch')) $('#statsNickSearch').value = state.nick || '';
+  if ($('#statsAllianceSearch')) $('#statsAllianceSearch').value = state.alliance || '';
+  if ($('#statsRegionSearch')) $('#statsRegionSearch').value = state.region || '';
+  if ($('#statsRoleFilter')) $('#statsRoleFilter').value = state.role || 'all';
+  if ($('#statsRowsFilter')) $('#statsRowsFilter').value = state.rows || '10';
+  if ($('#statsIncludeFarmsToggle')) $('#statsIncludeFarmsToggle').checked = Boolean(state.includeFarms);
+}
 function bindControls() {
   $('#refreshStatsBtn')?.addEventListener('click', () => loadSummaryOnly({ force: true, loadDetails: true }));
   const loadThenRender = () => {
+    writeStatsFilterState();
     if (!detailsLoaded) {
       ensurePlayersLoaded().catch(error => {
         console.warn('[WKD] stats players load failed:', error);
@@ -763,6 +771,7 @@ function bindControls() {
   $('#statsRoleFilter')?.addEventListener('change', loadThenRender);
   $('#statsRowsFilter')?.addEventListener('change', loadThenRender);
   $('#statsIncludeFarmsToggle')?.addEventListener('change', async () => {
+    writeStatsFilterState();
     if (includeFarmRows()) {
       if (!detailsLoaded) {
         await ensurePlayersLoaded().catch(error => {
@@ -800,12 +809,8 @@ function bindControls() {
 async function initStatsPage() {
   if (statsReady || !$('#publicPlayersBody')) return;
   statsReady = true;
+  restoreStatsFilterState();
   bindControls();
-  await watchAuth(user => {
-    currentUser = user;
-    if (liveStatsPatchReady) refreshCurrentUserLiveStats().catch(console.error);
-  }).catch?.(() => null);
-  liveStatsPatchReady = true;
   await loadSummaryOnly().catch(error => {
     console.error(error);
     setStatus(t('stats.loadFailed', 'Could not load statistics. Try again.'), 'error');

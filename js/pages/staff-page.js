@@ -5,12 +5,12 @@ import {
   getGameProfile,
   getUserFarms,
   getUserProfile,
-  listStaffRegionPlayers,
   roleLabel,
   staffRankOptionsForTarget,
   staffRoleOptionsForTarget,
   updateRegionPlayerByStaff
 } from '../services/user-db.js';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot } from '../services/region-table-cache.js?v=252';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : fallback;
@@ -18,6 +18,10 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&am
 const normalizeRegion = value => String(value || '').replace(/[^0-9]/g, '');
 const normalizeAlliance = value => String(value || '').trim().toUpperCase().slice(0, 3);
 const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
+const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
+const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
+const STAFF_REFRESH_LIMIT = 5;
+const STAFF_CACHE_BUILD = 'v252-d1-snapshot-local';
 
 const STAFF_TABS = {
   players: { labelKey: 'staff.playersTitle', label: 'Гравці регіону' },
@@ -33,9 +37,9 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=248',
-  'region-settings': './region-settings-page.js?v=248',
-  'action-log': './action-log-page.js?v=248'
+  'region-table': './region-table-page.js?v=252',
+  'region-settings': './region-settings-page.js?v=252',
+  'action-log': './action-log-page.js?v=252'
 };
 const loadedStaffToolTabs = new Set();
 
@@ -74,29 +78,14 @@ function switchStaffTab(tab = 'players') {
 }
 
 function injectStaffDrawerTabs() {
-  const drawerBody = document.querySelector('.drawer-body');
-  if (!drawerBody || drawerBody.querySelector('.staff-drawer-tabs')) return;
-  const wrap = document.createElement('div');
-  wrap.className = 'staff-drawer-tabs';
-  wrap.innerHTML = `<strong>${esc(t('staff.title', 'Панель регіону'))}</strong>` + Object.entries(STAFF_TABS).map(([key, meta]) => (
-    `<button class="staff-drawer-tab" type="button" data-staff-tab="${esc(key)}">${esc(t(meta.labelKey, meta.label))}</button>`
-  )).join('');
-  const afterAuth = drawerBody.querySelector('.drawer-auth');
-  if (afterAuth?.nextSibling) drawerBody.insertBefore(wrap, afterAuth.nextSibling);
-  else drawerBody.prepend(wrap);
-  wrap.querySelectorAll('[data-staff-tab]').forEach(button => {
-    button.addEventListener('click', () => {
-      switchStaffTab(button.dataset.staffTab);
-      document.getElementById('drawer')?.classList.remove('open');
-      document.getElementById('drawer')?.setAttribute('aria-hidden', 'true');
-      document.getElementById('burgerBtn')?.setAttribute('aria-expanded', 'false');
-    });
-  });
+  document.querySelectorAll('.staff-drawer-tabs').forEach(node => node.remove());
 }
+
 
 let ready = false;
 let currentUser = null;
 let currentProfile = null;
+let staffSnapshotRows = [];
 let currentRows = [];
 let editRow = null;
 
@@ -129,23 +118,164 @@ function scopeBadge() {
   if ($('#staffScopeBadge')) $('#staffScopeBadge').textContent = text || '—';
 }
 
-async function loadRows() {
-  const region = $('#staffRegionSelect')?.value || '';
-  const alliance = $('#staffAllianceFilter')?.value || '';
-  const nick = $('#staffNickFilter')?.value || '';
-  const rank = $('#staffRankFilter')?.value || 'all';
-  setStatus(t('staff.loadingPlayers', 'Завантажую гравців регіону...'), 'muted');
-  const result = await listStaffRegionPlayers({ region, alliance, nick, rank, limitCount: 350 });
-  currentRows = result.users || [];
-  if (result.allianceLocked && $('#staffAllianceFilter')) {
-    $('#staffAllianceFilter').value = result.alliance || '';
-    $('#staffAllianceFilter').disabled = true;
-  } else if ($('#staffAllianceFilter')) {
-    $('#staffAllianceFilter').disabled = false;
+
+function staffScopeForRegion(region = '') {
+  const safeRegion = normalizeRegion(region || $('#staffRegionSelect')?.value || '');
+  const games = actorGames(currentProfile || {});
+  const game = games.find(item => normalizeRegion(item.region) === safeRegion) || games[0] || {};
+  const profileRole = String(currentProfile?.role || 'player').toLowerCase();
+  const role = ['admin', 'moderator'].includes(profileRole) ? profileRole : String(game.role || profileRole || 'player').toLowerCase();
+  const global = ['admin', 'moderator'].includes(profileRole);
+  const consul = role === 'consul';
+  const alliance = normalizeAlliance(game.alliance || currentProfile?.alliance || '');
+  return { region: safeRegion, role, alliance, global, consul, allianceLocked: !global && !consul };
+}
+function syncAllianceLockForStaff(region = '') {
+  const input = $('#staffAllianceFilter');
+  if (!input) return staffScopeForRegion(region);
+  const scope = staffScopeForRegion(region);
+  if (scope.allianceLocked) {
+    input.value = scope.alliance || input.value || '';
+    input.disabled = true;
+  } else {
+    input.disabled = false;
   }
+  return scope;
+}
+
+
+function staffCacheKey(region = '') {
+  return `wkd.staff.regionRows.${STAFF_CACHE_BUILD}.${normalizeRegion(region) || 'none'}`;
+}
+function readStaffRowsCache(region = '') {
+  try {
+    const raw = localStorage.getItem(staffCacheKey(region));
+    const data = raw ? JSON.parse(raw) : null;
+    if (!data || data.build !== STAFF_CACHE_BUILD) return null;
+    if (Date.now() - Number(data.savedAtMs || 0) > STAFF_CACHE_TTL_MS) return null;
+    if (normalizeRegion(data.region) !== normalizeRegion(region)) return null;
+    return Array.isArray(data.rows) ? data : null;
+  } catch {
+    return null;
+  }
+}
+function writeStaffRowsCache(region = '', rows = [], meta = {}) {
+  try {
+    localStorage.setItem(staffCacheKey(region), JSON.stringify({
+      build: STAFF_CACHE_BUILD,
+      region: normalizeRegion(region),
+      savedAtMs: Date.now(),
+      rows: Array.isArray(rows) ? rows.slice(0, 2000) : [],
+      meta: meta || {}
+    }));
+  } catch {}
+}
+function refreshHistoryKey(region = '') {
+  return `wkd.staff.refreshHistory.${STAFF_CACHE_BUILD}.${normalizeRegion(region) || 'none'}`;
+}
+function manualStaffRefreshAllowed(region = '') {
+  const key = refreshHistoryKey(region);
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem(key) || '[]'); } catch { history = []; }
+  const now = Date.now();
+  history = (Array.isArray(history) ? history : []).filter(time => now - Number(time) < STAFF_REFRESH_WINDOW_MS);
+  if (history.length >= STAFF_REFRESH_LIMIT) {
+    try { localStorage.setItem(key, JSON.stringify(history)); } catch {}
+    return false;
+  }
+  history.push(now);
+  try { localStorage.setItem(key, JSON.stringify(history)); } catch {}
+  return true;
+}
+function normalizeStaffSnapshotRow(row = {}) {
+  const farmId = String(row.farmId || '').trim();
+  return {
+    ...row,
+    id: row.uid || row.id || row.publicKey || `${row.nickname || row.gameNick || 'player'}-${row.alliance || ''}-${farmId || 'main'}`,
+    uid: row.uid || row.id || row.publicKey || '',
+    nickname: row.nickname || row.gameNick || row.name || '',
+    region: normalizeRegion(row.region || ''),
+    alliance: normalizeAlliance(row.alliance || ''),
+    rank: normalizeRank(row.rank || 'p1'),
+    shk: row.shk || '',
+    role: row.role || 'player',
+    farmId
+  };
+}
+function staffFilterValues() {
+  return {
+    region: $('#staffRegionSelect')?.value || '',
+    alliance: $('#staffAllianceFilter')?.value || '',
+    nick: $('#staffNickFilter')?.value || '',
+    rank: $('#staffRankFilter')?.value || 'all'
+  };
+}
+function applyLocalStaffFilters({ statusMessage = '' } = {}) {
+  const { region, alliance, nick, rank } = staffFilterValues();
+  const scope = syncAllianceLockForStaff(region);
+  const nickFilter = String(nick || '').trim().toLowerCase();
+  const rankFilter = String(rank || '').trim().toLowerCase();
+  const allianceFilter = scope.allianceLocked ? scope.alliance : normalizeAlliance(alliance || '');
+  let rows = (Array.isArray(staffSnapshotRows) ? staffSnapshotRows : []).filter(row => !row.deleted && !row.blocked);
+  if (allianceFilter) rows = rows.filter(row => normalizeAlliance(row.alliance) === allianceFilter);
+  if (nickFilter) rows = rows.filter(row => String(row.nickname || row.gameNick || '').toLowerCase().includes(nickFilter));
+  if (rankFilter && rankFilter !== 'all') rows = rows.filter(row => normalizeRank(row.rank || '') === rankFilter);
+  rows.sort((a, b) => String(a.nickname || a.gameNick || '').localeCompare(String(b.nickname || b.gameNick || ''), undefined, { sensitivity: 'base' }));
+  currentRows = rows;
   renderRows();
   scopeBadge();
-  setStatus(t('staff.loaded', 'Панель регіону готова.'), 'success');
+  if (statusMessage) setStatus(statusMessage, 'success');
+}
+async function readStaffSnapshotRows(region = '', { force = false } = {}) {
+  const safeRegion = normalizeRegion(region);
+  if (!safeRegion) return { rows: [], region: '', source: 'no-region' };
+  if (!isRegionTableCacheEnabled()) throw new Error('staff-d1-snapshot-disabled');
+  const result = await readRegionTableSnapshot(currentUser, safeRegion, {
+    force,
+    ttlMs: force ? 0 : STAFF_CACHE_TTL_MS
+  });
+  const rows = (result.rows || []).map(normalizeStaffSnapshotRow).filter(row => normalizeRegion(row.region || safeRegion) === safeRegion || !row.region);
+  return { ...result, region: safeRegion, rows };
+}
+async function loadRows(options = {}) {
+  const force = Boolean(options?.force);
+  const region = $('#staffRegionSelect')?.value || normalizeRegion(getGameProfile(currentProfile || {}).region);
+  if (!region) {
+    staffSnapshotRows = [];
+    currentRows = [];
+    renderRows();
+    setStatus(t('staff.noRegion', 'Немає регіону для завантаження.'), 'warn');
+    return;
+  }
+  if (force && !manualStaffRefreshAllowed(region)) {
+    setStatus(t('staff.refreshLimited', 'Оновлення обмежено: максимум 5 разів за 10 хвилин для цього регіону.'), 'warn');
+    return;
+  }
+  const cached = !force ? readStaffRowsCache(region) : null;
+  if (cached?.rows?.length) {
+    staffSnapshotRows = cached.rows.map(normalizeStaffSnapshotRow);
+    applyLocalStaffFilters({ statusMessage: t('staff.loadedFromLocalCache', 'Гравці показані з локального кешу. Натисни Оновити для ручного оновлення D1 snapshot.') });
+    return;
+  }
+  setStatus(t('staff.loadingPlayers', 'Завантажую гравців регіону з D1 snapshot...'), 'muted');
+  try {
+    const result = await readStaffSnapshotRows(region, { force });
+    staffSnapshotRows = result.rows || [];
+    writeStaffRowsCache(region, staffSnapshotRows, { source: result.source || 'cloudflare-d1-region-table', totalRows: result.totalRows || staffSnapshotRows.length });
+    applyLocalStaffFilters({ statusMessage: t('staff.loaded', 'Панель регіону готова.') });
+  } catch (error) {
+    console.error('[WKD] staff D1 snapshot load failed:', error);
+    const fallback = readStaffRowsCache(region);
+    if (fallback?.rows?.length) {
+      staffSnapshotRows = fallback.rows.map(normalizeStaffSnapshotRow);
+      applyLocalStaffFilters({ statusMessage: t('staff.loadedFromLocalCache', 'Гравці показані з локального кешу.') });
+      return;
+    }
+    staffSnapshotRows = [];
+    currentRows = [];
+    renderRows();
+    setStatus(t('staff.loadFailed', 'Не вдалося завантажити D1 snapshot для панелі регіону.'), 'error');
+  }
 }
 
 function renderRows() {
@@ -223,15 +353,14 @@ function bindControls() {
   document.querySelectorAll('[data-staff-tab]').forEach(button => {
     button.addEventListener('click', () => switchStaffTab(button.dataset.staffTab));
   });
-  injectStaffDrawerTabs();
-  $('#staffRefreshBtn')?.addEventListener('click', loadRows);
-  $('#staffRegionSelect')?.addEventListener('change', loadRows);
-  $('#staffAllianceFilter')?.addEventListener('change', loadRows);
+  $('#staffRefreshBtn')?.addEventListener('click', () => loadRows({ force: true }));
+  $('#staffRegionSelect')?.addEventListener('change', () => loadRows());
+  $('#staffAllianceFilter')?.addEventListener('change', () => applyLocalStaffFilters());
   $('#staffNickFilter')?.addEventListener('input', () => {
     clearTimeout(window.__wkdStaffSearchTimer);
-    window.__wkdStaffSearchTimer = setTimeout(loadRows, 250);
+    window.__wkdStaffSearchTimer = setTimeout(() => applyLocalStaffFilters(), 150);
   });
-  $('#staffRankFilter')?.addEventListener('change', loadRows);
+  $('#staffRankFilter')?.addEventListener('change', () => applyLocalStaffFilters());
   $('#staffSaveEditBtn')?.addEventListener('click', saveEdit);
   document.querySelectorAll('[data-staff-close]').forEach(el => el.addEventListener('click', closeEdit));
 }
@@ -249,7 +378,7 @@ async function initStaffPage() {
       setTimeout(() => { window.location.href = 'login.html'; }, 700);
       return;
     }
-    currentProfile = await getUserProfile(user.uid, { forceRefresh: true }).catch(() => null);
+    currentProfile = await getUserProfile(user.uid).catch(() => null);
     if (!canUseStaffPanel(user, currentProfile)) {
       setStatus(t('staff.noAccess', 'Ця сторінка доступна тільки консулу, офіцеру або R5.'), 'error');
       $('#staffPlayersBody').innerHTML = `<tr><td colspan="7">${esc(t('staff.noAccess', 'Ця сторінка доступна тільки консулу, офіцеру або R5.'))}</td></tr>`;
@@ -265,13 +394,11 @@ async function initStaffPage() {
 }
 
 document.addEventListener('wkd:partials-ready', () => {
-  injectStaffDrawerTabs();
   initStaffPage();
 });
 document.addEventListener('DOMContentLoaded', () => setTimeout(initStaffPage, 0));
 document.addEventListener('wkd:language-changed', () => {
   document.querySelectorAll('.staff-drawer-tabs').forEach(node => node.remove());
-  injectStaffDrawerTabs();
   scopeBadge();
   renderRows();
 });

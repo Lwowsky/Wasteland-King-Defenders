@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=216';
+import { trackCloudflareUsage } from './usage-tracker.js?v=252';
 
 const MAX_ROWS = 2000;
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -207,6 +207,11 @@ async function requestPublicSnapshotJson(path, options = {}) {
 export function publicRegionTableSnapshotUrl(code = '') {
   const safeCode = cleanCode(code);
   return safeCode ? `/public-cache/share/rt/${encodeURIComponent(safeCode)}.json` : '';
+}
+
+export function publicRegionFormSnapshotUrl(code = '') {
+  const safeCode = cleanCode(code);
+  return safeCode ? `/public-cache/share/f/${encodeURIComponent(safeCode)}.json` : '';
 }
 
 function sanitizeTableRow(row = {}) {
@@ -619,7 +624,12 @@ export async function readRegionFormShare(code, options = {}) {
     const cached = readLocalJsonCache('regionFormShare', safeCode, Number(options?.ttlMs) || REGION_FORM_SETTINGS_TTL_MS);
     if (cached?.settings) return cached;
   }
-  const data = await requestJson(`/api/region-form/share/${encodeURIComponent(safeCode)}`);
+  let data = null;
+  try {
+    data = await requestPublicSnapshotJson(publicRegionFormSnapshotUrl(safeCode));
+  } catch (snapshotError) {
+    data = await requestJson(`/api/region-form/share/${encodeURIComponent(safeCode)}`);
+  }
   const normalized = normalizeRegionFormResponse(data);
   writeLocalJsonCache('regionFormShare', safeCode, normalized);
   if (normalized.region) writeLocalJsonCache('regionFormSettings', normalized.region, normalized);

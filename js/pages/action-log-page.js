@@ -1,11 +1,15 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { canUseAdminPanel, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=248';
-import { clearRegionActionLogs, deleteRegionActionLog, deleteRegionActionLogs, getManagedRegionOptions, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=248';
+import { canUseAdminPanel, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole } from '../services/user-db.js?v=252';
+import { clearRegionActionLogs, deleteRegionActionLog, deleteRegionActionLogs, getManagedRegionOptions, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=252';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 const PAGE_SIZE = 20;
+const ACTION_LOG_CACHE_BUILD = 'v252-manual-local';
+const ACTION_LOG_CACHE_TTL_MS = 30 * 60 * 1000;
+const ACTION_LOG_REFRESH_WINDOW_MS = 10 * 60 * 1000;
+const ACTION_LOG_REFRESH_LIMIT = 10;
 const ACTION_LOG_REGION_KEY = 'wkd.actionLog.activeRegion';
 const GLOBAL_ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
 let currentUser = null;
@@ -34,6 +38,64 @@ function rememberRegion(region = '') {
     localStorage.setItem(ACTION_LOG_REGION_KEY, safe);
     localStorage.setItem(GLOBAL_ACTIVE_REGION_KEY, safe);
   } catch (_) {}
+}
+
+function actionLogCacheKey(region = '', page = 0) {
+  return `wkd.actionLog.rows.${ACTION_LOG_CACHE_BUILD}.${normalizeRegion(region) || 'none'}.${Math.max(0, Number(page) || 0)}`;
+}
+function readActionLogCache(region = '', page = 0) {
+  try {
+    const raw = localStorage.getItem(actionLogCacheKey(region, page));
+    const data = raw ? JSON.parse(raw) : null;
+    if (!data || data.build !== ACTION_LOG_CACHE_BUILD) return null;
+    if (Date.now() - Number(data.savedAtMs || 0) > ACTION_LOG_CACHE_TTL_MS) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+function writeActionLogCache(region = '', page = 0, payload = {}) {
+  try {
+    localStorage.setItem(actionLogCacheKey(region, page), JSON.stringify({
+      build: ACTION_LOG_CACHE_BUILD,
+      region: normalizeRegion(region),
+      page: Math.max(0, Number(page) || 0),
+      savedAtMs: Date.now(),
+      rows: Array.isArray(payload.rows) ? payload.rows : [],
+      nextCursorMs: Number(payload.nextCursorMs || 0) || 0,
+      hasMore: Boolean(payload.hasMore)
+    }));
+  } catch {}
+}
+function showActionLogCache(region = '') {
+  const cached = readActionLogCache(region, 0);
+  currentRegion = normalizeRegion(region || currentRegion || cached?.region || '');
+  if (cached?.rows) {
+    rows = cached.rows;
+    hasMore = Boolean(cached.hasMore);
+    pageIndex = 0;
+    pageStack = [{ rows, nextCursorMs: cached.nextCursorMs || 0, hasMore }];
+    setStatus(t('actionLog.loadedFromCache', 'Попередню сторінку показано з кешу.'), 'success');
+  } else {
+    rows = [];
+    resetPages();
+    setStatus(t('actionLog.manualOpenHint', 'Журнал не завантажується автоматично. Натисни “Відкрити”, щоб оновити з D1.'), 'muted');
+  }
+  render();
+}
+function actionLogRefreshAllowed(region = '') {
+  const key = `wkd.actionLog.refreshHistory.${ACTION_LOG_CACHE_BUILD}.${normalizeRegion(region) || 'none'}`;
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem(key) || '[]'); } catch { history = []; }
+  const now = Date.now();
+  history = (Array.isArray(history) ? history : []).filter(time => now - Number(time) < ACTION_LOG_REFRESH_WINDOW_MS);
+  if (history.length >= ACTION_LOG_REFRESH_LIMIT) {
+    try { localStorage.setItem(key, JSON.stringify(history)); } catch {}
+    return false;
+  }
+  history.push(now);
+  try { localStorage.setItem(key, JSON.stringify(history)); } catch {}
+  return true;
 }
 function firstAllowedRegion() {
   return normalizeRegion(regionOptions[0]?.region || regionOptions[0]?.id || regionOptions[0] || '');
@@ -118,6 +180,12 @@ async function loadPage(region = '', direction = 'reset') {
   loadingPage = true;
   renderPager();
   const targetRegion = resolveTargetRegion(region);
+  if (!actionLogRefreshAllowed(targetRegion)) {
+    setStatus(t('actionLog.refreshLimited', 'Оновлення обмежено: максимум 10 разів за 10 хвилин для цього регіону.'), 'warn');
+    loadingPage = false;
+    renderPager();
+    return;
+  }
   const cursorMs = direction === 'next' ? Number(pageStack[pageIndex]?.nextCursorMs) || 0 : 0;
   try {
     const result = await listRegionActionLogs(currentUser, targetRegion, { limitCount: PAGE_SIZE, cursorMs });
@@ -134,6 +202,7 @@ async function loadPage(region = '', direction = 'reset') {
     if (direction === 'next') pageIndex += 1;
     else pageIndex = 0;
     pageStack[pageIndex] = { rows, nextCursorMs: result.nextCursorMs || 0, hasMore };
+    writeActionLogCache(currentRegion, pageIndex, pageStack[pageIndex]);
     pageStack = pageStack.slice(0, pageIndex + 1);
     const messageKey = rows.length < PAGE_SIZE ? 'actionLog.loadedLastPage' : 'actionLog.loaded';
     setStatus(t(messageKey, messageKey === 'actionLog.loadedLastPage' ? 'Завантажено останні записи.' : 'Журнал дій оновлено.'), 'success');
@@ -188,14 +257,16 @@ async function load(user, region = '') {
     render();
     return;
   }
-  await saveSignedInUser(user).catch(() => null);
   currentProfile = await getUserProfile(user.uid).catch(() => null);
   if (canUseAdminPanel(user, currentProfile) && ['admin','moderator'].includes(String(currentProfile?.role || '').toLowerCase())) {
     regionOptions = await listRegionCatalog({ includeInactive: true, skipPublicPlayers: true }).catch(() => []);
   } else {
     regionOptions = getManagedRegionOptions(currentProfile || {}, user).map(region => ({ region }));
   }
-  await loadPage(region || readStoredRegion(), 'reset');
+  currentRegion = resolveTargetRegion(region || readStoredRegion());
+  rememberRegion(currentRegion);
+  renderRegionList();
+  showActionLogCache(currentRegion);
 }
 function bind() {
   $('#actionLogOpenBtn')?.addEventListener('click', () => { const region = normalizeRegion($('#actionLogRegionInput')?.value || ''); rememberRegion(region); load(currentUser, region).catch(console.error); });
