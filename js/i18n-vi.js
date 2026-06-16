@@ -2481,5 +2481,5 @@ window.WKD_TRANSLATIONS.vi = {
   "stats.loadingSummary": "Đang tải public-cache thống kê...",
   "stats.playersUnavailable": "Danh sách người chơi không khả dụng. Hãy bấm “Làm mới cache”.",
   "admin.publicCacheOnly": "Bộ nhớ đệm công khai",
-  "admin.playersLoadedPublicCache": "Đã tải {count} người chơi từ public-cache. Có thể sửa: {editable}. Chỉ public-cache: {publicOnly}. Firebase reads≈{reads}."
+  "admin.playersLoadedPublicCache": "Đã tải {count} người chơi. Có thể sửa: {editable}. Chỉ public-cache: {publicOnly}. Firebase reads≈{reads}."
 };

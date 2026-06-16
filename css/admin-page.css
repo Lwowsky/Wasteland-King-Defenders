@@ -117,7 +117,7 @@
 .admin-edit-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .admin-edit-panel-head strong{color:#fff;font-size:18px;font-weight:950;overflow-wrap:anywhere}
 .admin-edit-panel-head span{color:#9fb0d7;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
-.admin-edit-grid{display:grid;grid-template-columns:2fr 1.15fr 1.15fr .7fr .7fr 1fr 1.05fr;gap:10px;align-items:end}
+.admin-edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end}
 .admin-edit-field{display:grid;gap:6px;min-width:0}
 .admin-edit-field span,.admin-edit-date span{color:#9fb0d7;font-size:12px;font-weight:950;text-transform:uppercase;letter-spacing:.04em}
 .admin-edit-field--wide{min-width:180px}

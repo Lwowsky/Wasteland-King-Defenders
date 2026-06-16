@@ -2481,5 +2481,5 @@ window.WKD_TRANSLATIONS.en = {
   "stats.loadingSummary": "Loading public statistics cache...",
   "stats.playersUnavailable": "Player list is unavailable. Try “Refresh cache”.",
   "admin.publicCacheOnly": "Public cache",
-  "admin.playersLoadedPublicCache": "Loaded {count} players from public-cache. Editable: {editable}. Public-only: {publicOnly}. Firebase reads≈{reads}."
+  "admin.playersLoadedPublicCache": "Loaded {count} players. Editable: {editable}. Public-only: {publicOnly}. Firebase reads≈{reads}."
 };

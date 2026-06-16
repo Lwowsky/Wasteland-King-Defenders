@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=253';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=253';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=253';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=262';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=262';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=262';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -18,7 +18,7 @@ import {
   readNotificationBellD1,
   setNotificationSummaryD1,
   upsertNotificationDirectoryD1
-} from './notifications-d1.js?v=253';
+} from './notifications-d1.js?v=262';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -2050,6 +2050,89 @@ function mergeAdminUserRows(...groups) {
   });
   return [...map.values()].sort((a, b) => adminRowTimeMs(b) - adminRowTimeMs(a));
 }
+
+
+export async function listPublicPlayersForAdmin(options = {}) {
+  const firebase = await getFirebase();
+  if (!firebase) return { users: [], reads: 0, pageSize: 0, filters: {}, queryMode: 'no-firebase' };
+  const { db, firestoreMod } = firebase;
+  const limitCount = Math.max(1, Math.min(2000, Number(options?.pageSize || options?.limitCount || 2000)));
+  const filters = options?.filters || {};
+  const snap = await firestoreMod.getDocs(firestoreMod.query(
+    firestoreMod.collection(db, 'publicPlayers'),
+    firestoreMod.limit(limitCount)
+  ));
+  const docs = snap.docs || [];
+  trackReads(Math.max(1, docs.length));
+  const mapped = docs
+    .map(doc => {
+      const data = doc.data?.() || {};
+      const uid = normalizeText(data.uid || doc.id);
+      const game = {
+        nickname: normalizeText(data.nickname || data.gameNick || ''),
+        region: normalizeText(data.region || '').replace(/[^0-9]/g, ''),
+        alliance: normalizeAllianceTag(data.alliance || ''),
+        rank: normalizeText(data.rank || 'p1').toLowerCase(),
+        shk: normalizeText(data.shk || ''),
+        role: normalizeRole(data.role || 'player')
+      };
+      return {
+        id: uid,
+        uid,
+        publicKey: normalizeText(data.publicKey || ''),
+        __publicCacheOnly: false,
+        email: normalizeText(data.email || ''),
+        displayName: normalizeText(data.displayName || game.nickname),
+        nickname: game.nickname,
+        gameNick: game.nickname,
+        region: game.region,
+        alliance: game.alliance,
+        rank: game.rank,
+        shk: game.shk,
+        role: game.role,
+        roleLabel: roleLabel(game.role),
+        country: normalizeCountry(data.country || ''),
+        countryCode: normalizeCountryCode(data.countryCode || ''),
+        farmCount: Number(data.farmCount || (Array.isArray(data.farms) ? data.farms.length : 0)) || 0,
+        profileComplete: data.profileComplete !== false,
+        blocked: Boolean(data.blocked),
+        deleted: Boolean(data.deleted),
+        createdAt: data.createdAt || null,
+        updatedAt: data.updatedAt || data.createdAt || null,
+        lastLoginAt: data.lastLoginAt || null,
+        gameProfile: game,
+        farms: Array.isArray(data.farms) ? data.farms : [],
+        profileVisibility: data.profileVisibility || null,
+        source: 'publicPlayers'
+      };
+    })
+    .filter(user => user.uid && user.profileComplete !== false && !user.deleted && !user.blocked)
+    .filter(user => {
+      const game = getGameProfile(user);
+      const nick = adminSearchKey(game.nickname || user.nickname || '');
+      const filterNick = adminSearchKey(filters.nick || '');
+      const region = gameRegion(game);
+      const filterRegion = normalizeText(filters.region || '').replace(/[^0-9]/g, '');
+      const alliance = adminAllianceExactKey(game.alliance || user.alliance || '');
+      const filterAlliance = adminAllianceExactKey(filters.alliance || '');
+      const role = normalizeRole(user.role || game.role || 'player');
+      const filterRole = normalizeRole(filters.role || 'all');
+      return (!filterNick || nick.includes(filterNick))
+        && (!filterRegion || region === filterRegion)
+        && (!filterAlliance || alliance === filterAlliance)
+        && ((filters.role || 'all') === 'all' || role === filterRole);
+    })
+    .sort((a, b) => adminRowTimeMs(b) - adminRowTimeMs(a));
+
+  return {
+    users: mapped,
+    reads: Math.max(1, docs.length),
+    pageSize: limitCount,
+    filters,
+    queryMode: 'publicPlayers-editable'
+  };
+}
+
 
 export async function listRegisteredUsersPage(options = {}) {
   const firebase = await getFirebase();
