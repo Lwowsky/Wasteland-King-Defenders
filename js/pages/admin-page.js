@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=262';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=262';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=262';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=262';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=263';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=263';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=263';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=263';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=262';
+} from '../services/user-db.js?v=263';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -35,7 +35,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=262';
+} from '../services/region-db.js?v=263';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -51,7 +51,7 @@ const rankOptions = ['p1', 'p2', 'p3', 'p4', 'p5'];
 
 const ADMIN_PUBLIC_PLAYERS_FILE = 'stats-players.json';
 const ADMIN_PUBLIC_FARMS_FILE = 'stats-farms.json';
-const ADMIN_PUBLIC_CACHE_BUILD = 'v262-admin-publicplayers-edit-source';
+const ADMIN_PUBLIC_CACHE_BUILD = 'v263-admin-publicplayers-stable-list';
 
 function adminPublicCacheUrls(file, force = false) {
   const clean = String(file || '').replace(/^\/+/, '');
@@ -2060,47 +2060,53 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
   if (reset) resetPlayersPage();
   setPlayersLoading();
 
-  const publicCacheUsers = await loadAdminPublicCacheUsers({ force: reset }).catch(error => {
+  const publicCacheUsers = await withAdminTimeout(
+    loadAdminPublicCacheUsers({ force: reset }),
+    2500,
+    []
+  ).catch(error => {
     console.warn('[WKD] admin public-cache failed:', error?.message || error);
     return [];
   });
 
-  // Show public-cache immediately. It is the display source and never blocks on Firestore.
-  users = mergeAdminUsersWithPublicCache([currentAdminSelfUser()].filter(Boolean), publicCacheUsers);
+  // Public-cache is the source of truth for the visible list. It must render even if Firestore index fails.
+  users = mergeAdminUsersWithPublicCache([currentAdminSelfUser()].filter(Boolean), publicCacheUsers || []);
   playersPageMeta = {
     hasNext: false,
     reads: 0,
-    queryMode: `public-cache-${publicCacheUsers.length}`,
+    queryMode: `public-cache-${(publicCacheUsers || []).length}`,
     firstDoc: null,
     lastDoc: null
   };
-
   renderStats();
   renderUsers();
 
-  // Resolve real editable UIDs from publicPlayers. This collection is public-read and uses doc.id == uid.
-  // It replaces the old adminUsersIndex dependency for the visible admin list.
-  try {
-    const filters = adminPlayerQueryFilters();
-    const publicResult = await withAdminTimeout(listPublicPlayersForAdmin({
-      pageSize: 2000,
-      filters,
-      scanLimit: 2000
-    }), 4500, { users: [], reads: 0, queryMode: 'publicPlayers-timeout' }) || { users: [], reads: 0, queryMode: 'publicPlayers-timeout' };
+  // Resolve editable UIDs from publicPlayers only after the list is already visible.
+  const filters = adminPlayerQueryFilters();
+  const publicResult = await withAdminTimeout(listPublicPlayersForAdmin({
+    pageSize: 2000,
+    filters,
+    scanLimit: 2000
+  }), 4500, { users: [], reads: 0, queryMode: 'publicPlayers-timeout' }) || { users: [], reads: 0, queryMode: 'publicPlayers-timeout' };
 
-    const editableUsers = Array.isArray(publicResult.users) ? publicResult.users : [];
-    users = mergeAdminUsersWithPublicCache([currentAdminSelfUser(), ...editableUsers].filter(Boolean), publicCacheUsers);
+  const editableUsers = Array.isArray(publicResult.users) ? publicResult.users : [];
+  if (editableUsers.length) {
+    users = mergeAdminUsersWithPublicCache([currentAdminSelfUser(), ...editableUsers].filter(Boolean), publicCacheUsers || []);
     playersPageMeta = {
       hasNext: false,
       reads: Number(publicResult.reads || 0),
-      queryMode: `${publicResult.queryMode || 'publicPlayers'}+public-cache-${publicCacheUsers.length}`,
+      queryMode: `${publicResult.queryMode || 'publicPlayers'}+public-cache-${(publicCacheUsers || []).length}`,
       firstDoc: null,
       lastDoc: null
     };
     renderStats();
     renderUsers();
-  } catch (error) {
-    console.warn('[WKD] admin publicPlayers editable resolve failed:', error?.code || error?.message || error);
+  } else {
+    playersPageMeta = {
+      ...playersPageMeta,
+      reads: Number(publicResult.reads || 0),
+      queryMode: `${publicResult.queryMode || 'publicPlayers-empty'}+public-cache-${(publicCacheUsers || []).length}`
+    };
   }
 
   const publicOnlyCount = users.filter(user => Boolean(user.__publicCacheOnly || String(user.uid || '').startsWith('public:'))).length;
@@ -2271,7 +2277,7 @@ function handlePlayerSearchKeydown(event) {
 function bindAdminControls() {
   $('#refreshRequestsBtn')?.addEventListener('click', () => loadRoleRequests().catch(console.error));
   $('#refreshPlayersBtn')?.addEventListener('click', () => runPlayerSearchNow());
-  $('#rebuildAdminIndexBtn')?.addEventListener('click', () => rebuildPlayersIndex().catch(console.error));
+  $('#rebuildAdminIndexBtn')?.addEventListener('click', () => loadPlayersPage({ reset: true }).catch(console.error));
   $('#refreshIncompleteProfilesBtn')?.addEventListener('click', () => loadIncompleteProfiles($('#incompleteStatusFilter')?.value || 'incomplete').catch(console.error));
   $('#incompleteStatusFilter')?.addEventListener('change', () => loadIncompleteProfiles($('#incompleteStatusFilter')?.value || 'incomplete').catch(console.error));
   $('#refreshUsageBtn')?.addEventListener('click', () => { renderUsage(); setStatus(t('admin.firebaseEstimateRefreshed', 'Оцінку Firebase оновлено локально.'), 'success'); });

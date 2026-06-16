@@ -26,7 +26,7 @@ const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
 const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STAFF_REFRESH_LIMIT = 5;
-const STAFF_CACHE_BUILD = 'v256-staff-hard-dedupe';
+const STAFF_CACHE_BUILD = 'v263-staff-versioned-public-cache';
 
 const STAFF_PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const STAFF_PUBLIC_STATS_VERSION_FILE = 'stats-version.json';
@@ -250,7 +250,7 @@ function readStaffRowsCache(region = '', expectedVersion = '') {
     if (Date.now() - Number(data.savedAtMs || 0) > STAFF_CACHE_TTL_MS) return null;
     if (normalizeRegion(data.region) !== normalizeRegion(region)) return null;
     const cachedVersion = String(data.version || data.meta?.version || '');
-    if (expectedVersion && cachedVersion && cachedVersion !== String(expectedVersion)) return null;
+    if (expectedVersion && cachedVersion !== String(expectedVersion)) return null;
     return Array.isArray(data.rows) ? data : null;
   } catch {
     return null;
