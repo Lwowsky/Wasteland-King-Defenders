@@ -2481,4 +2481,5 @@ window.WKD_TRANSLATIONS.pl = {
   "stats.loadingSummary": "Ładuję public-cache statystyk...",
   "stats.playersUnavailable": "Lista graczy jest niedostępna. Kliknij „Odśwież cache”.",
   "admin.publicCacheOnly": "Publiczny cache · kliknij „Odbuduj indeks”, aby edytować",
+  "admin.playersLoadedPublicCache": "Załadowano {count} graczy z public-cache. Firebase reads≈{reads}. Aby edytować starsze profile, kliknij „Odbuduj indeks”."
 };

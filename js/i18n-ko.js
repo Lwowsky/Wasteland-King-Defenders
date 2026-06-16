@@ -2481,4 +2481,5 @@ window.WKD_TRANSLATIONS.ko = {
   "stats.loadingSummary": "통계 public-cache 불러오는 중...",
   "stats.playersUnavailable": "플레이어 목록을 사용할 수 없습니다. “캐시 새로고침”을 누르세요.",
   "admin.publicCacheOnly": "공개 캐시 · 편집하려면 “인덱스 다시 만들기”를 누르세요",
+  "admin.playersLoadedPublicCache": "public-cache에서 플레이어 {count}명을 불러왔습니다. Firebase reads≈{reads}. 오래된 프로필을 편집하려면 “인덱스 새로고침”을 누르세요."
 };

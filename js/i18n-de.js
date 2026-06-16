@@ -2481,4 +2481,5 @@ window.WKD_TRANSLATIONS.de = {
   "stats.loadingSummary": "Lade public-cache Statistiken...",
   "stats.playersUnavailable": "Spielerliste nicht verfügbar. Klicke auf „Cache aktualisieren”.",
   "admin.publicCacheOnly": "Öffentlicher Cache · klicke „Index neu aufbauen“, um zu bearbeiten",
+  "admin.playersLoadedPublicCache": "{count} Spieler aus public-cache geladen. Firebase reads≈{reads}. Zum Bearbeiten älterer Profile „Index neu erstellen“ drücken."
 };

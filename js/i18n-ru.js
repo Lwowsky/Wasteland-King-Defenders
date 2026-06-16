@@ -2481,4 +2481,5 @@ window.WKD_TRANSLATIONS.ru = {
   "stats.loadingSummary": "Загружаю public-cache статистики...",
   "stats.playersUnavailable": "Список игроков недоступен. Нажми “Обновить кеш”.",
   "admin.publicCacheOnly": "Публичный кеш · нажми “Обновить индекс”, чтобы редактировать",
+  "admin.playersLoadedPublicCache": "Загружено {count} игроков из public-cache. Firebase reads≈{reads}. Чтобы редактировать старые профили, нажмите “Обновить индекс”."
 };

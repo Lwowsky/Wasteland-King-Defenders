@@ -2479,4 +2479,5 @@ window.WKD_TRANSLATIONS.ar = {
   "stats.loadingSummary": "جارٍ تحميل public-cache للإحصاءات...",
   "stats.playersUnavailable": "قائمة اللاعبين غير متاحة. اضغط “تحديث الذاكرة”.",
   "admin.publicCacheOnly": "ذاكرة عامة · اضغط “إعادة بناء الفهرس” للتعديل",
+  "admin.playersLoadedPublicCache": "تم تحميل {count} لاعبًا من public-cache. Firebase reads≈{reads}. اضغط “إعادة بناء الفهرس” لتعديل الملفات القديمة."
 };

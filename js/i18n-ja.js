@@ -2481,4 +2481,5 @@ window.WKD_TRANSLATIONS.ja = {
   "stats.loadingSummary": "統計 public-cache を読み込み中...",
   "stats.playersUnavailable": "プレイヤー一覧を読み込めません。「キャッシュ更新」を押してください。",
   "admin.publicCacheOnly": "公開キャッシュ · 編集するには「インデックス更新」を押してください",
+  "admin.playersLoadedPublicCache": "public-cache から {count} 人のプレイヤーを読み込みました。Firebase reads≈{reads}。古いプロフィールを編集するには「インデックス更新」を押してください。"
 };
