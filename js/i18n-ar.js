@@ -2472,6 +2472,7 @@ window.WKD_TRANSLATIONS.ar = {
   "stats.snapshotLoaded": "تم تحميل قائمة اللاعبين من public-cache snapshot. اللاعبون: {count}. تم التحديث: {date}.",
   "stats.snapshotStale": "تنبيه: public-cache snapshot قديم. آخر تحديث: {date}. قد تختلف البيانات عن لوحة الإدارة حتى يعمل export.",
   "stats.playersLoadFailed": "قائمة اللاعبين غير متاحة. جرّب “تحديث الكاش”.",
+  "stats.playersUnavailable": "قائمة اللاعبين غير متاحة. جرّب “تحديث الذاكرة المؤقتة”.",
   "stats.playersJsonMismatch": "يحتوي stats-summary.json على أرقام، لكن stats-players.json فارغ. استبدل public-cache بأحدث ملفات JSON المولدة.",
   "stats.cacheFailed": "ملفات public-cache للإحصاءات غير متاحة. تحقق من public-cache/stats-summary.json و stats-players.json.",
   "stats.cacheEmpty": "Public JSON cache فارغ. تحقق من public-cache/stats-players.json أو استبدله.",

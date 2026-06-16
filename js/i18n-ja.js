@@ -2474,6 +2474,7 @@ window.WKD_TRANSLATIONS.ja = {
   "stats.snapshotLoaded": "public-cache snapshot からプレイヤー一覧を読み込みました。プレイヤー: {count}。更新: {date}。",
   "stats.snapshotStale": "注意: public-cache snapshot が古いです。最終更新: {date}。export が実行されるまで管理画面と異なる場合があります。",
   "stats.playersLoadFailed": "プレイヤー一覧を利用できません。「キャッシュ更新」を試してください。",
+  "stats.playersUnavailable": "プレイヤー一覧を利用できません。「キャッシュを更新」を押してください。",
   "stats.playersJsonMismatch": "stats-summary.json には数値がありますが、stats-players.json は空です。public-cache を最新の生成済み JSON に置き換えてください。",
   "stats.cacheFailed": "統計の public-cache ファイルを利用できません。public-cache/stats-summary.json と stats-players.json を確認してください。",
   "stats.cacheEmpty": "Public JSON cache が空です。public-cache/stats-players.json を確認または置き換えてください。",

@@ -2474,6 +2474,7 @@ window.WKD_TRANSLATIONS.uk = {
   "stats.snapshotLoaded": "Список гравців завантажено з public-cache snapshot. Гравців: {count}. Оновлено: {date}.",
   "stats.snapshotStale": "Увага: public-cache snapshot застарілий. Останнє оновлення: {date}. Дані можуть не збігатися з адмінкою, поки не спрацює export.",
   "stats.playersLoadFailed": "Список гравців недоступний. Спробуй “Оновити кеш”.",
+  "stats.playersUnavailable": "Список гравців недоступний. Натисни “Оновити кеш”.",
   "stats.playersJsonMismatch": "stats-summary.json має цифри, але stats-players.json порожній. Замінити public-cache на останні generated JSON файли.",
   "stats.cacheFailed": "Файли public-cache статистики недоступні. Перевір public-cache/stats-summary.json і stats-players.json.",
   "stats.cacheEmpty": "Public JSON cache порожній. Перевір або заміни public-cache/stats-players.json.",

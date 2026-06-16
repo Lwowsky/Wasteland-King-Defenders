@@ -2035,6 +2035,22 @@ function mapAdminUserDocs(rawDocs = [], filters = {}) {
     .sort((a, b) => timestampToMs(b.createdAt || b.updatedAt || b.lastLoginAt) - timestampToMs(a.createdAt || a.updatedAt || a.lastLoginAt));
 }
 
+function adminRowTimeMs(user = {}) {
+  return Number(user.createdAtMs || timestampToMs(user.createdAt || user.updatedAt || user.lastLoginAt) || 0);
+}
+function mergeAdminUserRows(...groups) {
+  const map = new Map();
+  groups.flat().filter(Boolean).forEach(user => {
+    const uid = normalizeText(user.uid || user.id || '');
+    if (!uid) return;
+    const existing = map.get(uid);
+    if (!existing || adminRowTimeMs(user) >= adminRowTimeMs(existing) || (!existing.__doc && user.__doc)) {
+      map.set(uid, { ...(existing || {}), ...user });
+    }
+  });
+  return [...map.values()].sort((a, b) => adminRowTimeMs(b) - adminRowTimeMs(a));
+}
+
 export async function listRegisteredUsersPage(options = {}) {
   const firebase = await getFirebase();
   if (!firebase) return { users: [], firstDoc: null, lastDoc: null, hasNext: false, reads: 0, pageSize: 10, filters: {} };
@@ -2082,7 +2098,7 @@ export async function listRegisteredUsersPage(options = {}) {
     }
   }
 
-  if (!mapped.length && hasFilters && !options?.cursor) {
+  if (hasFilters && !options?.cursor && mapped.length < queryPageSize) {
     try {
       const publicSnap = await firestoreMod.getDocs(buildPublicPlayersAdminSearchQuery(firestoreMod, db, {
         pageSize: queryPageSize,
@@ -2092,20 +2108,20 @@ export async function listRegisteredUsersPage(options = {}) {
       if (publicSnap.docs.length) {
         const userDocs = await loadAdminUsersFromPublicPlayers(db, firestoreMod, publicSnap.docs);
         readCount += userDocs.length;
-        rawDocs = userDocs;
-        mapped = mapAdminUserDocs(rawDocs, filters);
-        const indexedCount = await writeAdminUserIndexesForDocs(db, firestoreMod, rawDocs).catch(error => {
+        mergeUniqueDocs(rawDocs, userDocs);
+        mapped = mergeAdminUserRows(mapped, mapAdminUserDocs(userDocs, filters));
+        const indexedCount = await writeAdminUserIndexesForDocs(db, firestoreMod, userDocs).catch(error => {
           console.warn('[WKD] admin publicPlayers search index repair skipped:', error?.code || error?.message || error);
           return 0;
         });
-        queryMode = indexedCount ? `publicPlayers-repair-${indexedCount}` : 'publicPlayers-search';
+        queryMode = indexedCount ? `${queryMode}+publicPlayers-repair-${indexedCount}` : `${queryMode}+publicPlayers-search`;
       }
     } catch (publicError) {
       console.warn('[WKD] publicPlayers admin search fallback skipped:', publicError?.code || publicError?.message || publicError);
     }
   }
 
-  if (!mapped.length && hasFilters && !options?.cursor) {
+  if (hasFilters && !options?.cursor && mapped.length < queryPageSize) {
     const exactQueries = buildUsersAdminExactSearchQueries(firestoreMod, db, { pageSize: queryPageSize, filters });
     if (exactQueries.length) {
       try {
@@ -2117,13 +2133,13 @@ export async function listRegisteredUsersPage(options = {}) {
           if (exactDocs.length >= queryPageSize) break;
         }
         if (exactDocs.length) {
-          rawDocs = exactDocs;
-          mapped = mapAdminUserDocs(rawDocs, filters);
-          const indexedCount = await writeAdminUserIndexesForDocs(db, firestoreMod, rawDocs).catch(error => {
+          mergeUniqueDocs(rawDocs, exactDocs);
+          mapped = mergeAdminUserRows(mapped, mapAdminUserDocs(exactDocs, filters));
+          const indexedCount = await writeAdminUserIndexesForDocs(db, firestoreMod, exactDocs).catch(error => {
             console.warn('[WKD] admin exact users search index repair skipped:', error?.code || error?.message || error);
             return 0;
           });
-          queryMode = indexedCount ? `users-exact-repair-${indexedCount}` : 'users-exact-search';
+          queryMode = indexedCount ? `${queryMode}+users-exact-repair-${indexedCount}` : `${queryMode}+users-exact-search`;
         }
       } catch (exactError) {
         console.warn('[WKD] exact users admin search fallback skipped:', exactError?.code || exactError?.message || exactError);
@@ -2134,7 +2150,7 @@ export async function listRegisteredUsersPage(options = {}) {
   // One-time self-healing fallback for old profiles that do not yet have adminUsersIndex docs.
   // Important: for active searches, a zero-result indexed query stays cheap and does NOT scan users.
   // If the player is old and missing from the index, publicPlayers search repairs the index without scanning users.
-  const shouldTryUsersFallback = !mapped.length && !options?.cursor && (!hasFilters || indexQueryFailed);
+  const shouldTryUsersFallback = !options?.cursor && ((!hasFilters && mapped.length < queryPageSize) || (!mapped.length && indexQueryFailed));
   if (shouldTryUsersFallback) {
     try {
       const fallbackLimit = hasFilters ? Math.max(pageSize + 1, Math.min(100, Number(options?.scanLimit || 50))) : pageSize + 1;
@@ -2145,9 +2161,9 @@ export async function listRegisteredUsersPage(options = {}) {
         serverFilters: true
       }));
       readCount += Math.max(1, userSnap.docs.length);
-      rawDocs = userSnap.docs || [];
-      mapped = mapAdminUserDocs(rawDocs, filters);
-      const indexedCount = await writeAdminUserIndexesForDocs(db, firestoreMod, rawDocs).catch(error => {
+      mergeUniqueDocs(rawDocs, userSnap.docs || []);
+      mapped = mergeAdminUserRows(mapped, mapAdminUserDocs(userSnap.docs || [], filters));
+      const indexedCount = await writeAdminUserIndexesForDocs(db, firestoreMod, userSnap.docs || []).catch(error => {
         console.warn('[WKD] admin users index self-heal skipped:', error?.code || error?.message || error);
         return 0;
       });
@@ -2162,9 +2178,9 @@ export async function listRegisteredUsersPage(options = {}) {
       const legacyLimit = hasFilters ? Math.max(pageSize + 1, Math.min(100, Number(options?.scanLimit || 50))) : pageSize + 1;
       const legacySnapshot = await firestoreMod.getDocs(buildLegacyAdminUsersQuery(firestoreMod, db, { pageSize: legacyLimit }));
       readCount += Math.max(1, legacySnapshot.docs.length);
-      rawDocs = legacySnapshot.docs || [];
-      mapped = mapAdminUserDocs(rawDocs, filters);
-      const indexedCount = await writeAdminUserIndexesForDocs(db, firestoreMod, rawDocs).catch(() => 0);
+      mergeUniqueDocs(rawDocs, legacySnapshot.docs || []);
+      mapped = mergeAdminUserRows(mapped, mapAdminUserDocs(legacySnapshot.docs || [], filters));
+      const indexedCount = await writeAdminUserIndexesForDocs(db, firestoreMod, legacySnapshot.docs || []).catch(() => 0);
       queryMode = indexedCount ? `${queryMode}+legacy-self-healed-${indexedCount}` : `${queryMode}+legacy-fallback`;
     } catch (legacyError) {
       console.warn('[WKD] legacy admin users fallback failed:', legacyError?.code || legacyError?.message || legacyError);
@@ -2172,6 +2188,7 @@ export async function listRegisteredUsersPage(options = {}) {
   }
 
   trackReads(readCount || 1);
+  mapped = mergeAdminUserRows(mapped);
   const pageUsers = mapped.slice(0, pageSize).map(({ __doc, ...user }) => user);
   const pageDocs = mapped.slice(0, pageSize).map(user => user.__doc).filter(Boolean);
   const hasNext = rawDocs.length > pageSize || mapped.length > pageSize;

@@ -2474,6 +2474,7 @@ window.WKD_TRANSLATIONS.pl = {
   "stats.snapshotLoaded": "Lista graczy załadowana z public-cache snapshot. Graczy: {count}. Zaktualizowano: {date}.",
   "stats.snapshotStale": "Uwaga: public-cache snapshot jest nieaktualny. Ostatnia aktualizacja: {date}. Dane mogą różnić się od panelu admina, dopóki nie uruchomi się export.",
   "stats.playersLoadFailed": "Lista graczy jest niedostępna. Spróbuj „Odśwież cache”.",
+  "stats.playersUnavailable": "Lista graczy jest niedostępna. Kliknij „Odśwież cache”.",
   "stats.playersJsonMismatch": "stats-summary.json ma liczby, ale stats-players.json jest pusty. Podmień public-cache na najnowsze wygenerowane pliki JSON.",
   "stats.cacheFailed": "Pliki public-cache statystyk są niedostępne. Sprawdź public-cache/stats-summary.json i stats-players.json.",
   "stats.cacheEmpty": "Public JSON cache jest pusty. Sprawdź lub podmień public-cache/stats-players.json.",

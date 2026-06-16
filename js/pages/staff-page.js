@@ -26,7 +26,7 @@ const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
 const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STAFF_REFRESH_LIMIT = 5;
-const STAFF_CACHE_BUILD = 'v254-public-stats-first';
+const STAFF_CACHE_BUILD = 'v255-public-stats-dedupe';
 
 const STAFF_PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const STAFF_PUBLIC_STATS_VERSION_FILE = 'stats-version.json';
@@ -73,12 +73,28 @@ async function fetchStaffPublicStatsPlayers({ force = false } = {}) {
   const list = await fetchStaffPublicCacheJson(STAFF_PUBLIC_STATS_PLAYERS_FILE, { force });
   return Array.isArray(list) ? list : [];
 }
-function staffIdentityKey(row = {}) {
-  const key = String(row.uid || row.id || '').trim();
-  if (key) return `uid:${key}`;
-  const publicKey = String(row.publicKey || '').trim();
+function staffRowTime(row = {}) {
+  const raw = row.updatedAt || row.createdAt || row.lastLoginAt || 0;
+  if (typeof raw === 'number') return raw;
+  if (raw && typeof raw.toMillis === 'function') return raw.toMillis();
+  if (raw && typeof raw.seconds === 'number') return raw.seconds * 1000;
+  const parsed = Date.parse(String(raw || ''));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+function staffGameIdentityKey(row = {}) {
+  const normalized = normalizeStaffSnapshotRow(row);
+  const farmId = String(normalized.farmId || '').trim().toLowerCase();
+  const nickname = String(normalized.nickname || normalized.gameNick || '').trim().toLowerCase();
+  const region = normalizeRegion(normalized.region || '');
+  const alliance = normalizeAlliance(normalized.alliance || '').toLowerCase();
+  // The public JSON has publicKey, but the editable region mirror has uid.
+  // For the same main player these keys differ, so the stable identity must be the game identity.
+  if (nickname && region && alliance) return `game:${region}|${alliance}|${nickname}|${farmId && farmId !== 'main' ? farmId : 'main'}`;
+  const uid = String(normalized.uid || normalized.id || '').trim();
+  if (uid) return `uid:${uid}`;
+  const publicKey = String(normalized.publicKey || '').trim();
   if (publicKey) return `public:${publicKey}`;
-  return ['nickname', 'region', 'alliance'].map(field => String(row[field] || '').trim().toLowerCase()).join('|');
+  return `fallback:${nickname || 'player'}|${region}|${alliance}|${farmId || 'main'}`;
 }
 function mergeStaffRows(primary = [], secondary = []) {
   const map = new Map();
@@ -86,13 +102,15 @@ function mergeStaffRows(primary = [], secondary = []) {
     if (!row) return;
     const normalized = normalizeStaffSnapshotRow(row);
     if (!normalized.nickname && !normalized.gameNick) return;
-    const key = staffIdentityKey(normalized);
+    const key = staffGameIdentityKey(normalized);
     const existing = map.get(key);
-    if (!existing || (!existing.uid && normalized.uid) || (Date.parse(normalized.updatedAt || 0) >= Date.parse(existing.updatedAt || 0))) {
-      map.set(key, normalized);
+    const preferEditable = !existing || (!existing.uid && normalized.uid);
+    const preferNewest = staffRowTime(normalized) >= staffRowTime(existing || {});
+    if (preferEditable || (!existing?.uid && preferNewest) || (existing?.__publicSnapshotOnly && !normalized.__publicSnapshotOnly)) {
+      map.set(key, { ...(existing || {}), ...normalized });
     }
   });
-  return [...map.values()];
+  return [...map.values()].sort((a, b) => staffRowTime(b) - staffRowTime(a));
 }
 
 
@@ -110,9 +128,9 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=254',
-  'region-settings': './region-settings-page.js?v=254',
-  'action-log': './action-log-page.js?v=254'
+  'region-table': './region-table-page.js?v=255',
+  'region-settings': './region-settings-page.js?v=255',
+  'action-log': './action-log-page.js?v=255'
 };
 const loadedStaffToolTabs = new Set();
 
@@ -303,7 +321,7 @@ function applyLocalStaffFilters({ statusMessage = '' } = {}) {
   if (allianceFilter) rows = rows.filter(row => normalizeAlliance(row.alliance) === allianceFilter);
   if (nickFilter) rows = rows.filter(row => String(row.nickname || row.gameNick || '').toLowerCase().includes(nickFilter));
   if (rankFilter && rankFilter !== 'all') rows = rows.filter(row => normalizeRank(row.rank || '') === rankFilter);
-  rows.sort((a, b) => String(a.nickname || a.gameNick || '').localeCompare(String(b.nickname || b.gameNick || ''), undefined, { sensitivity: 'base' }));
+  rows.sort((a, b) => staffRowTime(b) - staffRowTime(a) || String(a.nickname || a.gameNick || '').localeCompare(String(b.nickname || b.gameNick || ''), undefined, { sensitivity: 'base' }));
   currentRows = rows;
   renderRows();
   scopeBadge();

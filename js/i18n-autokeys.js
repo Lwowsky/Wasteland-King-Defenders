@@ -935,4 +935,16 @@ window.WKD_I18N_AUTO_ATTR = {
   "staff.title": "Region panel",
   "staff.requestTitle": "Registration",
   "staff.requestHelp": "Player Wasteland request through the region form."
+  "stats.playersUnavailable": "stats.playersUnavailable",
+  "staff.loadedFromLocalCache": "staff.loadedFromLocalCache",
+  "staff.loadedRowsMerged": "staff.loadedRowsMerged",
+  "staff.loadedRowsFromSnapshot": "staff.loadedRowsFromSnapshot",
+  "staff.loadingPlayers": "staff.loadingPlayers",
+  "staff.refreshLimited": "staff.refreshLimited",
+  "staff.empty": "staff.empty",
+  "staff.viewOnly": "staff.viewOnly",
+  "staff.noAccess": "staff.noAccess",
+  "staff.loginRequired": "staff.loginRequired",
+  "stats.snapshotLoaded": "stats.snapshotLoaded",
+  "stats.snapshotStale": "stats.snapshotStale",
 };

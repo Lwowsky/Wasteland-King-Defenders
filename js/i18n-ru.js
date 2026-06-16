@@ -2474,6 +2474,7 @@ window.WKD_TRANSLATIONS.ru = {
   "stats.snapshotLoaded": "Список игроков загружен из public-cache snapshot. Игроков: {count}. Обновлено: {date}.",
   "stats.snapshotStale": "Внимание: public-cache snapshot устарел. Последнее обновление: {date}. Данные могут отличаться от админки, пока не сработает export.",
   "stats.playersLoadFailed": "Список игроков недоступен. Попробуй “Обновить кеш”.",
+  "stats.playersUnavailable": "Список игроков недоступен. Нажми «Обновить кеш».",
   "stats.playersJsonMismatch": "В stats-summary.json есть цифры, но stats-players.json пустой. Замени public-cache последними generated JSON файлами.",
   "stats.cacheFailed": "Файлы public-cache статистики недоступны. Проверь public-cache/stats-summary.json и stats-players.json.",
   "stats.cacheEmpty": "Public JSON cache пустой. Проверь или замени public-cache/stats-players.json.",

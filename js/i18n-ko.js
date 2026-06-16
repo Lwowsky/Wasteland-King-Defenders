@@ -2474,6 +2474,7 @@ window.WKD_TRANSLATIONS.ko = {
   "stats.snapshotLoaded": "public-cache snapshot에서 플레이어 목록을 불러왔습니다. 플레이어: {count}. 업데이트: {date}.",
   "stats.snapshotStale": "주의: public-cache snapshot이 오래되었습니다. 마지막 업데이트: {date}. export 실행 전까지 관리자 화면과 다를 수 있습니다.",
   "stats.playersLoadFailed": "플레이어 목록을 사용할 수 없습니다. “캐시 새로고침”을 시도하세요.",
+  "stats.playersUnavailable": "플레이어 목록을 사용할 수 없습니다. “캐시 새로고침”을 눌러 주세요.",
   "stats.playersJsonMismatch": "stats-summary.json에는 수치가 있지만 stats-players.json은 비어 있습니다. public-cache를 최신 생성 JSON 파일로 교체하세요.",
   "stats.cacheFailed": "통계 public-cache 파일을 사용할 수 없습니다. public-cache/stats-summary.json 및 stats-players.json을 확인하세요.",
   "stats.cacheEmpty": "Public JSON cache가 비어 있습니다. public-cache/stats-players.json을 확인하거나 교체하세요.",

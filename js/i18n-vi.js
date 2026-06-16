@@ -2474,6 +2474,7 @@ window.WKD_TRANSLATIONS.vi = {
   "stats.snapshotLoaded": "Đã tải danh sách người chơi từ public-cache snapshot. Người chơi: {count}. Cập nhật: {date}.",
   "stats.snapshotStale": "Chú ý: public-cache snapshot đã cũ. Cập nhật lần cuối: {date}. Dữ liệu có thể khác trang quản trị cho đến khi export chạy.",
   "stats.playersLoadFailed": "Danh sách người chơi không khả dụng. Hãy thử “Làm mới cache”.",
+  "stats.playersUnavailable": "Không thể tải danh sách người chơi. Hãy bấm “Làm mới bộ nhớ đệm”.",
   "stats.playersJsonMismatch": "stats-summary.json có số liệu nhưng stats-players.json trống. Hãy thay public-cache bằng các file JSON được tạo mới nhất.",
   "stats.cacheFailed": "Không có file public-cache thống kê. Kiểm tra public-cache/stats-summary.json và stats-players.json.",
   "stats.cacheEmpty": "Public JSON cache trống. Kiểm tra hoặc thay public-cache/stats-players.json.",

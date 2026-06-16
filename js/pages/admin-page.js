@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=223';
+} from '../services/user-db.js?v=255';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
