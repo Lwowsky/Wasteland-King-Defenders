@@ -1,0 +1,14 @@
+{
+  "version": "1781520837328",
+  "generatedAt": "2026-06-16T05:19:12.654Z",
+  "updatedAt": "2026-06-16T05:19:12.654Z",
+  "source": "cloudflare-d1-public-stats",
+  "playersFile": "stats-players.json",
+  "farmsFile": "stats-farms.json",
+  "summaryFile": "stats-summary.json",
+  "totalPlayers": 2,
+  "totalFarms": 3,
+  "totalRows": 5,
+  "playersRows": 2,
+  "farmRows": 3
+}
