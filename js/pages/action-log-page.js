@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { canUseAdminPanel, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=213';
-import { clearRegionActionLogs, deleteRegionActionLog, deleteRegionActionLogs, getManagedRegionOptions, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=213';
+import { canUseAdminPanel, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=248';
+import { clearRegionActionLogs, deleteRegionActionLog, deleteRegionActionLogs, getManagedRegionOptions, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=248';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -228,4 +228,8 @@ function init() {
   watchAuth(user => load(user).catch(console.error));
 }
 document.addEventListener('wkd:partials-ready', init);
-document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));
+} else {
+  setTimeout(init, 0);
+}

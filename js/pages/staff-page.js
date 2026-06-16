@@ -32,31 +32,28 @@ function badge(name, value, fallback = '') {
   return fallback || esc(value || '—');
 }
 
-function normalizeEmbedUrl(url = '') {
-  const value = String(url || '').trim();
-  if (!value) return '';
-  const resolved = new URL(value, window.location.href);
-  resolved.searchParams.set('staffEmbed', '1');
-  resolved.searchParams.set('staffv', '247');
-  return resolved.toString();
-}
+const STAFF_TOOL_MODULES = {
+  'region-table': './region-table-page.js?v=248',
+  'region-settings': './region-settings-page.js?v=248',
+  'action-log': './action-log-page.js?v=248'
+};
+const loadedStaffToolTabs = new Set();
 
-function setFrameHeight(iframe) {
-  const desired = Number(iframe?.dataset?.staffHeight || 0) || 1200;
-  iframe.style.height = `${Math.max(720, desired)}px`;
-  iframe.style.opacity = '1';
-  iframe.style.visibility = 'visible';
-}
-
-function loadFrameForTab(tab) {
-  const iframe = document.querySelector(`[data-staff-panel="${tab}"] [data-staff-frame]`);
-  if (!iframe) return;
-  iframe.setAttribute('scrolling', 'no');
-  iframe.style.overflow = 'hidden';
-  setFrameHeight(iframe);
-  if (!iframe.dataset.loaded) {
-    iframe.src = normalizeEmbedUrl(iframe.dataset.staffSrc);
-    iframe.dataset.loaded = '1';
+async function loadStaffToolTab(tab) {
+  const path = STAFF_TOOL_MODULES[tab];
+  if (!path || loadedStaffToolTabs.has(tab)) return;
+  loadedStaffToolTabs.add(tab);
+  try {
+    await import(path);
+  } catch (error) {
+    loadedStaffToolTabs.delete(tab);
+    console.error('[WKD] staff tab module failed:', tab, error);
+    const panel = document.querySelector(`[data-staff-panel="${tab}"]`);
+    const status = panel?.querySelector('.auth-status');
+    if (status) {
+      status.textContent = t('staff.tabLoadFailed', 'Не вдалося відкрити вкладку.');
+      status.dataset.type = 'error';
+    }
   }
 }
 
@@ -73,7 +70,7 @@ function switchStaffTab(tab = 'players') {
     panel.hidden = !active;
     panel.classList.toggle('is-active', active);
   });
-  if (safeTab !== 'players') loadFrameForTab(safeTab);
+  if (safeTab !== 'players') loadStaffToolTab(safeTab);
 }
 
 function injectStaffDrawerTabs() {

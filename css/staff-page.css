@@ -1,4 +1,4 @@
-/* v247 — clean direct staff iframes; no hidden srcdoc leftovers. */
+/* v248 — no iframe staff tabs; tools are integrated into the panel. */
 
 .staff-page {
   min-height: auto;
@@ -354,18 +354,6 @@
   line-height: 1.42;
 }
 
-.staff-frame {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  min-height: 720px;
-  height: 1100px;
-  overflow: hidden;
-  border: 0;
-  border-radius: 22px;
-  background: transparent;
-}
-
 .staff-drawer-tabs {
   display: grid;
   gap: 8px;
@@ -501,24 +489,20 @@
     border-radius: 18px;
   }
 
-  .staff-frame {
-    min-height: 720px;
-    height: 900px;
-    border-radius: 18px;
   }
-}
 
 
 
 
 
-/* STAFF_DIRECT_IFRAME_V247 */
+
+/* STAFF_INTEGRATED_TABS_V248 */
 .staff-tabs {
   width: 100%;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.staff-tab-panel:not([data-staff-panel="players"]) {
+.staff-tool-panel {
   width: 100%;
   max-width: none;
   padding: 0 !important;
@@ -528,25 +512,40 @@
   overflow: visible;
 }
 
-.staff-frame {
-  display: block;
+.staff-tool-panel > .profile-card,
+.staff-tool-panel > .region-card,
+.staff-tool-panel > .staff-integrated-tool {
   width: 100%;
-  max-width: 100%;
-  min-height: 720px;
-  height: 1200px;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto;
-  overflow: hidden !important;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  max-width: none;
+  margin: 0;
+  box-sizing: border-box;
 }
 
-.staff-frame::-webkit-scrollbar {
-  width: 0 !important;
-  height: 0 !important;
-  display: none !important;
+.staff-tool-panel .profile-page,
+.staff-tool-panel .container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.staff-tool-panel .profile-card.region-card,
+.staff-tool-panel .region-table-card,
+.staff-tool-panel .region-settings-page,
+.staff-tool-panel .action-log-page {
+  border-radius: 22px;
+}
+
+.staff-tool-panel .region-head-actions {
+  max-width: 100%;
+}
+
+.staff-tool-panel .admin-table-wrap,
+.staff-tool-panel .region-table-controls,
+.staff-tool-panel .region-form-block,
+.staff-tool-panel .region-grid {
+  width: 100%;
+  max-width: 100%;
 }
 
 @media (max-width: 1280px) {

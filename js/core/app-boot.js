@@ -1,17 +1,3 @@
-// WKD_STAFF_EMBED_MARKER_V247
-(function markStaffEmbedMode() {
-  try {
-    const params = new URLSearchParams(window.location.search || '');
-    if (params.get('staffEmbed') !== '1') return;
-    document.documentElement.classList.add('staff-embedded-page');
-    const markBody = () => document.body?.classList.add('staff-embedded-page');
-    if (document.body) markBody();
-    else document.addEventListener('DOMContentLoaded', markBody, { once: true });
-  } catch (error) {
-    console.warn('[WKD] staff embed mode skipped:', error);
-  }
-})();
-
 window.WKD = window.WKD || {};
 
 WKD.bootAppShell = async function bootAppShell(options = {}) {
@@ -38,7 +24,7 @@ WKD.bootAppShell = async function bootAppShell(options = {}) {
 
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     try {
-      navigator.serviceWorker.register('/sw.js?v=247').catch(error => console.warn('[WKD] service worker registration skipped:', error));
+      navigator.serviceWorker.register('/sw.js?v=248').catch(error => console.warn('[WKD] service worker registration skipped:', error));
     } catch (error) {
       console.warn('[WKD] service worker registration failed:', error);
     }

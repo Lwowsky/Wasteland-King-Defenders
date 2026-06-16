@@ -1,5 +1,5 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=213';
+import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=248';
 import {
   canManageRegion,
   canViewAnyRegion,
@@ -25,9 +25,9 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=213';
-import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1 } from '../services/region-table-cache.js?v=213';
-import { makePublicShareUrl } from '../core/share-links.js?v=216';
+} from '../services/region-db.js?v=248';
+import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1 } from '../services/region-table-cache.js?v=248';
+import { makePublicShareUrl } from '../core/share-links.js?v=248';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -1429,7 +1429,11 @@ async function init() {
 }
 
 document.addEventListener('wkd:partials-ready', init);
-document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));
+} else {
+  setTimeout(init, 0);
+}
 
 document.addEventListener('wkd:language-changed', () => {
   if (!ready) return;
