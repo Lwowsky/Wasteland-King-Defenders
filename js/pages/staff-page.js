@@ -133,9 +133,9 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=264',
-  'region-settings': './region-settings-page.js?v=264',
-  'action-log': './action-log-page.js?v=264'
+  'region-table': './region-table-page.js?v=265',
+  'region-settings': './region-settings-page.js?v=265',
+  'action-log': './action-log-page.js?v=265'
 };
 const loadedStaffToolTabs = new Set();
 

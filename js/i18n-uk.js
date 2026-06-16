@@ -2481,7 +2481,7 @@ window.WKD_TRANSLATIONS.uk = {
   "stats.loadingSummary": "Завантажую public-cache статистики...",
   "stats.playersUnavailable": "Список гравців недоступний. Натисни “Оновити кеш”.",
   "admin.publicCacheOnly": "Публічний кеш",
-  "admin.playersLoadedPublicCache": "Завантажено {count} гравців. Редагуються: {editable}. Public-only: {publicOnly}. Firebase reads≈{reads}.",
+  "admin.playersLoadedPublicCache": "Завантажено {count} гравців із public-cache. Редагуються: {editable}. Public-only: {publicOnly}. Firebase reads≈{reads}.",
   "admin.publicPlayerResolveFailed": "Не знайшов реальний профіль для цього рядка. Натисни “Оновити”, потім спробуй ще раз.",
   "admin.refreshingPlayers": "Оновлюю список гравців..."
 };

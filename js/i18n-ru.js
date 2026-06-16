@@ -2481,7 +2481,7 @@ window.WKD_TRANSLATIONS.ru = {
   "stats.loadingSummary": "Загружаю public-cache статистики...",
   "stats.playersUnavailable": "Список игроков недоступен. Нажми “Обновить кеш”.",
   "admin.publicCacheOnly": "Публичный кеш",
-  "admin.playersLoadedPublicCache": "Загружено {count} игроков. Можно редактировать: {editable}. Только public-cache: {publicOnly}. Firebase reads≈{reads}.",
+  "admin.playersLoadedPublicCache": "Загружено {count} игроков из public-cache. Можно редактировать: {editable}. Только public-cache: {publicOnly}. Firebase reads≈{reads}.",
   "admin.publicPlayerResolveFailed": "Не найден реальный профиль для этой строки. Нажми “Обновить”, затем попробуй ещё раз.",
   "admin.refreshingPlayers": "Обновляю список игроков..."
 };
