@@ -187,3 +187,57 @@ html.staff-embedded-page .region-timer-card--compact,
 html.staff-embedded-page .region-note {
   max-width: none !important;
 }
+
+/* STAFF_EMBED_DIRECT_V247 — pages embedded inside staff.html tabs. */
+html.staff-embedded-page,
+html.staff-embedded-page body {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  overflow-x: hidden !important;
+}
+
+html.staff-embedded-page .app-header,
+html.staff-embedded-page .site-footer,
+html.staff-embedded-page .drawer,
+html.staff-embedded-page [data-include*="partials/header"],
+html.staff-embedded-page [data-include*="partials/footer"],
+html.staff-embedded-page [data-include*="contact-modal"] {
+  display: none !important;
+}
+
+html.staff-embedded-page main,
+html.staff-embedded-page main.container,
+html.staff-embedded-page .container,
+html.staff-embedded-page .page-shell,
+html.staff-embedded-page .profile-page,
+html.staff-embedded-page .profile-page.container {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  display: block !important;
+  place-items: initial !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+html.staff-embedded-page .profile-card,
+html.staff-embedded-page .region-card,
+html.staff-embedded-page .region-table-card,
+html.staff-embedded-page .region-settings-page,
+html.staff-embedded-page .action-log-page,
+html.staff-embedded-page .region-form-shell,
+html.staff-embedded-page .region-shell,
+html.staff-embedded-page .admin-card,
+html.staff-embedded-page .admin-panel {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}

@@ -37,13 +37,15 @@ function normalizeEmbedUrl(url = '') {
   if (!value) return '';
   const resolved = new URL(value, window.location.href);
   resolved.searchParams.set('staffEmbed', '1');
-  resolved.searchParams.set('staffv', '246');
+  resolved.searchParams.set('staffv', '247');
   return resolved.toString();
 }
 
 function setFrameHeight(iframe) {
   const desired = Number(iframe?.dataset?.staffHeight || 0) || 1200;
   iframe.style.height = `${Math.max(720, desired)}px`;
+  iframe.style.opacity = '1';
+  iframe.style.visibility = 'visible';
 }
 
 function loadFrameForTab(tab) {

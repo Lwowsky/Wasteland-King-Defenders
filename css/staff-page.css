@@ -1,4 +1,4 @@
-/* v246 — staff tabs use same-origin iframe, flat embedded pages, no nested containers. */
+/* v247 — clean direct staff iframes; no hidden srcdoc leftovers. */
 
 .staff-page {
   min-height: auto;
@@ -510,8 +510,14 @@
 
 
 
-/* STAFF_EMBED_SRC_DOC_V245 */
-.staff-tabs { width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+
+/* STAFF_DIRECT_IFRAME_V247 */
+.staff-tabs {
+  width: 100%;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .staff-tab-panel:not([data-staff-panel="players"]) {
   width: 100%;
   max-width: none;
@@ -521,42 +527,16 @@
   box-shadow: none !important;
   overflow: visible;
 }
-.staff-frame {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  min-height: 720px;
-  overflow: hidden !important;
-  border: 0;
-  border-radius: 22px;
-  background: transparent;
-  opacity: 0;
-  transition: opacity .12s ease;
-}
-.staff-frame[data-ready="1"] { opacity: 1; }
-.staff-frame::-webkit-scrollbar { width: 0 !important; height: 0 !important; display: none !important; }
-@media (max-width: 1280px) { .staff-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 760px) { .staff-tabs { grid-template-columns: 1fr; } }
-
-
-/* STAFF_FRAME_FLAT_V246 */
-.staff-tabs {
-  width: 100%;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.staff-tab-panel:not([data-staff-panel="players"]) {
-  width: 100%;
-  max-width: none;
-  padding: clamp(22px, 2vw, 30px);
-  overflow: visible;
-}
 
 .staff-frame {
   display: block;
   width: 100%;
   max-width: 100%;
   min-height: 720px;
+  height: 1200px;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto;
   overflow: hidden !important;
   border: 0;
   border-radius: 0;
@@ -570,10 +550,13 @@
 }
 
 @media (max-width: 1280px) {
-  .staff-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .staff-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
-  .staff-tabs { grid-template-columns: 1fr; }
-  .staff-tab-panel:not([data-staff-panel="players"]) { padding: 14px; }
+  .staff-tabs {
+    grid-template-columns: 1fr;
+  }
 }
