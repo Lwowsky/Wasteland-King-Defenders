@@ -1,5 +1,5 @@
 import { formatUserDate, roleLabel } from '../services/user-db.js';
-import { troopLabel } from '../services/region-db.js?v=253';
+import { troopLabel } from '../services/region-db.js?v=254';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
@@ -35,7 +35,7 @@ function locale() {
 
 
 
-const STATS_CACHE_BUILD = 'v253-snapshot-only-public-stats';
+const STATS_CACHE_BUILD = 'v254-snapshot-only-public-stats';
 const PUBLIC_STATS_SUMMARY_FILE = 'stats-summary.json';
 const PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -133,13 +133,16 @@ function isStatsSnapshotStale(summary = statsSummaryCache) {
   return Boolean(generatedAt && Date.now() - generatedAt > STATS_STALE_MS);
 }
 function setStatsSnapshotLoadedStatus() {
+  const updatedValue = statsSummaryCache?.generatedAt || statsSummaryCache?.updatedAt || statsSummaryCache?.d1UpdatedAtMs || statsSummaryCache?.lastFullRebuildDate;
+  const date = formatSummaryUpdatedAt(updatedValue);
   if (isStatsSnapshotStale(statsSummaryCache)) {
-    setStatus(tv('stats.snapshotStale', 'Увага: public-cache snapshot застарілий. Останнє оновлення: {date}. Дані можуть не збігатися з адмінкою, поки не спрацює export.', {
-      date: formatSummaryUpdatedAt(statsSummaryCache?.generatedAt || statsSummaryCache?.updatedAt || statsSummaryCache?.d1UpdatedAtMs || statsSummaryCache?.lastFullRebuildDate)
-    }), 'warning');
+    setStatus(tv('stats.snapshotStale', 'Увага: public-cache snapshot застарілий. Останнє оновлення: {date}. Дані можуть не збігатися з адмінкою, поки не спрацює export.', { date }), 'warning');
     return;
   }
-  setStatsSnapshotLoadedStatus();
+  setStatus(tv('stats.snapshotLoaded', 'Список гравців завантажено з public-cache snapshot. Гравців: {count}. Оновлено: {date}.', {
+    count: players.length,
+    date
+  }), 'success');
 }
 async function fetchPublicStatsVersion({ force = false } = {}) {
   if (!force) {
