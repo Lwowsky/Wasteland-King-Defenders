@@ -75,3 +75,27 @@
 .admin-row-actions .btn-danger{border-color:#ff6f7e66;background:#31101a;color:#ffd7dc}
 @media(max-width:900px){.admin-profile-status-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.admin-profile-status-grid{grid-template-columns:1fr}}
+
+
+/* ADMIN_PANEL_VISIBILITY_V256 */
+.admin-section[hidden],
+.admin-section:not(.is-active) {
+  display: none !important;
+}
+
+.admin-row-actions .admin-muted {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 12px;
+  color: #aeb9d3;
+  background: rgba(255,255,255,.04);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-table tr.is-public-cache-row td {
+  background: rgba(90, 120, 255, .035);
+}

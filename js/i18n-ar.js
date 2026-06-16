@@ -2478,4 +2478,5 @@ window.WKD_TRANSLATIONS.ar = {
   "stats.cacheEmpty": "Public JSON cache فارغ. تحقق من public-cache/stats-players.json أو استبدله.",
   "stats.refreshLimited": "تم الوصول إلى حد تحديث الكاش. جرّب بعد {minutes} دقيقة.",
   "stats.loadingSummary": "جارٍ تحميل public-cache للإحصاءات..."
+  'admin.publicCacheOnly': "ذاكرة عامة · اضغط “إعادة بناء الفهرس” للتعديل",
 };

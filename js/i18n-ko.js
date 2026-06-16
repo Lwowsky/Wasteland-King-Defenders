@@ -2480,4 +2480,5 @@ window.WKD_TRANSLATIONS.ko = {
   "stats.cacheEmpty": "Public JSON cache가 비어 있습니다. public-cache/stats-players.json을 확인하거나 교체하세요.",
   "stats.refreshLimited": "캐시 새로고침 제한입니다. {minutes}분 후 다시 시도하세요.",
   "stats.loadingSummary": "통계 public-cache 불러오는 중..."
+  'admin.publicCacheOnly': "공개 캐시 · 편집하려면 “인덱스 다시 만들기”를 누르세요",
 };

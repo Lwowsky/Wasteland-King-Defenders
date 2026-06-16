@@ -2480,4 +2480,5 @@ window.WKD_TRANSLATIONS.zh = {
   "stats.cacheEmpty": "Public JSON cache 为空。请检查或替换 public-cache/stats-players.json。",
   "stats.refreshLimited": "缓存刷新已达限制。请在 {minutes} 分钟后重试。",
   "stats.loadingSummary": "正在加载统计 public-cache..."
+  'admin.publicCacheOnly': "公共缓存 · 点击“重建索引”后可编辑",
 };

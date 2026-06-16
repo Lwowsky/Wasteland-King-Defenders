@@ -2480,4 +2480,5 @@ window.WKD_TRANSLATIONS.uk = {
   "stats.cacheEmpty": "Public JSON cache порожній. Перевір або заміни public-cache/stats-players.json.",
   "stats.refreshLimited": "Ліміт оновлення кешу. Спробуй через {minutes} хв.",
   "stats.loadingSummary": "Завантажую public-cache статистики..."
+  'admin.publicCacheOnly': "Публічний кеш · натисни “Оновити індекс”, щоб редагувати",
 };

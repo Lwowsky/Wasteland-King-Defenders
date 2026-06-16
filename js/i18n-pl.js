@@ -2480,4 +2480,5 @@ window.WKD_TRANSLATIONS.pl = {
   "stats.cacheEmpty": "Public JSON cache jest pusty. Sprawdź lub podmień public-cache/stats-players.json.",
   "stats.refreshLimited": "Limit odświeżania cache. Spróbuj za {minutes} min.",
   "stats.loadingSummary": "Ładuję public-cache statystyk..."
+  'admin.publicCacheOnly': "Publiczny cache · kliknij „Odbuduj indeks”, aby edytować",
 };

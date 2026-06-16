@@ -2480,4 +2480,5 @@ window.WKD_TRANSLATIONS.ja = {
   "stats.cacheEmpty": "Public JSON cache が空です。public-cache/stats-players.json を確認または置き換えてください。",
   "stats.refreshLimited": "キャッシュ更新制限です。{minutes} 分後に再試行してください。",
   "stats.loadingSummary": "統計 public-cache を読み込み中..."
+  'admin.publicCacheOnly': "公開キャッシュ · 編集するには「インデックス更新」を押してください",
 };

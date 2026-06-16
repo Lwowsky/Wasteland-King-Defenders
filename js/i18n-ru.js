@@ -2480,4 +2480,5 @@ window.WKD_TRANSLATIONS.ru = {
   "stats.cacheEmpty": "Public JSON cache пустой. Проверь или замени public-cache/stats-players.json.",
   "stats.refreshLimited": "Лимит обновления кеша. Попробуй через {minutes} мин.",
   "stats.loadingSummary": "Загружаю public-cache статистики..."
+  'admin.publicCacheOnly': "Публичный кеш · нажми “Обновить индекс”, чтобы редактировать",
 };

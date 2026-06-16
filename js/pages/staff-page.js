@@ -26,7 +26,7 @@ const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
 const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STAFF_REFRESH_LIMIT = 5;
-const STAFF_CACHE_BUILD = 'v255-public-stats-dedupe';
+const STAFF_CACHE_BUILD = 'v256-staff-hard-dedupe';
 
 const STAFF_PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const STAFF_PUBLIC_STATS_VERSION_FILE = 'stats-version.json';
@@ -113,6 +113,10 @@ function mergeStaffRows(primary = [], secondary = []) {
   return [...map.values()].sort((a, b) => staffRowTime(b) - staffRowTime(a));
 }
 
+function dedupeStaffRowsHard(rows = []) {
+  return mergeStaffRows([], Array.isArray(rows) ? rows : []);
+}
+
 
 const STAFF_TABS = {
   players: { labelKey: 'staff.playersTitle', label: 'Гравці регіону' },
@@ -128,9 +132,9 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=255',
-  'region-settings': './region-settings-page.js?v=255',
-  'action-log': './action-log-page.js?v=255'
+  'region-table': './region-table-page.js?v=256',
+  'region-settings': './region-settings-page.js?v=256',
+  'action-log': './action-log-page.js?v=256'
 };
 const loadedStaffToolTabs = new Set();
 
@@ -317,7 +321,7 @@ function applyLocalStaffFilters({ statusMessage = '' } = {}) {
   const nickFilter = String(nick || '').trim().toLowerCase();
   const rankFilter = String(rank || '').trim().toLowerCase();
   const allianceFilter = scope.allianceLocked ? scope.alliance : normalizeAlliance(alliance || '');
-  let rows = (Array.isArray(staffSnapshotRows) ? staffSnapshotRows : []).filter(row => !row.deleted && !row.blocked);
+  let rows = dedupeStaffRowsHard(staffSnapshotRows).filter(row => !row.deleted && !row.blocked);
   if (allianceFilter) rows = rows.filter(row => normalizeAlliance(row.alliance) === allianceFilter);
   if (nickFilter) rows = rows.filter(row => String(row.nickname || row.gameNick || '').toLowerCase().includes(nickFilter));
   if (rankFilter && rankFilter !== 'all') rows = rows.filter(row => normalizeRank(row.rank || '') === rankFilter);
@@ -416,14 +420,14 @@ async function loadRows(options = {}) {
   const expectedVersion = String(version?.version || version?.updatedAt || '');
   const cached = !force ? readStaffRowsCache(region, expectedVersion) : null;
   if (cached?.rows?.length) {
-    staffSnapshotRows = cached.rows.map(normalizeStaffSnapshotRow);
+    staffSnapshotRows = dedupeStaffRowsHard(cached.rows.map(normalizeStaffSnapshotRow));
     applyLocalStaffFilters({ statusMessage: tv('staff.loadedFromLocalCache', 'Гравці показані з локального кешу. Рядків: {count}.', { count: staffSnapshotRows.length }) });
     return;
   }
   setStatus(t('staff.loadingPlayers', 'Завантажую гравців регіону з public-cache snapshot...'), 'muted');
   try {
     const result = await readStaffRegionPlayerRows(region, { force });
-    staffSnapshotRows = result.rows || [];
+    staffSnapshotRows = dedupeStaffRowsHard(result.rows || []);
     writeStaffRowsCache(region, staffSnapshotRows, {
       source: result.source || 'public-cache/stats-players.json',
       version: result.version || expectedVersion,

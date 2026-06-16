@@ -2480,4 +2480,5 @@ window.WKD_TRANSLATIONS.en = {
   "stats.cacheEmpty": "Public JSON cache is empty. Check or replace public-cache/stats-players.json.",
   "stats.refreshLimited": "Cache refresh limit reached. Try again in {minutes} min.",
   "stats.loadingSummary": "Loading public statistics cache..."
+  'admin.publicCacheOnly': "Public cache · click “Rebuild index” to edit",
 };

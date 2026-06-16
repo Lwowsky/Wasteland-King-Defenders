@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=213';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=213';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=213';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=213';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=256';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=256';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=256';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=256';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=255';
+} from '../services/user-db.js?v=256';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -35,7 +35,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=213';
+} from '../services/region-db.js?v=256';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -46,6 +46,132 @@ const tv = (key, fallback = '', vars = {}) => {
 };
 function roleLabels() { return { admin: t('role.admin', 'Admin'), moderator: t('role.moderator', 'Moderator'), consul: t('role.consul', 'Consul'), officer: t('role.officer', 'Officer'), player: t('role.player', 'Player') }; }
 const rankOptions = ['p1', 'p2', 'p3', 'p4', 'p5'];
+
+
+const ADMIN_PUBLIC_PLAYERS_FILE = 'stats-players.json';
+const ADMIN_PUBLIC_CACHE_BUILD = 'v256-admin-public-cache-merge';
+
+function adminPublicCacheUrls(file, force = false) {
+  const clean = String(file || '').replace(/^\/+/, '');
+  const suffix = force ? `?t=${Date.now()}` : '';
+  const basePath = `${location.origin}${location.pathname.replace(/[^/]*$/, '')}`;
+  return [...new Set([
+    `${location.origin}/public-cache/${clean}${suffix}`,
+    `${basePath}public-cache/${clean}${suffix}`,
+    `public-cache/${clean}${suffix}`
+  ])];
+}
+
+async function fetchAdminPublicCacheJson(file, { force = false } = {}) {
+  let lastError = null;
+  for (const url of adminPublicCacheUrls(file, force)) {
+    try {
+      const response = await fetch(url, { cache: force ? 'no-store' : 'force-cache' });
+      if (!response.ok) throw new Error(`${file}-${response.status}`);
+      return await response.json();
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error(`${file}-unavailable`);
+}
+
+function adminPublicPlayerToUser(row = {}) {
+  const nickname = normalizeText(row.nickname || row.gameNick || row.name || '');
+  const region = normalizeText(row.region || '').replace(/[^0-9]/g, '');
+  const alliance = allianceTag3(row.alliance || '');
+  const publicKey = normalizeText(row.publicKey || row.id || '');
+  const publicUid = normalizeText(row.uid || '');
+  const uid = publicUid || (publicKey ? `public:${publicKey}` : `public:${region}:${alliance}:${nickname.toLowerCase()}`);
+  const gameProfile = {
+    nickname,
+    region,
+    alliance,
+    rank: normalizeText(row.rank || 'p1').toLowerCase(),
+    shk: normalizeText(row.shk || ''),
+    role: normalizeText(row.role || 'player').toLowerCase()
+  };
+  return {
+    id: uid,
+    uid,
+    publicKey,
+    __publicCacheOnly: !publicUid,
+    __publicCacheBuild: ADMIN_PUBLIC_CACHE_BUILD,
+    email: normalizeText(row.email || row.authEmail || ''),
+    displayName: nickname,
+    nickname,
+    gameNick: nickname,
+    region,
+    alliance,
+    rank: gameProfile.rank,
+    shk: gameProfile.shk,
+    role: gameProfile.role,
+    roleLabel: roleLabel(gameProfile.role),
+    countryCode: row.countryCode || '',
+    farmCount: Number(row.farmCount || 0),
+    profileComplete: true,
+    blocked: Boolean(row.blocked),
+    deleted: Boolean(row.deleted),
+    createdAt: row.createdAt || row.updatedAt || null,
+    updatedAt: row.updatedAt || row.createdAt || null,
+    gameProfile,
+    farms: Array.isArray(row.farms) ? row.farms : [],
+    profileVisibility: row.profileVisibility || null,
+    source: 'public-cache/stats-players.json'
+  };
+}
+
+async function loadAdminPublicCacheUsers({ force = false } = {}) {
+  const cacheKey = `adminPublicPlayers.${ADMIN_PUBLIC_CACHE_BUILD}`;
+  if (!force) {
+    const cached = readAdminJsonCache(cacheKey);
+    if (Array.isArray(cached)) return cached;
+  }
+  try {
+    const raw = await fetchAdminPublicCacheJson(ADMIN_PUBLIC_PLAYERS_FILE, { force });
+    const usersFromCache = (Array.isArray(raw) ? raw : [])
+      .map(adminPublicPlayerToUser)
+      .filter(user => user.nickname && user.region && !user.deleted && !user.blocked);
+    writeAdminJsonCache(cacheKey, usersFromCache);
+    return usersFromCache;
+  } catch (error) {
+    console.warn('[WKD] admin public-cache players unavailable:', error?.message || error);
+    return [];
+  }
+}
+
+function adminPlayerIdentity(user = {}) {
+  const game = getGameProfile(user);
+  const region = normalizeText(game.region || user.region || '').replace(/[^0-9]/g, '');
+  const alliance = allianceTag3(game.alliance || user.alliance || '').toLowerCase();
+  const nickname = normalizeText(game.nickname || user.nickname || user.gameNick || '').toLowerCase();
+  if (region && alliance && nickname) return `game:${region}|${alliance}|${nickname}`;
+  const uid = normalizeText(user.uid || user.id || '');
+  return uid ? `uid:${uid}` : `fallback:${nickname}|${region}|${alliance}`;
+}
+
+function mergeAdminUsersWithPublicCache(indexUsers = [], publicUsers = []) {
+  const map = new Map();
+  const put = user => {
+    if (!user) return;
+    const key = adminPlayerIdentity(user);
+    const uid = normalizeText(user.uid || user.id || '');
+    const existing = map.get(key) || (uid && map.get(`uid:${uid}`));
+    const existingIsPublicOnly = Boolean(existing?.__publicCacheOnly);
+    const userIsPublicOnly = Boolean(user.__publicCacheOnly);
+    const merged = existing
+      ? (existingIsPublicOnly && !userIsPublicOnly ? { ...existing, ...user, __publicCacheOnly: false } : { ...user, ...existing, ...(!existingIsPublicOnly && userIsPublicOnly ? { farmCount: user.farmCount ?? existing.farmCount } : {}) })
+      : user;
+    map.set(key, merged);
+    if (uid) map.set(`uid:${uid}`, merged);
+  };
+  (Array.isArray(publicUsers) ? publicUsers : []).forEach(put);
+  (Array.isArray(indexUsers) ? indexUsers : []).forEach(put);
+  return [...new Set([...map.values()])]
+    .filter(user => !user.deleted && !user.blocked)
+    .sort((a, b) => timestampToMsSafe(b.createdAt || b.updatedAt || b.lastLoginAt) - timestampToMsSafe(a.createdAt || a.updatedAt || a.lastLoginAt));
+}
+
 
 let adminReady = false;
 let currentUser = null;
@@ -281,7 +407,13 @@ function updateRebuildIndexAccess() {
 }
 
 function setLimitsAccess(enabled) {
-  document.querySelectorAll('.admin-limits-only').forEach(el => { el.hidden = !enabled; });
+  document.querySelectorAll('.admin-limits-only').forEach(el => {
+    if (el.matches('[data-admin-panel]')) {
+      el.hidden = !enabled || !el.classList.contains('is-active');
+      return;
+    }
+    el.hidden = !enabled;
+  });
   if (!enabled && ['limits','clean'].includes(window.location.hash.replace('#', ''))) switchTab('players');
 }
 
@@ -1386,7 +1518,13 @@ function userRow(row) {
   const sub = row.isFarmRow
     ? `${t('account.farm', 'Farm')} · ${t('account.mainPlayer', 'Main player')}: ${row.mainNickname || '—'}`
     : (includeAdminFarmRows() ? `${t('account.mainPlayer', 'Main player')} · ${tv('stats.farmCountShort', '{count} farms', { count: getUserFarms(user).length })}` : (user.email || ''));
-  return `<tr ${rowAttrs} class="${row.isFarmRow ? 'is-farm-row' : 'is-main-row'}">
+  const publicOnly = Boolean(user.__publicCacheOnly || String(user.uid || '').startsWith('public:'));
+  const actionsHtml = publicOnly
+    ? `<span class="admin-muted">${escapeHtml(t('admin.publicCacheOnly', 'Публічний кеш · натисни “Оновити індекс”, щоб редагувати'))}</span>`
+    : `<button class="btn" type="button" data-action="edit-user" data-uid="${escapeHtml(user.uid)}" data-row-id="${escapeHtml(row.rowId)}" data-farm-id="${escapeHtml(row.farmId || 'main')}">${escapeHtml(t('common.edit', 'Edit'))}</button>
+      ${!row.isFarmRow && actorIsGlobalManager() ? `<button class="btn" type="button" data-action="${user.blocked ? 'unblock-user' : 'block-user'}" data-uid="${escapeHtml(user.uid)}">${escapeHtml(user.blocked ? t('admin.unblock', 'Розблокувати') : t('admin.block', 'Чорний список'))}</button>
+      ${canUseLimitsPanel() ? `<button class="btn btn-danger" type="button" data-action="delete-user-profile" data-uid="${escapeHtml(user.uid)}">${escapeHtml(t('common.delete', 'Видалити'))}</button>` : ''}` : ''}`;
+  return `<tr ${rowAttrs} class="${row.isFarmRow ? 'is-farm-row' : 'is-main-row'} ${publicOnly ? 'is-public-cache-row' : ''}">
     <td data-label="${labels.nickname}"><strong>${escapeHtml(game.nickname || '—')}</strong><small>${escapeHtml(sub || '')}</small></td>
     <td data-label="${labels.region}">${getRegionBadge(game.region)}</td>
     <td data-label="${labels.alliance}">${getAllianceBadge(game.alliance, game.region)}</td>
@@ -1394,11 +1532,7 @@ function userRow(row) {
     <td data-label="${labels.shk}">${getShkBadge(game.shk)}</td>
     <td data-label="${labels.role}">${getRoleBadge(role)}</td>
     <td data-label="${labels.registered}">${formatUserDate(user.createdAt)}</td>
-    <td class="admin-row-actions" data-label="${labels.actions}">
-      <button class="btn" type="button" data-action="edit-user" data-uid="${escapeHtml(user.uid)}" data-row-id="${escapeHtml(row.rowId)}" data-farm-id="${escapeHtml(row.farmId || 'main')}">${escapeHtml(t('common.edit', 'Edit'))}</button>
-      ${!row.isFarmRow && actorIsGlobalManager() ? `<button class="btn" type="button" data-action="${user.blocked ? 'unblock-user' : 'block-user'}" data-uid="${escapeHtml(user.uid)}">${escapeHtml(user.blocked ? t('admin.unblock', 'Розблокувати') : t('admin.block', 'Чорний список'))}</button>
-      ${canUseLimitsPanel() ? `<button class="btn btn-danger" type="button" data-action="delete-user-profile" data-uid="${escapeHtml(user.uid)}">${escapeHtml(t('common.delete', 'Видалити'))}</button>` : ''}` : ''}
-    </td>
+    <td class="admin-row-actions" data-label="${labels.actions}">${actionsHtml}</td>
   </tr>`;
 }
 
@@ -1752,23 +1886,33 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
   if (reset) resetPlayersPage();
   setPlayersLoading();
   const cursor = playersCursorStack[playersPage - 1] || null;
-  const result = await listRegisteredUsersPage({
-    pageSize: ADMIN_PLAYERS_PAGE_SIZE,
-    cursor,
-    direction,
-    filters: adminPlayerQueryFilters()
-  });
-  users = Array.isArray(result.users) ? result.users : [];
+  const filters = adminPlayerQueryFilters();
+  const [result, publicCacheUsers] = await Promise.all([
+    listRegisteredUsersPage({
+      pageSize: ADMIN_PLAYERS_PAGE_SIZE,
+      cursor,
+      direction,
+      filters,
+      scanLimit: 300
+    }).catch(error => {
+      console.warn('[WKD] registered users page failed:', error?.code || error?.message || error);
+      return { users: [], hasNext: false, reads: 0, queryMode: 'failed' };
+    }),
+    loadAdminPublicCacheUsers({ force: reset }).catch(() => [])
+  ]);
+
+  users = mergeAdminUsersWithPublicCache(Array.isArray(result.users) ? result.users : [], publicCacheUsers);
+
   if (!users.length && currentUser?.uid && currentProfile) {
-    // Free self-fallback: does not read Firestore. Useful while a freshly edited admin profile is being re-indexed.
     const fallbackProfile = { id: currentUser.uid, uid: currentUser.uid, email: currentUser.email || currentProfile.email || '', ...currentProfile };
     const fallbackMain = mainRowForUser(fallbackProfile);
     if (canDisplayRow(fallbackMain) && rowMatchesFilters(fallbackMain, filterValues())) users = [fallbackProfile];
   }
+
   playersPageMeta = {
     hasNext: Boolean(result.hasNext),
     reads: Number(result.reads || 0),
-    queryMode: result.queryMode || 'indexed',
+    queryMode: `${result.queryMode || 'indexed'}+public-cache-${publicCacheUsers.length}`,
     firstDoc: result.firstDoc || null,
     lastDoc: result.lastDoc || null
   };
@@ -1776,9 +1920,9 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
   renderUsers();
   const msgKey = filtersAreActive() ? 'admin.playersLoadedFiltered' : 'admin.playersLoadedOptimized';
   const fallback = filtersAreActive()
-    ? 'Завантажено {count} гравців за індексом. Firebase reads≈{reads}. Пошук запускається кнопкою Оновити або Enter.'
-    : 'Завантажено {count} останніх гравців. Firebase reads≈{reads}; вся users-колекція не читається.';
-  setStatus(tv(msgKey, fallback, { count: users.length, reads: playersPageMeta.reads }), 'success');
+    ? 'Завантажено {count} гравців. Public-cache={public}. Firebase reads≈{reads}. Пошук запускається кнопкою Оновити або Enter.'
+    : 'Завантажено {count} останніх гравців. Public-cache={public}. Firebase reads≈{reads}; вся users-колекція не читається.';
+  setStatus(tv(msgKey, fallback, { count: users.length, public: publicCacheUsers.length, reads: playersPageMeta.reads }), 'success');
 }
 
 async function rebuildPlayersIndex() {
@@ -1893,8 +2037,16 @@ async function loadAdminData() {
 function switchTab(tab) {
   const requested = tab || 'players';
   const safeTab = (requested === 'limits' || requested === 'clean') && !canUseLimitsPanel() ? 'players' : requested;
-  document.querySelectorAll('[data-admin-tab]').forEach(button => button.classList.toggle('is-active', button.dataset.adminTab === safeTab));
-  document.querySelectorAll('[data-admin-panel]').forEach(panel => panel.classList.toggle('is-active', panel.dataset.adminPanel === safeTab));
+  document.querySelectorAll('[data-admin-tab]').forEach(button => {
+    const active = button.dataset.adminTab === safeTab;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  document.querySelectorAll('[data-admin-panel]').forEach(panel => {
+    const active = panel.dataset.adminPanel === safeTab;
+    panel.classList.toggle('is-active', active);
+    panel.hidden = !active;
+  });
   if (safeTab === 'limits') renderUsage();
   if (safeTab === 'clean') loadCleanPanel().catch(console.error);
   if (safeTab === 'requests' && !requestsLoaded) loadRoleRequests().catch(console.error);
@@ -2008,7 +2160,9 @@ async function initAdminPage() {
     }
 
     document.querySelectorAll('[data-admin-tab], [data-admin-panel]').forEach(el => {
-      if (!el.classList.contains('admin-limits-only')) el.hidden = false;
+      if (el.classList.contains('admin-limits-only')) return;
+      if (el.matches('[data-admin-panel]')) el.hidden = !el.classList.contains('is-active');
+      else el.hidden = false;
     });
     setLimitsAccess(canUseLimitsPanel(user, currentProfile));
     updateRebuildIndexAccess();

@@ -2480,4 +2480,5 @@ window.WKD_TRANSLATIONS.vi = {
   "stats.cacheEmpty": "Public JSON cache trống. Kiểm tra hoặc thay public-cache/stats-players.json.",
   "stats.refreshLimited": "Đã đạt giới hạn làm mới cache. Thử lại sau {minutes} phút.",
   "stats.loadingSummary": "Đang tải public-cache thống kê..."
+  'admin.publicCacheOnly': "Bộ nhớ đệm công khai · bấm “Tạo lại chỉ mục” để chỉnh sửa",
 };
