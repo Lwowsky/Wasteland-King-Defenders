@@ -2480,6 +2480,6 @@ window.WKD_TRANSLATIONS.pl = {
   "stats.refreshLimited": "Limit odświeżania cache. Spróbuj za {minutes} min.",
   "stats.loadingSummary": "Ładuję public-cache statystyk...",
   "stats.playersUnavailable": "Lista graczy jest niedostępna. Kliknij „Odśwież cache”.",
-  "admin.publicCacheOnly": "Publiczny cache · kliknij „Odbuduj indeks”, aby edytować",
-  "admin.playersLoadedPublicCache": "Załadowano {count} graczy z public-cache. Firebase reads≈{reads}. Aby edytować starsze profile, kliknij „Odbuduj indeks”."
+  "admin.publicCacheOnly": "Publiczny cache",
+  "admin.playersLoadedPublicCache": "Załadowano {count} graczy z public-cache. Edytowalne: {editable}. Tylko public-cache: {publicOnly}. Firebase reads≈{reads}."
 };

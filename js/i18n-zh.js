@@ -2480,6 +2480,6 @@ window.WKD_TRANSLATIONS.zh = {
   "stats.refreshLimited": "缓存刷新已达限制。请在 {minutes} 分钟后重试。",
   "stats.loadingSummary": "正在加载统计 public-cache...",
   "stats.playersUnavailable": "玩家列表不可用。请点击“刷新缓存”。",
-  "admin.publicCacheOnly": "公共缓存 · 点击“重建索引”后可编辑",
-  "admin.playersLoadedPublicCache": "已从 public-cache 加载 {count} 名玩家。Firebase reads≈{reads}。如需编辑旧资料，请点击“重建索引”。"
+  "admin.publicCacheOnly": "公共缓存",
+  "admin.playersLoadedPublicCache": "已从 public-cache 加载 {count} 名玩家。可编辑：{editable}。仅 public-cache：{publicOnly}。Firebase reads≈{reads}。"
 };

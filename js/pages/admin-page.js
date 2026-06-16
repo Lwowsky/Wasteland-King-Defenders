@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=259';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=259';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=259';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=259';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=260';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=260';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=260';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=260';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=259';
+} from '../services/user-db.js?v=260';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -35,7 +35,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=259';
+} from '../services/region-db.js?v=260';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -51,7 +51,7 @@ const rankOptions = ['p1', 'p2', 'p3', 'p4', 'p5'];
 
 const ADMIN_PUBLIC_PLAYERS_FILE = 'stats-players.json';
 const ADMIN_PUBLIC_FARMS_FILE = 'stats-farms.json';
-const ADMIN_PUBLIC_CACHE_BUILD = 'v259-admin-public-cache-with-farms';
+const ADMIN_PUBLIC_CACHE_BUILD = 'v260-admin-public-cache-edit-resolve';
 
 function adminPublicCacheUrls(file, force = false) {
   const clean = String(file || '').replace(/^\/+/, '');
@@ -1985,7 +1985,7 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
     return [];
   });
 
-  // Cheap full display source. Do not wait for the editable Firestore index before rendering.
+  // Cheap full display source: show public-cache immediately, then resolve editable uid rows below.
   users = mergeAdminUsersWithPublicCache([], publicCacheUsers);
   playersPageMeta = {
     hasNext: false,
@@ -2004,20 +2004,22 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
   renderStats();
   renderUsers();
 
-  // Firestore index is only a fallback when public-cache is empty. If rules deny it, the table stays rendered.
-  if (!users.length) {
-    try {
-      const filters = adminPlayerQueryFilters();
-      const cursor = playersCursorStack[playersPage - 1] || null;
-      const result = await withAdminTimeout(listRegisteredUsersPage({
-        pageSize: ADMIN_PLAYERS_PAGE_SIZE,
-        cursor,
-        direction,
-        filters,
-        scanLimit: 300
-      }), 4500, { users: [], hasNext: false, reads: 0, queryMode: 'timeout' }) || { users: [], hasNext: false, reads: 0, queryMode: 'timeout' };
+  // v260: always try the cheap editable index, even when public-cache already displayed rows.
+  // v259 skipped this path when public-cache had players, so rows stayed "Публічний кеш" forever.
+  try {
+    const filters = adminPlayerQueryFilters();
+    const cursor = playersCursorStack[playersPage - 1] || null;
+    const result = await withAdminTimeout(listRegisteredUsersPage({
+      pageSize: Math.max(ADMIN_PLAYERS_PAGE_SIZE, Math.min(50, publicCacheUsers.length || ADMIN_PLAYERS_PAGE_SIZE)),
+      cursor,
+      direction,
+      filters,
+      scanLimit: 300
+    }), 4500, { users: [], hasNext: false, reads: 0, queryMode: 'timeout' }) || { users: [], hasNext: false, reads: 0, queryMode: 'timeout' };
 
-      users = mergeAdminUsersWithPublicCache(Array.isArray(result.users) ? result.users : [], publicCacheUsers);
+    const indexedUsers = Array.isArray(result.users) ? result.users : [];
+    if (indexedUsers.length || !users.length) {
+      users = mergeAdminUsersWithPublicCache(indexedUsers, publicCacheUsers);
       playersPageMeta = {
         hasNext: Boolean(result.hasNext),
         reads: Number(result.reads || 0),
@@ -2027,16 +2029,26 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
       };
       renderStats();
       renderUsers();
-    } catch (error) {
-      console.warn('[WKD] admin index fallback failed:', error?.code || error?.message || error);
+    } else {
+      playersPageMeta = {
+        ...playersPageMeta,
+        reads: Number(result.reads || 0),
+        queryMode: `${result.queryMode || 'index-empty'}+public-cache-${publicCacheUsers.length}`
+      };
     }
+  } catch (error) {
+    console.warn('[WKD] admin editable index resolve failed:', error?.code || error?.message || error);
   }
 
+  const publicOnlyCount = users.filter(user => Boolean(user.__publicCacheOnly || String(user.uid || '').startsWith('public:'))).length;
+  const editableCount = Math.max(0, users.length - publicOnlyCount);
   if (publicCacheUsers.length) {
-    setStatus(tv('admin.playersLoadedPublicCache', 'Завантажено {count} гравців із public-cache. Firebase reads≈{reads}. Для редагування старих профілів натисни “Оновити індекс”.', {
+    setStatus(tv('admin.playersLoadedPublicCache', 'Завантажено {count} гравців із public-cache. Редагуються: {editable}. Public-only: {publicOnly}. Firebase reads≈{reads}.', {
       count: users.length,
+      editable: editableCount,
+      publicOnly: publicOnlyCount,
       reads: playersPageMeta.reads || 0
-    }), 'success');
+    }), publicOnlyCount ? 'warn' : 'success');
   } else {
     setStatus(tv('admin.playersLoadedOptimized', 'Завантажено {count} гравців. Public-cache={public}. Firebase reads≈{reads}; вся users-колекція не читається.', {
       count: users.length,
