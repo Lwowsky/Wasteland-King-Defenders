@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=256';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=256';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=256';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=256';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=257';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=257';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=257';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=257';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=256';
+} from '../services/user-db.js?v=257';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -35,7 +35,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=256';
+} from '../services/region-db.js?v=257';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -44,12 +44,12 @@ const tv = (key, fallback = '', vars = {}) => {
   Object.entries(vars).forEach(([name, value]) => { text = text.replaceAll(`{${name}}`, String(value)); });
   return text;
 };
-function roleLabels() { return { admin: t('role.admin', 'Admin'), moderator: t('role.moderator', 'Moderator'), consul: t('role.consul', 'Consul'), officer: t('role.officer', 'Officer'), player: t('role.player', 'Player') }; }
+function roleLabels() { return { admin: t('role.admin', 'Адмін'), moderator: t('role.moderator', 'Модератор'), consul: t('role.consul', 'Консул'), officer: t('role.officer', 'Офіцер'), player: t('role.player', 'Гравець') }; }
 const rankOptions = ['p1', 'p2', 'p3', 'p4', 'p5'];
 
 
 const ADMIN_PUBLIC_PLAYERS_FILE = 'stats-players.json';
-const ADMIN_PUBLIC_CACHE_BUILD = 'v256-admin-public-cache-merge';
+const ADMIN_PUBLIC_CACHE_BUILD = 'v257-admin-public-cache-first';
 
 function adminPublicCacheUrls(file, force = false) {
   const clean = String(file || '').replace(/^\/+/, '');
@@ -60,6 +60,21 @@ function adminPublicCacheUrls(file, force = false) {
     `${basePath}public-cache/${clean}${suffix}`,
     `public-cache/${clean}${suffix}`
   ])];
+}
+
+function withAdminTimeout(promise, ms = 3500, fallback = null) {
+  let timer = null;
+  return Promise.race([
+    Promise.resolve(promise).catch(error => {
+      console.warn('[WKD] admin request failed:', error?.code || error?.message || error);
+      return fallback;
+    }),
+    new Promise(resolve => {
+      timer = setTimeout(() => resolve(fallback), ms);
+    })
+  ]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
 }
 
 async function fetchAdminPublicCacheJson(file, { force = false } = {}) {
@@ -1885,23 +1900,31 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
   if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
   if (reset) resetPlayersPage();
   setPlayersLoading();
-  const cursor = playersCursorStack[playersPage - 1] || null;
+
   const filters = adminPlayerQueryFilters();
-  const [result, publicCacheUsers] = await Promise.all([
-    listRegisteredUsersPage({
+  const cursor = playersCursorStack[playersPage - 1] || null;
+
+  const publicCacheUsers = await loadAdminPublicCacheUsers({ force: reset }).catch(error => {
+    console.warn('[WKD] admin public cache failed:', error?.message || error);
+    return [];
+  });
+
+  // Public-cache is the cheap full list. Show it first, then merge editable Firestore index
+  // only when needed, so the table cannot stay on “Loading players”.
+  users = mergeAdminUsersWithPublicCache([], publicCacheUsers);
+
+  let result = { users: [], hasNext: false, reads: 0, queryMode: 'public-cache' };
+  const shouldReadIndex = !publicCacheUsers.length || filtersAreActive(filterValues()) || reset;
+  if (shouldReadIndex) {
+    result = await withAdminTimeout(listRegisteredUsersPage({
       pageSize: ADMIN_PLAYERS_PAGE_SIZE,
       cursor,
       direction,
       filters,
       scanLimit: 300
-    }).catch(error => {
-      console.warn('[WKD] registered users page failed:', error?.code || error?.message || error);
-      return { users: [], hasNext: false, reads: 0, queryMode: 'failed' };
-    }),
-    loadAdminPublicCacheUsers({ force: reset }).catch(() => [])
-  ]);
-
-  users = mergeAdminUsersWithPublicCache(Array.isArray(result.users) ? result.users : [], publicCacheUsers);
+    }), 4500, { users: [], hasNext: false, reads: 0, queryMode: 'timeout' }) || result;
+    users = mergeAdminUsersWithPublicCache(Array.isArray(result.users) ? result.users : [], publicCacheUsers);
+  }
 
   if (!users.length && currentUser?.uid && currentProfile) {
     const fallbackProfile = { id: currentUser.uid, uid: currentUser.uid, email: currentUser.email || currentProfile.email || '', ...currentProfile };
@@ -1912,16 +1935,17 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
   playersPageMeta = {
     hasNext: Boolean(result.hasNext),
     reads: Number(result.reads || 0),
-    queryMode: `${result.queryMode || 'indexed'}+public-cache-${publicCacheUsers.length}`,
+    queryMode: `${result.queryMode || 'public-cache'}+public-cache-${publicCacheUsers.length}`,
     firstDoc: result.firstDoc || null,
     lastDoc: result.lastDoc || null
   };
+
   renderStats();
   renderUsers();
   const msgKey = filtersAreActive() ? 'admin.playersLoadedFiltered' : 'admin.playersLoadedOptimized';
   const fallback = filtersAreActive()
     ? 'Завантажено {count} гравців. Public-cache={public}. Firebase reads≈{reads}. Пошук запускається кнопкою Оновити або Enter.'
-    : 'Завантажено {count} останніх гравців. Public-cache={public}. Firebase reads≈{reads}; вся users-колекція не читається.';
+    : 'Завантажено {count} гравців. Public-cache={public}. Firebase reads≈{reads}; вся users-колекція не читається.';
   setStatus(tv(msgKey, fallback, { count: users.length, public: publicCacheUsers.length, reads: playersPageMeta.reads }), 'success');
 }
 
@@ -2047,6 +2071,7 @@ function switchTab(tab) {
     panel.classList.toggle('is-active', active);
     panel.hidden = !active;
   });
+  document.querySelectorAll('[data-limit-panel]').forEach(panel => { panel.hidden = safeTab !== 'limits' || !panel.classList.contains('is-active'); });
   if (safeTab === 'limits') renderUsage();
   if (safeTab === 'clean') loadCleanPanel().catch(console.error);
   if (safeTab === 'requests' && !requestsLoaded) loadRoleRequests().catch(console.error);
@@ -2058,7 +2083,7 @@ function switchTab(tab) {
 function switchLimitTab(tab = 'firebase') {
   const safeTab = tab === 'cloudflare' || tab === 'github' ? tab : 'firebase';
   document.querySelectorAll('[data-limit-tab]').forEach(button => button.classList.toggle('is-active', button.dataset.limitTab === safeTab));
-  document.querySelectorAll('[data-limit-panel]').forEach(panel => panel.classList.toggle('is-active', panel.dataset.limitPanel === safeTab));
+  document.querySelectorAll('[data-limit-panel]').forEach(panel => { const active = panel.dataset.limitPanel === safeTab; panel.classList.toggle('is-active', active); panel.hidden = !active; });
   renderUsage();
 }
 function openInitialAdminTab() {

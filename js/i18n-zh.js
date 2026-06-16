@@ -2474,11 +2474,11 @@ window.WKD_TRANSLATIONS.zh = {
   "stats.snapshotLoaded": "已从 public-cache snapshot 加载玩家列表。玩家：{count}。更新时间：{date}。",
   "stats.snapshotStale": "注意：public-cache snapshot 已过期。上次更新：{date}。在 export 运行前，数据可能与管理后台不同。",
   "stats.playersLoadFailed": "玩家列表不可用。请尝试“刷新缓存”。",
-  "stats.playersUnavailable": "玩家列表不可用。请点击“刷新缓存”。",
   "stats.playersJsonMismatch": "stats-summary.json 有数据，但 stats-players.json 为空。请用最新生成的 JSON 文件替换 public-cache。",
   "stats.cacheFailed": "统计 public-cache 文件不可用。请检查 public-cache/stats-summary.json 和 stats-players.json。",
   "stats.cacheEmpty": "Public JSON cache 为空。请检查或替换 public-cache/stats-players.json。",
   "stats.refreshLimited": "缓存刷新已达限制。请在 {minutes} 分钟后重试。",
-  "stats.loadingSummary": "正在加载统计 public-cache..."
-  'admin.publicCacheOnly': "公共缓存 · 点击“重建索引”后可编辑",
+  "stats.loadingSummary": "正在加载统计 public-cache...",
+  "stats.playersUnavailable": "玩家列表不可用。请点击“刷新缓存”。",
+  "admin.publicCacheOnly": "公共缓存 · 点击“重建索引”后可编辑",
 };

@@ -934,8 +934,7 @@ window.WKD_I18N_AUTO_ATTR = {
   "staff.playersHelp": "Consuls see the region. Officers and R5 work with their alliance.",
   "staff.title": "Region panel",
   "staff.requestTitle": "Registration",
-  "staff.requestHelp": "Player Wasteland request through the region form."
-  "stats.playersUnavailable": "stats.playersUnavailable",
+  "staff.requestHelp": "Player Wasteland request through the region form.",
   "staff.loadedFromLocalCache": "staff.loadedFromLocalCache",
   "staff.loadedRowsMerged": "staff.loadedRowsMerged",
   "staff.loadedRowsFromSnapshot": "staff.loadedRowsFromSnapshot",
@@ -947,4 +946,6 @@ window.WKD_I18N_AUTO_ATTR = {
   "staff.loginRequired": "staff.loginRequired",
   "stats.snapshotLoaded": "stats.snapshotLoaded",
   "stats.snapshotStale": "stats.snapshotStale",
+  "stats.playersUnavailable": "stats.playersUnavailable",
+  "admin.publicCacheOnly": "admin.publicCacheOnly",
 };

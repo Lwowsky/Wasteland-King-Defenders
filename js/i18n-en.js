@@ -2474,11 +2474,11 @@ window.WKD_TRANSLATIONS.en = {
   "stats.snapshotLoaded": "Player list loaded from public-cache snapshot. Players: {count}. Updated: {date}.",
   "stats.snapshotStale": "Warning: public-cache snapshot is outdated. Last update: {date}. Data may differ from Admin until export runs.",
   "stats.playersLoadFailed": "Player list is unavailable. Try “Refresh cache”.",
-  "stats.playersUnavailable": "Player list is unavailable. Try “Refresh cache”.",
   "stats.playersJsonMismatch": "stats-summary.json has numbers, but stats-players.json is empty. Replace public-cache with the latest generated JSON files.",
   "stats.cacheFailed": "Public statistics cache files are unavailable. Check public-cache/stats-summary.json and stats-players.json.",
   "stats.cacheEmpty": "Public JSON cache is empty. Check or replace public-cache/stats-players.json.",
   "stats.refreshLimited": "Cache refresh limit reached. Try again in {minutes} min.",
-  "stats.loadingSummary": "Loading public statistics cache..."
-  'admin.publicCacheOnly': "Public cache · click “Rebuild index” to edit",
+  "stats.loadingSummary": "Loading public statistics cache...",
+  "stats.playersUnavailable": "Player list is unavailable. Try “Refresh cache”.",
+  "admin.publicCacheOnly": "Public cache · click “Rebuild index” to edit",
 };
