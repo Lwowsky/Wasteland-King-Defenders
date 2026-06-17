@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=269';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=269';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=269';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=269';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=270';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=270';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=270';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=270';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -15,7 +15,6 @@ import {
   getUserProfile,
   getAdminCounters,
   isOwnerUser,
-  listPublicPlayersForAdmin,
   resolvePublicPlayerUidForEdit,
   listRoleRequests,
   roleLabel,
@@ -26,7 +25,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=269';
+} from '../services/user-db.js?v=270';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -35,7 +34,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=269';
+} from '../services/region-db.js?v=270';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -51,68 +50,25 @@ const rankOptions = ['p1', 'p2', 'p3', 'p4', 'p5'];
 
 const ADMIN_PUBLIC_PLAYERS_FILE = 'stats-players.json';
 const ADMIN_PUBLIC_FARMS_FILE = 'stats-farms.json';
-const ADMIN_PUBLIC_CACHE_BUILD = 'v269-admin-public-cache-single-source';
-const ADMIN_STATS_CACHE_BUILD = 'v254-snapshot-only-public-stats';
-// Last-resort static fallback from the generated public-cache files in this deploy.
-// Normal path is still /public-cache/*.json; this prevents the admin table from staying empty
-// when the browser/service worker serves an old empty JSON response.
-
-function adminPublicCacheUrls(file, force = false) {
+const ADMIN_PUBLIC_CACHE_BUILD = 'v270-admin-public-cache-direct';
+async function fetchAdminPublicCacheJson(file, { force = true } = {}) {
   const clean = String(file || '').replace(/^\/+/, '');
-  const suffix = force ? `?t=${Date.now()}` : '';
-  const basePath = `${location.origin}${location.pathname.replace(/[^/]*$/, '')}`;
-  return [...new Set([
-    `${location.origin}/public-cache/${clean}${suffix}`,
-    `${basePath}public-cache/${clean}${suffix}`,
-    `public-cache/${clean}${suffix}`
-  ])];
-}
-
-function withAdminTimeout(promise, ms = 3500, fallback = null) {
-  let timer = null;
-  return Promise.race([
-    Promise.resolve(promise).catch(error => {
-      console.warn('[WKD] admin request failed:', error?.code || error?.message || error);
-      return fallback;
-    }),
-    new Promise(resolve => {
-      timer = setTimeout(() => resolve(fallback), ms);
-    })
-  ]).finally(() => {
-    if (timer) clearTimeout(timer);
-  });
-}
-
-async function fetchAdminPublicCacheJson(file, { force = false } = {}) {
-  let lastError = null;
-  const urls = adminPublicCacheUrls(file, true);
-  for (const url of urls) {
-    const finalUrl = force ? `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}` : url;
+  const urls = [
+    `${location.origin}/public-cache/${clean}`,
+    `${location.pathname.replace(/[^/]*$/, '')}public-cache/${clean}`,
+    `public-cache/${clean}`
+  ];
+  for (const baseUrl of [...new Set(urls)]) {
+    const url = force ? `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}v=${ADMIN_PUBLIC_CACHE_BUILD}&t=${Date.now()}` : baseUrl;
     try {
-      const response = await fetch(finalUrl, { cache: 'no-store' });
-      if (!response.ok) throw new Error(`${file}-${response.status}`);
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) continue;
       return await response.json();
     } catch (error) {
-      lastError = error;
+      console.warn('[WKD] admin public-cache fetch skipped:', clean, error?.message || error);
     }
   }
-  throw lastError || new Error(`${file}-unavailable`);
-}
-
-function readAdminStatsPageCache(kind = 'Players') {
-  try {
-    const directKey = `wkd.publicStats${kind}.${ADMIN_STATS_CACHE_BUILD}`;
-    const keys = [directKey, ...Object.keys(localStorage).filter(key => key.startsWith(`wkd.publicStats${kind}.`) && key !== directKey)];
-    let newest = null;
-    keys.forEach(key => {
-      const parsed = JSON.parse(localStorage.getItem(key) || 'null');
-      if (!parsed || !Array.isArray(parsed.data)) return;
-      if (!newest || Number(parsed.savedAt || 0) > Number(newest.savedAt || 0)) newest = parsed;
-    });
-    return Array.isArray(newest?.data) ? newest.data : [];
-  } catch (_) {
-    return [];
-  }
+  return [];
 }
 
 function normalizeAdminPublicArray(value) {
@@ -231,26 +187,13 @@ function attachAdminPublicFarmsToUsers(usersFromCache = [], farmsFromCache = [])
   });
 }
 
-async function loadAdminPublicCacheUsers({ force = false } = {}) {
+async function loadAdminPublicCacheUsers({ force = true } = {}) {
   const [playersRaw, farmsRaw] = await Promise.all([
-    fetchAdminPublicCacheJson(ADMIN_PUBLIC_PLAYERS_FILE, { force: true }).catch(error => {
-      console.warn('[WKD] admin stats-players fetch unavailable:', error?.message || error);
-      return [];
-    }),
-    fetchAdminPublicCacheJson(ADMIN_PUBLIC_FARMS_FILE, { force: true }).catch(error => {
-      console.warn('[WKD] admin stats-farms fetch unavailable:', error?.message || error);
-      return [];
-    })
+    fetchAdminPublicCacheJson(ADMIN_PUBLIC_PLAYERS_FILE, { force }),
+    fetchAdminPublicCacheJson(ADMIN_PUBLIC_FARMS_FILE, { force })
   ]);
-
-  let playersList = normalizeAdminPublicArray(playersRaw);
-  let farmsList = normalizeAdminPublicArray(farmsRaw);
-
-  // Єдиний fallback: той самий localStorage, який використовує stats.html.
-  // Немає старого admin-кешу і немає вбудованого JSON у коді.
-  if (!playersList.length) playersList = readAdminStatsPageCache('Players');
-  if (!farmsList.length) farmsList = readAdminStatsPageCache('Farms');
-
+  const playersList = normalizeAdminPublicArray(playersRaw);
+  const farmsList = normalizeAdminPublicArray(farmsRaw);
   const usersWithoutFarms = playersList
     .map(adminPublicPlayerToUser)
     .filter(user => user.nickname && user.region && !user.deleted && !user.blocked);
@@ -670,7 +613,6 @@ async function loadAdminCounters(force = false) {
 }
 
 function rowMatchesFilters(row, filters = filterValues()) {
-  if (!canDisplayRow(row)) return false;
   if (filters.role !== 'all' && rowRole(row) !== filters.role) return false;
   const game = row.game || {};
   const userNick = String(game.nickname || '').toLowerCase();
@@ -688,11 +630,11 @@ function filteredPlayerGroups() {
   return users
     .map(user => {
       const main = mainRowForUser(user);
-      const farms = farmRowsForUser(user, main).filter(canDisplayRow);
+      const farms = farmRowsForUser(user, main);
       const searchable = includeAdminFarmRows() ? [main, ...farms] : [main];
       return { user, main, farms, matches: searchable.some(row => rowMatchesFilters(row, filters)) };
     })
-    .filter(group => group.matches && canDisplayRow(group.main))
+    .filter(group => group.matches)
     .sort((a, b) => sortRows(a.main, b.main));
 }
 
@@ -2120,35 +2062,14 @@ function setPlayersLoading() {
 }
 
 
-function adminPlayersBodyIsLoading() {
-  const body = $('#registeredPlayersBody');
-  return Boolean(body && /Завантажую гравців|Loading Players|loading players/i.test(body.textContent || ''));
-}
 
-function adminSnapshotRowMatches(row, filters = filterValues()) {
-  const game = row?.game || {};
-  if (filters.role !== 'all' && rowRole(row) !== filters.role) return false;
-  const nick = String(game.nickname || '').toLowerCase();
-  const mainNick = String(row.mainNickname || '').toLowerCase();
-  const alliance = allianceTag3(game.alliance || '');
-  const filterAlliance = allianceTag3(filters.alliance || '');
-  const region = String(game.region || '').toLowerCase();
-  if (filters.nick && !nick.includes(filters.nick) && !mainNick.includes(filters.nick)) return false;
-  if (filterAlliance && alliance !== filterAlliance) return false;
-  if (filters.region && !region.includes(filters.region.replace(/[^0-9]/g, ''))) return false;
-  return true;
-}
 
-async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
+async function loadPlayersPage({ reset = false } = {}) {
   if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
   if (reset) resetPlayersPage();
   setPlayersLoading();
 
-  const publicCacheUsers = await withAdminTimeout(
-    loadAdminPublicCacheUsers({ force: true }),
-    5000,
-    []
-  ).catch(error => {
+  const publicCacheUsers = await loadAdminPublicCacheUsers({ force: true }).catch(error => {
     console.warn('[WKD] admin public-cache load failed:', error?.message || error);
     return [];
   });
@@ -2172,32 +2093,10 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
   }));
   setStatus(tv('admin.playersLoadedPublicCache', 'Завантажено {count} гравців із public-cache. Firebase reads≈0.', {
     count: users.length,
-    editable: 0,
-    publicOnly: users.length,
+    editable: users.length,
+    publicOnly: 0,
     reads: 0
   }), users.length ? 'success' : 'warn');
-
-  // Другий крок не може стерти таблицю. Він тільки додає реальні uid для редагування.
-  listPublicPlayersForAdmin({
-    pageSize: 2000,
-    filters: adminPlayerQueryFilters(),
-    scanLimit: 2000
-  }).then(publicResult => {
-    const editableUsers = Array.isArray(publicResult?.users) ? publicResult.users : [];
-    if (!editableUsers.length) return;
-    users = mergeAdminUsersWithPublicCache([currentAdminSelfUser(), ...editableUsers].filter(Boolean), publicCacheUsers);
-    playersPageMeta = {
-      hasNext: false,
-      reads: Number(publicResult?.reads || 0),
-      queryMode: `${publicResult?.queryMode || 'publicPlayers'}+public-cache-${publicCacheUsers.length}`,
-      firstDoc: null,
-      lastDoc: null
-    };
-    renderStats();
-    renderUsers();
-  }).catch(error => {
-    console.warn('[WKD] admin editable resolve skipped:', error?.code || error?.message || error);
-  });
 }
 
 async function rebuildPlayersIndex() {
@@ -2268,14 +2167,13 @@ async function loadRegionsCatalog(force = false) {
 
 async function loadAdminData() {
   if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
-  const results = await Promise.allSettled([
-    loadAdminCounters(),
-    loadPlayersPage({ reset: true })
-  ]);
-  results.forEach(result => {
-    if (result.status === 'rejected') console.warn('[WKD] admin load part failed:', result.reason?.code || result.reason?.message || result.reason);
+  await loadPlayersPage({ reset: true }).catch(error => {
+    console.warn('[WKD] admin players load failed:', error?.code || error?.message || error);
+    renderUsers();
   });
-  renderStats();
+  loadAdminCounters().then(() => renderStats()).catch(error => {
+    console.warn('[WKD] admin counters unavailable:', error?.code || error?.message || error);
+  });
   renderUsage();
 }
 
@@ -2414,7 +2312,6 @@ async function initAdminPage() {
     updateRebuildIndexAccess();
     openInitialAdminTab();
     setStatus(t('admin.loadingPanel', 'Loading admin panel...'), 'muted');
-    renderUsage();
     await loadAdminData();
   });
 }
