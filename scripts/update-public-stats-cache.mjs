@@ -325,6 +325,9 @@ function sortPublicPlayers(players = []) {
 
 function compactPublicPlayerForStats(player = {}) {
   const sameNick = cleanString(player.gameNick || '', 80) === cleanString(player.nickname || '', 80);
+  const visibility = player.profileVisibility && typeof player.profileVisibility === 'object' ? player.profileVisibility : {};
+  const showExtra = Boolean(visibility.showWastelandInfo);
+  const showFarms = Boolean(visibility.showFarmsInfo);
   const row = {
     publicKey: cleanString(player.publicKey || player.uid || player.id, 80),
     nickname: cleanString(player.nickname || player.gameNick || '—', 80),
@@ -338,16 +341,18 @@ function compactPublicPlayerForStats(player = {}) {
     createdAt: timestampToIso(player.createdAt) || null,
     updatedAt: timestampToIso(player.updatedAt) || null,
     profileVisibility: {
-      showWastelandInfo: false,
-      showFarmsInfo: Boolean(player.profileVisibility?.showFarmsInfo)
+      showWastelandInfo: showExtra,
+      showFarmsInfo: showFarms
     }
   };
   if (!sameNick && player.gameNick) row.gameNick = cleanString(player.gameNick, 80);
+  if (showExtra && player.wastelandProfile) row.wastelandProfile = sanitizeWastelandInfo(player.wastelandProfile);
   return row;
 }
 
 function compactFarmForStats(owner = {}, farm = {}, index = 0) {
-  return {
+  const showExtra = Boolean(owner?.profileVisibility?.showWastelandInfo);
+  const row = {
     ownerPublicKey: cleanString(owner.publicKey || owner.uid || owner.id, 80),
     ownerNickname: cleanString(owner.nickname || owner.gameNick || '—', 80),
     farmKey: cleanString(farm.farmKey || farm.farmId || farm.id || `farm-${index + 1}`, 40),
@@ -360,6 +365,8 @@ function compactFarmForStats(owner = {}, farm = {}, index = 0) {
     createdAt: timestampToIso(owner.createdAt) || null,
     updatedAt: timestampToIso(owner.updatedAt) || null
   };
+  if (showExtra && farm.wastelandProfile) row.wastelandProfile = sanitizeWastelandInfo(farm.wastelandProfile);
+  return row;
 }
 
 function splitPublicStatsFiles(publicPlayers = []) {
@@ -376,7 +383,9 @@ function splitPublicStatsFiles(publicPlayers = []) {
 }
 
 function statsVersionToken(summary = {}, files = {}) {
-  return String(summary.d1Version || summary.d1UpdatedAtMs || Date.parse(summary.generatedAt || '') || Date.now());
+  const sourceVersion = String(summary.d1Version || summary.d1UpdatedAtMs || 'static');
+  const generated = String(Date.parse(summary.generatedAt || '') || Date.now());
+  return `${sourceVersion}-${generated}`;
 }
 
 function buildStatsVersion(summary = {}, files = {}) {

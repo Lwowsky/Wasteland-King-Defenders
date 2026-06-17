@@ -35,7 +35,7 @@ function locale() {
 
 
 
-const STATS_CACHE_BUILD = 'v287-static-public-snapshot';
+const STATS_CACHE_BUILD = 'v288-static-public-snapshot';
 const PUBLIC_STATS_SUMMARY_FILE = 'stats-summary.json';
 const PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -96,7 +96,8 @@ async function fetchPublicCacheJson(file, { force = false } = {}) {
   let lastError = null;
   for (const url of publicCacheUrls(file, force)) {
     try {
-      const response = await fetch(url, { cache: force ? 'no-store' : 'force-cache' });
+      const isVersionFile = String(file || '') === PUBLIC_STATS_VERSION_FILE;
+      const response = await fetch(url, { cache: force || isVersionFile ? 'no-store' : 'force-cache' });
       if (!response.ok) throw new Error(`${file}-${response.status}`);
       return await response.json();
     } catch (error) {
@@ -150,15 +151,13 @@ function setStatsSnapshotLoadedStatus() {
   }), 'success');
 }
 async function fetchPublicStatsVersion({ force = false } = {}) {
-  if (!force) {
-    const cached = readVersionCache();
-    if (cached) return cached;
-  }
   try {
-    const data = await fetchPublicCacheJson(PUBLIC_STATS_VERSION_FILE, { force });
+    const data = await fetchPublicCacheJson(PUBLIC_STATS_VERSION_FILE, { force: true });
     writeVersionCache(data);
     return data;
   } catch (error) {
+    const cached = readVersionCache();
+    if (cached) return cached;
     console.warn('[WKD] stats-version.json unavailable, using direct cache files:', error);
     return null;
   }
