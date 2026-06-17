@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=267';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=267';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=267';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=267';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=268';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=268';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=268';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=268';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=267';
+} from '../services/user-db.js?v=268';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -35,7 +35,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=267';
+} from '../services/region-db.js?v=268';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -51,8 +51,13 @@ const rankOptions = ['p1', 'p2', 'p3', 'p4', 'p5'];
 
 const ADMIN_PUBLIC_PLAYERS_FILE = 'stats-players.json';
 const ADMIN_PUBLIC_FARMS_FILE = 'stats-farms.json';
-const ADMIN_PUBLIC_CACHE_BUILD = 'v267-admin-cache-mirrors-stats';
+const ADMIN_PUBLIC_CACHE_BUILD = 'v268-admin-public-cache-visible-first';
 const ADMIN_STATS_CACHE_BUILD = 'v254-snapshot-only-public-stats';
+// Last-resort static fallback from the generated public-cache files in this deploy.
+// Normal path is still /public-cache/*.json; this prevents the admin table from staying empty
+// when the browser/service worker serves an old empty JSON response.
+const ADMIN_BUNDLED_PUBLIC_PLAYERS = [{"publicKey":"6db42f5a72b0b64b1b0c2916","nickname":"Lwowsky","region":"987","alliance":"YYY","rank":"P4","shk":"39","role":"admin","countryCode":"UA","farmCount":3,"createdAt":"2026-05-27T13:51:55.337Z","updatedAt":"2026-06-10T22:25:02.178Z","profileVisibility":{"showWastelandInfo":false,"showFarmsInfo":true}},{"publicKey":"cf2d00338f78d42530684d04","nickname":"アユシュカさん","region":"987","alliance":"YYY","rank":"P1","shk":"26","role":"player","countryCode":"JP","farmCount":0,"createdAt":"2026-06-15T08:40:15.270Z","updatedAt":"2026-06-15T10:53:55.875Z","profileVisibility":{"showWastelandInfo":false,"showFarmsInfo":false}}];
+const ADMIN_BUNDLED_PUBLIC_FARMS = [{"ownerPublicKey":"6db42f5a72b0b64b1b0c2916","ownerNickname":"Lwowsky","farmKey":"farm-1780412538097","nickname":"炎Shɪsuɪ숬Uchiha炎","region":"982","alliance":"DIO","rank":"P3","shk":"24","role":"admin","createdAt":"2026-05-27T13:51:55.337Z","updatedAt":"2026-06-10T22:25:02.178Z"},{"ownerPublicKey":"6db42f5a72b0b64b1b0c2916","ownerNickname":"Lwowsky","farmKey":"farm-1780412494763","nickname":"TheKidsCallMeBoss","region":"987","alliance":"YYY","rank":"P2","shk":"24","role":"admin","createdAt":"2026-05-27T13:51:55.337Z","updatedAt":"2026-06-10T22:25:02.178Z"},{"ownerPublicKey":"6db42f5a72b0b64b1b0c2916","ownerNickname":"Lwowsky","farmKey":"farm-main-1780723884170","nickname":"廾عά_dS廾όナ","region":"987","alliance":"YYY","rank":"P2","shk":"24","role":"admin","createdAt":"2026-05-27T13:51:55.337Z","updatedAt":"2026-06-10T22:25:02.178Z"}];
 
 function adminPublicCacheUrls(file, force = false) {
   const clean = String(file || '').replace(/^\/+/, '');
@@ -253,10 +258,23 @@ async function loadAdminPublicCacheUsers({ force = false } = {}) {
   let playersList = normalizeAdminPublicArray(playersRaw);
   let farmsList = normalizeAdminPublicArray(farmsRaw);
 
+  // If normal cache path returned empty but summary says players exist, bypass HTTP/SW cache once.
+  // This fixes the admin table showing empty while stats-summary already shows real totals.
+  if (!playersList.length && !force) {
+    playersList = normalizeAdminPublicArray(await fetchAdminPublicCacheJson(ADMIN_PUBLIC_PLAYERS_FILE, { force: true }).catch(() => []));
+  }
+  if (!farmsList.length && !force) {
+    farmsList = normalizeAdminPublicArray(await fetchAdminPublicCacheJson(ADMIN_PUBLIC_FARMS_FILE, { force: true }).catch(() => []));
+  }
+
   // Same data source as stats.html. If the browser/service-worker gives admin.html an empty
   // response, reuse the already loaded stats page cache instead of showing an empty table.
   if (!playersList.length && !force) playersList = readAdminStatsPageCache('Players');
   if (!farmsList.length && !force) farmsList = readAdminStatsPageCache('Farms');
+
+  // Absolute last fallback: bundled deploy snapshot. It is only used if all fetch/local paths fail.
+  if (!playersList.length) playersList = ADMIN_BUNDLED_PUBLIC_PLAYERS;
+  if (!farmsList.length) farmsList = ADMIN_BUNDLED_PUBLIC_FARMS;
 
   const usersWithoutFarms = playersList
     .map(adminPublicPlayerToUser)
@@ -2228,7 +2246,11 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
   try {
     renderStats();
     renderUsers();
-    if (adminPlayersBodyIsLoading() && publicCacheUsers.length) renderUsersDirectFromSnapshot(users);
+    const snapshotVisibleRows = adminRows().filter(row => adminSnapshotRowMatches(row)).length;
+    const normalVisibleRows = pagedPlayersState().rows.length;
+    if (publicCacheUsers.length && (!normalVisibleRows || adminPlayersBodyIsLoading()) && snapshotVisibleRows) {
+      renderUsersDirectFromSnapshot(users);
+    }
   } catch (error) {
     console.error('[WKD] admin public-cache render failed:', error);
     if (publicCacheUsers.length) renderUsersDirectFromSnapshot(users);
