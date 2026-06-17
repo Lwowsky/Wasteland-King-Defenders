@@ -1,4 +1,4 @@
-const WKD_SW_VERSION = 'wkd-sw-v286';
+const WKD_SW_VERSION = 'wkd-sw-v287';
 const STATIC_CACHE = `${WKD_SW_VERSION}-static`;
 const RUNTIME_CACHE = `${WKD_SW_VERSION}-runtime`;
 const STATIC_ASSET_RE = /\.(?:html|css|js|mjs|png|webp|svg|ico|json)$/i;
@@ -8,7 +8,7 @@ self.addEventListener('install', event => {
   event.waitUntil(caches.open(STATIC_CACHE).then(cache => cache.addAll([
     '/', '/index.html', '/stats.html', '/region-table.html', '/public-plan.html', '/notifications.html',
     '/css/styles.css', '/css/base.css', '/css/header.css', '/css/responsive.css', '/js/core/app-boot.js',
-    '/public-cache/stats-summary.json', '/public-cache/stats-version.json'
+    '/public-cache/stats-version.json'
   ]).catch(() => null)));
 });
 
@@ -36,10 +36,10 @@ self.addEventListener('fetch', event => {
     const isPublicCache = url.pathname.startsWith('/public-cache/');
     const forcePublicCacheRefresh = isPublicCache && url.searchParams.has('t');
     const cache = await caches.open(isPublicCache ? RUNTIME_CACHE : STATIC_CACHE);
-    const cached = await cache.match(request, { ignoreSearch: true });
-    if (forcePublicCacheRefresh) {
+    const cached = await cache.match(request);
+    if (isPublicCache) {
       try {
-        const response = await fetch(request, { cache: 'no-store' });
+        const response = await fetch(request, { cache: forcePublicCacheRefresh ? 'no-store' : 'no-cache' });
         if (response && response.ok) cache.put(request, response.clone()).catch(() => null);
         return response;
       } catch (error) {
@@ -47,9 +47,6 @@ self.addEventListener('fetch', event => {
       }
     }
     if (cached) {
-      // Public JSON snapshots can be large. Do not re-download them on every refresh.
-      // Fresh files are fetched only by the app with ?t=... when the user presses Refresh cache.
-      if (isPublicCache) return cached;
       event.waitUntil(fetch(request).then(response => {
         if (response && response.ok) cache.put(request, response.clone()).catch(() => null);
       }).catch(() => null));

@@ -1,5 +1,4 @@
-import { formatUserDate, getUserProfile, makePublicPlayer, roleLabel } from '../services/user-db.js';
-import { getFirebase } from '../services/firebase-service.js';
+import { formatUserDate, roleLabel } from '../services/user-db.js';
 import { troopLabel } from '../services/region-db.js?v=271';
 import { localizedCountry } from '../services/country-utils.js';
 
@@ -36,7 +35,7 @@ function locale() {
 
 
 
-const STATS_CACHE_BUILD = 'v254-snapshot-only-public-stats';
+const STATS_CACHE_BUILD = 'v287-static-public-snapshot';
 const PUBLIC_STATS_SUMMARY_FILE = 'stats-summary.json';
 const PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -78,9 +77,14 @@ function clearStatsLocalCache() {
   [STATS_SUMMARY_CACHE_KEY, STATS_PLAYERS_CACHE_KEY, STATS_FARMS_CACHE_KEY, STATS_VERSION_CACHE_KEY].forEach(key => localStorage.removeItem(key));
   Object.keys(localStorage).filter(key => key.startsWith('wkd.publicStats') && !key.includes(STATS_CACHE_BUILD)).forEach(key => localStorage.removeItem(key));
 }
+function publicStatsVersionToken() {
+  const raw = statsVersionInfo?.version || statsVersionInfo?.generatedAt || statsVersionInfo?.updatedAt || '';
+  return String(raw || '').replace(/[^a-zA-Z0-9_.:-]/g, '').slice(0, 80);
+}
 function publicCacheUrls(file, force = false) {
   const clean = String(file || '').replace(/^\/+/, '');
-  const suffix = force ? `?t=${Date.now()}` : '';
+  const versionToken = clean === PUBLIC_STATS_VERSION_FILE ? '' : publicStatsVersionToken();
+  const suffix = force ? `?t=${Date.now()}` : (versionToken ? `?v=${encodeURIComponent(versionToken)}` : '');
   const basePath = `${location.origin}${location.pathname.replace(/[^/]*$/, '')}`;
   return [...new Set([
     `${location.origin}/public-cache/${clean}${suffix}`,
@@ -302,20 +306,8 @@ function mergeLivePublicPlayer(livePlayer = null) {
   return true;
 }
 
-async function refreshCurrentUserLiveStats() {
-  try {
-    const firebase = await getFirebase();
-    const user = firebase?.auth?.currentUser || null;
-    if (!user?.uid) return false;
-    const profile = await getUserProfile(user.uid, { forceRefresh: true }).catch(() => null);
-    if (!profile) return false;
-    const livePlayer = makePublicPlayer({ ...profile, uid: profile.uid || user.uid });
-    return mergeLivePublicPlayer(livePlayer);
-  } catch (error) {
-    console.warn('[WKD] own live public stats merge skipped:', error?.message || error);
-    return false;
-  }
-}
+function isStaticPublicStatsMode() { return true; }
+
 
 function hasUsableStatsSummary(summary = {}) {
   if (!summary || typeof summary !== 'object') return false;
@@ -379,7 +371,6 @@ async function ensurePlayersLoaded({ force = false } = {}) {
     setStatus(t('stats.loadingPlayers', 'Loading players...'), 'muted');
     const publicPlayers = await fetchPublicStatsPlayers({ force });
     players = dedupePublicPlayersList(Array.isArray(publicPlayers) ? publicPlayers : []);
-    await refreshCurrentUserLiveStats();
     detailsLoaded = true;
     if (includeFarmRows()) {
       setStatus(t('stats.loadingFarms', 'Loading farm statistics...'), 'muted');
