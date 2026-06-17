@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=275';
+} from '../services/user-db.js?v=276';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -1378,7 +1378,6 @@ function renderStats() {
     const incomplete = counterValue('incompleteProfilesTotal', 0);
     const blocked = counterValue('blockedProfilesTotal', 0);
     profileBox.innerHTML = [
-      profileStatusCard(t('admin.authAccounts', 'Auth акаунти'), t('admin.authAccountsConsole', 'дивись Firebase Console'), t('admin.authAccountsHelp', 'Firebase Auth не дає клієнту читати повний список акаунтів.')),
       profileStatusCard(t('admin.siteProfiles', 'Профілі сайту'), profiles, t('admin.siteProfilesHelp', 'Документи users/{uid}.')),
       profileStatusCard(t('admin.completeProfiles', 'Повні профілі'), complete, t('admin.completeProfilesHelp', 'Заповнили нік, регіон, альянс, ранг і ШК.')),
       profileStatusCard(t('admin.incompleteProfiles', 'Неповні профілі'), incomplete, t('admin.incompleteProfilesHelp', 'Увійшли, але ще не завершили реєстрацію.')),
@@ -1396,6 +1395,14 @@ function profileStatusCard(label, value, help) {
   return `<article class="admin-profile-status-card"><span>${escapeHtml(label)}</span><b>${escapeHtml(String(value))}</b><small>${escapeHtml(help || '')}</small></article>`;
 }
 
+function adminUserEmail(user = {}) {
+  return normalizeText(user.adminEmailOverride || user.email || user.authEmail || user.accountEmail || '');
+}
+
+function canManageAdminUserRow(row = {}) {
+  const user = row.user || row || {};
+  return !row.isFarmRow && actorIsGlobalManager() && Boolean(editableUidForAdminRow(row, user.uid || user.id || ''));
+}
 
 function editCell(name, value, type = 'text') {
   const extra = name === 'alliance' ? ' maxlength="3"' : '';
@@ -1419,7 +1426,7 @@ function userRow(row) {
     const accountFields = row.isFarmRow ? '' : `
         <label class="admin-edit-field admin-edit-field--wide">
           <span>${escapeHtml(t('admin.emailInProfile', 'Email у профілі'))}</span>
-          ${editCell('accountEmail', user.adminEmailOverride || user.email || '')}
+          ${editCell('accountEmail', adminUserEmail(user))}
         </label>
         <label class="admin-edit-field admin-edit-field--wide">
           <span>${escapeHtml(t('admin.displayName', 'Display name'))}</span>
@@ -1477,10 +1484,11 @@ function userRow(row) {
 
   const sub = row.isFarmRow
     ? `${t('account.farm', 'Farm')} · ${t('account.mainPlayer', 'Main player')}: ${row.mainNickname || '—'}`
-    : (includeAdminFarmRows() ? `${t('account.mainPlayer', 'Main player')} · ${tv('stats.farmCountShort', '{count} farms', { count: getUserFarms(user).length })}` : (user.email || ''));
+    : (includeAdminFarmRows() ? `${t('account.mainPlayer', 'Main player')} · ${tv('stats.farmCountShort', '{count} farms', { count: getUserFarms(user).length })}` : adminUserEmail(user));
   const publicOnly = Boolean(user.__publicCacheOnly || String(user.uid || '').startsWith('public:'));
+  const canManageRow = canManageAdminUserRow(row);
   const editButton = `<button class="btn" type="button" data-action="edit-user" data-uid="${escapeHtml(user.uid)}" data-row-id="${escapeHtml(row.rowId)}" data-farm-id="${escapeHtml(row.farmId || 'main')}">${escapeHtml(t('common.edit', 'Редагувати'))}</button>`;
-  const manageButtons = (!publicOnly && !row.isFarmRow && actorIsGlobalManager())
+  const manageButtons = canManageRow
     ? `<button class="btn" type="button" data-action="${user.blocked ? 'unblock-user' : 'block-user'}" data-uid="${escapeHtml(user.uid)}">${escapeHtml(user.blocked ? t('admin.unblock', 'Розблокувати') : t('admin.block', 'Чорний список'))}</button>
       ${canUseLimitsPanel() ? `<button class="btn btn-danger" type="button" data-action="delete-user-profile" data-uid="${escapeHtml(user.uid)}">${escapeHtml(t('common.delete', 'Видалити'))}</button>` : ''}`
     : '';
@@ -1826,7 +1834,7 @@ async function handleUserAction(event) {
     if (farmId && farmId !== 'main') await updateFarmByAdmin(editableUid, farmId, values);
     else await updateUserByAdmin(editableUid, values);
     editUid = null;
-    await loadPlayersPage({ reset: false });
+    await Promise.all([loadPlayersPage({ reset: false }), loadAdminCounters(true)]);
     setStatus(t('admin.playerUpdated', 'Player updated.'), 'success');
   } catch (error) {
     console.error(error);

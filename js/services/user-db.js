@@ -1032,7 +1032,7 @@ export function makeAdminUserIndex(data = {}) {
   const createdAtMs = adminIndexMs(data.createdAt || data.updatedAt || data.lastLoginAt);
   return {
     uid,
-    email: normalizeText(data.email).slice(0, 180),
+    email: normalizeText(data.adminEmailOverride || data.email || data.authEmail || '').slice(0, 180),
     displayName: normalizeText(data.displayName).slice(0, 160),
     photoURL: normalizeText(data.photoURL).slice(0, 300),
     authEmail: normalizeText(data.authEmail || '').slice(0, 180),
@@ -1884,7 +1884,7 @@ function adminUserMatchesFilters(user = {}, filters = {}) {
   const alliance = adminAllianceFilterValue(filters.alliance);
   const role = normalizeRole(filters.role || 'all');
   if (role && role !== 'all' && normalizeRole(user.role || 'player') !== role && !farms.some(farm => normalizeRole(farm.role || 'player') === role)) return false;
-  if (nick && !allGames.some(item => adminUserFilterValue(item.nickname || item.gameNick).includes(nick)) && !adminUserFilterValue(user.email).includes(nick) && !adminUserFilterValue(user.displayName).includes(nick)) return false;
+  if (nick && !allGames.some(item => adminUserFilterValue(item.nickname || item.gameNick).includes(nick)) && !adminUserFilterValue(user.adminEmailOverride || user.email || user.authEmail || '').includes(nick) && !adminUserFilterValue(user.displayName).includes(nick)) return false;
   if (region && !allGames.some(item => gameRegion(item) === region)) return false;
   if (alliance && !allGames.some(item => adminAllianceFilterValue(item.alliance) === alliance)) return false;
   return true;
@@ -2113,7 +2113,7 @@ export async function listPublicPlayersForAdmin(options = {}) {
         uid,
         publicKey: normalizeText(data.publicKey || ''),
         __publicCacheOnly: false,
-        email: normalizeText(data.email || ''),
+        email: normalizeText(data.adminEmailOverride || data.email || data.authEmail || ''),
         displayName: normalizeText(data.displayName || game.nickname),
         nickname: game.nickname,
         gameNick: game.nickname,
@@ -2886,14 +2886,15 @@ export async function updateUserByAdmin(uid, values) {
   await assertNicknameRegionUnique(db, firestoreMod, uid, 'main', clean);
   await assertAllianceRankLimit(db, firestoreMod, uid, 'main', clean);
   const canEditAccountFields = isOwnerUser(actor, actorProfile) || ['admin', 'moderator'].includes(normalizeRole(actorProfile?.role || 'player'));
-  const emailOverride = normalizeText(values.accountEmail || values.email || oldProfile.adminEmailOverride || oldProfile.email || '').slice(0, 180);
+  const emailOverride = normalizeText(values.accountEmail || values.email || oldProfile.adminEmailOverride || oldProfile.email || oldProfile.authEmail || '').slice(0, 180);
   const displayName = normalizeText(values.displayName || oldProfile.displayName || '').slice(0, 160);
   const photoURL = normalizeText(values.photoURL || oldProfile.photoURL || '').slice(0, 300);
   const fullUser = {
     uid,
     ...(canEditAccountFields ? {
-      email: emailOverride || oldProfile.email || '',
-      adminEmailOverride: emailOverride || '',
+      ...(oldProfile.email ? { email: oldProfile.email } : {}),
+      adminEmailOverride: emailOverride || oldProfile.adminEmailOverride || '',
+      authEmail: oldProfile.authEmail || oldProfile.email || '',
       displayName,
       photoURL,
       blocked: Boolean(values.blocked === true || values.blocked === 'true' || oldProfile.blocked)
