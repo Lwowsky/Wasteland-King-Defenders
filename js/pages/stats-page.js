@@ -35,7 +35,7 @@ function locale() {
 
 
 
-const STATS_CACHE_BUILD = 'v288-static-public-snapshot';
+const STATS_CACHE_BUILD = 'v289-static-farms-modal-snapshot';
 const PUBLIC_STATS_SUMMARY_FILE = 'stats-summary.json';
 const PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -233,7 +233,6 @@ function attachStatsFarmsToPlayers(farmRows = statsFarms) {
   });
 }
 async function ensureFarmsLoaded({ force = false } = {}) {
-  if (!includeFarmRows()) return [];
   if (statsFarmsLoaded && !force) return statsFarms;
   if (farmsLoadingPromise && !force) return farmsLoadingPromise;
   farmsLoadingPromise = (async () => {
@@ -371,13 +370,12 @@ async function ensurePlayersLoaded({ force = false } = {}) {
     const publicPlayers = await fetchPublicStatsPlayers({ force });
     players = dedupePublicPlayersList(Array.isArray(publicPlayers) ? publicPlayers : []);
     detailsLoaded = true;
-    if (includeFarmRows()) {
-      setStatus(t('stats.loadingFarms', 'Loading farm statistics...'), 'muted');
-      await ensureFarmsLoaded({ force }).catch(error => {
-        console.warn('[WKD] stats farms not loaded:', error);
-        setStatus(t('stats.farmsLoadFailed', 'Farm statistics are unavailable. Try Refresh cache.'), 'warning');
-      });
-    }
+    const farmRowsVisible = includeFarmRows();
+    if (farmRowsVisible) setStatus(t('stats.loadingFarms', 'Loading farm statistics...'), 'muted');
+    await ensureFarmsLoaded({ force }).catch(error => {
+      console.warn('[WKD] stats farms not loaded:', error);
+      if (farmRowsVisible) setStatus(t('stats.farmsLoadFailed', 'Farm statistics are unavailable. Try Refresh cache.'), 'warning');
+    });
     renderStats();
     renderPlayers();
     if (isPublicPlayersJsonMissing(statsSummaryCache, publicPlayers)) {
@@ -731,6 +729,13 @@ function openPlayerModal(player, tab = 'profile', farmIndex = -1) {
   const modal = $('#playerStatsModal');
   const body = $('#playerStatsModalBody');
   if (!modal || !body) return;
+  if (!statsFarmsLoaded && Number(player?.farmCount || 0) > 0) {
+    ensureFarmsLoaded().then(() => {
+      const key = String(player.publicKey || player.uid || player.id || '').trim();
+      const refreshed = players.find(item => String(item.publicKey || item.uid || item.id || '').trim() === key) || player;
+      if (activeModalPlayer && key && String(activeModalPlayer.publicKey || activeModalPlayer.uid || activeModalPlayer.id || '').trim() === key) openPlayerModal(refreshed, tab, farmIndex);
+    }).catch(error => console.warn('[WKD] stats modal farms refresh failed:', error));
+  }
   $('#playerStatsModalTitle').textContent = player.nickname || player.gameNick || t('stats.modalTitle', 'Профіль гравця');
   $('#playerStatsModalLead').textContent = tv('stats.regionLine', 'Region {region} · {alliance} · {rank}', { region: player.region || '—', alliance: player.alliance || '—', rank: String(player.rank || '').toUpperCase() || '—' });
   const roleBadge = $('#playerStatsModalRole');
