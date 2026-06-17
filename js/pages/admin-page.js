@@ -18,6 +18,7 @@ import {
   resolvePublicPlayerUidForEdit,
   listRoleRequests,
   roleLabel,
+  listRegisteredUsersPage,
   updateUserByAdmin,
   updateFarmByAdmin,
   listUserProfilesPage,
@@ -2079,38 +2080,65 @@ function setPlayersLoading() {
 
 
 
-async function loadPlayersPage({ reset = false } = {}) {
+async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
   if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
   if (reset) resetPlayersPage();
   setPlayersLoading();
 
-  const publicCacheUsers = await loadAdminPublicCacheUsers({ force: true }).catch(error => {
-    console.warn('[WKD] admin public-cache load failed:', error?.name || error?.message || error);
-    return [];
-  });
+  const cursor = playersCursorStack[playersPage - 1] || null;
+  const filters = adminPlayerQueryFilters();
 
-  users = mergeAdminUsersWithPublicCache([currentAdminSelfUser()].filter(Boolean), publicCacheUsers);
+  const [registeredResult, publicCacheUsers] = await Promise.all([
+    listRegisteredUsersPage({
+      pageSize: ADMIN_PLAYERS_PAGE_SIZE,
+      cursor,
+      direction,
+      filters
+    }).catch(error => {
+      console.warn('[WKD] admin registered users load failed:', error?.code || error?.message || error);
+      return { users: [], reads: 0, hasNext: false, firstDoc: null, lastDoc: null, queryMode: 'registered-users-failed' };
+    }),
+    loadAdminPublicCacheUsers({ force: true }).catch(error => {
+      console.warn('[WKD] admin public-cache load failed:', error?.name || error?.message || error);
+      return [];
+    })
+  ]);
+
+  const registeredUsers = Array.isArray(registeredResult?.users) ? registeredResult.users : [];
+  const selfUser = currentAdminSelfUser();
+  const filterSnapshot = filterValues();
+  const editableBase = [...registeredUsers];
+  if (selfUser && rowMatchesFilters(mainRowForUser(selfUser), filterSnapshot)
+    && !editableBase.some(user => normalizeText(user.uid || user.id || '') === normalizeText(selfUser.uid || selfUser.id || ''))) {
+    editableBase.push(selfUser);
+  }
+  const editableIdentities = new Set(editableBase.map(adminPlayerIdentity));
+  const publicPageUsers = registeredUsers.length
+    ? publicCacheUsers.filter(user => editableIdentities.has(adminPlayerIdentity(user)))
+    : publicCacheUsers.filter(user => rowMatchesFilters(mainRowForUser(user), filterSnapshot)).slice(0, ADMIN_PLAYERS_PAGE_SIZE);
+  users = mergeAdminUsersWithPublicCache(editableBase, publicPageUsers);
   playersPageMeta = {
-    hasNext: false,
-    reads: 0,
-    queryMode: `public-cache-${publicCacheUsers.length}`,
-    firstDoc: null,
-    lastDoc: null
+    hasNext: Boolean(registeredResult?.hasNext),
+    reads: Number(registeredResult?.reads || 0),
+    queryMode: registeredResult?.queryMode || `registered-users-${registeredUsers.length}`,
+    firstDoc: registeredResult?.firstDoc || null,
+    lastDoc: registeredResult?.lastDoc || null
   };
 
   renderStats();
   renderUsers();
 
   const visibleRows = pagedPlayersState().rows.length;
+  const publicOnlyCount = users.filter(user => user.__publicCacheOnly || String(user.uid || user.id || '').startsWith('public:')).length;
   setSummary(tv('admin.playersLoadedSummary', '{count} гравців завантажено • {shown} рядків показано зараз • — заявок', {
     count: users.length,
     shown: visibleRows
   }));
-  setStatus(tv('admin.playersLoadedPublicCache', 'Завантажено {count} гравців із public-cache. Firebase reads≈0.', {
+  setStatus(tv('admin.playersLoadedEditable', 'Завантажено {count} гравців. Редагуються: {editable}. Public-only: {publicOnly}. Firebase reads≈{reads}.', {
     count: users.length,
-    editable: users.length,
-    publicOnly: 0,
-    reads: 0
+    editable: Math.max(0, users.length - publicOnlyCount),
+    publicOnly: publicOnlyCount,
+    reads: playersPageMeta.reads || 0
   }), users.length ? 'success' : 'warn');
 }
 
