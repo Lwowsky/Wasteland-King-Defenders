@@ -22,6 +22,8 @@ window.WKD_TRANSLATIONS.ko = {
   "account.shk": "본부",
   "account.showFarmsInfo": "농장 정보 표시",
   "account.showWastelandInfo": "지역 양식 추가 정보 표시",
+  "account.farmsInfoFields": "끄면 통계에는 농장 수만 표시됩니다.",
+  "account.wastelandInfoFields": "소굴 레벨, 유형, 티어, 행군, 집결.",
   "account.signOut": "로그아웃",
   "admin.pageTitle": "관리자 — Wasteland King Defenders",
   "admin.eyebrow": "관리자 패널",

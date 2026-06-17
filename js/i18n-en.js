@@ -22,6 +22,8 @@ window.WKD_TRANSLATIONS.en = {
   "account.shk": "HQ",
   "account.showFarmsInfo": "Show farm information",
   "account.showWastelandInfo": "Show extra info from the region form",
+  "account.farmsInfoFields": "If disabled, statistics will show only the farm count.",
+  "account.wastelandInfoFields": "Lair level, type, tier, march, rally.",
   "account.signOut": "Sign out",
   "admin.pageTitle": "Admin — Wasteland King Defenders",
   "admin.eyebrow": "Admin panel",

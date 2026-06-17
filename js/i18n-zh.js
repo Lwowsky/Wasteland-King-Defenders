@@ -22,6 +22,8 @@ window.WKD_TRANSLATIONS.zh = {
   "account.shk": "总部",
   "account.showFarmsInfo": "显示农场信息",
   "account.showWastelandInfo": "显示地区表单的额外信息",
+  "account.farmsInfoFields": "关闭后，统计中只会显示农场数量。",
+  "account.wastelandInfoFields": "巢穴等级、类型、等级、行军、集结。",
   "account.signOut": "退出",
   "admin.pageTitle": "管理后台 — Wasteland King Defenders",
   "admin.eyebrow": "管理面板",

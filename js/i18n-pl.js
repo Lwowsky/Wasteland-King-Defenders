@@ -22,6 +22,8 @@ window.WKD_TRANSLATIONS.pl = {
   "account.shk": "Kwatera główna",
   "account.showFarmsInfo": "Pokaż informacje o farmach",
   "account.showWastelandInfo": "Pokaż dodatkowe informacje z formularza regionu",
+  "account.farmsInfoFields": "Jeśli wyłączone — w statystykach będzie widoczna tylko liczba farm.",
+  "account.wastelandInfoFields": "Poziom legowiska, typ, tier, marsz, rajd.",
   "account.signOut": "Wyloguj",
   "admin.pageTitle": "Panel administratora — Wasteland King Defenders",
   "admin.eyebrow": "Panel administratora",

@@ -22,6 +22,8 @@ window.WKD_TRANSLATIONS.vi = {
   "account.shk": "Tổng bộ",
   "account.showFarmsInfo": "Hiển thị thông tin farm",
   "account.showWastelandInfo": "Hiển thị thông tin thêm từ biểu mẫu khu vực",
+  "account.farmsInfoFields": "Nếu tắt, thống kê chỉ hiển thị số lượng farm.",
+  "account.wastelandInfoFields": "Cấp hang, loại, bậc, hành quân, rally.",
   "account.signOut": "Đăng xuất",
   "admin.pageTitle": "Quản trị — Wasteland King Defenders",
   "admin.eyebrow": "Bảng quản trị",

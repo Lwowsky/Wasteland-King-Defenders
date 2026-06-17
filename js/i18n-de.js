@@ -22,6 +22,8 @@ window.WKD_TRANSLATIONS.de = {
   "account.shk": "HQ",
   "account.showFarmsInfo": "Farminformationen anzeigen",
   "account.showWastelandInfo": "Zusatzinfos aus dem Regionsformular anzeigen",
+  "account.farmsInfoFields": "Wenn deaktiviert, zeigen die Statistiken nur die Anzahl der Farmen.",
+  "account.wastelandInfoFields": "Bau-Level, Typ, Tier, Marsch, Rally.",
   "account.signOut": "Abmelden",
   "admin.pageTitle": "Adminbereich — Wasteland King Defenders",
   "admin.eyebrow": "Adminbereich",

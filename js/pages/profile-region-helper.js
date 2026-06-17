@@ -237,7 +237,11 @@ function prepareProfileForm() {
   $('#regionFormTitleText') && ($('#regionFormTitleText').textContent = t('profile.regionFormDataTitle', 'Region form data'));
   $('#regionFormDescText') && ($('#regionFormDescText').textContent = t('profile.regionFormDataHelp', 'This data is saved in the selected player or farm profile. Then press “Fill from profile” in the linked form.'));
   $('#openRegionTableBtn') && ($('#openRegionTableBtn').textContent = t('profile.openThisRegionForm', 'Open this region form'));
-  $('#wrFillFromProfileBtn') && ($('#wrFillFromProfileBtn').textContent = t('profile.fillFromProfile', 'Fill from profile'));
+  const fillProfileBtn = $('#wrFillFromProfileBtn');
+  if (fillProfileBtn) {
+    fillProfileBtn.hidden = true;
+    fillProfileBtn.disabled = true;
+  }
   $('#saveWastelandDraftBtn') && ($('#saveWastelandDraftBtn').textContent = t('regionForm.submit', 'Відправити заявку'));
   $('#resetWastelandFormBtn') && ($('#resetWastelandFormBtn').textContent = t('profile.clearFormData', 'Очистити форму'));
   const submit = $('#wastelandForm button[type="submit"]');

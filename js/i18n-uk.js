@@ -22,6 +22,8 @@ window.WKD_TRANSLATIONS.uk = {
   "account.shk": "ШК",
   "account.showFarmsInfo": "Показувати інформацію про ферми",
   "account.showWastelandInfo": "Показувати додаткову інформацію з форми регіону",
+  "account.farmsInfoFields": "Якщо вимкнено — у статистиці буде видно тільки кількість ферм.",
+  "account.wastelandInfoFields": "Рівень лігва, тип, тір, марш, ралі.",
   "account.signOut": "Вийти",
   "admin.pageTitle": "Адмінка — Wasteland King Defenders",
   "admin.eyebrow": "Панель адміністратора",

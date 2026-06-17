@@ -22,6 +22,8 @@ window.WKD_TRANSLATIONS.ar = {
   "account.shk": "المقر",
   "account.showFarmsInfo": "عرض معلومات المزارع",
   "account.showWastelandInfo": "عرض معلومات إضافية من نموذج المنطقة",
+  "account.farmsInfoFields": "إذا تم إيقافه، ستعرض الإحصاءات عدد المزارع فقط.",
+  "account.wastelandInfoFields": "مستوى العرين، النوع، المستوى، المسير، التجمع.",
   "account.signOut": "تسجيل الخروج",
   "admin.pageTitle": "الإدارة — Wasteland King Defenders",
   "admin.eyebrow": "لوحة الإدارة",

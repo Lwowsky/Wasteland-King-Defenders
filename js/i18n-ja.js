@@ -22,6 +22,8 @@ window.WKD_TRANSLATIONS.ja = {
   "account.shk": "本部",
   "account.showFarmsInfo": "ファーム情報を表示",
   "account.showWastelandInfo": "地域フォームの追加情報を表示",
+  "account.farmsInfoFields": "オフの場合、統計にはファーム数のみ表示されます。",
+  "account.wastelandInfoFields": "巣穴レベル、タイプ、ティア、行軍、ラリー。",
   "account.signOut": "ログアウト",
   "admin.pageTitle": "管理画面 — Wasteland King Defenders",
   "admin.eyebrow": "管理パネル",

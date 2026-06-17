@@ -1,4 +1,5 @@
-import { formatUserDate, roleLabel } from '../services/user-db.js';
+import { formatUserDate, getUserProfile, makePublicPlayer, roleLabel } from '../services/user-db.js';
+import { getFirebase } from '../services/firebase-service.js';
 import { troopLabel } from '../services/region-db.js?v=271';
 import { localizedCountry } from '../services/country-utils.js';
 
@@ -212,11 +213,18 @@ function attachStatsFarmsToPlayers(farmRows = statsFarms) {
   players = players.map(player => {
     const key = String(player.publicKey || player.uid || player.id || '').trim();
     const farms = byOwner.get(key) || [];
-    if (!farms.length) return { ...player, farms: [], profileVisibility: { ...(player.profileVisibility || {}), showFarmsInfo: Boolean(player.profileVisibility?.showFarmsInfo) } };
+    const existingFarms = Array.isArray(player.farms) ? player.farms : [];
+    if (!farms.length) {
+      return {
+        ...player,
+        farms: existingFarms,
+        profileVisibility: { ...(player.profileVisibility || {}), showFarmsInfo: Boolean(player.profileVisibility?.showFarmsInfo) }
+      };
+    }
     return {
       ...player,
       farms,
-      farmCount: Math.max(Number(player.farmCount || 0), farms.length),
+      farmCount: Math.max(Number(player.farmCount || 0), existingFarms.length, farms.length),
       profileVisibility: { ...(player.profileVisibility || {}), showFarmsInfo: true }
     };
   });
@@ -294,9 +302,19 @@ function mergeLivePublicPlayer(livePlayer = null) {
   return true;
 }
 
-function refreshCurrentUserLiveStats() {
-  // v252: public statistics page uses only public-cache JSON snapshots.
-  return Promise.resolve();
+async function refreshCurrentUserLiveStats() {
+  try {
+    const firebase = await getFirebase();
+    const user = firebase?.auth?.currentUser || null;
+    if (!user?.uid) return false;
+    const profile = await getUserProfile(user.uid, { forceRefresh: true }).catch(() => null);
+    if (!profile) return false;
+    const livePlayer = makePublicPlayer({ ...profile, uid: profile.uid || user.uid });
+    return mergeLivePublicPlayer(livePlayer);
+  } catch (error) {
+    console.warn('[WKD] own live public stats merge skipped:', error?.message || error);
+    return false;
+  }
 }
 
 function hasUsableStatsSummary(summary = {}) {
@@ -361,6 +379,7 @@ async function ensurePlayersLoaded({ force = false } = {}) {
     setStatus(t('stats.loadingPlayers', 'Loading players...'), 'muted');
     const publicPlayers = await fetchPublicStatsPlayers({ force });
     players = dedupePublicPlayersList(Array.isArray(publicPlayers) ? publicPlayers : []);
+    await refreshCurrentUserLiveStats();
     detailsLoaded = true;
     if (includeFarmRows()) {
       setStatus(t('stats.loadingFarms', 'Loading farm statistics...'), 'muted');
