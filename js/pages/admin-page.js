@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=266';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=266';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=266';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=266';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=267';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=267';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=267';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=267';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=266';
+} from '../services/user-db.js?v=267';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -35,7 +35,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=266';
+} from '../services/region-db.js?v=267';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -51,7 +51,8 @@ const rankOptions = ['p1', 'p2', 'p3', 'p4', 'p5'];
 
 const ADMIN_PUBLIC_PLAYERS_FILE = 'stats-players.json';
 const ADMIN_PUBLIC_FARMS_FILE = 'stats-farms.json';
-const ADMIN_PUBLIC_CACHE_BUILD = 'v266-admin-public-cache-never-hangs';
+const ADMIN_PUBLIC_CACHE_BUILD = 'v267-admin-cache-mirrors-stats';
+const ADMIN_STATS_CACHE_BUILD = 'v254-snapshot-only-public-stats';
 
 function adminPublicCacheUrls(file, force = false) {
   const clean = String(file || '').replace(/^\/+/, '');
@@ -83,7 +84,7 @@ async function fetchAdminPublicCacheJson(file, { force = false } = {}) {
   let lastError = null;
   for (const url of adminPublicCacheUrls(file, force)) {
     try {
-      const response = await fetch(url, { cache: force ? 'no-store' : 'no-cache' });
+      const response = await fetch(url, { cache: force ? 'no-store' : 'force-cache' });
       if (!response.ok) throw new Error(`${file}-${response.status}`);
       return await response.json();
     } catch (error) {
@@ -91,6 +92,30 @@ async function fetchAdminPublicCacheJson(file, { force = false } = {}) {
     }
   }
   throw lastError || new Error(`${file}-unavailable`);
+}
+
+function readAdminStatsPageCache(kind = 'Players') {
+  try {
+    const directKey = `wkd.publicStats${kind}.${ADMIN_STATS_CACHE_BUILD}`;
+    const keys = [directKey, ...Object.keys(localStorage).filter(key => key.startsWith(`wkd.publicStats${kind}.`) && key !== directKey)];
+    let newest = null;
+    keys.forEach(key => {
+      const parsed = JSON.parse(localStorage.getItem(key) || 'null');
+      if (!parsed || !Array.isArray(parsed.data)) return;
+      if (!newest || Number(parsed.savedAt || 0) > Number(newest.savedAt || 0)) newest = parsed;
+    });
+    return Array.isArray(newest?.data) ? newest.data : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function normalizeAdminPublicArray(value) {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.players)) return value.players;
+  if (Array.isArray(value?.rows)) return value.rows;
+  if (Array.isArray(value?.data)) return value.data;
+  return [];
 }
 
 function adminPublicPlayerToUser(row = {}) {
@@ -207,24 +232,38 @@ async function loadAdminPublicCacheUsers({ force = false } = {}) {
     const cached = readAdminJsonCache(cacheKey);
     if (Array.isArray(cached) && cached.length) return cached;
   }
+
+  let playersRaw = [];
+  let farmsRaw = [];
   try {
-    const [playersRaw, farmsRaw] = await Promise.all([
-      fetchAdminPublicCacheJson(ADMIN_PUBLIC_PLAYERS_FILE, { force }),
+    [playersRaw, farmsRaw] = await Promise.all([
+      fetchAdminPublicCacheJson(ADMIN_PUBLIC_PLAYERS_FILE, { force }).catch(error => {
+        console.warn('[WKD] admin stats-players fetch unavailable:', error?.message || error);
+        return [];
+      }),
       fetchAdminPublicCacheJson(ADMIN_PUBLIC_FARMS_FILE, { force }).catch(error => {
-        console.warn('[WKD] admin public-cache farms unavailable:', error?.message || error);
+        console.warn('[WKD] admin stats-farms fetch unavailable:', error?.message || error);
         return [];
       })
     ]);
-    const usersWithoutFarms = (Array.isArray(playersRaw) ? playersRaw : [])
-      .map(adminPublicPlayerToUser)
-      .filter(user => user.nickname && user.region && !user.deleted && !user.blocked);
-    const usersFromCache = attachAdminPublicFarmsToUsers(usersWithoutFarms, Array.isArray(farmsRaw) ? farmsRaw : []);
-    writeAdminJsonCache(cacheKey, usersFromCache);
-    return usersFromCache;
   } catch (error) {
-    console.warn('[WKD] admin public-cache players unavailable:', error?.message || error);
-    return [];
+    console.warn('[WKD] admin public-cache fetch failed:', error?.message || error);
   }
+
+  let playersList = normalizeAdminPublicArray(playersRaw);
+  let farmsList = normalizeAdminPublicArray(farmsRaw);
+
+  // Same data source as stats.html. If the browser/service-worker gives admin.html an empty
+  // response, reuse the already loaded stats page cache instead of showing an empty table.
+  if (!playersList.length && !force) playersList = readAdminStatsPageCache('Players');
+  if (!farmsList.length && !force) farmsList = readAdminStatsPageCache('Farms');
+
+  const usersWithoutFarms = playersList
+    .map(adminPublicPlayerToUser)
+    .filter(user => user.nickname && user.region && !user.deleted && !user.blocked);
+  const usersFromCache = attachAdminPublicFarmsToUsers(usersWithoutFarms, farmsList);
+  if (usersFromCache.length) writeAdminJsonCache(cacheKey, usersFromCache);
+  return usersFromCache;
 }
 
 function adminPlayerIdentity(user = {}) {
@@ -2176,7 +2215,8 @@ async function loadPlayersPage({ reset = false, direction = 'next' } = {}) {
   fallbackTimer = null;
 
   // Stable first paint: public-cache must render even when Firestore/publicPlayers is slow or denied.
-  users = mergeAdminUsersWithPublicCache([currentAdminSelfUser()].filter(Boolean), publicCacheUsers);
+  const previousPublicUsers = Array.isArray(users) && users.length ? users : [];
+  users = mergeAdminUsersWithPublicCache([currentAdminSelfUser(), ...previousPublicUsers].filter(Boolean), publicCacheUsers);
   playersPageMeta = {
     hasNext: false,
     reads: 0,
@@ -2311,6 +2351,9 @@ async function loadRegionsCatalog(force = false) {
 
 async function loadAdminData() {
   if (!currentUser || !canUseAdminPanel(currentUser, currentProfile)) return;
+  await paintAdminPublicCacheFallback({ force: false, reason: 'early' }).catch(error => {
+    console.warn('[WKD] admin early public-cache paint failed:', error?.message || error);
+  });
   const results = await Promise.allSettled([
     loadAdminCounters(),
     loadPlayersPage({ reset: true })
