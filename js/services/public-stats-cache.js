@@ -74,10 +74,11 @@ export async function mirrorPublicStatsPlayer(user, publicPlayer = {}) {
   const uid = cleanText(publicPlayer?.uid || user?.uid || '', 180);
   if (!uid) return { skipped: true, reason: 'uid-required' };
   const safePlayer = stripUnsafeFields({ ...publicPlayer, uid });
+  const active = publicPlayer?.profileComplete !== false && publicPlayer?.blocked !== true && publicPlayer?.deleted !== true;
   return requestJson('/api/public-stats/player', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ uid, player: safePlayer, active: publicPlayer?.profileComplete !== false })
+    body: JSON.stringify({ uid, player: safePlayer, active })
   }).catch(error => {
     console.warn('[WKD] public stats D1 mirror skipped:', error?.message || error);
     return { ok: false, skipped: true, error: error?.message || String(error) };

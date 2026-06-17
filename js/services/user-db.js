@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
 import { readCache, writeCache, removeCache } from './local-cache.js?v=266';
 import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=266';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=266';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=274';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -251,13 +251,15 @@ export function normalizeUserRole(role = 'player') {
 }
 
 export function isOwnerUser(user, profile = null) {
-  const email = user?.email || profile?.email || '';
-  return isOwnerEmail(email);
+  const email = user?.email || '';
+  const verified = user?.emailVerified !== false;
+  return verified && isOwnerEmail(email);
 }
 
 export function isAdminUser(user, profile = null) {
-  const email = user?.email || profile?.email || '';
-  return isAdminEmail(email) || profile?.role === 'admin';
+  const email = user?.email || '';
+  const verified = user?.emailVerified !== false;
+  return (verified && isAdminEmail(email)) || profile?.role === 'admin';
 }
 
 export function isModeratorUser(user, profile = null) {
@@ -265,7 +267,9 @@ export function isModeratorUser(user, profile = null) {
 }
 
 export function canUseAdminPanel(user, profile = null) {
-  return isOwnerUser(user, profile) || profile?.role === 'admin' || profile?.role === 'moderator';
+  if (isOwnerUser(user, profile)) return true;
+  if (!user || profile?.blocked || profile?.deleted) return false;
+  return profile?.role === 'admin' || profile?.role === 'moderator';
 }
 
 export function canUseStaffPanel(user, profile = null) {
@@ -2023,14 +2027,14 @@ async function loadAdminUsersFromPublicPlayers(db, firestoreMod, publicDocs = []
 function mapAdminIndexDocs(rawDocs = [], filters = {}) {
   return rawDocs
     .map(doc => ({ id: doc.id, ...doc.data(), uid: doc.data()?.uid || doc.id, __doc: doc }))
-    .filter(user => user.profileComplete !== false && !user.blocked && !user.deleted)
+    .filter(user => user.profileComplete !== false && !user.deleted)
     .filter(user => adminUserMatchesFilters(user, filters))
     .sort((a, b) => Number(b.createdAtMs || timestampToMs(b.createdAt || b.updatedAt || b.lastLoginAt)) - Number(a.createdAtMs || timestampToMs(a.createdAt || a.updatedAt || a.lastLoginAt)));
 }
 function mapAdminUserDocs(rawDocs = [], filters = {}) {
   return rawDocs
     .map(doc => ({ id: doc.id, ...doc.data(), uid: doc.data()?.uid || doc.id, __doc: doc }))
-    .filter(user => user.profileComplete !== false && !user.blocked && !user.deleted)
+    .filter(user => user.profileComplete !== false && !user.deleted)
     .filter(user => adminUserMatchesFilters(user, filters))
     .sort((a, b) => timestampToMs(b.createdAt || b.updatedAt || b.lastLoginAt) - timestampToMs(a.createdAt || a.updatedAt || a.lastLoginAt));
 }
@@ -2915,6 +2919,7 @@ export async function updateUserByAdmin(uid, values) {
   publicPlayer.updatedAt = now;
   publicPlayer.createdAt = oldProfile.createdAt || now;
   publicPlayer.lastLoginAt = oldProfile.lastLoginAt || null;
+  if (Boolean(fullUser.blocked)) publicPlayer.blocked = true;
 
   const batch = firestoreMod.writeBatch(db);
   batch.set(firestoreMod.doc(db, 'users', uid), fullUser, { merge: true });
@@ -2932,7 +2937,7 @@ export async function updateUserByAdmin(uid, values) {
   await batch.commit();
   removeUserProfileCache(uid);
   await markStatsChanged(db, firestoreMod, uid, 'admin_changed', 'admin-main').catch(() => null);
-  await mirrorPublicStatsFromPublicPlayer(publicPlayer, 'admin-main');
+  await mirrorPublicStatsFromPublicPlayer(Boolean(fullUser.blocked) ? { uid, blocked: true, profileComplete: false, updatedAt: now } : publicPlayer, 'admin-main');
   const changed = [];
   if (oldGame.rank !== clean.rank) changed.push(`${serviceT('account.rank','Ранг')}: ${clean.rank.toUpperCase()}`);
   if (oldProfile?.role !== role) changed.push(`${serviceT('account.role','Роль')}: ${roleLabel(role)}`);
@@ -3140,6 +3145,12 @@ export async function setUserBlockedByAdmin(uid, blocked = true, reason = '') {
   trackWrites(2);
   removeUserProfileCache(uid);
   await markStatsChanged(db, firestoreMod, uid, blocked ? 'admin_blocked' : 'admin_unblocked', 'admin-status').catch(() => null);
+  if (blocked) {
+    await mirrorPublicStatsFromPublicPlayer({ ...profile, uid, blocked: true, profileComplete: false, updatedAt: now }, 'admin-blocked').catch(() => null);
+  } else if (isProfileComplete(profile)) {
+    const publicPlayer = makePublicPlayer({ ...profile, blocked: false, updatedAt: now });
+    await mirrorPublicStatsFromPublicPlayer(publicPlayer, 'admin-unblocked').catch(() => null);
+  }
   return { uid, blocked: Boolean(blocked) };
 }
 
@@ -3216,11 +3227,16 @@ export async function updateFarmByAdmin(uid, farmId, values) {
   const batch = firestoreMod.writeBatch(db);
   batch.set(firestoreMod.doc(db, 'users', uid), userPatch, { merge: true });
   if (oldProfile.profileComplete) await writeAdminUserIndexDoc(db, firestoreMod, { ...oldProfile, ...userPatch, uid, updatedAt: now }, batch);
-  if (oldProfile.profileComplete) batch.set(firestoreMod.doc(db, 'publicPlayers', uid), publicPlayer, { merge: true });
+  if (oldProfile.profileComplete && !oldProfile.blocked) {
+    batch.set(firestoreMod.doc(db, 'publicPlayers', uid), publicPlayer, { merge: true });
+  } else if (oldProfile.blocked) {
+    batch.delete(firestoreMod.doc(db, 'publicPlayers', uid));
+    if (mainGame.region) batch.delete(firestoreMod.doc(db, 'regions', mainGame.region, 'players', uid));
+  }
   await batch.commit();
   removeUserProfileCache(uid);
   await markStatsChanged(db, firestoreMod, uid, 'admin_changed', 'admin-farm').catch(() => null);
-  await mirrorPublicStatsFromPublicPlayer(publicPlayer, 'admin-farm');
+  await mirrorPublicStatsFromPublicPlayer(oldProfile.blocked ? { uid, blocked: true, profileComplete: false, updatedAt: now } : publicPlayer, 'admin-farm');
   const oldFarm = farms[index] || {};
   const changed = [];
   if (oldFarm.rank !== nextFarm.rank) changed.push(`${serviceT('account.rank','Ранг')}: ${nextFarm.rank.toUpperCase()}`);

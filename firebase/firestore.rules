@@ -11,7 +11,9 @@ service cloud.firestore {
     }
 
     function ownerEmail() {
-      return signedIn() && request.auth.token.email in ['vovapotaychuk@gmail.com'];
+      return signedIn()
+        && request.auth.token.email in ['vovapotaychuk@gmail.com']
+        && request.auth.token.email_verified == true;
     }
 
     function userDoc(userId) {
@@ -54,18 +56,25 @@ service cloud.firestore {
       return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
+    function currentUserActive() {
+      return ownerEmail()
+        || (currentUserExists()
+          && (!currentUserDoc().data.keys().hasAny(['blocked']) || currentUserDoc().data.blocked != true)
+          && (!currentUserDoc().data.keys().hasAny(['deleted']) || currentUserDoc().data.deleted != true));
+    }
+
     function hasRegionAccess(regionId) {
-      return currentUserExists()
+      return currentUserActive()
         && (currentRegion() == regionId
           || (currentUserDoc().data.keys().hasAny(['regionAccess']) && regionId in currentUserDoc().data.regionAccess));
     }
 
     function currentRegionRole(regionId) {
       return ownerEmail() ? 'admin'
+        : !currentUserActive() ? 'player'
         : currentRole() in ['admin', 'moderator'] ? currentRole()
         : isSameRegion(regionId) ? currentRole()
-        : (currentUserExists()
-          && currentUserDoc().data.keys().hasAny(['regionRoles'])
+        : (currentUserDoc().data.keys().hasAny(['regionRoles'])
           && currentUserDoc().data.regionRoles.keys().hasAny([regionId])
             ? currentUserDoc().data.regionRoles[regionId]
             : 'player');
@@ -143,11 +152,11 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return ownerEmail() || currentRole() == 'admin';
+      return ownerEmail() || (currentUserActive() && currentRole() == 'admin');
     }
 
     function isModerator() {
-      return currentRole() == 'moderator';
+      return currentUserActive() && currentRole() == 'moderator';
     }
 
     function isRegionLeader() {
@@ -432,7 +441,7 @@ function ownerRegionRoleDowngradeSafe(userId) {
         && request.resource.data.keys().hasOnly(['uid', 'playerKey', 'changeType', 'source', 'processed', 'createdAt'])
         && request.resource.data.uid is string
         && request.resource.data.playerKey is string
-        && request.resource.data.changeType in ['profile_changed', 'farm_changed', 'role_changed', 'admin_changed', 'sync_changed']
+        && request.resource.data.changeType in ['profile_changed', 'farm_changed', 'role_changed', 'admin_changed', 'admin_blocked', 'admin_unblocked', 'sync_changed']
         && request.resource.data.source is string
         && request.resource.data.source.size() <= 32
         && request.resource.data.processed == false

@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=272';
+} from '../services/user-db.js?v=274';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -51,7 +51,7 @@ const rankOptions = ['p1', 'p2', 'p3', 'p4', 'p5'];
 
 const ADMIN_PUBLIC_PLAYERS_FILE = 'stats-players.json';
 const ADMIN_PUBLIC_FARMS_FILE = 'stats-farms.json';
-const ADMIN_PUBLIC_CACHE_BUILD = 'v272-admin-public-cache-row-time-fix';
+const ADMIN_PUBLIC_CACHE_BUILD = 'v274-admin-blocked-editable';
 function fetchWithTimeout(url, options = {}, timeoutMs = 2500) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -291,7 +291,7 @@ function mergeAdminUsersWithPublicCache(indexUsers = [], publicUsers = []) {
     compact.set(identity, preferEditableAdminUser(compact.get(identity), user));
   });
   return [...compact.values()]
-    .filter(user => !user.deleted && !user.blocked)
+    .filter(user => !user.deleted)
     .sort((a, b) => timestampToMsSafe(b.createdAt || b.updatedAt || b.lastLoginAt) - timestampToMsSafe(a.createdAt || a.updatedAt || a.lastLoginAt));
 }
 
