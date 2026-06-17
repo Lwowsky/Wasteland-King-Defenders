@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=270';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=270';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=270';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=270';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=271';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=271';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=271';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=271';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -25,7 +25,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=270';
+} from '../services/user-db.js?v=271';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -34,7 +34,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=270';
+} from '../services/region-db.js?v=271';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -50,22 +50,29 @@ const rankOptions = ['p1', 'p2', 'p3', 'p4', 'p5'];
 
 const ADMIN_PUBLIC_PLAYERS_FILE = 'stats-players.json';
 const ADMIN_PUBLIC_FARMS_FILE = 'stats-farms.json';
-const ADMIN_PUBLIC_CACHE_BUILD = 'v270-admin-public-cache-direct';
-async function fetchAdminPublicCacheJson(file, { force = true } = {}) {
+const ADMIN_PUBLIC_CACHE_BUILD = 'v271-admin-public-cache-timeout';
+function fetchWithTimeout(url, options = {}, timeoutMs = 2500) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+async function fetchAdminPublicCacheJson(file, { force = true, timeoutMs = 2500 } = {}) {
   const clean = String(file || '').replace(/^\/+/, '');
+  const basePath = `${location.pathname.replace(/[^/]*$/, '')}public-cache/${clean}`;
   const urls = [
     `${location.origin}/public-cache/${clean}`,
-    `${location.pathname.replace(/[^/]*$/, '')}public-cache/${clean}`,
-    `public-cache/${clean}`
+    new URL(basePath, location.href).href,
+    new URL(`public-cache/${clean}`, location.href).href
   ];
   for (const baseUrl of [...new Set(urls)]) {
     const url = force ? `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}v=${ADMIN_PUBLIC_CACHE_BUILD}&t=${Date.now()}` : baseUrl;
     try {
-      const response = await fetch(url, { cache: 'no-store' });
+      const response = await fetchWithTimeout(url, { cache: 'no-store' }, timeoutMs);
       if (!response.ok) continue;
       return await response.json();
     } catch (error) {
-      console.warn('[WKD] admin public-cache fetch skipped:', clean, error?.message || error);
+      console.warn('[WKD] admin public-cache fetch skipped:', clean, error?.name || error?.message || error);
     }
   }
   return [];
@@ -188,10 +195,8 @@ function attachAdminPublicFarmsToUsers(usersFromCache = [], farmsFromCache = [])
 }
 
 async function loadAdminPublicCacheUsers({ force = true } = {}) {
-  const [playersRaw, farmsRaw] = await Promise.all([
-    fetchAdminPublicCacheJson(ADMIN_PUBLIC_PLAYERS_FILE, { force }),
-    fetchAdminPublicCacheJson(ADMIN_PUBLIC_FARMS_FILE, { force })
-  ]);
+  const playersRaw = await fetchAdminPublicCacheJson(ADMIN_PUBLIC_PLAYERS_FILE, { force, timeoutMs: 2200 });
+  const farmsRaw = await fetchAdminPublicCacheJson(ADMIN_PUBLIC_FARMS_FILE, { force, timeoutMs: 1500 }).catch(() => []);
   const playersList = normalizeAdminPublicArray(playersRaw);
   const farmsList = normalizeAdminPublicArray(farmsRaw);
   const usersWithoutFarms = playersList
@@ -2070,7 +2075,7 @@ async function loadPlayersPage({ reset = false } = {}) {
   setPlayersLoading();
 
   const publicCacheUsers = await loadAdminPublicCacheUsers({ force: true }).catch(error => {
-    console.warn('[WKD] admin public-cache load failed:', error?.message || error);
+    console.warn('[WKD] admin public-cache load failed:', error?.name || error?.message || error);
     return [];
   });
 

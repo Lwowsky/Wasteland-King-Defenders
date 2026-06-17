@@ -24,7 +24,7 @@ WKD.bootAppShell = async function bootAppShell(options = {}) {
 
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     try {
-      navigator.serviceWorker.register('/sw.js?v=270').catch(error => console.warn('[WKD] service worker registration skipped:', error));
+      navigator.serviceWorker.register('/sw.js?v=271').catch(error => console.warn('[WKD] service worker registration skipped:', error));
     } catch (error) {
       console.warn('[WKD] service worker registration failed:', error);
     }
