@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=271';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=271';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=271';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=271';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=272';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=272';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=272';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=272';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -25,7 +25,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=271';
+} from '../services/user-db.js?v=272';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -34,7 +34,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=271';
+} from '../services/region-db.js?v=272';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -50,7 +50,7 @@ const rankOptions = ['p1', 'p2', 'p3', 'p4', 'p5'];
 
 const ADMIN_PUBLIC_PLAYERS_FILE = 'stats-players.json';
 const ADMIN_PUBLIC_FARMS_FILE = 'stats-farms.json';
-const ADMIN_PUBLIC_CACHE_BUILD = 'v271-admin-public-cache-timeout';
+const ADMIN_PUBLIC_CACHE_BUILD = 'v272-admin-public-cache-row-time-fix';
 function fetchWithTimeout(url, options = {}, timeoutMs = 2500) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -215,6 +215,16 @@ function adminPlayerIdentity(user = {}) {
   return uid ? `uid:${uid}` : `fallback:${nickname}|${region}|${alliance}`;
 }
 
+
+function adminCacheRowTimeMs(user = {}) {
+  return Math.max(
+    timestampToMsSafe(user?.createdAt),
+    timestampToMsSafe(user?.updatedAt),
+    timestampToMsSafe(user?.lastLoginAt),
+    timestampToMsSafe(user?.registeredAt)
+  );
+}
+
 function preferEditableAdminUser(a = null, b = null) {
   if (!a) return b;
   if (!b) return a;
@@ -224,7 +234,7 @@ function preferEditableAdminUser(a = null, b = null) {
   const aFarms = getUserFarms(a).length;
   const bFarms = getUserFarms(b).length;
   if (aFarms !== bFarms) return aFarms > bFarms ? a : b;
-  return adminRowTimeMs(a) >= adminRowTimeMs(b) ? a : b;
+  return adminCacheRowTimeMs(a) >= adminCacheRowTimeMs(b) ? a : b;
 }
 
 function currentAdminSelfUser() {
