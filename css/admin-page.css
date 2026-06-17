@@ -128,3 +128,31 @@
 .admin-table .admin-edit-panel .admin-edit-input{min-width:0;width:100%;box-sizing:border-box}
 @media (max-width:1360px){.admin-edit-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.admin-edit-field--wide{grid-column:span 2}.admin-edit-date{grid-column:span 2}}
 @media (max-width:760px){.admin-edit-grid{grid-template-columns:1fr}.admin-edit-field--wide,.admin-edit-date{grid-column:auto}.admin-edit-actions{display:grid;grid-template-columns:1fr}.admin-edit-actions .btn{width:100%;min-width:0}}
+
+/* v277 admin edit row: keep desktop editor compact in one row without duplicate markup */
+@media (min-width:1361px){
+  .admin-edit-grid{
+    grid-template-columns:minmax(150px,1.08fr) minmax(170px,1.15fr) minmax(170px,1.15fr) 86px 86px 78px 78px minmax(116px,.8fr) minmax(120px,.72fr)!important;
+    grid-auto-flow:column;
+    align-items:end;
+  }
+  .admin-edit-field--nickname,.admin-edit-field--email,.admin-edit-field--display,.admin-edit-field--region,.admin-edit-field--alliance,.admin-edit-field--rank,.admin-edit-field--shk,.admin-edit-field--role,.admin-edit-field--date{min-width:0!important;grid-column:auto!important;}
+  .admin-edit-field--region,.admin-edit-field--alliance,.admin-edit-field--rank,.admin-edit-field--shk{max-width:92px;}
+  .admin-edit-field--role{max-width:132px;}
+  .admin-edit-date{min-width:0;}
+  .admin-edit-date b{white-space:nowrap;font-size:13px;}
+  .admin-edit-input{padding-left:10px;padding-right:10px;}
+}
+
+
+/* v281 admin editor sizing fixes */
+@media (min-width:1361px){
+  .admin-table{min-width:1380px}
+  .admin-edit-grid{grid-template-columns:repeat(4,minmax(0,1fr)) 84px 84px 72px 56px minmax(142px,.95fr) minmax(150px,1fr)!important;column-gap:10px!important}
+  .admin-edit-field--nickname,.admin-edit-field--login,.admin-edit-field--email,.admin-edit-field--display{min-width:0!important;max-width:none!important}
+  .admin-edit-field--region,.admin-edit-field--alliance{max-width:84px!important}
+  .admin-edit-field--rank{max-width:72px!important}
+  .admin-edit-field--shk{max-width:56px!important}
+  .admin-edit-field--role{max-width:142px!important}
+  .admin-edit-date{max-width:150px!important}
+}

@@ -705,7 +705,7 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
 
     // D1 registration is the submitted request. Do not also save the same data into
     // the account draft automatically; that Firestore write is only needed when the
-    // player explicitly presses “Зберегти заявку” or changes auto-profile settings.
+    // player explicitly saves the template/request draft or changes auto-profile settings.
     clearDraft();
     localStorage.setItem('wkd.players.sourceMode', 'region');
     if (currentRegion) localStorage.setItem('wkd.players.activeRegion', currentRegion);

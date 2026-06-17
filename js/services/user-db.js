@@ -87,6 +87,19 @@ function sameJsonValue(a, b) {
 function compactAuthValue(value = '') {
   return normalizeText(value).slice(0, 300);
 }
+function normalizeAuthEmail(value = '') {
+  return normalizeText(value).trim().toLowerCase().slice(0, 180);
+}
+function normalizeLoginKey(value = '') {
+  return normalizeText(value).trim().toLowerCase().replace(/\s+/g, '').slice(0, 32);
+}
+function validAuthLogin(value = '') {
+  const key = normalizeLoginKey(value);
+  return key.length >= 3 && key.length <= 32 && !/[\/#?\[\]@]/.test(key);
+}
+function cleanAuthLogin(value = '') {
+  return normalizeText(value).trim().slice(0, 32);
+}
 function isSignInTouchDue(profile = {}) {
   const lastLoginMs = timestampToMs(profile?.lastLoginAt || profile?.lastLoginAtMs || profile?.updatedAt);
   return !lastLoginMs || (Date.now() - lastLoginMs) >= SIGN_IN_TOUCH_TTL_MS;
@@ -1027,6 +1040,8 @@ export function makeAdminUserIndex(data = {}) {
     ...adminPrefixTerms(main.nickname),
     ...adminPrefixTerms(data.email),
     ...adminPrefixTerms(data.displayName),
+    ...adminPrefixTerms(data.authLogin),
+    ...adminPrefixTerms(data.authLoginKey),
     ...farms.flatMap(farm => adminPrefixTerms(farm.nickname))
   ])].slice(0, 240);
   const createdAtMs = adminIndexMs(data.createdAt || data.updatedAt || data.lastLoginAt);
@@ -1036,6 +1051,8 @@ export function makeAdminUserIndex(data = {}) {
     displayName: normalizeText(data.displayName).slice(0, 160),
     photoURL: normalizeText(data.photoURL).slice(0, 300),
     authEmail: normalizeText(data.authEmail || '').slice(0, 180),
+    authLogin: normalizeText(data.authLogin || '').slice(0, 80),
+    authLoginKey: normalizeText(data.authLoginKey || '').slice(0, 80),
     adminEmailOverride: normalizeText(data.adminEmailOverride || '').slice(0, 180),
     providerId: normalizeText(data.providerId || '').slice(0, 80),
     providerIds: Array.isArray(data.providerIds) ? data.providerIds.map(normalizeText).filter(Boolean).slice(0, 12) : [],
@@ -1468,6 +1485,75 @@ function makeRoleRequestPayload({ user, oldProfile, clean, requestedRole, farmId
   };
 }
 
+export async function updateOwnAccountIdentity(user, values = {}) {
+  if (!user?.uid) throw new Error('auth-required');
+  const firebase = await getFirebase();
+  if (!firebase) throw new Error('firebase-not-configured');
+
+  const { db, firestoreMod, authMod } = firebase;
+  const uid = user.uid;
+  const oldProfile = await getUserProfile(uid, { forceRefresh: true }) || await saveSignedInUser(user, { forceRefresh: true });
+  if (!oldProfile) throw new Error('profile-bootstrap-failed');
+
+  const rawLogin = cleanAuthLogin(values.authLogin || values.login || '');
+  const nextLoginKey = rawLogin ? normalizeLoginKey(rawLogin) : '';
+  if (rawLogin && !validAuthLogin(rawLogin)) throw new Error('invalid-login');
+
+  const oldLoginKey = normalizeLoginKey(oldProfile.authLoginKey || oldProfile.authLogin || '');
+  const requestedEmail = normalizeAuthEmail(values.email || values.authEmail || user.email || oldProfile.authEmail || oldProfile.email || '');
+  const oldEmail = normalizeAuthEmail(user.email || oldProfile.authEmail || oldProfile.email || '');
+  if (!requestedEmail) throw new Error('email-required');
+
+  if (requestedEmail !== oldEmail) {
+    if (!authMod?.updateEmail) throw new Error('auth/operation-not-allowed');
+    await authMod.updateEmail(user, requestedEmail);
+    await firebase.auth?.currentUser?.reload?.().catch(() => null);
+    await firebase.auth?.currentUser?.getIdToken?.(true).catch(() => null);
+  }
+
+  const loginEmail = normalizeAuthEmail(firebase.auth?.currentUser?.email || requestedEmail || oldEmail);
+  if (nextLoginKey && nextLoginKey !== oldLoginKey) {
+    const aliasSnap = await firestoreMod.getDoc(firestoreMod.doc(db, 'loginAliases', nextLoginKey));
+    trackReads(1);
+    if (aliasSnap.exists() && aliasSnap.data()?.uid !== uid) throw new Error('login-already-used');
+  }
+
+  const now = firestoreMod.serverTimestamp();
+  const batch = firestoreMod.writeBatch(db);
+  if (oldLoginKey && oldLoginKey !== nextLoginKey) {
+    batch.delete(firestoreMod.doc(db, 'loginAliases', oldLoginKey));
+  }
+  if (nextLoginKey) {
+    batch.set(firestoreMod.doc(db, 'loginAliases', nextLoginKey), {
+      uid,
+      email: loginEmail,
+      login: rawLogin,
+      loginKey: nextLoginKey,
+      createdAt: oldLoginKey === nextLoginKey ? (oldProfile.authLoginCreatedAt || oldProfile.createdAt || now) : now,
+      updatedAt: now
+    }, { merge: true });
+  }
+
+  const displayName = rawLogin || oldProfile.displayName || user.displayName || '';
+  if (rawLogin && authMod?.updateProfile && firebase.auth?.currentUser) {
+    await authMod.updateProfile(firebase.auth.currentUser, { displayName: rawLogin }).catch(() => null);
+  }
+
+  batch.set(firestoreMod.doc(db, 'users', uid), {
+    authLogin: rawLogin,
+    authLoginKey: nextLoginKey,
+    displayName,
+    email: loginEmail,
+    authEmail: loginEmail,
+    updatedAt: now
+  }, { merge: true });
+
+  await batch.commit();
+  trackWrites((oldLoginKey && oldLoginKey !== nextLoginKey ? 1 : 0) + (nextLoginKey ? 1 : 0) + 1);
+  removeUserProfileCache(uid);
+  return getUserProfile(uid, { forceRefresh: true });
+}
+
 export async function saveGameRegistration(user, values) {
   if (!user) throw new Error('auth-required');
   const firebase = await getFirebase();
@@ -1875,6 +1961,10 @@ function adminAllianceFilterValue(value = '') {
   // Keep alliance filters case-sensitive: EVO, evo, Evo and eVo are different alliances.
   return adminAllianceExactKey(value);
 }
+function adminRoleFilterValue(value = 'all') {
+  const raw = normalizeText(value || 'all').toLowerCase();
+  return raw === 'all' ? 'all' : normalizeRole(raw);
+}
 function adminUserMatchesFilters(user = {}, filters = {}) {
   const game = getGameProfile(user);
   const farms = getUserFarms(user);
@@ -1882,7 +1972,7 @@ function adminUserMatchesFilters(user = {}, filters = {}) {
   const nick = adminUserFilterValue(filters.nick);
   const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
   const alliance = adminAllianceFilterValue(filters.alliance);
-  const role = normalizeRole(filters.role || 'all');
+  const role = adminRoleFilterValue(filters.role || 'all');
   if (role && role !== 'all' && normalizeRole(user.role || 'player') !== role && !farms.some(farm => normalizeRole(farm.role || 'player') === role)) return false;
   if (nick && !allGames.some(item => adminUserFilterValue(item.nickname || item.gameNick).includes(nick)) && !adminUserFilterValue(user.adminEmailOverride || user.email || user.authEmail || '').includes(nick) && !adminUserFilterValue(user.displayName).includes(nick)) return false;
   if (region && !allGames.some(item => gameRegion(item) === region)) return false;
@@ -1895,7 +1985,7 @@ function buildAdminUsersIndexQuery(firestoreMod, db, { cursor = null, direction 
   const nick = adminSearchKey(filters.nick).slice(0, ADMIN_INDEX_PREFIX_LIMIT);
   const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
   const alliance = adminAllianceFilterValue(filters.alliance);
-  const role = normalizeRole(filters.role || 'all');
+  const role = adminRoleFilterValue(filters.role || 'all');
   const hasRole = Boolean(role && role !== 'all');
   const hasFilters = Boolean(nick || region || alliance || hasRole);
 
@@ -1928,7 +2018,7 @@ function buildAdminUsersIndexQuery(firestoreMod, db, { cursor = null, direction 
 
 function buildAdminUsersQuery(firestoreMod, db, { cursor = null, direction = 'next', pageSize = 10, filters = {}, strictProfileComplete = true, serverFilters = true } = {}) {
   const clauses = [firestoreMod.collection(db, 'users')];
-  const role = normalizeRole(filters.role || 'all');
+  const role = adminRoleFilterValue(filters.role || 'all');
   if (strictProfileComplete) clauses.push(firestoreMod.where('profileComplete', '==', true));
   if (serverFilters && role && role !== 'all') clauses.push(firestoreMod.where('role', '==', role));
   clauses.push(firestoreMod.orderBy('createdAt', 'desc'));
@@ -1949,7 +2039,7 @@ function buildAdminUsersIndexDirectQuery(firestoreMod, db, { pageSize = 10, filt
   const nick = adminSearchKey(filters.nick).slice(0, ADMIN_INDEX_PREFIX_LIMIT);
   const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
   const alliance = adminAllianceFilterValue(filters.alliance);
-  const role = normalizeRole(filters.role || 'all');
+  const role = adminRoleFilterValue(filters.role || 'all');
   const clauses = [firestoreMod.collection(db, ADMIN_USERS_INDEX_COLLECTION)];
   if (nick) clauses.push(firestoreMod.where('searchPrefixes', 'array-contains', nick));
   if (region) clauses.push(firestoreMod.where('region', '==', region));
@@ -1963,7 +2053,7 @@ function buildPublicPlayersAdminSearchQuery(firestoreMod, db, { pageSize = 10, f
   const nick = normalizeText(filters.nick);
   const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
   const alliance = adminAllianceFilterValue(filters.alliance);
-  const role = normalizeRole(filters.role || 'all');
+  const role = adminRoleFilterValue(filters.role || 'all');
   const clauses = [firestoreMod.collection(db, 'publicPlayers')];
   if (nick) clauses.push(firestoreMod.where('nickname', '==', nick));
   if (region) clauses.push(firestoreMod.where('region', '==', region));
@@ -1978,7 +2068,7 @@ function buildUsersAdminExactSearchQueries(firestoreMod, db, { pageSize = 10, fi
   const nick = normalizeText(filters.nick);
   const region = normalizeText(filters.region).replace(/[^0-9]/g, '');
   const alliance = adminAllianceFilterValue(filters.alliance);
-  const role = normalizeRole(filters.role || 'all');
+  const role = adminRoleFilterValue(filters.role || 'all');
   const makeQuery = (field, value) => {
     const clauses = [firestoreMod.collection(db, 'users'), firestoreMod.where(field, '==', value)];
     if (role && role !== 'all') clauses.push(firestoreMod.where('role', '==', role));
@@ -2148,7 +2238,7 @@ export async function listPublicPlayersForAdmin(options = {}) {
       const alliance = adminAllianceExactKey(game.alliance || user.alliance || '');
       const filterAlliance = adminAllianceExactKey(filters.alliance || '');
       const role = normalizeRole(user.role || game.role || 'player');
-      const filterRole = normalizeRole(filters.role || 'all');
+      const filterRole = adminRoleFilterValue(filters.role || 'all');
       return (!filterNick || nick.includes(filterNick))
         && (!filterRegion || region === filterRegion)
         && (!filterAlliance || alliance === filterAlliance)
@@ -2172,7 +2262,7 @@ export async function listRegisteredUsersPage(options = {}) {
   const { db, firestoreMod } = firebase;
   const pageSize = Math.max(1, Math.min(50, Number(options?.pageSize || 10)));
   const filters = options?.filters || {};
-  const hasFilters = Boolean(adminUserFilterValue(filters.nick) || normalizeText(filters.region) || normalizeText(filters.alliance) || (normalizeRole(filters.role || 'all') !== 'all'));
+  const hasFilters = Boolean(adminUserFilterValue(filters.nick) || normalizeText(filters.region) || normalizeText(filters.alliance) || (adminRoleFilterValue(filters.role || 'all') !== 'all'));
   const queryPageSize = pageSize + 1;
 
   let readCount = 0;
@@ -2889,6 +2979,16 @@ export async function updateUserByAdmin(uid, values) {
   const emailOverride = normalizeText(values.accountEmail || values.email || oldProfile.adminEmailOverride || oldProfile.email || oldProfile.authEmail || '').slice(0, 180);
   const displayName = normalizeText(values.displayName || oldProfile.displayName || '').slice(0, 160);
   const photoURL = normalizeText(values.photoURL || oldProfile.photoURL || '').slice(0, 300);
+  const requestedLogin = cleanAuthLogin(values.authLogin ?? oldProfile.authLogin ?? '');
+  const nextLoginKey = requestedLogin ? normalizeLoginKey(requestedLogin) : '';
+  const oldLoginKey = normalizeLoginKey(oldProfile.authLoginKey || oldProfile.authLogin || '');
+  if (requestedLogin && !validAuthLogin(requestedLogin)) throw new Error('invalid-login');
+  if (nextLoginKey && nextLoginKey !== oldLoginKey) {
+    const aliasSnap = await firestoreMod.getDoc(firestoreMod.doc(db, 'loginAliases', nextLoginKey));
+    trackReads(1);
+    if (aliasSnap.exists() && aliasSnap.data()?.uid !== uid) throw new Error('login-already-used');
+  }
+  const loginEmail = normalizeAuthEmail(oldProfile.authEmail || oldProfile.email || values.accountEmail || values.email || '');
   const fullUser = {
     uid,
     ...(canEditAccountFields ? {
@@ -2897,6 +2997,8 @@ export async function updateUserByAdmin(uid, values) {
       authEmail: oldProfile.authEmail || oldProfile.email || '',
       displayName,
       photoURL,
+      authLogin: requestedLogin,
+      authLoginKey: nextLoginKey,
       blocked: Boolean(values.blocked === true || values.blocked === 'true' || oldProfile.blocked)
     } : {}),
     gameNick: clean.nickname,
@@ -2924,6 +3026,19 @@ export async function updateUserByAdmin(uid, values) {
 
   const batch = firestoreMod.writeBatch(db);
   batch.set(firestoreMod.doc(db, 'users', uid), fullUser, { merge: true });
+  if (canEditAccountFields && oldLoginKey && oldLoginKey !== nextLoginKey) {
+    batch.delete(firestoreMod.doc(db, 'loginAliases', oldLoginKey));
+  }
+  if (canEditAccountFields && nextLoginKey && loginEmail) {
+    batch.set(firestoreMod.doc(db, 'loginAliases', nextLoginKey), {
+      uid,
+      email: loginEmail,
+      login: requestedLogin,
+      loginKey: nextLoginKey,
+      updatedAt: now,
+      createdAt: oldLoginKey === nextLoginKey ? (oldProfile.authLoginCreatedAt || oldProfile.createdAt || now) : now
+    }, { merge: true });
+  }
   await writeAdminUserIndexDoc(db, firestoreMod, { ...oldProfile, ...fullUser, uid, createdAt: oldProfile.createdAt || now, updatedAt: now }, batch);
   if (Boolean(fullUser.blocked)) {
     batch.delete(firestoreMod.doc(db, 'publicPlayers', uid));
@@ -3155,6 +3270,44 @@ export async function setUserBlockedByAdmin(uid, blocked = true, reason = '') {
   return { uid, blocked: Boolean(blocked) };
 }
 
+async function deleteSiteProfileDocuments(db, firestoreMod, uid, profile = {}) {
+  const game = getGameProfile(profile || {});
+  const batch = firestoreMod.writeBatch(db);
+  batch.delete(firestoreMod.doc(db, 'users', uid));
+  batch.delete(firestoreMod.doc(db, ADMIN_USERS_INDEX_COLLECTION, uid));
+  batch.delete(firestoreMod.doc(db, 'publicPlayers', uid));
+  if (game.region) batch.delete(firestoreMod.doc(db, 'regions', game.region, 'players', uid));
+  const loginAliasKey = normalizeText(profile.authLoginKey || profile.authLogin || '').toLowerCase().replace(/\s+/g, '');
+  if (loginAliasKey) batch.delete(firestoreMod.doc(db, 'loginAliases', loginAliasKey));
+  await batch.commit();
+  trackDeletes(loginAliasKey ? 5 : 4);
+  removeUserProfileCache(uid);
+  await markStatsChanged(db, firestoreMod, uid, 'profile_deleted', 'admin-status').catch(() => null);
+  return { uid, loginAliasKey, region: game.region || '' };
+}
+
+export async function deleteOwnSiteAccount(user, options = {}) {
+  if (!user?.uid) throw new Error('auth-required');
+  const firebase = await getFirebase();
+  if (!firebase) throw new Error('firebase-not-configured');
+  const { db, firestoreMod, authMod } = firebase;
+  const uid = user.uid;
+  const profile = await getUserProfile(uid, { forceRefresh: true }) || await saveSignedInUser(user, { forceRefresh: true });
+  if (!profile) throw new Error('user-not-found');
+  await deleteSiteProfileDocuments(db, firestoreMod, uid, profile);
+  let authUserDeleted = false;
+  let authDeleteCode = '';
+  if (options?.deleteAuth !== false && authMod?.deleteUser && (firebase.auth?.currentUser || user)) {
+    try {
+      await authMod.deleteUser(firebase.auth?.currentUser || user);
+      authUserDeleted = true;
+    } catch (error) {
+      authDeleteCode = String(error?.code || error?.message || '');
+    }
+  }
+  return { uid, deleted: true, authUserDeleted, authDeleteCode };
+}
+
 export async function deleteUserProfileByAdmin(uid) {
   if (!uid) throw new Error('missing-user-id');
   const firebase = await getFirebase();
@@ -3166,16 +3319,7 @@ export async function deleteUserProfileByAdmin(uid) {
   if (actor?.uid === uid) throw new Error('cannot-delete-self');
   const profile = await getUserProfile(uid, { forceRefresh: true });
   if (!profile) throw new Error('user-not-found');
-  const game = getGameProfile(profile);
-  const batch = firestoreMod.writeBatch(db);
-  batch.delete(firestoreMod.doc(db, 'users', uid));
-  batch.delete(firestoreMod.doc(db, ADMIN_USERS_INDEX_COLLECTION, uid));
-  batch.delete(firestoreMod.doc(db, 'publicPlayers', uid));
-  if (game.region) batch.delete(firestoreMod.doc(db, 'regions', game.region, 'players', uid));
-  await batch.commit();
-  trackDeletes(4);
-  removeUserProfileCache(uid);
-  await markStatsChanged(db, firestoreMod, uid, 'admin_deleted_profile', 'admin-status').catch(() => null);
+  await deleteSiteProfileDocuments(db, firestoreMod, uid, profile);
   return { uid, deleted: true, authUserDeleted: false };
 }
 

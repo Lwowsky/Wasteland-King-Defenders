@@ -238,9 +238,10 @@ function prepareProfileForm() {
   $('#regionFormDescText') && ($('#regionFormDescText').textContent = t('profile.regionFormDataHelp', 'This data is saved in the selected player or farm profile. Then press “Fill from profile” in the linked form.'));
   $('#openRegionTableBtn') && ($('#openRegionTableBtn').textContent = t('profile.openThisRegionForm', 'Open this region form'));
   $('#wrFillFromProfileBtn') && ($('#wrFillFromProfileBtn').textContent = t('profile.fillFromProfile', 'Fill from profile'));
-  $('#resetWastelandFormBtn') && ($('#resetWastelandFormBtn').textContent = t('profile.clearFormData', 'Clear form data'));
+  $('#saveWastelandDraftBtn') && ($('#saveWastelandDraftBtn').textContent = t('regionForm.submit', 'Відправити заявку'));
+  $('#resetWastelandFormBtn') && ($('#resetWastelandFormBtn').textContent = t('profile.clearFormData', 'Очистити форму'));
   const submit = $('#wastelandForm button[type="submit"]');
-  if (submit) submit.textContent = t('profile.saveFormData', 'Save form data');
+  if (submit) submit.textContent = t('profile.saveFormData', 'Зберегти як шаблон');
   renderTroopOptions();
   fillTierSelect($('#wrTier'), 'T10');
   fillExtraTierSelects({});
@@ -312,6 +313,7 @@ function bind() {
     fillSelectedFarm().catch(error => { console.warn('[WKD] profile farm form refresh failed:', error); });
   });
   $('#wrFillFromProfileBtn')?.addEventListener('click', () => fillSelectedFarm().catch(error => { console.warn('[WKD] profile fill failed:', error); }));
+  $('#saveWastelandDraftBtn')?.addEventListener('click', openRegionForm);
   $('#resetWastelandFormBtn')?.addEventListener('click', () => setRegionForm({ nickname: $('#wrNickname')?.value, alliance: $('#wrAlliance')?.value }));
   $('#openRegionTableBtn')?.addEventListener('click', openRegionForm);
   document.addEventListener('wkd:language-changed', handleLanguageChange);

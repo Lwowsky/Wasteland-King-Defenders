@@ -2,6 +2,7 @@ import { getFirebase, watchAuth } from '../services/firebase-service.js';
 import {
   assignableRolesForActor,
   deleteFarm,
+  deleteOwnSiteAccount,
   getActiveRoleRequest,
   getFarmById,
   getGameProfile,
@@ -13,7 +14,8 @@ import {
   normalizeProfileVisibility,
   roleLabel,
   saveGameRegistration,
-  saveSignedInUser
+  saveSignedInUser,
+  updateOwnAccountIdentity
 } from '../services/user-db.js';
 import { countryChoices, localizedCountry, matchCountry } from '../services/country-utils.js';
 
@@ -60,6 +62,36 @@ function setStatus(text, type = 'muted', state = null) {
   box.textContent = text;
   box.dataset.type = type;
   lastStatusState = state;
+}
+
+function cleanEmail(value = '') {
+  return String(value || '').trim().toLowerCase();
+}
+
+function loginKey(value = '') {
+  return String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+}
+
+function fillAccountIdentityFields(profile = {}) {
+  const login = $('#accountLogin');
+  const email = $('#accountLoginEmail');
+  if (login) login.value = profile.authLogin || profile.authLoginKey || '';
+  if (email) email.value = currentUser?.email || profile.authEmail || profile.email || '';
+}
+
+function readAccountIdentityValues() {
+  return {
+    authLogin: trim($('#accountLogin')?.value || ''),
+    email: cleanEmail($('#accountLoginEmail')?.value || '')
+  };
+}
+
+function identityChanged(values = {}, profile = currentProfile || {}) {
+  const oldLoginKey = loginKey(profile.authLoginKey || profile.authLogin || '');
+  const nextLoginKey = loginKey(values.authLogin || '');
+  const oldEmail = cleanEmail(currentUser?.email || profile.authEmail || profile.email || '');
+  const nextEmail = cleanEmail(values.email || '');
+  return nextLoginKey !== oldLoginKey || (nextEmail && nextEmail !== oldEmail);
 }
 
 
@@ -246,6 +278,7 @@ function fillForm(profile = {}) {
   fillFarmFields(selectedFarm(profile));
   renderRoleOptions(requestedRole || 'player');
   fillUserCard(currentUser, profile);
+  fillAccountIdentityFields(profile);
   if ($('#currentRoleText')) $('#currentRoleText').textContent = roleLabel(role || 'player');
   const country = $('#country');
   const countryCode = $('#countryCode');
@@ -349,6 +382,13 @@ async function handleSave(event) {
 
   try {
     setStatus(t('account.saving', 'Saving data...'), 'muted');
+    const identity = readAccountIdentityValues();
+    if (identityChanged(identity, currentProfile || {})) {
+      setStatus(t('account.savingLoginData', 'Оновлюю логін/email...'), 'muted');
+      currentProfile = await updateOwnAccountIdentity(currentUser, identity);
+      const firebase = await getFirebase();
+      currentUser = firebase?.auth?.currentUser || currentUser;
+    }
     currentProfile = await saveGameRegistration(currentUser, values);
     draftFarm = null;
     currentFarmId = values.farmId || 'main';
@@ -379,6 +419,22 @@ async function handleSave(event) {
     }
     if (error?.message === 'profile-bootstrap-failed') {
       setStatus(t('account.profileBootstrapFailed', 'Не вдалося створити профіль акаунта. Перевір Firestore rules і спробуй ще раз.'), 'error');
+      return;
+    }
+    if (error?.message === 'login-already-used') {
+      setStatus(t('account.loginAlreadyUsed', 'Цей логін вже зайнятий.'), 'error');
+      return;
+    }
+    if (error?.message === 'invalid-login') {
+      setStatus(t('account.invalidLogin', 'Логін має бути 3–32 символи без / # ? [ ].'), 'error');
+      return;
+    }
+    if (error?.code === 'auth/requires-recent-login') {
+      setStatus(t('account.recentLoginRequired', 'Для зміни email потрібно вийти і зайти ще раз.'), 'error');
+      return;
+    }
+    if (error?.code === 'auth/operation-not-allowed') {
+      setStatus(t('account.emailProviderDisabled', 'Зміна email недоступна для цього способу входу.'), 'error');
       return;
     }
     const code = String(error?.code || '');
@@ -477,6 +533,44 @@ async function removeFarm() {
   }
 }
 
+async function removeOwnAccount() {
+  if (!currentUser) return;
+  const ok = window.WKD?.confirmDialog
+    ? await window.WKD.confirmDialog({
+      title: t('account.deleteOwnAccountTitle', 'Видалити свій акаунт?'),
+      message: t('account.deleteOwnAccountMessage', 'Після підтвердження сайт видалить твій профіль, логін для входу, основного гравця, ферми та публічні записи у статистиці.'),
+      note: t('account.deleteOwnAccountNote', 'Щоб підтвердити видалення, введи DELETE. Якщо сервіс попросить повторний вхід, дані сайту все одно буде видалено, а акаунт входу можна буде завершити видаляти після повторного входу.'),
+      icon: '🗑',
+      acceptText: t('account.deleteOwnAccount', 'Видалити акаунт'),
+      confirmText: 'DELETE',
+      inputLabel: t('account.deleteOwnAccountConfirmLabel', 'Введи DELETE для підтвердження'),
+      inputPlaceholder: t('account.deleteOwnAccountConfirmPlaceholder', 'DELETE'),
+      inputHint: t('account.deleteOwnAccountConfirmHint', 'Це додатковий захист від випадкового видалення акаунта.')
+    })
+    : window.confirm(t('account.deleteOwnAccountTitle', 'Видалити свій акаунт?'));
+  if (!ok) return;
+  try {
+    setStatus(t('account.deletingOwnAccount', 'Видаляю акаунт...'), 'muted');
+    const result = await deleteOwnSiteAccount(currentUser, { deleteAuth: true });
+    const firebase = await getFirebase();
+    if (!result?.authUserDeleted && firebase?.authMod?.signOut && firebase?.auth) {
+      await firebase.authMod.signOut(firebase.auth).catch(() => null);
+    }
+    const message = result?.authUserDeleted
+      ? t('account.ownAccountDeleted', 'Акаунт і дані сайту видалено.')
+      : t('account.ownProfileDeletedAuthPending', 'Профіль сайту видалено. Auth акаунт не вдалося видалити автоматично — увійди ще раз і повтори видалення або прибери акаунт у Firebase Console.');
+    setStatus(message, result?.authUserDeleted ? 'success' : 'warn');
+    setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+  } catch (error) {
+    console.error(error);
+    if (error?.code === 'auth/requires-recent-login') {
+      setStatus(t('account.recentLoginRequiredDelete', 'Для повного видалення акаунта потрібно вийти і зайти ще раз.'), 'error');
+      return;
+    }
+    setStatus(t('account.deleteOwnAccountFailed', 'Не вдалося видалити акаунт.'), 'error');
+  }
+}
+
 async function signOut() {
   const firebase = await getFirebase();
   if (firebase) await firebase.authMod.signOut(firebase.auth);
@@ -501,6 +595,8 @@ async function initAccountPage() {
     });
   });
   $('#backToSiteBtn')?.addEventListener('click', () => { window.location.href = 'index.html'; });
+  $('#deleteOwnAccountBtn')?.addEventListener('click', removeOwnAccount);
+  $('#deleteOwnAccountBtn') && ($('#deleteOwnAccountBtn').hidden = document.body.dataset.accountPage !== 'profile');
   $('#signOutBtn')?.addEventListener('click', signOut);
   $('#country')?.addEventListener('input', event => { updateCountryList(event.currentTarget.value); syncCountryInput(false); });
   $('#country')?.addEventListener('blur', () => syncCountryInput(true));

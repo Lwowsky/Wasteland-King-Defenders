@@ -226,13 +226,16 @@ function ownerProfileCreateSafe(userId) {
 function ownerOwnProfilePatchSafe(userId) {
       return isOwner(userId)
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'uid', 'email', 'role', 'createdAt', 'providerId', 'providerIds',
+          'uid', 'role', 'createdAt', 'providerId', 'providerIds',
           'regionAccess', 'allianceAccess', 'regionRoles',
           'blocked', 'deleted', 'adminEmailOverride'
         ])
         && (!request.resource.data.keys().hasAny(['uid']) || request.resource.data.uid == userId)
         && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == resource.data.role || request.resource.data.role == 'player')
-        && (!request.resource.data.keys().hasAny(['email']) || !resource.data.keys().hasAny(['email']) || request.resource.data.email == resource.data.email);
+        && (!request.resource.data.keys().hasAny(['authLogin']) || (request.resource.data.authLogin is string && request.resource.data.authLogin.size() <= 32))
+        && (!request.resource.data.keys().hasAny(['authLoginKey']) || (request.resource.data.authLoginKey is string && request.resource.data.authLoginKey.size() <= 32))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['email', 'authEmail'])
+          || (request.resource.data.email == request.auth.token.email && request.resource.data.authEmail == request.auth.token.email));
     }
 
 function ownerRegionRoleDowngradeSafe(userId) {
@@ -789,6 +792,28 @@ function ownerRegionRoleDowngradeSafe(userId) {
     match /adminCounters/{docId} {
       // Private cached counters for the admin dashboard.
       allow read, create, update, delete: if canUseAdminPanel();
+    }
+
+
+
+    match /loginAliases/{loginKey} {
+      // Allows sign-in by login name. Public get is needed before authentication.
+      // Do not use this as a private email directory; list is disabled.
+      allow get: if true;
+      allow list: if false;
+      allow create: if ownerEmail() || isAdmin() || (signedIn()
+        && !exists(/databases/$(database)/documents/loginAliases/$(loginKey))
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'login', 'loginKey', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.loginKey == loginKey
+        && request.resource.data.email == request.auth.token.email);
+      allow update: if ownerEmail() || isAdmin()
+        || (signedIn()
+          && resource.data.uid == request.auth.uid
+          && request.resource.data.uid == resource.data.uid
+          && (request.resource.data.email == resource.data.email || request.resource.data.email == request.auth.token.email)
+          && request.resource.data.loginKey == resource.data.loginKey);
+      allow delete: if ownerEmail() || isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
     }
 
     match /publicPlayers/{userId} {

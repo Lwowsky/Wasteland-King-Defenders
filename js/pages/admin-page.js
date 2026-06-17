@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=276';
+} from '../services/user-db.js?v=277';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -38,7 +38,7 @@ import {
 } from '../services/region-db.js?v=272';
 
 const $ = selector => document.querySelector(selector);
-const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
+const t = (key, fallback = '') => { const value = window.WKD_t ? window.WKD_t(key) : ''; return (!value || value === key) ? (fallback || key) : value; };
 const tv = (key, fallback = '', vars = {}) => {
   let text = t(key, fallback);
   Object.entries(vars).forEach(([name, value]) => { text = text.replaceAll(`{${name}}`, String(value)); });
@@ -1424,11 +1424,15 @@ function userRow(row) {
   const rowAttrs = `data-uid="${escapeHtml(user.uid)}" data-row-id="${escapeHtml(row.rowId)}" data-farm-id="${escapeHtml(row.farmId || 'main')}" data-farm-label="${escapeHtml(t('account.farm', 'Farm'))}"`;
   if (editing) {
     const accountFields = row.isFarmRow ? '' : `
-        <label class="admin-edit-field admin-edit-field--wide">
+        <label class="admin-edit-field admin-edit-field--login">
+          <span>${escapeHtml(t('account.loginName', 'Логін'))}</span>
+          ${editCell('authLogin', user.authLogin || '')}
+        </label>
+        <label class="admin-edit-field admin-edit-field--email">
           <span>${escapeHtml(t('admin.emailInProfile', 'Email у профілі'))}</span>
           ${editCell('accountEmail', adminUserEmail(user))}
         </label>
-        <label class="admin-edit-field admin-edit-field--wide">
+        <label class="admin-edit-field admin-edit-field--display">
           <span>${escapeHtml(t('admin.displayName', 'Display name'))}</span>
           ${editCell('displayName', user.displayName || '')}
         </label>`;
@@ -1443,32 +1447,32 @@ function userRow(row) {
             <span>${row.isFarmRow ? escapeHtml(t('admin.editingFarm', 'Редагування ферми')) : escapeHtml(t('admin.editingPlayer', 'Редагування гравця'))}</span>
           </div>
           <div class="admin-edit-grid">
-            <label class="admin-edit-field admin-edit-field--wide">
+            <label class="admin-edit-field admin-edit-field--nickname">
               <span>${labels.nickname}</span>
               ${editCell('nickname', game.nickname)}
             </label>
             ${accountFields}
-            <label class="admin-edit-field">
+            <label class="admin-edit-field admin-edit-field--region">
               <span>${labels.region}</span>
               ${editCell('region', game.region, 'number')}
             </label>
-            <label class="admin-edit-field">
+            <label class="admin-edit-field admin-edit-field--alliance">
               <span>${labels.alliance}</span>
               ${editCell('alliance', game.alliance, 'text')}
             </label>
-            <label class="admin-edit-field admin-edit-field--small">
+            <label class="admin-edit-field admin-edit-field--rank">
               <span>${labels.rank}</span>
               ${editSelect('rank', game.rank || 'p1', rankOptions)}
             </label>
-            <label class="admin-edit-field admin-edit-field--small">
+            <label class="admin-edit-field admin-edit-field--shk">
               <span>${labels.shk}</span>
               ${editCell('shk', game.shk, 'number')}
             </label>
-            <label class="admin-edit-field">
+            <label class="admin-edit-field admin-edit-field--role">
               <span>${labels.role}</span>
               ${editSelect('role', role || 'player', roleOptionsFor(role || 'player', row), roleLabels())}
             </label>
-            <div class="admin-edit-date">
+            <div class="admin-edit-date admin-edit-field--date">
               <span>${labels.registered}</span>
               <b>${escapeHtml(formatUserDate(user.createdAt))}</b>
             </div>
@@ -1844,6 +1848,8 @@ async function handleUserAction(event) {
     if (error?.message === 'nickname-duplicate-region') message = t('account.nicknameDuplicateRegion', 'У цьому регіоні вже є гравець з таким нікнеймом.');
     if (error?.message === 'rank-p5-limit') message = t('account.rankP5Limit', 'У цьому альянсі вже є P5. Можна мати тільки одного P5.');
     if (error?.message === 'rank-p4-limit') message = t('account.rankP4Limit', 'У цьому альянсі вже є 20 гравців P4. Ліміт P4 заповнений.');
+    if (error?.message === 'login-already-used') message = t('account.loginAlreadyUsed', 'Цей логін вже зайнятий.');
+    if (error?.message === 'invalid-login') message = t('account.invalidLogin', 'Логін має бути 3–32 символи без / # ? [ ].');
     if (error?.message === 'public-player-not-found') message = t('admin.publicPlayerResolveFailed', 'Не знайшов реальний профіль для цього рядка. Натисни “Оновити”, потім спробуй ще раз.');
     setStatus(message, 'error');
   }

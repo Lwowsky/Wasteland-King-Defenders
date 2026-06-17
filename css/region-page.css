@@ -107,3 +107,23 @@
 }
 
 .public-region-table-page .public-region-stats{display:grid;width:100%;grid-template-columns:minmax(340px,1.45fr) minmax(320px,1fr) minmax(320px,1fr);gap:16px;margin:18px 0}.admin-toolbar--public-table{display:grid;grid-template-columns:minmax(180px,1.25fr) minmax(140px,.8fr) minmax(140px,.8fr) minmax(110px,.6fr) minmax(100px,.55fr) max-content;gap:10px;align-items:end;margin:18px 0}.admin-toolbar--public-table label{display:grid;gap:6px;min-width:0;color:#f4f7ff;font-weight:900}.admin-toolbar--public-table span{color:#aeb9d3;font-size:13px}.admin-toolbar--public-table input,.admin-toolbar--public-table select{width:100%;min-height:46px;padding:0 14px;border:1px solid #243250;border-radius:15px;background:#07101f;color:#fff;font:inherit;font-weight:800;outline:none}.admin-toolbar--public-table input:focus,.admin-toolbar--public-table select:focus{border-color:#6d86ff;box-shadow:0 0 0 3px #6d86ff24}.region-public-table th button{display:inline-flex;align-items:center;gap:8px;border:0;background:transparent;color:inherit;font:inherit;font-weight:950;cursor:pointer}.region-public-table .sort-arrow{opacity:.55}.region-public-table .sort-arrow.is-active{opacity:1;color:#9fb4ff}.public-region-pagination{margin-top:16px}.public-region-table-page .admin-stat-card b{font-size:28px}.public-region-table-page .admin-table td strong{font-weight:950;color:#fff}@media (max-width:1180px){.public-region-table-page .public-region-stats{grid-template-columns:1fr}.admin-toolbar--public-table{grid-template-columns:1fr 1fr}}@media (max-width:620px){.public-region-table-page .public-region-stats,.admin-toolbar--public-table{grid-template-columns:1fr}.admin-toolbar--public-table .btn{width:100%}}
+
+
+/* v285 profile region form compact one-row layout */
+@media (min-width:1280px){
+  .profile-tab-panel[data-profile-panel="region"] .region-grid{grid-template-columns:minmax(150px,1.18fr) minmax(72px,.55fr) minmax(126px,.78fr) minmax(76px,.48fr) minmax(88px,.55fr) minmax(108px,.68fr) minmax(118px,.72fr)!important;gap:10px!important;align-items:stretch}
+  .profile-tab-panel[data-profile-panel="region"] .region-grid>.region-field:nth-child(-n+7){grid-column:auto!important;min-width:0;padding:12px!important;border-radius:18px!important}
+  .profile-tab-panel[data-profile-panel="region"] .region-grid>.region-field:nth-child(n+8){grid-column:1/-1!important}
+  .profile-tab-panel[data-profile-panel="region"] .region-field span{font-size:13px;line-height:1.2}
+  .profile-tab-panel[data-profile-panel="region"] .region-field input,
+  .profile-tab-panel[data-profile-panel="region"] .region-field select{min-height:44px!important;padding-inline:12px!important}
+  .profile-tab-panel[data-profile-panel="region"] .region-form-title{align-items:end}
+}
+@media (min-width:1180px){
+  .region-profile-tools{grid-template-columns:minmax(170px,1.1fr) minmax(180px,1fr) minmax(190px,1fr) minmax(170px,.95fr) minmax(210px,1fr)!important;align-items:stretch!important}
+  .region-profile-tools-title{grid-column:1/-1}
+  .region-profile-tools .region-check--inline{min-height:46px}
+}
+@media (max-width:1279px){
+  .profile-tab-panel[data-profile-panel="region"] .region-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

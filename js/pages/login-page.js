@@ -13,31 +13,74 @@ function setStatus(text, type = 'muted', i18nKey = '') {
   else box.removeAttribute('data-i18n');
 }
 
+function redirectAfterLogin(profile) {
+  window.location.href = isProfileComplete(profile) ? 'profile.html' : 'register.html';
+}
+
+function cleanEmail(value = '') {
+  return String(value || '').trim().toLowerCase();
+}
+
+function loginKey(value = '') {
+  return String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+}
+
+function isEmail(value = '') {
+  return /@/.test(String(value || ''));
+}
+
+function validLoginName(value = '') {
+  const key = loginKey(value);
+  return key.length >= 3 && key.length <= 32 && !/[\\/#?\[\]]/.test(key) && !key.includes('@');
+}
+
+function activeMode() {
+  return $('.auth-mode-btn.is-active')?.dataset.mode || 'login';
+}
+
+function setMode(mode = 'login') {
+  const next = mode === 'register' ? 'register' : 'login';
+  document.body.dataset.authMode = next;
+  document.querySelectorAll('.auth-mode-btn').forEach(btn => {
+    const active = btn.dataset.mode === next;
+    btn.classList.toggle('is-active', active);
+    btn.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  $('#loginForm')?.toggleAttribute('hidden', next !== 'login');
+  $('#registerForm')?.toggleAttribute('hidden', next !== 'register');
+  const titleKey = next === 'register' ? 'login.registerTitle' : 'login.signInTitle';
+  const hintKey = next === 'register' ? 'login.registerHint' : 'login.signInHint';
+  const title = $('#authFormTitle');
+  const hint = $('#authFormHint');
+  if (title) {
+    title.dataset.i18n = titleKey;
+    title.textContent = t(titleKey, next === 'register' ? 'Створити акаунт' : 'Увійти в акаунт');
+  }
+  if (hint) {
+    hint.dataset.i18n = hintKey;
+    hint.textContent = t(hintKey, next === 'register'
+      ? 'Вкажи email і пароль двічі. Логін можна додати за бажанням.'
+      : 'Введи логін або email і пароль.');
+  }
+  setStatus(t(next === 'register' ? 'login.registerModeReady' : 'login.signInModeReady', next === 'register'
+    ? 'Реєстрація готова.'
+    : 'Вхід готовий.'), 'muted', next === 'register' ? 'login.registerModeReady' : 'login.signInModeReady');
+}
+
 function providerLabels(user = null) {
   const map = {
     'google.com': 'Google',
-    'apple.com': 'Apple ID',
     'password': 'Email'
   };
   const ids = [...new Set((user?.providerData || []).map(item => item.providerId).filter(Boolean))];
   return ids.map(id => map[id] || id).join(' · ');
 }
 
-function redirectAfterLogin(profile) {
-  window.location.href = isProfileComplete(profile) ? 'profile.html' : 'register.html';
-}
-
 function updateSignedUi(user, profile = null) {
   const signed = Boolean(user);
   $('#loginUserCard')?.classList.toggle('is-hidden', !signed);
-  $('#accountLinkPanel')?.classList.toggle('is-hidden', !signed);
-  $('#loginGoogleBtn')?.toggleAttribute('hidden', signed);
-  $('#loginAppleBtn')?.toggleAttribute('hidden', signed);
-  $('#loginLogoutBtn')?.toggleAttribute('hidden', !signed);
-  $('#goAppBtn')?.toggleAttribute('hidden', !signed);
-
-  const emailForm = $('#emailLoginForm');
-  if (emailForm) emailForm.hidden = signed;
+  $('#signedActions')?.toggleAttribute('hidden', !signed);
+  $('#authFormShell')?.toggleAttribute('hidden', signed);
 
   if ($('#goAppBtn') && signed) {
     const goKey = isProfileComplete(profile) ? 'login.goProfile' : 'login.finishRegistration';
@@ -46,9 +89,9 @@ function updateSignedUi(user, profile = null) {
   }
 
   if (!signed) {
-    const statusKey = isFirebaseConfigured() ? 'login.signInOrGuestMulti' : 'login.firebaseConfigMissing';
+    const statusKey = isFirebaseConfigured() ? (activeMode() === 'register' ? 'login.registerModeReady' : 'login.signInModeReady') : 'login.firebaseConfigMissing';
     setStatus(t(statusKey, isFirebaseConfigured()
-      ? 'Увійди через Google, Apple ID, Email + пароль або продовжуй як гість.'
+      ? (activeMode() === 'register' ? 'Реєстрація готова.' : 'Вхід готовий.')
       : 'Вхід тимчасово недоступний. Налаштування входу ще не завершене.'),
       isFirebaseConfigured() ? 'muted' : 'warn', statusKey);
     return;
@@ -58,7 +101,7 @@ function updateSignedUi(user, profile = null) {
   $('#loginAvatar')?.setAttribute('src', user.photoURL || profile?.photoURL || 'img/logo.webp');
   if ($('#loginName')) {
     $('#loginName').removeAttribute('data-i18n');
-    $('#loginName').textContent = game.nickname || user.displayName || profile?.displayName || user.email || t('profile.googleUser', 'Користувач');
+    $('#loginName').textContent = game.nickname || profile?.authLogin || user.displayName || profile?.displayName || user.email || t('profile.googleUser', 'Користувач');
   }
   if ($('#loginEmail')) $('#loginEmail').textContent = user.email || profile?.email || '';
   if ($('#loginProviders')) $('#loginProviders').textContent = providerLabels(user);
@@ -71,14 +114,18 @@ function updateSignedUi(user, profile = null) {
 }
 
 function friendlyAuthError(error) {
-  const code = error?.code || '';
-  if (code.includes('auth/email-already-in-use')) return t('login.emailAlreadyUsed', 'Цей email вже використовується. Увійди ним і зв’яжи акаунт у цьому профілі.');
-  if (code.includes('auth/wrong-password') || code.includes('auth/invalid-credential')) return t('login.badPassword', 'Неправильний email або пароль.');
+  const code = error?.code || error?.message || '';
+  if (code.includes('auth/email-already-in-use')) return t('login.emailAlreadyUsed', 'Цей email вже використовується. Увійди ним або скинь пароль.');
+  if (code.includes('auth/wrong-password') || code.includes('auth/invalid-credential')) return t('login.badPassword', 'Неправильний логін/email або пароль.');
   if (code.includes('auth/popup-closed-by-user')) return t('login.popupClosed', 'Вікно входу закрито.');
-  if (code.includes('auth/provider-already-linked')) return t('login.providerAlreadyLinked', 'Цей спосіб входу вже підключений.');
   if (code.includes('auth/requires-recent-login')) return t('login.recentLoginRequired', 'Для цієї дії потрібно вийти і зайти ще раз.');
   if (code.includes('auth/blocked-account')) return t('login.blockedAccount', 'Цей акаунт у чорному списку.');
   if (code.includes('auth/operation-not-allowed')) return t('login.providerDisabled', 'Цей спосіб входу ще не включений у Firebase Console.');
+  if (code.includes('auth/login-not-found') || code.includes('auth/user-not-found')) return t('login.loginNotFound', 'Логін або email не знайдено.');
+  if (code.includes('auth/login-already-used')) return t('login.loginAlreadyUsed', 'Цей логін вже зайнятий.');
+  if (code.includes('auth/password-mismatch')) return t('login.passwordMismatch', 'Паролі не збігаються.');
+  if (code.includes('auth/weak-password')) return t('login.weakPassword', 'Пароль має містити мінімум 6 символів.');
+  if (code.includes('auth/invalid-login')) return t('login.invalidLogin', 'Логін має бути 3–32 символи без / # ? [ ].');
   return t('login.signInFailed', 'Не вдалося увійти. Спробуй ще раз або перевір налаштування входу.');
 }
 
@@ -90,30 +137,51 @@ async function firebaseOrWarn() {
   return await getFirebase();
 }
 
-async function afterAuthUser(user) {
-  const profile = await saveSignedInUser(user);
-  if (profile?.blocked) {
+async function setRememberPersistence(firebase, remember = true) {
+  if (!firebase?.authMod?.setPersistence) return;
+  const persistence = remember ? firebase.authMod.browserLocalPersistence : firebase.authMod.browserSessionPersistence;
+  if (!persistence) return;
+  await firebase.authMod.setPersistence(firebase.auth, persistence);
+}
+
+async function afterAuthUser(user, extraProfilePatch = null) {
+  const profile = await saveSignedInUser(user, { forceRefresh: Boolean(extraProfilePatch) });
+  if (extraProfilePatch && profile?.uid) {
+    const firebase = await getFirebase();
+    const ref = firebase.firestoreMod.doc(firebase.db, 'users', profile.uid);
+    await firebase.firestoreMod.setDoc(ref, { ...extraProfilePatch, updatedAt: firebase.firestoreMod.serverTimestamp() }, { merge: true }).catch(() => null);
+  }
+  const freshProfile = extraProfilePatch ? await saveSignedInUser(user, { forceRefresh: true }) : profile;
+  if (freshProfile?.blocked) {
     const firebase = await getFirebase();
     await firebase?.authMod?.signOut(firebase.auth);
     updateSignedUi(null);
     throw new Error('auth/blocked-account');
   }
-  updateSignedUi(user, profile);
-  return profile;
+  updateSignedUi(user, freshProfile);
+  return freshProfile;
 }
 
-async function signInWithProvider(kind = 'google') {
+async function resolveIdentifier(firebase, identifier = '') {
+  const value = String(identifier || '').trim();
+  if (!value) throw new Error('auth/email-password-required');
+  if (isEmail(value)) return cleanEmail(value);
+  const key = loginKey(value);
+  if (!validLoginName(key)) throw new Error('auth/invalid-login');
+  const ref = firebase.firestoreMod.doc(firebase.db, 'loginAliases', key);
+  const snap = await firebase.firestoreMod.getDoc(ref);
+  if (!snap.exists()) throw new Error('auth/login-not-found');
+  const email = cleanEmail(snap.data()?.email || '');
+  if (!email) throw new Error('auth/login-not-found');
+  return email;
+}
+
+async function signInWithGoogle() {
   const firebase = await firebaseOrWarn();
   if (!firebase) return;
   try {
-    setStatus(t(kind === 'apple' ? 'login.openingApple' : 'login.openingGoogle', kind === 'apple' ? 'Відкриваю вхід через Apple ID...' : 'Відкриваю вхід через Google...'), 'muted');
-    const provider = kind === 'apple'
-      ? new firebase.authMod.OAuthProvider('apple.com')
-      : new firebase.authMod.GoogleAuthProvider();
-    if (kind === 'apple') {
-      provider.addScope('email');
-      provider.addScope('name');
-    }
+    setStatus(t('login.openingGoogle', 'Відкриваю Google вхід...'), 'muted', 'login.openingGoogle');
+    const provider = new firebase.authMod.GoogleAuthProvider();
     const result = await firebase.authMod.signInWithPopup(firebase.auth, provider);
     const profile = await afterAuthUser(result.user);
     redirectAfterLogin(profile);
@@ -127,11 +195,14 @@ async function emailSignIn(event) {
   event?.preventDefault?.();
   const firebase = await firebaseOrWarn();
   if (!firebase) return;
-  const email = String($('#loginEmailInput')?.value || '').trim();
+  const identifier = String($('#loginIdentifierInput')?.value || '').trim();
   const password = String($('#loginPasswordInput')?.value || '');
-  if (!email || !password) return setStatus(t('login.emailPasswordRequired', 'Введи email і пароль.'), 'warn');
+  const remember = Boolean($('#rememberMeInput')?.checked);
+  if (!identifier || !password) return setStatus(t('login.identifierPasswordRequired', 'Введи логін або email і пароль.'), 'warn');
   try {
-    setStatus(t('login.emailSigningIn', 'Входжу через Email...'), 'muted');
+    await setRememberPersistence(firebase, remember);
+    setStatus(t('login.emailSigningIn', 'Входжу...'), 'muted', 'login.emailSigningIn');
+    const email = await resolveIdentifier(firebase, identifier);
     const result = await firebase.authMod.signInWithEmailAndPassword(firebase.auth, email, password);
     const profile = await afterAuthUser(result.user);
     redirectAfterLogin(profile);
@@ -141,16 +212,43 @@ async function emailSignIn(event) {
   }
 }
 
-async function emailCreate() {
+async function createAccount(event) {
+  event?.preventDefault?.();
   const firebase = await firebaseOrWarn();
   if (!firebase) return;
-  const email = String($('#loginEmailInput')?.value || '').trim();
-  const password = String($('#loginPasswordInput')?.value || '');
-  if (!email || !password) return setStatus(t('login.emailPasswordRequired', 'Введи email і пароль.'), 'warn');
+  const login = String($('#registerLoginInput')?.value || '').trim();
+  const hasLogin = Boolean(login);
+  const key = hasLogin ? loginKey(login) : '';
+  const email = cleanEmail($('#registerEmailInput')?.value || '');
+  const password = String($('#registerPasswordInput')?.value || '');
+  const confirm = String($('#registerPasswordConfirmInput')?.value || '');
+  if (hasLogin && !validLoginName(login)) return setStatus(t('login.invalidLogin', 'Логін має бути 3–32 символи без / # ? [ ].'), 'warn');
+  if (!email || !password || !confirm) return setStatus(t('login.registerFieldsRequired', 'Введи email і два рази пароль. Логін можна не вказувати.'), 'warn');
+  if (password !== confirm) return setStatus(t('login.passwordMismatch', 'Паролі не збігаються.'), 'warn');
+  if (password.length < 6) return setStatus(t('login.weakPassword', 'Пароль має містити мінімум 6 символів.'), 'warn');
   try {
-    setStatus(t('login.emailCreating', 'Створюю акаунт...'), 'muted');
+    const aliasRef = hasLogin ? firebase.firestoreMod.doc(firebase.db, 'loginAliases', key) : null;
+    if (aliasRef) {
+      const aliasSnap = await firebase.firestoreMod.getDoc(aliasRef);
+      if (aliasSnap.exists()) throw new Error('auth/login-already-used');
+    }
+    await setRememberPersistence(firebase, true);
+    setStatus(t('login.emailCreating', 'Створюю акаунт...'), 'muted', 'login.emailCreating');
     const result = await firebase.authMod.createUserWithEmailAndPassword(firebase.auth, email, password);
-    const profile = await afterAuthUser(result.user);
+    if (hasLogin && firebase.authMod.updateProfile) await firebase.authMod.updateProfile(result.user, { displayName: login }).catch(() => null);
+    const userEmail = cleanEmail(result.user?.email || email);
+    if (aliasRef) {
+      await firebase.firestoreMod.setDoc(aliasRef, {
+        uid: result.user.uid,
+        email: userEmail,
+        login,
+        loginKey: key,
+        createdAt: firebase.firestoreMod.serverTimestamp(),
+        updatedAt: firebase.firestoreMod.serverTimestamp()
+      });
+    }
+    const patch = hasLogin ? { authLogin: login, authLoginKey: key, displayName: login } : null;
+    const profile = await afterAuthUser(result.user, patch);
     redirectAfterLogin(profile);
   } catch (error) {
     console.error(error);
@@ -161,53 +259,12 @@ async function emailCreate() {
 async function resetPassword() {
   const firebase = await firebaseOrWarn();
   if (!firebase) return;
-  const email = String($('#loginEmailInput')?.value || '').trim();
-  if (!email) return setStatus(t('login.emailRequiredReset', 'Введи email, щоб отримати лист для скидання пароля.'), 'warn');
+  const identifier = String($('#loginIdentifierInput')?.value || '').trim();
+  if (!identifier) return setStatus(t('login.identifierRequiredReset', 'Введи логін або email, щоб отримати лист для скидання пароля.'), 'warn');
   try {
+    const email = await resolveIdentifier(firebase, identifier);
     await firebase.authMod.sendPasswordResetEmail(firebase.auth, email);
-    setStatus(t('login.resetSent', 'Лист для скидання пароля відправлено.'), 'success');
-  } catch (error) {
-    console.error(error);
-    setStatus(friendlyAuthError(error), 'error');
-  }
-}
-
-async function linkProvider(kind = 'google') {
-  const firebase = await firebaseOrWarn();
-  const user = firebase?.auth?.currentUser;
-  if (!firebase || !user) return setStatus(t('login.signInFirstLink', 'Спочатку увійди в акаунт, який хочеш зв’язати.'), 'warn');
-  try {
-    const provider = kind === 'apple'
-      ? new firebase.authMod.OAuthProvider('apple.com')
-      : new firebase.authMod.GoogleAuthProvider();
-    if (kind === 'apple') {
-      provider.addScope('email');
-      provider.addScope('name');
-    }
-    await firebase.authMod.linkWithPopup(user, provider);
-    const profile = await afterAuthUser(firebase.auth.currentUser || user);
-    updateSignedUi(firebase.auth.currentUser || user, profile);
-    setStatus(t('login.linked', 'Спосіб входу підключено до цього профілю.'), 'success');
-  } catch (error) {
-    console.error(error);
-    setStatus(friendlyAuthError(error), 'error');
-  }
-}
-
-async function linkEmail(event) {
-  event?.preventDefault?.();
-  const firebase = await firebaseOrWarn();
-  const user = firebase?.auth?.currentUser;
-  if (!firebase || !user) return setStatus(t('login.signInFirstLink', 'Спочатку увійди в акаунт, який хочеш зв’язати.'), 'warn');
-  const email = String($('#linkEmailInput')?.value || '').trim();
-  const password = String($('#linkPasswordInput')?.value || '');
-  if (!email || !password) return setStatus(t('login.emailPasswordRequired', 'Введи email і пароль.'), 'warn');
-  try {
-    const credential = firebase.authMod.EmailAuthProvider.credential(email, password);
-    await firebase.authMod.linkWithCredential(user, credential);
-    const profile = await afterAuthUser(firebase.auth.currentUser || user);
-    updateSignedUi(firebase.auth.currentUser || user, profile);
-    setStatus(t('login.linked', 'Спосіб входу підключено до цього профілю.'), 'success');
+    setStatus(t('login.resetSent', 'Лист для скидання пароля відправлено.'), 'success', 'login.resetSent');
   } catch (error) {
     console.error(error);
     setStatus(friendlyAuthError(error), 'error');
@@ -221,10 +278,12 @@ async function signOut() {
 }
 
 async function initLoginPage() {
-  $('#loginGoogleBtn')?.addEventListener('click', () => signInWithProvider('google'));
-  $('#loginAppleBtn')?.addEventListener('click', () => signInWithProvider('apple'));
-  $('#emailLoginForm')?.addEventListener('submit', emailSignIn);
-  $('#emailCreateBtn')?.addEventListener('click', emailCreate);
+  document.querySelectorAll('.auth-mode-btn').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+  $('#showRegisterBtn')?.addEventListener('click', () => setMode('register'));
+  $('#showLoginBtn')?.addEventListener('click', () => setMode('login'));
+  $('#loginGoogleBtn')?.addEventListener('click', signInWithGoogle);
+  $('#loginForm')?.addEventListener('submit', emailSignIn);
+  $('#registerForm')?.addEventListener('submit', createAccount);
   $('#emailResetBtn')?.addEventListener('click', resetPassword);
   $('#loginLogoutBtn')?.addEventListener('click', signOut);
   $('#guestBtn')?.addEventListener('click', () => { window.location.href = 'index.html'; });
@@ -235,10 +294,8 @@ async function initLoginPage() {
     const profile = await saveSignedInUser(user);
     redirectAfterLogin(profile);
   });
-  $('#linkGoogleBtn')?.addEventListener('click', () => linkProvider('google'));
-  $('#linkAppleBtn')?.addEventListener('click', () => linkProvider('apple'));
-  $('#linkEmailForm')?.addEventListener('submit', linkEmail);
 
+  setMode('login');
   await watchAuth(async user => {
     if (!user) {
       updateSignedUi(null);

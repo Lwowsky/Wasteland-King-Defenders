@@ -13,6 +13,23 @@
       <small data-i18n="profile.googleAvatarNote">Поки використовується Google-аватар. Пізніше додамо готові аватарки для вибору на сайті.</small>
     </section>
 
+
+    <section class="profile-field profile-account-panel">
+      <span data-i18n="account.loginSettingsTitle">Дані входу</span>
+      <small data-i18n="account.loginSettingsHelp">Логін — тільки для входу на сайт. Нік у грі нижче залишається окремим.</small>
+      <div class="profile-account-grid">
+        <label>
+          <b data-i18n="account.loginName">Логін</b>
+          <input id="accountLogin" name="accountLogin" type="text" maxlength="32" placeholder="Lwowsky" autocomplete="username" />
+        </label>
+        <label>
+          <b data-i18n="account.loginEmail">Email для входу</b>
+          <input id="accountLoginEmail" name="accountLoginEmail" type="email" maxlength="180" placeholder="name@example.com" autocomplete="email" />
+        </label>
+      </div>
+      <small data-i18n="account.loginChangeNote">Після зміни логіну можна входити новим логіном. Зміна email може попросити повторний вхід.</small>
+    </section>
+
     <label class="profile-field profile-field--role">
       <span data-i18n="profile.roleRequestTitle">Роль / заявка</span>
       <small class="profile-current-role"><span data-i18n="profile.currentRoleLabel">Поточна роль:</span> <b id="currentRoleText">Гравець</b></small>
@@ -24,24 +41,26 @@
       <small id="roleRequestHint" data-i18n="profile.roleRequestHint">Офіцера або консула підтверджує тільки адмін. Адміна і модератора можна отримати тільки вручну.</small>
     </label>
 
-    <section class="profile-field profile-farm-panel">
-      <span data-i18n="account.farmsTitle">Мої гравці / ферми</span>
-      <small data-i18n="account.farmsHelp">Можеш зберегти основного гравця і додаткові ферми. Потім вибереш потрібний нік у формі Пустоші.</small>
-      <div class="profile-farm-row">
-        <select id="farmSelect" name="farmSelect" aria-label="Мої гравці"></select>
-        <button class="btn" id="addFarmBtn" type="button" data-i18n="account.addFarm">+ Додати ферму</button>
-        <button class="btn farm-primary" id="makePrimaryFarmBtn" type="button" data-i18n="account.makePrimary" hidden>Зробити основним</button>
-        <button class="btn btn-primary profile-farm-save" id="saveFarmBtn" type="submit" data-i18n="account.saveFarm">Зберегти гравця</button>
-        <button class="btn farm-delete" id="deleteFarmBtn" type="button" data-i18n="account.deleteFarm" hidden>Видалити</button>
-      </div>
-    </section>
-
     <section class="profile-field profile-privacy-panel">
       <span data-i18n="account.privacyTitle">Видимість у статистиці</span>
       <small data-i18n="account.privacyHelp">Email ніколи не показується. Тут можна дозволити показувати дані з форми регіону і ферми у статистиці гравців.</small>
       <div class="profile-privacy-grid">
         <label class="profile-check"><input id="showWastelandInfo" name="showWastelandInfo" type="checkbox" /> <b data-i18n="account.showWastelandInfo">Показувати доп. інфо з форми регіону</b><small>Рівень лігва, тип, тір, марш, ралі, зміна і готовність.</small></label>
         <label class="profile-check"><input id="showFarmsInfo" name="showFarmsInfo" type="checkbox" /> <b data-i18n="account.showFarmsInfo">Показувати інформацію про ферми</b><small>Якщо вимкнено — у статистиці буде видно тільки кількість ферм.</small></label>
+      </div>
+    </section>
+
+    <section class="profile-field profile-farm-panel">
+      <span data-i18n="account.farmsTitle">Мої гравці / ферми</span>
+      <small data-i18n="account.farmsHelp">Можеш зберегти основного гравця і додаткові ферми. Потім вибереш потрібний нік у формі Пустоші.</small>
+      <div class="profile-farm-row">
+        <select id="farmSelect" name="farmSelect" aria-label="Мої гравці"></select>
+        <div class="profile-farm-buttons">
+          <button class="btn" id="addFarmBtn" type="button" data-i18n="account.addFarm">+ Додати ферму</button>
+          <button class="btn farm-primary" id="makePrimaryFarmBtn" type="button" data-i18n="account.makePrimary" hidden>Зробити основним</button>
+          <button class="btn btn-primary profile-farm-save" id="saveFarmBtn" type="submit" data-i18n="account.saveFarm">Зберегти гравця</button>
+          <button class="btn farm-delete" id="deleteFarmBtn" type="button" data-i18n="account.deleteFarm" hidden>Видалити</button>
+        </div>
       </div>
     </section>
 
@@ -86,6 +105,7 @@
   <div class="profile-actions">
     <button class="btn btn-primary profile-save" type="submit" data-i18n="profile.saveProfile">Зберегти профіль</button>
     <button class="btn" id="backToSiteBtn" type="button" data-i18n="common.backToSite">На сайт</button>
+    <button class="btn btn-danger profile-delete-account" id="deleteOwnAccountBtn" type="button" data-i18n="account.deleteOwnAccount">Видалити акаунт</button>
     <button class="btn" id="signOutBtn" type="button" data-i18n="common.signOut">Вийти</button>
   </div>
 </form>
