@@ -23,11 +23,11 @@
     "alliance": "YYY",
     "rank": "P1",
     "shk": "26",
-    "role": "player",
+    "role": "consul",
     "countryCode": "JP",
     "farmCount": 0,
     "createdAt": "2026-06-15T08:40:15.270Z",
-    "updatedAt": "2026-06-15T10:53:55.875Z",
+    "updatedAt": null,
     "profileVisibility": {
       "showWastelandInfo": false,
       "showFarmsInfo": false
