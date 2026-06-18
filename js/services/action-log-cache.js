@@ -117,27 +117,15 @@ export async function listRegionActionLogsD1(user, region, { limitCount = 20, cu
 }
 
 export async function deleteRegionActionLogD1(user, region, id = '') {
-  return deleteRegionActionLogsD1(user, region, [id]);
+  throw new Error('action-log-immutable');
 }
+
 
 export async function deleteRegionActionLogsD1(user, region, ids = []) {
-  if (!isActionLogCacheEnabled()) throw new Error('action-log-cache-disabled');
-  const safeRegion = cleanRegion(region);
-  const safeIds = [...new Set((Array.isArray(ids) ? ids : []).map(item => cleanText(item, 120)).filter(Boolean))].slice(0, 100);
-  if (!safeRegion) throw new Error('region-required');
-  if (!safeIds.length) return { ok: true, region: safeRegion, deleted: 0 };
-  return requestJson('/api/action-log/delete', user, {
-    method: 'POST',
-    body: JSON.stringify({ region: safeRegion, ids: safeIds })
-  });
+  throw new Error('action-log-immutable');
 }
 
+
 export async function clearRegionActionLogsD1(user, region, { olderThanMs = 0, limitCount = 500 } = {}) {
-  if (!isActionLogCacheEnabled()) throw new Error('action-log-cache-disabled');
-  const safeRegion = cleanRegion(region);
-  if (!safeRegion) throw new Error('region-required');
-  return requestJson('/api/action-log/clear', user, {
-    method: 'POST',
-    body: JSON.stringify({ region: safeRegion, olderThanMs: Number(olderThanMs) || 0, limitCount: Math.max(1, Math.min(500, Number(limitCount) || 500)) })
-  });
+  throw new Error('action-log-immutable');
 }

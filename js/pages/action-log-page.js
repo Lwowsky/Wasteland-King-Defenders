@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { canUseAdminPanel, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole } from '../services/user-db.js?v=256';
-import { clearRegionActionLogs, deleteRegionActionLog, deleteRegionActionLogs, getManagedRegionOptions, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=256';
+import { canUseAdminPanel, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole } from '../services/user-db.js?v=007';
+import { getManagedRegionOptions, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=007';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -129,20 +129,13 @@ function profileRegions(profile = {}) {
   return [main, ...getUserFarms(profile || {})].map(game => normalizeRegion(game.region || '')).filter(Boolean);
 }
 function canDeleteLogs() {
-  if (!currentUser || !currentProfile || !currentRegion) return false;
-  const role = normalizeUserRole(currentProfile.role || 'player');
-  if (['admin', 'moderator'].includes(role)) return true;
-  const regionRole = normalizeUserRole(currentProfile.regionRoles?.[currentRegion] || '');
-  if (regionRole === 'consul') return true;
-  return role === 'consul' && profileRegions(currentProfile).includes(normalizeRegion(currentRegion));
+  return false;
 }
 function renderCleanupActions() {
   const box = $('#actionLogCleanupActions');
-  if (!box) return;
-  const allowed = canDeleteLogs();
-  box.hidden = !allowed;
-  box.querySelectorAll('button').forEach(btn => { btn.disabled = !allowed || loadingPage; });
+  if (box) box.hidden = true;
 }
+
 function renderPager() {
   const pageText = $('#actionLogPageText');
   const prevBtn = $('#actionLogPrevBtn');
@@ -157,7 +150,6 @@ function render() {
   renderRegionList();
   const body = $('#actionLogBody');
   if (!body) return;
-  const deleteAllowed = canDeleteLogs();
   body.innerHTML = rows.length ? rows.map(row => `
     <tr>
       <td>${esc(formatUserDate(row.createdAt) || (row.createdAtMs ? new Date(row.createdAtMs).toLocaleString() : '—'))}</td>
@@ -165,8 +157,7 @@ function render() {
       <td><span class="region-starter-name">${esc(row.actorName || '—')}</span></td>
       <td>${window.WKD?.Badges?.alliance ? window.WKD.Badges.alliance(row.alliance || row.actorAlliance || '—', { region: currentRegion }) : esc(row.alliance || row.actorAlliance || '—')}</td>
       <td>${esc(row.summary || row.targetName || '—')}</td>
-      <td>${deleteAllowed ? `<button class="btn btn-danger-soft" type="button" data-action-log-delete="${esc(row.id || '')}">${esc(t('actionLog.delete', 'Видалити'))}</button>` : '—'}</td>
-    </tr>`).join('') : `<tr><td colspan="6">${esc(t('actionLog.empty', 'Дій поки немає.'))}</td></tr>`;
+    </tr>`).join('') : `<tr><td colspan="5">${esc(t('actionLog.empty', 'Дій поки немає.'))}</td></tr>`;
   renderPager();
   renderCleanupActions();
 }
@@ -214,40 +205,7 @@ async function loadPage(region = '', direction = 'reset') {
     render();
   }
 }
-async function deleteLogEntry(logId = '') {
-  if (!canDeleteLogs() || !logId) return;
-  if (!window.confirm(t('actionLog.deleteConfirm', 'Видалити цю дію з журналу?'))) return;
-  await deleteRegionActionLog(currentUser, currentRegion, logId);
-  rows = rows.filter(row => row.id !== logId);
-  pageStack[pageIndex] = { ...(pageStack[pageIndex] || {}), rows };
-  setStatus(t('actionLog.deleted', 'Запис видалено.'), 'success');
-  render();
-}
-async function clearVisibleLogs() {
-  if (!canDeleteLogs() || !rows.length) return;
-  if (!window.confirm(t('actionLog.clearPageConfirm', 'Видалити всі записи на цій сторінці?'))) return;
-  const result = await deleteRegionActionLogs(currentUser, currentRegion, rows.map(row => row.id).filter(Boolean));
-  resetPages();
-  await loadPage(currentRegion, 'reset');
-  setStatus(t('actionLog.clearDone', 'Журнал очищено.') + ` (${result.deleted || 0})`, 'success');
-}
-async function clearOldLogs() {
-  if (!canDeleteLogs()) return;
-  if (!window.confirm(t('actionLog.clearOldConfirm', 'Видалити записи журналу старші 30 днів?'))) return;
-  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
-  const result = await clearRegionActionLogs(currentUser, currentRegion, { olderThanMs: cutoff, limitCount: 500 });
-  resetPages();
-  await loadPage(currentRegion, 'reset');
-  setStatus((result.hasMore ? t('actionLog.clearMore', 'Очищено частину записів. Натисни ще раз, якщо треба продовжити.') : t('actionLog.clearDone', 'Журнал очищено.')) + ` (${result.deleted || 0})`, 'success');
-}
-async function clearRegionLogs() {
-  if (!canDeleteLogs()) return;
-  if (!window.confirm(t('actionLog.clearRegionConfirm', 'Видалити журнал дій цього регіону? Це не можна скасувати.'))) return;
-  const result = await clearRegionActionLogs(currentUser, currentRegion, { limitCount: 500 });
-  resetPages();
-  await loadPage(currentRegion, 'reset');
-  setStatus((result.hasMore ? t('actionLog.clearMore', 'Очищено частину записів. Натисни ще раз, якщо треба продовжити.') : t('actionLog.clearDone', 'Журнал очищено.')) + ` (${result.deleted || 0})`, 'success');
-}
+
 async function load(user, region = '') {
   currentUser = user;
   resetPages();
@@ -281,15 +239,6 @@ function bind() {
     render();
   });
   $('#actionLogNextBtn')?.addEventListener('click', () => loadPage(currentRegion, 'next').catch(console.error));
-  $('#actionLogClearPageBtn')?.addEventListener('click', () => clearVisibleLogs().catch(error => { console.error(error); setStatus(t('actionLog.accessDenied', 'Немає доступу до журналу цього регіону.'), 'error'); }));
-  $('#actionLogClearOldBtn')?.addEventListener('click', () => clearOldLogs().catch(error => { console.error(error); setStatus(t('actionLog.accessDenied', 'Немає доступу до журналу цього регіону.'), 'error'); }));
-  $('#actionLogClearRegionBtn')?.addEventListener('click', () => clearRegionLogs().catch(error => { console.error(error); setStatus(t('actionLog.accessDenied', 'Немає доступу до журналу цього регіону.'), 'error'); }));
-  document.addEventListener('click', event => {
-    const btn = event.target.closest('[data-action-log-delete]');
-    if (!btn) return;
-    event.preventDefault();
-    deleteLogEntry(btn.dataset.actionLogDelete || '').catch(error => { console.error(error); setStatus(t('actionLog.accessDenied', 'Немає доступу до журналу цього регіону.'), 'error'); });
-  });
   document.addEventListener('wkd:language-changed', render);
 }
 function init() {

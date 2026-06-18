@@ -198,6 +198,21 @@ service cloud.firestore {
         || (currentRegionRole(regionId) == 'consul' && hasRegionAccess(regionId));
     }
 
+    function actionLogCreateSafe(regionId) {
+      return signedIn()
+        && request.resource.data.keys().hasOnly([
+          'region', 'action', 'actionLabel',
+          'actorUid', 'actorName', 'actorAlliance', 'actorRole',
+          'alliance', 'targetUid', 'targetName', 'summary',
+          'details', 'createdAtMs', 'source'
+        ])
+        && request.resource.data.region == regionId
+        && request.resource.data.actorUid == request.auth.uid
+        && (!request.resource.data.keys().hasAny(['details']) || request.resource.data.details is map)
+        && (!request.resource.data.keys().hasAny(['createdAtMs']) || request.resource.data.createdAtMs is number);
+    }
+
+
     function canDeleteWastelandRegistration(regionId) {
       return ownerEmail() || isAdmin() || isModerator() || (currentRegionRole(regionId) in ['admin', 'moderator', 'consul'] && hasRegionAccess(regionId));
     }
@@ -960,8 +975,9 @@ function ownerRegionRoleDowngradeSafe(userId) {
         allow read: if ownerEmail() || isAdmin() || isModerator()
           || (currentRegionRole(regionId) == 'consul' && hasRegionAccess(regionId))
           || (currentRegionRole(regionId) == 'officer' && hasRegionAccess(regionId) && (resource.data.alliance == currentAlliance() || resource.data.actorAlliance == currentAlliance()));
-        allow create: if signedIn() && (hasRegionAccess(regionId) || canManageRegion(regionId));
-        allow update, delete: if canDeleteActionLog(regionId);
+        allow create: if actionLogCreateSafe(regionId) && (hasRegionAccess(regionId) || canManageRegion(regionId));
+        // v007: action logs are append-only. No one can silently edit or delete history from the client.
+        allow update, delete: if false;
       }
     }
 

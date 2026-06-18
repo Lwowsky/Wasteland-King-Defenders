@@ -2760,14 +2760,14 @@ async function handleActionLogCreate(request, env) {
   try { body = await request.json(); } catch { return json({ ok: false, error: "bad_json" }, 400); }
   const region = normalizeRegion(body?.region);
   if (!region) return json({ ok: false, error: "region_required" }, 400);
-  const createdAtMs = Number(body?.createdAtMs) || Date.now();
-  const id = clean(body?.id || crypto.randomUUID(), 120);
+  const createdAtMs = Date.now();
+  const id = clean(crypto.randomUUID(), 120);
   const details = sanitizeActionDetails(body?.details || {});
   const row = {
     id,
     region,
     action: clean(body?.action || "", 80),
-    actorUid: clean(body?.actorUid || user.uid || "", 160),
+    actorUid: clean(user.uid || "", 160),
     actorName: clean(body?.actorName || user.name || user.email || user.uid || "", 160),
     actorAlliance: clean(body?.actorAlliance || "", 40),
     actorRole: clean(body?.actorRole || "", 40).toLowerCase(),
@@ -2779,65 +2779,22 @@ async function handleActionLogCreate(request, env) {
     createdAtMs,
   };
   await db.prepare(
-    `INSERT INTO action_logs (id, region, action, actor_uid, actor_name, actor_alliance, actor_role, alliance, target_uid, target_name, summary, details_json, created_at_ms)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
-     ON CONFLICT(id) DO UPDATE SET
-       region = excluded.region,
-       action = excluded.action,
-       actor_uid = excluded.actor_uid,
-       actor_name = excluded.actor_name,
-       actor_alliance = excluded.actor_alliance,
-       actor_role = excluded.actor_role,
-       alliance = excluded.alliance,
-       target_uid = excluded.target_uid,
-       target_name = excluded.target_name,
-       summary = excluded.summary,
-       details_json = excluded.details_json,
-       created_at_ms = excluded.created_at_ms`
+    `INSERT OR IGNORE INTO action_logs (id, region, action, actor_uid, actor_name, actor_alliance, actor_role, alliance, target_uid, target_name, summary, details_json, created_at_ms)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)`
   ).bind(row.id, row.region, row.action, row.actorUid, row.actorName, row.actorAlliance, row.actorRole, row.alliance, row.targetUid, row.targetName, row.summary, JSON.stringify(details), row.createdAtMs).run();
   await grantRegionAccess(db, region, user.uid, "action-log-write").catch(() => null);
   return json({ ok: true, region, log: row, source: "cloudflare-d1-action-log" });
 }
 
 async function handleActionLogDelete(request, env) {
-  const db = regionTableDb(env);
-  if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
-  await ensureRegionTableSchema(db);
   await verifyFirebaseToken(request, env);
-  let body = null;
-  try { body = await request.json(); } catch { return json({ ok: false, error: "bad_json" }, 400); }
-  const region = normalizeRegion(body?.region);
-  if (!region) return json({ ok: false, error: "region_required" }, 400);
-  const ids = [...new Set((Array.isArray(body?.ids) ? body.ids : [body?.id]).map((item) => clean(item, 120)).filter(Boolean))].slice(0, 100);
-  if (!ids.length) return json({ ok: true, region, deleted: 0 });
-  const placeholders = ids.map((_, index) => `?${index + 2}`).join(",");
-  const result = await db.prepare(`DELETE FROM action_logs WHERE region = ?1 AND id IN (${placeholders})`).bind(region, ...ids).run();
-  return json({ ok: true, region, deleted: Number(result?.meta?.changes) || ids.length, source: "cloudflare-d1-action-log" });
+  return json({ ok: false, error: "action_log_immutable", message: "Action logs are append-only and cannot be deleted from this endpoint." }, 403, "private, no-store");
 }
 
+
 async function handleActionLogClear(request, env) {
-  const db = regionTableDb(env);
-  if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
-  await ensureRegionTableSchema(db);
   await verifyFirebaseToken(request, env);
-  let body = null;
-  try { body = await request.json(); } catch { return json({ ok: false, error: "bad_json" }, 400); }
-  const region = normalizeRegion(body?.region);
-  if (!region) return json({ ok: false, error: "region_required" }, 400);
-  const limitValue = Math.max(1, Math.min(500, Number(body?.limitCount) || 500));
-  const olderThanMs = Number(body?.olderThanMs) || 0;
-  const params = [region];
-  let where = "region = ?1";
-  if (olderThanMs > 0) {
-    params.push(olderThanMs);
-    where += ` AND created_at_ms < ?${params.length}`;
-  }
-  const selected = await db.prepare(`SELECT id FROM action_logs WHERE ${where} ORDER BY created_at_ms ASC LIMIT ${limitValue}`).bind(...params).all();
-  const ids = (selected?.results || []).map((row) => clean(row.id, 120)).filter(Boolean);
-  if (!ids.length) return json({ ok: true, region, deleted: 0, hasMore: false });
-  const placeholders = ids.map((_, index) => `?${index + 2}`).join(",");
-  const result = await db.prepare(`DELETE FROM action_logs WHERE region = ?1 AND id IN (${placeholders})`).bind(region, ...ids).run();
-  return json({ ok: true, region, deleted: Number(result?.meta?.changes) || ids.length, hasMore: ids.length === limitValue, source: "cloudflare-d1-action-log" });
+  return json({ ok: false, error: "action_log_immutable", message: "Action logs are append-only and cannot be cleared from this endpoint." }, 403, "private, no-store");
 }
 
 

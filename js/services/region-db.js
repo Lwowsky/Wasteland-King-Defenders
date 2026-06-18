@@ -854,12 +854,11 @@ function regionActionVisibleTo(profile = {}, region = '', actor = null, entry = 
   return Boolean(ownAlliance && normalizeAllianceTag(entry.alliance || entry.actorAlliance || entry.details?.alliance) === ownAlliance);
 }
 function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
-  const role = roleForRegion(profile || {}, normalizeRegion(region), actor);
-  return ['admin', 'moderator', 'consul'].includes(role) || isOwnerEmail(actor?.email || profile?.email);
+  return false;
 }
 
 async function actionLogCacheModule() {
-  return import('./action-log-cache.js?v=252');
+  return import('./action-log-cache.js?v=007');
 }
 
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
@@ -930,56 +929,15 @@ export async function listRegionActionLogs(user, regionOverride = '', { limitCou
 
 
 export async function deleteRegionActionLog(user, regionOverride = '', logId = '') {
-  if (!user) throw new Error('auth-required');
-  const safeLogId = trim(logId).slice(0, 160);
-  if (!safeLogId) throw new Error('log-id-required');
-  const { db, firestoreMod } = await getFirebaseParts();
-  const { profile, region } = await getMyRegionContext(user, regionOverride);
-  if (!canDeleteRegionActionLogs(profile || {}, region, user)) throw new Error('action-log-delete-denied');
-  try {
-    const mod = await actionLogCacheModule();
-    if (mod?.isActionLogCacheEnabled?.()) {
-      return { profile, region, ...(await mod.deleteRegionActionLogD1(user, region, safeLogId)) };
-    }
-  } catch (d1Error) {
-    if (window.WKD_DEBUG) console.warn('[WKD] D1 action log delete unavailable; Firebase fallback disabled:', d1Error);
-  }
-  return { profile, region, deleted: 0, source: 'action-log-d1-unavailable-no-firebase' };
+  throw new Error('action-log-immutable');
 }
 
 export async function deleteRegionActionLogs(user, regionOverride = '', logIds = []) {
-  if (!user) throw new Error('auth-required');
-  const ids = [...new Set((Array.isArray(logIds) ? logIds : []).map(id => trim(id).slice(0, 160)).filter(Boolean))].slice(0, 100);
-  if (!ids.length) return { deleted: 0 };
-  const { db, firestoreMod } = await getFirebaseParts();
-  const { profile, region } = await getMyRegionContext(user, regionOverride);
-  if (!canDeleteRegionActionLogs(profile || {}, region, user)) throw new Error('action-log-delete-denied');
-  try {
-    const mod = await actionLogCacheModule();
-    if (mod?.isActionLogCacheEnabled?.()) {
-      return { profile, region, ...(await mod.deleteRegionActionLogsD1(user, region, ids)) };
-    }
-  } catch (d1Error) {
-    if (window.WKD_DEBUG) console.warn('[WKD] D1 action log batch delete unavailable; Firebase fallback disabled:', d1Error);
-  }
-  return { profile, region, deleted: 0, source: 'action-log-d1-unavailable-no-firebase' };
+  throw new Error('action-log-immutable');
 }
 
 export async function clearRegionActionLogs(user, regionOverride = '', { olderThanMs = 0, limitCount = 500 } = {}) {
-  if (!user) throw new Error('auth-required');
-  const { db, firestoreMod } = await getFirebaseParts();
-  const { profile, region } = await getMyRegionContext(user, regionOverride);
-  if (!canDeleteRegionActionLogs(profile || {}, region, user)) throw new Error('action-log-delete-denied');
-  const safeLimit = Math.max(1, Math.min(500, Number(limitCount) || 500));
-  try {
-    const mod = await actionLogCacheModule();
-    if (mod?.isActionLogCacheEnabled?.()) {
-      return { profile, region, ...(await mod.clearRegionActionLogsD1(user, region, { olderThanMs: Number(olderThanMs) || 0, limitCount: safeLimit })) };
-    }
-  } catch (d1Error) {
-    if (window.WKD_DEBUG) console.warn('[WKD] D1 action log clear fallback:', d1Error);
-  }
-  return { profile, region, deleted: 0, hasMore: false, source: 'action-log-d1-unavailable-no-firebase' };
+  throw new Error('action-log-immutable');
 }
 
 export async function getSecurityOverview(user) {
