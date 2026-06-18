@@ -209,6 +209,51 @@ service cloud.firestore {
     }
 
 
+    function publicDocNoPrivateFields() {
+      return !request.resource.data.keys().hasAny([
+        'email', 'authEmail', 'adminEmailOverride', 'toEmail',
+        'login', 'authLogin', 'authLoginKey', 'providerId', 'providerIds',
+        'regionAccess', 'allianceAccess', 'regionRoles',
+        'roleRequestEmail', 'firebaseUidToken', 'idToken', 'token'
+      ]);
+    }
+
+    function loginAliasFieldsSafe(loginKey) {
+      return request.resource.data.keys().hasOnly(['uid', 'email', 'login', 'loginKey', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid is string
+        && request.resource.data.uid.size() > 0
+        && request.resource.data.uid.size() <= 160
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 3
+        && request.resource.data.email.size() <= 260
+        && request.resource.data.login is string
+        && request.resource.data.login.size() > 0
+        && request.resource.data.login.size() <= 32
+        && request.resource.data.loginKey == loginKey
+        && request.resource.data.loginKey is string
+        && request.resource.data.loginKey.size() > 0
+        && request.resource.data.loginKey.size() <= 32;
+    }
+
+    function roleRequestOwnerFieldsSafe(requestId) {
+      return request.resource.data.keys().hasOnly([
+          'id', 'requestId', 'uid', 'farmId', 'farmName', 'farmLabel',
+          'mainNickname', 'requestedRole', 'requestedRoleLabel', 'currentRole', 'currentRoleLabel',
+          'status', 'statusLabel', 'nickname', 'region', 'alliance', 'rank', 'shk',
+          'email', 'displayName', 'photoURL', 'requestedAt', 'updatedAt'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && (!request.resource.data.keys().hasAny(['id']) || request.resource.data.id == requestId)
+        && (!request.resource.data.keys().hasAny(['requestId']) || request.resource.data.requestId == requestId)
+        && request.resource.data.status in ['pending', 'cancelled']
+        && request.resource.data.requestedRole in ['officer', 'consul']
+        && (!request.resource.data.keys().hasAny(['email']) || request.resource.data.email == request.auth.token.email)
+        && (!request.resource.data.keys().hasAny(['rank']) || request.resource.data.rank in ['p1', 'p2', 'p3', 'p4', 'p5'])
+        && (!request.resource.data.keys().hasAny(['region']) || (request.resource.data.region is string && request.resource.data.region.size() <= 20))
+        && (!request.resource.data.keys().hasAny(['alliance']) || (request.resource.data.alliance is string && request.resource.data.alliance.size() <= 3));
+    }
+
+
 function ownerProfileCreateSafe(userId) {
       return isOwner(userId)
         && (!request.resource.data.keys().hasAny(['uid']) || request.resource.data.uid == userId)
@@ -226,7 +271,8 @@ function ownerProfileCreateSafe(userId) {
 function ownerOwnProfilePatchSafe(userId) {
       return isOwner(userId)
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'uid', 'role', 'createdAt', 'providerId', 'providerIds',
+          'uid', 'role', 'roleLabel', 'createdAt', 'createdAtMs', 'approvedBy', 'approvedAt',
+          'providerId', 'providerIds', 'isAdmin', 'isModerator', 'isOwner', 'permissions',
           'regionAccess', 'allianceAccess', 'regionRoles',
           'blocked', 'deleted', 'adminEmailOverride'
         ])
@@ -271,10 +317,9 @@ function ownerRegionRoleDowngradeSafe(userId) {
 
     function ownerRoleRequestSafe(requestId) {
       return signedIn()
-        && requestId == request.auth.uid
-        && request.resource.data.uid == request.auth.uid
+        && roleRequestOwnerFieldsSafe(requestId)
         && (
-          (request.resource.data.status == 'cancelled')
+          request.resource.data.status == 'cancelled'
           || (requestableRole() && request.resource.data.status == 'pending')
         );
     }
@@ -295,14 +340,14 @@ function ownerRegionRoleDowngradeSafe(userId) {
     function staffRankAllowedByActor(regionId, allianceTag, wantedRank) {
       return ownerEmail() || isAdmin() || isModerator()
         || (currentRegionRole(regionId) == 'consul' && hasRegionAccess(regionId) && wantedRank in ['p1', 'p2', 'p3', 'p4', 'p5'])
-        || (currentAlliance() == allianceTag && currentStaffRankNumber() == 5 && wantedRank in ['p1', 'p2', 'p3', 'p4'])
+        || (currentRegionRole(regionId) == 'officer' && currentAlliance() == allianceTag && currentStaffRankNumber() == 5 && wantedRank in ['p1', 'p2', 'p3', 'p4'])
         || (currentRegionRole(regionId) == 'officer' && currentAlliance() == allianceTag && wantedRank in ['p1', 'p2', 'p3']);
     }
 
     function staffRoleAllowedByActor(regionId, allianceTag, wantedRole, oldRole) {
       return ownerEmail() || isAdmin() || isModerator()
         || (currentRegionRole(regionId) == 'consul' && hasRegionAccess(regionId) && wantedRole in ['player', 'officer'])
-        || ((currentRegionRole(regionId) == 'officer' || currentStaffRankNumber() == 5) && currentAlliance() == allianceTag && wantedRole == oldRole);
+        || (currentRegionRole(regionId) == 'officer' && currentAlliance() == allianceTag && wantedRole == oldRole);
     }
 
     function regionalStaffCanEdit(regionId, allianceTag, wantedRank, wantedRole, oldRole) {
@@ -340,7 +385,7 @@ function ownerRegionRoleDowngradeSafe(userId) {
       return request.resource.data.uid == resource.data.uid
         && request.resource.data.region == resource.data.region
         && request.resource.data.alliance == resource.data.alliance
-        && !request.resource.data.keys().hasAny(['email', 'toEmail'])
+        && publicDocNoPrivateFields()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rank', 'role', 'roleLabel', 'updatedAt'])
         && regionalStaffCanEdit(regionId, allianceTag, wantedRank, wantedRole, oldRole);
     }
@@ -348,14 +393,14 @@ function ownerRegionRoleDowngradeSafe(userId) {
     function publicPlayerSafe(userId) {
       return isOwner(userId)
         && request.resource.data.uid == userId
-        && !('email' in request.resource.data)
+        && publicDocNoPrivateFields()
         && request.resource.data.role == userDoc(userId).data.role
         && targetHasRegionAccess(userId, request.resource.data.region);
     }
 
     function managerPublicPlayerSafe() {
       return canUseAdminPanel()
-        && !('email' in request.resource.data)
+        && publicDocNoPrivateFields()
         && canAssignRole(request.resource.data.role);
     }
 
@@ -363,7 +408,7 @@ function ownerRegionRoleDowngradeSafe(userId) {
       return isOwner(userId)
         && request.resource.data.uid == userId
         && request.resource.data.region == regionId
-        && !('email' in request.resource.data)
+        && publicDocNoPrivateFields()
         && request.resource.data.role == userDoc(userId).data.role
         && targetHasRegionAccess(userId, regionId);
     }
@@ -801,18 +846,18 @@ function ownerRegionRoleDowngradeSafe(userId) {
       // Do not use this as a private email directory; list is disabled.
       allow get: if true;
       allow list: if false;
-      allow create: if ownerEmail() || isAdmin() || (signedIn()
+      allow create: if (ownerEmail() || isAdmin() || (signedIn()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.email == request.auth.token.email))
         && !exists(/databases/$(database)/documents/loginAliases/$(loginKey))
-        && request.resource.data.keys().hasOnly(['uid', 'email', 'login', 'loginKey', 'createdAt', 'updatedAt'])
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.loginKey == loginKey
-        && request.resource.data.email == request.auth.token.email);
-      allow update: if ownerEmail() || isAdmin()
+        && loginAliasFieldsSafe(loginKey);
+      allow update: if (ownerEmail() || isAdmin()
         || (signedIn()
           && resource.data.uid == request.auth.uid
           && request.resource.data.uid == resource.data.uid
-          && (request.resource.data.email == resource.data.email || request.resource.data.email == request.auth.token.email)
-          && request.resource.data.loginKey == resource.data.loginKey);
+          && (request.resource.data.email == resource.data.email || request.resource.data.email == request.auth.token.email)))
+        && request.resource.data.loginKey == resource.data.loginKey
+        && loginAliasFieldsSafe(loginKey);
       allow delete: if ownerEmail() || isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
     }
 
