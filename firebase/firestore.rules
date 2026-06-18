@@ -379,7 +379,7 @@ function ownerRegionRoleDowngradeSafe(userId) {
       return signedIn()
         && regionId != ''
         && allianceTag != ''
-        && hasRegionAccess(regionId)
+        && (ownerEmail() || isAdmin() || isModerator() || hasRegionAccess(regionId))
         && staffRankAllowedByActor(regionId, allianceTag, wantedRank)
         && staffRoleAllowedByActor(regionId, allianceTag, wantedRole, oldRole);
     }

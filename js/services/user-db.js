@@ -3168,10 +3168,32 @@ export async function updateRegionPlayerByStaff(uid, values = {}) {
   const oldPublic = { uid, ...(publicSnap.data() || {}) };
   const nextRank = normalizeText(values.rank || oldPublic.rank || 'p1').toLowerCase();
   const nextRole = normalizeRole(values.role || oldPublic.role || 'player');
-  const target = { ...oldPublic, rank: nextRank, role: nextRole, region: oldPublic.region || region };
   if (!canStaffEditPlayer(actor, actorProfile, oldPublic)) throw new Error('staff-target-not-allowed');
   if (!staffRankOptionsForTarget(actor, actorProfile, oldPublic).includes(nextRank)) throw new Error('rank-not-allowed');
   if (!staffRoleOptionsForTarget(actor, actorProfile, oldPublic).includes(nextRole)) throw new Error('role-not-allowed');
+
+  // v010: global Admin/Moderator uses the same complete profile writer as the Admin page.
+  // This keeps users/{uid}, publicPlayers/{uid}, regions/{region}/players/{uid}, adminUsersIndex
+  // and profile locks in sync. The previous staff shortcut only patched rank/role fields and could
+  // be rejected by the stricter v008 Firestore rules for some real profiles.
+  if (isGlobalAdminActor(actor, actorProfile)) {
+    const targetProfile = await getUserProfile(uid, { forceRefresh: true }).catch(() => null);
+    if (!targetProfile) throw new Error('user-not-found');
+    const oldGame = getGameProfile(targetProfile || {});
+    const saved = await updateUserByAdmin(uid, {
+      nickname: oldPublic.nickname || oldPublic.gameNick || oldGame.nickname || targetProfile.nickname || '',
+      region: oldPublic.region || oldGame.region || region,
+      alliance: oldPublic.alliance || oldGame.alliance || '',
+      rank: nextRank,
+      shk: oldPublic.shk || oldGame.shk || targetProfile.shk || '',
+      role: nextRole,
+      country: targetProfile.country || '',
+      countryCode: targetProfile.countryCode || '',
+      accountEmail: targetProfile.adminEmailOverride || targetProfile.email || targetProfile.authEmail || '',
+      authLogin: targetProfile.authLogin || ''
+    });
+    return { ...oldPublic, ...(saved || {}), rank: nextRank, role: nextRole, roleLabel: roleLabel(nextRole), updatedAt: Date.now() };
+  }
 
   const now = firestoreMod.serverTimestamp();
   const roleText = roleLabel(nextRole);
