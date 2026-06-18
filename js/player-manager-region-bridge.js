@@ -1,7 +1,7 @@
 import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=216';
 import { getFirebase, watchAuth } from './services/firebase-service.js';
 import { getGameProfile, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=213';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=004';
 
 window.WKD = window.WKD || {};
 
@@ -114,7 +114,7 @@ async function loadRegionRows(force = false, regionOverride = '') {
       .filter(row => !String(row.region || '').replace(/[^0-9]/g, '') || String(row.region || '').replace(/[^0-9]/g, '') === currentRegion)
       .flatMap(row => expandRegionPlayerRow(row).map(player => ({ ...player, source: REGION_SOURCE })));
     if (result?.d1Missing) {
-      console.warn('[WKD] region table D1 snapshot missing; Firebase fallback was not used to protect reads.', currentRegion);
+      console.info('[WKD] region table D1 snapshot missing; Firebase fallback was not used to protect reads.', currentRegion);
       window.WKD?.showNotice?.(tr('players.regionD1MissingNoFirestore', 'Таблиця регіону ще не має D1-кешу. Firebase fallback не запускався, щоб не витрачати reads.'));
     }
     return { rows: loadedRows, region: currentRegion, profile: currentProfile, canUseRegion: true, d1Missing: Boolean(result?.d1Missing), source: result?.source || '' };

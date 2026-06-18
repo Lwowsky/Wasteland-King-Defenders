@@ -2539,4 +2539,5 @@ window.WKD_TRANSLATIONS.de = {
   "account.deleteOwnAccountConfirmPlaceholder": "DELETE",
   "account.deleteOwnAccountConfirmHint": "Dies ist ein zusätzlicher Schutz gegen das versehentliche Löschen des Kontos.",
   "account.deleteOwnAccountFailed": "Konto konnte nicht gelöscht werden.",
+  "players.regionAccessDenied": "Du hast keinen Zugriff auf diese Region.",
 };

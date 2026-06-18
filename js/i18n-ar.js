@@ -2537,4 +2537,5 @@ window.WKD_TRANSLATIONS.ar = {
   "account.deleteOwnAccountConfirmPlaceholder": "DELETE",
   "account.deleteOwnAccountConfirmHint": "هذه حماية إضافية لمنع حذف الحساب بالخطأ.",
   "account.deleteOwnAccountFailed": "تعذر حذف الحساب.",
+  "players.regionAccessDenied": "ليس لديك صلاحية الوصول إلى هذه المنطقة.",
 };

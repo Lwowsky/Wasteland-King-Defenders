@@ -2539,4 +2539,5 @@ window.WKD_TRANSLATIONS.en = {
   "account.deleteOwnAccountConfirmPlaceholder": "DELETE",
   "account.deleteOwnAccountConfirmHint": "This is an extra protection against accidentally deleting the account.",
   "account.deleteOwnAccountFailed": "Could not delete the account.",
+  "players.regionAccessDenied": "You do not have access to this region.",
 };

@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=213';
-import { readRegionTableSnapshot } from '../services/region-table-cache.js?v=213';
+import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=004';
+import { readRegionTableSnapshot } from '../services/region-table-cache.js?v=004';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -428,6 +428,11 @@ function canUseRegionSource() {
   return Boolean(currentUser && isProfileComplete(currentProfile));
 }
 
+function isRegionAccessDeniedError(error) {
+  const code = String(error?.code || error?.data?.error || error?.message || '');
+  return code === 'region_access_denied' || code.includes('region_access_denied') || Number(error?.status) === 403;
+}
+
 function regionRoleForLocalImport(region = '') {
   const safeRegion = normalizeRegion(region || targetRegion());
   const globalRole = normalizeUserRole(currentProfile?.role || 'player');
@@ -614,10 +619,14 @@ async function loadRegionRowsPage(force = false, regionOverride = '', pageOverri
     updateAllianceColorMap();
   } catch (error) {
     if (requestId !== regionLoadRequestId) return;
-    console.error(error);
     loadedRegionRows = [];
     loadedRegionPageMeta = null;
-    setNote(t('players.regionLoadFailed', 'Could not load the region table. Check the profile or region.'), 'warn');
+    if (isRegionAccessDeniedError(error)) {
+      setNote(t('players.regionAccessDenied', 'Немає доступу до цього регіону.'), 'warn');
+    } else {
+      console.warn('[WKD] region rows load failed:', error?.message || error);
+      setNote(t('players.regionLoadFailed', 'Could not load the region table. Check the profile or region.'), 'warn');
+    }
   } finally {
     if (requestId === regionLoadRequestId) {
       loadingRegion = false;

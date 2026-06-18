@@ -822,14 +822,15 @@ export function formatUserDate(value) {
 }
 
 export function isProfileComplete(data = {}) {
-  const profile = data.gameProfile || {};
+  const safeData = data && typeof data === 'object' ? data : {};
+  const profile = safeData.gameProfile || {};
   return Boolean(
-    data.profileComplete &&
-    normalizeText(profile.nickname || data.gameNick) &&
-    normalizeText(profile.region || data.region) &&
-    normalizeText(profile.alliance || data.alliance) &&
-    normalizeText(profile.rank || data.rank) &&
-    normalizeText(profile.shk || data.shk)
+    safeData.profileComplete &&
+    normalizeText(profile.nickname || safeData.gameNick) &&
+    normalizeText(profile.region || safeData.region) &&
+    normalizeText(profile.alliance || safeData.alliance) &&
+    normalizeText(profile.rank || safeData.rank) &&
+    normalizeText(profile.shk || safeData.shk)
   );
 }
 

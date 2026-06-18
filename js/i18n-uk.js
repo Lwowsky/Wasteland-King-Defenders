@@ -2539,4 +2539,5 @@ window.WKD_TRANSLATIONS.uk = {
   "account.deleteOwnAccountConfirmPlaceholder": "DELETE",
   "account.deleteOwnAccountConfirmHint": "Це додатковий захист від випадкового видалення акаунта.",
   "account.deleteOwnAccountFailed": "Не вдалося видалити акаунт.",
+  "players.regionAccessDenied": "Немає доступу до цього регіону.",
 };
