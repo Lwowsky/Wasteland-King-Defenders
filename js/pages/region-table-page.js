@@ -17,8 +17,8 @@ import {
   listRegionAlliances,
   listRegionCatalog,
   shareRegionTable
-} from '../services/region-db.js?v=256';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot } from '../services/region-table-cache.js?v=256';
+} from '../services/region-db.js?v=006';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=006';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
@@ -29,6 +29,28 @@ const tv = (key, fallback = '', vars = {}) => {
   Object.entries(vars).forEach(([name, value]) => { text = text.replaceAll(`{${name}}`, String(value)); });
   return text;
 };
+
+function isQuietRegionTableError(error = null) {
+  return isExpectedRegionTableCacheError(error);
+}
+
+function quietRegionTableMessage(error = null, fallbackKey = 'players.regionD1MissingNoFirestore') {
+  if (isRegionAccessDeniedCacheError(error)) return t('players.regionAccessDenied', 'Немає доступу до цього регіону.');
+  if (isRegionSnapshotMissingCacheError(error) || isQuietRegionTableError(error)) {
+    return t(fallbackKey, 'Таблиця регіону ще не має D1-кешу. Firebase fallback не запускався, щоб не витрачати reads.');
+  }
+  return '';
+}
+
+function reportRegionTableProblem(error = null, fallbackKey = 'region.tableRefreshFailed', fallbackText = 'Could not refresh the region table.') {
+  const quietMessage = quietRegionTableMessage(error);
+  if (quietMessage) {
+    setStatus(quietMessage, 'warn');
+    return;
+  }
+  setStatus(t(fallbackKey, fallbackText), 'error');
+  if (window.WKD_DEBUG) console.warn('[WKD] region table handled error:', error?.message || error);
+}
 
 function setDynamicText(selector, text) {
   const el = typeof selector === 'string' ? $(selector) : selector;
@@ -65,6 +87,7 @@ let tableTotalRows = 0;
 let tableTotalPages = 1;
 let serverPagedTable = false;
 let filterDebounceId = null;
+let quietRegionTableStatus = '';
 
 
 function normTag(value) { return String(value || '').trim(); }
@@ -365,8 +388,7 @@ function renderPager() {
 async function reloadTablePage(options = {}) {
   if (options.resetPage) resetTablePage();
   await load(currentUser, { forceD1: Boolean(options.forceD1), keepPage: true }).catch(error => {
-    console.error(error);
-    setStatus(t('region.tableRefreshFailed', 'Could not refresh the region table.'), 'error');
+    reportRegionTableProblem(error, 'region.tableRefreshFailed', 'Could not refresh the region table.');
   });
 }
 
@@ -517,7 +539,11 @@ function render() {
   const visible = filteredRows();
   const total = serverPagedTable ? tableTotalRows : rows.length;
   body.innerHTML = visible.length ? visible.map(rowHtml).join('') : `<tr><td colspan="8">${t('region.table.emptyCycle', 'У цьому активному наборі ще немає гравців або заявок.')}</td></tr>`;
-  setStatus(tv('region.tableShownStatus', '{regionLabel} {region}: shown {visible} of {total} records.', { regionLabel: t('account.region', 'Region'), region: currentRegion, visible: visible.length, total }), currentSettings?.open ? 'success' : 'warn');
+  if (quietRegionTableStatus) {
+    setStatus(quietRegionTableStatus, 'warn');
+  } else {
+    setStatus(tv('region.tableShownStatus', '{regionLabel} {region}: shown {visible} of {total} records.', { regionLabel: t('account.region', 'Region'), region: currentRegion, visible: visible.length, total }), currentSettings?.open ? 'success' : 'warn');
+  }
   renderPager();
 }
 
@@ -538,6 +564,7 @@ async function load(user, options = {}) {
   }
   const allowedRegion = canUseRequestedRegion ? requestedRegion : '';
   let result = null;
+  quietRegionTableStatus = '';
   if (!options?.keepPage) tablePage = 1;
   if (isRegionTableCacheEnabled() && allowedRegion) {
     result = await readRegionTableSnapshot(user, allowedRegion, {
@@ -546,11 +573,20 @@ async function load(user, options = {}) {
       pageSize: tablePageSize,
       ...tableFilterValues()
     }).catch(error => {
-      console.warn('[WKD] region table D1 page unavailable, using Firebase fallback:', error);
+      if (isRegionAccessDeniedCacheError(error)) {
+        quietRegionTableStatus = t('players.regionAccessDenied', 'Немає доступу до цього регіону.');
+        return { region: allowedRegion, rows: [], settings: {}, d1AccessDenied: true, source: 'cloudflare-d1-access-denied' };
+      }
+      if (isRegionSnapshotMissingCacheError(error)) {
+        quietRegionTableStatus = t('players.regionD1MissingNoFirestore', 'Таблиця регіону ще не має D1-кешу. Firebase fallback не запускався, щоб не витрачати reads.');
+        return { region: allowedRegion, rows: [], settings: {}, d1Missing: true, requiresManualFirestoreFallback: true, source: 'cloudflare-d1-missing-no-firestore' };
+      }
+      if (!isQuietRegionTableError(error) && window.WKD_DEBUG) console.warn('[WKD] region table D1 page unavailable:', error?.message || error);
       return null;
     });
   }
   serverPagedTable = Boolean(result && Number(result.totalRows) >= 0 && Number(result.pageSize));
+  const preventFirestoreFallback = Boolean(result?.d1AccessDenied || result?.d1Missing || result?.requiresManualFirestoreFallback);
   if (!result) {
     result = await listRegionRegistrations(user, allowedRegion, { skipD1: true });
     await publishRegionTableSnapshot(user, {
@@ -605,8 +641,8 @@ async function shareRegionTableLink() {
     setStatus(t('region.tableLinkCopied', 'Секретне посилання таблиці скопійовано.'), 'success');
     window.WKD?.showNotice?.(t('region.tableLinkCopied', 'Секретне посилання таблиці скопійовано.'));
   } catch (error) {
-    console.error(error);
     setStatus(t('region.tableLinkFailed', 'Не вдалося створити секретне посилання таблиці.'), 'error');
+    if (window.WKD_DEBUG) console.warn('[WKD] region table share link failed:', error?.message || error);
   }
 }
 
@@ -666,7 +702,7 @@ function bind() {
   });
   $('#openWastelandRegisterBtn')?.addEventListener('click', () => { window.location.href = `region-form.html?r=${currentRegion}`; });
   $('#openRegionSettingsBtn')?.addEventListener('click', () => { window.location.href = `region-settings.html?region=${currentRegion}`; });
-  $('#shareRegionTableBtn')?.addEventListener('click', () => shareRegionTableLink().catch(console.error));
+  $('#shareRegionTableBtn')?.addEventListener('click', () => shareRegionTableLink());
   document.addEventListener('wkd:language-changed', handleLanguageChange);
   document.addEventListener('wkd:time-display-changed', startCycleTimer);
 }
@@ -676,8 +712,7 @@ async function init() {
   ready = true;
   bind();
   await watchAuth(user => load(user).catch(error => {
-    console.error(error);
-    setStatus(t('region.tableOpenFailed', 'Could not open the region table. Check profile or region.'), 'error');
+    reportRegionTableProblem(error, 'region.tableOpenFailed', 'Could not open the region table. Check profile or region.');
   }));
 }
 

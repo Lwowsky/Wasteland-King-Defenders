@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=004';
-import { readRegionTableSnapshot } from '../services/region-table-cache.js?v=004';
+import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=005';
+import { readRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError } from '../services/region-table-cache.js?v=005';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -419,7 +419,7 @@ async function loadExistingRegionRowsForLocalImportPreview(region = '') {
     writeLocalImportPreviewCache(region, rows);
     return rows;
   } catch (error) {
-    console.warn('[WKD] local-to-region preview skipped:', error);
+    if (!isQuietRegionError(error)) console.warn('[WKD] local-to-region preview skipped:', error?.message || error);
     return [];
   }
 }
@@ -429,8 +429,10 @@ function canUseRegionSource() {
 }
 
 function isRegionAccessDeniedError(error) {
-  const code = String(error?.code || error?.data?.error || error?.message || '');
-  return code === 'region_access_denied' || code.includes('region_access_denied') || Number(error?.status) === 403;
+  return isRegionAccessDeniedCacheError(error);
+}
+function isQuietRegionError(error) {
+  return isExpectedRegionTableCacheError(error);
 }
 
 function regionRoleForLocalImport(region = '') {
@@ -623,6 +625,8 @@ async function loadRegionRowsPage(force = false, regionOverride = '', pageOverri
     loadedRegionPageMeta = null;
     if (isRegionAccessDeniedError(error)) {
       setNote(t('players.regionAccessDenied', 'Немає доступу до цього регіону.'), 'warn');
+    } else if (isQuietRegionError(error)) {
+      setNote(t('players.regionD1MissingNoFirestore', 'Таблиця регіону ще не має D1-кешу. Firebase fallback не запускався, щоб не витрачати reads.'), 'warn');
     } else {
       console.warn('[WKD] region rows load failed:', error?.message || error);
       setNote(t('players.regionLoadFailed', 'Could not load the region table. Check the profile or region.'), 'warn');

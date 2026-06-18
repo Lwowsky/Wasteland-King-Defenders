@@ -1,7 +1,8 @@
 import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=216';
 import { getFirebase, watchAuth } from './services/firebase-service.js';
-import { getGameProfile, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=004';
+import { getGameProfile, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js?v=005';
+import { isExpectedRegionTableCacheError } from './services/region-table-cache.js?v=005';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=005';
 
 window.WKD = window.WKD || {};
 
@@ -114,7 +115,6 @@ async function loadRegionRows(force = false, regionOverride = '') {
       .filter(row => !String(row.region || '').replace(/[^0-9]/g, '') || String(row.region || '').replace(/[^0-9]/g, '') === currentRegion)
       .flatMap(row => expandRegionPlayerRow(row).map(player => ({ ...player, source: REGION_SOURCE })));
     if (result?.d1Missing) {
-      console.info('[WKD] region table D1 snapshot missing; Firebase fallback was not used to protect reads.', currentRegion);
       window.WKD?.showNotice?.(tr('players.regionD1MissingNoFirestore', 'Таблиця регіону ще не має D1-кешу. Firebase fallback не запускався, щоб не витрачати reads.'));
     }
     return { rows: loadedRows, region: currentRegion, profile: currentProfile, canUseRegion: true, d1Missing: Boolean(result?.d1Missing), source: result?.source || '' };
@@ -140,7 +140,7 @@ async function loadRegionAlliances(force = false, regionOverride = '') {
     document.dispatchEvent(new CustomEvent('wkd:alliance-colors-updated', { detail: { source: 'region-bridge-load' } }));
     return loadedAlliances;
   }).catch(error => {
-    console.warn('[WKD] alliance colors load failed:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] alliance colors load failed:', error);
     return [];
   }).finally(() => { allianceLoadingPromise = null; });
   return allianceLoadingPromise;
@@ -220,7 +220,7 @@ async function refreshTowerRegionOptions() {
     let regions = [];
     if (isOwnerAdmin() || role === 'admin' || role === 'moderator') {
       const catalog = await listRegionCatalog({ includeInactive: true, skipPublicPlayers: true }).catch(error => {
-        console.warn('[WKD] tower region catalog skipped:', error);
+        if (window.WKD_DEBUG) console.warn('[WKD] tower region catalog skipped:', error);
         return [];
       });
       regions = catalog.map(item => item.region).filter(Boolean);
@@ -394,11 +394,13 @@ async function handleAuth(user) {
   authReadyResolve?.();
   if (!canUseRegion() && currentMode === 'region') setMode('local');
   await refreshTowerRegionOptions();
-  if (currentMode === 'region' && canUseRegion()) await showRowsForMode(true).catch(error => console.warn('[WKD] initial region rows skipped:', error));
+  if (currentMode === 'region' && canUseRegion()) await showRowsForMode(true).catch(error => {
+    if (!isExpectedRegionTableCacheError(error)) if (window.WKD_DEBUG) console.warn('[WKD] initial region rows skipped:', error?.message || error);
+  });
   document.dispatchEvent(new CustomEvent('wkd:player-manager-auth-ready', { detail: sourceInfo() }));
 }
 
-watchAuth(handleAuth).catch(error => console.warn('[WKD] player manager auth bridge skipped:', error));
+watchAuth(handleAuth).catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] player manager auth bridge skipped:', error); });
 
 window.WKD.getPlayersSourceInfo = sourceInfo;
 window.WKD.loadTowerPlanFromActiveSource = loadTowerPlanFromActiveSource;
@@ -429,6 +431,6 @@ window.WKD.playerManagerRegion = {
 };
 
 document.addEventListener('wkd:language-changed', () => {
-  refreshTowerRegionOptions().catch(error => console.warn('[WKD] tower regions language refresh skipped:', error));
+  refreshTowerRegionOptions().catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] tower regions language refresh skipped:', error); });
   document.dispatchEvent(new CustomEvent('wkd:player-manager-source-changed', { detail: sourceInfo() }));
 });

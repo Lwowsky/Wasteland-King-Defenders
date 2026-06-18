@@ -12,8 +12,8 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=004';
-import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1 } from './region-table-cache.js?v=004';
+} from './user-db.js?v=005';
+import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=005';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -409,7 +409,7 @@ export async function listKnownRegionIds(options = {}) {
       }
     });
   } catch (error) {
-    console.warn('[WKD] regions list skipped:', error?.code || error?.message || error);
+    if (window.WKD_DEBUG) console.warn('[WKD] regions list skipped:', error?.code || error?.message || error);
   }
   if (includePublicPlayers) {
     try {
@@ -422,7 +422,7 @@ export async function listKnownRegionIds(options = {}) {
         farms.forEach(farm => addRegion(farm?.region));
       });
     } catch (error) {
-      console.warn('[WKD] public region list skipped:', error?.code || error?.message || error);
+      if (window.WKD_DEBUG) console.warn('[WKD] public region list skipped:', error?.code || error?.message || error);
     }
   }
   return [...regions].sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
@@ -472,7 +472,7 @@ export async function listRegionCatalog({ includeInactive = false, skipPublicPla
     trackReads(Math.max(1, regionSnap.docs.length));
     regionSnap.docs.forEach(doc => addItem(regionCatalogItem(doc.id, doc.data() || {})));
   } catch (error) {
-    console.warn('[WKD] region catalog skipped:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] region catalog skipped:', error);
   }
 
   if (!skipPublicPlayers) {
@@ -489,7 +489,7 @@ export async function listRegionCatalog({ includeInactive = false, skipPublicPla
           });
       });
     } catch (error) {
-      console.warn('[WKD] public region catalog skipped:', error);
+      if (window.WKD_DEBUG) console.warn('[WKD] public region catalog skipped:', error);
     }
   }
 
@@ -894,11 +894,11 @@ async function writeRegionActionLog(firebase, user, profile = {}, region = '', a
         if (result?.ok !== false) return result.log || payload;
       }
     } catch (d1Error) {
-      console.warn('[WKD] D1 action log unavailable; Firebase fallback disabled:', d1Error);
+      if (window.WKD_DEBUG) console.warn('[WKD] D1 action log unavailable; Firebase fallback disabled:', d1Error);
     }
     return { ...payload, source: 'action-log-d1-unavailable-no-firebase' };
   } catch (error) {
-    console.warn('[WKD] action log skipped:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] action log skipped:', error);
     return null;
   }
 }
@@ -923,7 +923,7 @@ export async function listRegionActionLogs(user, regionOverride = '', { limitCou
       return { profile, region, rows, limitCount: limitValue, hasMore: Boolean(result.hasMore), nextCursorMs: Number(result.nextCursorMs || lastRow?.createdAtMs) || 0, source: 'cloudflare-d1-action-log' };
     }
   } catch (d1Error) {
-    console.warn('[WKD] D1 action log list fallback:', d1Error);
+    if (window.WKD_DEBUG) console.warn('[WKD] D1 action log list fallback:', d1Error);
   }
   return { profile, region, rows: [], limitCount: limitValue, hasMore: false, nextCursorMs: 0, source: 'action-log-d1-unavailable-no-firebase' };
 }
@@ -942,7 +942,7 @@ export async function deleteRegionActionLog(user, regionOverride = '', logId = '
       return { profile, region, ...(await mod.deleteRegionActionLogD1(user, region, safeLogId)) };
     }
   } catch (d1Error) {
-    console.warn('[WKD] D1 action log delete unavailable; Firebase fallback disabled:', d1Error);
+    if (window.WKD_DEBUG) console.warn('[WKD] D1 action log delete unavailable; Firebase fallback disabled:', d1Error);
   }
   return { profile, region, deleted: 0, source: 'action-log-d1-unavailable-no-firebase' };
 }
@@ -960,7 +960,7 @@ export async function deleteRegionActionLogs(user, regionOverride = '', logIds =
       return { profile, region, ...(await mod.deleteRegionActionLogsD1(user, region, ids)) };
     }
   } catch (d1Error) {
-    console.warn('[WKD] D1 action log batch delete unavailable; Firebase fallback disabled:', d1Error);
+    if (window.WKD_DEBUG) console.warn('[WKD] D1 action log batch delete unavailable; Firebase fallback disabled:', d1Error);
   }
   return { profile, region, deleted: 0, source: 'action-log-d1-unavailable-no-firebase' };
 }
@@ -977,7 +977,7 @@ export async function clearRegionActionLogs(user, regionOverride = '', { olderTh
       return { profile, region, ...(await mod.clearRegionActionLogsD1(user, region, { olderThanMs: Number(olderThanMs) || 0, limitCount: safeLimit })) };
     }
   } catch (d1Error) {
-    console.warn('[WKD] D1 action log clear fallback:', d1Error);
+    if (window.WKD_DEBUG) console.warn('[WKD] D1 action log clear fallback:', d1Error);
   }
   return { profile, region, deleted: 0, hasMore: false, source: 'action-log-d1-unavailable-no-firebase' };
 }
@@ -1032,11 +1032,11 @@ export async function cleanupOldEmailFields(user) {
 
 async function rotateRegionPublicSharesForNewCycle(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=004');
+    const mod = await import('./region-table-cache.js?v=005');
     if (!mod?.rotateRegionPublicShares) return null;
     return await mod.rotateRegionPublicShares(user, region);
   } catch (error) {
-    console.warn('[WKD] public share rotation skipped:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] public share rotation skipped:', error);
     return null;
   }
 }
@@ -1175,20 +1175,20 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=004');
+    const mod = await import('./region-table-cache.js?v=005');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
-    console.warn('[WKD] region table JSON mirror unavailable:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] region table JSON mirror unavailable:', error);
     return null;
   }
 }
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=004');
+    const mod = await import('./region-table-cache.js?v=005');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
-    console.warn('[WKD] region table JSON snapshot unavailable:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] region table JSON snapshot unavailable:', error);
     return null;
   }
 }
@@ -1196,34 +1196,33 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function updateRegionTableRowD1First(user, region, registrationId, values = {}, settings = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=004');
+    const mod = await import('./region-table-cache.js?v=005');
     return await mod.updateRegionTableRowD1(user, region, registrationId, values, settings, { updateOnly: true });
   } catch (error) {
     const status = Number(error?.status || 0) || 0;
     if (status === 409) throw error;
-    console.warn('[WKD] D1 registration row update skipped:', error?.message || error);
+    if (window.WKD_DEBUG) console.warn('[WKD] D1 registration row update skipped:', error?.message || error);
     return null;
   }
 }
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=004');
+    const mod = await import('./region-table-cache.js?v=005');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
-    console.warn('[WKD] region table JSON share unavailable:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] region table JSON share unavailable:', error);
     return null;
   }
 }
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=004');
+    const mod = await import('./region-table-cache.js?v=005');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
-    const code = String(error?.code || error?.data?.error || error?.message || '');
-    if (code === 'region_access_denied' || code.includes('region_access_denied') || Number(error?.status) === 403) {
+    if (isRegionAccessDeniedCacheError(error)) {
       return {
         region: normalizeRegion(region),
         rows: [],
@@ -1233,18 +1232,28 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
         source: 'cloudflare-d1-access-denied'
       };
     }
-    console.warn('[WKD] region table D1 snapshot unavailable:', error?.message || error);
+    if (isRegionSnapshotMissingCacheError(error)) {
+      return {
+        region: normalizeRegion(region),
+        rows: [],
+        settings: {},
+        cached: false,
+        d1Missing: true,
+        source: 'cloudflare-d1-missing-no-firestore'
+      };
+    }
+    if (!isExpectedRegionTableCacheError(error)) if (window.WKD_DEBUG) console.warn('[WKD] region table D1 snapshot unavailable:', error?.message || error);
     return null;
   }
 }
 
 async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=004');
+    const mod = await import('./region-table-cache.js?v=005');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readMyRegionRegistrationD1(user, region, farmId, options);
   } catch (error) {
-    console.warn('[WKD] my D1 registration unavailable, Firebase fallback used:', error?.message || error);
+    if (!isExpectedRegionTableCacheError(error)) if (window.WKD_DEBUG) console.warn('[WKD] my D1 registration unavailable, Firebase fallback used:', error?.message || error);
     return null;
   }
 }
@@ -1255,7 +1264,7 @@ async function readFinalPlanFromD1Cache(code, options = {}) {
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.readFinalPlanShare(code, options);
   } catch (error) {
-    console.warn('[WKD] final plan D1 read unavailable:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] final plan D1 read unavailable:', error);
     return null;
   }
 }
@@ -1266,7 +1275,7 @@ async function publishFinalPlanToD1Cache(user, payload = {}) {
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.publishFinalPlanShare(user, payload);
   } catch (error) {
-    console.warn('[WKD] final plan D1 publish unavailable:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] final plan D1 publish unavailable:', error);
     return null;
   }
 }
@@ -1418,14 +1427,14 @@ async function queryCleanableOldRegistrationDocs(firestoreMod, db, safeRegion, o
     trackReads(snap?.docs?.length || 0);
     collect(snap);
   } catch (error) {
-    console.warn('[WKD] indexed registration cleanup check skipped:', error?.message || error);
+    if (window.WKD_DEBUG) console.warn('[WKD] indexed registration cleanup check skipped:', error?.message || error);
     indexedSkipped = 'indexed-cleanup-unavailable';
     if (!allowLegacyFullScan) return { docs: [], scannedCount, hasMore: false, indexedSkipped };
   }
 
   if (allowLegacyFullScan && byId.size < maxDocs) {
     const legacySnap = await firestoreMod.getDocs(firestoreMod.query(collectionRef, firestoreMod.limit(maxDocs + 1))).catch(error => {
-      console.warn('[WKD] legacy registration cleanup scan skipped:', error?.message || error);
+      if (window.WKD_DEBUG) console.warn('[WKD] legacy registration cleanup scan skipped:', error?.message || error);
       return { docs: [] };
     });
     trackReads(legacySnap?.docs?.length || 0);
@@ -1597,7 +1606,7 @@ export async function ensureRegionRegistrationRunInfo(user, regionOverride = '')
     updatedByEmail: actorEmail
   };
   await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), patch, { merge: true }).catch(error => {
-    console.warn('[WKD] registration run info repair skipped:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] registration run info repair skipped:', error);
   });
   return getRegionSettings(safeRegion).then(getRegionFormStatus).catch(() => status);
 }
@@ -1623,7 +1632,7 @@ async function ensureSettingsAlliancesInD1(user, region, settings = {}) {
     if (!missing.length) return;
     await Promise.allSettled(missing.map(tag => saveRegionAllianceD1(user, safeRegion, { tag, name: tag, note: '', updatedAtMs: Date.now() })));
   } catch (error) {
-    console.warn('[WKD] settings alliance persistence skipped:', error?.message || error);
+    if (window.WKD_DEBUG) console.warn('[WKD] settings alliance persistence skipped:', error?.message || error);
   }
 }
 
@@ -1792,7 +1801,7 @@ export async function saveRegionSettings(user, region, settings) {
       actorRole: normalizeUserRole(profile?.role || 'player'),
       actorRoleText: roleLabel(normalizeUserRole(profile?.role || 'player')),
       targetLabel: `R${safeRegion}`
-    }).catch(error => console.warn('[WKD] region campaign notification skipped:', error));
+    }).catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] region campaign notification skipped:', error); });
   }
 
   if (openNewCycle) {
@@ -1801,14 +1810,14 @@ export async function saveRegionSettings(user, region, settings) {
       cycleId: currentCycleId || '',
       settings: clean || {},
       rows: []
-    }).catch(error => console.warn('[WKD] empty D1 table for new cycle skipped:', error));
+    }).catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] empty D1 table for new cycle skipped:', error); });
     await rotateRegionPublicSharesForNewCycle(user, safeRegion).catch(() => null);
   }
 
   const cleanup = { deletedCount: 0, skipped: 'manual-cleanup-only' };
   const shortLinkCode = await saveRegionShareLink({ db, firestoreMod }, user, safeRegion, clean, openNewCycle);
   const finalPlanShareCode = await saveRegionFinalPlanShareLink({ db, firestoreMod }, user, safeRegion, clean, openNewCycle).catch(error => {
-    console.warn('[WKD] final plan share code skipped:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] final plan share code skipped:', error);
     return '';
   });
   return { ...clean, shortLinkCode, finalPlanShareCode, openedNewCycle: openNewCycle, cleanupDeletedCount: cleanup.deletedCount || 0 };
@@ -1839,7 +1848,7 @@ export async function listRegionAlliances(region) {
       if (Array.isArray(result?.items) && result.items.length) return result.items;
       d1WasEmpty = Array.isArray(result?.items) && result.items.length === 0;
     } catch (error) {
-      console.warn('[WKD] D1 alliance list unavailable, using legacy fallback:', error?.message || error);
+      if (window.WKD_DEBUG) console.warn('[WKD] D1 alliance list unavailable, using legacy fallback:', error?.message || error);
     }
   }
 
@@ -1865,7 +1874,7 @@ export async function listRegionAlliances(region) {
       note: item.note || '',
       colorHue: item.colorHue ?? null,
       colorMode: item.colorMode || (item.colorHue == null ? 'auto' : 'manual')
-    }))).catch(error => console.warn('[WKD] legacy alliances D1 migration skipped:', error));
+    }))).catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] legacy alliances D1 migration skipped:', error); });
   }
   return items;
 }
@@ -1916,7 +1925,7 @@ export async function saveRegionAllianceColor(user, region, tagValue, hueValue =
     const result = await saveRegionAllianceD1(user, safeRegion, d1Patch);
     if (result?.ok !== false) return { id: tag, ...d1Patch, ...(result.item || {}), colorHue: hue, d1Only: true };
   } catch (error) {
-    console.warn('[WKD] D1 alliance color save fallback:', error?.message || error);
+    if (window.WKD_DEBUG) console.warn('[WKD] D1 alliance color save fallback:', error?.message || error);
   }
 
   const { db, firestoreMod } = await getFirebaseParts();
@@ -1964,7 +1973,7 @@ export async function saveRegionAlliance(user, region, values = {}) {
       return { id: tag, ...clean, ...(result.item || {}), d1Only: true };
     }
   } catch (error) {
-    console.warn('[WKD] D1 alliance save fallback:', error?.message || error);
+    if (window.WKD_DEBUG) console.warn('[WKD] D1 alliance save fallback:', error?.message || error);
   }
 
   const { db, firestoreMod } = await getFirebaseParts();
@@ -2006,7 +2015,7 @@ export async function deleteRegionAlliance(user, region, allianceId) {
       return { region: safeRegion, tag, d1Only: true };
     }
   } catch (error) {
-    console.warn('[WKD] D1 alliance delete fallback:', error?.message || error);
+    if (window.WKD_DEBUG) console.warn('[WKD] D1 alliance delete fallback:', error?.message || error);
   }
 
   const { db, firestoreMod } = await getFirebaseParts();
@@ -2393,7 +2402,7 @@ export async function listRegionRegistrations(user, regionOverride = '', options
     if (snapshot && Array.isArray(snapshot.rows)) {
       const snapshotRegion = normalizeRegion(snapshot.region || region);
       if (snapshotRegion && snapshotRegion !== region) {
-        console.warn('[WKD] ignored D1 snapshot for another region:', snapshotRegion, 'requested:', region);
+        if (window.WKD_DEBUG) console.warn('[WKD] ignored D1 snapshot for another region:', snapshotRegion, 'requested:', region);
       } else {
         const d1Settings = getRegionFormStatus(snapshot.settings || {});
         const rows = snapshot.rows
@@ -2427,13 +2436,13 @@ export async function listRegionRegistrations(user, regionOverride = '', options
   let status = getRegionFormStatus(settings);
   if (canManageRegion(profile, region, user) && status.enabled && (!status.openedAtMs || !(status.openedByName || status.openedByEmail || status.openedByUid))) {
     status = await ensureRegionRegistrationRunInfo(user, region).catch(error => {
-      console.warn('[WKD] registration run info repair skipped:', error);
+      if (window.WKD_DEBUG) console.warn('[WKD] registration run info repair skipped:', error);
       return status;
     });
     settings = status;
   }
   if (options?.cleanup === true) {
-    await cleanupOldRegionRegistrations(user, region).catch(error => console.warn('[WKD] old registration cleanup skipped:', error));
+    await cleanupOldRegionRegistrations(user, region).catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] old registration cleanup skipped:', error); });
   }
 
   const cacheKey = `regionRegistrations.${region}.${status.currentCycleId || 'no-cycle'}.v139`;
@@ -2482,7 +2491,7 @@ export async function deleteRegionRegistrations(user, region, registrationIds = 
   if (!canDeleteRegionRegistration(profile, safeRegion, user)) throw new Error('region-delete-access-denied');
 
   const d1Delete = await deleteRegionTableRowsD1(user, safeRegion, ids).catch(error => {
-    console.warn('[WKD] D1 delete region rows fallback:', error?.message || error);
+    if (window.WKD_DEBUG) console.warn('[WKD] D1 delete region rows fallback:', error?.message || error);
     return null;
   });
   if (d1Delete?.ok && !d1Delete?.skipped) {
@@ -2786,22 +2795,22 @@ function localImportRegistrationKey(row = {}) {
 
 async function readLocalImportRegionLockFromD1(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=004');
+    const mod = await import('./region-table-cache.js?v=005');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readLocalImportRegionLock(user, region);
   } catch (error) {
-    console.warn('[WKD] local import region lock read unavailable:', error?.message || error);
+    if (window.WKD_DEBUG) console.warn('[WKD] local import region lock read unavailable:', error?.message || error);
     return null;
   }
 }
 
 async function commitLocalImportRegionLockToD1(user, region, payload = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=004');
+    const mod = await import('./region-table-cache.js?v=005');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.commitLocalImportRegionLock(user, region, payload);
   } catch (error) {
-    console.warn('[WKD] local import region lock commit unavailable:', error?.message || error);
+    if (window.WKD_DEBUG) console.warn('[WKD] local import region lock commit unavailable:', error?.message || error);
     return null;
   }
 }
@@ -3018,7 +3027,7 @@ export async function getRegionTowerPlan(user, regionOverride = '', options = {}
   const allowFirestoreFallback = Boolean(options?.allowFirestoreFallback || options?.firebaseFallback);
 
   const cached = await readRegionTowerPlanSnapshot(user, region, { force: Boolean(options?.forceD1), ttlMs: options?.d1TtlMs }).catch(error => {
-    console.warn('[WKD] tower plan D1 read skipped:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] tower plan D1 read skipped:', error);
     return null;
   });
   if (cached?.plan) {
@@ -3097,7 +3106,7 @@ export async function saveRegionTowerPlan(user, region, plan = {}) {
       return { region: safeRegion, plan: cleanPlan, updatedAtMs, source: 'cloudflare-d1-tower-plan' };
     }
   } catch (error) {
-    console.warn('[WKD] tower plan D1 publish failed; Firebase fallback allowed:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] tower plan D1 publish failed; Firebase fallback allowed:', error);
   }
 
   const { db, firestoreMod } = await getFirebaseParts();

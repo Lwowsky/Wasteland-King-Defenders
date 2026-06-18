@@ -368,6 +368,11 @@ window.WKD = window.WKD || {};
     const both = strict.filter(shift => shift === 'both').length;
     return real === 0 && both === list.length;
   }
+  function isQuietRegionRefreshError(error = null) {
+    const code = String(error?.code || error?.data?.error || error?.message || '').trim();
+    return code === 'region_access_denied' || code.includes('region_access_denied') || code.includes('not_found') || Number(error?.status) === 403 || Number(error?.status) === 404;
+  }
+
   async function ensureRegionPlayersFreshForTower(force = false) {
     const info = sourceInfo();
     if (info.mode !== 'region') return false;
@@ -382,7 +387,7 @@ window.WKD = window.WKD || {};
       const rows = await WKD.reloadRegionPlayersForTower(info.region || '', { force: Boolean(force || broken), d1Only: true });
       return Array.isArray(rows) && rows.length > 0;
     } catch (error) {
-      console.warn('[WKD] tower region rows refresh skipped:', error);
+      if (!isQuietRegionRefreshError(error)) if (window.WKD_DEBUG) console.warn('[WKD] tower region rows refresh skipped:', error?.message || error);
       return false;
     }
   }
@@ -593,7 +598,7 @@ window.WKD = window.WKD || {};
         sanitizeShiftOverridesForCurrentPlayers();
       }
     } catch (error) {
-      console.error(error);
+      if (window.WKD_DEBUG) console.warn(error);
       const info = sourceInfo();
       const draft = info.mode === 'region' ? readRegionDraft(info.region || '') : null;
       plan = draft?.plan || localLoadPlan();
@@ -1568,7 +1573,7 @@ window.WKD = window.WKD || {};
         ? `${tr('tower.regionalMode', 'Регіонально')}: R${region}`
         : tr('tower.localMode', 'Локально'));
     } catch (error) {
-      console.error('[WKD] tower source switch failed:', error);
+      if (window.WKD_DEBUG) console.warn('[WKD] tower source switch failed:', error);
       WKD.showNotice?.(tr('tower.sourceSwitchFailed', 'Не вдалося переключити джерело плану.'));
     }
   }
@@ -1881,7 +1886,7 @@ window.WKD = window.WKD || {};
     try {
       if (typeof window.html2canvas !== 'function' && typeof WKD.ensureHtml2Canvas === 'function') await WKD.ensureHtml2Canvas();
     } catch (error) {
-      console.error(error);
+      if (window.WKD_DEBUG) console.warn(error);
       WKD.showNotice?.(tr('finalPlan.pngLibraryLoadFailed', 'Не вдалося завантажити бібліотеку для PNG. Перевір інтернет і спробуй ще раз.'));
       return;
     }
@@ -1894,7 +1899,7 @@ window.WKD = window.WKD || {};
       const blob = await renderSheetToPngBlob(sheet, { scale: 5 });
       downloadBlob(`wasteland-final-plan-${activeFinalShift}-${Date.now()}.png`, blob);
     } catch (error) {
-      console.error(error);
+      if (window.WKD_DEBUG) console.warn(error);
       WKD.showNotice?.(tr('finalPlan.pngCreateFailed', 'Не вдалося створити PNG фінального плану.'));
     } finally {
       sheet.classList.remove('is-exporting-png');
@@ -2291,7 +2296,7 @@ window.WKD = window.WKD || {};
       return true;
     } catch (error) {
       initialized = false;
-      console.warn('[WKD] tower planner bind skipped:', error);
+      if (window.WKD_DEBUG) console.warn('[WKD] tower planner bind skipped:', error);
       return false;
     }
   }
@@ -2344,7 +2349,7 @@ window.WKD = window.WKD || {};
       await loadPlan();
       render();
     } catch (error) {
-      console.warn('[WKD] tower source refresh skipped:', reason, error);
+      if (window.WKD_DEBUG) console.warn('[WKD] tower source refresh skipped:', reason, error);
     }
   }
   function txtLine(char = '═', length = 32) {
@@ -2454,7 +2459,7 @@ window.WKD = window.WKD || {};
     try {
       if (typeof window.html2canvas !== 'function' && typeof WKD.ensureHtml2Canvas === 'function') await WKD.ensureHtml2Canvas();
     } catch (error) {
-      console.warn('[WKD] html2canvas lazy load failed:', error);
+      if (window.WKD_DEBUG) console.warn('[WKD] html2canvas lazy load failed:', error);
       return [];
     }
     if (typeof window.html2canvas !== 'function') return [];
@@ -2476,7 +2481,7 @@ window.WKD = window.WKD || {};
           const pngBlob = await renderSheetToPngBlob(sheet, { scale: 4 });
           files.push(new File([pngBlob], `wasteland-final-plan-${item.shift}.png`, { type: 'image/png' }));
         } catch (error) {
-          console.warn('[WKD] share png skipped:', item.shift, error);
+          if (window.WKD_DEBUG) console.warn('[WKD] share png skipped:', item.shift, error);
         }
       }
     } finally {
@@ -2505,7 +2510,7 @@ window.WKD = window.WKD || {};
       await navigator.clipboard.writeText(shareUrl);
       WKD.showNotice?.(tr('finalPlan.linkCopied', 'Секретне посилання скопійовано.'));
     } catch (error) {
-      console.error(error);
+      if (window.WKD_DEBUG) console.warn(error);
       WKD.showNotice?.(tr('finalPlan.shareLinkFailed', 'Не вдалося створити секретне посилання.'));
     }
   }
@@ -2514,7 +2519,7 @@ window.WKD = window.WKD || {};
     try {
       data = await makeFinalShareData();
     } catch (error) {
-      console.error(error);
+      if (window.WKD_DEBUG) console.warn(error);
       WKD.showNotice?.(tr('finalPlan.shareLinkFailed', 'Не вдалося створити секретне посилання.'));
       data = { text: currentTxt({ allShifts: true }), sheets: renderFinalShareSheets(finalShareShifts()), shareUrl: '' };
     }
@@ -2778,7 +2783,7 @@ ${text}` : text };
     document.addEventListener('wkd:player-manager-auth-ready', () => reloadPlanForActiveSourceAfterReady('auth-ready'));
     document.addEventListener('wkd:player-manager-source-changed', () => reloadPlanForActiveSourceAfterReady('source-changed'));
     document.addEventListener('wkd:tower-plan-hard-reset', event => {
-      resetPlanToEmpty(event.detail?.source || 'hard-reset').catch(error => console.warn('[WKD] tower hard reset skipped:', error));
+      resetPlanToEmpty(event.detail?.source || 'hard-reset').catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] tower hard reset skipped:', error); });
     });
     document.addEventListener('wkd:players-updated', event => {
       invalidatePlayerEntryCache();

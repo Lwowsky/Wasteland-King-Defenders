@@ -86,6 +86,38 @@ function removeLocalTableCache(kind, id) {
 }
 
 
+export function regionTableCacheErrorCode(error = null) {
+  return String(error?.code || error?.data?.error || error?.message || '').trim();
+}
+
+export function isExpectedRegionTableCacheError(error = null) {
+  const code = regionTableCacheErrorCode(error);
+  if (!code) return false;
+  return code === 'region_access_denied'
+    || code === 'table_not_found'
+    || code === 'tower_plan_not_found'
+    || code === 'region_form_settings_not_found'
+    || code === 'form_settings_not_found'
+    || code === 'share_not_found'
+    || code === 'final_plan_not_found'
+    || code === 'region_row_not_found'
+    || code === 'region-table-cache-disabled'
+    || code === 'auth-token-required'
+    || code.includes('region_access_denied')
+    || code.includes('not_found');
+}
+
+export function isRegionAccessDeniedCacheError(error = null) {
+  const code = regionTableCacheErrorCode(error);
+  return code === 'region_access_denied' || code.includes('region_access_denied') || Number(error?.status) === 403;
+}
+
+export function isRegionSnapshotMissingCacheError(error = null) {
+  const code = regionTableCacheErrorCode(error);
+  return code === 'table_not_found' || code.includes('table_not_found') || code.includes('not_found') || Number(error?.status) === 404;
+}
+
+
 function readLocalJsonCache(kind, id, ttlMs) {
   try {
     const raw = localStorage.getItem(localCacheKey(kind, id));
@@ -169,6 +201,7 @@ async function requestJson(path, options = {}) {
     error.status = response.status;
     error.code = data?.error || '';
     error.data = data;
+    error.isExpectedRegionCacheError = isExpectedRegionTableCacheError(error);
     throw error;
   }
   const usage = data?.usage || {};
@@ -612,7 +645,7 @@ export async function publishRegionTowerPlanSnapshot(user, payload = {}) {
     if (result?.ok !== false) writeLocalJsonCache('regionTowerPlan', safeRegion, { ...body, ok: true, cached: true, source: 'cloudflare-d1-tower-plan' });
     return result;
   }).catch(error => {
-    console.warn('[WKD] tower plan D1 publish skipped:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] tower plan D1 publish skipped:', error);
     return { ok: false, skipped: true, error: error.message };
   });
 }
@@ -656,7 +689,7 @@ export async function publishRegionFormSettings(user, payload = {}) {
       updatedAtMs: Number(payload.updatedAtMs) || Date.now()
     })
   }).catch(error => {
-    console.warn('[WKD] region form settings D1 publish skipped:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] region form settings D1 publish skipped:', error);
     return { ok: false, skipped: true, error: error.message };
   });
 }
@@ -740,7 +773,7 @@ export async function mirrorRegionRegistration(user, region, row, settings = {})
       row: sanitizeTableRow({ ...row, id: cacheRowId, farmId, region: safeRegion })
     })
   }).catch(error => {
-    console.warn('[WKD] region table JSON mirror skipped:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] region table JSON mirror skipped:', error);
     return { ok: false, skipped: true, error: error.message };
   });
 }
@@ -824,7 +857,7 @@ export async function deleteRegionTableRowsD1(user, region, ids = []) {
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify({ region: safeRegion, ids: cleanIds })
   }).catch(error => {
-    console.warn('[WKD] region table D1 row delete skipped:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] region table D1 row delete skipped:', error);
     return { ok: false, skipped: true, error: error.message };
   });
 }
@@ -853,7 +886,7 @@ export async function publishRegionTableSnapshot(user, payload = {}) {
     if (result?.ok !== false) writeLocalTableCache('regionTableSnapshot', safeRegion, { region: safeRegion, settings: sanitizeSettings(payload.settings || {}), rows, version: Date.now() });
     return result;
   }).catch(error => {
-    console.warn('[WKD] region table snapshot publish skipped:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] region table snapshot publish skipped:', error);
     return { ok: false, skipped: true, error: error.message };
   });
 }
@@ -882,7 +915,7 @@ export async function publishRegionTableShare(user, payload = {}) {
       expiresAtMs: Number(payload.expiresAtMs) || 0
     })
   }).catch(error => {
-    console.warn('[WKD] region table share publish skipped:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] region table share publish skipped:', error);
     return { ok: false, skipped: true, error: error.message };
   });
 }
