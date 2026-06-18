@@ -179,6 +179,13 @@ function injectStaffDrawerTabs() {
 
 
 let ready = false;
+
+function revealGuardedStaffPage() {
+  document.body.classList.remove('access-guard-pending');
+}
+function denyGuardedStaffPage() {
+  window.location.replace('404.html');
+}
 let currentUser = null;
 let currentProfile = null;
 let staffSnapshotRows = [];
@@ -558,16 +565,15 @@ async function initStaffPage() {
   await watchAuth(async user => {
     currentUser = user;
     if (!user) {
-      setStatus(t('staff.loginRequired', 'Потрібно увійти в акаунт.'), 'warn');
-      setTimeout(() => { window.location.href = 'login.html'; }, 700);
+      denyGuardedStaffPage();
       return;
     }
     currentProfile = await getUserProfile(user.uid).catch(() => null);
     if (!canUseStaffPanel(user, currentProfile)) {
-      setStatus(t('staff.noAccess', 'Ця сторінка доступна тільки консулу, офіцеру або R5.'), 'error');
-      $('#staffPlayersBody').innerHTML = `<tr><td colspan="7">${esc(t('staff.noAccess', 'Ця сторінка доступна тільки консулу, офіцеру або R5.'))}</td></tr>`;
+      denyGuardedStaffPage();
       return;
     }
+    revealGuardedStaffPage();
     fillRegionSelect();
     scopeBadge();
     await loadRows().catch(error => {

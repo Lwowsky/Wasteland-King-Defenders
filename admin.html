@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="google" content="notranslate" />
+  <meta name="robots" content="noindex,nofollow" />
   <title data-i18n="admin.pageTitle">Адмінка — Wasteland King Defenders</title>
   <link rel="icon" href="favicon.png" type="image/png" />
   <link rel="stylesheet" href="css/styles.css" />
@@ -15,6 +16,7 @@
   <link rel="stylesheet" href="css/region-page.css?v=272" />
   <link rel="stylesheet" href="css/confirm-modal.css" />
   <link rel="stylesheet" href="css/responsive.css" />
+  <style>body.access-guard-pending main{visibility:hidden}body.access-guard-pending::before{content:"";position:fixed;inset:0;background:#050b18;z-index:9999}</style>
   <script defer src="js/i18n.js?v=277"></script>
   <script defer src="js/i18n-uk.js?v=277"></script>
   <script defer src="js/i18n-en.js?v=277"></script>
@@ -38,10 +40,10 @@
   <script defer src="js/app-login-shell.js?v=272"></script>
   <script type="module" src="js/auth-google.js?v=272"></script>
   <script type="module" src="js/notifications.js?v=272"></script>
-  <script type="module" src="js/pages/admin-page.js?v=277"></script>
+  <script type="module" src="js/pages/admin-page.js?v=001"></script>
   <script type="module" src="js/pages/security-page.js?v=272"></script>
 </head>
-<body class="notranslate">
+<body class="notranslate access-guard-pending">
   <div data-include="partials/header.html"></div>
 
   <main class="profile-page container">

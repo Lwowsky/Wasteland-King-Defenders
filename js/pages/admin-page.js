@@ -84,6 +84,13 @@ function currentAdminSelfUser() {
 
 
 let adminReady = false;
+
+function revealGuardedAdminPage() {
+  document.body.classList.remove('access-guard-pending');
+}
+function denyGuardedAdminPage() {
+  window.location.replace('404.html');
+}
 let currentUser = null;
 let currentProfile = null;
 let users = [];
@@ -2115,22 +2122,16 @@ async function initAdminPage() {
   await watchAuth(async user => {
     currentUser = user;
     if (!user) {
-      setStatus(t('admin.loginRequired', 'You need to sign in with Google.'), 'warn');
-      setTimeout(() => { window.location.href = 'login.html'; }, 700);
+      denyGuardedAdminPage();
       return;
     }
 
     currentProfile = await ensureCurrentUserPublished(user).catch(() => getUserProfile(user.uid)).catch(() => null);
     if (!canUseAdminPanel(user, currentProfile)) {
-      setLimitsAccess(false);
-      document.querySelectorAll('[data-admin-tab], [data-admin-panel]').forEach(el => { el.hidden = true; });
-      setSummary(t('admin.noAccessShort', 'No access'));
-      setStatus(t('admin.noAccess', 'This page is available only to an admin or moderator.'), 'error');
-      $('#registeredPlayersBody').innerHTML = `<tr><td colspan="8">${escapeHtml(t('admin.noPlayerAccess', 'You do not have permission to view players.'))}</td></tr>`;
-      $('#roleRequestsList').innerHTML = `<div class="admin-empty">${escapeHtml(t('admin.noRequestAccess', 'You do not have permission to view requests.'))}</div>`;
-      $('#adminRegionList') && ($('#adminRegionList').innerHTML = `<div class="admin-empty">${escapeHtml(t('admin.noRegionAccess', 'You do not have permission to manage regions.'))}</div>`);
+      denyGuardedAdminPage();
       return;
     }
+    revealGuardedAdminPage();
 
     document.querySelectorAll('[data-admin-tab], [data-admin-panel]').forEach(el => {
       if (el.classList.contains('admin-limits-only')) return;
