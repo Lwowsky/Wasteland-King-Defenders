@@ -4,8 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Wasteland King Defenders</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <style>
+    :root{color-scheme:dark}*{box-sizing:border-box}body{min-height:100vh;margin:0;display:grid;place-items:center;background:radial-gradient(circle at top,#1e2f72 0,#071020 45%,#030713 100%);color:#f7fbff;font:700 18px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}.not-found-card{width:min(560px,calc(100% - 32px));padding:34px;border:1px solid rgba(130,160,255,.28);border-radius:28px;background:rgba(10,20,42,.88);box-shadow:0 28px 90px rgba(0,0,0,.45)}.eyebrow{color:#9fb0d7;text-transform:uppercase;letter-spacing:.12em;font-size:13px}.title{font-size:clamp(34px,8vw,72px);line-height:1;margin:10px 0}.text{color:#c6d2ec;font-weight:600}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;margin-top:22px;padding:0 20px;border-radius:14px;background:linear-gradient(135deg,#5f83ff,#8358f0);color:#fff;text-decoration:none;font-weight:900}
+  </style>
   <script>
     (function () {
+      var params = new URLSearchParams(window.location.search || '');
+      if (params.get('private') === '1' || params.get('denied') === '1') return;
       var path = window.location.pathname || '';
 
       var formShort = path.match(/^\/f\/([A-Za-z0-9_-]{6,160})\/?$/);
@@ -36,5 +42,12 @@
     })();
   </script>
 </head>
-<body></body>
+<body>
+  <main class="not-found-card" aria-live="polite">
+    <div class="eyebrow">Wasteland King Defenders</div>
+    <h1 class="title">404</h1>
+    <p class="text">Сторінку не знайдено або доступ закритий.</p>
+    <a class="btn" href="/index.html">На головну</a>
+  </main>
+</body>
 </html>

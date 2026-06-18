@@ -2431,6 +2431,8 @@ window.WKD_TRANSLATIONS.ru = {
   "staff.notificationsHelp": "Messages for players, region or alliance according to your role.",
   "staff.playersTitle": "Region players",
   "staff.playersHelp": "Consul sees the region. Officer and R5 work with their own alliance.",
+  "staff.refreshingPlayers": "Обновляю список игроков...",
+  "staff.accessConfirmed": "Доступ подтверждён. Загружаю игроков...",
   "staff.loadingPlayers": "Загружаю игроков региона из public-cache snapshot...",
   "staff.loaded": "Region panel is ready.",
   "staff.empty": "Игроки не найдены.",

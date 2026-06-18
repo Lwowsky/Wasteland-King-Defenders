@@ -2431,6 +2431,8 @@ window.WKD_TRANSLATIONS.uk = {
   "staff.notificationsHelp": "Повідомлення для гравців, регіону або альянсу за правами ролі.",
   "staff.playersTitle": "Гравці регіону",
   "staff.playersHelp": "Консул бачить регіон. Офіцер і R5 працюють зі своїм альянсом.",
+  "staff.refreshingPlayers": "Оновлюю список гравців...",
+  "staff.accessConfirmed": "Доступ підтверджено. Завантажую гравців...",
   "staff.loadingPlayers": "Завантажую гравців регіону з public-cache snapshot...",
   "staff.loaded": "Панель регіону готова.",
   "staff.empty": "Гравців не знайдено.",

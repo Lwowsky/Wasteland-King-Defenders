@@ -89,7 +89,7 @@ function revealGuardedAdminPage() {
   document.body.classList.remove('access-guard-pending');
 }
 function denyGuardedAdminPage() {
-  window.location.replace('404.html');
+  window.location.replace('404.html?private=1');
 }
 let currentUser = null;
 let currentProfile = null;

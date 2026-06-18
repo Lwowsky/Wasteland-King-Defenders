@@ -184,7 +184,7 @@ function revealGuardedStaffPage() {
   document.body.classList.remove('access-guard-pending');
 }
 function denyGuardedStaffPage() {
-  window.location.replace('404.html');
+  window.location.replace('404.html?private=1');
 }
 let currentUser = null;
 let currentProfile = null;
@@ -412,6 +412,7 @@ async function readStaffRegionPlayerRows(region = '', { force = false } = {}) {
 }
 async function loadRows(options = {}) {
   const force = Boolean(options?.force);
+  setStatus(force ? t('staff.refreshingPlayers', 'Оновлюю список гравців...') : t('staff.loadingPlayers', 'Завантажую гравців регіону з public-cache snapshot...'), 'muted');
   const region = $('#staffRegionSelect')?.value || normalizeRegion(getGameProfile(currentProfile || {}).region);
   if (!region) {
     staffSnapshotRows = [];
@@ -574,6 +575,7 @@ async function initStaffPage() {
       return;
     }
     revealGuardedStaffPage();
+    setStatus(t('staff.accessConfirmed', 'Доступ підтверджено. Завантажую гравців...'), 'success');
     fillRegionSelect();
     scopeBadge();
     await loadRows().catch(error => {

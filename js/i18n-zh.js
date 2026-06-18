@@ -2431,6 +2431,8 @@ window.WKD_TRANSLATIONS.zh = {
   "staff.notificationsHelp": "Messages for players, region or alliance according to your role.",
   "staff.playersTitle": "Region players",
   "staff.playersHelp": "Consul sees the region. Officer and R5 work with their own alliance.",
+  "staff.refreshingPlayers": "正在刷新玩家列表...",
+  "staff.accessConfirmed": "访问已确认。正在加载玩家...",
   "staff.loadingPlayers": "正在从 public-cache snapshot 加载区域玩家...",
   "staff.loaded": "Region panel is ready.",
   "staff.empty": "未找到玩家。",

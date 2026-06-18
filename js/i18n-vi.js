@@ -2431,6 +2431,8 @@ window.WKD_TRANSLATIONS.vi = {
   "staff.notificationsHelp": "Messages for players, region or alliance according to your role.",
   "staff.playersTitle": "Region players",
   "staff.playersHelp": "Consul sees the region. Officer and R5 work with their own alliance.",
+  "staff.refreshingPlayers": "Đang làm mới danh sách người chơi...",
+  "staff.accessConfirmed": "Đã xác nhận quyền truy cập. Đang tải người chơi...",
   "staff.loadingPlayers": "Đang tải người chơi khu vực từ public-cache snapshot...",
   "staff.loaded": "Region panel is ready.",
   "staff.empty": "Không tìm thấy người chơi.",

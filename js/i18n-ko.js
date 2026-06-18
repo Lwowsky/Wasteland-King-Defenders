@@ -2431,6 +2431,8 @@ window.WKD_TRANSLATIONS.ko = {
   "staff.notificationsHelp": "Messages for players, region or alliance according to your role.",
   "staff.playersTitle": "Region players",
   "staff.playersHelp": "Consul sees the region. Officer and R5 work with their own alliance.",
+  "staff.refreshingPlayers": "플레이어 목록을 새로고침하는 중...",
+  "staff.accessConfirmed": "접근이 확인되었습니다. 플레이어를 불러오는 중...",
   "staff.loadingPlayers": "public-cache snapshot에서 지역 플레이어를 불러오는 중...",
   "staff.loaded": "Region panel is ready.",
   "staff.empty": "플레이어를 찾을 수 없습니다.",

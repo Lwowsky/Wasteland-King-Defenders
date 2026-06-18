@@ -938,6 +938,8 @@ window.WKD_I18N_AUTO_ATTR = {
   "staff.loadedFromLocalCache": "staff.loadedFromLocalCache",
   "staff.loadedRowsMerged": "staff.loadedRowsMerged",
   "staff.loadedRowsFromSnapshot": "staff.loadedRowsFromSnapshot",
+  "staff.refreshingPlayers": "staff.refreshingPlayers",
+  "staff.accessConfirmed": "staff.accessConfirmed",
   "staff.loadingPlayers": "staff.loadingPlayers",
   "staff.refreshLimited": "staff.refreshLimited",
   "staff.empty": "staff.empty",
