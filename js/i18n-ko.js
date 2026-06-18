@@ -1488,6 +1488,7 @@ window.WKD_TRANSLATIONS.ko = {
   "regionSettings.rotationDeleteNote": "동맹 자체는 지역 동맹 목록에 남습니다.",
   "region.formNotOpenYet": "등록이 아직 열리지 않았습니다. 자동 개방을 기다리거나 영사에게 시간 변경을 요청하세요.",
   "regionSettings.rotationAccessDenied": "로테이션은 지역 영사, 관리자 또는 모더레이터만 설정할 수 있습니다.",
+  "regionSettings.rotationOpenFailed": "로테이션 창을 열 수 없습니다.",
   "login.googleAccount": "Google 계정",
   "login.lead": "게임 프로필, 지역, 역할 요청을 저장하려면 Google로 로그인하세요. 게스트 모드는 사이트를 빠르게 보는 용도로 계속 사용할 수 있습니다.",
   "login.googleButton": "Google로 로그인",

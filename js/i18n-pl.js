@@ -1488,6 +1488,7 @@ window.WKD_TRANSLATIONS.pl = {
   "regionSettings.rotationDeleteNote": "Sam sojusz pozostanie na liście sojuszy regionu.",
   "region.formNotOpenYet": "Rejestracja nie jest jeszcze otwarta. Poczekaj na automatyczne otwarcie albo poproś konsula o zmianę czasu.",
   "regionSettings.rotationAccessDenied": "Rotację może ustawiać tylko konsul regionu, administrator lub moderator.",
+  "regionSettings.rotationOpenFailed": "Nie udało się otworzyć okna rotacji.",
   "login.googleAccount": "Konto Google",
   "login.lead": "Zaloguj się przez Google, aby zapisać profil gry, region i prośbę o rolę. Tryb gościa nadal służy do szybkiego przeglądania strony.",
   "login.googleButton": "Zaloguj przez Google",

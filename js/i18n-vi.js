@@ -1488,6 +1488,7 @@ window.WKD_TRANSLATIONS.vi = {
   "regionSettings.rotationDeleteNote": "Liên minh vẫn nằm trong danh sách liên minh của khu vực.",
   "region.formNotOpenYet": "Đăng ký chưa mở. Hãy chờ mở tự động hoặc nhờ lãnh sự đổi thời gian.",
   "regionSettings.rotationAccessDenied": "Chỉ lãnh sự khu vực, quản trị viên hoặc điều phối viên mới có thể thiết lập luân phiên.",
+  "regionSettings.rotationOpenFailed": "Không thể mở cửa sổ luân phiên.",
   "login.googleAccount": "Tài khoản Google",
   "login.lead": "Đăng nhập bằng Google để lưu hồ sơ game, khu vực và yêu cầu vai trò. Chế độ khách vẫn dùng để xem nhanh trang web.",
   "login.googleButton": "Đăng nhập bằng Google",

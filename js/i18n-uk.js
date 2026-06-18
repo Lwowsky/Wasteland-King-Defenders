@@ -1488,6 +1488,7 @@ window.WKD_TRANSLATIONS.uk = {
   "regionSettings.rotationDeleteNote": "Сам альянс залишиться у списку альянсів регіону.",
   "region.formNotOpenYet": "Реєстрація ще не відкрилась. Зачекай автоматичного відкриття або попроси консула змінити час.",
   "regionSettings.rotationAccessDenied": "Ротацію може налаштовувати тільки консул регіону, адмін або модератор.",
+  "regionSettings.rotationOpenFailed": "Не вдалося відкрити вікно ротації.",
   "login.googleAccount": "Google акаунт",
   "login.lead": "Увійди через Google, щоб зберегти свій ігровий профіль, регіон і заявку на роль. Гостьовий режим залишився для швидкого перегляду сайту.",
   "login.googleButton": "Увійти через Google",

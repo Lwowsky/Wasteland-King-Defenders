@@ -1488,6 +1488,7 @@ window.WKD_TRANSLATIONS.en = {
   "regionSettings.rotationDeleteNote": "The alliance itself will stay in the region alliance list.",
   "region.formNotOpenYet": "Registration is not open yet. Wait for automatic opening or ask the consul to change the time.",
   "regionSettings.rotationAccessDenied": "Only the region consul, admin or moderator can configure rotation.",
+  "regionSettings.rotationOpenFailed": "Could not open the rotation window.",
   "login.googleAccount": "Google account",
   "login.lead": "Sign in with Google to save your game profile, region, and role request. Guest mode is still available for quick site browsing.",
   "login.googleButton": "Sign in with Google",

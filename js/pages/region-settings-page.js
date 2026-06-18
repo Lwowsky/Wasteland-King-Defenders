@@ -1093,6 +1093,47 @@ async function removeAlliance(id) {
 }
 
 
+function ensureRotationModal() {
+  let backdrop = $('#regionRotationBackdrop');
+  if (backdrop) return backdrop;
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = `<div class="region-rotation-backdrop" id="regionRotationBackdrop" hidden>
+    <section class="region-rotation-modal" role="dialog" aria-modal="true" aria-labelledby="regionRotationTitle">
+      <div class="region-rotation-head">
+        <div>
+          <p class="auth-eyebrow" data-i18n="regionSettings.rotationEyebrow">Черга альянсів</p>
+          <h3 id="regionRotationTitle" data-i18n="regionSettings.rotationTitle">Ротація альянсів</h3>
+          <small data-i18n="regionSettings.rotationHelp">Додай альянси у чергу Пустоші. Поточний альянс підсвічується.</small>
+        </div>
+        <button class="btn btn-icon" id="closeRotationModalBtn" type="button" aria-label="Close" data-i18n-aria-label="common.close">✕</button>
+      </div>
+      <div class="region-rotation-body">
+        <div class="region-check-grid region-rotation-toggles">
+          <label class="region-check"><input id="rotationEnabled" type="checkbox" /> <span data-i18n="regionSettings.rotationEnabled">Активувати ротацію</span></label>
+          <label class="region-check"><input id="rotationLoop" type="checkbox" /> <span data-i18n="regionSettings.rotationLoop">Йти по колу</span></label>
+        </div>
+        <div class="region-rotation-add">
+          <label class="region-field"><span data-i18n="regionSettings.rotationPickAlliance">Вибрати зі списку</span><select id="rotationAllianceSelect"></select></label>
+          <label class="region-field"><span data-i18n="regionSettings.rotationManualTag">Або вписати тег</span><input id="rotationManualTag" maxlength="3" placeholder="YYY" /></label>
+          <button class="btn" id="addRotationAllianceBtn" type="button" data-i18n="regionSettings.rotationAddAlliance">Додати альянс</button>
+        </div>
+        <div class="region-rotation-current" id="rotationCurrentText" data-i18n="regionSettings.rotationCurrentEmpty">Поточний альянс ще не вибрано.</div>
+        <div class="region-rotation-list" id="rotationAllianceList"></div>
+      </div>
+      <div class="region-rotation-actions">
+        <button class="btn" id="cancelRotationModalBtn" type="button" data-i18n="ui.cancel">Скасувати</button>
+        <button class="btn region-save" id="saveRotationModalBtn" type="button" data-i18n="regionSettings.rotationSave">Зберегти ротацію</button>
+      </div>
+    </section>
+  </div>`;
+  backdrop = wrapper.firstElementChild;
+  if (!backdrop) return null;
+  document.body.appendChild(backdrop);
+  window.WKD_applyI18n?.(backdrop);
+  return backdrop;
+}
+
+
 function renderRotationModal() {
   const enabled = $('#rotationEnabled');
   const loop = $('#rotationLoop');
@@ -1139,7 +1180,9 @@ function openRotationModal() {
     activeIndex: Number(currentSettings?.rotationActiveIndex ?? rotationDraft.activeIndex) || 0,
     alliances: normalizeRotation(currentSettings?.rotationAlliances || rotationDraft.alliances || [])
   };
-  $('#regionRotationBackdrop') && ($('#regionRotationBackdrop').hidden = false);
+  const backdrop = ensureRotationModal();
+  if (!backdrop) { setStatus(t('regionSettings.rotationOpenFailed', 'Не вдалося відкрити вікно ротації.'), 'error'); return; }
+  backdrop.hidden = false;
   renderRotationModal();
 }
 function closeRotationModal() {
@@ -1286,6 +1329,7 @@ async function load(user) {
 
 function bind() {
   updateSettingsTabsLayout();
+  ensureRotationModal();
   $('#regionSettingsForm')?.addEventListener('submit', save);
   $('#openAddRegionBtn')?.addEventListener('click', () => toggleManualRegionForm());
   $('#cancelAddRegionBtn')?.addEventListener('click', () => toggleManualRegionForm(false));

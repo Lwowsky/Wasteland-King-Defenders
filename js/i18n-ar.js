@@ -1486,6 +1486,7 @@ window.WKD_TRANSLATIONS.ar = {
   "regionSettings.rotationDeleteNote": "سيبقى التحالف نفسه في قائمة تحالفات المنطقة.",
   "region.formNotOpenYet": "التسجيل لم يُفتح بعد. انتظر الفتح التلقائي أو اطلب من القنصل تغيير الوقت.",
   "regionSettings.rotationAccessDenied": "يمكن فقط لقنصل المنطقة أو المدير أو المشرف إعداد التناوب.",
+  "regionSettings.rotationOpenFailed": "تعذر فتح نافذة التناوب.",
   "login.googleAccount": "حساب Google",
   "login.lead": "سجّل الدخول عبر Google لحفظ ملفك في اللعبة والمنطقة وطلب الدور. يبقى وضع الضيف متاحًا لتصفح الموقع بسرعة.",
   "login.googleButton": "تسجيل الدخول عبر Google",

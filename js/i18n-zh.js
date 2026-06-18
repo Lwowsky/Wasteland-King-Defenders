@@ -1488,6 +1488,7 @@ window.WKD_TRANSLATIONS.zh = {
   "regionSettings.rotationDeleteNote": "该联盟仍会保留在地区联盟列表中。",
   "region.formNotOpenYet": "报名尚未开放。请等待自动开放，或请领事调整时间。",
   "regionSettings.rotationAccessDenied": "只有地区领事、管理员或版主可以设置轮换。",
+  "regionSettings.rotationOpenFailed": "无法打开轮换窗口。",
   "login.googleAccount": "Google 账号",
   "login.lead": "使用 Google 登录以保存你的游戏资料、地区和角色申请。访客模式仍可用于快速浏览网站。",
   "login.googleButton": "使用 Google 登录",

@@ -1488,6 +1488,7 @@ window.WKD_TRANSLATIONS.de = {
   "regionSettings.rotationDeleteNote": "Die Allianz bleibt in der regionalen Allianzliste.",
   "region.formNotOpenYet": "Die Registrierung ist noch nicht geöffnet. Warte auf die automatische Öffnung oder bitte den Konsul, die Zeit zu ändern.",
   "regionSettings.rotationAccessDenied": "Nur der Regionskonsul, Admin oder Moderator kann die Rotation einrichten.",
+  "regionSettings.rotationOpenFailed": "Das Rotationsfenster konnte nicht geöffnet werden.",
   "login.googleAccount": "Google-Konto",
   "login.lead": "Melde dich mit Google an, um dein Spielprofil, die Region und die Rollen-Anfrage zu speichern. Der Gastmodus bleibt für schnelles Ansehen der Seite verfügbar.",
   "login.googleButton": "Mit Google anmelden",

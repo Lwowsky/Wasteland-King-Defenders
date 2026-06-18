@@ -1488,6 +1488,7 @@ window.WKD_TRANSLATIONS.ja = {
   "regionSettings.rotationDeleteNote": "同盟自体は地域の同盟リストに残ります。",
   "region.formNotOpenYet": "登録はまだ開いていません。自動開始を待つか、領事に時間変更を依頼してください。",
   "regionSettings.rotationAccessDenied": "ローテーションを設定できるのは地域の領事、管理者、モデレーターのみです。",
+  "regionSettings.rotationOpenFailed": "ローテーション画面を開けませんでした。",
   "login.googleAccount": "Googleアカウント",
   "login.lead": "ゲームプロフィール、地域、役職申請を保存するにはGoogleでログインしてください。ゲストモードはサイトをすぐ見るために使えます。",
   "login.googleButton": "Googleでログイン",
