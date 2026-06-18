@@ -307,7 +307,9 @@ export function readRegionFromUrl() {
 
 export function canManageRegion(profile = {}, region = '', actor = null) {
   const role = roleForRegion(profile, region, actor);
-  return ['admin', 'moderator', 'consul', 'officer'].includes(role) && canViewRegion(profile, region, actor);
+  // v008: full region-management means global admin/moderator or region consul.
+  // Officers can still edit their own alliance rows through staff/row-specific gates and can edit the tower plan only when their alliance leads the current rotation.
+  return ['admin', 'moderator', 'consul'].includes(role) && canViewRegion(profile, region, actor);
 }
 
 function activeRotationAlliance(settings = {}) {
@@ -858,7 +860,7 @@ function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
 }
 
 async function actionLogCacheModule() {
-  return import('./action-log-cache.js?v=007');
+  return import('./action-log-cache.js?v=008');
 }
 
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {

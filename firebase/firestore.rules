@@ -172,7 +172,17 @@ service cloud.firestore {
     }
 
     function canManageRegion(regionId) {
-      return ownerEmail() || isAdmin() || isModerator() || (currentRegionRole(regionId) in ['admin', 'moderator', 'consul', 'officer'] && hasRegionAccess(regionId));
+      // v008: full region management is Admin/Moderator/Consul only.
+      // Officers are restricted to row/alliance-specific actions, not whole-region settings.
+      return ownerEmail() || isAdmin() || isModerator() || (currentRegionRole(regionId) in ['admin', 'moderator', 'consul'] && hasRegionAccess(regionId));
+    }
+
+    function canOfficerOwnAlliance(regionId, allianceTag) {
+      return signedIn()
+        && currentRegionRole(regionId) == 'officer'
+        && hasRegionAccess(regionId)
+        && allianceTag != ''
+        && currentAlliance() == allianceTag;
     }
 
     function canManageOwnAllianceColor(regionId, allianceId) {
@@ -975,7 +985,10 @@ function ownerRegionRoleDowngradeSafe(userId) {
         allow read: if ownerEmail() || isAdmin() || isModerator()
           || (currentRegionRole(regionId) == 'consul' && hasRegionAccess(regionId))
           || (currentRegionRole(regionId) == 'officer' && hasRegionAccess(regionId) && (resource.data.alliance == currentAlliance() || resource.data.actorAlliance == currentAlliance()));
-        allow create: if actionLogCreateSafe(regionId) && (hasRegionAccess(regionId) || canManageRegion(regionId));
+        allow create: if actionLogCreateSafe(regionId) && (
+          canManageRegion(regionId)
+          || (canOfficerOwnAlliance(regionId, request.resource.data.alliance) && request.resource.data.actorRole == 'officer')
+        );
         // v007: action logs are append-only. No one can silently edit or delete history from the client.
         allow update, delete: if false;
       }

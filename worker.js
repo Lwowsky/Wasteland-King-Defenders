@@ -1045,10 +1045,74 @@ async function activeRegionHasUid(db, region, uid) {
   return tableContainsUid(legacy, safeUid);
 }
 
+function accessHasRegion(access, region) {
+  const safeRegion = normalizeRegion(region);
+  return Boolean(safeRegion && Array.isArray(access?.regions) && access.regions.includes(safeRegion));
+}
+function accessHasAlliance(access, region, alliance) {
+  const safeRegion = normalizeRegion(region);
+  const safeAlliance = directoryAlliance(alliance);
+  return Boolean(safeRegion && safeAlliance && Array.isArray(access?.alliances) && access.alliances.includes(`${safeRegion}:${safeAlliance}`));
+}
+function accessHasRole(access, role) {
+  return Boolean(access?.roles instanceof Set && access.roles.has(role));
+}
+async function readRegionLeadershipAccess(db, env, user, region) {
+  const safeRegion = normalizeRegion(region);
+  if (!user?.uid || !safeRegion) return { isGlobal: false, roles: new Set(), regions: [], alliances: [] };
+  const access = await readDirectoryAccess(db, env, user).catch(() => null);
+  if (!access) return { isGlobal: isAdminUid(env, user.uid), roles: new Set(), regions: [], alliances: [] };
+  return access;
+}
+async function canReadRegionD1(db, env, user, region) {
+  const safeRegion = normalizeRegion(region);
+  if (!user?.uid || !safeRegion) return false;
+  if (isAdminUid(env, user.uid)) return true;
+  const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
+  return Boolean(access.isGlobal || accessHasRegion(access, safeRegion) || await hasSavedRegionAccess(db, user.uid, safeRegion) || await activeRegionHasUid(db, safeRegion, user.uid));
+}
+async function canManageRegionD1(db, env, user, region) {
+  const safeRegion = normalizeRegion(region);
+  if (!user?.uid || !safeRegion) return false;
+  if (isAdminUid(env, user.uid)) return true;
+  const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
+  return Boolean(access.isGlobal || (accessHasRegion(access, safeRegion) && accessHasRole(access, 'consul')));
+}
+function activeAllianceFromSettings(settings = {}) {
+  const list = Array.isArray(settings.rotationAlliances) ? settings.rotationAlliances : [];
+  const fallback = directoryAlliance(settings.hostAlliance || settings.activeHostAlliance || settings.alliance || '');
+  if (!settings.rotationEnabled || !list.length) return fallback;
+  const idx = Math.max(0, Math.min(list.length - 1, Number(settings.rotationActiveIndex) || 0));
+  const row = list[idx] || {};
+  return directoryAlliance(row.tag || row.id || fallback || '');
+}
+async function canLeadCurrentRegionD1(db, env, user, region) {
+  const safeRegion = normalizeRegion(region);
+  if (!user?.uid || !safeRegion) return false;
+  if (isAdminUid(env, user.uid)) return true;
+  const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
+  if (access.isGlobal) return true;
+  if (accessHasRegion(access, safeRegion) && accessHasRole(access, 'consul')) return true;
+  if (!accessHasRegion(access, safeRegion) || !accessHasRole(access, 'officer')) return false;
+  const form = await readRegionFormSettingsD1(db, safeRegion).catch(() => null);
+  const activeAlliance = activeAllianceFromSettings(form?.settings || {});
+  return Boolean(activeAlliance && accessHasAlliance(access, safeRegion, activeAlliance));
+}
+async function canEditRegionAllianceD1(db, env, user, region, alliance) {
+  const safeRegion = normalizeRegion(region);
+  const safeAlliance = directoryAlliance(alliance);
+  if (!user?.uid || !safeRegion || !safeAlliance) return false;
+  if (await canManageRegionD1(db, env, user, safeRegion)) return true;
+  const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
+  return Boolean(accessHasRole(access, 'officer') && accessHasAlliance(access, safeRegion, safeAlliance));
+}
+async function canDeleteRegionRowsD1(db, env, user, region) {
+  return canManageRegionD1(db, env, user, region);
+}
 async function canWriteRegionD1(db, env, user, region) {
-  if (!user?.uid || !region) return false;
-  if (isAdminUid(env, user.uid) || await hasSavedRegionAccess(db, user.uid, region)) return true;
-  return activeRegionHasUid(db, region, user.uid);
+  // v008: kept as the generic D1 write gate for existing callers.
+  // It now means real region leadership, not just a saved region_access row.
+  return canManageRegionD1(db, env, user, region);
 }
 
 async function handleRegionAlliancesRead(request, env) {
@@ -1059,7 +1123,7 @@ async function handleRegionAlliancesRead(request, env) {
   const url = new URL(request.url);
   const region = normalizeRegion(url.searchParams.get('region'));
   if (!region) return json({ ok: false, error: 'region_required' }, 400);
-  const allowed = isAdminUid(env, user.uid) || await hasSavedRegionAccess(db, user.uid, region) || await activeRegionHasUid(db, region, user.uid);
+  const allowed = await canReadRegionD1(db, env, user, region);
   if (!allowed) return json({ ok: false, error: 'region_access_denied' }, 403);
   const result = await db.prepare(`SELECT region, tag, name, note, color_hue, color_mode, updated_at_ms, updated_by FROM region_alliances WHERE region = ?1 ORDER BY tag ASC`).bind(region).all();
   const items = (result?.results || []).map(allianceRowToObject).filter(Boolean);
@@ -1076,7 +1140,7 @@ async function handleRegionAlliancesPut(request, env) {
   const region = normalizeRegion(body?.region || body?.alliance?.region);
   const item = sanitizeAlliancePayload(body?.alliance || body, region);
   if (!region || !item?.tag) return json({ ok: false, error: 'alliance_tag_required' }, 400);
-  if (!await canWriteRegionD1(db, env, user, region)) return json({ ok: false, error: 'region_access_denied' }, 403);
+  if (!await canEditRegionAllianceD1(db, env, user, region, item.tag)) return json({ ok: false, error: 'region_access_denied' }, 403);
   const nowMs = Date.now();
   await db.prepare(`INSERT INTO region_alliances (region, tag, name, note, color_hue, color_mode, updated_at_ms, updated_by)
     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
@@ -1101,7 +1165,7 @@ async function handleRegionAlliancesDelete(request, env) {
   const region = normalizeRegion(body?.region);
   const tag = clean(body?.tag || body?.id || '', 12);
   if (!region || !tag) return json({ ok: false, error: 'alliance_tag_required' }, 400);
-  if (!await canWriteRegionD1(db, env, user, region)) return json({ ok: false, error: 'region_access_denied' }, 403);
+  if (!await canManageRegionD1(db, env, user, region)) return json({ ok: false, error: 'region_access_denied' }, 403);
   await db.prepare(`DELETE FROM region_alliances WHERE region = ?1 AND tag = ?2`).bind(region, tag).run();
   return json({ ok: true, region, tag, usage: { d1RowsWritten: 1 }, source: 'cloudflare-d1-region-alliances' });
 }
@@ -1195,8 +1259,8 @@ async function handleRegionFormSettingsPut(request, env) {
   try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
   const region = normalizeRegion(body?.region || body?.settings?.region);
   if (!region) return json({ ok: false, error: 'region_required' }, 400);
-  const allowed = isAdminUid(env, user.uid) || await hasSavedRegionAccess(db, user.uid, region);
-  if (!allowed) return json({ ok: false, error: 'region_access_denied' }, 403);
+  const allowed = await canLeadCurrentRegionD1(db, env, user, region);
+  if (!allowed) return json({ ok: false, error: 'region_leadership_required' }, 403);
   const form = await saveRegionFormSettingsD1(db, {
     region,
     code: body?.code || body?.shortCode || '',
@@ -1489,10 +1553,7 @@ function cycleMetaFromRow(row = {}, activeCycleId = '') {
 }
 
 async function canReadRegionArchive(db, env, user, region) {
-  if (!user?.uid || !region) return false;
-  if (isAdminUid(env, user.uid)) return true;
-  if (await hasSavedRegionAccess(db, user.uid, region)) return true;
-  return activeRegionHasUid(db, region, user.uid);
+  return canReadRegionD1(db, env, user, region);
 }
 
 async function handleRegionCycleArchiveList(request, env) {
@@ -1605,10 +1666,7 @@ async function handleRegionTableRead(request, env) {
   const meta = await readTableMeta(db, region, cycleId);
   if (!meta) return json({ ok: false, error: "table_not_found" }, 404);
   await migrateLegacyTableRowsIfNeeded(db, meta);
-  const allowed =
-    isAdminUid(env, user.uid) ||
-    await hasSavedRegionAccess(db, user.uid, region) ||
-    await activeRegionHasUid(db, region, user.uid);
+  const allowed = await canReadRegionD1(db, env, user, region);
   if (!allowed) return json({ ok: false, error: "region_access_denied" }, 403);
 
   const requestedPage = Number(url.searchParams.get('page') || 0) || 0;
@@ -1756,7 +1814,7 @@ async function handleRegionTableRegistration(request, env) {
 
   const isOwner = Boolean(user?.uid && (row.uid === user.uid || !row.uid));
   const canWrite = user?.uid
-    ? (isOwner || isAdminUid(env, user.uid) || await canWriteRegionD1(db, env, user, region))
+    ? (isOwner || await canManageRegionD1(db, env, user, region) || (existingRow && await canEditRegionAllianceD1(db, env, user, region, row.alliance)))
     : Boolean(isPublicRegistration && row.nickname && row.publicKey);
   if (!canWrite) return json({ ok: false, error: "row_owner_mismatch" }, 403);
 
@@ -1856,8 +1914,8 @@ async function handleRegionTableDeleteRows(request, env) {
   const cycleId = await getActiveCycleId(db, region);
   const meta = await readTableMeta(db, region, cycleId).catch(() => null);
   if (meta) await migrateLegacyTableRowsIfNeeded(db, meta);
-  const allowed = isAdminUid(env, user.uid) || await hasSavedRegionAccess(db, user.uid, region) || await activeRegionHasUid(db, region, user.uid);
-  if (!allowed) return json({ ok: false, error: "region_access_denied" }, 403);
+  const allowed = await canDeleteRegionRowsD1(db, env, user, region);
+  if (!allowed) return json({ ok: false, error: "region_delete_access_denied" }, 403);
   const placeholders = ids.map((_, index) => `?${index + 3}`).join(',');
   const result = await db.prepare(
     `DELETE FROM region_table_rows WHERE region = ?1 AND cycle_id = ?2 AND id IN (${placeholders})`
@@ -1876,6 +1934,7 @@ async function handleRegionImportLockRead(request, env) {
   const url = new URL(request.url);
   const region = normalizeRegion(url.searchParams.get("region"));
   if (!region) return json({ ok: false, error: "region_required" }, 400);
+  if (!await canReadRegionD1(db, env, user, region)) return json({ ok: false, error: "region_access_denied" }, 403);
   const row = await db.prepare(`SELECT region, last_import_at_ms, next_allowed_at_ms, imported_by_uid, imported_by_name, rows_count, mode, updated_at_ms FROM region_import_locks WHERE region = ?1 LIMIT 1`).bind(region).first();
   const nowMs = Date.now();
   const nextAllowedAtMs = Number(row?.next_allowed_at_ms || 0) || 0;
@@ -1908,6 +1967,7 @@ async function handleRegionImportLockCommit(request, env) {
   try { body = await request.json(); } catch { return json({ ok: false, error: "bad_json" }, 400); }
   const region = normalizeRegion(body?.region);
   if (!region) return json({ ok: false, error: "region_required" }, 400);
+  if (!await canManageRegionD1(db, env, user, region)) return json({ ok: false, error: "region_import_access_denied" }, 403);
   const nowMs = Date.now();
   const existing = await db.prepare(`SELECT next_allowed_at_ms FROM region_import_locks WHERE region = ?1 LIMIT 1`).bind(region).first();
   const existingNext = Number(existing?.next_allowed_at_ms || 0) || 0;
@@ -1936,8 +1996,6 @@ async function handleRegionTableShareCreate(request, env) {
   if (!db) return json({ ok: false, error: "d1_not_configured" }, 500);
   await ensureRegionTableSchema(db);
   const user = await verifyFirebaseToken(request, env);
-  if (!isAdminUid(env, user.uid))
-    return json({ ok: false, error: "admin_required" }, 403);
   let body = null;
   try {
     body = await request.json();
@@ -1951,6 +2009,8 @@ async function handleRegionTableShareCreate(request, env) {
   );
   if (!code || !region)
     return json({ ok: false, error: "code_region_required" }, 400);
+  if (!await canLeadCurrentRegionD1(db, env, user, region))
+    return json({ ok: false, error: "region_leadership_required" }, 403);
   const rows = (Array.isArray(body?.rows) ? body.rows : [])
     .map(sanitizeTableRow)
     .filter((row) => row.nickname)
@@ -2122,8 +2182,8 @@ async function handleFinalPlanShareCreate(request, env) {
   catch { return json({ ok: false, error: 'bad_json' }, 400); }
   const plan = sanitizeFinalPlanPayload(body, user);
   if (!plan.code || !plan.region) return json({ ok: false, error: 'code_region_required' }, 400);
-  const allowed = isAdminUid(env, user.uid) || await hasSavedRegionAccess(db, user.uid, plan.region);
-  if (!allowed) return json({ ok: false, error: 'region_access_denied' }, 403);
+  const allowed = await canLeadCurrentRegionD1(db, env, user, plan.region);
+  if (!allowed) return json({ ok: false, error: 'region_leadership_required' }, 403);
   await db.prepare(
     `INSERT INTO final_plan_shares (code, region, cycle_id, event_start_at_ms, title, shift, html, text, updated_at_ms, updated_by, updated_by_name, expires_at_ms, revoked)
      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 0)
@@ -2298,7 +2358,7 @@ async function handleTowerPlanPut(request, env) {
   try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
   const payload = sanitizeTowerPlanSnapshotBody(body, user);
   if (!payload.region) return json({ ok: false, error: 'region_required' }, 400);
-  const allowed = await canWriteTowerPlanD1(db, env, user, payload.region);
+  const allowed = await canLeadCurrentRegionD1(db, env, user, payload.region);
   if (!allowed) return json({ ok: false, error: 'region_plan_access_denied' }, 403);
   await db.prepare(
     `INSERT INTO region_tower_plans (region, cycle_id, version, updated_at_ms, updated_by, updated_by_name, plan_json)
@@ -2726,9 +2786,16 @@ async function handleActionLogList(request, env) {
   const url = new URL(request.url);
   const region = normalizeRegion(url.searchParams.get("region"));
   if (!region) return json({ ok: false, error: "region_required" }, 400);
+  const access = await readRegionLeadershipAccess(db, env, user, region);
+  const canRead = Boolean(access.isGlobal || (accessHasRegion(access, region) && (accessHasRole(access, 'consul') || accessHasRole(access, 'officer'))));
+  if (!canRead) return json({ ok: false, error: "action_log_access_denied" }, 403, "private, no-store");
   const limitValue = Math.max(1, Math.min(20, Number(url.searchParams.get("limit")) || 20));
   const cursorMs = Number(url.searchParams.get("cursorMs")) || 0;
-  const alliance = clean(url.searchParams.get("alliance") || "", 40);
+  let alliance = clean(url.searchParams.get("alliance") || "", 40);
+  if (!access.isGlobal && !accessHasRole(access, 'consul')) {
+    const own = (access.alliances || []).find(pair => pair.startsWith(`${region}:`)) || '';
+    alliance = directoryAlliance(own.split(':')[1] || alliance);
+  }
   const params = [region];
   let where = "region = ?1";
   if (cursorMs > 0) {
@@ -2747,7 +2814,6 @@ async function handleActionLogList(request, env) {
   const result = await db.prepare(sql).bind(...params).all();
   const rows = (result?.results || []).map(actionRowToObject);
   const last = rows[rows.length - 1] || null;
-  await grantRegionAccess(db, region, user.uid, "action-log-read").catch(() => null);
   return json({ ok: true, region, rows, limitCount: limitValue, hasMore: rows.length === limitValue, nextCursorMs: Number(last?.createdAtMs) || 0, source: "cloudflare-d1-action-log" });
 }
 
@@ -2760,18 +2826,24 @@ async function handleActionLogCreate(request, env) {
   try { body = await request.json(); } catch { return json({ ok: false, error: "bad_json" }, 400); }
   const region = normalizeRegion(body?.region);
   if (!region) return json({ ok: false, error: "region_required" }, 400);
+  const access = await readRegionLeadershipAccess(db, env, user, region);
+  const allowed = Boolean(access.isGlobal || (accessHasRegion(access, region) && (accessHasRole(access, 'consul') || accessHasRole(access, 'officer'))));
+  if (!allowed) return json({ ok: false, error: "action_log_access_denied" }, 403, "private, no-store");
   const createdAtMs = Date.now();
   const id = clean(crypto.randomUUID(), 120);
   const details = sanitizeActionDetails(body?.details || {});
+  const ownAllianceForLog = !access.isGlobal && !accessHasRole(access, 'consul')
+    ? directoryAlliance(((access.alliances || []).find(pair => pair.startsWith(`${region}:`)) || '').split(':')[1] || '')
+    : directoryAlliance(body?.alliance || body?.actorAlliance || '');
   const row = {
     id,
     region,
     action: clean(body?.action || "", 80),
     actorUid: clean(user.uid || "", 160),
     actorName: clean(body?.actorName || user.name || user.email || user.uid || "", 160),
-    actorAlliance: clean(body?.actorAlliance || "", 40),
-    actorRole: clean(body?.actorRole || "", 40).toLowerCase(),
-    alliance: clean(body?.alliance || body?.actorAlliance || "", 40),
+    actorAlliance: ownAllianceForLog,
+    actorRole: access.isGlobal ? 'admin' : (accessHasRole(access, 'consul') ? 'consul' : (accessHasRole(access, 'officer') ? 'officer' : 'player')),
+    alliance: ownAllianceForLog,
     targetUid: clean(body?.targetUid || "", 160),
     targetName: clean(body?.targetName || "", 160),
     summary: clean(body?.summary || "", 500),
@@ -2782,7 +2854,6 @@ async function handleActionLogCreate(request, env) {
     `INSERT OR IGNORE INTO action_logs (id, region, action, actor_uid, actor_name, actor_alliance, actor_role, alliance, target_uid, target_name, summary, details_json, created_at_ms)
      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)`
   ).bind(row.id, row.region, row.action, row.actorUid, row.actorName, row.actorAlliance, row.actorRole, row.alliance, row.targetUid, row.targetName, row.summary, JSON.stringify(details), row.createdAtMs).run();
-  await grantRegionAccess(db, region, user.uid, "action-log-write").catch(() => null);
   return json({ ok: true, region, log: row, source: "cloudflare-d1-action-log" });
 }
 
@@ -3171,8 +3242,8 @@ async function handleRegionSharesRotate(request, env) {
   try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
   const region = normalizeRegion(body?.region);
   if (!region) return json({ ok: false, error: 'region_required' }, 400);
-  const allowed = isAdminUid(env, user.uid) || await hasSavedRegionAccess(db, user.uid, region) || await activeRegionHasUid(db, region, user.uid);
-  if (!allowed) return json({ ok: false, error: 'region_access_denied' }, 403);
+  const allowed = await canLeadCurrentRegionD1(db, env, user, region);
+  if (!allowed) return json({ ok: false, error: 'region_leadership_required' }, 403);
   const tableCodes = (await db.prepare(`SELECT code FROM region_table_shares WHERE region = ?1`).bind(region).all())?.results?.map(row => row.code) || [];
   const finalCodes = (await db.prepare(`SELECT code FROM final_plan_shares WHERE region = ?1`).bind(region).all())?.results?.map(row => row.code) || [];
   const tableResult = await db.prepare(`DELETE FROM region_table_shares WHERE region = ?1`).bind(region).run();
@@ -4112,10 +4183,15 @@ async function handleNotificationDirectoryUpsert(request, env) {
   const user = await verifyFirebaseToken(request, env);
   let body = null;
   try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
-  const rows = (Array.isArray(body?.rows) ? body.rows : []).map(directoryRowForDb).filter(row => row.uid && row.nickname).slice(0, 20);
+  let rows = (Array.isArray(body?.rows) ? body.rows : []).map(directoryRowForDb).filter(row => row.uid && row.nickname).slice(0, 20);
   if (!rows.length) return json({ ok: true, indexed: 0, rowsWritten: 0, source: 'cloudflare-d1-directory' });
   const ownsAllRows = rows.every(row => row.uid === user.uid);
-  if (!ownsAllRows && !isAdminUid(env, user.uid)) return json({ ok: false, error: 'admin_only' }, 403);
+  const adminMirror = isAdminUid(env, user.uid);
+  if (!ownsAllRows && !adminMirror) return json({ ok: false, error: 'admin_only' }, 403);
+  if (ownsAllRows && !adminMirror) {
+    // v008: a player can mirror their own directory row, but cannot grant D1 staff/admin powers to themselves.
+    rows = rows.map(row => ({ ...row, role: 'player', accountRole: 'player' }));
+  }
   const uids = [...new Set(rows.map(row => row.uid))];
   const statements = [];
   for (const uid of uids) {
