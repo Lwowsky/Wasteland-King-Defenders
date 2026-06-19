@@ -49,13 +49,13 @@
     "nickname": "アユシュカさん",
     "region": "987",
     "alliance": "YYY",
-    "rank": "P4",
+    "rank": "P1",
     "shk": "26",
-    "role": "officer",
+    "role": "consul",
     "countryCode": "JP",
     "farmCount": 0,
     "createdAt": "2026-06-15T08:40:15.270Z",
-    "updatedAt": null,
+    "updatedAt": "2026-06-17T13:13:30.865Z",
     "profileVisibility": {
       "showWastelandInfo": false,
       "showFarmsInfo": false

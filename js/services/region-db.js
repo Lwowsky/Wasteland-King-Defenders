@@ -13,7 +13,7 @@ import {
   createUserNotification,
   createRegionNotificationCampaign
 } from './user-db.js?v=005';
-import { readRegionFormShare as readRegionFormShareD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=005';
+import { readRegionFormShare as readRegionFormShareD1, readRegionFormSettings as readRegionFormSettingsD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=005';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -840,6 +840,18 @@ export async function getRegionSettings(region) {
   return mergeRegionSettings(withRegionRootFallback(regionData));
 }
 
+async function getRegionSettingsD1First(region) {
+  const safeRegion = normalizeRegion(region);
+  if (!safeRegion) throw new Error('region-required');
+  try {
+    const cached = await readRegionFormSettingsD1(safeRegion, { force: true, ttlMs: 0 });
+    if (cached?.settings) return mergeRegionSettings(cached.settings);
+  } catch (error) {
+    if (window.WKD_DEBUG) console.warn('[WKD] D1 region settings read skipped:', error?.message || error);
+  }
+  return getRegionSettings(safeRegion);
+}
+
 function actionLabel(action = '') {
   const labels = {
     registration_started: 'Запустив реєстрацію',
@@ -1607,10 +1619,12 @@ export async function saveRegionSettings(user, region, settings) {
   const { db, firestoreMod } = await getFirebaseParts();
   const profile = await getUserProfile(user.uid);
   const safeRegion = normalizeRegion(region);
-  if (!canManageRegion(profile, safeRegion, user)) throw new Error('region-access-denied');
-
-  const oldSettings = await getRegionSettings(safeRegion).catch(() => mergeRegionSettings({}));
+  const oldSettings = await getRegionSettingsD1First(safeRegion).catch(() => mergeRegionSettings({}));
   const actionSettings = { ...oldSettings, ...settings };
+  const canManageFullRegion = canManageRegion(profile, safeRegion, user);
+  const canLeadActiveRotation = canLeadCurrentRotation(profile, safeRegion, user, actionSettings);
+  if (!canManageFullRegion && !canLeadActiveRotation) throw new Error('region-access-denied');
+
   if ((settings.forceOpenNow || settings.forceCloseNow || 'enabled' in settings || settings.openNewCycle) && !canOpenCloseRegion(profile, safeRegion, user, actionSettings)) throw new Error('region-open-close-denied');
   const forceOpenNow = Boolean(settings.forceOpenNow);
   const forceCloseNow = Boolean(settings.forceCloseNow);
@@ -1748,13 +1762,20 @@ export async function saveRegionSettings(user, region, settings) {
     };
   }
 
-  await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), regionPatch, { merge: true });
-  const shortLinkSnap = await firestoreMod.getDoc(firestoreMod.doc(db, 'regions', safeRegion, 'privateSettings', 'shortLink')).catch(() => null);
-  const shortCode = normalizeShortLinkCode(shortLinkSnap?.exists?.() ? shortLinkSnap.data()?.code : '');
-  await publishRegionFormSettings(user, { region: safeRegion, code: shortCode, settings: clean, updatedAtMs: nowMs }).catch(() => null);
-  await writeRegionActionLog({ db, firestoreMod }, user, profile, safeRegion, forceCloseNow ? 'registration_closed' : (forceOpenNow || openNewCycle ? 'registration_started' : 'registration_settings_saved'), { summary: clean.enabled ? 'Форма відкрита' : 'Форма закрита', alliance: clean.hostAlliance || '' });
+  let shortCode = '';
+  if (canManageFullRegion) {
+    await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), regionPatch, { merge: true });
+    const shortLinkSnap = await firestoreMod.getDoc(firestoreMod.doc(db, 'regions', safeRegion, 'privateSettings', 'shortLink')).catch(() => null);
+    shortCode = normalizeShortLinkCode(shortLinkSnap?.exists?.() ? shortLinkSnap.data()?.code : '');
+  }
 
-  const campaignType = forceCloseNow ? 'registration_closed' : (justOpened ? 'registration_opened' : '');
+  const d1Save = await publishRegionFormSettings(user, { region: safeRegion, code: shortCode, settings: clean, updatedAtMs: nowMs }).catch(error => ({ ok: false, skipped: true, error: error?.message || String(error) }));
+  if (!canManageFullRegion && (!d1Save || d1Save.ok === false || d1Save.skipped)) {
+    throw new Error(d1Save?.error || 'region-form-d1-save-required');
+  }
+  await writeRegionActionLog(canManageFullRegion ? { db, firestoreMod } : null, user, profile, safeRegion, forceCloseNow ? 'registration_closed' : (forceOpenNow || openNewCycle ? 'registration_started' : 'registration_settings_saved'), { summary: clean.enabled ? 'Форма відкрита' : 'Форма закрита', alliance: clean.hostAlliance || actorAllianceForRegion(profile, safeRegion) || '' });
+
+  const campaignType = canManageFullRegion ? (forceCloseNow ? 'registration_closed' : (justOpened ? 'registration_opened' : '')) : '';
   if (campaignType) {
     await createRegionNotificationCampaign({
       type: campaignType,
@@ -1778,6 +1799,10 @@ export async function saveRegionSettings(user, region, settings) {
       rows: []
     }).catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] empty D1 table for new cycle skipped:', error); });
     await rotateRegionPublicSharesForNewCycle(user, safeRegion).catch(() => null);
+  }
+
+  if (!canManageFullRegion) {
+    return { ...clean, shortLinkCode: '', finalPlanShareCode: '', openedNewCycle: openNewCycle, cleanupDeletedCount: 0, source: 'cloudflare-d1-form-settings' };
   }
 
   const cleanup = { deletedCount: 0, skipped: 'manual-cleanup-only' };

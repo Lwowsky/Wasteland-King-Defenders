@@ -2,6 +2,7 @@ import { watchAuth } from '../services/firebase-service.js';
 import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=256';
 import {
   canManageRegion,
+  canLeadCurrentRotation,
   canViewAnyRegion,
   createManualRegion,
   deleteRegionAlliance,
@@ -25,8 +26,8 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=011';
-import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1 } from '../services/region-table-cache.js?v=256';
+} from '../services/region-db.js?v=012';
+import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=256';
 import { makePublicShareUrl } from '../core/share-links.js?v=256';
 
 const $ = selector => document.querySelector(selector);
@@ -1289,6 +1290,18 @@ async function copyShareLink(inputId = 'regionShareLink') {
   }
 }
 
+async function loadRegionEditorSettings(region) {
+  const safeRegion = normalizeRegion(region);
+  if (!safeRegion) return null;
+  try {
+    const cached = await readRegionFormSettingsD1(safeRegion, { force: true, ttlMs: 0 });
+    if (cached?.settings) return cached.settings;
+  } catch (error) {
+    if (window.WKD_DEBUG) console.warn('[WKD] D1 region form settings unavailable for editor:', error?.message || error);
+  }
+  return getRegionSettings(safeRegion);
+}
+
 async function load(user) {
   currentUser = user;
   if (!user) {
@@ -1304,19 +1317,26 @@ async function load(user) {
   updateRegionPill(region);
   await refreshRegionSwitcher();
   $('#openRegionTableFromSettingsBtn') && ($('#openRegionTableFromSettingsBtn').hidden = false);
-  if (!canManageRegion(profile, region, user)) {
+
+  const baseSettings = await loadRegionEditorSettings(region);
+  const canManageFullRegion = canManageRegion(profile, region, user);
+  const canLeadActiveRotation = canLeadCurrentRotation(profile, region, user, baseSettings || {});
+  if (!canManageFullRegion && !canLeadActiveRotation) {
     setStatus(t('regionSettings.accessDenied', 'Only an admin, moderator, consul or officer of their own region can edit the region form.'), 'error');
     return;
   }
+
   resetArchiveState();
-  const settings = await ensureRegionRegistrationRunInfo(user, region).catch(error => {
-    console.warn('[WKD] registration run info repair skipped:', error);
-    return null;
-  }) || await getRegionSettings(region);
-  currentShareCode = await getRegionShareLinkCode(user, region).catch(error => {
+  const settings = canManageFullRegion
+    ? (await ensureRegionRegistrationRunInfo(user, region).catch(error => {
+        console.warn('[WKD] registration run info repair skipped:', error);
+        return null;
+      }) || baseSettings || await getRegionSettings(region))
+    : (baseSettings || await getRegionSettings(region));
+  currentShareCode = canManageFullRegion ? await getRegionShareLinkCode(user, region).catch(error => {
     console.warn('Short registration link unavailable', error);
     return '';
-  });
+  }) : '';
   fill(settings);
   $('#regionSettingsForm').hidden = false;
   await refreshAlliances().catch(error => {
