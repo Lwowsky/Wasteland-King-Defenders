@@ -1227,7 +1227,9 @@ async function saveRegionFormSettingsD1(db, payload = {}) {
   if (!region) throw new Error('region_required');
   const settings = sanitizeSettings(payload.settings || {});
   const cycleId = normalizeCycleId(payload.cycleId || settings.currentCycleId || 'active');
-  const code = normalizeCode(payload.code || payload.shortCode || '');
+  const existing = await db.prepare(`SELECT short_code FROM region_form_settings WHERE region = ?1 LIMIT 1`).bind(region).first().catch(() => null);
+  const existingCode = normalizeCode(existing?.short_code || '');
+  const code = normalizeCode(payload.code || payload.shortCode || existingCode || makeD1SecretCode(`f${region}`));
   const nowMs = Number(payload.updatedAtMs) || Date.now();
   await db.prepare(
     `INSERT INTO region_form_settings (region, short_code, cycle_id, version, updated_at_ms, settings_json)

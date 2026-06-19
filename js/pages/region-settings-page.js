@@ -26,7 +26,7 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=013';
+} from '../services/region-db.js?v=014';
 import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=256';
 import { makePublicShareUrl } from '../core/share-links.js?v=256';
 
@@ -633,6 +633,10 @@ async function saveManualRegionFromSettings(event) {
     console.error(error);
     setStatus(t('regionSettings.regionAddFailed', 'Could not add region. Check access rights.'), 'error');
   }
+}
+
+function cleanShareCode(value = '') {
+  return String(value || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 140);
 }
 
 function buildShareLink(region) {
@@ -1295,7 +1299,10 @@ async function loadRegionEditorSettings(region) {
   if (!safeRegion) return null;
   try {
     const cached = await readRegionFormSettingsD1(safeRegion, { force: true, ttlMs: 0 });
-    if (cached?.settings) return cached.settings;
+    if (cached?.settings) {
+      const code = cleanShareCode(cached.code || cached.settings?.shortLinkCode || cached.settings?.code || '');
+      return { ...cached.settings, shortLinkCode: code, code };
+    }
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] D1 region form settings unavailable for editor:', error?.message || error);
   }
@@ -1335,8 +1342,8 @@ async function load(user) {
     : (baseSettings || await getRegionSettings(region));
   currentShareCode = canManageFullRegion ? await getRegionShareLinkCode(user, region).catch(error => {
     console.warn('Short registration link unavailable', error);
-    return '';
-  }) : '';
+    return cleanShareCode(baseSettings?.shortLinkCode || baseSettings?.code || '');
+  }) : cleanShareCode(baseSettings?.shortLinkCode || baseSettings?.code || currentSettings?.shortLinkCode || '');
   fill(settings);
   $('#regionSettingsForm').hidden = false;
   await refreshAlliances().catch(error => {

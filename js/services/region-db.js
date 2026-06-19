@@ -845,7 +845,10 @@ async function getRegionSettingsD1First(region) {
   if (!safeRegion) throw new Error('region-required');
   try {
     const cached = await readRegionFormSettingsD1(safeRegion, { force: true, ttlMs: 0 });
-    if (cached?.settings) return mergeRegionSettings(cached.settings);
+    if (cached?.settings) {
+      const code = normalizeShortLinkCode(cached.code || cached.settings?.shortLinkCode || cached.settings?.code || '');
+      return mergeRegionSettings({ ...cached.settings, shortLinkCode: code, code });
+    }
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] D1 region settings read skipped:', error?.message || error);
   }
@@ -1753,14 +1756,15 @@ export async function saveRegionSettings(user, region, settings) {
     };
   }
 
-  let shortCode = '';
+  let shortCode = normalizeShortLinkCode(settings.shortLinkCode || settings.code || oldSettings.shortLinkCode || oldSettings.code || '');
   if (canManageFullRegion) {
     await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), regionPatch, { merge: true });
     const shortLinkSnap = await firestoreMod.getDoc(firestoreMod.doc(db, 'regions', safeRegion, 'privateSettings', 'shortLink')).catch(() => null);
-    shortCode = normalizeShortLinkCode(shortLinkSnap?.exists?.() ? shortLinkSnap.data()?.code : '');
+    shortCode = normalizeShortLinkCode(shortLinkSnap?.exists?.() ? shortLinkSnap.data()?.code : '') || shortCode;
   }
 
   const d1Save = await publishRegionFormSettings(user, { region: safeRegion, code: shortCode, settings: clean, updatedAtMs: nowMs }).catch(error => ({ ok: false, skipped: true, error: error?.message || String(error) }));
+  shortCode = normalizeShortLinkCode(d1Save?.form?.code || d1Save?.code || shortCode);
   if (!canManageFullRegion && (!d1Save || d1Save.ok === false || d1Save.skipped)) {
     throw new Error(d1Save?.error || 'region-form-d1-save-required');
   }
@@ -1793,7 +1797,7 @@ export async function saveRegionSettings(user, region, settings) {
   }
 
   if (!canManageFullRegion) {
-    return { ...clean, shortLinkCode: '', finalPlanShareCode: '', openedNewCycle: openNewCycle, cleanupDeletedCount: 0, source: 'cloudflare-d1-form-settings' };
+    return { ...clean, shortLinkCode: shortCode, code: shortCode, finalPlanShareCode: '', openedNewCycle: openNewCycle, cleanupDeletedCount: 0, source: 'cloudflare-d1-form-settings' };
   }
 
   const cleanup = { deletedCount: 0, skipped: 'manual-cleanup-only' };
