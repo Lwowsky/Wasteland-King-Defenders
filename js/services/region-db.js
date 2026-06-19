@@ -329,13 +329,18 @@ function actorRankForRegion(profile = {}, region = '') {
   const game = gameForRegion(profile || {}, region) || bestRegionGame(profile || {});
   return trim(game?.rank || '').toLowerCase();
 }
+function rankNumber(value = '') {
+  const m = String(value || '').match(/[1-5]/);
+  return m ? Number(m[0]) : 1;
+}
 
 export function canLeadCurrentRotation(profile = {}, region = '', actor = null, settings = {}) {
   const safeRegion = normalizeRegion(region);
   if (!safeRegion || !canViewRegion(profile, safeRegion, actor)) return false;
   const role = roleForRegion(profile, safeRegion, actor);
   if (['admin', 'moderator', 'consul'].includes(role)) return true;
-  if (role !== 'officer') return false;
+  const ownRank = rankNumber(actorRankForRegion(profile, safeRegion));
+  if (role !== 'officer' && ownRank < 4) return false;
   const active = activeRotationAlliance(settings);
   return Boolean(active && actorAllianceForRegion(profile, safeRegion) === active);
 }
@@ -369,7 +374,8 @@ export function canDeleteRegionRegistration(profile = {}, region = '', actor = n
 
 export function canOpenRegionTools(profile = {}) {
   const globalRole = normalizeUserRole(profile?.role || 'player');
-  return MANAGER_ROLES.includes(globalRole) || allRegionGames(profile).some(game => MANAGER_ROLES.includes(normalizeUserRole(game.role || 'player')));
+  return MANAGER_ROLES.includes(globalRole)
+    || allRegionGames(profile).some(game => MANAGER_ROLES.includes(normalizeUserRole(game.role || 'player')) || rankNumber(game.rank) >= 4);
 }
 
 export function canViewAnyRegion(profile = {}, actor = null) {

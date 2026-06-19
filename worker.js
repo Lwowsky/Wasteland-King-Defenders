@@ -1057,11 +1057,21 @@ function accessHasAlliance(access, region, alliance) {
 function accessHasRole(access, role) {
   return Boolean(access?.roles instanceof Set && access.roles.has(role));
 }
+function directoryRankNumber(value = '') {
+  const match = String(value || '').match(/[1-5]/);
+  return match ? Number(match[0]) : 1;
+}
+function accessHasCommandAlliance(access, region, alliance, minRank = 4) {
+  const safeRegion = normalizeRegion(region);
+  const safeAlliance = directoryAlliance(alliance);
+  return Boolean(safeRegion && safeAlliance && Array.isArray(access?.commandAlliances)
+    && access.commandAlliances.some(item => item.region === safeRegion && item.alliance === safeAlliance && Number(item.rank || 0) >= minRank));
+}
 async function readRegionLeadershipAccess(db, env, user, region) {
   const safeRegion = normalizeRegion(region);
-  if (!user?.uid || !safeRegion) return { isGlobal: false, roles: new Set(), regions: [], alliances: [] };
+  if (!user?.uid || !safeRegion) return { isGlobal: false, roles: new Set(), regions: [], alliances: [], commandAlliances: [] };
   const access = await readDirectoryAccess(db, env, user).catch(() => null);
-  if (!access) return { isGlobal: isAdminUid(env, user.uid), roles: new Set(), regions: [], alliances: [] };
+  if (!access) return { isGlobal: isAdminUid(env, user.uid), roles: new Set(), regions: [], alliances: [], commandAlliances: [] };
   return access;
 }
 async function canReadRegionD1(db, env, user, region) {
@@ -1093,10 +1103,12 @@ async function canLeadCurrentRegionD1(db, env, user, region) {
   const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
   if (access.isGlobal) return true;
   if (accessHasRegion(access, safeRegion) && accessHasRole(access, 'consul')) return true;
-  if (!accessHasRegion(access, safeRegion) || !accessHasRole(access, 'officer')) return false;
+  if (!accessHasRegion(access, safeRegion)) return false;
   const form = await readRegionFormSettingsD1(db, safeRegion).catch(() => null);
   const activeAlliance = activeAllianceFromSettings(form?.settings || {});
-  return Boolean(activeAlliance && accessHasAlliance(access, safeRegion, activeAlliance));
+  if (!activeAlliance) return false;
+  return Boolean((accessHasRole(access, 'officer') && accessHasAlliance(access, safeRegion, activeAlliance))
+    || accessHasCommandAlliance(access, safeRegion, activeAlliance, 4));
 }
 async function canEditRegionAllianceD1(db, env, user, region, alliance) {
   const safeRegion = normalizeRegion(region);
@@ -1104,7 +1116,10 @@ async function canEditRegionAllianceD1(db, env, user, region, alliance) {
   if (!user?.uid || !safeRegion || !safeAlliance) return false;
   if (await canManageRegionD1(db, env, user, safeRegion)) return true;
   const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
-  return Boolean(accessHasRole(access, 'officer') && accessHasAlliance(access, safeRegion, safeAlliance));
+  if (accessHasRole(access, 'officer') && accessHasAlliance(access, safeRegion, safeAlliance)) return true;
+  if (!accessHasCommandAlliance(access, safeRegion, safeAlliance, 4)) return false;
+  const form = await readRegionFormSettingsD1(db, safeRegion).catch(() => null);
+  return activeAllianceFromSettings(form?.settings || {}) === safeAlliance;
 }
 async function canDeleteRegionRowsD1(db, env, user, region) {
   return canManageRegionD1(db, env, user, region);
@@ -4104,6 +4119,7 @@ function directoryAccessFromRows(rows = [], env, uid = '') {
   const roles = new Set();
   const regions = new Set();
   const alliances = new Set();
+  const commandAlliances = [];
   (Array.isArray(rows) ? rows : []).forEach(row => {
     const role = directoryRole(row.account_role || row.role || 'player');
     roles.add(role);
@@ -4111,13 +4127,15 @@ function directoryAccessFromRows(rows = [], env, uid = '') {
     const alliance = directoryAlliance(row.alliance);
     if (region) regions.add(region);
     if (region && alliance) alliances.add(`${region}:${alliance}`);
+    const rank = directoryRankNumber(row.rank || '');
+    if (region && alliance && rank >= 4) commandAlliances.push({ region, alliance, rank });
   });
   const isGlobal = isAdminUid(env, uid) || roles.has('admin') || roles.has('moderator');
-  return { isGlobal, roles, regions: [...regions], alliances: [...alliances] };
+  return { isGlobal, roles, regions: [...regions], alliances: [...alliances], commandAlliances };
 }
 async function readDirectoryAccess(db, env, user) {
   const result = await db.prepare(
-    `SELECT region, alliance, role, account_role FROM notification_directory WHERE uid = ?1 AND deleted = 0 LIMIT 80`
+    `SELECT region, alliance, role, account_role, rank FROM notification_directory WHERE uid = ?1 AND deleted = 0 LIMIT 80`
   ).bind(user.uid).all();
   return directoryAccessFromRows(result?.results || [], env, user.uid);
 }

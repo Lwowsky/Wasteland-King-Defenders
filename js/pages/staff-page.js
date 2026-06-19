@@ -11,7 +11,7 @@ import {
   staffRankOptionsForTarget,
   staffRoleOptionsForTarget,
   updateRegionPlayerByStaff
-} from '../services/user-db.js?v=010';
+} from '../services/user-db.js?v=011';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : fallback;
@@ -27,7 +27,7 @@ const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
 const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STAFF_REFRESH_LIMIT = 5;
-const STAFF_CACHE_BUILD = 'v010-staff-edit-admin-save';
+const STAFF_CACHE_BUILD = 'v011-r4-staff-access';
 
 const STAFF_PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const STAFF_PUBLIC_STATS_VERSION_FILE = 'stats-version.json';
@@ -133,9 +133,9 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=271',
-  'region-settings': './region-settings-page.js?v=010',
-  'action-log': './action-log-page.js?v=010'
+  'region-table': './region-table-page.js?v=011',
+  'region-settings': './region-settings-page.js?v=011',
+  'action-log': './action-log-page.js?v=011'
 };
 const loadedStaffToolTabs = new Set();
 

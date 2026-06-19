@@ -177,12 +177,16 @@ service cloud.firestore {
       return ownerEmail() || isAdmin() || isModerator() || (currentRegionRole(regionId) in ['admin', 'moderator', 'consul'] && hasRegionAccess(regionId));
     }
 
-    function canOfficerOwnAlliance(regionId, allianceTag) {
+    function canStaffOwnAlliance(regionId, allianceTag) {
       return signedIn()
-        && currentRegionRole(regionId) == 'officer'
         && hasRegionAccess(regionId)
         && allianceTag != ''
-        && currentAlliance() == allianceTag;
+        && currentAlliance() == allianceTag
+        && (currentRegionRole(regionId) == 'officer' || currentStaffRankNumber() >= 4);
+    }
+
+    function canOfficerOwnAlliance(regionId, allianceTag) {
+      return canStaffOwnAlliance(regionId, allianceTag);
     }
 
     function canManageOwnAllianceColor(regionId, allianceId) {
@@ -365,14 +369,14 @@ function ownerRegionRoleDowngradeSafe(userId) {
     function staffRankAllowedByActor(regionId, allianceTag, wantedRank) {
       return ownerEmail() || isAdmin() || isModerator()
         || (currentRegionRole(regionId) == 'consul' && hasRegionAccess(regionId) && wantedRank in ['p1', 'p2', 'p3', 'p4', 'p5'])
-        || (currentRegionRole(regionId) == 'officer' && currentAlliance() == allianceTag && currentStaffRankNumber() == 5 && wantedRank in ['p1', 'p2', 'p3', 'p4'])
-        || (currentRegionRole(regionId) == 'officer' && currentAlliance() == allianceTag && wantedRank in ['p1', 'p2', 'p3']);
+        || (canStaffOwnAlliance(regionId, allianceTag) && currentStaffRankNumber() == 5 && wantedRank in ['p1', 'p2', 'p3', 'p4'])
+        || (canStaffOwnAlliance(regionId, allianceTag) && wantedRank in ['p1', 'p2', 'p3']);
     }
 
     function staffRoleAllowedByActor(regionId, allianceTag, wantedRole, oldRole) {
       return ownerEmail() || isAdmin() || isModerator()
         || (currentRegionRole(regionId) == 'consul' && hasRegionAccess(regionId) && wantedRole in ['player', 'officer'])
-        || (currentRegionRole(regionId) == 'officer' && currentAlliance() == allianceTag && wantedRole == oldRole);
+        || (canStaffOwnAlliance(regionId, allianceTag) && wantedRole == oldRole);
     }
 
     function regionalStaffCanEdit(regionId, allianceTag, wantedRank, wantedRole, oldRole) {

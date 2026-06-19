@@ -193,6 +193,7 @@ const isOwnerEmail = email => OWNER_EMAILS.includes(String(email || '').trim().t
 const isAdminEmail = email => ADMIN_EMAILS.includes(String(email || '').trim().toLowerCase());
 function gameRegion(game = {}) { return normalizeText(game.region).replace(/[^0-9]/g, ''); }
 function rankNum(rank = '') { const m = String(rank || '').match(/[1-5]/); return m ? Number(m[0]) : 1; }
+function isCommandRank(rank = '') { return rankNum(rank) >= 4; }
 function allActorGames(profile = {}) {
   const main = getGameProfile(profile || {});
   return [{ ...main, role: normalizeRole(profile?.role || 'player'), farmId: 'main' }, ...getUserFarms(profile || {})];
@@ -226,7 +227,10 @@ function canAssignRankForTarget(actor = null, actorProfile = null, target = {}, 
   const actorRank = rankNum(actorGame.rank);
   const sameAlliance = normalizeAllianceTag(actorGame.alliance) === normalizeAllianceTag(target.alliance);
   if (actorRole === 'consul' && gameRegion(actorGame) === gameRegion(target)) return true;
-  if (sameAlliance && actorRank === 5) return wantedRank <= 4;
+  if (sameAlliance && actorRank >= 5) return wantedRank <= 4;
+  // R4/P4 may use the region panel for the active alliance, but it must not
+  // create new R4/R5 players. It can only keep normal P1-P3 ranks in staff edits.
+  if (sameAlliance && actorRank >= 4) return wantedRank <= 3;
   return wantedRank <= 3;
 }
 function canRegionalEditTarget(actor = null, actorProfile = null, target = {}, oldTarget = {}) {
@@ -243,7 +247,10 @@ function canRegionalEditTarget(actor = null, actorProfile = null, target = {}, o
   if (sameAlliance && actorRole === 'officer') {
     return wantedRole === normalizeRole(oldTarget.role || 'player') && canAssignRankForTarget(actor, actorProfile, target, oldTarget);
   }
-  if (sameAlliance && actorRank === 5) {
+  if (sameAlliance && actorRank >= 5) {
+    return wantedRole === normalizeRole(oldTarget.role || 'player') && canAssignRankForTarget(actor, actorProfile, target, oldTarget);
+  }
+  if (sameAlliance && actorRank >= 4) {
     return wantedRole === normalizeRole(oldTarget.role || 'player') && canAssignRankForTarget(actor, actorProfile, target, oldTarget);
   }
   return false;
@@ -290,7 +297,7 @@ export function canUseStaffPanel(user, profile = null) {
   if (canUseAdminPanel(user, profile)) return true;
   return allActorGames(profile).some(game => {
     const role = normalizeRole(game.role || profile.role || 'player');
-    return ['consul', 'officer'].includes(role) || rankNum(game.rank) === 5;
+    return ['consul', 'officer'].includes(role) || isCommandRank(game.rank);
   });
 }
 
@@ -3085,7 +3092,8 @@ export function canStaffEditPlayer(user = null, actorProfile = null, target = {}
   const sameAlliance = normalizeAllianceTag(actorGame.alliance) === targetAlliance;
   if (actorRole === 'consul' && gameRegion(actorGame) === targetRegion) return true;
   if (sameAlliance && actorRole === 'officer') return true;
-  if (sameAlliance && actorRank === 5) return true;
+  if (sameAlliance && actorRank >= 5) return true;
+  if (sameAlliance && actorRank >= 4) return true;
   return false;
 }
 
@@ -3099,7 +3107,8 @@ export function staffRankOptionsForTarget(user = null, actorProfile = null, targ
   const actorRank = rankNum(actorGame.rank);
   const sameAlliance = normalizeAllianceTag(actorGame.alliance) === targetAlliance;
   if (actorRole === 'consul' && gameRegion(actorGame) === targetRegion) return ['p1', 'p2', 'p3', 'p4', 'p5'];
-  if (sameAlliance && actorRank === 5) return ['p1', 'p2', 'p3', 'p4'];
+  if (sameAlliance && actorRank >= 5) return ['p1', 'p2', 'p3', 'p4'];
+  if (sameAlliance && actorRank >= 4) return ['p1', 'p2', 'p3'];
   return ['p1', 'p2', 'p3'];
 }
 
