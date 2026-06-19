@@ -1349,7 +1349,7 @@ window.WKD_TRANSLATIONS.ar = {
   "regionSettings.allianceDeleted": "تم حذف التحالف.",
   "regionSettings.allianceDeleteFailed": "تعذر حذف التحالف.",
   "regionSettings.signInRequired": "سجّل الدخول عبر Google لإعداد النموذج.",
-  "regionSettings.accessDenied": "لا يمكن تعديل نموذج المنطقة إلا بواسطة المسؤول أو المشرف أو القنصل أو ضابط من منطقته.",
+  "regionSettings.accessDenied": "لا يمكن تعديل نموذج المنطقة إلا بواسطة المسؤول أو المشرف أو القنصل أو ضابط/R4 من التحالف النشط.",
   "regionSettings.readyStatus": "اضبط النموذج ووقت الإغلاق والرابط السري للاعبي منطقتك.",
   "regionSettings.openFailed": "تعذر فتح إعدادات المنطقة.",
   "region.regionPill": "{label} {region}",

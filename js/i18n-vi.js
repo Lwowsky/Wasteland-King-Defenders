@@ -1351,7 +1351,7 @@ window.WKD_TRANSLATIONS.vi = {
   "regionSettings.allianceDeleted": "Đã xóa liên minh.",
   "regionSettings.allianceDeleteFailed": "Không thể xóa liên minh.",
   "regionSettings.signInRequired": "Đăng nhập bằng Google để cấu hình biểu mẫu.",
-  "regionSettings.accessDenied": "Chỉ quản trị viên, điều hành viên, lãnh sự hoặc sĩ quan khu vực của mình mới có thể sửa biểu mẫu khu vực.",
+  "regionSettings.accessDenied": "Chỉ quản trị viên, điều hành viên, lãnh sự hoặc sĩ quan/R4 của liên minh đang hoạt động mới có thể sửa biểu mẫu khu vực.",
   "regionSettings.readyStatus": "Cấu hình biểu mẫu, thời gian đóng và liên kết bí mật cho người chơi trong khu vực của bạn.",
   "regionSettings.openFailed": "Không thể mở cài đặt khu vực.",
   "region.regionPill": "{label} {region}",

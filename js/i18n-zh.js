@@ -1351,7 +1351,7 @@ window.WKD_TRANSLATIONS.zh = {
   "regionSettings.allianceDeleted": "联盟已删除。",
   "regionSettings.allianceDeleteFailed": "无法删除联盟。",
   "regionSettings.signInRequired": "请使用 Google 登录以配置表单。",
-  "regionSettings.accessDenied": "只有管理员、版主、执政官或本区域官员可以编辑区域表单。",
+  "regionSettings.accessDenied": "只有管理员、版主、执政官或当前轮值联盟的官员/R4可以编辑区域表单。",
   "regionSettings.readyStatus": "为本区域玩家配置表单、关闭时间和秘密链接。",
   "regionSettings.openFailed": "无法打开区域设置。",
   "region.regionPill": "{label} {region}",

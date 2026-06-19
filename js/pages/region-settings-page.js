@@ -26,7 +26,7 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=012';
+} from '../services/region-db.js?v=013';
 import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=256';
 import { makePublicShareUrl } from '../core/share-links.js?v=256';
 
@@ -1322,7 +1322,7 @@ async function load(user) {
   const canManageFullRegion = canManageRegion(profile, region, user);
   const canLeadActiveRotation = canLeadCurrentRotation(profile, region, user, baseSettings || {});
   if (!canManageFullRegion && !canLeadActiveRotation) {
-    setStatus(t('regionSettings.accessDenied', 'Only an admin, moderator, consul or officer of their own region can edit the region form.'), 'error');
+    setStatus(t('regionSettings.accessDenied', 'Only an admin, moderator, consul, or active-alliance officer/R4 can edit the region form.'), 'error');
     return;
   }
 

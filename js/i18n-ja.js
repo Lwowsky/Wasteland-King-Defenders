@@ -1351,7 +1351,7 @@ window.WKD_TRANSLATIONS.ja = {
   "regionSettings.allianceDeleted": "同盟を削除しました。",
   "regionSettings.allianceDeleteFailed": "同盟を削除できませんでした。",
   "regionSettings.signInRequired": "フォームを設定するにはGoogleでログインしてください。",
-  "regionSettings.accessDenied": "地域フォームを編集できるのは管理者、モデレーター、領事、または自分の地域のオフィサーのみです。",
+  "regionSettings.accessDenied": "地域フォームを編集できるのは管理者、モデレーター、領事、または現在担当中の同盟のオフィサー/R4のみです。",
   "regionSettings.readyStatus": "自分の地域のプレイヤー向けにフォーム、締切時間、秘密リンクを設定してください。",
   "regionSettings.openFailed": "地域設定を開けませんでした。",
   "region.regionPill": "{label} {region}",

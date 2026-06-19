@@ -1351,7 +1351,7 @@ window.WKD_TRANSLATIONS.ko = {
   "regionSettings.allianceDeleted": "연맹이 삭제되었습니다.",
   "regionSettings.allianceDeleteFailed": "연맹을 삭제할 수 없습니다.",
   "regionSettings.signInRequired": "폼을 설정하려면 Google로 로그인하세요.",
-  "regionSettings.accessDenied": "관리자, 모더레이터, 영사 또는 자신의 지역 장교만 지역 폼을 수정할 수 있습니다.",
+  "regionSettings.accessDenied": "지역 양식은 관리자, 모더레이터, 영사 또는 현재 활성 동맹의 장교/R4만 수정할 수 있습니다.",
   "regionSettings.readyStatus": "자신의 지역 플레이어를 위한 폼, 마감 시간, 비밀 링크를 설정하세요.",
   "regionSettings.openFailed": "지역 설정을 열 수 없습니다.",
   "region.regionPill": "{label} {region}",

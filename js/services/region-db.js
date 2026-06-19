@@ -1651,19 +1651,10 @@ export async function saveRegionSettings(user, region, settings) {
   const enabledNow = forceCloseNow ? false : (forceOpenNow ? true : Boolean(settings.enabled));
   const justOpened = forceOpenNow || Boolean(settings.openNewCycle) || (!oldSettings.enabled && enabledNow);
   const openNewCycle = !forceCloseNow && (Boolean(settings.openNewCycle) || (!oldSettings.enabled && enabledNow));
-  const previousHostAlliance = normalizeAllianceTag(oldSettings.activeHostAlliance || oldSettings.hostAlliance || '');
-  const shouldAdvanceRotation = Boolean(
-    openNewCycle
-    && rotationEnabled
-    && rotationAlliances.length > 1
-    && previousHostAlliance
-  );
-  if (shouldAdvanceRotation) {
-    const nextIndex = rotationActiveIndex + 1;
-    rotationActiveIndex = nextIndex < rotationAlliances.length
-      ? nextIndex
-      : (rotationLoop ? 0 : rotationActiveIndex);
-  }
+  // v013: do not silently advance rotation when somebody presses “Start now”.
+  // The active alliance is selected in the rotation modal and must remain stable
+  // during the opened cycle. Silent auto-advance made the current officer/R4 lose
+  // access immediately after opening registration.
   const baseCycleId = makeCycleId(eventStartAtMs);
   const currentCycleId = openNewCycle ? `${baseCycleId}-${Date.now()}` : (oldSettings.currentCycleId || baseCycleId);
   const now = firestoreMod.serverTimestamp();
