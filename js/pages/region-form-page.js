@@ -24,7 +24,7 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=024';
+} from '../services/region-db.js?v=026';
 import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches } from '../services/region-table-cache.js?v=025';
 
 const $ = selector => document.querySelector(selector);

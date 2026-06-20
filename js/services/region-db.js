@@ -1865,12 +1865,16 @@ export async function saveRegionSettings(user, region, settings) {
   }
 
   if (openNewCycle) {
-    await publishSnapshotToRegionTableCache(user, {
-      region: safeRegion,
-      cycleId: currentCycleId || '',
-      settings: clean || {},
-      rows: []
-    }).catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] empty D1 table for new cycle skipped:', error); });
+    // v026: D1 /api/region-form/settings already resets the active table and runs server auto-submit.
+    // Do NOT publish an empty table snapshot afterwards, because it overwrites auto-submitted rows.
+    if (!d1Save || d1Save.ok === false || d1Save.skipped) {
+      await publishSnapshotToRegionTableCache(user, {
+        region: safeRegion,
+        cycleId: currentCycleId || '',
+        settings: clean || {},
+        rows: []
+      }).catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] empty D1 table for new cycle skipped:', error); });
+    }
     await rotateRegionPublicSharesForNewCycle(user, safeRegion).catch(() => null);
   }
 

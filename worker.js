@@ -1501,14 +1501,22 @@ async function autoSubmitTemplatesForRegionCycle(db, region, cycleId = 'active',
     .first()
     .catch(() => null);
   if (previousRun) {
-    return { skipped: true, reason: 'already-ran', createdCount: Number(previousRun.created_count || 0), skippedCount: Number(previousRun.skipped_count || 0), rowsRead: 1, rowsWritten: 0 };
+    const currentRowsCount = await readStoredTableRowsCount(db, safeRegion, safeCycle).catch(() => 0);
+    const previousCreated = Number(previousRun.created_count || 0) || 0;
+    // v026: v025 could run auto-submit and then a client empty snapshot wiped the table.
+    // If the run says rows were created but the active table is empty, allow one repair rerun.
+    if (currentRowsCount > 0 || previousCreated <= 0) {
+      return { skipped: true, reason: 'already-ran', createdCount: previousCreated, skippedCount: Number(previousRun.skipped_count || 0), rowsCount: currentRowsCount, rowsRead: 2, rowsWritten: 0 };
+    }
   }
 
   const nowMs = Date.now();
-  await db.prepare(
-    `INSERT INTO region_auto_submit_runs (region, cycle_id, version, templates_count, created_count, skipped_count, updated_at_ms)
-     VALUES (?1, ?2, ?3, 0, 0, 0, ?4)`
-  ).bind(safeRegion, safeCycle, nowMs, nowMs).run();
+  if (!previousRun) {
+    await db.prepare(
+      `INSERT INTO region_auto_submit_runs (region, cycle_id, version, templates_count, created_count, skipped_count, updated_at_ms)
+       VALUES (?1, ?2, ?3, 0, 0, 0, ?4)`
+    ).bind(safeRegion, safeCycle, nowMs, nowMs).run();
+  }
 
   const templatesCountRow = await db.prepare(
     `SELECT COUNT(*) AS count FROM region_auto_submit_templates WHERE region = ?1 AND enabled = 1`
