@@ -27,7 +27,7 @@ const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
 const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STAFF_REFRESH_LIMIT = 5;
-const STAFF_CACHE_BUILD = 'v035-staff-farms-toggle';
+const STAFF_CACHE_BUILD = 'v036-staff-nick-subline';
 
 const STAFF_PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const STAFF_PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -138,7 +138,7 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=035',
+  'region-table': './region-table-page.js?v=036',
   'region-settings': './region-settings-page.js?v=026',
   'action-log': './action-log-page.js?v=019'
 };
@@ -522,24 +522,40 @@ async function loadRows(options = {}) {
 }
 
 
-function staffKindBadge(row = {}) {
-  const farm = Boolean(row.isFarm);
-  const label = farm ? t('staff.farm', 'Ферма') : t('staff.mainPlayer', 'Основа');
-  return `<span class="staff-kind-badge ${farm ? 'is-farm' : 'is-main'}">${esc(label)}</span>`;
+function staffMainFarmCount(row = {}) {
+  const direct = Number(row.farmCount ?? row.farmsCount ?? row.farms_count);
+  if (Number.isFinite(direct) && direct >= 0) return direct;
+  const publicKey = String(row.publicKey || '').trim();
+  const nick = String(row.nickname || row.gameNick || '').trim().toLowerCase();
+  return dedupeStaffRowsHard(staffSnapshotRows)
+    .filter(item => item?.isFarm)
+    .filter(item => {
+      const ownerKey = String(item.ownerPublicKey || '').trim();
+      const ownerNick = String(item.ownerNickname || item.mainNickname || '').trim().toLowerCase();
+      return (publicKey && ownerKey && ownerKey === publicKey) || (nick && ownerNick && ownerNick === nick);
+    }).length;
+}
+function staffNicknameSubline(row = {}) {
+  if (row.isFarm) {
+    const owner = row.ownerNickname || row.mainNickname || '—';
+    return `${t('account.farm', 'Ферма')} · ${t('account.mainPlayer', 'Основний гравець')}: ${owner}`;
+  }
+  if (!Boolean($('#staffIncludeFarmsToggle')?.checked)) return '';
+  return `${t('account.mainPlayer', 'Основний гравець')} · ${tv('stats.farmCountShort', '{count} ферм', { count: staffMainFarmCount(row) })}`;
 }
 
 function renderRows() {
   const body = $('#staffPlayersBody');
   if (!body) return;
   if (!currentRows.length) {
-    body.innerHTML = `<tr><td colspan="8">${esc(t('staff.empty', 'Гравців не знайдено.'))}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7">${esc(t('staff.empty', 'Гравців не знайдено.'))}</td></tr>`;
     return;
   }
   body.innerHTML = currentRows.map(row => {
     const canEdit = Boolean(canStaffEditPlayer(currentUser, currentProfile, row));
-    return `<tr>
-      <td><strong>${esc(row.nickname || row.gameNick || '—')}</strong>${row.isFarm && row.ownerNickname ? `<small>${esc(t('staff.owner', 'Власник'))}: ${esc(row.ownerNickname)}</small>` : ''}</td>
-      <td>${staffKindBadge(row)}</td>
+    const subLine = staffNicknameSubline(row);
+    return `<tr class="${row.isFarm ? 'is-farm-row' : 'is-main-row'}">
+      <td><strong>${esc(row.nickname || row.gameNick || '—')}</strong>${subLine ? `<small class="${row.isFarm ? 'staff-farm-owner' : ''}">${esc(subLine)}</small>` : ''}</td>
       <td>${badge('region', row.region || '—')}</td>
       <td>${badge('alliance', row.alliance || '—')}</td>
       <td>${badge('rank', row.rank || 'p1')}</td>

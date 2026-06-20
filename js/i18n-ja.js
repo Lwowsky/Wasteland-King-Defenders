@@ -2550,9 +2550,5 @@ window.WKD_TRANSLATIONS.ja = {
   'players.searchNickAlliance': "ニック/同盟で検索",
   'players.resetFilters': "フィルターをリセット",
 
-  'staff.playerKind': 'プロフィール',
-  'staff.mainPlayer': 'メイン',
-  'staff.farm': 'ファーム',
-  'staff.owner': '所有者',
 
 };

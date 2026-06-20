@@ -2550,9 +2550,5 @@ window.WKD_TRANSLATIONS.ru = {
   'players.searchNickAlliance': "Поиск по нику / альянсу",
   'players.resetFilters': "Сбросить фильтры",
 
-  'staff.playerKind': 'Профиль',
-  'staff.mainPlayer': 'Основа',
-  'staff.farm': 'Ферма',
-  'staff.owner': 'Владелец',
 
 };

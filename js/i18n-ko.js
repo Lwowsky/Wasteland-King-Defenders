@@ -2550,9 +2550,5 @@ window.WKD_TRANSLATIONS.ko = {
   'players.searchNickAlliance': "닉네임/동맹 검색",
   'players.resetFilters': "필터 초기화",
 
-  'staff.playerKind': '프로필',
-  'staff.mainPlayer': '본계정',
-  'staff.farm': '팜',
-  'staff.owner': '소유자',
 
 };

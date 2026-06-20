@@ -2548,9 +2548,5 @@ window.WKD_TRANSLATIONS.ar = {
   'players.searchNickAlliance': "البحث بالاسم / التحالف",
   'players.resetFilters': "إعادة ضبط الفلاتر",
 
-  'staff.playerKind': 'الملف',
-  'staff.mainPlayer': 'أساسي',
-  'staff.farm': 'مزرعة',
-  'staff.owner': 'المالك',
 
 };
