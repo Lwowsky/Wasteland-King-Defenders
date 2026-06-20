@@ -2540,5 +2540,6 @@ window.WKD_TRANSLATIONS.zh = {
   "account.deleteOwnAccountConfirmPlaceholder": "DELETE",
   "account.deleteOwnAccountConfirmHint": "这是防止误删账号的额外保护。",
   "account.deleteOwnAccountFailed": "无法删除账号。",
-  "players.regionAccessDenied": "你没有访问此区域的权限。",
+  "players.regionAccessDenied": "你没有访问此区域的权限。",  "region.form.chooseAlliance": "选择联盟",
+
 };

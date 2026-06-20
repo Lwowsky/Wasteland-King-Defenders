@@ -2540,5 +2540,6 @@ window.WKD_TRANSLATIONS.pl = {
   "account.deleteOwnAccountConfirmPlaceholder": "DELETE",
   "account.deleteOwnAccountConfirmHint": "To dodatkowe zabezpieczenie przed przypadkowym usunięciem konta.",
   "account.deleteOwnAccountFailed": "Nie udało się usunąć konta.",
-  "players.regionAccessDenied": "Nie masz dostępu do tego regionu.",
+  "players.regionAccessDenied": "Nie masz dostępu do tego regionu.",  "region.form.chooseAlliance": "Wybierz sojusz",
+
 };

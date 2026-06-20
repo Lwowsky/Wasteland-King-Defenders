@@ -56,7 +56,7 @@
 
     <div class="region-grid">
       <label class="region-field"><span data-i18n="account.nickname">Нік у грі <b>*</b></span><input id="wrNickname" required autocomplete="off" /></label>
-      <label class="region-field"><span data-i18n="account.alliance">Альянс <b>*</b></span><input id="wrAlliance" required maxlength="3" autocomplete="off" list="wrAllianceList" /><datalist id="wrAllianceList"></datalist></label>
+      <label class="region-field"><span data-i18n="account.alliance">Альянс <b>*</b></span><div class="region-alliance-control"><input id="wrAlliance" required maxlength="3" autocomplete="off" list="wrAllianceList" /><select id="wrAllianceSelect" class="region-alliance-select" aria-label="Альянс" hidden></select><datalist id="wrAllianceList"></datalist></div></label>
       <label class="region-field"><span data-i18n="regionForm.mainTroopType">Основний тип військ <b>*</b></span><select id="wrTroopType" required><option value="" data-i18n="common.selectType">Вибери тип</option><option value="fighter" data-i18n="troop.fighter">Бійці</option><option value="rider" data-i18n="troop.rider">Наїзники</option><option value="shooter" data-i18n="troop.shooter">Стрільці</option></select></label>
       <label class="region-field"><span data-i18n="playerEdit.tier">Тір <b>*</b></span><select id="wrTier" required></select></label>
       <label class="region-field"><span data-i18n="regionForm.lairLevel">Рівень лігва</span><input id="wrLairLevel" inputmode="numeric" placeholder="Наприклад: 45" data-i18n-placeholder="regionForm.example45" /></label>

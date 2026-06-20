@@ -2540,5 +2540,6 @@ window.WKD_TRANSLATIONS.ru = {
   "account.deleteOwnAccountConfirmPlaceholder": "DELETE",
   "account.deleteOwnAccountConfirmHint": "Это дополнительная защита от случайного удаления аккаунта.",
   "account.deleteOwnAccountFailed": "Не удалось удалить аккаунт.",
-  "players.regionAccessDenied": "Нет доступа к этому региону.",
+  "players.regionAccessDenied": "Нет доступа к этому региону.",  "region.form.chooseAlliance": "Выбери альянс",
+
 };

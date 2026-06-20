@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=008';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=252';
+} from '../services/region-db.js?v=016';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=016';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -86,6 +86,7 @@ let farmFromLink = '';
 let formSettings = null;
 let selectedFarmId = 'main';
 let regionAlliances = [];
+let shareAlliances = [];
 let regionOptions = [];
 let countdownId = null;
 let ready = false;
@@ -289,14 +290,39 @@ function renderCustomFields(settings = formSettings, saved = {}) {
 
 function renderAllianceOptions() {
   const list = $('#wrAllianceList');
-  if (!list) return;
-  list.innerHTML = regionAlliances
+  const select = $('#wrAllianceSelect');
+  const input = $('#wrAlliance');
+  const options = regionAlliances
     .map(item => {
       const tag = String(item.tag || item.id || '').trim();
       const label = [tag, item.name].filter(Boolean).join(' — ');
-      return tag ? `<option value="${esc(tag)}" label="${esc(label)}"></option>` : '';
+      return tag ? { tag, label } : null;
     })
-    .join('');
+    .filter(Boolean);
+  if (list) {
+    list.innerHTML = options.map(item => `<option value="${esc(item.tag)}" label="${esc(item.label)}"></option>`).join('');
+  }
+  if (select) {
+    select.hidden = !options.length;
+    select.innerHTML = `<option value="">${esc(t('region.form.chooseAlliance', 'Вибери альянс'))}</option>`
+      + options.map(item => `<option value="${esc(item.tag)}">${esc(item.label || item.tag)}</option>`).join('');
+  }
+  syncAllianceSelect(input?.value || '');
+}
+
+function syncAllianceSelect(value = '') {
+  const select = $('#wrAllianceSelect');
+  if (!select || select.hidden) return;
+  const tag = allianceTag3(value || '');
+  const hasOption = [...select.options].some(option => option.value === tag);
+  select.value = hasOption ? tag : '';
+}
+
+function setAllianceInputValue(value = '') {
+  const input = $('#wrAlliance');
+  const tag = allianceTag3(value || '');
+  if (input) input.value = tag;
+  syncAllianceSelect(tag);
 }
 
 function allianceOptionsFromSettings(settings = formSettings || {}) {
@@ -311,13 +337,15 @@ function allianceOptionsFromSettings(settings = formSettings || {}) {
 }
 
 async function loadRegionAlliancesForForm() {
-  regionAlliances = [];
+  regionAlliances = Array.isArray(shareAlliances) ? [...shareAlliances] : [];
   if (!currentRegion) return;
-  try {
-    regionAlliances = await listRegionAlliances(currentRegion);
-  } catch (error) {
-    if (window.WKD_DEBUG) console.warn('[WKD] region form alliances skipped:', error);
-    regionAlliances = [];
+  if (!regionAlliances.length) {
+    try {
+      regionAlliances = await listRegionAlliances(currentRegion);
+    } catch (error) {
+      if (window.WKD_DEBUG) console.warn('[WKD] region form alliances skipped:', error);
+      regionAlliances = [];
+    }
   }
   if (!regionAlliances.length) regionAlliances = allianceOptionsFromSettings(formSettings);
   renderAllianceOptions();
@@ -550,6 +578,7 @@ function fillSavedRegistration(row, options = {}) {
   const copyEventFields = options.copyEventFields !== false;
   $('#wrNickname').value = row.nickname || $('#wrNickname').value;
   $('#wrAlliance').value = row.alliance || $('#wrAlliance').value;
+  syncAllianceSelect($('#wrAlliance')?.value || '');
   renderTroopOptions(formSettings);
   fillTierSelect($('#wrTier'), row.tier || 'T10', formSettings);
   $('#wrTroopType').value = row.troopType || '';
@@ -883,6 +912,7 @@ async function prepareForm(settings) {
 async function resolveShortLinkSettings() {
   const resolved = await resolveRegionShareLink(shortCodeFromLink);
   currentRegion = resolved.region;
+  shareAlliances = Array.isArray(resolved.alliances) ? resolved.alliances : [];
   return resolved.settings;
 }
 
@@ -1060,6 +1090,8 @@ function handleLanguageChange() {
 
 function bind() {
   $('#wastelandForm')?.addEventListener('submit', handleSubmit);
+  $('#wrAllianceSelect')?.addEventListener('change', event => setAllianceInputValue(event.currentTarget.value));
+  $('#wrAlliance')?.addEventListener('input', event => syncAllianceSelect(event.currentTarget.value));
   document.addEventListener('change', event => {
     if (event.target?.matches?.('#wrExtraEnabled, [data-extra-troop]')) toggleExtraFields();
   });

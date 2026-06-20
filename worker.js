@@ -1176,6 +1176,13 @@ async function handleRegionAlliancesRead(request, env) {
   return json({ ok: true, region, items, version: Date.now(), usage: { d1RowsRead: Math.max(1, items.length) }, source: 'cloudflare-d1-region-alliances' }, 200, 'private, no-store');
 }
 
+async function readPublicRegionAlliancesD1(db, region) {
+  const safeRegion = normalizeRegion(region);
+  if (!safeRegion) return [];
+  const result = await db.prepare(`SELECT region, tag, name, note, color_hue, color_mode, updated_at_ms, updated_by FROM region_alliances WHERE region = ?1 ORDER BY tag ASC`).bind(safeRegion).all().catch(() => ({ results: [] }));
+  return (result?.results || []).map(allianceRowToObject).filter(Boolean);
+}
+
 async function handleRegionAlliancesPut(request, env) {
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
@@ -1295,7 +1302,9 @@ async function handleRegionFormShareRead(request, env, codeValue) {
   if (!code) return json({ ok: false, error: 'share_code_required' }, 400);
   const form = await readRegionFormShareD1(db, code);
   if (!form) return json({ ok: false, error: 'share_not_found' }, 404);
-  return json({ ok: true, form, usage: { d1RowsRead: 1 }, source: 'cloudflare-d1-form-settings' }, 200, 'public, max-age=60');
+  const alliances = await readPublicRegionAlliancesD1(db, form.region);
+  const fallbackAlliances = Array.isArray(form.settings?.rotationAlliances) ? form.settings.rotationAlliances : [];
+  return json({ ok: true, form, alliances: alliances.length ? alliances : fallbackAlliances, usage: { d1RowsRead: Math.max(1, alliances.length || fallbackAlliances.length || 1) }, source: 'cloudflare-d1-form-settings' }, 200, 'public, max-age=60');
 }
 
 async function handleRegionFormSettingsPut(request, env) {
@@ -1814,7 +1823,8 @@ async function handleRegionTableRegistration(request, env) {
     canonicalForm = await readRegionFormShareD1(db, shareCode);
     if (!canonicalForm) return json({ ok: false, error: "share_not_found" }, 404);
     if (normalizeRegion(canonicalForm.region) !== region) return json({ ok: false, error: "share_region_mismatch" }, 403);
-    if (normalizeCycleId(canonicalForm.cycleId || "active") !== cycleId) return json({ ok: false, error: "share_cycle_mismatch" }, 409);
+    const canonicalCycleId = normalizeCycleId(canonicalForm.cycleId || canonicalForm.settings?.currentCycleId || "active");
+    cycleId = canonicalCycleId || cycleId;
     if (!isRegionFormOpenD1(canonicalForm.settings || {})) return json({ ok: false, error: "region_form_closed" }, 423, "private, no-store");
   }
 
@@ -1830,7 +1840,10 @@ async function handleRegionTableRegistration(request, env) {
   const currentSettings = sanitizeSettings({ ...(parseJson(meta?.settings_json, {}) || {}), ...(canonicalForm?.settings || {}), currentCycleId: cycleId });
   if (isRegionFormSubmission(body)) {
     if (!canonicalForm) return json({ ok: false, error: "region_form_settings_not_found" }, 404, "private, no-store");
-    if (canonicalForm?.cycleId && normalizeCycleId(canonicalForm.cycleId) !== cycleId) return json({ ok: false, error: "region_form_cycle_mismatch" }, 409, "private, no-store");
+    if (canonicalForm?.cycleId && normalizeCycleId(canonicalForm.cycleId) !== cycleId) {
+      if (!user?.uid) cycleId = normalizeCycleId(canonicalForm.cycleId);
+      else return json({ ok: false, error: "region_form_cycle_mismatch" }, 409, "private, no-store");
+    }
     if (!isRegionFormOpenD1(currentSettings)) return json({ ok: false, error: "region_form_closed" }, 423, "private, no-store");
   }
   if (meta) await migrateLegacyTableRowsIfNeeded(db, meta);

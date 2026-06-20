@@ -563,12 +563,15 @@ function normalizeRegionFormResponse(data = {}) {
   const settings = sanitizeSettings(item.settings || data.settings || {});
   const cycleId = cleanText(item.cycleId || item.cycle_id || data.cycleId || settings.currentCycleId || '', 80);
   if (cycleId && !settings.currentCycleId) settings.currentCycleId = cycleId;
+  const region = cleanRegion(item.region || data.region);
+  const alliances = sanitizeAllianceList(data.alliances || item.alliances || settings.rotationAlliances || [], region);
   return {
     ok: data.ok !== false,
-    region: cleanRegion(item.region || data.region),
+    region,
     code: cleanCode(item.code || data.code || ''),
     cycleId,
     settings,
+    alliances,
     version: Number(item.version || item.updatedAtMs || data.version || 0) || 0,
     updatedAtMs: Number(item.updatedAtMs || data.updatedAtMs || 0) || 0,
     cached: true,

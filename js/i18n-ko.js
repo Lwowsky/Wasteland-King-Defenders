@@ -2540,5 +2540,6 @@ window.WKD_TRANSLATIONS.ko = {
   "account.deleteOwnAccountConfirmPlaceholder": "DELETE",
   "account.deleteOwnAccountConfirmHint": "실수로 계정을 삭제하지 않도록 하는 추가 보호입니다.",
   "account.deleteOwnAccountFailed": "계정을 삭제하지 못했습니다.",
-  "players.regionAccessDenied": "이 지역에 접근할 권한이 없습니다.",
+  "players.regionAccessDenied": "이 지역에 접근할 권한이 없습니다.",  "region.form.chooseAlliance": "동맹 선택",
+
 };

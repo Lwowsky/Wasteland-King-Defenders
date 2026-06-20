@@ -2540,5 +2540,6 @@ window.WKD_TRANSLATIONS.ja = {
   "account.deleteOwnAccountConfirmPlaceholder": "DELETE",
   "account.deleteOwnAccountConfirmHint": "誤ってアカウントを削除しないための追加確認です。",
   "account.deleteOwnAccountFailed": "アカウントを削除できませんでした。",
-  "players.regionAccessDenied": "この地域へのアクセス権がありません。",
+  "players.regionAccessDenied": "この地域へのアクセス権がありません。",  "region.form.chooseAlliance": "同盟を選択",
+
 };

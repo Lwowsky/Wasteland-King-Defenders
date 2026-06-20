@@ -2540,5 +2540,6 @@ window.WKD_TRANSLATIONS.vi = {
   "account.deleteOwnAccountConfirmPlaceholder": "DELETE",
   "account.deleteOwnAccountConfirmHint": "Đây là lớp bảo vệ bổ sung để tránh xóa tài khoản ngoài ý muốn.",
   "account.deleteOwnAccountFailed": "Không thể xóa tài khoản.",
-  "players.regionAccessDenied": "Bạn không có quyền truy cập khu vực này.",
+  "players.regionAccessDenied": "Bạn không có quyền truy cập khu vực này.",  "region.form.chooseAlliance": "Chọn liên minh",
+
 };

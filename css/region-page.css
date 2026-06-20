@@ -127,3 +127,4 @@
 @media (max-width:1279px){
   .profile-tab-panel[data-profile-panel="region"] .region-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+.region-alliance-control{display:grid;grid-template-columns:minmax(0,1fr)minmax(112px,.32fr);gap:8px;align-items:center}.region-alliance-control input,.region-alliance-control select{width:100%;min-width:0}.region-alliance-select[hidden]{display:none!important}@media (max-width:640px){.region-alliance-control{grid-template-columns:1fr}.region-alliance-select:not([hidden]){display:block}}
