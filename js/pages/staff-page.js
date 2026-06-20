@@ -27,7 +27,7 @@ const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
 const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STAFF_REFRESH_LIMIT = 5;
-const STAFF_CACHE_BUILD = 'v037-staff-farms-region-visible';
+const STAFF_CACHE_BUILD = 'v038-staff-owner-enrich';
 
 const STAFF_PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const STAFF_PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -114,6 +114,22 @@ function mergeStaffRows(primary = [], secondary = []) {
     const preferNewest = staffRowTime(normalized) >= staffRowTime(existing || {});
     if (preferEditable || (!existing?.uid && preferNewest) || (existing?.__publicSnapshotOnly && !normalized.__publicSnapshotOnly)) {
       map.set(key, { ...(existing || {}), ...normalized });
+    } else if (existing) {
+      // Keep the editable/mirror row, but enrich it with public-cache farm owner fields.
+      // The editable mirror may not contain ownerNickname/ownerPublicKey, while stats-farms.json does.
+      map.set(key, {
+        ...existing,
+        ownerPublicKey: existing.ownerPublicKey || normalized.ownerPublicKey || '',
+        ownerNickname: existing.ownerNickname || normalized.ownerNickname || normalized.mainNickname || normalized.ownerName || '',
+        mainNickname: existing.mainNickname || normalized.mainNickname || normalized.ownerNickname || '',
+        ownerName: existing.ownerName || normalized.ownerName || '',
+        farmKey: existing.farmKey || normalized.farmKey || '',
+        isFarm: Boolean(existing.isFarm || normalized.isFarm),
+        __isFarm: Boolean(existing.__isFarm || normalized.__isFarm),
+        publicKey: existing.publicKey || normalized.publicKey || normalized.ownerPublicKey || '',
+        farmCount: existing.farmCount ?? normalized.farmCount ?? existing.farmsCount ?? normalized.farmsCount,
+        farmsCount: existing.farmsCount ?? normalized.farmsCount ?? existing.farmCount ?? normalized.farmCount
+      });
     }
   });
   return [...map.values()].sort((a, b) => staffRowTime(b) - staffRowTime(a));
@@ -558,17 +574,25 @@ function staffMainFarmCount(row = {}) {
     }).length;
 }
 function staffOwnerNickname(row = {}) {
-  const direct = String(row.ownerNickname || row.mainNickname || '').trim();
+  const direct = String(row.ownerNickname || row.mainNickname || row.ownerName || '').trim();
   if (direct) return direct;
   const ownerKey = String(row.ownerPublicKey || '').trim();
   const ownerNick = String(row.ownerName || '').trim().toLowerCase();
-  const match = dedupeStaffRowsHard(staffSnapshotRows).find(item => {
+  const farmNick = String(row.nickname || row.gameNick || '').trim().toLowerCase();
+  const allRows = dedupeStaffRowsHard(staffSnapshotRows);
+  const match = allRows.find(item => {
     if (item?.isFarm) return false;
     const publicKey = String(item.publicKey || '').trim();
     const nickname = String(item.nickname || item.gameNick || '').trim().toLowerCase();
     return (ownerKey && publicKey && ownerKey === publicKey) || (ownerNick && nickname && ownerNick === nickname);
   });
-  return String(match?.nickname || match?.gameNick || '').trim() || '—';
+  if (match?.nickname || match?.gameNick) return String(match.nickname || match.gameNick).trim();
+  const linkedFarm = allRows.find(item => {
+    if (!item?.isFarm) return false;
+    const nickname = String(item.nickname || item.gameNick || '').trim().toLowerCase();
+    return farmNick && nickname === farmNick && (item.ownerNickname || item.mainNickname || item.ownerName);
+  });
+  return String(linkedFarm?.ownerNickname || linkedFarm?.mainNickname || linkedFarm?.ownerName || '').trim() || '—';
 }
 function staffNicknameSubline(row = {}) {
   if (row.isFarm) {
