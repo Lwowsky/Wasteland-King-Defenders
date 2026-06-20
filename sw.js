@@ -1,4 +1,4 @@
-const WKD_SW_VERSION = 'wkd-sw-v018';
+const WKD_SW_VERSION = 'wkd-sw-v019';
 const STATIC_CACHE = `${WKD_SW_VERSION}-static`;
 const RUNTIME_CACHE = `${WKD_SW_VERSION}-runtime`;
 const STATIC_ASSET_RE = /\.(?:html|css|js|mjs|png|webp|svg|ico|json)$/i;

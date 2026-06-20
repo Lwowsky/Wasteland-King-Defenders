@@ -1916,8 +1916,11 @@ async function handleRegionTableRegistration(request, env) {
 
   const key = row.id || `${row.uid || row.publicKey || "guest"}:${row.farmId || "main"}`;
   const nextRow = { ...row, id: existingRow?.id || key };
+  if (!user?.uid && isPublicRegistration && existingRow) {
+    return json({ ok: false, error: "registration-nickname-duplicate-region", existing: true, notWritten: true, usage: { d1RowsRead: 3, d1RowsWritten: 0 } }, 409, "private, no-store");
+  }
   const duplicate = await findDuplicateNicknameRow(db, region, cycleId, normalizedNickname(nextRow.nickname), nextRow);
-  if (duplicate) return json({ ok: false, error: "registration-nickname-duplicate-region" }, 409);
+  if (duplicate) return json({ ok: false, error: "registration-nickname-duplicate-region", existing: true, notWritten: true, usage: { d1RowsRead: 3, d1RowsWritten: 0 } }, 409, "private, no-store");
 
   const unchanged = existingRow ? sameRegistrationData(existingRow, nextRow) : false;
   const forceUpdate = Boolean(body?.forceUpdate);

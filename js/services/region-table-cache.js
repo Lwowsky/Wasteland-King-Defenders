@@ -136,18 +136,19 @@ function removeLocalJsonCache(kind, id) {
   try { localStorage.removeItem(localCacheKey(kind, id)); } catch {}
 }
 
-function browserRegistrationKey(region = '', cycleId = 'active') {
+function browserRegistrationKey(region = '', cycleId = 'active', nickname = '') {
   const safeRegion = cleanRegion(region) || 'region';
   const safeCycle = cleanText(cycleId || 'active', 80).replace(/[^A-Za-z0-9._:-]/g, '-');
-  const key = `wkd.d1PublicRegistrationKey.${safeRegion}.${safeCycle}`;
+  const nickKey = cleanText(nickname || 'guest', 80).toLowerCase().replace(/[^a-z0-9а-яіїєґ_-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'guest';
+  const key = `wkd.d1PublicRegistrationKey.${safeRegion}.${safeCycle}.${nickKey}`;
   try {
     const existing = localStorage.getItem(key);
     if (existing) return cleanText(existing, 120);
-    const value = `guest-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+    const value = `guest-${safeRegion}-${safeCycle}-${nickKey}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     localStorage.setItem(key, value);
     return value;
   } catch {
-    return `guest-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+    return `guest-${safeRegion}-${safeCycle}-${nickKey}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   }
 }
 
@@ -733,7 +734,7 @@ export async function saveRegionRegistrationD1First(user, region, values = {}, s
   const cycleId = cleanText(settings?.currentCycleId || values?.cycleId || '', 80);
   const token = await getFirebaseToken(user);
   const farmId = cleanText(values?.farmId || 'main', 80) || 'main';
-  const publicKey = browserRegistrationKey(safeRegion, cycleId);
+  const publicKey = browserRegistrationKey(safeRegion, cycleId, values?.nickname || values?.gameNick || values?.name || '');
   const uid = cleanText(user?.uid || '', 120);
   const rowKey = uid ? `${uid}_${farmId}_${cycleId}` : `${publicKey}_${farmId}_${cycleId}`;
   const source = uid ? 'account-d1' : 'public-link-d1';

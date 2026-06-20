@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=018';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=018';
+} from '../services/region-db.js?v=019';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=019';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -775,8 +775,7 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
     if (currentRegion) localStorage.setItem('wkd.players.activeRegion', currentRegion);
     window.dispatchEvent(new CustomEvent('wkd:region-registration-saved', { detail: { region: currentRegion, farmId: savedRequest?.farmId || values.farmId || 'main' } }));
     if (!currentUser) {
-      localStorage.setItem(publicLockKey(), String(Date.now()));
-      lockForm(t('region.requestSavedGuestLocked', 'Request saved. Now only a consul or region officer can change it.'));
+      setStatus(t('region.requestSavedDialogTitle', 'Заявку відправлено'), 'success');
       window.WKD?.actionDoneDialog?.({
         title: t('region.requestSavedDialogTitle', 'Заявку відправлено'),
         message: tv('region.requestSavedDialogMessage', 'Заявку для регіону R{region} збережено. Її вже видно у таблиці регіону.', { region: currentRegion }),
@@ -869,10 +868,6 @@ async function handleSubmit(event) {
     setStatus(t('region.formClosedDraftAllowed', 'The registration page is open for preparation. You can fill in the data, but sending is available only when the region opens registration.'), 'error');
     return;
   }
-  if (!currentUser && localStorage.getItem(publicLockKey())) {
-    lockForm(t('region.alreadySubmittedBrowserTable', 'A request has already been sent from this browser. Only a consul or officer can change it in the region table.'));
-    return;
-  }
   const values = readForm();
   const errors = validate(values);
   if (errors.length) {
@@ -939,10 +934,6 @@ async function loadPublicForm(region) {
   if (!open) return;
   const draft = loadDraft();
   if (draft) fillSavedRegistration(draft);
-  if (localStorage.getItem(publicLockKey())) {
-    lockForm(t('region.alreadySubmittedBrowser', 'A request has already been sent from this browser. Only a consul or region officer can change it.'));
-    return;
-  }
   setStatus(t('region.publicCanSubmit', 'You can fill out the request without Google sign-in. After sending, only a consul or officer can edit it.'), 'muted');
 }
 
