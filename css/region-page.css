@@ -158,13 +158,13 @@
 .region-placement-cell{padding-inline:8px!important;}
 .region-placement-card{margin-inline:auto;justify-content:center;}
 .region-placement-card .placement-edit{margin-left:0;}
-.region-placement-card .region-request-edit-btn{width:34px;height:58px;min-width:34px;border-radius:14px;background:rgba(255,255,255,.04);box-shadow:none;}
+.region-placement-card .region-request-edit-btn{width:34px;height:auto;min-height:58px;min-width:34px;align-self:stretch;border-radius:14px;background:rgba(255,255,255,.04);box-shadow:none;}
 .region-placement-card .region-request-edit-btn:hover,.region-placement-card .region-request-edit-btn:focus-visible{background:rgba(86,123,235,.18);border-color:rgba(136,160,255,.28);transform:none;}
 @media (max-width:700px){
   .region-public-table{min-width:0;}
   .region-public-table th:nth-child(n),.region-public-table td:nth-child(n){width:auto;min-width:0;}
   .region-placement-card{justify-content:end;}
-  .region-placement-card .region-request-edit-btn{height:42px;}
+  .region-placement-card .region-request-edit-btn{height:42px;min-height:42px;}
 }
 
 

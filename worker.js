@@ -1564,6 +1564,11 @@ function autoSubmitTemplateRowToObject(row = {}) {
   };
 }
 
+function tierNumberForAutoSubmit(value = '') {
+  const match = String(value || '').toUpperCase().match(/T?\s*(\d{1,2})/);
+  return match ? Math.max(0, Math.min(99, Number(match[1]) || 0)) : 0;
+}
+
 function autoSubmitTemplateHash(row = {}) {
   const stable = JSON.stringify({
     nickname: clean(row.nickname || '', 80),
@@ -1664,6 +1669,7 @@ async function autoSubmitTemplatesForRegionCycle(db, region, cycleId = 'active',
   }
 
   const nowMs = Date.now();
+  const minTierNumber = tierNumberForAutoSubmit(settings?.minTier || 'T10') || 10;
   if (!previousRun) {
     await db.prepare(
       `INSERT INTO region_auto_submit_runs (region, cycle_id, version, templates_count, created_count, skipped_count, updated_at_ms)
@@ -1714,6 +1720,7 @@ async function autoSubmitTemplatesForRegionCycle(db, region, cycleId = 'active',
          AND COALESCE(json_extract(row_json, '$.alliance'), '') != ''
          AND COALESCE(json_extract(row_json, '$.troopType'), '') != ''
          AND COALESCE(json_extract(row_json, '$.tier'), '') != ''
+         AND CAST(REPLACE(REPLACE(UPPER(COALESCE(json_extract(row_json, '$.tier'), '')), 'T', ''), ' ', '') AS INTEGER) >= ?6
          AND COALESCE(json_extract(row_json, '$.shift'), '') != ''
        GROUP BY nickname_key
        ORDER BY updated_at_ms DESC
@@ -1724,7 +1731,7 @@ async function autoSubmitTemplatesForRegionCycle(db, region, cycleId = 'active',
          AND r.cycle_id = ?2
          AND r.nickname_key = t.nickname_key
      )`
-  ).bind(safeRegion, safeCycle, nowMs, 'auto-submit-d1', 'Автозаявка').run();
+  ).bind(safeRegion, safeCycle, nowMs, 'auto-submit-d1', 'Автозаявка', minTierNumber).run();
 
   const createdCount = Math.max(0, Number(insertResult?.meta?.changes || 0) || 0);
   const afterCount = Math.max(0, beforeCount + createdCount);
@@ -2378,6 +2385,12 @@ async function handleRegionTableRegistration(request, env) {
   };
   const row = sanitizeTableRow(mergedRawRow);
   if (!row.nickname) return json({ ok: false, error: "registration_nickname_required" }, 400);
+  if (isRegionFormSubmission(body)) {
+    const minTierNumber = tierNumberForAutoSubmit(currentSettings?.minTier || 'T10') || 10;
+    if (tierNumberForAutoSubmit(row.tier) < minTierNumber) {
+      return json({ ok: false, error: "registration-invalid-tier", minTier: currentSettings?.minTier || 'T10' }, 400, "private, no-store");
+    }
+  }
 
   const isOwner = Boolean(user?.uid && (row.uid === user.uid || !row.uid));
   const canWrite = user?.uid

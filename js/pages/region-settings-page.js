@@ -1323,7 +1323,6 @@ async function load(user) {
   currentCanViewAnyRegion = canViewAnyRegion(profile, user);
   updateRegionPill(region);
   await refreshRegionSwitcher();
-  $('#openRegionTableFromSettingsBtn') && ($('#openRegionTableFromSettingsBtn').hidden = false);
 
   const baseSettings = await loadRegionEditorSettings(region);
   const canManageFullRegion = canManageRegion(profile, region, user);
@@ -1430,7 +1429,6 @@ function bind() {
     rotationDragIndex = null;
   });
   $('#copyRegionShareBtn')?.addEventListener('click', () => copyShareLink('regionShareLink'));
-  $('#openRegionTableFromSettingsBtn')?.addEventListener('click', () => { if (currentCanViewAnyRegion) window.location.href = `region-table.html?region=${currentRegion}`; });
   $('#regionAllianceList')?.addEventListener('click', event => {
     const editId = event.target.closest('[data-edit-alliance]')?.dataset.editAlliance;
     const deleteId = event.target.closest('[data-delete-alliance]')?.dataset.deleteAlliance;

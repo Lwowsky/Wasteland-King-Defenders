@@ -4,6 +4,7 @@ import { getGameProfile, getUserFarms, getUserProfile, saveSignedInUser } from '
 import {
   listRegionRegistrations,
   canManageRegion,
+  canLeadCurrentRotation,
   canViewAnyRegion,
   canViewRegion,
   readRegionFromUrl,
@@ -20,8 +21,8 @@ import {
   updateRegionRegistration,
   deleteRegionRegistrations,
   regionRegistrationToPlayer
-} from '../services/region-db.js?v=031';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=031';
+} from '../services/region-db.js?v=040';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=040';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
@@ -532,7 +533,44 @@ function formatNumber(value) {
   return Number.isFinite(number) && number > 0 ? number.toLocaleString('uk-UA') : '—';
 }
 
-function canEditRegionRows() {
+function activeRotationAllianceFromSettings(settings = {}) {
+  const clean = value => String(value || '').trim().replace(/[\/\[\]#?]/g, '').slice(0, 3);
+  const list = Array.isArray(settings.rotationAlliances) ? settings.rotationAlliances : [];
+  const fallback = clean(settings.hostAlliance || settings.activeHostAlliance || settings.alliance || '');
+  if (!settings.rotationEnabled || !list.length) return fallback;
+  const count = list.length;
+  let index = Math.max(0, Math.min(count - 1, Number(settings.rotationActiveIndex) || 0));
+  const handoverAtMs = Number(settings.rotationHandoverAtMs) || 0;
+  if (handoverAtMs && Date.now() >= handoverAtMs) {
+    const closed = Number.isFinite(Number(settings.rotationClosedActiveIndex)) ? Number(settings.rotationClosedActiveIndex) : index;
+    const next = Number.isFinite(Number(settings.rotationNextActiveIndex)) ? Number(settings.rotationNextActiveIndex) : closed + 1;
+    index = next < count ? next : (settings.rotationLoop === false ? Math.min(count - 1, closed) : 0);
+  }
+  const item = list[index] || {};
+  return clean(item.tag || item.id || item.alliance || fallback);
+}
+
+function actorAllianceForCurrentRegion() {
+  const clean = value => String(value || '').trim().replace(/[\/\[\]#?]/g, '').slice(0, 3);
+  const main = getGameProfile(currentProfile || {});
+  const farms = getUserFarms(currentProfile || {});
+  const region = String(currentRegion || '');
+  const match = [main, ...farms].find(item => String(item?.region || '').replace(/[^0-9]/g, '') === region);
+  return clean(match?.alliance || main?.alliance || currentProfile?.alliance || '');
+}
+
+function canEditRegionRows(row = null) {
+  if (!currentUser || !currentRegion) return false;
+  if (canManageRegion(currentProfile || {}, currentRegion, currentUser)) return true;
+  if (!row) return Boolean(canLeadCurrentRotation(currentProfile || {}, currentRegion, currentUser, currentSettings || {}));
+  const rowAlliance = String(row.alliance || '').trim().replace(/[\/\[\]#?]/g, '').slice(0, 3);
+  const activeAlliance = activeRotationAllianceFromSettings(currentSettings || {});
+  const actorAlliance = actorAllianceForCurrentRegion();
+  return Boolean(rowAlliance && activeAlliance && actorAlliance && rowAlliance === activeAlliance && actorAlliance === activeAlliance
+    && canLeadCurrentRotation(currentProfile || {}, currentRegion, currentUser, currentSettings || {}));
+}
+
+function canDeleteRegionRows() {
   return Boolean(currentUser && currentRegion && canManageRegion(currentProfile || {}, currentRegion, currentUser));
 }
 
@@ -585,7 +623,7 @@ function installRegionEditorBridge() {
     region: currentRegion,
     label: currentRegion ? `R${currentRegion}` : t('playerManager.regionList', 'Таблиця регіону'),
     canUpdate: canEditRegionRows(),
-    canDelete: canEditRegionRows(),
+    canDelete: canDeleteRegionRows(),
     canPlan: canEditRegionRows(),
     canViewRegion: Boolean(currentRegion),
     userRole: String(currentProfile?.role || 'player').toLowerCase()
@@ -595,6 +633,7 @@ function installRegionEditorBridge() {
     const wanted = String(id || '').trim();
     const existing = rowById(wanted);
     if (!existing) throw new Error('player-not-found');
+    if (!canEditRegionRows(existing)) throw new Error('region-update-access-denied');
     const result = await updateRegionRegistration(currentUser, currentRegion, wanted, values);
     rows = rows.map(row => String(row.id || row.uid || '') === wanted ? mergeEditedRow(row, values, result) : row);
     syncRegionEditorState();
@@ -602,7 +641,7 @@ function installRegionEditorBridge() {
     return { handled: true, updated: true, result };
   };
   window.WKD.deletePlayersFromActiveSource = async (ids = []) => {
-    if (!canEditRegionRows()) throw new Error('region-delete-access-denied');
+    if (!canDeleteRegionRows()) throw new Error('region-delete-access-denied');
     const wanted = new Set((Array.isArray(ids) ? ids : [ids]).map(id => String(id || '').trim()).filter(Boolean));
     if (!wanted.size) return { removed: 0 };
     const result = await deleteRegionRegistrations(currentUser, currentRegion, [...wanted]);
@@ -616,7 +655,8 @@ function installRegionEditorBridge() {
 }
 
 function openRegionPlayerEditor(rowId = '', trigger = null) {
-  if (!rowId || !canEditRegionRows()) return openRequestDetails(rowId);
+  const row = rowById(rowId);
+  if (!rowId || !row || !canEditRegionRows(row)) return openRequestDetails(rowId);
   installRegionEditorBridge();
   syncRegionEditorState();
   if (typeof window.WKD?.openPlayerEditModal === 'function') {
@@ -642,7 +682,7 @@ function regionPlacementHtml(row = {}) {
       <small>${esc(sub)}</small>
     </span>`;
   }).join('');
-  const editButton = rowId && canEditRegionRows()
+  const editButton = rowId && canEditRegionRows(row)
     ? `<button class="region-request-edit-btn placement-edit" type="button" data-region-edit-id="${esc(rowId)}" aria-label="${esc(tv('players.editPlacement', 'Редагувати {name}', { name: row.nickname || '' }))}" title="${esc(t('common.edit', 'Редагувати'))}">✎</button>`
     : '';
   return `<div class="placement-card region-placement-card" style="--placement-cols:${count}">${items}${editButton}</div>`;
