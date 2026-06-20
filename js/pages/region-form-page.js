@@ -25,7 +25,7 @@ import {
   getAllowedTiers,
   troopLabel
 } from '../services/region-db.js?v=024';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches } from '../services/region-table-cache.js?v=024';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches } from '../services/region-table-cache.js?v=025';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);

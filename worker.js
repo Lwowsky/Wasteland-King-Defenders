@@ -1,6 +1,6 @@
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_FIELD_LENGTH = 300;
-const MAX_TABLE_ROWS = 2000;
+const PUBLIC_REGION_TABLE_PAGE_SIZE = 100;
 const FIREBASE_JWKS_URL =
   "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
 
@@ -28,7 +28,7 @@ function json(data, status = 200, cache = "no-store") {
 }
 
 
-const PUBLIC_SHARE_CACHE_VERSION = "v218";
+const PUBLIC_SHARE_CACHE_VERSION = "v025";
 
 function envNumber(value, fallback = 0, min = 0, max = Number.MAX_SAFE_INTEGER) {
   const num = Number(value);
@@ -130,6 +130,27 @@ async function deletePublicShareCaches(request, type = "", codes = []) {
     if (await deletePublicShareCache(request, type, code)) count += 1;
   }
   return count;
+}
+
+async function readStaticPublicCacheAsset(request, env) {
+  if (!env?.ASSETS) return null;
+  try {
+    const response = await env.ASSETS.fetch(request);
+    if (!response || response.status !== 200) return null;
+    const text = await response.text();
+    let data = null;
+    try { data = JSON.parse(text); } catch { return null; }
+    if (!data || data.ok !== true) return null;
+    const headers = new Headers(response.headers);
+    headers.set("Content-Type", "application/json; charset=utf-8");
+    headers.set("Cache-Control", headers.get("Cache-Control") || "public, max-age=300, s-maxage=3600");
+    headers.set("X-WKD-Public-Cache", "STATIC");
+    headers.set("X-WKD-Public-Cache-Version", PUBLIC_SHARE_CACHE_VERSION);
+    Object.entries(CORS_HEADERS).forEach(([key, value]) => headers.set(key, value));
+    return new Response(text, { status: 200, headers });
+  } catch {
+    return null;
+  }
 }
 
 function remainingCacheSecondsUntil(expiresAtMs = 0, fallbackSeconds = 60) {
@@ -825,7 +846,7 @@ function rowToTable(row = {}, rowsOverride = null) {
   const rows = Array.isArray(rowsOverride)
     ? rowsOverride
     : (Array.isArray(legacyRows)
-        ? legacyRows.map(item => sanitizeTableRow({ ...item, region, cycleId })).filter((item) => item.nickname).slice(0, MAX_TABLE_ROWS)
+        ? legacyRows.map(item => sanitizeTableRow({ ...item, region, cycleId })).filter((item) => item.nickname)
         : []);
   return {
     region,
@@ -894,22 +915,65 @@ function tableRowsOrder(options = {}) {
 
 async function readTableRows(db, region, cycleId = "active", options = {}) {
   await ensureRegionTableSchema(db);
-  const limit = Math.max(1, Math.min(MAX_TABLE_ROWS, Number(options.limit || MAX_TABLE_ROWS) || MAX_TABLE_ROWS));
+  const requestedLimit = Number(options.limit || 0) || 0;
+  const hasLimit = requestedLimit > 0;
+  const limit = hasLimit ? Math.max(1, Math.floor(requestedLimit)) : 0;
   const offset = Math.max(0, Number(options.offset || 0) || 0);
   const scope = tableRowsWhere(region, cycleId, options);
+  const limitSql = hasLimit ? ` LIMIT ?${scope.binds.length + 1} OFFSET ?${scope.binds.length + 2}` : '';
   const query = `SELECT region, cycle_id, id, uid, public_key, farm_id, nickname, nickname_key, alliance, troop_type, tier, shift, updated_at_ms, row_json
                  FROM region_table_rows
                 WHERE ${scope.where}
-                ORDER BY ${tableRowsOrder(options)} LIMIT ?${scope.binds.length + 1} OFFSET ?${scope.binds.length + 2}`;
-  const result = await db.prepare(query).bind(...scope.binds, limit, offset).all();
+                ORDER BY ${tableRowsOrder(options)}${limitSql}`;
+  const result = hasLimit
+    ? await db.prepare(query).bind(...scope.binds, limit, offset).all()
+    : await db.prepare(query).bind(...scope.binds).all();
   return (result?.results || []).map(row => d1RegionTableRowToObject(row, scope.safeRegion, scope.safeCycle)).filter(row => row.nickname);
 }
 
-async function countTableRows(db, region, cycleId = "active", options = {}) {
+async function hasAnyTableRows(db, region, cycleId = "active") {
+  await ensureRegionTableSchema(db);
+  const row = await db.prepare(
+    `SELECT id FROM region_table_rows WHERE region = ?1 AND cycle_id = ?2 LIMIT 1`
+  ).bind(normalizeRegion(region), normalizeCycleId(cycleId || 'active')).first().catch(() => null);
+  return Boolean(row?.id);
+}
+
+async function readStoredTableRowsCount(db, region, cycleId = "active") {
+  await ensureRegionTableSchema(db);
+  const safeRegion = normalizeRegion(region);
+  const safeCycle = normalizeCycleId(cycleId || 'active');
+  const active = await db.prepare(
+    `SELECT rows_count FROM region_active WHERE region = ?1 AND cycle_id = ?2 LIMIT 1`
+  ).bind(safeRegion, safeCycle).first().catch(() => null);
+  if (active) return Math.max(0, Number(active.rows_count || 0) || 0);
+  const cycle = await db.prepare(
+    `SELECT rows_count FROM region_cycles WHERE region = ?1 AND cycle_id = ?2 LIMIT 1`
+  ).bind(safeRegion, safeCycle).first().catch(() => null);
+  return Math.max(0, Number(cycle?.rows_count || 0) || 0);
+}
+
+async function countFilteredTableRows(db, region, cycleId = "active", options = {}) {
   await ensureRegionTableSchema(db);
   const scope = tableRowsWhere(region, cycleId, options);
   const row = await db.prepare(`SELECT COUNT(*) AS count FROM region_table_rows WHERE ${scope.where}`).bind(...scope.binds).first();
   return Math.max(0, Number(row?.count || 0) || 0);
+}
+
+function hasTableRowFilters(options = {}) {
+  return Boolean(
+    clean(options.search || '', 120)
+    || clean(options.alliance || '', 12)
+    || (clean(options.troop || '', 40).toLowerCase() && clean(options.troop || '', 40).toLowerCase() !== 'all')
+    || (clean(options.tier || '', 12).toUpperCase() && clean(options.tier || '', 12).toUpperCase() !== 'ALL')
+    || (clean(options.shift || '', 40).toLowerCase() && clean(options.shift || '', 40).toLowerCase() !== 'all')
+  );
+}
+
+async function tableRowsTotal(db, region, cycleId = "active", options = {}) {
+  return hasTableRowFilters(options)
+    ? countFilteredTableRows(db, region, cycleId, options)
+    : readStoredTableRowsCount(db, region, cycleId);
 }
 
 async function readTable(db, region, cycleId = "active") {
@@ -1031,8 +1095,7 @@ async function saveTable(db, table) {
   const cycleId = normalizeCycleId(table.cycleId || table.settings?.currentCycleId || "active");
   const rows = (Array.isArray(table.rows) ? table.rows : [])
     .map((row) => sanitizeTableRow({ ...row, region, cycleId }))
-    .filter((row) => row.nickname)
-    .slice(0, MAX_TABLE_ROWS);
+    .filter((row) => row.nickname);
   await db.prepare(`DELETE FROM region_table_rows WHERE region = ?1 AND cycle_id = ?2`).bind(region, cycleId).run();
   const chunkSize = 100;
   for (let index = 0; index < rows.length; index += chunkSize) {
@@ -1047,8 +1110,8 @@ async function migrateLegacyTableRowsIfNeeded(db, meta) {
   if (!meta) return 0;
   const region = normalizeRegion(meta.region);
   const cycleId = normalizeCycleId(meta.cycle_id || 'active');
-  const existing = await countTableRows(db, region, cycleId).catch(() => 0);
-  if (existing > 0) return 0;
+  const existing = await hasAnyTableRows(db, region, cycleId).catch(() => false);
+  if (existing) return 0;
   const legacy = rowToTable(meta);
   const rows = Array.isArray(legacy?.rows) ? legacy.rows : [];
   if (!rows.length) return 0;
@@ -1442,7 +1505,6 @@ async function autoSubmitTemplatesForRegionCycle(db, region, cycleId = 'active',
   }
 
   const nowMs = Date.now();
-  const templateLimit = Math.max(100, Math.min(20000, Number(settings.autoSubmitLimit || 10000) || 10000));
   await db.prepare(
     `INSERT INTO region_auto_submit_runs (region, cycle_id, version, templates_count, created_count, skipped_count, updated_at_ms)
      VALUES (?1, ?2, ?3, 0, 0, 0, ?4)`
@@ -1452,9 +1514,9 @@ async function autoSubmitTemplatesForRegionCycle(db, region, cycleId = 'active',
     `SELECT COUNT(*) AS count FROM region_auto_submit_templates WHERE region = ?1 AND enabled = 1`
   ).bind(safeRegion).first().catch(() => ({ count: 0 }));
   const templatesCount = Math.max(0, Number(templatesCountRow?.count || 0) || 0);
-  const beforeCount = await countTableRows(db, safeRegion, safeCycle).catch(() => 0);
+  const beforeCount = await readStoredTableRowsCount(db, safeRegion, safeCycle).catch(() => 0);
 
-  await db.prepare(
+  const insertResult = await db.prepare(
     `INSERT OR IGNORE INTO region_table_rows
       (region, cycle_id, id, uid, public_key, farm_id, nickname, nickname_key, alliance, troop_type, tier, shift, updated_at_ms, row_json)
      SELECT
@@ -1494,7 +1556,6 @@ async function autoSubmitTemplatesForRegionCycle(db, region, cycleId = 'active',
          AND COALESCE(json_extract(row_json, '$.shift'), '') != ''
        GROUP BY nickname_key
        ORDER BY updated_at_ms DESC
-       LIMIT ?6
      ) AS t
      WHERE NOT EXISTS (
        SELECT 1 FROM region_table_rows r
@@ -1502,10 +1563,10 @@ async function autoSubmitTemplatesForRegionCycle(db, region, cycleId = 'active',
          AND r.cycle_id = ?2
          AND r.nickname_key = t.nickname_key
      )`
-  ).bind(safeRegion, safeCycle, nowMs, 'auto-submit-d1', 'Автозаявка', templateLimit).run();
+  ).bind(safeRegion, safeCycle, nowMs, 'auto-submit-d1', 'Автозаявка').run();
 
-  const afterCount = await countTableRows(db, safeRegion, safeCycle).catch(() => beforeCount);
-  const createdCount = Math.max(0, afterCount - beforeCount);
+  const createdCount = Math.max(0, Number(insertResult?.meta?.changes || 0) || 0);
+  const afterCount = Math.max(0, beforeCount + createdCount);
   const skippedCount = Math.max(0, templatesCount - createdCount);
   if (createdCount > 0) {
     await updateTableMeta(db, { region: safeRegion, cycleId: safeCycle, version: nowMs, settings: { ...(settings || {}), currentCycleId: safeCycle } }, afterCount);
@@ -1942,7 +2003,7 @@ async function handleRegionCycleArchiveRead(request, env, cycleIdValue) {
   const activeCycleId = await getActiveCycleId(db, region).catch(() => 'active');
   const meta = await readTableMeta(db, region, cycleId);
   if (!meta) return json({ ok: false, error: 'cycle_not_found' }, 404);
-  let totalRows = await countTableRows(db, region, cycleId, { search });
+  let totalRows = await tableRowsTotal(db, region, cycleId, { search });
   let safePage = Math.max(1, page);
   let pageRows = [];
   if (totalRows > 0) {
@@ -2018,7 +2079,7 @@ async function handleRegionTableRead(request, env) {
     sort: clean(url.searchParams.get('sort') || '', 40),
     dir: clean(url.searchParams.get('dir') || '', 8)
   };
-  const totalRows = await countTableRows(db, region, cycleId, filters);
+  const totalRows = await tableRowsTotal(db, region, cycleId, filters);
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
   const safePage = Math.min(page, totalPages);
   const rows = await readTableRows(db, region, cycleId, { ...filters, limit: pageSize, offset: (safePage - 1) * pageSize });
@@ -2167,13 +2228,14 @@ async function handleRegionTableRegistration(request, env) {
   const unchanged = existingRow ? sameRegistrationData(existingRow, nextRow) : false;
   const forceUpdate = Boolean(body?.forceUpdate);
   if (existingRow && unchanged && !forceUpdate) {
-    return json({ ok: true, version: Number(meta?.version || 0) || 0, rowsCount: await countTableRows(db, region, cycleId), existing: true, unchanged: true, notWritten: true, action: "unchanged", row: existingRow });
+    return json({ ok: true, version: Number(meta?.version || 0) || 0, rowsCount: await readStoredTableRowsCount(db, region, cycleId), existing: true, unchanged: true, notWritten: true, action: "unchanged", row: existingRow });
   }
 
   const nowMs = Date.now();
   const savedRow = sanitizeTableRow({ ...nextRow, submittedAtMs: existingRow?.submittedAtMs || nextRow.submittedAtMs || nowMs, registeredAtMs: existingRow?.registeredAtMs || nextRow.registeredAtMs || nextRow.submittedAtMs || nowMs, updatedAtMs: nowMs });
   await upsertTableRowStatement(db, region, cycleId, savedRow).run();
-  const rowsCount = await countTableRows(db, region, cycleId);
+  const previousRowsCount = await readStoredTableRowsCount(db, region, cycleId).catch(() => 0);
+  const rowsCount = Math.max(0, previousRowsCount + (existingRow ? 0 : 1));
   const table = await updateTableMeta(db, { region, cycleId, version: nowMs, settings: currentSettings }, rowsCount);
   if (user?.uid) await grantRegionAccess(db, region, user.uid, "registration");
   if (user?.uid && savedRow.uid && savedRow.uid !== user.uid) await grantRegionAccess(db, region, savedRow.uid, "registration-row");
@@ -2222,8 +2284,7 @@ async function handleRegionTableSnapshot(request, env) {
   let cycleId = normalizeCycleId(requestedCycleRaw || "active");
   const rows = (Array.isArray(body?.rows) ? body.rows : [])
     .map((row) => sanitizeTableRow({ ...row, region }))
-    .filter((row) => row.nickname)
-    .slice(0, MAX_TABLE_ROWS);
+    .filter((row) => row.nickname);
   const emptyNewCycleSnapshot = rows.length === 0 && Boolean(body?.settings?.currentCycleId || body?.cycleId);
   const allowed = await canWriteRegionD1(db, env, user, region)
     || (emptyNewCycleSnapshot && await canLeadCurrentRegionD1(db, env, user, region));
@@ -2264,7 +2325,8 @@ async function handleRegionTableDeleteRows(request, env) {
     `DELETE FROM region_table_rows WHERE region = ?1 AND cycle_id = ?2 AND id IN (${placeholders})`
   ).bind(region, cycleId, ...ids).run();
   const deleted = Math.max(0, Number(result?.meta?.changes || 0) || 0);
-  const rowsCount = await countTableRows(db, region, cycleId);
+  const previousRowsCount = await readStoredTableRowsCount(db, region, cycleId).catch(() => 0);
+  const rowsCount = Math.max(0, previousRowsCount - deleted);
   if (deleted > 0) await updateTableMeta(db, { region, cycleId, version: Date.now(), settings: { currentCycleId: cycleId } }, rowsCount);
   return json({ ok: true, region, deleted, rowsCount, usage: { d1RowsRead: 1, d1RowsWritten: deleted > 0 ? deleted + 1 : 0 }, source: "cloudflare-d1-region-table-rows" });
 }
@@ -2356,8 +2418,7 @@ async function handleRegionTableShareCreate(request, env) {
     return json({ ok: false, error: "region_leadership_required" }, 403);
   const rows = (Array.isArray(body?.rows) ? body.rows : [])
     .map(sanitizeTableRow)
-    .filter((row) => row.nickname)
-    .slice(0, MAX_TABLE_ROWS);
+    .filter((row) => row.nickname);
   const existing = await readTable(db, region, cycleId);
   if (!existing)
     await saveTable(db, {
@@ -3019,6 +3080,12 @@ function shareSnapshotFileName(kind = '', code = '') {
   return `public-cache/share/${safeKind}/${safeCode}.json`;
 }
 
+function regionTableSharePageFileName(code = '', page = 1) {
+  const safeCode = normalizeCode(code);
+  const safePage = String(Math.max(1, Number(page) || 1)).padStart(3, '0');
+  return safeCode ? `public-cache/share/rt/${safeCode}/page-${safePage}.json` : '';
+}
+
 function exportedSharePayload(payload = {}, kind = '', code = '') {
   const now = Date.now();
   return {
@@ -3040,6 +3107,56 @@ function exportedSharePayload(payload = {}, kind = '', code = '') {
       d1RowsWritten: 0
     }
   };
+}
+
+function exportedRegionTableShareFiles(payload = {}, code = '') {
+  const safeCode = normalizeCode(code);
+  if (!safeCode) return [];
+  const table = payload?.table && typeof payload.table === 'object' ? payload.table : {};
+  const rows = Array.isArray(table.rows) ? table.rows : [];
+  const pageSize = PUBLIC_REGION_TABLE_PAGE_SIZE;
+  const totalRows = rows.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const pageFiles = [];
+  const files = [];
+  for (let page = 1; page <= totalPages; page += 1) {
+    const pageRows = rows.slice((page - 1) * pageSize, page * pageSize);
+    const pagePath = regionTableSharePageFileName(safeCode, page);
+    if (!pagePath) continue;
+    pageFiles.push(pagePath);
+    files.push({
+      kind: 'rt-page',
+      code: safeCode,
+      page,
+      path: pagePath,
+      data: exportedSharePayload({
+        ok: true,
+        table: { ...table, rows: pageRows },
+        page,
+        pageSize,
+        totalRows,
+        totalPages,
+        rows: pageRows,
+        pages: { enabled: true, page, pageSize, totalRows, totalPages }
+      }, 'rt', safeCode)
+    });
+  }
+  const indexPayload = exportedSharePayload({
+    ...(payload || {}),
+    table: { ...table, rows: [] },
+    rows: [],
+    totalRows,
+    totalPages,
+    pageSize,
+    pages: {
+      enabled: true,
+      pageSize,
+      totalRows,
+      totalPages,
+      files: pageFiles
+    }
+  }, 'rt', safeCode);
+  return [{ kind: 'rt', code: safeCode, path: shareSnapshotFileName('rt', safeCode), data: indexPayload }, ...files];
 }
 
 async function handlePublicShareSnapshotExport(request, env) {
@@ -3066,7 +3183,7 @@ async function handlePublicShareSnapshotExport(request, env) {
     if (!code) continue;
     const built = await buildRegionTableSharePayload(env, code);
     if (built.response || !built.payload?.ok) continue;
-    files.push({ kind: 'rt', code, path: shareSnapshotFileName('rt', code), data: exportedSharePayload(built.payload, 'rt', code) });
+    files.push(...exportedRegionTableShareFiles(built.payload, code));
   }
   for (const row of finalRows?.results || []) {
     const code = normalizeCode(row?.code);
@@ -5424,11 +5541,15 @@ export default {
 
       const publicRegionTableSnapshotMatch = url.pathname.match(/^\/public-cache\/share\/rt\/([A-Za-z0-9_-]{6,140})\.json$/);
       if (publicRegionTableSnapshotMatch && request.method === "GET") {
+        const staticSnapshot = await readStaticPublicCacheAsset(request, env);
+        if (staticSnapshot) return staticSnapshot;
         return await handlePublicRegionTableSnapshot(request, env, publicRegionTableSnapshotMatch[1]);
       }
 
       const publicFinalPlanSnapshotMatch = url.pathname.match(/^\/public-cache\/share\/p\/([A-Za-z0-9_-]{6,140})\.json$/);
       if (publicFinalPlanSnapshotMatch && request.method === "GET") {
+        const staticSnapshot = await readStaticPublicCacheAsset(request, env);
+        if (staticSnapshot) return staticSnapshot;
         return await handlePublicFinalPlanSnapshot(request, env, publicFinalPlanSnapshotMatch[1]);
       }
 

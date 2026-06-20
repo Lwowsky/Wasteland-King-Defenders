@@ -1,7 +1,6 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
 import { trackCloudflareUsage } from './usage-tracker.js?v=024';
 
-const MAX_ROWS = 2000;
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
 const SHARE_TABLE_CACHE_TTL_MS = 10 * 60 * 1000;
 const REGION_FORM_SETTINGS_TTL_MS = 5 * 60 * 1000;
@@ -384,6 +383,45 @@ export function publicRegionTableSnapshotUrl(code = '') {
   return safeCode ? `/public-cache/share/rt/${encodeURIComponent(safeCode)}.json` : '';
 }
 
+function safePublicRegionTablePagePath(path = '') {
+  const value = String(path || '').replace(/\\/g, '/').replace(/^\/+/, '');
+  if (!value.startsWith('public-cache/share/rt/')) return '';
+  if (!value.endsWith('.json')) return '';
+  if (value.includes('..')) return '';
+  return `/${value}`;
+}
+
+function publicRegionTablePageSnapshotUrl(code = '', page = 1) {
+  const safeCode = cleanCode(code);
+  const safePage = String(Math.max(1, Number(page) || 1)).padStart(3, '0');
+  return safeCode ? `/public-cache/share/rt/${encodeURIComponent(safeCode)}/page-${safePage}.json` : '';
+}
+
+async function hydratePagedRegionTableShareData(data = {}, code = '') {
+  const pageInfo = data?.pages || data?.snapshot?.pages || null;
+  const table = data?.table && typeof data.table === 'object' ? data.table : {};
+  if (!pageInfo?.enabled) return data;
+  if (Array.isArray(table.rows) && table.rows.length) return data;
+  const totalPages = Math.max(1, Number(pageInfo.totalPages || data.totalPages || 1) || 1);
+  const explicitFiles = Array.isArray(pageInfo.files) ? pageInfo.files.map(safePublicRegionTablePagePath).filter(Boolean) : [];
+  const files = explicitFiles.length
+    ? explicitFiles
+    : Array.from({ length: totalPages }, (_, index) => publicRegionTablePageSnapshotUrl(code, index + 1)).filter(Boolean);
+  const rows = [];
+  for (const file of files) {
+    const pageData = await requestPublicSnapshotJson(file, { cache: 'default' });
+    const pageTable = pageData?.table && typeof pageData.table === 'object' ? pageData.table : {};
+    const pageRows = Array.isArray(pageTable.rows) ? pageTable.rows : (Array.isArray(pageData?.rows) ? pageData.rows : []);
+    rows.push(...pageRows);
+  }
+  return {
+    ...(data || {}),
+    table: { ...table, rows },
+    rows,
+    source: data.source || 'github-public-cache-export-paged'
+  };
+}
+
 export function publicRegionFormSnapshotUrl(code = '') {
   const safeCode = cleanCode(code);
   return safeCode ? `/public-cache/share/f/${encodeURIComponent(safeCode)}.json` : '';
@@ -593,6 +631,7 @@ export async function readRegionTableShare(code, options = {}) {
   let data = null;
   try {
     data = await requestPublicSnapshotJson(publicRegionTableSnapshotUrl(safeCode));
+    data = await hydratePagedRegionTableShareData(data, safeCode);
   } catch (snapshotError) {
     data = await requestJson(`/api/region-table/share/${encodeURIComponent(safeCode)}`);
   }
@@ -686,10 +725,10 @@ export async function readFullRegionCycleArchiveD1(user, region, cycleId, option
     rows = rows.concat(Array.isArray(result.rows) ? result.rows : []);
     if (page >= Number(result.totalPages || 1)) break;
     page += 1;
-  } while (page <= 200);
+  } while (page <= Math.max(1, Number(first?.totalPages || 1) || 1));
   return {
     ...(first || {}),
-    rows: rows.slice(0, MAX_ROWS),
+    rows,
     page: 1,
     pageSize: rows.length,
     totalRows: Number(first?.totalRows || rows.length) || rows.length,
@@ -1079,8 +1118,7 @@ export async function publishRegionTableSnapshot(user, payload = {}) {
   if (!token) return { skipped: true };
   const rows = (Array.isArray(payload.rows) ? payload.rows : [])
     .map(row => sanitizeTableRow({ ...row, region: safeRegion }))
-    .filter(row => row.nickname)
-    .slice(0, MAX_ROWS);
+    .filter(row => row.nickname);
   removeLocalTableCache('regionTableSnapshot', safeRegion);
   return requestJson('/api/region-table/snapshot', {
     method: 'PUT',
@@ -1109,8 +1147,7 @@ export async function publishRegionTableShare(user, payload = {}) {
   if (!token) return { skipped: true };
   const rows = (Array.isArray(payload.rows) ? payload.rows : [])
     .map(row => sanitizeTableRow({ ...row, region: safeRegion }))
-    .filter(row => row.nickname)
-    .slice(0, MAX_ROWS);
+    .filter(row => row.nickname);
   removeLocalTableCache('regionTableShare', safeCode);
   return requestJson('/api/region-table/share', {
     method: 'POST',

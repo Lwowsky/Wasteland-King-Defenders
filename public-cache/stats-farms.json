@@ -10,7 +10,7 @@
     "shk": "24",
     "role": "admin",
     "createdAt": "2026-05-27T13:51:55.337Z",
-    "updatedAt": "2026-06-20T05:01:33.259Z",
+    "updatedAt": "2026-06-17T14:58:53.017Z",
     "wastelandProfile": {
       "lairLevel": "39",
       "troopType": "rider",
@@ -38,7 +38,7 @@
     "shk": "24",
     "role": "admin",
     "createdAt": "2026-05-27T13:51:55.337Z",
-    "updatedAt": "2026-06-20T05:01:33.259Z",
+    "updatedAt": "2026-06-17T14:58:53.017Z",
     "wastelandProfile": {
       "lairLevel": "",
       "troopType": "",
@@ -66,11 +66,11 @@
     "shk": "24",
     "role": "admin",
     "createdAt": "2026-05-27T13:51:55.337Z",
-    "updatedAt": "2026-06-20T05:01:33.259Z",
+    "updatedAt": "2026-06-17T14:58:53.017Z",
     "wastelandProfile": {
       "lairLevel": "42",
       "troopType": "rider",
-      "tier": "T8",
+      "tier": "T14",
       "marchSize": "291000",
       "rallySize": "1400000",
       "captainReady": false,
