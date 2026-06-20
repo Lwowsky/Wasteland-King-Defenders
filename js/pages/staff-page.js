@@ -27,9 +27,10 @@ const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
 const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STAFF_REFRESH_LIMIT = 5;
-const STAFF_CACHE_BUILD = 'v012-officer-form-access';
+const STAFF_CACHE_BUILD = 'v034-staff-farms-cache';
 
 const STAFF_PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
+const STAFF_PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
 const STAFF_PUBLIC_STATS_VERSION_FILE = 'stats-version.json';
 let staffPublicStatsVersionInfo = null;
 
@@ -72,6 +73,10 @@ async function fetchStaffPublicStatsVersion({ force = false } = {}) {
 }
 async function fetchStaffPublicStatsPlayers({ force = false } = {}) {
   const list = await fetchStaffPublicCacheJson(STAFF_PUBLIC_STATS_PLAYERS_FILE, { force });
+  return Array.isArray(list) ? list : [];
+}
+async function fetchStaffPublicStatsFarms({ force = false } = {}) {
+  const list = await fetchStaffPublicCacheJson(STAFF_PUBLIC_STATS_FARMS_FILE, { force });
   return Array.isArray(list) ? list : [];
 }
 function staffRowTime(row = {}) {
@@ -133,7 +138,7 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=033',
+  'region-table': './region-table-page.js?v=034',
   'region-settings': './region-settings-page.js?v=026',
   'action-log': './action-log-page.js?v=019'
 };
@@ -295,25 +300,53 @@ function manualStaffRefreshAllowed(region = '') {
   return true;
 }
 function normalizeStaffSnapshotRow(row = {}) {
-  const farmId = String(row.farmId || '').trim();
-  const publicOnly = Boolean(row.__publicSnapshotOnly || (!row.uid && row.publicKey));
+  const farmId = String(row.farmId || row.farmKey || '').trim();
+  const publicKey = String(row.publicKey || row.ownerPublicKey || '').trim();
+  const publicOnly = Boolean(row.__publicSnapshotOnly || (!row.uid && publicKey));
   const uid = publicOnly ? String(row.uid || '').trim() : String(row.uid || row.id || '').trim();
-  const publicKey = String(row.publicKey || '').trim();
-  const id = uid || publicKey || `${row.nickname || row.gameNick || 'player'}-${row.alliance || ''}-${farmId || 'main'}`;
+  const nickname = row.nickname || row.gameNick || row.name || '';
+  const id = uid || (farmId ? `${publicKey || row.ownerNickname || 'farm'}:${farmId}` : publicKey) || `${nickname || 'player'}-${row.alliance || ''}-${farmId || 'main'}`;
+  const wasteland = row.wastelandProfile || {};
   return {
     ...row,
     id,
     uid,
     publicKey,
+    farmId,
     __publicSnapshotOnly: publicOnly || !uid,
-    nickname: row.nickname || row.gameNick || row.name || '',
+    nickname,
     region: normalizeRegion(row.region || ''),
     alliance: normalizeAlliance(row.alliance || ''),
     rank: normalizeRank(row.rank || 'p1'),
     shk: row.shk || '',
     role: row.role || 'player',
-    farmId
+    troopType: row.troopType || wasteland.troopType || '',
+    tier: row.tier || wasteland.tier || '',
+    marchSize: row.marchSize || wasteland.marchSize || '',
+    rallySize: row.rallySize || wasteland.rallySize || '',
+    captainReady: Boolean(row.captainReady ?? wasteland.captainReady),
+    shift: row.shift || wasteland.shift || ''
   };
+}
+function staffOwnProfileRows(region = '') {
+  const safeRegion = normalizeRegion(region);
+  if (!safeRegion || !currentProfile) return [];
+  return actorGames(currentProfile)
+    .filter(game => normalizeRegion(game.region) === safeRegion)
+    .map(game => normalizeStaffSnapshotRow({
+      ...game,
+      uid: currentProfile.uid || currentUser?.uid || '',
+      id: game.farmId && game.farmId !== 'main' ? `${currentProfile.uid || currentUser?.uid || 'self'}:${game.farmId}` : (currentProfile.uid || currentUser?.uid || ''),
+      publicKey: currentProfile.publicKey || '',
+      farmId: game.farmId || 'main',
+      nickname: game.nickname || currentProfile.nickname || currentProfile.displayName || '',
+      region: game.region,
+      alliance: game.alliance,
+      rank: game.rank || currentProfile.rank || 'p1',
+      shk: game.shk || currentProfile.shk || '',
+      role: game.role || currentProfile.role || 'player',
+      __selfProfileFallback: true
+    }));
 }
 function staffFilterValues() {
   return {
@@ -342,17 +375,26 @@ function applyLocalStaffFilters({ statusMessage = '' } = {}) {
 async function readStaffPublicSnapshotRows(region = '', { force = false } = {}) {
   const safeRegion = normalizeRegion(region);
   const version = await fetchStaffPublicStatsVersion({ force }).catch(() => null);
-  const publicRows = await fetchStaffPublicStatsPlayers({ force });
-  const rows = (Array.isArray(publicRows) ? publicRows : [])
-    .map(row => normalizeStaffSnapshotRow({ ...row, __publicSnapshotOnly: true }))
+  const [publicPlayers, publicFarms] = await Promise.all([
+    fetchStaffPublicStatsPlayers({ force }).catch(() => []),
+    fetchStaffPublicStatsFarms({ force }).catch(() => [])
+  ]);
+  const playerRows = (Array.isArray(publicPlayers) ? publicPlayers : [])
+    .map(row => normalizeStaffSnapshotRow({ ...row, farmId: row.farmId || 'main', __publicSnapshotOnly: true }))
     .filter(row => normalizeRegion(row.region || safeRegion) === safeRegion || !row.region);
+  const farmRows = (Array.isArray(publicFarms) ? publicFarms : [])
+    .map(row => normalizeStaffSnapshotRow({ ...row, farmId: row.farmId || row.farmKey || '', __publicSnapshotOnly: true }))
+    .filter(row => normalizeRegion(row.region || safeRegion) === safeRegion || !row.region);
+  const rows = mergeStaffRows(playerRows, farmRows);
   return {
-    source: 'public-cache/stats-players.json',
+    source: 'public-cache/stats-players.json + stats-farms.json',
     version: String(version?.version || version?.updatedAt || ''),
     region: safeRegion,
     rows,
     totalRows: rows.length,
-    reads: 0
+    reads: 0,
+    publicPlayers: playerRows.length,
+    publicFarms: farmRows.length
   };
 }
 async function readStaffRegionPlayerRows(region = '', { force = false } = {}) {
@@ -396,7 +438,8 @@ async function readStaffRegionPlayerRows(region = '', { force = false } = {}) {
     }
   }
 
-  const merged = mergeStaffRows(mirrorResult?.rows || [], publicResult?.rows || []);
+  const ownRows = staffOwnProfileRows(safeRegion);
+  const merged = mergeStaffRows(mirrorResult?.rows || [], mergeStaffRows(publicResult?.rows || [], ownRows));
   return {
     source: mirrorResult?.rows?.length
       ? 'regions-players-profile-mirror + public-cache'
@@ -407,7 +450,9 @@ async function readStaffRegionPlayerRows(region = '', { force = false } = {}) {
     totalRows: merged.length,
     reads: Number(mirrorResult?.reads || 0),
     publicRows: Number(publicResult?.rows?.length || 0),
-    mirrorRows: Number(mirrorResult?.rows?.length || 0)
+    publicFarms: Number(publicResult?.publicFarms || 0),
+    mirrorRows: Number(mirrorResult?.rows?.length || 0),
+    ownRows: ownRows.length
   };
 }
 async function loadRows(options = {}) {
@@ -442,7 +487,9 @@ async function loadRows(options = {}) {
       version: result.version || expectedVersion,
       totalRows: result.totalRows || staffSnapshotRows.length,
       publicRows: result.publicRows || 0,
-      mirrorRows: result.mirrorRows || 0
+      publicFarms: result.publicFarms || 0,
+      mirrorRows: result.mirrorRows || 0,
+      ownRows: result.ownRows || 0
     });
     const messageKey = result.reads ? 'staff.loadedRowsMerged' : 'staff.loadedRowsFromSnapshot';
     const fallback = result.reads
@@ -548,7 +595,13 @@ function bindControls() {
     button.addEventListener('click', () => switchStaffTab(button.dataset.staffTab));
   });
   $('#staffRefreshBtn')?.addEventListener('click', () => loadRows({ force: true }));
-  $('#staffRegionSelect')?.addEventListener('change', () => loadRows());
+  $('#staffRegionSelect')?.addEventListener('change', () => {
+    const region = $('#staffRegionSelect')?.value || '';
+    const scope = staffScopeForRegion(region);
+    const allianceInput = $('#staffAllianceFilter');
+    if (allianceInput) allianceInput.value = scope.allianceLocked ? scope.alliance : '';
+    loadRows();
+  });
   $('#staffAllianceFilter')?.addEventListener('change', () => applyLocalStaffFilters());
   $('#staffNickFilter')?.addEventListener('input', () => {
     clearTimeout(window.__wkdStaffSearchTimer);

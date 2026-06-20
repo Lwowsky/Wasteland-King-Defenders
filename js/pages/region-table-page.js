@@ -26,7 +26,7 @@ import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableS
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
 const SOURCE_MODE_KEY = 'wkd.players.sourceMode';
-const REGION_TABLE_PAGE_SIZE_KEY = 'wkd.regionTable.pageSize.v032';
+const REGION_TABLE_PAGE_SIZE_KEY = 'wkd.regionTable.pageSize.v034';
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 const tv = (key, fallback = '', vars = {}) => {
   let text = t(key, fallback);
@@ -292,13 +292,27 @@ function startCycleTimer() {
   timerId = setInterval(update, 30000);
 }
 
-function openRegion(region) {
+function isEmbeddedStaffRegionTable() {
+  return Boolean(document.body?.classList?.contains('staff-shell') || document.querySelector('.staff-integrated-region-table'));
+}
+
+async function openRegion(region) {
   const safeRegion = normalizeRegion(region);
   if (!safeRegion) {
     setStatus(t('region.openRegionPrompt', 'Enter the region number you want to open.'), 'warn');
     return;
   }
   rememberActiveRegion(safeRegion);
+  if (isEmbeddedStaffRegionTable()) {
+    currentRegion = safeRegion;
+    const input = $('#regionLookupInput');
+    if (input) input.value = safeRegion;
+    const pill = $('#regionTablePill');
+    if (pill) pill.textContent = regionPillText();
+    tablePage = 1;
+    await reloadTablePage({ resetPage: true });
+    return;
+  }
   const url = new URL(window.location.href);
   url.pathname = url.pathname.replace(/\/region-table(?:\.html)?\/?$/, '/region-table.html');
   if (!/region-table\.html$/i.test(url.pathname)) url.pathname = `${url.pathname.replace(/\/$/, '')}/region-table.html`;
