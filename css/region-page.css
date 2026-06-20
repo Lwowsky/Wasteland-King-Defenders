@@ -166,3 +166,24 @@
   .region-placement-card{justify-content:end;}
   .region-placement-card .region-request-edit-btn{height:42px;}
 }
+
+
+/* v030: region table header/filter/stat layout aligned with main page */
+.region-table-card{overflow:hidden;}
+.region-table-stats{width:100%;align-items:stretch;margin:14px 0 14px;}
+.region-table-stats>.stat-card{height:100%;min-width:0;}
+.region-table-shift-stats{height:100%;}
+.region-table-controls{display:grid!important;grid-template-columns:minmax(130px,.7fr) minmax(130px,.7fr) minmax(190px,1.05fr) minmax(120px,.7fr) minmax(170px,1fr) minmax(120px,.7fr) minmax(140px,.8fr) minmax(105px,.55fr);gap:10px;width:100%;align-items:end;}
+.region-table-controls .region-control{min-width:0;}
+.region-table-controls input,.region-table-controls select{width:100%;min-width:0;}
+.region-table-controls .region-open-btn{width:100%;min-height:48px;}
+.region-table-controls .region-control--rows{min-width:100px;}
+.region-table-pagination{justify-content:center;}
+.region-public-table{width:100%;min-width:1380px;table-layout:fixed;}
+.admin-table-wrap>.region-public-table{width:100%;}
+.region-public-table thead tr,.region-public-table thead th{background:#101a37;}
+.region-public-table thead th{height:58px;}
+.region-public-table th:nth-child(9),.region-public-table td:nth-child(9){width:22%;min-width:300px;}
+@media (min-width:1500px){.region-public-table{min-width:100%;}}
+@media (max-width:1260px){.region-table-controls{grid-template-columns:repeat(4,minmax(0,1fr));}.region-table-stats{grid-template-columns:1fr;}.region-table-shift-stats{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media (max-width:760px){.region-table-controls{grid-template-columns:1fr;}.region-table-shift-stats{grid-template-columns:1fr;}}

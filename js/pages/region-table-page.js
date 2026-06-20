@@ -20,13 +20,13 @@ import {
   updateRegionRegistration,
   deleteRegionRegistrations,
   regionRegistrationToPlayer
-} from '../services/region-db.js?v=029';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=029';
+} from '../services/region-db.js?v=030';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=030';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
 const SOURCE_MODE_KEY = 'wkd.players.sourceMode';
-const REGION_TABLE_PAGE_SIZE_KEY = 'wkd.regionTable.pageSize.v029';
+const REGION_TABLE_PAGE_SIZE_KEY = 'wkd.regionTable.pageSize.v030';
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 const tv = (key, fallback = '', vars = {}) => {
   let text = t(key, fallback);
@@ -92,6 +92,7 @@ let tableTotalPages = 1;
 let serverPagedTable = false;
 let filterDebounceId = null;
 let quietRegionTableStatus = '';
+let tableSummary = null;
 
 
 function normTag(value) { return String(value || '').trim(); }
@@ -371,6 +372,55 @@ function tableFilterValues() {
 }
 
 function resetTablePage() { tablePage = 1; }
+
+
+function numberFromSummary(summary = {}, key = '', fallback = 0) {
+  const value = Number(summary?.[key]);
+  return Number.isFinite(value) && value >= 0 ? Math.round(value) : Math.max(0, Number(fallback || 0) || 0);
+}
+
+function pageSummaryFromRows(list = rows) {
+  const result = { totalCount: list.length, captainCount: 0, fighterCount: 0, riderCount: 0, shooterCount: 0, shift1Count: 0, shift2Count: 0, shift3Count: 0, shift4Count: 0, bothCount: 0 };
+  list.forEach(row => {
+    if (row?.captainReady) result.captainCount += 1;
+    const troop = String(row?.troopType || row?.troopLabel || '').trim().toLowerCase();
+    if (troop === 'fighter') result.fighterCount += 1;
+    else if (troop === 'rider') result.riderCount += 1;
+    else if (troop === 'shooter') result.shooterCount += 1;
+    const shift = String(row?.shift || row?.shiftLabel || '').trim().toLowerCase();
+    if (shift.includes('4')) result.shift4Count += 1;
+    else if (shift.includes('3')) result.shift3Count += 1;
+    else if (shift.includes('2')) result.shift2Count += 1;
+    else if (shift.includes('1')) result.shift1Count += 1;
+    else if (shift === 'both' || shift.includes('обид') || shift.includes('всі') || shift.includes('all')) result.bothCount += 1;
+  });
+  return result;
+}
+
+function renderRegionStats() {
+  const box = $('#regionTableStats');
+  if (!box) return;
+  const fallback = pageSummaryFromRows(serverPagedTable ? [] : rows);
+  const summary = tableSummary || fallback;
+  const total = numberFromSummary(summary, 'totalCount', serverPagedTable ? tableTotalRows : rows.length);
+  setDynamicText('#regionStatTotalPlayers', String(total));
+  setDynamicText('#regionStatCaptainsReady', String(numberFromSummary(summary, 'captainCount', fallback.captainCount)));
+  setDynamicText('#regionStatFighters', String(numberFromSummary(summary, 'fighterCount', fallback.fighterCount)));
+  setDynamicText('#regionStatRiders', String(numberFromSummary(summary, 'riderCount', fallback.riderCount)));
+  setDynamicText('#regionStatShooters', String(numberFromSummary(summary, 'shooterCount', fallback.shooterCount)));
+  const shiftCount = Math.max(1, Math.min(4, Number(window.WKD?.getActiveShiftCount?.() || currentSettings?.shiftsCount || 2) || 2));
+  const shiftBox = $('#regionTableShiftStats');
+  if (shiftBox) {
+    shiftBox.className = `stat-split stat-split--shifts region-table-shift-stats is-shifts-${shiftCount}`;
+    const pieces = [];
+    for (let index = 1; index <= shiftCount; index += 1) {
+      pieces.push(`<div class="stat-chip stat-chip--shift is-shift${index}"><b>${numberFromSummary(summary, `shift${index}Count`, fallback[`shift${index}Count`])}</b><small>${esc(t('common.shift', 'Зміна'))} ${index}</small></div>`);
+    }
+    pieces.push(`<div class="stat-chip stat-chip--shift is-both"><b>${numberFromSummary(summary, 'bothCount', fallback.bothCount)}</b><small>${esc(t('common.all', 'Всі'))}</small></div>`);
+    shiftBox.innerHTML = pieces.join('');
+  }
+  box.hidden = false;
+}
 
 function renderPager() {
   const pager = $('#regionTablePager');
@@ -666,6 +716,7 @@ function render() {
   } else {
     setStatus(tv('region.tableShownStatus', '{regionLabel} {region}: shown {visible} of {total} records.', { regionLabel: t('account.region', 'Region'), region: currentRegion, visible: visible.length, total }), currentSettings?.open ? 'success' : 'warn');
   }
+  renderRegionStats();
   renderPager();
 }
 
@@ -723,6 +774,7 @@ async function load(user, options = {}) {
   currentRegion = result.region;
   rememberActiveRegion(currentRegion);
   rows = result.rows || [];
+  tableSummary = result.summary || result.table?.summary || result.stats || null;
   tablePage = Math.max(1, Number(result.page || tablePage) || 1);
   tablePageSize = Math.max(10, Math.min(100, Number(result.pageSize || tablePageSize) || 10));
   tableTotalRows = serverPagedTable ? Math.max(0, Number(result.totalRows || 0) || 0) : rows.length;

@@ -290,6 +290,23 @@ async function ensureRegionTableSchema(db) {
       )`,
       `CREATE INDEX IF NOT EXISTS idx_region_cycles_region_time ON region_cycles(region, updated_at_ms DESC)`,
       `CREATE INDEX IF NOT EXISTS idx_region_cycles_region_status ON region_cycles(region, status, updated_at_ms DESC)`,
+      `CREATE TABLE IF NOT EXISTS region_table_stats (
+        region TEXT NOT NULL,
+        cycle_id TEXT NOT NULL,
+        total_count INTEGER NOT NULL DEFAULT 0,
+        captain_count INTEGER NOT NULL DEFAULT 0,
+        fighter_count INTEGER NOT NULL DEFAULT 0,
+        rider_count INTEGER NOT NULL DEFAULT 0,
+        shooter_count INTEGER NOT NULL DEFAULT 0,
+        shift1_count INTEGER NOT NULL DEFAULT 0,
+        shift2_count INTEGER NOT NULL DEFAULT 0,
+        shift3_count INTEGER NOT NULL DEFAULT 0,
+        shift4_count INTEGER NOT NULL DEFAULT 0,
+        both_count INTEGER NOT NULL DEFAULT 0,
+        updated_at_ms INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (region, cycle_id)
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_region_table_stats_region ON region_table_stats(region, updated_at_ms DESC)`,
       `CREATE TABLE IF NOT EXISTS region_access (
         region TEXT NOT NULL,
         uid TEXT NOT NULL,
@@ -810,6 +827,136 @@ function sanitizeTableRow(row = {}) {
   };
 }
 
+
+function emptyRegionTableStats() {
+  return {
+    totalCount: 0,
+    captainCount: 0,
+    fighterCount: 0,
+    riderCount: 0,
+    shooterCount: 0,
+    shift1Count: 0,
+    shift2Count: 0,
+    shift3Count: 0,
+    shift4Count: 0,
+    bothCount: 0,
+  };
+}
+
+function normalizeStatsNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, Math.round(number)) : 0;
+}
+
+function regionTableStatsFromRow(row = {}) {
+  const stats = emptyRegionTableStats();
+  const cleanRow = sanitizeTableRow(row || {});
+  if (!cleanRow.nickname) return stats;
+  stats.totalCount = 1;
+  if (cleanRow.captainReady) stats.captainCount = 1;
+  const troop = clean(cleanRow.troopType || cleanRow.troopLabel || '', 40).toLowerCase();
+  if (troop === 'fighter') stats.fighterCount = 1;
+  else if (troop === 'rider') stats.riderCount = 1;
+  else if (troop === 'shooter') stats.shooterCount = 1;
+  const shift = clean(cleanRow.shift || cleanRow.shiftLabel || '', 40).toLowerCase();
+  if (shift === 'both' || shift === 'all' || shift.includes('обид') || shift.includes('всі') || shift.includes('все')) stats.bothCount = 1;
+  else if (shift.includes('4')) stats.shift4Count = 1;
+  else if (shift.includes('3')) stats.shift3Count = 1;
+  else if (shift.includes('2')) stats.shift2Count = 1;
+  else if (shift.includes('1')) stats.shift1Count = 1;
+  return stats;
+}
+
+function regionTableStatsFromRows(rows = []) {
+  return (Array.isArray(rows) ? rows : []).reduce((acc, row) => addRegionTableStats(acc, regionTableStatsFromRow(row)), emptyRegionTableStats());
+}
+
+function addRegionTableStats(a = {}, b = {}, sign = 1) {
+  const result = emptyRegionTableStats();
+  for (const key of Object.keys(result)) {
+    result[key] = Math.max(0, normalizeStatsNumber(a?.[key]) + Math.round((Number(b?.[key]) || 0) * sign));
+  }
+  return result;
+}
+
+function diffRegionTableStats(next = {}, previous = {}) {
+  const result = emptyRegionTableStats();
+  for (const key of Object.keys(result)) {
+    result[key] = normalizeStatsNumber(next?.[key]) - normalizeStatsNumber(previous?.[key]);
+  }
+  return result;
+}
+
+function statsFromD1Row(row = null) {
+  if (!row) return null;
+  return {
+    totalCount: normalizeStatsNumber(row.total_count),
+    captainCount: normalizeStatsNumber(row.captain_count),
+    fighterCount: normalizeStatsNumber(row.fighter_count),
+    riderCount: normalizeStatsNumber(row.rider_count),
+    shooterCount: normalizeStatsNumber(row.shooter_count),
+    shift1Count: normalizeStatsNumber(row.shift1_count),
+    shift2Count: normalizeStatsNumber(row.shift2_count),
+    shift3Count: normalizeStatsNumber(row.shift3_count),
+    shift4Count: normalizeStatsNumber(row.shift4_count),
+    bothCount: normalizeStatsNumber(row.both_count),
+  };
+}
+
+async function writeRegionTableStats(db, region, cycleId, stats = {}, updatedAtMs = Date.now()) {
+  const safeRegion = normalizeRegion(region);
+  const safeCycle = normalizeCycleId(cycleId || 'active');
+  const value = addRegionTableStats(emptyRegionTableStats(), stats || {});
+  await db.prepare(
+    `INSERT INTO region_table_stats (region, cycle_id, total_count, captain_count, fighter_count, rider_count, shooter_count, shift1_count, shift2_count, shift3_count, shift4_count, both_count, updated_at_ms)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+     ON CONFLICT(region, cycle_id) DO UPDATE SET
+       total_count = excluded.total_count,
+       captain_count = excluded.captain_count,
+       fighter_count = excluded.fighter_count,
+       rider_count = excluded.rider_count,
+       shooter_count = excluded.shooter_count,
+       shift1_count = excluded.shift1_count,
+       shift2_count = excluded.shift2_count,
+       shift3_count = excluded.shift3_count,
+       shift4_count = excluded.shift4_count,
+       both_count = excluded.both_count,
+       updated_at_ms = excluded.updated_at_ms`
+  ).bind(safeRegion, safeCycle, value.totalCount, value.captainCount, value.fighterCount, value.riderCount, value.shooterCount, value.shift1Count, value.shift2Count, value.shift3Count, value.shift4Count, value.bothCount, Number(updatedAtMs) || Date.now()).run();
+  return value;
+}
+
+async function readRegionTableStats(db, region, cycleId = 'active') {
+  await ensureRegionTableSchema(db);
+  const safeRegion = normalizeRegion(region);
+  const safeCycle = normalizeCycleId(cycleId || 'active');
+  const row = await db.prepare(
+    `SELECT total_count, captain_count, fighter_count, rider_count, shooter_count, shift1_count, shift2_count, shift3_count, shift4_count, both_count
+       FROM region_table_stats
+      WHERE region = ?1 AND cycle_id = ?2 LIMIT 1`
+  ).bind(safeRegion, safeCycle).first().catch(() => null);
+  return statsFromD1Row(row);
+}
+
+async function ensureRegionTableStats(db, region, cycleId = 'active') {
+  await ensureRegionTableSchema(db);
+  const safeRegion = normalizeRegion(region);
+  const safeCycle = normalizeCycleId(cycleId || 'active');
+  const rowsCount = await readStoredTableRowsCount(db, safeRegion, safeCycle).catch(() => 0);
+  const current = await readRegionTableStats(db, safeRegion, safeCycle).catch(() => null);
+  if (current && normalizeStatsNumber(current.totalCount) === normalizeStatsNumber(rowsCount)) return current;
+  if (!rowsCount) return writeRegionTableStats(db, safeRegion, safeCycle, emptyRegionTableStats());
+  const rows = await readTableRows(db, safeRegion, safeCycle);
+  const stats = regionTableStatsFromRows(rows);
+  return writeRegionTableStats(db, safeRegion, safeCycle, { ...stats, totalCount: rowsCount });
+}
+
+async function adjustRegionTableStats(db, region, cycleId, delta = {}) {
+  const current = await ensureRegionTableStats(db, region, cycleId).catch(() => emptyRegionTableStats());
+  const next = addRegionTableStats(current, delta, 1);
+  return writeRegionTableStats(db, region, cycleId, next);
+}
+
 function parseJson(value, fallback) {
   try {
     return JSON.parse(value || "");
@@ -1103,8 +1250,10 @@ async function saveTable(db, table) {
     const chunk = rows.slice(index, index + chunkSize).map(row => upsertTableRowStatement(db, region, cycleId, row));
     if (chunk.length) await db.batch(chunk);
   }
+  const stats = regionTableStatsFromRows(rows);
+  await writeRegionTableStats(db, region, cycleId, stats);
   const meta = await updateTableMeta(db, { ...table, region, cycleId }, rows.length);
-  return { ...meta, rows };
+  return { ...meta, rows, summary: stats };
 }
 
 async function migrateLegacyTableRowsIfNeeded(db, meta) {
@@ -1121,6 +1270,7 @@ async function migrateLegacyTableRowsIfNeeded(db, meta) {
     const chunk = rows.slice(index, index + chunkSize).map(row => upsertTableRowStatement(db, region, cycleId, row));
     if (chunk.length) await db.batch(chunk);
   }
+  await writeRegionTableStats(db, region, cycleId, regionTableStatsFromRows(rows));
   await updateTableMeta(db, { region, cycleId, version: Number(meta.version || 0) || Date.now(), settings: parseJson(meta.settings_json, {}) }, rows.length);
   return rows.length;
 }
@@ -1579,6 +1729,7 @@ async function autoSubmitTemplatesForRegionCycle(db, region, cycleId = 'active',
   const skippedCount = Math.max(0, templatesCount - createdCount);
   if (createdCount > 0) {
     await updateTableMeta(db, { region: safeRegion, cycleId: safeCycle, version: nowMs, settings: { ...(settings || {}), currentCycleId: safeCycle } }, afterCount);
+    await ensureRegionTableStats(db, safeRegion, safeCycle).catch(() => null);
   }
   await db.prepare(
     `UPDATE region_auto_submit_runs
@@ -2073,8 +2224,10 @@ async function handleRegionTableRead(request, env) {
   const settings = sanitizeSettings(parseJson(meta.settings_json, {}));
   if (!hasServerFilters) {
     const rows = await readTableRows(db, region, cycleId);
+    const summary = await ensureRegionTableStats(db, region, cycleId).catch(() => regionTableStatsFromRows(rows));
     const table = rowToTable(meta, rows);
-    return json({ ok: true, table, source: 'cloudflare-d1-region-table-rows', usage: { d1RowsRead: rows.length } }, 200, "private, no-store");
+    table.summary = summary;
+    return json({ ok: true, table, summary, source: 'cloudflare-d1-region-table-rows', usage: { d1RowsRead: rows.length + 1 } }, 200, "private, no-store");
   }
 
   const pageSize = Math.max(10, Math.min(100, requestedPageSize || 20));
@@ -2092,9 +2245,11 @@ async function handleRegionTableRead(request, env) {
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
   const safePage = Math.min(page, totalPages);
   const rows = await readTableRows(db, region, cycleId, { ...filters, limit: pageSize, offset: (safePage - 1) * pageSize });
+  const summary = await ensureRegionTableStats(db, region, cycleId).catch(() => regionTableStatsFromRows(rows));
   const table = rowToTable(meta, rows);
   table.settings = settings;
-  return json({ ok: true, table, page: safePage, pageSize, totalRows, totalPages, filters, source: 'cloudflare-d1-region-table-rows-paged', usage: { d1RowsRead: rows.length + 1 } }, 200, "private, no-store");
+  table.summary = summary;
+  return json({ ok: true, table, summary, page: safePage, pageSize, totalRows, totalPages, filters, source: 'cloudflare-d1-region-table-rows-paged', usage: { d1RowsRead: rows.length + 2 } }, 200, "private, no-store");
 }
 
 async function findRegionTableRow(db, region, cycleId, lookup = {}) {
@@ -2245,6 +2400,10 @@ async function handleRegionTableRegistration(request, env) {
   await upsertTableRowStatement(db, region, cycleId, savedRow).run();
   const previousRowsCount = await readStoredTableRowsCount(db, region, cycleId).catch(() => 0);
   const rowsCount = Math.max(0, previousRowsCount + (existingRow ? 0 : 1));
+  const oldStats = existingRow ? regionTableStatsFromRow(existingRow) : emptyRegionTableStats();
+  const newStats = regionTableStatsFromRow(savedRow);
+  const statDelta = diffRegionTableStats(newStats, oldStats);
+  await adjustRegionTableStats(db, region, cycleId, statDelta).catch(() => null);
   const table = await updateTableMeta(db, { region, cycleId, version: nowMs, settings: currentSettings }, rowsCount);
   if (user?.uid) await grantRegionAccess(db, region, user.uid, "registration");
   if (user?.uid && savedRow.uid && savedRow.uid !== user.uid) await grantRegionAccess(db, region, savedRow.uid, "registration-row");
@@ -2310,6 +2469,7 @@ async function handleRegionTableSnapshot(request, env) {
     ok: true,
     version: table.version,
     rowsCount: table.rows.length,
+    summary: table.summary || regionTableStatsFromRows(table.rows || []),
   });
 }
 
@@ -2330,14 +2490,22 @@ async function handleRegionTableDeleteRows(request, env) {
   const allowed = await canDeleteRegionRowsD1(db, env, user, region);
   if (!allowed) return json({ ok: false, error: "region_delete_access_denied" }, 403);
   const placeholders = ids.map((_, index) => `?${index + 3}`).join(',');
+  const deletingRows = await db.prepare(
+    `SELECT row_json FROM region_table_rows WHERE region = ?1 AND cycle_id = ?2 AND id IN (${placeholders})`
+  ).bind(region, cycleId, ...ids).all().then(result => (result?.results || []).map(row => sanitizeTableRow(parseJson(row.row_json, {}))).filter(row => row.nickname)).catch(() => []);
   const result = await db.prepare(
     `DELETE FROM region_table_rows WHERE region = ?1 AND cycle_id = ?2 AND id IN (${placeholders})`
   ).bind(region, cycleId, ...ids).run();
   const deleted = Math.max(0, Number(result?.meta?.changes || 0) || 0);
   const previousRowsCount = await readStoredTableRowsCount(db, region, cycleId).catch(() => 0);
   const rowsCount = Math.max(0, previousRowsCount - deleted);
-  if (deleted > 0) await updateTableMeta(db, { region, cycleId, version: Date.now(), settings: { currentCycleId: cycleId } }, rowsCount);
-  return json({ ok: true, region, deleted, rowsCount, usage: { d1RowsRead: 1, d1RowsWritten: deleted > 0 ? deleted + 1 : 0 }, source: "cloudflare-d1-region-table-rows" });
+  if (deleted > 0) {
+    const deletedStats = regionTableStatsFromRows(deletingRows);
+    const negativeStats = Object.fromEntries(Object.entries(deletedStats).map(([key, value]) => [key, -Math.max(0, Number(value) || 0)]));
+    await adjustRegionTableStats(db, region, cycleId, negativeStats).catch(() => null);
+    await updateTableMeta(db, { region, cycleId, version: Date.now(), settings: { currentCycleId: cycleId } }, rowsCount);
+  }
+  return json({ ok: true, region, deleted, rowsCount, usage: { d1RowsRead: 1 + deletingRows.length, d1RowsWritten: deleted > 0 ? deleted + 2 : 0 }, source: "cloudflare-d1-region-table-rows" });
 }
 
 async function handleRegionImportLockRead(request, env) {

@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="css/profile-page.css?v=006" />
   <link rel="stylesheet" href="css/players.css" />
   <link rel="stylesheet" href="css/admin-page.css?v=006" />
-  <link rel="stylesheet" href="css/region-page.css?v=029" />
+  <link rel="stylesheet" href="css/region-page.css?v=030" />
   <link rel="stylesheet" href="css/modal-import.css" />
   <link rel="stylesheet" href="css/modal-regions.css" />
   <link rel="stylesheet" href="css/modal-tiers.css" />
@@ -60,7 +60,7 @@
   <script type="module" src="js/player-manager-region-bridge.js?v=008"></script>
   <script type="module" src="js/auth-google.js?v=006"></script>
   <script type="module" src="js/notifications.js?v=006"></script>
-  <script type="module" src="js/pages/region-table-page.js?v=029"></script>
+  <script type="module" src="js/pages/region-table-page.js?v=030"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -90,6 +90,24 @@
         <small id="regionTableOpenedByText" data-i18n="regionSettings.openedByPlaceholder">Запустив: —</small>
       </div>
 
+      <div class="stats-grid region-table-stats" id="regionTableStats" hidden>
+        <div class="stat-card stat-card--duo">
+          <div class="stat-duo-item"><span data-i18n="auto.text.i.37954f">Усього гравців</span><strong id="regionStatTotalPlayers">0</strong></div>
+          <div class="stat-duo-divider" aria-hidden="true"></div>
+          <div class="stat-duo-item"><span data-i18n="players.captainsReady">Капітани готові</span><strong id="regionStatCaptainsReady">0</strong></div>
+        </div>
+        <div class="stat-card stat-card--plain">
+          <div class="stat-split stat-split--roles">
+            <div class="stat-chip stat-chip--role is-fighter"><b id="regionStatFighters">0</b><small data-i18n="troop.fighter">Бійці</small></div>
+            <div class="stat-chip stat-chip--role is-rider"><b id="regionStatRiders">0</b><small data-i18n="troop.rider">Наїзники</small></div>
+            <div class="stat-chip stat-chip--role is-shooter"><b id="regionStatShooters">0</b><small data-i18n="troop.shooter">Стрільці</small></div>
+          </div>
+        </div>
+        <div class="stat-card stat-card--shifts">
+          <div class="stat-split stat-split--shifts region-table-shift-stats" id="regionTableShiftStats"></div>
+        </div>
+      </div>
+
       <div class="region-table-controls">
         <label class="region-control region-control--region" id="regionManagerSwitch" hidden>
           <span data-i18n="account.region">Регіон</span>
@@ -102,6 +120,7 @@
         <label class="region-control region-control--troop"><span data-i18n="playerEdit.troopType">Тип</span><select id="regionTroopFilter"><option value="all" data-i18n="common.all">Усі</option><option value="fighter" data-i18n="troop.fighter">Бійці</option><option value="rider" data-i18n="troop.rider">Наїзники</option><option value="shooter" data-i18n="troop.shooter">Стрільці</option></select></label>
         <label class="region-control region-control--tier"><span data-i18n="playerEdit.tier">Тір</span><select id="regionTierFilter"><option value="all" data-i18n="common.all">Усі</option></select></label>
         <label class="region-control region-control--shift"><span data-i18n="common.shift">Зміна</span><select id="regionShiftFilter"><option value="all" data-i18n="common.all">Усі</option><option value="shift1" data-i18n="shift.shift1">Зміна 1</option><option value="shift2" data-i18n="shift.shift2">Зміна 2</option><option value="shift3" data-i18n="shift.shift3">Зміна 3</option><option value="shift4" data-i18n="shift.shift4">Зміна 4</option><option value="both" data-i18n="shift.both">Обидві</option></select></label>
+        <label class="region-control region-control--rows"><span data-i18n="region.rowsPerPage">Рядків</span><select id="regionTablePageSize"><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></label>
       </div>
 
       <div class="admin-table-wrap">
@@ -126,7 +145,6 @@
         <button class="btn" id="regionTablePrevBtn" type="button" data-i18n="common.previous">Назад</button>
         <span id="regionTablePageInfo">Сторінка 1 / 1</span>
         <button class="btn" id="regionTableNextBtn" type="button" data-i18n="common.next">Вперед</button>
-        <label class="region-table-page-size"><span data-i18n="region.rowsPerPage">Рядків</span><select id="regionTablePageSize"><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></label>
       </nav>
       <p class="region-mobile-help" data-i18n="region.mobileScrollHelp">На телефоні таблицю можна прокручувати горизонтально.</p>
       <section class="modal region-request-modal" id="regionRequestDetailsModal" aria-hidden="true" aria-label="Деталі заявки" data-i18n-aria-label="region.requestDetails">

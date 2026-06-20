@@ -613,7 +613,8 @@ export async function readRegionTableSnapshot(user, region, options = {}) {
       pageSize: Math.max(1, Number(data.pageSize) || Number(options?.pageSize) || normalized.rows.length || 20),
       totalRows: Math.max(0, Number(data.totalRows) || normalized.rows.length || 0),
       totalPages: Math.max(1, Number(data.totalPages) || 1),
-      filters: data.filters || {}
+      filters: data.filters || {},
+      summary: data.summary || normalized.summary || null
     };
   }
   writeLocalTableCache('regionTableSnapshot', safeRegion, normalized);
@@ -1187,6 +1188,7 @@ function normalizeTableResponse(data = {}, expectedRegion = '') {
     rows,
     version: Number(table.version) || 0,
     cached: true,
+    summary: data.summary || table.summary || null,
     source: data.source || 'cloudflare-d1-snapshot'
   };
 }
