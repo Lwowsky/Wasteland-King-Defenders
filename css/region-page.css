@@ -133,7 +133,7 @@
 .profile-tab-panel[data-profile-panel="region"] .region-alliance-control{grid-template-columns:1fr!important;}
 .profile-tab-panel[data-profile-panel="region"] .region-alliance-select{display:none!important;}
 
-/* v027: visible edit pencil in the region table */
+/* v028: visible edit pencil in the region table */
 .region-request-cell{display:inline-flex;align-items:center;gap:8px;min-width:0;max-width:100%;}
 .region-request-cell .region-request-link{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .region-request-edit-btn{display:inline-grid;place-items:center;width:34px;height:34px;min-width:34px;border:1px solid rgba(132,160,255,.36);border-radius:11px;background:linear-gradient(135deg,rgba(85,119,255,.24),rgba(126,86,255,.22));color:#f5f8ff;font:inherit;font-size:16px;font-weight:950;line-height:1;cursor:pointer;box-shadow:0 10px 24px rgba(54,87,190,.18);}

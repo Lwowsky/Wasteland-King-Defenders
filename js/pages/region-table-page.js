@@ -20,8 +20,8 @@ import {
   updateRegionRegistration,
   deleteRegionRegistrations,
   regionRegistrationToPlayer
-} from '../services/region-db.js?v=026';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=025';
+} from '../services/region-db.js?v=028';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=028';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
@@ -528,10 +528,13 @@ function openRegionPlayerEditor(rowId = '', trigger = null) {
 
 function rowHtml(row) {
   const labels = regionTableLabels();
-  const rowId = row.id || row.uid || '';
+  const rowId = row.id || row.uid || row.publicKey || '';
   const nickname = row.nickname || '—';
-  const editButton = rowId && canEditRegionRows()
-    ? `<button class="region-request-edit-btn" type="button" data-region-edit-id="${esc(rowId)}" aria-label="${esc(tv('players.editPlacement', 'Редагувати {name}', { name: nickname }))}" title="${esc(t('common.edit', 'Редагувати'))}">✎</button>`
+  const canEdit = canEditRegionRows();
+  // v028: show the edit pencil from the real region-table renderer.
+  // v027 could still be hidden when the browser served an old cached page/script through the service worker.
+  const editButton = rowId && canEdit
+    ? `<button class="region-request-edit-btn placement-edit" type="button" data-region-edit-id="${esc(rowId)}" aria-label="${esc(tv('players.editPlacement', 'Редагувати {name}', { name: nickname }))}" title="${esc(t('common.edit', 'Редагувати'))}">✎</button>`
     : '';
   return `<tr>
     <td data-label="${labels.nickname}"><span class="region-request-cell"><button class="region-request-link" type="button" data-region-request-id="${esc(rowId)}" aria-label="${esc(tv('region.openRequestDetails', 'Open request for {name}', { name: nickname }))}">${esc(nickname)}</button>${editButton}</span></td>

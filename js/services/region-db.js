@@ -13,7 +13,7 @@ import {
   createUserNotification,
   createRegionNotificationCampaign
 } from './user-db.js?v=005';
-import { readRegionFormShare as readRegionFormShareD1, readRegionFormSettings as readRegionFormSettingsD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=025';
+import { readRegionFormShare as readRegionFormShareD1, readRegionFormSettings as readRegionFormSettingsD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=028';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -1057,7 +1057,7 @@ export async function cleanupOldEmailFields(user) {
 
 async function rotateRegionPublicSharesForNewCycle(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=025');
+    const mod = await import('./region-table-cache.js?v=028');
     if (!mod?.rotateRegionPublicShares) return null;
     return await mod.rotateRegionPublicShares(user, region);
   } catch (error) {
@@ -1203,7 +1203,7 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=025');
+    const mod = await import('./region-table-cache.js?v=028');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1213,7 +1213,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=025');
+    const mod = await import('./region-table-cache.js?v=028');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1224,7 +1224,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function updateRegionTableRowD1First(user, region, registrationId, values = {}, settings = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=025');
+    const mod = await import('./region-table-cache.js?v=028');
     return await mod.updateRegionTableRowD1(user, region, registrationId, values, settings, { updateOnly: true });
   } catch (error) {
     const status = Number(error?.status || 0) || 0;
@@ -1236,7 +1236,7 @@ async function updateRegionTableRowD1First(user, region, registrationId, values 
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=025');
+    const mod = await import('./region-table-cache.js?v=028');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1246,7 +1246,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=025');
+    const mod = await import('./region-table-cache.js?v=028');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1277,7 +1277,7 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
 
 async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=025');
+    const mod = await import('./region-table-cache.js?v=028');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readMyRegionRegistrationD1(user, region, farmId, options);
   } catch (error) {
@@ -2863,7 +2863,7 @@ function localImportRegistrationKey(row = {}) {
 
 async function readLocalImportRegionLockFromD1(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=025');
+    const mod = await import('./region-table-cache.js?v=028');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readLocalImportRegionLock(user, region);
   } catch (error) {
@@ -2874,7 +2874,7 @@ async function readLocalImportRegionLockFromD1(user, region) {
 
 async function commitLocalImportRegionLockToD1(user, region, payload = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=025');
+    const mod = await import('./region-table-cache.js?v=028');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.commitLocalImportRegionLock(user, region, payload);
   } catch (error) {
