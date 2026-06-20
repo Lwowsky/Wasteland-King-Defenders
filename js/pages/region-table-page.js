@@ -20,12 +20,13 @@ import {
   updateRegionRegistration,
   deleteRegionRegistrations,
   regionRegistrationToPlayer
-} from '../services/region-db.js?v=028';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=028';
+} from '../services/region-db.js?v=029';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=029';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
 const SOURCE_MODE_KEY = 'wkd.players.sourceMode';
+const REGION_TABLE_PAGE_SIZE_KEY = 'wkd.regionTable.pageSize.v029';
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 const tv = (key, fallback = '', vars = {}) => {
   let text = t(key, fallback);
@@ -85,7 +86,7 @@ let tableSort = { field: 'nickname', dir: 1 };
 let timerId = null;
 let ready = false;
 let tablePage = 1;
-let tablePageSize = Number(localStorage.getItem('wkd.regionTable.pageSize') || 50) || 50;
+let tablePageSize = Number(localStorage.getItem(REGION_TABLE_PAGE_SIZE_KEY) || 10) || 10;
 let tableTotalRows = 0;
 let tableTotalPages = 1;
 let serverPagedTable = false;
@@ -416,14 +417,15 @@ function filteredRows() {
 
 function regionTableLabels() {
   return {
-    nickname: esc(t('account.nickname', 'Nickname')),
+    nickname: esc(t('players.nickname', 'Нік гравця')),
     alliance: esc(t('account.alliance', 'Alliance')),
     troop: esc(t('playerEdit.troopType', 'Troop type')),
     tier: esc(t('playerEdit.tier', 'Tier')),
     march: esc(t('playerEdit.march', 'March size')),
     rally: esc(t('playerEdit.rally', 'Rally size')),
     captain: esc(t('players.captain', 'Captain')),
-    shift: esc(t('account.shift', 'Shift'))
+    shift: esc(t('account.shift', 'Shift')),
+    placement: esc(t('auto.text.i.047f17', 'Розміщення'))
   };
 }
 
@@ -526,18 +528,34 @@ function openRegionPlayerEditor(rowId = '', trigger = null) {
   openRequestDetails(rowId);
 }
 
+function regionPlacementHtml(row = {}) {
+  const rowId = String(row.id || row.uid || row.publicKey || '').trim();
+  const count = Math.max(1, Math.min(4, Number(window.WKD?.getActiveShiftCount?.() || currentSettings?.shiftsCount || 2) || 2));
+  const assigned = typeof window.WKD?.getPlayerTowerAssignment === 'function' ? window.WKD.getPlayerTowerAssignment(rowId) : null;
+  const fallbackPlacement = String(row.placement || row.tower || row.towerName || '').trim();
+  const items = Array.from({ length: count }, (_, index) => {
+    const shift = `shift${index + 1}`;
+    const isHere = assigned && assigned.shift === shift;
+    const title = isHere ? assigned.towerName : t('common.reserve', 'Резерв');
+    const sub = isHere ? assigned.roleLabel : (fallbackPlacement && fallbackPlacement !== 'Резерв' ? fallbackPlacement : t('common.notAssigned', 'Не призначено'));
+    return `<span class="placement-item ${isHere ? 'is-assigned' : ''}" data-placement-shift="${index + 1}">
+      <b>${esc(t('common.shift', 'Зміна'))} ${index + 1}</b>
+      <strong>${esc(title)}</strong>
+      <small>${esc(sub)}</small>
+    </span>`;
+  }).join('');
+  const editButton = rowId && canEditRegionRows()
+    ? `<button class="region-request-edit-btn placement-edit" type="button" data-region-edit-id="${esc(rowId)}" aria-label="${esc(tv('players.editPlacement', 'Редагувати {name}', { name: row.nickname || '' }))}" title="${esc(t('common.edit', 'Редагувати'))}">✎</button>`
+    : '';
+  return `<div class="placement-card region-placement-card" style="--placement-cols:${count}">${items}${editButton}</div>`;
+}
+
 function rowHtml(row) {
   const labels = regionTableLabels();
   const rowId = row.id || row.uid || row.publicKey || '';
   const nickname = row.nickname || '—';
-  const canEdit = canEditRegionRows();
-  // v028: show the edit pencil from the real region-table renderer.
-  // v027 could still be hidden when the browser served an old cached page/script through the service worker.
-  const editButton = rowId && canEdit
-    ? `<button class="region-request-edit-btn placement-edit" type="button" data-region-edit-id="${esc(rowId)}" aria-label="${esc(tv('players.editPlacement', 'Редагувати {name}', { name: nickname }))}" title="${esc(t('common.edit', 'Редагувати'))}">✎</button>`
-    : '';
   return `<tr>
-    <td data-label="${labels.nickname}"><span class="region-request-cell"><button class="region-request-link" type="button" data-region-request-id="${esc(rowId)}" aria-label="${esc(tv('region.openRequestDetails', 'Open request for {name}', { name: nickname }))}">${esc(nickname)}</button>${editButton}</span></td>
+    <td data-label="${labels.nickname}"><button class="region-request-link" type="button" data-region-request-id="${esc(rowId)}" aria-label="${esc(tv('region.openRequestDetails', 'Open request for {name}', { name: nickname }))}">${esc(nickname)}</button></td>
     <td data-label="${labels.alliance}">${allianceBadge(row.alliance)}</td>
     <td data-label="${labels.troop}">${(window.WKD?.Badges?.troop || window.WKD?.troopBadge || ((type,label)=>`<span class="tag ${troopClass(type)}">${esc(label || '—')}</span>`))(row.troopType, troopLabel(row.troopType, currentSettings) || row.troopLabel || '—')}</td>
     <td data-label="${labels.tier}">${tierBadge(row.tier)}</td>
@@ -545,6 +563,7 @@ function rowHtml(row) {
     <td data-label="${labels.rally}">${formatNumber(row.rallySize)}</td>
     <td data-label="${labels.captain}">${captainBadge(row.captainReady)}</td>
     <td data-label="${labels.shift}">${shiftBadge(row.shift || row.shiftLabel)}</td>
+    <td data-label="${labels.placement}" class="region-placement-cell">${regionPlacementHtml(row)}</td>
   </tr>`;
 }
 
@@ -641,7 +660,7 @@ function render() {
   if (!body) return;
   const visible = filteredRows();
   const total = serverPagedTable ? tableTotalRows : rows.length;
-  body.innerHTML = visible.length ? visible.map(rowHtml).join('') : `<tr><td colspan="8">${t('region.table.emptyCycle', 'У цьому активному наборі ще немає гравців або заявок.')}</td></tr>`;
+  body.innerHTML = visible.length ? visible.map(rowHtml).join('') : `<tr><td colspan="9">${t('region.table.emptyCycle', 'У цьому активному наборі ще немає гравців або заявок.')}</td></tr>`;
   if (quietRegionTableStatus) {
     setStatus(quietRegionTableStatus, 'warn');
   } else {
@@ -705,7 +724,7 @@ async function load(user, options = {}) {
   rememberActiveRegion(currentRegion);
   rows = result.rows || [];
   tablePage = Math.max(1, Number(result.page || tablePage) || 1);
-  tablePageSize = Math.max(10, Math.min(100, Number(result.pageSize || tablePageSize) || 50));
+  tablePageSize = Math.max(10, Math.min(100, Number(result.pageSize || tablePageSize) || 10));
   tableTotalRows = serverPagedTable ? Math.max(0, Number(result.totalRows || 0) || 0) : rows.length;
   tableTotalPages = serverPagedTable ? Math.max(1, Number(result.totalPages || 1) || 1) : Math.max(1, Math.ceil(rows.length / tablePageSize));
   currentSettings = result.settings || {};
@@ -804,8 +823,8 @@ function bind() {
     reloadTablePage({ keepPage: true });
   });
   $('#regionTablePageSize')?.addEventListener('change', event => {
-    tablePageSize = Math.max(10, Math.min(100, Number(event.currentTarget.value) || 50));
-    localStorage.setItem('wkd.regionTable.pageSize', String(tablePageSize));
+    tablePageSize = Math.max(10, Math.min(100, Number(event.currentTarget.value) || 10));
+    localStorage.setItem(REGION_TABLE_PAGE_SIZE_KEY, String(tablePageSize));
     reloadTablePage({ resetPage: true });
   });
   $('#openRegionLookupBtn')?.addEventListener('click', () => openRegion($('#regionLookupInput')?.value || ''));

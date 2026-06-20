@@ -908,7 +908,8 @@ function tableRowsOrder(options = {}) {
     marchSize: `CAST(json_extract(row_json, '$.marchSize') AS INTEGER) ${numericDir}, nickname_key ASC`,
     rallySize: `CAST(json_extract(row_json, '$.rallySize') AS INTEGER) ${numericDir}, nickname_key ASC`,
     captainReady: `CAST(json_extract(row_json, '$.captainReady') AS INTEGER) ${numericDir}, nickname_key ASC`,
-    shift: `shift COLLATE NOCASE ${textDir}, nickname_key ASC`
+    shift: `shift COLLATE NOCASE ${textDir}, nickname_key ASC`,
+    placement: `json_extract(row_json, '$.placement') COLLATE NOCASE ${textDir}, nickname_key ASC`
   };
   return map[field] || `updated_at_ms DESC, nickname_key ASC`;
 }

@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="css/profile-page.css?v=006" />
   <link rel="stylesheet" href="css/players.css" />
   <link rel="stylesheet" href="css/admin-page.css?v=006" />
-  <link rel="stylesheet" href="css/region-page.css?v=028" />
+  <link rel="stylesheet" href="css/region-page.css?v=029" />
   <link rel="stylesheet" href="css/modal-import.css" />
   <link rel="stylesheet" href="css/modal-regions.css" />
   <link rel="stylesheet" href="css/modal-tiers.css" />
@@ -60,7 +60,7 @@
   <script type="module" src="js/player-manager-region-bridge.js?v=008"></script>
   <script type="module" src="js/auth-google.js?v=006"></script>
   <script type="module" src="js/notifications.js?v=006"></script>
-  <script type="module" src="js/pages/region-table-page.js?v=028"></script>
+  <script type="module" src="js/pages/region-table-page.js?v=029"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -108,7 +108,7 @@
         <table class="admin-table region-public-table">
           <thead>
             <tr>
-              <th><span data-i18n="account.nickname">Нік</span><button class="sort-btn" type="button" data-region-sort="nickname" aria-label="Sort nickname">↓</button></th>
+              <th><span data-i18n="players.nickname">Нік гравця</span><button class="sort-btn" type="button" data-region-sort="nickname" aria-label="Sort nickname">↓</button></th>
               <th><span data-i18n="account.alliance">Альянс</span><button class="sort-btn" type="button" data-region-sort="alliance" aria-label="Sort alliance">↓</button></th>
               <th><span data-i18n="playerEdit.troopType">Тип</span><button class="sort-btn" type="button" data-region-sort="troopType" aria-label="Sort troop">↓</button></th>
               <th><span data-i18n="playerEdit.tier">Тір</span><button class="sort-btn" type="button" data-region-sort="tier" aria-label="Sort tier">↓</button></th>
@@ -116,16 +116,17 @@
               <th><span data-i18n="playerEdit.rally">Ралі</span><button class="sort-btn" type="button" data-region-sort="rallySize" aria-label="Sort rally">↓</button></th>
               <th><span data-i18n="players.captain">Капітан</span><button class="sort-btn" type="button" data-region-sort="captainReady" aria-label="Sort captain">↓</button></th>
               <th><span data-i18n="common.shift">Зміна</span><button class="sort-btn" type="button" data-region-sort="shift" aria-label="Sort shift">↓</button></th>
+              <th class="region-placement-head"><span data-i18n="auto.text.i.047f17">Розміщення</span><button class="sort-btn" type="button" data-region-sort="placement" aria-label="Sort placement">↓</button></th>
             </tr>
           </thead>
-          <tbody id="regionRegistrationsBody"><tr><td colspan="8" data-i18n="region.loadingRequests">Завантажую заявки...</td></tr></tbody>
+          <tbody id="regionRegistrationsBody"><tr><td colspan="9" data-i18n="region.loadingRequests">Завантажую заявки...</td></tr></tbody>
         </table>
       </div>
       <nav class="region-table-pagination" id="regionTablePager" aria-label="Сторінки таблиці">
         <button class="btn" id="regionTablePrevBtn" type="button" data-i18n="common.previous">Назад</button>
         <span id="regionTablePageInfo">Сторінка 1 / 1</span>
         <button class="btn" id="regionTableNextBtn" type="button" data-i18n="common.next">Вперед</button>
-        <label class="region-table-page-size"><span data-i18n="region.rowsPerPage">Рядків</span><select id="regionTablePageSize"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></label>
+        <label class="region-table-page-size"><span data-i18n="region.rowsPerPage">Рядків</span><select id="regionTablePageSize"><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></label>
       </nav>
       <p class="region-mobile-help" data-i18n="region.mobileScrollHelp">На телефоні таблицю можна прокручувати горизонтально.</p>
       <section class="modal region-request-modal" id="regionRequestDetailsModal" aria-hidden="true" aria-label="Деталі заявки" data-i18n-aria-label="region.requestDetails">

@@ -139,3 +139,30 @@
 .region-request-edit-btn{display:inline-grid;place-items:center;width:34px;height:34px;min-width:34px;border:1px solid rgba(132,160,255,.36);border-radius:11px;background:linear-gradient(135deg,rgba(85,119,255,.24),rgba(126,86,255,.22));color:#f5f8ff;font:inherit;font-size:16px;font-weight:950;line-height:1;cursor:pointer;box-shadow:0 10px 24px rgba(54,87,190,.18);}
 .region-request-edit-btn:hover,.region-request-edit-btn:focus-visible{border-color:rgba(175,194,255,.7);background:linear-gradient(135deg,rgba(96,130,255,.38),rgba(137,94,255,.34));outline:none;transform:translateY(-1px);}
 @media (max-width:760px){.region-request-cell{justify-content:flex-end}.region-request-edit-btn{width:38px;height:38px;min-width:38px;}}
+
+/* v029: region table layout matches the main players table and keeps the edit pencil after shift/placement. */
+.region-public-table{min-width:1380px;table-layout:fixed;}
+.region-public-table th,.region-public-table td{text-align:center;vertical-align:middle;}
+.region-public-table th:first-child,.region-public-table td:first-child{text-align:left;}
+.region-public-table td{height:74px;}
+.region-public-table th:nth-child(1),.region-public-table td:nth-child(1){width:14%;}
+.region-public-table th:nth-child(2),.region-public-table td:nth-child(2){width:9%;}
+.region-public-table th:nth-child(3),.region-public-table td:nth-child(3){width:10%;}
+.region-public-table th:nth-child(4),.region-public-table td:nth-child(4){width:7%;}
+.region-public-table th:nth-child(5),.region-public-table td:nth-child(5),
+.region-public-table th:nth-child(6),.region-public-table td:nth-child(6){width:10%;}
+.region-public-table th:nth-child(7),.region-public-table td:nth-child(7),
+.region-public-table th:nth-child(8),.region-public-table td:nth-child(8){width:9%;}
+.region-public-table th:nth-child(9),.region-public-table td:nth-child(9){width:22%;min-width:300px;}
+.region-public-table .region-request-link{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
+.region-placement-cell{padding-inline:8px!important;}
+.region-placement-card{margin-inline:auto;justify-content:center;}
+.region-placement-card .placement-edit{margin-left:0;}
+.region-placement-card .region-request-edit-btn{width:34px;height:58px;min-width:34px;border-radius:14px;background:rgba(255,255,255,.04);box-shadow:none;}
+.region-placement-card .region-request-edit-btn:hover,.region-placement-card .region-request-edit-btn:focus-visible{background:rgba(86,123,235,.18);border-color:rgba(136,160,255,.28);transform:none;}
+@media (max-width:700px){
+  .region-public-table{min-width:0;}
+  .region-public-table th:nth-child(n),.region-public-table td:nth-child(n){width:auto;min-width:0;}
+  .region-placement-card{justify-content:end;}
+  .region-placement-card .region-request-edit-btn{height:42px;}
+}
