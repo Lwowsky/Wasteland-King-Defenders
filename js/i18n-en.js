@@ -2550,4 +2550,9 @@ window.WKD_TRANSLATIONS.en = {
   'players.searchNickAlliance': "Search by nick / alliance",
   'players.resetFilters': "Reset filters",
 
+  'staff.playerKind': 'Profile',
+  'staff.mainPlayer': 'Main',
+  'staff.farm': 'Farm',
+  'staff.owner': 'Owner',
+
 };

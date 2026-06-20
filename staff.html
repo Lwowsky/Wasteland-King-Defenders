@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="css/auth-page.css" />
   <link rel="stylesheet" href="css/profile-page.css?v=271" />
   <link rel="stylesheet" href="css/players.css" />
-  <link rel="stylesheet" href="css/region-page.css?v=034" />
+  <link rel="stylesheet" href="css/region-page.css?v=035" />
   <link rel="stylesheet" href="css/modal-import.css" />
   <link rel="stylesheet" href="css/modal-regions.css" />
   <link rel="stylesheet" href="css/modal-tiers.css" />
@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="css/tower-planner.css" />
   <link rel="stylesheet" href="css/tower-planner-tablet.css" />
   <link rel="stylesheet" href="css/tower-planner-mobile.css" />
-  <link rel="stylesheet" href="css/staff-page.css?v=034" />
+  <link rel="stylesheet" href="css/staff-page.css?v=035" />
   <link rel="stylesheet" href="css/confirm-modal.css" />
   <link rel="stylesheet" href="css/contact-modal.css" />
   <link rel="stylesheet" href="css/responsive.css" />
@@ -57,13 +57,13 @@
 <script defer src="js/player-manager-modal.js?v=271"></script>
 <script defer src="js/tower-planner.js?v=008"></script>
 <script defer src="js/contact-modal.js?v=271"></script>
-<script type="module" src="js/player-manager-region-bridge.js?v=034"></script>
+<script type="module" src="js/player-manager-region-bridge.js?v=035"></script>
   <script defer src="js/header.js?v=271"></script>
   <script defer src="js/core/app-boot.js?v=019"></script>
   <script defer src="js/app-login-shell.js?v=271"></script>
   <script type="module" src="js/auth-google.js?v=019"></script>
   <script type="module" src="js/notifications.js?v=271"></script>
-  <script type="module" src="js/pages/staff-page.js?v=034"></script>
+  <script type="module" src="js/pages/staff-page.js?v=035"></script>
 </head>
 <body class="staff-shell access-guard-pending">
   <div data-include="partials/header.html"></div>
@@ -114,6 +114,7 @@
           <label><span data-i18n="account.alliance">Альянс</span><input id="staffAllianceFilter" type="text" maxlength="3" placeholder="YYY" /></label>
           <label><span data-i18n="account.nickname">Нік</span><input id="staffNickFilter" type="search" placeholder="Пошук по ніку" data-i18n-placeholder="admin.searchNick" /></label>
           <label><span data-i18n="account.rank">Ранг</span><select id="staffRankFilter"><option value="all" data-i18n="common.all">Усі</option><option value="p1">P1</option><option value="p2">P2</option><option value="p3">P3</option><option value="p4">P4</option><option value="p5">P5</option></select></label>
+          <label class="staff-farms-toggle"><span data-i18n="stats.display">Показ</span><span class="staff-toggle-box"><input id="staffIncludeFarmsToggle" type="checkbox" /> <b data-i18n="stats.includeFarms">Основи + ферми</b></span></label>
         </div>
 
         <div class="admin-table-wrap">
@@ -121,6 +122,7 @@
             <thead>
               <tr>
                 <th data-i18n="account.nickname">Нік</th>
+                <th data-i18n="staff.playerKind">Профіль</th>
                 <th data-i18n="account.region">Регіон</th>
                 <th data-i18n="account.alliance">Альянс</th>
                 <th data-i18n="account.rank">Ранг</th>
@@ -130,7 +132,7 @@
               </tr>
             </thead>
             <tbody id="staffPlayersBody">
-              <tr><td colspan="7" data-i18n="staff.loading">Завантажую доступ...</td></tr>
+              <tr><td colspan="8" data-i18n="staff.loading">Завантажую доступ...</td></tr>
             </tbody>
           </table>
         </div>

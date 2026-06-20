@@ -195,7 +195,7 @@
 
 .staff-filters {
   display: grid;
-  grid-template-columns: minmax(150px, .7fr) minmax(180px, .8fr) minmax(320px, 1.6fr) minmax(140px, .6fr);
+  grid-template-columns: minmax(130px, .7fr) minmax(150px, .8fr) minmax(260px, 1.45fr) minmax(120px, .6fr) max-content;
   gap: 12px;
   margin-bottom: 14px;
 }
@@ -243,6 +243,53 @@
   opacity: .78;
   color: #dce6ff;
   background: #111a2e;
+}
+
+.staff-farms-toggle {
+  align-self: end;
+}
+
+.staff-toggle-box {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid #26375d;
+  border-radius: 16px;
+  background: #07101f;
+  color: #fff;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.staff-toggle-box input {
+  width: 18px;
+  height: 18px;
+  accent-color: #7b74ff;
+}
+
+.staff-toggle-box b {
+  font-size: 13px;
+}
+
+.staff-kind-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.16);
+  font-weight: 1000;
+  color: #eaf0ff;
+  background: rgba(78,105,170,.28);
+}
+
+.staff-kind-badge.is-farm {
+  color: #dffdf1;
+  background: linear-gradient(135deg, rgba(22,125,94,.86), rgba(42,154,132,.72));
+  border-color: rgba(120,255,205,.32);
 }
 
 .staff-page .btn {
@@ -428,6 +475,11 @@
 
   .staff-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .staff-farms-toggle .staff-toggle-box {
+    width: 100%;
+    box-sizing: border-box;
   }
 }
 

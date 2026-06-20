@@ -2550,4 +2550,9 @@ window.WKD_TRANSLATIONS.zh = {
   'players.searchNickAlliance': "按昵称/联盟搜索",
   'players.resetFilters': "重置筛选",
 
+  'staff.playerKind': '资料',
+  'staff.mainPlayer': '主号',
+  'staff.farm': '农场',
+  'staff.owner': '所有者',
+
 };

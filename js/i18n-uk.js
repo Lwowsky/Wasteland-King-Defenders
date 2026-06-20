@@ -2550,4 +2550,9 @@ window.WKD_TRANSLATIONS.uk = {
   'players.searchNickAlliance': "Пошук за ніком / альянсом",
   'players.resetFilters': "Скинути фільтри",
 
+  'staff.playerKind': 'Профіль',
+  'staff.mainPlayer': 'Основа',
+  'staff.farm': 'Ферма',
+  'staff.owner': 'Власник',
+
 };

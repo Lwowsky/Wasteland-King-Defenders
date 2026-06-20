@@ -2550,4 +2550,9 @@ window.WKD_TRANSLATIONS.de = {
   'players.searchNickAlliance': "Nach Nick / Allianz suchen",
   'players.resetFilters': "Filter zurücksetzen",
 
+  'staff.playerKind': 'Profil',
+  'staff.mainPlayer': 'Haupt',
+  'staff.farm': 'Farm',
+  'staff.owner': 'Besitzer',
+
 };

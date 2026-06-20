@@ -2550,4 +2550,9 @@ window.WKD_TRANSLATIONS.vi = {
   'players.searchNickAlliance': "Tìm theo nick / liên minh",
   'players.resetFilters': "Đặt lại bộ lọc",
 
+  'staff.playerKind': 'Hồ sơ',
+  'staff.mainPlayer': 'Chính',
+  'staff.farm': 'Farm',
+  'staff.owner': 'Chủ',
+
 };

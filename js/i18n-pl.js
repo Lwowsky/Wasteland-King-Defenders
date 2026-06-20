@@ -2550,4 +2550,9 @@ window.WKD_TRANSLATIONS.pl = {
   'players.searchNickAlliance': "Szukaj po nicku / sojuszu",
   'players.resetFilters': "Wyczyść filtry",
 
+  'staff.playerKind': 'Profil',
+  'staff.mainPlayer': 'Główne',
+  'staff.farm': 'Farma',
+  'staff.owner': 'Właściciel',
+
 };
