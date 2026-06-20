@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=020';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=020';
+} from '../services/region-db.js?v=021';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=021';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -692,6 +692,12 @@ function d1RegistrationErrorCode(error) {
   return String(error?.data?.error || error?.message || '').trim();
 }
 
+function duplicateNicknameMessage() {
+  const nickname = $('#wrNickname')?.value?.trim();
+  const suffix = nickname ? ` (${nickname})` : '';
+  return `${t('region.errorNicknameDuplicateGuestMessage', 'Заявка з таким нікнеймом уже є в активному циклі. Повторно такий самий нік не відправляється.')}${suffix}`;
+}
+
 function isHardD1RegistrationError(error) {
   const code = d1RegistrationErrorCode(error);
   return error?.status === 409 || [
@@ -729,25 +735,21 @@ ${message}`);
 
 async function showNicknameDuplicateDialog() {
   const title = t('region.errorNicknameDuplicateGuestTitle', 'Нікнейм уже зареєстрований');
-  const message = t('region.errorNicknameDuplicateGuestMessage', 'Гравець з таким нікнеймом уже зареєстрований у цьому регіоні. Щоб змінити дані, зареєструйся на сайті або звернись до консула регіону.');
-  setStatus(message, 'error');
-  if (window.WKD?.actionDoneDialog) {
-    await window.WKD.actionDoneDialog({
+  const message = duplicateNicknameMessage();
+  setStatus(message, 'warn');
+  if (window.WKD?.confirmDialog) {
+    await window.WKD.confirmDialog({
       title,
       message,
-      note: t('region.errorNicknameDuplicateGuestNote', 'Це захищає таблицю від дублікатів з різних пристроїв.'),
+      note: t('region.errorNicknameDuplicateGuestNote', 'Дублікат не записаний у D1, тому write-ліміт не витрачено.'),
       icon: '⚠️',
-      acceptText: t('common.goHome', 'На головну'),
+      acceptText: t('common.ok', 'Ок'),
       cancelText: t('common.continue', 'Продовжити'),
-      acceptClass: 'btn btn-danger-solid',
-      href: 'index.html'
+      acceptClass: 'btn btn-danger-solid'
     });
-  } else {
-    window.alert(`${title}
-
-${message}`);
   }
 }
+
 
 async function submitRegistrationD1First(values, options = {}) {
   const payload = { ...values, region: currentRegion, publicLink: Boolean(!currentUser || shortCodeFromLink) };

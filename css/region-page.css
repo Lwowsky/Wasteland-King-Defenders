@@ -128,3 +128,7 @@
   .profile-tab-panel[data-profile-panel="region"] .region-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 .region-alliance-control{display:grid;grid-template-columns:1fr;gap:8px;align-items:center}.region-alliance-control.has-alliance-select{grid-template-columns:minmax(96px,.65fr)minmax(132px,1fr)}.region-alliance-control input,.region-alliance-control select{width:100%;min-width:0}.region-alliance-select[hidden]{display:none!important}@media (max-width:640px){.region-alliance-control,.region-alliance-control.has-alliance-select{grid-template-columns:1fr}.region-alliance-select:not([hidden]){display:block}}
+
+/* v021: profile form uses the existing alliance input+datalist only; do not show the mobile select duplicate inside profile. */
+.profile-tab-panel[data-profile-panel="region"] .region-alliance-control{grid-template-columns:1fr!important;}
+.profile-tab-panel[data-profile-panel="region"] .region-alliance-select{display:none!important;}
