@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=019';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=019';
+} from '../services/region-db.js?v=020';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=020';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -156,12 +156,10 @@ function getAutoProfilePreference(region = currentRegion, farmId = selectedFarmI
   return Boolean(farm?.wastelandProfile?.autoSubmitEnabled);
 }
 async function setAutoProfilePreference(enabled, region = currentRegion, farmId = selectedFarmId) {
-  if (!currentUser) return;
+  if (!currentUser) return currentProfile;
   const values = { ...(accountDraft(currentProfile, farmId) || {}), ...readForm(), autoSubmitEnabled: enabled };
-  currentProfile = await saveFarmWastelandProfile(currentUser, farmId || 'main', values).catch(error => {
-    console.warn('[WKD] auto profile preference save failed:', error);
-    return currentProfile;
-  });
+  currentProfile = await saveFarmWastelandProfile(currentUser, farmId || 'main', values);
+  return currentProfile;
 }
 function syncAutoProfileCheckbox() {
   const input = $('#wrAutoFillProfile');
@@ -292,6 +290,7 @@ function renderAllianceOptions() {
   const list = $('#wrAllianceList');
   const select = $('#wrAllianceSelect');
   const input = $('#wrAlliance');
+  const wrap = document.querySelector('.region-alliance-control');
   const options = regionAlliances
     .map(item => {
       const tag = String(item.tag || item.id || '').trim();
@@ -307,6 +306,7 @@ function renderAllianceOptions() {
     select.innerHTML = `<option value="">${esc(t('region.form.chooseAlliance', 'Вибери альянс'))}</option>`
       + options.map(item => `<option value="${esc(item.tag)}">${esc(item.label || item.tag)}</option>`).join('');
   }
+  wrap?.classList.toggle('has-alliance-select', Boolean(options.length));
   syncAllianceSelect(input?.value || '');
 }
 
@@ -560,14 +560,18 @@ function renderSavedFarmTools(profile = {}) {
   renderRegionSelect();
 }
 
+function allianceFallbackForProfile(game = {}, saved = {}) {
+  return allianceTag3(saved.alliance || game.alliance || (regionAlliances.length === 1 ? regionAlliances[0].tag : '') || formSettings?.hostAlliance || '');
+}
+
 function fillProfileFields(profile, farmId = selectedFarmId) {
   const game = getFarmById(profile || {}, farmId) || getGameProfile(profile || {});
   selectedFarmId = game.farmId || farmId || 'main';
   const saved = game.wastelandProfile || {};
   fillSavedRegistration({
     ...saved,
-    nickname: game.nickname || saved.nickname || '',
-    alliance: game.alliance || saved.alliance || '',
+    nickname: saved.nickname || game.nickname || '',
+    alliance: allianceFallbackForProfile(game, saved),
     rank: game.rank || saved.rank || 'p1',
     shk: game.shk || saved.shk || ''
   }, { copyEventFields: false });
@@ -632,10 +636,14 @@ function readExtraSquads() {
 function readForm() {
   const extraSquads = readExtraSquads();
   const firstExtra = extraSquads[0] || {};
+  const game = activeFarmProfile(currentProfile, selectedFarmId);
+  const saved = game?.wastelandProfile || {};
+  const alliance = allianceTag3($('#wrAlliance')?.value || allianceFallbackForProfile(game || {}, saved));
+  if (!$('#wrAlliance')?.value && alliance) setAllianceInputValue(alliance);
   return {
     farmId: selectedFarmId || 'main',
     nickname: $('#wrNickname')?.value,
-    alliance: allianceTag3($('#wrAlliance')?.value),
+    alliance,
     troopType: $('#wrTroopType')?.value,
     tier: $('#wrTier')?.value,
     lairLevel: $('#wrLairLevel')?.value,
@@ -878,9 +886,15 @@ async function handleSubmit(event) {
 }
 
 async function handleSaveDraft() {
-  const values = readForm();
-  await saveDraft(values);
-  setStatus(currentUser ? t('region.draftSavedAccount', 'Поточні дані заявки збережено в акаунті.') : t('region.draftSaved', 'Поточні дані заявки збережено на цьому пристрої.'), 'success');
+  try {
+    const values = readForm();
+    await saveDraft(values);
+    setStatus(currentUser ? t('region.draftSavedAccount', 'Поточні дані заявки збережено в акаунті.') : t('region.draftSaved', 'Поточні дані заявки збережено на цьому пристрої.'), 'success');
+  } catch (error) {
+    console.error(error);
+    const code = String(error?.message || '').trim();
+    setStatus(`${t('profile.formDataSaveFailed', 'Не вдалося зберегти шаблон. Перевір права доступу або Google-вхід.')}${code ? ` (${code})` : ''}`, 'error');
+  }
 }
 
 async function prepareForm(settings) {

@@ -7,7 +7,8 @@ import {
   saveFarmWastelandProfile,
   saveSignedInUser
 } from '../services/user-db.js';
-import { getRegionSettings } from '../services/region-db.js?v=019';
+import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=020';
+import { isRegionTableCacheEnabled, saveRegionRegistrationD1First } from '../services/region-table-cache.js?v=020';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -16,6 +17,10 @@ const tv = (key, fallback = '', vars = {}) => {
   Object.entries(vars).forEach(([name, value]) => { text = text.replaceAll(`{${name}}`, String(value)); });
   return text;
 };
+const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+const allianceTag3 = value => window.WKD?.allianceTag3
+  ? window.WKD.allianceTag3(value)
+  : Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
 const tiers = Array.from({ length: 14 }, (_, i) => `T${14 - i}`);
 const allShifts = ['shift1', 'shift2', 'shift3', 'shift4', 'both'];
 let availableShifts = ['shift1', 'shift2'];
@@ -59,6 +64,8 @@ async function loadShiftSettingsForFarm(farm = {}) {
 let currentUser = null;
 let profile = null;
 let selectedFarmId = 'main';
+let regionAlliances = [];
+let currentRegionSettings = null;
 let ready = false;
 
 function setStatus(text, type = 'muted') {
@@ -127,6 +134,74 @@ function farmLabel(farm = {}, index = 0) {
   return `${name}${region}`;
 }
 
+function renderAllianceOptions(selected = '') {
+  const list = $('#wrAllianceList');
+  const select = $('#wrAllianceSelect');
+  const wrap = document.querySelector('.region-alliance-control');
+  const options = regionAlliances
+    .map(item => {
+      const tag = allianceTag3(item?.tag || item?.id || item);
+      const label = [tag, item?.name].filter(Boolean).join(' — ');
+      return tag ? { tag, label: label || tag } : null;
+    })
+    .filter(Boolean);
+  if (list) list.innerHTML = options.map(item => `<option value="${esc(item.tag)}" label="${esc(item.label)}"></option>`).join('');
+  if (select) {
+    select.hidden = !options.length;
+    select.innerHTML = `<option value="">${esc(t('region.form.chooseAlliance', 'Вибери альянс'))}</option>`
+      + options.map(item => `<option value="${esc(item.tag)}">${esc(item.label)}</option>`).join('');
+  }
+  wrap?.classList.toggle('has-alliance-select', Boolean(options.length));
+  syncAllianceSelect(selected || $('#wrAlliance')?.value || '');
+}
+
+function syncAllianceSelect(value = '') {
+  const select = $('#wrAllianceSelect');
+  if (!select || select.hidden) return;
+  const tag = allianceTag3(value || '');
+  select.value = [...select.options].some(option => option.value === tag) ? tag : '';
+}
+
+function setAllianceInputValue(value = '') {
+  const input = $('#wrAlliance');
+  const tag = allianceTag3(value || '');
+  if (input) input.value = tag;
+  syncAllianceSelect(tag);
+}
+
+async function loadAlliancesForFarm(farm = {}) {
+  regionAlliances = [];
+  currentRegionSettings = null;
+  if (!farm?.region) {
+    renderAllianceOptions('');
+    return;
+  }
+  try {
+    currentRegionSettings = await getRegionSettings(farm.region);
+  } catch (error) {
+    if (window.WKD_DEBUG) console.warn('[WKD] profile region settings skipped:', error);
+    currentRegionSettings = null;
+  }
+  try {
+    regionAlliances = await listRegionAlliances(farm.region);
+  } catch (error) {
+    if (window.WKD_DEBUG) console.warn('[WKD] profile alliance list skipped:', error);
+    regionAlliances = [];
+  }
+  if (!regionAlliances.length) {
+    const tags = new Set();
+    const add = value => { const tag = allianceTag3(typeof value === 'string' ? value : (value?.tag || value?.id || '')); if (tag) tags.add(tag); };
+    add(currentRegionSettings?.hostAlliance || currentRegionSettings?.activeHostAlliance || '');
+    (Array.isArray(currentRegionSettings?.rotationAlliances) ? currentRegionSettings.rotationAlliances : []).forEach(add);
+    regionAlliances = [...tags].map(tag => ({ id: tag, tag, name: tag }));
+  }
+  renderAllianceOptions(farm.alliance || farm.wastelandProfile?.alliance || '');
+}
+
+function allianceFallbackForFarm(farm = {}, saved = {}) {
+  return allianceTag3(saved.alliance || farm.alliance || (regionAlliances.length === 1 ? regionAlliances[0].tag : ''));
+}
+
 function readExtraSquads() {
   if (!$('#wrExtraEnabled')?.checked) return [];
   return [...document.querySelectorAll('[data-extra-troop]:checked')]
@@ -141,9 +216,14 @@ function readExtraSquads() {
 function readRegionForm() {
   const extraSquads = readExtraSquads();
   const firstExtra = extraSquads[0] || {};
+  const farm = getFarmById(profile || {}, selectedFarmId) || getGameProfile(profile || {});
+  const alliance = allianceTag3($('#wrAlliance')?.value || allianceFallbackForFarm(farm, farm?.wastelandProfile || {}));
+  if (!$('#wrAlliance')?.value && alliance) setAllianceInputValue(alliance);
   return {
+    farmId: selectedFarmId || 'main',
+    region: farm.region || '',
     nickname: $('#wrNickname')?.value,
-    alliance: $('#wrAlliance')?.value,
+    alliance,
     troopType: $('#wrTroopType')?.value,
     tier: $('#wrTier')?.value,
     lairLevel: $('#wrLairLevel')?.value,
@@ -157,13 +237,16 @@ function readRegionForm() {
     extraEnabled: Boolean(extraSquads.length),
     extraSquads,
     extraTroopType: firstExtra.troopType || '',
-    extraTier: firstExtra.tier || ''
+    extraTier: firstExtra.tier || '',
+    autoSubmitEnabled: Boolean($('#wrAutoFillProfile')?.checked)
   };
 }
 
 function setRegionForm(data = {}) {
   $('#wrNickname') && ($('#wrNickname').value = data.nickname || '');
-  $('#wrAlliance') && ($('#wrAlliance').value = data.alliance || '');
+  $('#wrAlliance') && ($('#wrAlliance').value = allianceTag3(data.alliance || ''));
+  syncAllianceSelect(data.alliance || '');
+  $('#wrAutoFillProfile') && ($('#wrAutoFillProfile').checked = Boolean(data.autoSubmitEnabled));
   $('#wrTroopType') && ($('#wrTroopType').value = data.troopType || '');
   $('#wrTier') && ($('#wrTier').value = data.tier || 'T10');
   $('#wrLairLevel') && ($('#wrLairLevel').value = data.lairLevel || data.lair || '');
@@ -188,12 +271,13 @@ function setRegionForm(data = {}) {
 async function fillSelectedFarm() {
   const farm = getFarmById(profile || {}, selectedFarmId) || getGameProfile(profile || {});
   await loadShiftSettingsForFarm(farm);
+  await loadAlliancesForFarm(farm);
   const saved = farm.wastelandProfile || {};
   renderShiftOptions(normalizeShiftForAvailable(saved.shift || 'shift1'));
   setRegionForm({
     ...saved,
-    nickname: farm.nickname || '',
-    alliance: farm.alliance || saved.alliance || ''
+    nickname: saved.nickname || farm.nickname || '',
+    alliance: allianceFallbackForFarm(farm, saved)
   });
   $('#regionNumberPill') && ($('#regionNumberPill').textContent = farm.region ? `R${farm.region}` : 'R—');
   setStatus(farm.region
@@ -253,6 +337,34 @@ function prepareProfileForm() {
   $('#wastelandForm') && ($('#wastelandForm').hidden = false);
 }
 
+function validateProfileRegionData(values = {}, farm = {}) {
+  const errors = [];
+  if (!String(values.nickname || '').trim()) errors.push(t('region.errorNickname', 'Введи нікнейм.'));
+  if (!String(values.alliance || '').trim()) errors.push(t('region.errorAlliance', 'Введи альянс.'));
+  if (!String(values.troopType || '').trim()) errors.push(t('region.errorMainTroop', 'Вибери основний тип військ.'));
+  if (!String(values.shift || '').trim()) errors.push(t('region.errorShift', 'Вибери зміну.'));
+  if (!farm?.region) errors.push(t('profile.saveProfileRegionFirst', 'Спочатку збережи регіон у вкладці “Профіль”.'));
+  return errors;
+}
+
+async function autoSubmitProfileRegionData(values = {}, farm = {}) {
+  if (!values.autoSubmitEnabled || !farm?.region) return { skipped: true };
+  if (!isRegionTableCacheEnabled?.()) throw new Error('region-table-cache-disabled');
+  const settings = currentRegionSettings || await getRegionSettings(farm.region);
+  const status = getRegionFormStatus(settings || {});
+  if (!status.open) {
+    setStatus(t('region.autoProfileSavedClosed', 'Автозаповнення збережено. Форма зараз закрита, тому заявка відправиться після відкриття або при наступному вході у форму.'), 'warn');
+    return { skipped: true, closed: true };
+  }
+  setStatus(t('region.autoSubmitting', 'Автоматично відправляю заявку з профілю...'), 'muted');
+  return saveRegionRegistrationD1First(currentUser, farm.region, {
+    ...values,
+    region: farm.region,
+    farmId: selectedFarmId || 'main',
+    publicLink: false
+  }, settings, { forceUpdate: true });
+}
+
 async function saveProfileRegionData(event) {
   event.preventDefault();
   if (!currentUser) {
@@ -260,20 +372,31 @@ async function saveProfileRegionData(event) {
     return;
   }
   const farm = getFarmById(profile || {}, selectedFarmId);
-  if (!farm?.region) {
-    setStatus(t('profile.saveProfileRegionFirst', 'First save the region in the “Profile” tab.'), 'error');
+  const values = readRegionForm();
+  const errors = validateProfileRegionData(values, farm);
+  if (errors.length) {
+    setStatus(errors.join(' '), 'error');
     return;
   }
   try {
-    setStatus(t('profile.savingFormData', 'Saving form data to profile...'), 'muted');
-    profile = await saveFarmWastelandProfile(currentUser, selectedFarmId, readRegionForm());
+    setStatus(t('profile.savingFormData', 'Зберігаю шаблон у профіль...'), 'muted');
+    profile = await saveFarmWastelandProfile(currentUser, selectedFarmId, values);
     renderFarmSelect();
-    fillSelectedFarm().catch(error => { console.warn('[WKD] profile farm form refresh failed:', error); });
+    await fillSelectedFarm();
     document.dispatchEvent(new CustomEvent('wkd:profile-updated', { detail: { profile } }));
-    setStatus(t('profile.formDataSaved', 'Form data saved to profile. Now it can be transferred into the request by link.'), 'success');
+    if (values.autoSubmitEnabled) {
+      await autoSubmitProfileRegionData(values, farm);
+      if (getRegionFormStatus(currentRegionSettings || {}).open) {
+        setStatus(t('region.autoSubmitted', 'Автоматична заявка з профілю відправлена.'), 'success');
+        return;
+      }
+    }
+    setStatus(t('profile.formDataSaved', 'Шаблон форми збережено в профілі.'), 'success');
   } catch (error) {
     console.error(error);
-    setStatus(t('profile.formDataSaveFailed', 'Could not save form data. Check access rights and Google sign-in.'), 'error');
+    const code = String(error?.data?.error || error?.message || '').trim();
+    const details = code ? ` (${code})` : '';
+    setStatus(`${t('profile.formDataSaveFailed', 'Не вдалося зберегти шаблон. Перевір права доступу або Google-вхід.')}${details}`, 'error');
   }
 }
 
@@ -315,6 +438,27 @@ function bind() {
   $('#wrSavedFarmSelect')?.addEventListener('change', event => {
     selectedFarmId = event.currentTarget.value || 'main';
     fillSelectedFarm().catch(error => { console.warn('[WKD] profile farm form refresh failed:', error); });
+  });
+  $('#wrAllianceSelect')?.addEventListener('change', event => setAllianceInputValue(event.currentTarget.value));
+  $('#wrAlliance')?.addEventListener('input', event => syncAllianceSelect(event.currentTarget.value));
+  $('#wrAutoFillProfile')?.addEventListener('change', event => {
+    const enabled = Boolean(event.currentTarget.checked);
+    const farm = getFarmById(profile || {}, selectedFarmId);
+    const values = readRegionForm();
+    if (!enabled) {
+      saveFarmWastelandProfile(currentUser, selectedFarmId, values).then(saved => { profile = saved; setStatus(t('region.autoProfileOff', 'Автозаповнення з профілю вимкнено для цього гравця.'), 'muted'); }).catch(error => { console.warn('[WKD] auto profile off save failed:', error); });
+      return;
+    }
+    const errors = validateProfileRegionData(values, farm);
+    if (errors.length) { setStatus(errors.join(' '), 'error'); return; }
+    saveFarmWastelandProfile(currentUser, selectedFarmId, values)
+      .then(saved => { profile = saved; return autoSubmitProfileRegionData(values, farm); })
+      .then(result => { if (!result?.closed) setStatus(t('region.autoSubmitted', 'Автоматична заявка з профілю відправлена.'), 'success'); })
+      .catch(error => {
+        console.error(error);
+        const code = String(error?.data?.error || error?.message || '').trim();
+        setStatus(`${t('profile.formDataSaveFailed', 'Не вдалося зберегти шаблон. Перевір права доступу або Google-вхід.')}${code ? ` (${code})` : ''}`, 'error');
+      });
   });
   $('#wrFillFromProfileBtn')?.addEventListener('click', () => fillSelectedFarm().catch(error => { console.warn('[WKD] profile fill failed:', error); }));
   $('#saveWastelandDraftBtn')?.addEventListener('click', openRegionForm);
