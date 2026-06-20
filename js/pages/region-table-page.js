@@ -16,7 +16,10 @@ import {
   getRegionActorName,
   listRegionAlliances,
   listRegionCatalog,
-  shareRegionTable
+  shareRegionTable,
+  updateRegionRegistration,
+  deleteRegionRegistrations,
+  regionRegistrationToPlayer
 } from '../services/region-db.js?v=026';
 import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=025';
 
@@ -429,12 +432,109 @@ function formatNumber(value) {
   return Number.isFinite(number) && number > 0 ? number.toLocaleString('uk-UA') : '—';
 }
 
+function canEditRegionRows() {
+  return Boolean(currentUser && currentRegion && canManageRegion(currentProfile || {}, currentRegion, currentUser));
+}
+
+function syncRegionEditorState() {
+  window.WKD = window.WKD || {};
+  window.WKD.state = window.WKD.state || {};
+  window.WKD.state.players = (rows || []).map(row => ({
+    ...regionRegistrationToPlayer(row),
+    source: 'regionForm'
+  }));
+}
+
+function rowById(rowId = '') {
+  const wanted = String(rowId || '');
+  return rows.find(item => String(item.id || item.uid || '') === wanted) || null;
+}
+
+function roleToTroopType(role = '') {
+  const text = String(role || '').trim().toLowerCase();
+  if (/fighter|бійц|боєц|боец|воїн|воин/.test(text)) return 'fighter';
+  if (/rider|наїз|наезд|кавал/.test(text)) return 'rider';
+  if (/shooter|стріл|стрел|shoot/.test(text)) return 'shooter';
+  return '';
+}
+
+function mergeEditedRow(row = {}, values = {}, result = {}) {
+  const patch = result?.data || result?.row || result?.result?.row || {};
+  const troopType = patch.troopType || values.troopType || roleToTroopType(values.role) || row.troopType || '';
+  const shift = patch.shift || values.shift || row.shift || '';
+  return {
+    ...row,
+    ...patch,
+    nickname: patch.nickname || values.name || values.nickname || row.nickname || '',
+    alliance: patch.alliance || values.alliance || row.alliance || '',
+    troopType,
+    troopLabel: patch.troopLabel || troopLabel(troopType, currentSettings) || row.troopLabel || '',
+    tier: patch.tier || values.tier || row.tier || '',
+    marchSize: Number(patch.marchSize ?? values.march ?? values.marchSize ?? row.marchSize) || 0,
+    rallySize: Number(patch.rallySize ?? values.rally ?? values.rallySize ?? row.rallySize) || 0,
+    captainReady: Object.prototype.hasOwnProperty.call(patch, 'captainReady') ? Boolean(patch.captainReady) : Boolean(values.captain ?? row.captainReady),
+    shift,
+    shiftLabel: patch.shiftLabel || shiftLabel(shift, currentSettings) || row.shiftLabel || ''
+  };
+}
+
+function installRegionEditorBridge() {
+  window.WKD = window.WKD || {};
+  window.WKD.getPlayersSourceInfo = () => ({
+    mode: 'region',
+    region: currentRegion,
+    label: currentRegion ? `R${currentRegion}` : t('playerManager.regionList', 'Таблиця регіону'),
+    canUpdate: canEditRegionRows(),
+    canDelete: canEditRegionRows(),
+    canPlan: canEditRegionRows(),
+    canViewRegion: Boolean(currentRegion),
+    userRole: String(currentProfile?.role || 'player').toLowerCase()
+  });
+  window.WKD.updatePlayerInActiveSource = async (id, values = {}) => {
+    if (!canEditRegionRows()) throw new Error('region-update-access-denied');
+    const wanted = String(id || '').trim();
+    const existing = rowById(wanted);
+    if (!existing) throw new Error('player-not-found');
+    const result = await updateRegionRegistration(currentUser, currentRegion, wanted, values);
+    rows = rows.map(row => String(row.id || row.uid || '') === wanted ? mergeEditedRow(row, values, result) : row);
+    syncRegionEditorState();
+    render();
+    return { handled: true, updated: true, result };
+  };
+  window.WKD.deletePlayersFromActiveSource = async (ids = []) => {
+    if (!canEditRegionRows()) throw new Error('region-delete-access-denied');
+    const wanted = new Set((Array.isArray(ids) ? ids : [ids]).map(id => String(id || '').trim()).filter(Boolean));
+    if (!wanted.size) return { removed: 0 };
+    const result = await deleteRegionRegistrations(currentUser, currentRegion, [...wanted]);
+    const before = rows.length;
+    rows = rows.filter(row => !wanted.has(String(row.id || row.uid || '')));
+    tableTotalRows = Math.max(0, Number(tableTotalRows || 0) - (before - rows.length));
+    syncRegionEditorState();
+    render();
+    return { handled: true, removed: before - rows.length, result };
+  };
+}
+
+function openRegionPlayerEditor(rowId = '', trigger = null) {
+  if (!rowId || !canEditRegionRows()) return openRequestDetails(rowId);
+  installRegionEditorBridge();
+  syncRegionEditorState();
+  if (typeof window.WKD?.openPlayerEditModal === 'function') {
+    window.WKD.openPlayerEditModal(rowId, trigger || document.activeElement);
+    return;
+  }
+  openRequestDetails(rowId);
+}
+
 function rowHtml(row) {
   const labels = regionTableLabels();
   const rowId = row.id || row.uid || '';
   const nickname = row.nickname || '—';
+  const editButton = rowId && canEditRegionRows()
+    ? `<button class="region-request-edit-btn" type="button" data-region-edit-id="${esc(rowId)}" aria-label="${esc(tv('players.editPlacement', 'Редагувати {name}', { name: nickname }))}" title="${esc(t('common.edit', 'Редагувати'))}">✎</button>`
+    : '';
   return `<tr>
-    <td data-label="${labels.nickname}"><button class="region-request-link" type="button" data-region-request-id="${esc(rowId)}" aria-label="${esc(tv('region.openRequestDetails', 'Open request for {name}', { name: nickname }))}">${esc(nickname)}</button></td>
+    <td data-label="${labels.nickname}"><span class="region-request-cell"><button class="region-request-link" type="button" data-region-request-id="${esc(rowId)}" aria-label="${esc(tv('region.openRequestDetails', 'Open request for {name}', { name: nickname }))}">${esc(nickname)}</button>${editButton}</span></td>
     <td data-label="${labels.alliance}">${allianceBadge(row.alliance)}</td>
     <td data-label="${labels.troop}">${(window.WKD?.Badges?.troop || window.WKD?.troopBadge || ((type,label)=>`<span class="tag ${troopClass(type)}">${esc(label || '—')}</span>`))(row.troopType, troopLabel(row.troopType, currentSettings) || row.troopLabel || '—')}</td>
     <td data-label="${labels.tier}">${tierBadge(row.tier)}</td>
@@ -606,6 +706,8 @@ async function load(user, options = {}) {
   tableTotalRows = serverPagedTable ? Math.max(0, Number(result.totalRows || 0) || 0) : rows.length;
   tableTotalPages = serverPagedTable ? Math.max(1, Number(result.totalPages || 1) || 1) : Math.max(1, Math.ceil(rows.length / tablePageSize));
   currentSettings = result.settings || {};
+  installRegionEditorBridge();
+  syncRegionEditorState();
   await loadAllianceColors();
   renderTroopFilter(currentSettings);
   renderTierFilter();
@@ -670,6 +772,13 @@ function bind() {
   });
 
   $('#regionRegistrationsBody')?.addEventListener('click', event => {
+    const editButton = event.target.closest('[data-region-edit-id]');
+    if (editButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      openRegionPlayerEditor(editButton.dataset.regionEditId || '', editButton);
+      return;
+    }
     const button = event.target.closest('[data-region-request-id]');
     if (button) { event.preventDefault(); openRequestDetails(button.dataset.regionRequestId || ''); }
   });

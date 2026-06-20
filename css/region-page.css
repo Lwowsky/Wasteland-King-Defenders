@@ -132,3 +132,10 @@
 /* v021: profile form uses the existing alliance input+datalist only; do not show the mobile select duplicate inside profile. */
 .profile-tab-panel[data-profile-panel="region"] .region-alliance-control{grid-template-columns:1fr!important;}
 .profile-tab-panel[data-profile-panel="region"] .region-alliance-select{display:none!important;}
+
+/* v027: visible edit pencil in the region table */
+.region-request-cell{display:inline-flex;align-items:center;gap:8px;min-width:0;max-width:100%;}
+.region-request-cell .region-request-link{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.region-request-edit-btn{display:inline-grid;place-items:center;width:34px;height:34px;min-width:34px;border:1px solid rgba(132,160,255,.36);border-radius:11px;background:linear-gradient(135deg,rgba(85,119,255,.24),rgba(126,86,255,.22));color:#f5f8ff;font:inherit;font-size:16px;font-weight:950;line-height:1;cursor:pointer;box-shadow:0 10px 24px rgba(54,87,190,.18);}
+.region-request-edit-btn:hover,.region-request-edit-btn:focus-visible{border-color:rgba(175,194,255,.7);background:linear-gradient(135deg,rgba(96,130,255,.38),rgba(137,94,255,.34));outline:none;transform:translateY(-1px);}
+@media (max-width:760px){.region-request-cell{justify-content:flex-end}.region-request-edit-btn{width:38px;height:38px;min-width:38px;}}
