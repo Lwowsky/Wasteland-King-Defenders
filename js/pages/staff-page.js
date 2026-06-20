@@ -27,7 +27,7 @@ const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
 const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STAFF_REFRESH_LIMIT = 5;
-const STAFF_CACHE_BUILD = 'v036-staff-nick-subline';
+const STAFF_CACHE_BUILD = 'v037-staff-farms-region-visible';
 
 const STAFF_PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const STAFF_PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -138,7 +138,7 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=036',
+  'region-table': './region-table-page.js?v=037',
   'region-settings': './region-settings-page.js?v=026',
   'action-log': './action-log-page.js?v=019'
 };
@@ -361,15 +361,28 @@ function staffFilterValues() {
     includeFarms: Boolean($('#staffIncludeFarmsToggle')?.checked)
   };
 }
+function isStaffLinkedOwnerForRegion(row = {}, region = '') {
+  const safeRegion = normalizeRegion(region);
+  if (!safeRegion || row.isFarm) return false;
+  const publicKey = String(row.publicKey || '').trim();
+  const nickname = String(row.nickname || row.gameNick || '').trim().toLowerCase();
+  return dedupeStaffRowsHard(staffSnapshotRows).some(item => {
+    if (!item?.isFarm || normalizeRegion(item.region) !== safeRegion) return false;
+    const ownerKey = String(item.ownerPublicKey || '').trim();
+    const ownerNick = String(item.ownerNickname || item.mainNickname || '').trim().toLowerCase();
+    return (publicKey && ownerKey && ownerKey === publicKey) || (nickname && ownerNick && ownerNick === nickname);
+  });
+}
 function applyLocalStaffFilters({ statusMessage = '' } = {}) {
   const { region, alliance, nick, rank, includeFarms } = staffFilterValues();
+  const safeRegion = normalizeRegion(region);
   const scope = syncAllianceLockForStaff(region);
   const nickFilter = String(nick || '').trim().toLowerCase();
   const rankFilter = String(rank || '').trim().toLowerCase();
   const allianceFilter = scope.allianceLocked ? scope.alliance : normalizeAlliance(alliance || '');
   let rows = dedupeStaffRowsHard(staffSnapshotRows).filter(row => !row.deleted && !row.blocked);
-  if (!includeFarms) rows = rows.filter(row => !row.isFarm);
-  if (allianceFilter) rows = rows.filter(row => normalizeAlliance(row.alliance) === allianceFilter);
+  rows = rows.filter(row => normalizeRegion(row.region) === safeRegion || (includeFarms && isStaffLinkedOwnerForRegion(row, safeRegion)));
+  if (allianceFilter) rows = rows.filter(row => normalizeAlliance(row.alliance) === allianceFilter || (includeFarms && !scope.allianceLocked && isStaffLinkedOwnerForRegion(row, safeRegion)));
   if (nickFilter) rows = rows.filter(row => String(row.nickname || row.gameNick || '').toLowerCase().includes(nickFilter));
   if (rankFilter && rankFilter !== 'all') rows = rows.filter(row => normalizeRank(row.rank || '') === rankFilter);
   rows.sort((a, b) => staffRowTime(b) - staffRowTime(a) || String(a.nickname || a.gameNick || '').localeCompare(String(b.nickname || b.gameNick || ''), undefined, { sensitivity: 'base' }));
@@ -385,13 +398,22 @@ async function readStaffPublicSnapshotRows(region = '', { force = false } = {}) 
     fetchStaffPublicStatsPlayers({ force }).catch(() => []),
     fetchStaffPublicStatsFarms({ force }).catch(() => [])
   ]);
-  const playerRows = (Array.isArray(publicPlayers) ? publicPlayers : [])
-    .map(row => normalizeStaffSnapshotRow({ ...row, farmId: row.farmId || 'main', __isFarm: false, __publicSnapshotOnly: true }))
-    .filter(row => normalizeRegion(row.region || safeRegion) === safeRegion || !row.region);
+  const allPlayerRows = (Array.isArray(publicPlayers) ? publicPlayers : [])
+    .map(row => normalizeStaffSnapshotRow({ ...row, farmId: row.farmId || 'main', __isFarm: false, __publicSnapshotOnly: true }));
   const farmRows = (Array.isArray(publicFarms) ? publicFarms : [])
     .map(row => normalizeStaffSnapshotRow({ ...row, farmId: row.farmId || row.farmKey || '', __isFarm: true, __publicSnapshotOnly: true }))
     .filter(row => normalizeRegion(row.region || safeRegion) === safeRegion || !row.region);
-  const rows = mergeStaffRows(playerRows, farmRows);
+  const playerRows = allPlayerRows.filter(row => normalizeRegion(row.region || safeRegion) === safeRegion || !row.region);
+  const ownerRows = allPlayerRows
+    .filter(player => farmRows.some(farm => {
+      const playerKey = String(player.publicKey || '').trim();
+      const playerNick = String(player.nickname || player.gameNick || '').trim().toLowerCase();
+      const ownerKey = String(farm.ownerPublicKey || '').trim();
+      const ownerNick = String(farm.ownerNickname || farm.mainNickname || '').trim().toLowerCase();
+      return (playerKey && ownerKey && playerKey === ownerKey) || (playerNick && ownerNick && playerNick === ownerNick);
+    }))
+    .map(row => normalizeStaffSnapshotRow({ ...row, __linkedOwnerContext: true, __publicSnapshotOnly: true }));
+  const rows = mergeStaffRows(playerRows, [...farmRows, ...ownerRows]);
   return {
     source: 'public-cache/stats-players.json + stats-farms.json',
     version: String(version?.version || version?.updatedAt || ''),
@@ -535,12 +557,23 @@ function staffMainFarmCount(row = {}) {
       return (publicKey && ownerKey && ownerKey === publicKey) || (nick && ownerNick && ownerNick === nick);
     }).length;
 }
+function staffOwnerNickname(row = {}) {
+  const direct = String(row.ownerNickname || row.mainNickname || '').trim();
+  if (direct) return direct;
+  const ownerKey = String(row.ownerPublicKey || '').trim();
+  const ownerNick = String(row.ownerName || '').trim().toLowerCase();
+  const match = dedupeStaffRowsHard(staffSnapshotRows).find(item => {
+    if (item?.isFarm) return false;
+    const publicKey = String(item.publicKey || '').trim();
+    const nickname = String(item.nickname || item.gameNick || '').trim().toLowerCase();
+    return (ownerKey && publicKey && ownerKey === publicKey) || (ownerNick && nickname && ownerNick === nickname);
+  });
+  return String(match?.nickname || match?.gameNick || '').trim() || '—';
+}
 function staffNicknameSubline(row = {}) {
   if (row.isFarm) {
-    const owner = row.ownerNickname || row.mainNickname || '—';
-    return `${t('account.farm', 'Ферма')} · ${t('account.mainPlayer', 'Основний гравець')}: ${owner}`;
+    return `${t('account.farm', 'Ферма')} · ${t('account.mainPlayer', 'Основний гравець')}: ${staffOwnerNickname(row)}`;
   }
-  if (!Boolean($('#staffIncludeFarmsToggle')?.checked)) return '';
   return `${t('account.mainPlayer', 'Основний гравець')} · ${tv('stats.farmCountShort', '{count} ферм', { count: staffMainFarmCount(row) })}`;
 }
 
