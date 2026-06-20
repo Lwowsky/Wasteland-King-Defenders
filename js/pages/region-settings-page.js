@@ -26,8 +26,8 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=017';
-import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=017';
+} from '../services/region-db.js?v=018';
+import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=018';
 import { makePublicShareUrl } from '../core/share-links.js?v=256';
 
 const $ = selector => document.querySelector(selector);
@@ -1340,11 +1340,12 @@ async function load(user) {
         return null;
       }) || baseSettings || await getRegionSettings(region))
     : (baseSettings || await getRegionSettings(region));
-  currentShareCode = canManageFullRegion ? await getRegionShareLinkCode(user, region).catch(error => {
+  const d1ShareCode = cleanShareCode(baseSettings?.shortLinkCode || baseSettings?.code || '');
+  currentShareCode = d1ShareCode || (canManageFullRegion ? await getRegionShareLinkCode(user, region).catch(error => {
     console.warn('Short registration link unavailable', error);
-    return cleanShareCode(baseSettings?.shortLinkCode || baseSettings?.code || '');
-  }) : cleanShareCode(baseSettings?.shortLinkCode || baseSettings?.code || currentSettings?.shortLinkCode || '');
-  fill(settings);
+    return '';
+  }) : cleanShareCode(currentSettings?.shortLinkCode || ''));
+  fill({ ...settings, shortLinkCode: currentShareCode, code: currentShareCode });
   $('#regionSettingsForm').hidden = false;
   await refreshAlliances().catch(error => {
     console.warn('Alliance list failed', error);

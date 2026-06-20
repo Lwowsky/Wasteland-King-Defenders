@@ -710,6 +710,16 @@ function isRegionFormSubmission(body = {}) {
   return Boolean(body?.publicLink || body?.shareCode || source.includes('registration') || source.includes('account-d1') || source.includes('public-link'));
 }
 
+function stablePublicRegistrationKey(region = '', cycleId = '', shareCode = '', row = {}) {
+  const existing = clean(row.publicKey || row.id || '', 180);
+  if (existing) return existing;
+  const nick = clean(row.nickname || row.name || row.gameNick || 'guest', 80).toLowerCase().replace(/[^a-z0-9а-яіїєґ_-]+/gi, '-').slice(0, 60) || 'guest';
+  const safeRegion = normalizeRegion(region) || 'region';
+  const safeCycle = normalizeCycleId(cycleId || 'active').replace(/[^A-Za-z0-9._:-]/g, '-').slice(0, 80) || 'active';
+  const safeShare = normalizeCode(shareCode || '').slice(0, 24) || 'link';
+  return clean(`guest-${safeRegion}-${safeCycle}-${safeShare}-${nick}`, 180);
+}
+
 function sanitizeTableRow(row = {}) {
   const id = clean(
     row.id || row.uid || row.publicKey || row.nickname || crypto.randomUUID(),
@@ -1273,6 +1283,7 @@ async function saveRegionFormSettingsD1(db, payload = {}) {
     ? (requestedCode || makeD1SecretCode(`f${region}`))
     : (requestedCode || existingCode || makeD1SecretCode(`f${region}`));
   const nowMs = Number(payload.updatedAtMs) || Date.now();
+  const settingsWithLink = { ...settings, currentCycleId: cycleId, shortLinkCode: code, code };
   await db.prepare(
     `INSERT INTO region_form_settings (region, short_code, cycle_id, version, updated_at_ms, settings_json)
      VALUES (?1, ?2, ?3, ?4, ?5, ?6)
@@ -1282,8 +1293,8 @@ async function saveRegionFormSettingsD1(db, payload = {}) {
        version = excluded.version,
        updated_at_ms = excluded.updated_at_ms,
        settings_json = excluded.settings_json`
-  ).bind(region, code, cycleId, nowMs, nowMs, JSON.stringify({ ...settings, currentCycleId: cycleId })).run();
-  return { region, code, cycleId, version: nowMs, updatedAtMs: nowMs, settings: { ...settings, currentCycleId: cycleId } };
+  ).bind(region, code, cycleId, nowMs, nowMs, JSON.stringify(settingsWithLink)).run();
+  return { region, code, cycleId, version: nowMs, updatedAtMs: nowMs, settings: settingsWithLink };
 }
 
 async function handleRegionFormSettingsRead(request, env) {
@@ -1868,8 +1879,12 @@ async function handleRegionTableRegistration(request, env) {
   const rawId = clean(rawRow.id || "", 180);
   const rawUid = clean(rawRow.uid || "", 160);
   const rawPublicKey = clean(rawRow.publicKey || "", 160);
+  const publicShareCode = normalizeCode(body?.shareCode || "");
+  const publicKeyForLookup = !user?.uid && isPublicRegistration
+    ? stablePublicRegistrationKey(region, cycleId, publicShareCode, rawRow)
+    : rawPublicKey;
   const rawFarmId = clean(rawRow.farmId || "main", 80) || "main";
-  let existingRow = await findRegionTableRow(db, region, cycleId, { id: rawId, uid: rawUid, publicKey: rawPublicKey, farmId: rawFarmId });
+  let existingRow = await findRegionTableRow(db, region, cycleId, { id: rawId, uid: rawUid, publicKey: publicKeyForLookup, farmId: rawFarmId });
 
   if (!existingRow && meta) {
     const legacy = rowToTable(meta);
@@ -1886,7 +1901,9 @@ async function handleRegionTableRegistration(request, env) {
     ...(existingRow || {}),
     ...rawRow,
     region,
-    uid: user?.uid ? (rawRow.uid || existingRow?.uid || (!existingRow ? user.uid : "")) : (rawRow.uid || existingRow?.uid || ""),
+    uid: user?.uid ? (rawRow.uid || existingRow?.uid || (!existingRow ? user.uid : "")) : "",
+    publicKey: user?.uid ? "" : publicKeyForLookup,
+    id: rawId || existingRow?.id || (user?.uid ? undefined : publicKeyForLookup),
   };
   const row = sanitizeTableRow(mergedRawRow);
   if (!row.nickname) return json({ ok: false, error: "registration_nickname_required" }, 400);
@@ -1894,7 +1911,7 @@ async function handleRegionTableRegistration(request, env) {
   const isOwner = Boolean(user?.uid && (row.uid === user.uid || !row.uid));
   const canWrite = user?.uid
     ? (isOwner || await canManageRegionD1(db, env, user, region) || (existingRow && await canEditRegionAllianceD1(db, env, user, region, row.alliance)))
-    : Boolean(isPublicRegistration && row.nickname && row.publicKey);
+    : Boolean(isPublicRegistration && publicShareCode && row.nickname && row.publicKey);
   if (!canWrite) return json({ ok: false, error: "row_owner_mismatch" }, 403);
 
   const key = row.id || `${row.uid || row.publicKey || "guest"}:${row.farmId || "main"}`;
