@@ -2547,4 +2547,7 @@ window.WKD_TRANSLATIONS.zh = {
   "players.regionAccessDenied": "你没有访问此区域的权限。",  "region.form.chooseAlliance": "选择联盟",
   "region.requestSaveDeniedD1": "D1 未接受来自此链接的申请。请在开启表单后复制新的短链接，或请军官再次点击保存/开始。",
 
+  'players.searchNickAlliance': "按昵称/联盟搜索",
+  'players.resetFilters': "重置筛选",
+
 };

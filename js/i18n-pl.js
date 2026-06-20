@@ -2547,4 +2547,7 @@ window.WKD_TRANSLATIONS.pl = {
   "players.regionAccessDenied": "Nie masz dostępu do tego regionu.",  "region.form.chooseAlliance": "Wybierz sojusz",
   "region.requestSaveDeniedD1": "D1 nie przyjął zgłoszenia z tego linku. Skopiuj nowy krótki link po uruchomieniu formularza albo poproś oficera, aby ponownie nacisnął Zapisz/Uruchom.",
 
+  'players.searchNickAlliance': "Szukaj po nicku / sojuszu",
+  'players.resetFilters': "Wyczyść filtry",
+
 };

@@ -2547,4 +2547,7 @@ window.WKD_TRANSLATIONS.ko = {
   "players.regionAccessDenied": "이 지역에 접근할 권한이 없습니다.",  "region.form.chooseAlliance": "동맹 선택",
   "region.requestSaveDeniedD1": "D1에서 이 링크의 신청을 받지 않았습니다. 양식을 시작한 뒤 새 짧은 링크를 복사하거나, 오피서에게 저장/시작을 다시 누르라고 요청하세요.",
 
+  'players.searchNickAlliance': "닉네임/동맹 검색",
+  'players.resetFilters': "필터 초기화",
+
 };

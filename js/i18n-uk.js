@@ -2547,4 +2547,7 @@ window.WKD_TRANSLATIONS.uk = {
   "players.regionAccessDenied": "Немає доступу до цього регіону.",  "region.form.chooseAlliance": "Вибери альянс",
   "region.requestSaveDeniedD1": "D1 не прийняв заявку з цього посилання. Скопіюй нове коротке посилання після запуску форми або попроси офіцера натиснути “Зберегти/Запустити” ще раз.",
 
+  'players.searchNickAlliance': "Пошук за ніком / альянсом",
+  'players.resetFilters': "Скинути фільтри",
+
 };

@@ -2547,4 +2547,7 @@ window.WKD_TRANSLATIONS.en = {
   "players.regionAccessDenied": "You do not have access to this region.",  "region.form.chooseAlliance": "Choose alliance",
   "region.requestSaveDeniedD1": "D1 did not accept this request from the link. Copy the new short link after starting the form, or ask an officer to press Save/Start again.",
 
+  'players.searchNickAlliance': "Search by nick / alliance",
+  'players.resetFilters': "Reset filters",
+
 };

@@ -2547,4 +2547,7 @@ window.WKD_TRANSLATIONS.ru = {
   "players.regionAccessDenied": "Нет доступа к этому региону.",  "region.form.chooseAlliance": "Выбери альянс",
   "region.requestSaveDeniedD1": "D1 не принял заявку по этой ссылке. Скопируй новую короткую ссылку после запуска формы или попроси офицера снова нажать «Сохранить/Запустить».",
 
+  'players.searchNickAlliance': "Поиск по нику / альянсу",
+  'players.resetFilters': "Сбросить фильтры",
+
 };

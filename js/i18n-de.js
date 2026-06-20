@@ -2547,4 +2547,7 @@ window.WKD_TRANSLATIONS.de = {
   "players.regionAccessDenied": "Du hast keinen Zugriff auf diese Region.",  "region.form.chooseAlliance": "Allianz wählen",
   "region.requestSaveDeniedD1": "D1 hat die Anfrage über diesen Link nicht akzeptiert. Kopiere nach dem Start des Formulars den neuen Kurzlink oder bitte einen Offizier, erneut Speichern/Starten zu drücken.",
 
+  'players.searchNickAlliance': "Nach Nick / Allianz suchen",
+  'players.resetFilters': "Filter zurücksetzen",
+
 };

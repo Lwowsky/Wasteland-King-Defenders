@@ -2545,4 +2545,7 @@ window.WKD_TRANSLATIONS.ar = {
   "players.regionAccessDenied": "ليس لديك صلاحية الوصول إلى هذه المنطقة.",  "region.form.chooseAlliance": "اختر التحالف",
   "region.requestSaveDeniedD1": "لم يقبل D1 الطلب من هذا الرابط. انسخ الرابط القصير الجديد بعد تشغيل النموذج، أو اطلب من الضابط الضغط على حفظ/تشغيل مرة أخرى.",
 
+  'players.searchNickAlliance': "البحث بالاسم / التحالف",
+  'players.resetFilters': "إعادة ضبط الفلاتر",
+
 };
