@@ -687,6 +687,7 @@ export async function publishRegionFormSettings(user, payload = {}) {
   const token = await getFirebaseToken(user);
   if (!token) return { skipped: true };
   const code = cleanCode(payload.code || payload.shortCode || '');
+  const cycleId = cleanText(payload.cycleId || payload.settings?.currentCycleId || '', 80);
   removeLocalJsonCache('regionFormSettings', safeRegion);
   if (code) removeLocalJsonCache('regionFormShare', code);
   return requestJson('/api/region-form/settings', {
@@ -695,6 +696,9 @@ export async function publishRegionFormSettings(user, payload = {}) {
     body: JSON.stringify({
       region: safeRegion,
       code,
+      cycleId,
+      forceNewCode: Boolean(payload.forceNewCode),
+      openNewCycle: Boolean(payload.openNewCycle),
       settings: sanitizeSettings(payload.settings || {}),
       updatedAtMs: Number(payload.updatedAtMs) || Date.now()
     })

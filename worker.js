@@ -1265,9 +1265,13 @@ async function saveRegionFormSettingsD1(db, payload = {}) {
   if (!region) throw new Error('region_required');
   const settings = sanitizeSettings(payload.settings || {});
   const cycleId = normalizeCycleId(payload.cycleId || settings.currentCycleId || 'active');
-  const existing = await db.prepare(`SELECT short_code FROM region_form_settings WHERE region = ?1 LIMIT 1`).bind(region).first().catch(() => null);
+  const existing = await db.prepare(`SELECT short_code, cycle_id FROM region_form_settings WHERE region = ?1 LIMIT 1`).bind(region).first().catch(() => null);
   const existingCode = normalizeCode(existing?.short_code || '');
-  const code = normalizeCode(payload.code || payload.shortCode || existingCode || makeD1SecretCode(`f${region}`));
+  const forceNewCode = Boolean(payload.forceNewCode || payload.openNewCycle || (existing?.cycle_id && normalizeCycleId(existing.cycle_id) !== cycleId));
+  const requestedCode = normalizeCode(payload.code || payload.shortCode || '');
+  const code = forceNewCode
+    ? (requestedCode || makeD1SecretCode(`f${region}`))
+    : (requestedCode || existingCode || makeD1SecretCode(`f${region}`));
   const nowMs = Number(payload.updatedAtMs) || Date.now();
   await db.prepare(
     `INSERT INTO region_form_settings (region, short_code, cycle_id, version, updated_at_ms, settings_json)
@@ -1304,7 +1308,7 @@ async function handleRegionFormShareRead(request, env, codeValue) {
   if (!form) return json({ ok: false, error: 'share_not_found' }, 404);
   const alliances = await readPublicRegionAlliancesD1(db, form.region);
   const fallbackAlliances = Array.isArray(form.settings?.rotationAlliances) ? form.settings.rotationAlliances : [];
-  return json({ ok: true, form, alliances: alliances.length ? alliances : fallbackAlliances, usage: { d1RowsRead: Math.max(1, alliances.length || fallbackAlliances.length || 1) }, source: 'cloudflare-d1-form-settings' }, 200, 'public, max-age=60');
+  return json({ ok: true, form, alliances: alliances.length ? alliances : fallbackAlliances, usage: { d1RowsRead: Math.max(1, alliances.length || fallbackAlliances.length || 1) }, source: 'cloudflare-d1-form-settings' }, 200, 'public, no-cache');
 }
 
 async function handleRegionFormSettingsPut(request, env) {
@@ -1318,15 +1322,29 @@ async function handleRegionFormSettingsPut(request, env) {
   if (!region) return json({ ok: false, error: 'region_required' }, 400);
   const allowed = await canLeadCurrentRegionD1(db, env, user, region);
   if (!allowed) return json({ ok: false, error: 'region_leadership_required' }, 403);
+  const previousForm = await readRegionFormSettingsD1(db, region).catch(() => null);
+  const requestedCycleId = normalizeCycleId(body?.cycleId || body?.settings?.currentCycleId || 'active');
+  const openNewCycle = Boolean(body?.openNewCycle || body?.forceNewCode || (previousForm?.cycleId && previousForm.cycleId !== requestedCycleId));
   const form = await saveRegionFormSettingsD1(db, {
     region,
     code: body?.code || body?.shortCode || '',
-    cycleId: body?.cycleId || body?.settings?.currentCycleId || 'active',
+    cycleId: requestedCycleId,
+    forceNewCode: Boolean(body?.forceNewCode || openNewCycle),
+    openNewCycle,
     updatedAtMs: body?.updatedAtMs,
     settings: body?.settings || {},
   });
+  if (openNewCycle) {
+    await saveTable(db, {
+      region,
+      cycleId: form.cycleId || requestedCycleId,
+      version: Number(body?.updatedAtMs) || Date.now(),
+      settings: { ...(form.settings || body?.settings || {}), currentCycleId: form.cycleId || requestedCycleId },
+      rows: []
+    }).catch(() => null);
+  }
   await grantRegionAccess(db, region, user.uid, 'form-settings');
-  return json({ ok: true, form, usage: { d1RowsWritten: 1 }, source: 'cloudflare-d1-form-settings' });
+  return json({ ok: true, form, usage: { d1RowsWritten: openNewCycle ? 3 : 1 }, source: 'cloudflare-d1-form-settings' });
 }
 
 async function hasSavedRegionAccess(db, uid, region) {
@@ -1937,15 +1955,17 @@ async function handleRegionTableSnapshot(request, env) {
     return json({ ok: false, error: "bad_json" }, 400);
   }
   const region = normalizeRegion(body?.region);
-  if (!region || !await canWriteRegionD1(db, env, user, region))
-    return json({ ok: false, error: "region_access_denied" }, 403);
+  if (!region) return json({ ok: false, error: "region_required" }, 400);
   const requestedCycleRaw = clean(body?.cycleId || body?.settings?.currentCycleId || "", 90);
   let cycleId = normalizeCycleId(requestedCycleRaw || "active");
-  if (!region) return json({ ok: false, error: "region_required" }, 400);
   const rows = (Array.isArray(body?.rows) ? body.rows : [])
     .map((row) => sanitizeTableRow({ ...row, region }))
     .filter((row) => row.nickname)
     .slice(0, MAX_TABLE_ROWS);
+  const emptyNewCycleSnapshot = rows.length === 0 && Boolean(body?.settings?.currentCycleId || body?.cycleId);
+  const allowed = await canWriteRegionD1(db, env, user, region)
+    || (emptyNewCycleSnapshot && await canLeadCurrentRegionD1(db, env, user, region));
+  if (!allowed) return json({ ok: false, error: "region_access_denied" }, 403);
   const table = await saveTable(db, {
     region,
     cycleId,

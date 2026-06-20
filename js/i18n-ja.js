@@ -2541,5 +2541,6 @@ window.WKD_TRANSLATIONS.ja = {
   "account.deleteOwnAccountConfirmHint": "誤ってアカウントを削除しないための追加確認です。",
   "account.deleteOwnAccountFailed": "アカウントを削除できませんでした。",
   "players.regionAccessDenied": "この地域へのアクセス権がありません。",  "region.form.chooseAlliance": "同盟を選択",
+  "region.requestSaveDeniedD1": "このリンクからの申請をD1が受け付けませんでした。フォーム開始後の新しい短縮リンクをコピーするか、オフィサーにもう一度「保存/開始」を押してもらってください。",
 
 };

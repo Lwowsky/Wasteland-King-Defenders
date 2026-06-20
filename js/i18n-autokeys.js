@@ -950,4 +950,6 @@ window.WKD_I18N_AUTO_ATTR = {
   "stats.snapshotStale": "stats.snapshotStale",
   "stats.playersUnavailable": "stats.playersUnavailable",
   "admin.publicCacheOnly": "admin.publicCacheOnly",
+  "region.requestSaveDeniedD1": "D1 did not accept this request from the link. Copy the new short link after starting the form, or ask an officer to press Save/Start again.",
+
 };

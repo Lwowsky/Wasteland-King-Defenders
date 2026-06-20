@@ -2541,5 +2541,6 @@ window.WKD_TRANSLATIONS.pl = {
   "account.deleteOwnAccountConfirmHint": "To dodatkowe zabezpieczenie przed przypadkowym usunięciem konta.",
   "account.deleteOwnAccountFailed": "Nie udało się usunąć konta.",
   "players.regionAccessDenied": "Nie masz dostępu do tego regionu.",  "region.form.chooseAlliance": "Wybierz sojusz",
+  "region.requestSaveDeniedD1": "D1 nie przyjął zgłoszenia z tego linku. Skopiuj nowy krótki link po uruchomieniu formularza albo poproś oficera, aby ponownie nacisnął Zapisz/Uruchom.",
 
 };

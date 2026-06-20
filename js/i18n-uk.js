@@ -2541,5 +2541,6 @@ window.WKD_TRANSLATIONS.uk = {
   "account.deleteOwnAccountConfirmHint": "Це додатковий захист від випадкового видалення акаунта.",
   "account.deleteOwnAccountFailed": "Не вдалося видалити акаунт.",
   "players.regionAccessDenied": "Немає доступу до цього регіону.",  "region.form.chooseAlliance": "Вибери альянс",
+  "region.requestSaveDeniedD1": "D1 не прийняв заявку з цього посилання. Скопіюй нове коротке посилання після запуску форми або попроси офіцера натиснути “Зберегти/Запустити” ще раз.",
 
 };

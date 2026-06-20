@@ -2541,5 +2541,6 @@ window.WKD_TRANSLATIONS.en = {
   "account.deleteOwnAccountConfirmHint": "This is an extra protection against accidentally deleting the account.",
   "account.deleteOwnAccountFailed": "Could not delete the account.",
   "players.regionAccessDenied": "You do not have access to this region.",  "region.form.chooseAlliance": "Choose alliance",
+  "region.requestSaveDeniedD1": "D1 did not accept this request from the link. Copy the new short link after starting the form, or ask an officer to press Save/Start again.",
 
 };

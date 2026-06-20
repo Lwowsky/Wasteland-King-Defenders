@@ -13,7 +13,7 @@ import {
   createUserNotification,
   createRegionNotificationCampaign
 } from './user-db.js?v=005';
-import { readRegionFormShare as readRegionFormShareD1, readRegionFormSettings as readRegionFormSettingsD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=016';
+import { readRegionFormShare as readRegionFormShareD1, readRegionFormSettings as readRegionFormSettingsD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=017';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -1057,7 +1057,7 @@ export async function cleanupOldEmailFields(user) {
 
 async function rotateRegionPublicSharesForNewCycle(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=016');
+    const mod = await import('./region-table-cache.js?v=017');
     if (!mod?.rotateRegionPublicShares) return null;
     return await mod.rotateRegionPublicShares(user, region);
   } catch (error) {
@@ -1071,7 +1071,10 @@ async function saveRegionShareLink({ db, firestoreMod }, user, region, settings,
   const privateRef = firestoreMod.doc(db, 'regions', safeRegion, 'privateSettings', 'shortLink');
   const privateSnap = await firestoreMod.getDoc(privateRef).catch(() => null);
   const oldCode = normalizeShortLinkCode(privateSnap?.exists?.() ? privateSnap.data()?.code : '');
-  const code = forceNew || !oldCode ? makeShortLinkCode() : oldCode;
+  const requestedCode = normalizeShortLinkCode(settings?.shortLinkCode || settings?.code || '');
+  const code = forceNew
+    ? (requestedCode || makeShortLinkCode())
+    : (requestedCode || oldCode || makeShortLinkCode());
   const now = firestoreMod.serverTimestamp();
 
   if (oldCode && oldCode !== code) {
@@ -1200,7 +1203,7 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=016');
+    const mod = await import('./region-table-cache.js?v=017');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1210,7 +1213,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=016');
+    const mod = await import('./region-table-cache.js?v=017');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1221,7 +1224,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function updateRegionTableRowD1First(user, region, registrationId, values = {}, settings = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=016');
+    const mod = await import('./region-table-cache.js?v=017');
     return await mod.updateRegionTableRowD1(user, region, registrationId, values, settings, { updateOnly: true });
   } catch (error) {
     const status = Number(error?.status || 0) || 0;
@@ -1233,7 +1236,7 @@ async function updateRegionTableRowD1First(user, region, registrationId, values 
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=016');
+    const mod = await import('./region-table-cache.js?v=017');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1243,7 +1246,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=016');
+    const mod = await import('./region-table-cache.js?v=017');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1274,7 +1277,7 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
 
 async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=016');
+    const mod = await import('./region-table-cache.js?v=017');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readMyRegionRegistrationD1(user, region, farmId, options);
   } catch (error) {
@@ -1820,13 +1823,23 @@ export async function saveRegionSettings(user, region, settings) {
   }
 
   let shortCode = normalizeShortLinkCode(settings.shortLinkCode || settings.code || oldSettings.shortLinkCode || oldSettings.code || '');
+  if (openNewCycle) shortCode = makeShortLinkCode();
   if (canManageFullRegion) {
     await firestoreMod.setDoc(firestoreMod.doc(db, 'regions', safeRegion), regionPatch, { merge: true });
     const shortLinkSnap = await firestoreMod.getDoc(firestoreMod.doc(db, 'regions', safeRegion, 'privateSettings', 'shortLink')).catch(() => null);
     shortCode = normalizeShortLinkCode(shortLinkSnap?.exists?.() ? shortLinkSnap.data()?.code : '') || shortCode;
   }
 
-  const d1Save = await publishRegionFormSettings(user, { region: safeRegion, code: shortCode, settings: clean, updatedAtMs: nowMs }).catch(error => ({ ok: false, skipped: true, error: error?.message || String(error) }));
+  const formSettingsForD1 = { ...clean, shortLinkCode: shortCode, code: shortCode };
+  const d1Save = await publishRegionFormSettings(user, {
+    region: safeRegion,
+    code: shortCode,
+    cycleId: currentCycleId,
+    forceNewCode: openNewCycle,
+    openNewCycle,
+    settings: formSettingsForD1,
+    updatedAtMs: nowMs
+  }).catch(error => ({ ok: false, skipped: true, error: error?.message || String(error) }));
   shortCode = normalizeShortLinkCode(d1Save?.form?.code || d1Save?.code || shortCode);
   if (!canManageFullRegion && (!d1Save || d1Save.ok === false || d1Save.skipped)) {
     throw new Error(d1Save?.error || 'region-form-d1-save-required');
@@ -1864,7 +1877,7 @@ export async function saveRegionSettings(user, region, settings) {
   }
 
   const cleanup = { deletedCount: 0, skipped: 'manual-cleanup-only' };
-  const shortLinkCode = await saveRegionShareLink({ db, firestoreMod }, user, safeRegion, clean, openNewCycle);
+  const shortLinkCode = await saveRegionShareLink({ db, firestoreMod }, user, safeRegion, { ...clean, shortLinkCode: shortCode, code: shortCode }, openNewCycle);
   const finalPlanShareCode = await saveRegionFinalPlanShareLink({ db, firestoreMod }, user, safeRegion, clean, openNewCycle).catch(error => {
     if (window.WKD_DEBUG) console.warn('[WKD] final plan share code skipped:', error);
     return '';
@@ -2844,7 +2857,7 @@ function localImportRegistrationKey(row = {}) {
 
 async function readLocalImportRegionLockFromD1(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=016');
+    const mod = await import('./region-table-cache.js?v=017');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readLocalImportRegionLock(user, region);
   } catch (error) {
@@ -2855,7 +2868,7 @@ async function readLocalImportRegionLockFromD1(user, region) {
 
 async function commitLocalImportRegionLockToD1(user, region, payload = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=016');
+    const mod = await import('./region-table-cache.js?v=017');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.commitLocalImportRegionLock(user, region, payload);
   } catch (error) {

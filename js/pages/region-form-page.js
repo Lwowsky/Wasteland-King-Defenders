@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=016';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=016';
+} from '../services/region-db.js?v=017';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=017';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -693,7 +693,10 @@ function isHardD1RegistrationError(error) {
     'share_not_found',
     'share_expired',
     'share_region_mismatch',
-    'share_cycle_mismatch'
+    'share_cycle_mismatch',
+    'region_form_settings_not_found',
+    'region_form_closed',
+    'region_row_not_found'
   ].includes(code);
 }
 
@@ -810,6 +813,14 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
     const code = d1RegistrationErrorCode(error);
     if (['share_code_required', 'share_not_found', 'share_expired', 'share_region_mismatch', 'share_cycle_mismatch', 'region_form_cycle_mismatch'].includes(code)) {
       setStatus(t('region.shortLinkInvalid', 'Це секретне посилання більше не підходить для активного циклу. Попроси консула або офіцера скопіювати нове коротке посилання.'), 'error');
+      return false;
+    }
+    if (code === 'region_form_settings_not_found') {
+      setStatus(t('region.d1SettingsMissing', 'Налаштування форми ще не опубліковані в D1. Попроси консула або офіцера натиснути Зберегти/Запустити у налаштуваннях регіону.'), 'error');
+      return false;
+    }
+    if (['row_owner_mismatch', 'region_access_denied'].includes(code)) {
+      setStatus(t('region.requestSaveDeniedD1', 'D1 не прийняв заявку з цього посилання. Скопіюй нове коротке посилання після запуску форми або попроси офіцера натиснути “Зберегти/Запустити” ще раз.'), 'error');
       return false;
     }
     if (error?.message === 'd1-registration-required' || (!isHardD1RegistrationError(error) && shouldUseD1FirstRegistration())) {
