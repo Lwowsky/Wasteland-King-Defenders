@@ -1629,6 +1629,8 @@ window.WKD_TRANSLATIONS.pl = {
   'region.autoSubmitting': 'Automatycznie wysyłam zgłoszenie z profilu...',
   'region.autoSubmitted': 'Automatyczne zgłoszenie z profilu zostało wysłane.',
   'region.autoProfileSavedClosed': 'Autouzupełnianie dla tego gracza zapisano. Rejestracja jest teraz zamknięta, więc zgłoszenie będzie można wysłać po jej otwarciu.',
+  'region.autoProfileReadyClosed': 'Autouzupełnianie jest włączone, ale rejestracja jest teraz zamknięta. Zgłoszenie nie zostało wysłane.',
+  'region.autoProfileReadyOpen': 'Autouzupełnianie jest włączone. Rejestracja jest otwarta — zgłoszenie zostanie wysłane automatycznie.',
   'region.requestAlreadySavedShort': 'Ten gracz ma już zgłoszenie w aktywnym cyklu.',
   'region.autoProfileOff': 'Autouzupełnianie z profilu jest wyłączone dla tego gracza.',
   'region.showUtcAndLocal': 'Pokaż UTC i mój czas',

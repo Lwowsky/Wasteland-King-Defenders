@@ -1629,6 +1629,8 @@ window.WKD_TRANSLATIONS.vi = {
   'region.autoSubmitting': 'Đang tự động gửi đơn từ hồ sơ...',
   'region.autoSubmitted': 'Đã gửi đơn tự động từ hồ sơ.',
   'region.autoProfileSavedClosed': 'Đã lưu tự động điền cho người chơi này. Hiện đăng ký đang đóng, có thể gửi đơn sau khi mở.',
+  'region.autoProfileReadyClosed': 'Tự động điền đã bật, nhưng đăng ký hiện đang đóng. Đơn chưa được gửi.',
+  'region.autoProfileReadyOpen': 'Tự động điền đã bật. Đăng ký đang mở — đơn sẽ được gửi tự động.',
   'region.requestAlreadySavedShort': 'Người chơi này đã có đơn trong chu kỳ hiện tại.',
   'region.autoProfileOff': 'Đã tắt tự động điền từ hồ sơ cho người chơi này.',
   'region.showUtcAndLocal': 'Hiển thị UTC và giờ của tôi',

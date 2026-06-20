@@ -1629,6 +1629,8 @@ window.WKD_TRANSLATIONS.uk = {
   'region.autoSubmitting': 'Автоматично відправляю заявку з профілю...',
   'region.autoSubmitted': 'Автоматична заявка з профілю відправлена.',
   'region.autoProfileSavedClosed': 'Автозаповнення для цього гравця збережено. Форма зараз закрита, тому заявку можна буде відправити після відкриття реєстрації.',
+  'region.autoProfileReadyClosed': 'Автозаповнення увімкнено, але форма зараз закрита. Заявка не відправлена.',
+  'region.autoProfileReadyOpen': 'Автозаповнення увімкнено. Форма відкрита — заявка буде відправлена автоматично.',
   'region.requestAlreadySavedShort': 'Заявка для цього гравця вже є в активному циклі.',
   'region.autoProfileOff': 'Автозаповнення з профілю вимкнено для цього гравця.',
   'region.showUtcAndLocal': 'Показувати UTC і свій час',

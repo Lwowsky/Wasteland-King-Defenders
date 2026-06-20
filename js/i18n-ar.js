@@ -1627,6 +1627,8 @@ window.WKD_TRANSLATIONS.ar = {
   'region.autoSubmitting': 'يتم إرسال الطلب تلقائياً من الملف الشخصي...',
   'region.autoSubmitted': 'تم إرسال الطلب التلقائي من الملف الشخصي.',
   'region.autoProfileSavedClosed': 'تم حفظ الملء التلقائي لهذا اللاعب. التسجيل مغلق الآن، ويمكن إرسال الطلب بعد فتحه.',
+  'region.autoProfileReadyClosed': 'تم تفعيل الملء التلقائي، لكن التسجيل مغلق الآن. لم يتم إرسال الطلب.',
+  'region.autoProfileReadyOpen': 'تم تفعيل الملء التلقائي. التسجيل مفتوح — سيتم إرسال الطلب تلقائيًا.',
   'region.requestAlreadySavedShort': 'لدى هذا اللاعب طلب بالفعل في الدورة النشطة.',
   'region.autoProfileOff': 'تم إيقاف الملء التلقائي من الملف الشخصي لهذا اللاعب.',
   'region.showUtcAndLocal': 'إظهار UTC ووقتي',

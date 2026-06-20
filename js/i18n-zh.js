@@ -1629,6 +1629,8 @@ window.WKD_TRANSLATIONS.zh = {
   'region.autoSubmitting': '正在从资料自动提交申请...',
   'region.autoSubmitted': '已提交资料自动申请。',
   'region.autoProfileSavedClosed': '已为该玩家保存自动填写。当前报名已关闭，开启后即可提交申请。',
+  'region.autoProfileReadyClosed': '自动填写已开启，但当前报名已关闭。申请未提交。',
+  'region.autoProfileReadyOpen': '自动填写已开启。报名已开放，申请将自动提交。',
   'region.requestAlreadySavedShort': '该玩家在当前周期已有申请。',
   'region.autoProfileOff': '已关闭该玩家的资料自动填写。',
   'region.showUtcAndLocal': '显示 UTC 和我的时间',

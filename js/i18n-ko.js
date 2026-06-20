@@ -1629,6 +1629,8 @@ window.WKD_TRANSLATIONS.ko = {
   'region.autoSubmitting': '프로필에서 신청을 자동으로 보내는 중...',
   'region.autoSubmitted': '프로필 자동 신청이 전송되었습니다.',
   'region.autoProfileSavedClosed': '이 플레이어의 자동 입력이 저장되었습니다. 지금은 등록이 닫혀 있어 열리면 보낼 수 있습니다.',
+  'region.autoProfileReadyClosed': '자동 입력이 켜져 있지만 현재 등록이 닫혀 있습니다. 신청은 전송되지 않았습니다.',
+  'region.autoProfileReadyOpen': '자동 입력이 켜져 있습니다. 등록이 열려 있어 신청이 자동으로 전송됩니다.',
   'region.requestAlreadySavedShort': '이 플레이어는 활성 주기에 이미 신청이 있습니다.',
   'region.autoProfileOff': '이 플레이어의 프로필 자동 입력이 꺼졌습니다.',
   'region.showUtcAndLocal': 'UTC와 내 시간 표시',

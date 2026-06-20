@@ -1629,6 +1629,8 @@ window.WKD_TRANSLATIONS.en = {
   'region.autoSubmitting': 'Automatically sending the request from profile...',
   'region.autoSubmitted': 'Automatic profile request sent.',
   'region.autoProfileSavedClosed': 'Auto-fill is saved for this player. Registration is closed now, so the request can be sent after it opens.',
+  'region.autoProfileReadyClosed': 'Auto-fill is enabled, but registration is closed now. The request was not sent.',
+  'region.autoProfileReadyOpen': 'Auto-fill is enabled. Registration is open — the request will be sent automatically.',
   'region.requestAlreadySavedShort': 'This player already has a request in the active cycle.',
   'region.autoProfileOff': 'Profile auto-fill is disabled for this player.',
   'region.showUtcAndLocal': 'Show UTC and my time',

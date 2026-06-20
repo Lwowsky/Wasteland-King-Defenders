@@ -7,8 +7,8 @@ import {
   saveFarmWastelandProfile,
   saveSignedInUser
 } from '../services/user-db.js';
-import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=021';
-import { isRegionTableCacheEnabled, saveRegionRegistrationD1First } from '../services/region-table-cache.js?v=021';
+import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=022';
+import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=022';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -68,6 +68,8 @@ let regionAlliances = [];
 let currentRegionSettings = null;
 let ready = false;
 let profileRegionStatusLockUntil = 0;
+let autoSubmitInProgress = false;
+let lastAutoSubmitKey = '';
 
 function setStatus(text, type = 'muted') {
   const box = $('#regionStatus');
@@ -180,6 +182,33 @@ function setAllianceInputValue(value = '') {
   syncAllianceSelect(tag);
 }
 
+async function loadLatestRegionSettingsForProfile(region = '', options = {}) {
+  const safeRegion = String(region || '').replace(/[^0-9]/g, '');
+  if (!safeRegion) return null;
+  if (isRegionTableCacheEnabled?.()) {
+    try {
+      const d1 = await readRegionFormSettingsD1(safeRegion, { force: Boolean(options.force), ttlMs: options.force ? 0 : undefined });
+      if (d1?.settings) {
+        if (Array.isArray(d1.alliances) && d1.alliances.length) regionAlliances = d1.alliances;
+        return {
+          ...d1.settings,
+          currentCycleId: d1.cycleId || d1.settings.currentCycleId || '',
+          shortLinkCode: d1.code || d1.settings.shortLinkCode || '',
+          code: d1.code || d1.settings.code || ''
+        };
+      }
+    } catch (error) {
+      if (window.WKD_DEBUG) console.warn('[WKD] profile D1 region settings skipped:', error);
+    }
+  }
+  try {
+    return await getRegionSettings(safeRegion);
+  } catch (error) {
+    if (window.WKD_DEBUG) console.warn('[WKD] profile region settings skipped:', error);
+    return null;
+  }
+}
+
 async function loadAlliancesForFarm(farm = {}) {
   regionAlliances = [];
   currentRegionSettings = null;
@@ -187,17 +216,14 @@ async function loadAlliancesForFarm(farm = {}) {
     renderAllianceOptions('');
     return;
   }
-  try {
-    currentRegionSettings = await getRegionSettings(farm.region);
-  } catch (error) {
-    if (window.WKD_DEBUG) console.warn('[WKD] profile region settings skipped:', error);
-    currentRegionSettings = null;
-  }
-  try {
-    regionAlliances = await listRegionAlliances(farm.region);
-  } catch (error) {
-    if (window.WKD_DEBUG) console.warn('[WKD] profile alliance list skipped:', error);
-    regionAlliances = [];
+  currentRegionSettings = await loadLatestRegionSettingsForProfile(farm.region);
+  if (!regionAlliances.length) {
+    try {
+      regionAlliances = await listRegionAlliances(farm.region);
+    } catch (error) {
+      if (window.WKD_DEBUG) console.warn('[WKD] profile alliance list skipped:', error);
+      regionAlliances = [];
+    }
   }
   if (!regionAlliances.length) {
     const tags = new Set();
@@ -292,9 +318,16 @@ async function fillSelectedFarm() {
   });
   $('#regionNumberPill') && ($('#regionNumberPill').textContent = farm.region ? `R${farm.region}` : 'R—');
   if (!profileStatusLocked()) {
-    setStatus(farm.region
-      ? t('profile.regionFormFillHelp', 'Заповни дані для Пустоші й натисни «Зберегти як шаблон». На Пустош нічого не відправляється, якщо автозаповнення вимкнено або форма закрита.')
-      : t('profile.regionRequiredFirst', 'First set the region for this player in the “Profile” tab.'), farm.region ? 'muted' : 'warn');
+    const status = getRegionFormStatus(currentRegionSettings || {});
+    if (!farm.region) {
+      setStatus(t('profile.regionRequiredFirst', 'First set the region for this player in the “Profile” tab.'), 'warn');
+    } else if (saved.autoSubmitEnabled && status.open) {
+      setStatus(t('region.autoProfileReadyOpen', 'Автозаповнення увімкнено. Форма відкрита — заявка буде відправлена автоматично.'), 'muted');
+    } else if (saved.autoSubmitEnabled) {
+      setStatus(t('region.autoProfileReadyClosed', 'Автозаповнення увімкнено, але форма зараз закрита. Заявка не відправлена.'), 'warn');
+    } else {
+      setStatus(t('profile.regionFormFillHelp', 'Заповни дані для Пустоші й натисни «Зберегти як шаблон». На Пустош нічого не відправляється, якщо автозаповнення вимкнено або форма закрита.'), 'muted');
+    }
   }
 }
 
@@ -369,22 +402,60 @@ function validateProfileRegionData(values = {}, farm = {}) {
   return errors;
 }
 
-async function autoSubmitProfileRegionData(values = {}, farm = {}) {
+async function autoSubmitProfileRegionData(values = {}, farm = {}, options = {}) {
   if (!values.autoSubmitEnabled || !farm?.region) return { skipped: true };
+  if (autoSubmitInProgress) return { skipped: true, busy: true };
   if (!isRegionTableCacheEnabled?.()) throw new Error('region-table-cache-disabled');
-  const settings = currentRegionSettings || await getRegionSettings(farm.region);
-  const status = getRegionFormStatus(settings || {});
+  currentRegionSettings = await loadLatestRegionSettingsForProfile(farm.region, { force: true }) || currentRegionSettings;
+  const settings = currentRegionSettings || {};
+  const status = getRegionFormStatus(settings);
   if (!status.open) {
-    setStickyStatus(t('region.autoProfileSavedClosed', 'Автозаповнення збережено. Форма зараз закрита, тому заявка НЕ відправлена. Вона відправиться після відкриття або при наступному вході у форму.'), 'warn');
+    setStickyStatus(t('region.autoProfileSavedClosed', 'Автозаповнення збережено. Форма зараз закрита, тому заявка НЕ відправлена.'), 'warn');
     return { skipped: true, closed: true };
   }
-  setStatus(t('region.autoSubmitting', 'Автоматично відправляю заявку з профілю...'), 'muted');
-  return saveRegionRegistrationD1First(currentUser, farm.region, {
-    ...values,
-    region: farm.region,
-    farmId: selectedFarmId || 'main',
-    publicLink: false
-  }, settings, { forceUpdate: true });
+  const errors = validateProfileRegionData(values, farm);
+  if (errors.length) {
+    setStickyStatus(errors.join(' '), 'error');
+    return { skipped: true, invalid: true };
+  }
+  const submitKey = [farm.region, settings.currentCycleId || 'active', selectedFarmId || 'main', String(values.nickname || '').trim().toLowerCase()].join('|');
+  if (lastAutoSubmitKey === submitKey && options.reason !== 'save') return { skipped: true, alreadyTried: true };
+  lastAutoSubmitKey = submitKey;
+  autoSubmitInProgress = true;
+  try {
+    setStatus(t('region.autoSubmitting', 'Автоматично відправляю заявку з профілю...'), 'muted');
+    const result = await saveRegionRegistrationD1First(currentUser, farm.region, {
+      ...values,
+      region: farm.region,
+      farmId: selectedFarmId || 'main',
+      publicLink: false
+    }, settings, { forceUpdate: false });
+    if (result?.existing && (result?.unchanged || result?.notWritten)) {
+      setStickyStatus(t('region.requestAlreadySavedShort', 'Заявка для цього гравця вже є в активному циклі. Повторно запис не створюється.'), 'success');
+      return { ...result, alreadyExists: true };
+    }
+    setStickyStatus(t('region.autoSubmitted', 'Автоматична заявка з профілю відправлена.'), 'success');
+    return result;
+  } catch (error) {
+    const code = profileD1ErrorCode(error);
+    if (code === 'registration-nickname-duplicate-region') {
+      setStickyStatus(duplicateRequestMessage(), 'warn');
+      return { skipped: true, duplicate: true };
+    }
+    throw error;
+  } finally {
+    autoSubmitInProgress = false;
+  }
+}
+
+async function autoSubmitSavedTemplateIfEnabled(reason = 'load') {
+  if (!currentUser || !profile) return false;
+  const farm = getFarmById(profile || {}, selectedFarmId) || getGameProfile(profile || {});
+  const saved = farm?.wastelandProfile || {};
+  if (!saved.autoSubmitEnabled || !farm?.region) return false;
+  const values = readRegionForm();
+  const result = await autoSubmitProfileRegionData(values, farm, { reason });
+  return !result?.skipped || Boolean(result?.alreadyExists || result?.duplicate);
 }
 
 async function saveProfileRegionData(event) {
@@ -407,11 +478,8 @@ async function saveProfileRegionData(event) {
     await fillSelectedFarm();
     document.dispatchEvent(new CustomEvent('wkd:profile-updated', { detail: { profile } }));
     if (values.autoSubmitEnabled) {
-      await autoSubmitProfileRegionData(values, farm);
-      if (getRegionFormStatus(currentRegionSettings || {}).open) {
-        setStickyStatus(t('region.autoSubmitted', 'Автоматична заявка з профілю відправлена.'), 'success');
-        return;
-      }
+      const result = await autoSubmitProfileRegionData(values, farm, { reason: 'save' });
+      if (!result?.closed && !result?.invalid) return;
     }
     setStickyStatus(t('profile.formDataSaved', 'Шаблон форми збережено в профілі. На Пустош нічого не відправлено.'), 'success');
   } catch (error) {
@@ -478,8 +546,7 @@ function bind() {
     const errors = validateProfileRegionData(values, farm);
     if (errors.length) { setStatus(errors.join(' '), 'error'); return; }
     saveFarmWastelandProfile(currentUser, selectedFarmId, values)
-      .then(saved => { profile = saved; return autoSubmitProfileRegionData(values, farm); })
-      .then(result => { if (!result?.closed) setStickyStatus(t('region.autoSubmitted', 'Автоматична заявка з профілю відправлена.'), 'success'); })
+      .then(saved => { profile = saved; return autoSubmitProfileRegionData(values, farm, { reason: 'toggle' }); })
       .catch(error => {
         console.error(error);
         const code = profileD1ErrorCode(error);
@@ -509,6 +576,12 @@ async function load(user) {
   prepareProfileForm();
   renderFarmSelect();
   await fillSelectedFarm();
+  autoSubmitSavedTemplateIfEnabled('load').catch(error => {
+    console.error(error);
+    const code = profileD1ErrorCode(error);
+    if (code === 'registration-nickname-duplicate-region') setStickyStatus(duplicateRequestMessage(), 'warn');
+    else setStickyStatus(`${t('profile.formDataSaveFailed', 'Не вдалося зберегти шаблон. Перевір права доступу або Google-вхід.')}${code ? ` (${code})` : ''}`, 'error');
+  });
 }
 
 async function init() {

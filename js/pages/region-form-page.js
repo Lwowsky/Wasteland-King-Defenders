@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=021';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=021';
+} from '../services/region-db.js?v=022';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=022';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -1004,7 +1004,10 @@ async function loadSignedInForm(user) {
     setStatus(t('region.savedPlayerCanUpdate', 'Твоя заявка вже є. Якщо дані змінились, можна відправити форму ще раз і оновити заявку.'), 'success');
   }
   setFormInputsDisabled(false);
-  if (autoProfile && !saved) await maybeAutoSubmitFromProfile('load');
+  if (autoProfile && !saved) {
+    await maybeAutoSubmitFromProfile('load');
+    return;
+  }
   setStatus(saved ? t('region.savedLeaderCanUpdate', 'Your request already exists. You are a region leader, so you can update it.') : t('region.fillRegionForm', 'Fill out the region form.'), saved ? 'success' : 'muted');
 }
 
