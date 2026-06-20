@@ -371,6 +371,10 @@ function sanitizeSettings(settings = {}) {
     rotationEnabled: Boolean(settings.rotationEnabled),
     rotationLoop: Boolean(settings.rotationLoop),
     rotationActiveIndex: Number(settings.rotationActiveIndex) || 0,
+    rotationClosedActiveIndex: Number(settings.rotationClosedActiveIndex),
+    rotationNextActiveIndex: Number(settings.rotationNextActiveIndex),
+    rotationHandoverAtMs: Number(settings.rotationHandoverAtMs) || 0,
+    activeHostAlliance: cleanText(settings.activeHostAlliance || '', 12),
     rotationAlliances: sanitizeRotationAlliances(settings.rotationAlliances || []),
     updatedAtMs: Number(settings.updatedAtMs) || 0,
     updatedByName: cleanText(settings.updatedByName || '', 120)
@@ -557,10 +561,13 @@ export async function readFullRegionCycleArchiveD1(user, region, cycleId, option
 function normalizeRegionFormResponse(data = {}) {
   const item = data.form || data;
   const settings = sanitizeSettings(item.settings || data.settings || {});
+  const cycleId = cleanText(item.cycleId || item.cycle_id || data.cycleId || settings.currentCycleId || '', 80);
+  if (cycleId && !settings.currentCycleId) settings.currentCycleId = cycleId;
   return {
     ok: data.ok !== false,
     region: cleanRegion(item.region || data.region),
     code: cleanCode(item.code || data.code || ''),
+    cycleId,
     settings,
     version: Number(item.version || item.updatedAtMs || data.version || 0) || 0,
     updatedAtMs: Number(item.updatedAtMs || data.updatedAtMs || 0) || 0,

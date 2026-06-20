@@ -81,6 +81,7 @@ function withRegionRootFallback(regionData = {}) {
   };
 }
 const WASTELAND_PERIOD_MS = 14 * DAY_MS;
+const ROTATION_HANDOVER_HOLD_MS = 72 * DAY_MS;
 const WASTELAND_DURATION_MS = DAY_MS;
 export const REGION_REGISTRATION_RETENTION_DAYS = 14;
 const REGION_REGISTRATION_RETENTION_MS = REGION_REGISTRATION_RETENTION_DAYS * DAY_MS;
@@ -312,11 +313,11 @@ export function canManageRegion(profile = {}, region = '', actor = null) {
   return ['admin', 'moderator', 'consul'].includes(role) && canViewRegion(profile, region, actor);
 }
 
-function activeRotationAlliance(settings = {}) {
+function activeRotationAlliance(settings = {}, nowMs = Date.now()) {
   const list = normalizeRotationAlliances(settings.rotationAlliances || []);
   const fallback = normalizeAllianceTag(settings.hostAlliance || settings.activeHostAlliance || '');
   if (!settings.rotationEnabled || !list.length) return fallback;
-  const index = Math.max(0, Math.min(list.length - 1, Number(settings.rotationActiveIndex) || 0));
+  const index = effectiveRotationIndex(settings, nowMs);
   return normalizeAllianceTag(list[index]?.tag || fallback || '');
 }
 
@@ -581,6 +582,44 @@ export function computeCloseAtMs(eventStartAtMs, closeRule = 'hoursBeforeEvent',
   return eventMs - hours * 60 * 60 * 1000;
 }
 
+
+function nextMondayUtcAfter(ms = Date.now()) {
+  const date = new Date(Number(ms) || Date.now());
+  date.setUTCHours(0, 0, 0, 0);
+  const daysUntilMonday = (1 - date.getUTCDay() + 7) % 7 || 7;
+  date.setUTCDate(date.getUTCDate() + daysUntilMonday);
+  return date.getTime();
+}
+
+export function computeRotationHandoverAtMs(closedAtMs = Date.now()) {
+  const closed = Number(closedAtMs) || Date.now();
+  // Real Wasteland closes on the Friday reset, so the 72-hour handover is
+  // the next Monday 00:00 UTC. If someone closes a test cycle on another day,
+  // still use the next Monday boundary so the rotation never moves instantly.
+  return nextMondayUtcAfter(closed);
+}
+
+function nextRotationIndex(index = 0, list = [], loop = true) {
+  const count = Array.isArray(list) ? list.length : 0;
+  if (!count) return 0;
+  const current = Math.max(0, Math.min(count - 1, Number(index) || 0));
+  const next = current + 1;
+  return next < count ? next : (loop ? 0 : current);
+}
+
+function effectiveRotationIndex(settings = {}, nowMs = Date.now()) {
+  const list = normalizeRotationAlliances(settings.rotationAlliances || []);
+  if (!list.length) return 0;
+  const stored = Math.max(0, Math.min(list.length - 1, Number(settings.rotationActiveIndex) || 0));
+  const handoverAtMs = Number(settings.rotationHandoverAtMs) || 0;
+  if (settings.rotationEnabled && handoverAtMs && nowMs >= handoverAtMs) {
+    const closedIndex = Number.isFinite(Number(settings.rotationClosedActiveIndex)) ? Number(settings.rotationClosedActiveIndex) : stored;
+    const plannedNext = Number.isFinite(Number(settings.rotationNextActiveIndex)) ? Number(settings.rotationNextActiveIndex) : nextRotationIndex(closedIndex, list, settings.rotationLoop !== false);
+    return Math.max(0, Math.min(list.length - 1, plannedNext));
+  }
+  return stored;
+}
+
 export function computeOpenAtMs(eventStartAtMs, autoOpenEnabled = true, autoOpenDay = 5, autoOpenTime = '00:00') {
   if (!autoOpenEnabled) return 0;
   const eventMs = Number(eventStartAtMs) || getNextWastelandStart();
@@ -751,6 +790,8 @@ function mergeRegionSettings(data = {}) {
   const openAtMs = Number(data.openAtMs) || computeOpenAtMs(eventStartAtMs, autoOpenEnabled, autoOpenDay, autoOpenTime);
   const rotationAlliances = normalizeRotationAlliances(data.rotationAlliances);
   const rotationActiveIndex = Math.max(0, Math.min(Math.max(0, rotationAlliances.length - 1), Number(data.rotationActiveIndex) || 0));
+  const rotationClosedActiveIndex = Number.isFinite(Number(data.rotationClosedActiveIndex)) ? Math.max(0, Math.min(Math.max(0, rotationAlliances.length - 1), Number(data.rotationClosedActiveIndex) || 0)) : rotationActiveIndex;
+  const rotationNextActiveIndex = Number.isFinite(Number(data.rotationNextActiveIndex)) ? Math.max(0, Math.min(Math.max(0, rotationAlliances.length - 1), Number(data.rotationNextActiveIndex) || 0)) : nextRotationIndex(rotationClosedActiveIndex, rotationAlliances, data.rotationLoop !== false);
   const currentCycleId = trim(data.currentCycleId) || makeCycleId(eventStartAtMs);
   const customShifts = normalizeCustomShifts(data.customShifts);
   const updatedAtMs = timestampToMs(data.updatedAt) || Number(data.updatedAtMs) || 0;
@@ -778,6 +819,9 @@ function mergeRegionSettings(data = {}) {
     rotationEnabled: Boolean(data.rotationEnabled),
     rotationLoop: 'rotationLoop' in data ? Boolean(data.rotationLoop) : DEFAULT_REGION_FORM.rotationLoop,
     rotationActiveIndex,
+    rotationClosedActiveIndex,
+    rotationNextActiveIndex,
+    rotationHandoverAtMs: Number(data.rotationHandoverAtMs) || 0,
     rotationAlliances,
     eventStartAtMs,
     startAtMs: eventStartAtMs,
@@ -1651,6 +1695,13 @@ export async function saveRegionSettings(user, region, settings) {
   const rotationEnabled = Boolean(settings.rotationEnabled);
   const rotationLoop = 'rotationLoop' in settings ? Boolean(settings.rotationLoop) : DEFAULT_REGION_FORM.rotationLoop;
   let rotationActiveIndex = Math.max(0, Math.min(Math.max(0, rotationAlliances.length - 1), Number(settings.rotationActiveIndex) || 0));
+  const previousHandoverAtMs = Number(oldSettings.rotationHandoverAtMs) || 0;
+  if (!forceCloseNow && previousHandoverAtMs && nowMs >= previousHandoverAtMs && rotationEnabled && rotationAlliances.length) {
+    const closedIndex = Number.isFinite(Number(oldSettings.rotationClosedActiveIndex)) ? Number(oldSettings.rotationClosedActiveIndex) : rotationActiveIndex;
+    rotationActiveIndex = Number.isFinite(Number(oldSettings.rotationNextActiveIndex))
+      ? Math.max(0, Math.min(rotationAlliances.length - 1, Number(oldSettings.rotationNextActiveIndex) || 0))
+      : nextRotationIndex(closedIndex, rotationAlliances, rotationLoop);
+  }
   const enabledNow = forceCloseNow ? false : (forceOpenNow ? true : Boolean(settings.enabled));
   const justOpened = forceOpenNow || Boolean(settings.openNewCycle) || (!oldSettings.enabled && enabledNow);
   const openNewCycle = !forceCloseNow && (Boolean(settings.openNewCycle) || (!oldSettings.enabled && enabledNow));
@@ -1674,6 +1725,15 @@ export async function saveRegionSettings(user, region, settings) {
   const activeHostAlliance = forceCloseNow
     ? activeHostBeforeClose
     : (enabledNow ? visibleHostAlliance : normalizeAllianceTag(oldSettings.activeHostAlliance || visibleHostAlliance || ''));
+  const rotationClosedActiveIndex = forceCloseNow
+    ? rotationActiveIndex
+    : (Number.isFinite(Number(oldSettings.rotationClosedActiveIndex)) ? Number(oldSettings.rotationClosedActiveIndex) : rotationActiveIndex);
+  const rotationNextActiveIndex = forceCloseNow
+    ? nextRotationIndex(rotationActiveIndex, rotationAlliances, rotationLoop)
+    : (Number.isFinite(Number(oldSettings.rotationNextActiveIndex)) ? Number(oldSettings.rotationNextActiveIndex) : nextRotationIndex(rotationClosedActiveIndex, rotationAlliances, rotationLoop));
+  const rotationHandoverAtMs = forceCloseNow
+    ? computeRotationHandoverAtMs(nowMs)
+    : (enabledNow ? 0 : (previousHandoverAtMs && nowMs < previousHandoverAtMs ? previousHandoverAtMs : 0));
 
   const clean = {
     enabled: enabledNow,
@@ -1698,6 +1758,9 @@ export async function saveRegionSettings(user, region, settings) {
     rotationEnabled: Boolean(settings.rotationEnabled),
     rotationLoop,
     rotationActiveIndex,
+    rotationClosedActiveIndex,
+    rotationNextActiveIndex,
+    rotationHandoverAtMs,
     rotationAlliances,
     eventStartAtMs,
     startAtMs: eventStartAtMs,

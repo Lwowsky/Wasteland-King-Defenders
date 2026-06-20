@@ -187,6 +187,21 @@ function setFormAvailable(available) {
   if (!form) return;
   form.hidden = !available;
   setFormInputsDisabled(!available);
+  applySecretLinkUi();
+}
+
+function applySecretLinkUi() {
+  const isSecret = Boolean(shortCodeFromLink);
+  const profileTools = $('#regionProfileTools');
+  const openTableBtn = $('#openRegionTableBtn');
+  const shortLinkPanel = $('#regionPlayerShortLinkPanel');
+  const saveDraftBtn = $('#saveWastelandDraftBtn');
+  const resetBtn = $('#resetWastelandFormBtn');
+  if (profileTools && isSecret) profileTools.hidden = true;
+  if (openTableBtn && isSecret) openTableBtn.hidden = true;
+  if (shortLinkPanel && isSecret) shortLinkPanel.hidden = true;
+  if (saveDraftBtn) saveDraftBtn.hidden = isSecret;
+  if (resetBtn) resetBtn.hidden = isSecret;
 }
 async function saveDraft(values = readForm()) {
   const payload = { ...values, region: currentRegion, farmId: selectedFarmId || 'main', savedAtMs: Date.now(), cycleId: formSettings?.currentCycleId || '', autoSubmitEnabled: getAutoProfilePreference(currentRegion, selectedFarmId) };
@@ -284,15 +299,27 @@ function renderAllianceOptions() {
     .join('');
 }
 
+function allianceOptionsFromSettings(settings = formSettings || {}) {
+  const map = new Map();
+  const add = value => {
+    const tag = allianceTag3(typeof value === 'string' ? value : (value?.tag || value?.id || ''));
+    if (tag && !map.has(tag)) map.set(tag, { id: tag, tag, name: typeof value === 'object' ? (value.name || tag) : tag });
+  };
+  add(settings.hostAlliance || settings.activeHostAlliance || '');
+  (Array.isArray(settings.rotationAlliances) ? settings.rotationAlliances : []).forEach(add);
+  return [...map.values()];
+}
+
 async function loadRegionAlliancesForForm() {
   regionAlliances = [];
   if (!currentRegion) return;
   try {
     regionAlliances = await listRegionAlliances(currentRegion);
   } catch (error) {
-    console.warn('[WKD] region form alliances skipped:', error);
+    if (window.WKD_DEBUG) console.warn('[WKD] region form alliances skipped:', error);
     regionAlliances = [];
   }
+  if (!regionAlliances.length) regionAlliances = allianceOptionsFromSettings(formSettings);
   renderAllianceOptions();
 }
 
@@ -461,6 +488,7 @@ async function updatePlayerShortLinkPanel() {
   const input = $('#regionPlayerShortLink');
   if (!panel || !input) return;
   panel.hidden = true;
+  if (shortCodeFromLink) return;
   if (!currentUser || !canManageRegion(currentProfile || {}, currentRegion, currentUser)) return;
   const code = shortCodeFromLink || await getRegionShareLinkCode(currentUser, currentRegion).catch(() => '');
   const link = buildShortPlayerLink(code, currentRegion);
@@ -480,6 +508,10 @@ function renderSavedFarmTools(profile = {}) {
   const panel = $('#regionProfileTools');
   const select = $('#wrSavedFarmSelect');
   if (!panel || !select) return;
+  if (shortCodeFromLink) {
+    panel.hidden = true;
+    return;
+  }
   const showAllRegions = Boolean(currentUser);
   const farms = getSavedFarms(profile, currentRegion, { allRegions: showAllRegions });
   const hasRegionOptions = Boolean(currentUser && regionOptions.length > 1);
@@ -746,6 +778,11 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
       await showNicknameDuplicateDialog();
       return false;
     }
+    const code = d1RegistrationErrorCode(error);
+    if (['share_code_required', 'share_not_found', 'share_expired', 'share_region_mismatch', 'share_cycle_mismatch', 'region_form_cycle_mismatch'].includes(code)) {
+      setStatus(t('region.shortLinkInvalid', 'Це секретне посилання більше не підходить для активного циклу. Попроси консула або офіцера скопіювати нове коротке посилання.'), 'error');
+      return false;
+    }
     if (error?.message === 'd1-registration-required' || (!isHardD1RegistrationError(error) && shouldUseD1FirstRegistration())) {
       setStatus(t('region.d1RegistrationRequired', 'Відправити заявку можна тільки через Cloudflare D1. Перевір деплой Worker або спробуй ще раз через кілька хвилин.'), 'error');
       return false;
@@ -839,6 +876,7 @@ async function prepareForm(settings) {
   renderShiftOptions(settings);
   toggleExtraFields();
   setFormAvailable(true);
+  applySecretLinkUi();
   return true;
 }
 
@@ -854,6 +892,7 @@ async function loadPublicForm(region) {
   const settings = shortCodeFromLink ? await resolveShortLinkSettings() : await loadRegionFormSettings(region);
   currentRegion = shortCodeFromLink ? currentRegion : region;
   $('#openRegionTableBtn').hidden = true;
+  applySecretLinkUi();
   const open = await prepareForm(settings);
   syncTimeDisplayCheckbox();
   if (!open) return;
@@ -900,6 +939,7 @@ async function loadSignedInForm(user) {
   $('#openRegionTableBtn').hidden = !canViewRegion(currentProfile, currentRegion, currentUser);
   const open = await prepareForm(settings);
   renderSavedFarmTools(currentProfile);
+  applySecretLinkUi();
   syncTimeDisplayCheckbox();
   const autoProfile = syncAutoProfileCheckbox();
   if (!open) {
@@ -934,10 +974,11 @@ async function switchSavedFarm(farmId = selectedFarmId, { copyProfile = true } =
     const settings = await loadRegionFormSettings(currentRegion);
     isOpen = await prepareForm(settings);
     renderSavedFarmTools(currentProfile);
-    $('#openRegionTableBtn').hidden = !canViewRegion(currentProfile, currentRegion, currentUser);
+    $('#openRegionTableBtn').hidden = shortCodeFromLink ? true : !canViewRegion(currentProfile, currentRegion, currentUser);
   } else {
     renderSavedFarmTools(currentProfile);
   }
+  applySecretLinkUi();
   syncAutoProfileCheckbox();
   syncTimeDisplayCheckbox();
   if (copyProfile) fillProfileFields(currentProfile, selectedFarmId);
@@ -966,7 +1007,8 @@ async function switchRegion(region = currentRegion, { copyProfile = true } = {})
   const settings = await loadRegionFormSettings(currentRegion);
   const isOpen = await prepareForm(settings);
   renderSavedFarmTools(currentProfile);
-  $('#openRegionTableBtn').hidden = !canViewRegion(currentProfile, currentRegion, currentUser);
+  $('#openRegionTableBtn').hidden = shortCodeFromLink ? true : !canViewRegion(currentProfile, currentRegion, currentUser);
+  applySecretLinkUi();
   syncAutoProfileCheckbox();
   syncTimeDisplayCheckbox();
   if (copyProfile && getFarmById(currentProfile || {}, selectedFarmId)) fillProfileFields(currentProfile, selectedFarmId);

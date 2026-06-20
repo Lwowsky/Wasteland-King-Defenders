@@ -646,6 +646,10 @@ function sanitizeSettings(settings = {}) {
     rotationEnabled: Boolean(settings.rotationEnabled),
     rotationLoop: Boolean(settings.rotationLoop),
     rotationActiveIndex: Number(settings.rotationActiveIndex) || 0,
+    rotationClosedActiveIndex: Number(settings.rotationClosedActiveIndex),
+    rotationNextActiveIndex: Number(settings.rotationNextActiveIndex),
+    rotationHandoverAtMs: Number(settings.rotationHandoverAtMs) || 0,
+    activeHostAlliance: clean(settings.activeHostAlliance || '', 12),
     rotationAlliances: sanitizeRotationAlliances(settings.rotationAlliances || []),
     updatedAtMs: Number(settings.updatedAtMs) || 0,
     updatedByName: clean(settings.updatedByName || '', 120),
@@ -654,6 +658,33 @@ function sanitizeSettings(settings = {}) {
 
 
 const WKD_FORM_DEFAULT_CLOSE_HOURS = 24;
+const WKD_ROTATION_HANDOVER_MS = 72 * 24 * 60 * 60 * 1000;
+function nextMondayUtcAfterD1(ms = Date.now()) {
+  const date = new Date(Number(ms) || Date.now());
+  date.setUTCHours(0, 0, 0, 0);
+  const daysUntilMonday = (1 - date.getUTCDay() + 7) % 7 || 7;
+  date.setUTCDate(date.getUTCDate() + daysUntilMonday);
+  return date.getTime();
+}
+function nextRotationIndexD1(index = 0, list = [], loop = true) {
+  const count = Array.isArray(list) ? list.length : 0;
+  if (!count) return 0;
+  const current = Math.max(0, Math.min(count - 1, Number(index) || 0));
+  const next = current + 1;
+  return next < count ? next : (loop ? 0 : current);
+}
+function effectiveRotationIndexD1(settings = {}, nowMs = Date.now()) {
+  const list = Array.isArray(settings.rotationAlliances) ? settings.rotationAlliances : [];
+  if (!list.length) return 0;
+  const stored = Math.max(0, Math.min(list.length - 1, Number(settings.rotationActiveIndex) || 0));
+  const handoverAtMs = Number(settings.rotationHandoverAtMs) || 0;
+  if (settings.rotationEnabled && handoverAtMs && nowMs >= handoverAtMs) {
+    const closedIndex = Number.isFinite(Number(settings.rotationClosedActiveIndex)) ? Number(settings.rotationClosedActiveIndex) : stored;
+    const plannedNext = Number.isFinite(Number(settings.rotationNextActiveIndex)) ? Number(settings.rotationNextActiveIndex) : nextRotationIndexD1(closedIndex, list, settings.rotationLoop !== false);
+    return Math.max(0, Math.min(list.length - 1, plannedNext));
+  }
+  return stored;
+}
 function firstPositiveD1Ms(...values) {
   for (const value of values) {
     const number = Number(value) || 0;
@@ -1092,7 +1123,7 @@ function activeAllianceFromSettings(settings = {}) {
   const list = Array.isArray(settings.rotationAlliances) ? settings.rotationAlliances : [];
   const fallback = directoryAlliance(settings.hostAlliance || settings.activeHostAlliance || settings.alliance || '');
   if (!settings.rotationEnabled || !list.length) return fallback;
-  const idx = Math.max(0, Math.min(list.length - 1, Number(settings.rotationActiveIndex) || 0));
+  const idx = effectiveRotationIndexD1(settings, Date.now());
   const row = list[idx] || {};
   return directoryAlliance(row.tag || row.id || fallback || '');
 }
