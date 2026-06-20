@@ -152,6 +152,109 @@ function browserRegistrationKey(region = '', cycleId = 'active', nickname = '') 
   }
 }
 
+
+const AUTO_SUBMIT_MARKER_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+
+function autoSubmitNickKey(nickname = '') {
+  return cleanText(nickname || 'player', 80).toLowerCase().replace(/[^a-z0-9а-яіїєґ_-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'player';
+}
+
+function stableAutoValue(value) {
+  if (Array.isArray(value)) return value.map(stableAutoValue);
+  if (value && typeof value === 'object') {
+    return Object.keys(value).sort().reduce((acc, key) => {
+      const val = value[key];
+      if (val === undefined || typeof val === 'function') return acc;
+      acc[key] = stableAutoValue(val);
+      return acc;
+    }, {});
+  }
+  return value ?? '';
+}
+
+function autoSubmitHashFromText(text = '') {
+  let hash = 2166136261;
+  const str = String(text || '');
+  for (let i = 0; i < str.length; i += 1) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+export function autoSubmitSignature(values = {}) {
+  const row = sanitizeRegistrationValues(values || {});
+  const stable = stableAutoValue({
+    nickname: row.nickname,
+    alliance: row.alliance,
+    troopType: row.troopType,
+    tier: row.tier,
+    lairLevel: row.lairLevel,
+    marchSize: row.marchSize,
+    rallySize: row.rallySize,
+    readyToJoin: row.readyToJoin,
+    readyToAttack: row.readyToAttack,
+    captainReady: row.captainReady,
+    shift: row.shift,
+    comment: row.comment,
+    extraEnabled: row.extraEnabled,
+    extraSquads: row.extraSquads,
+    extraTroopType: row.extraTroopType,
+    extraTier: row.extraTier,
+    customFields: row.customFields
+  });
+  return autoSubmitHashFromText(JSON.stringify(stable));
+}
+
+function autoSubmitMarkerKey(data = {}) {
+  const safeRegion = cleanRegion(data.region) || 'region';
+  const safeCycle = cleanText(data.cycleId || 'active', 80).replace(/[^A-Za-z0-9._:-]/g, '-');
+  const safeFarm = cleanText(data.farmId || 'main', 80).replace(/[^A-Za-z0-9._:-]/g, '-').slice(0, 80) || 'main';
+  const safeNick = autoSubmitNickKey(data.nickname || 'player');
+  const safeUser = cleanText(data.uid || 'account', 120).replace(/[^A-Za-z0-9._:-]/g, '-').slice(0, 80) || 'account';
+  return `wkd.autoSubmit.v023.${safeRegion}.${safeCycle}.${safeUser}.${safeFarm}.${safeNick}`;
+}
+
+export function readAutoSubmitMarker(data = {}) {
+  try {
+    const raw = localStorage.getItem(autoSubmitMarkerKey(data));
+    if (!raw) return null;
+    const marker = JSON.parse(raw);
+    if (!marker || !marker.hash) return null;
+    const savedAt = Number(marker.savedAtMs || 0);
+    if (savedAt && Date.now() - savedAt > AUTO_SUBMIT_MARKER_TTL_MS) {
+      localStorage.removeItem(autoSubmitMarkerKey(data));
+      return null;
+    }
+    return marker;
+  } catch {
+    return null;
+  }
+}
+
+export function writeAutoSubmitMarker(data = {}) {
+  if (!data?.hash) return false;
+  try {
+    localStorage.setItem(autoSubmitMarkerKey(data), JSON.stringify({
+      hash: String(data.hash || ''),
+      status: cleanText(data.status || 'submitted', 40),
+      messageKey: cleanText(data.messageKey || '', 120),
+      savedAtMs: Date.now()
+    }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function clearAutoSubmitMarker(data = {}) {
+  try { localStorage.removeItem(autoSubmitMarkerKey(data)); return true; } catch { return false; }
+}
+
+export function autoSubmitMarkerMatches(marker = null, hash = '') {
+  return Boolean(marker?.hash && hash && marker.hash === String(hash || '') && ['submitted', 'alreadyExists', 'duplicate'].includes(String(marker.status || '')));
+}
+
 function sanitizeRegistrationValues(values = {}) {
   return {
     farmId: cleanText(values.farmId || 'main', 80) || 'main',

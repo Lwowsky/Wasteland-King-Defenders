@@ -1628,6 +1628,7 @@ window.WKD_TRANSLATIONS.vi = {
   'region.draftSaved': 'Dữ liệu đơn hiện tại đã được lưu trên thiết bị này.',
   'region.autoSubmitting': 'Đang tự động gửi đơn từ hồ sơ...',
   'region.autoSubmitted': 'Đã gửi đơn tự động từ hồ sơ.',
+  'region.autoSubmittedCached': 'Đơn tự động đã được gửi cho chu kỳ này. Không kiểm tra D1 lại.',
   'region.autoProfileSavedClosed': 'Đã lưu tự động điền cho người chơi này. Hiện đăng ký đang đóng, có thể gửi đơn sau khi mở.',
   'region.autoProfileReadyClosed': 'Tự động điền đã bật, nhưng đăng ký hiện đang đóng. Đơn chưa được gửi.',
   'region.autoProfileReadyOpen': 'Tự động điền đã bật. Đăng ký đang mở — đơn sẽ được gửi tự động.',

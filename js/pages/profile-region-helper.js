@@ -7,8 +7,8 @@ import {
   saveFarmWastelandProfile,
   saveSignedInUser
 } from '../services/user-db.js';
-import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=022';
-import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=022';
+import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=023';
+import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches } from '../services/region-table-cache.js?v=023';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -69,7 +69,6 @@ let currentRegionSettings = null;
 let ready = false;
 let profileRegionStatusLockUntil = 0;
 let autoSubmitInProgress = false;
-let lastAutoSubmitKey = '';
 
 function setStatus(text, type = 'muted') {
   const box = $('#regionStatus');
@@ -392,6 +391,30 @@ function duplicateRequestMessage() {
   return t('region.errorNicknameDuplicateGuestMessage', 'Заявка з таким нікнеймом уже є в активному циклі. Повторно такий самий нік не відправляється.');
 }
 
+function autoSubmitMarkerData(values = {}, farm = {}, settings = {}) {
+  return {
+    region: farm?.region || values.region || '',
+    cycleId: settings?.currentCycleId || values.cycleId || 'active',
+    farmId: selectedFarmId || values.farmId || 'main',
+    nickname: values.nickname || '',
+    uid: currentUser?.uid || '',
+    hash: autoSubmitSignature(values)
+  };
+}
+
+function showAutoSubmitMarkerStatus(marker = null) {
+  const status = String(marker?.status || 'submitted');
+  if (status === 'duplicate') {
+    setStickyStatus(duplicateRequestMessage(), 'warn');
+    return;
+  }
+  if (status === 'alreadyExists') {
+    setStickyStatus(t('region.requestAlreadySavedShort', 'Заявка для цього гравця вже є в активному циклі. Повторно запис не створюється.'), 'success');
+    return;
+  }
+  setStickyStatus(t('region.autoSubmittedCached', 'Автоматична заявка вже відправлена для цього циклу. Повторна перевірка D1 не виконувалась.'), 'success');
+}
+
 function validateProfileRegionData(values = {}, farm = {}) {
   const errors = [];
   if (!String(values.nickname || '').trim()) errors.push(t('region.errorNickname', 'Введи нікнейм.'));
@@ -406,8 +429,17 @@ async function autoSubmitProfileRegionData(values = {}, farm = {}, options = {})
   if (!values.autoSubmitEnabled || !farm?.region) return { skipped: true };
   if (autoSubmitInProgress) return { skipped: true, busy: true };
   if (!isRegionTableCacheEnabled?.()) throw new Error('region-table-cache-disabled');
+
+  let settings = currentRegionSettings || {};
+  let markerData = autoSubmitMarkerData(values, farm, settings);
+  let marker = readAutoSubmitMarker(markerData);
+  if (autoSubmitMarkerMatches(marker, markerData.hash)) {
+    showAutoSubmitMarkerStatus(marker);
+    return { skipped: true, cached: true, alreadyTried: true, marker };
+  }
+
   currentRegionSettings = await loadLatestRegionSettingsForProfile(farm.region, { force: true }) || currentRegionSettings;
-  const settings = currentRegionSettings || {};
+  settings = currentRegionSettings || {};
   const status = getRegionFormStatus(settings);
   if (!status.open) {
     setStickyStatus(t('region.autoProfileSavedClosed', 'Автозаповнення збережено. Форма зараз закрита, тому заявка НЕ відправлена.'), 'warn');
@@ -418,9 +450,14 @@ async function autoSubmitProfileRegionData(values = {}, farm = {}, options = {})
     setStickyStatus(errors.join(' '), 'error');
     return { skipped: true, invalid: true };
   }
-  const submitKey = [farm.region, settings.currentCycleId || 'active', selectedFarmId || 'main', String(values.nickname || '').trim().toLowerCase()].join('|');
-  if (lastAutoSubmitKey === submitKey && options.reason !== 'save') return { skipped: true, alreadyTried: true };
-  lastAutoSubmitKey = submitKey;
+
+  markerData = autoSubmitMarkerData(values, farm, settings);
+  marker = readAutoSubmitMarker(markerData);
+  if (autoSubmitMarkerMatches(marker, markerData.hash)) {
+    showAutoSubmitMarkerStatus(marker);
+    return { skipped: true, cached: true, alreadyTried: true, marker };
+  }
+
   autoSubmitInProgress = true;
   try {
     setStatus(t('region.autoSubmitting', 'Автоматично відправляю заявку з профілю...'), 'muted');
@@ -431,14 +468,17 @@ async function autoSubmitProfileRegionData(values = {}, farm = {}, options = {})
       publicLink: false
     }, settings, { forceUpdate: false });
     if (result?.existing && (result?.unchanged || result?.notWritten)) {
+      writeAutoSubmitMarker({ ...markerData, status: 'alreadyExists', messageKey: 'region.requestAlreadySavedShort' });
       setStickyStatus(t('region.requestAlreadySavedShort', 'Заявка для цього гравця вже є в активному циклі. Повторно запис не створюється.'), 'success');
       return { ...result, alreadyExists: true };
     }
+    writeAutoSubmitMarker({ ...markerData, status: 'submitted', messageKey: 'region.autoSubmittedCached' });
     setStickyStatus(t('region.autoSubmitted', 'Автоматична заявка з профілю відправлена.'), 'success');
     return result;
   } catch (error) {
     const code = profileD1ErrorCode(error);
     if (code === 'registration-nickname-duplicate-region') {
+      writeAutoSubmitMarker({ ...markerData, status: 'duplicate', messageKey: 'region.errorNicknameDuplicateGuestMessage' });
       setStickyStatus(duplicateRequestMessage(), 'warn');
       return { skipped: true, duplicate: true };
     }

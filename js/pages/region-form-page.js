@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=022';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings } from '../services/region-table-cache.js?v=022';
+} from '../services/region-db.js?v=023';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches } from '../services/region-table-cache.js?v=023';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -768,7 +768,10 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
 
     if (savedRequest?.unchanged && !forceUpdate) {
       setStatus(t('region.requestAlreadySavedNoChanges', 'Заявка вже була подана без змін.'), 'warn');
-      if (auto) return true;
+      if (auto) {
+        writeAutoSubmitMarker({ ...regionFormAutoSubmitMarkerData(values), status: 'alreadyExists', messageKey: 'region.requestAlreadySavedNoChanges' });
+        return true;
+      }
       const shouldUpdate = await confirmUpdateExistingRequest();
       if (!shouldUpdate) {
         setStatus(t('region.requestAlreadySubmittedUpdateCancelled', 'Оновлення скасовано. Додатковий запис у D1 не виконано.'), 'muted');
@@ -797,6 +800,9 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
     const successMessage = savedRequest?.existing
       ? t('region.requestUpdatedCurrentCycle', 'Заявку оновлено. Нові дані вже збережені для активного циклу.')
       : t('region.requestSavedCurrentCycle', 'Request saved. This player is already submitted for the current set; choose another farm from the list if needed.');
+    if (auto) {
+      writeAutoSubmitMarker({ ...regionFormAutoSubmitMarkerData(values), status: savedRequest?.existing ? 'alreadyExists' : 'submitted', messageKey: savedRequest?.existing ? 'region.requestAlreadySavedShort' : 'region.autoSubmittedCached' });
+    }
     setStatus(auto ? t('region.autoSubmitted', 'Автоматична заявка з профілю відправлена.') : successMessage, 'success');
     window.WKD?.actionDoneDialog?.({
       title: t('region.requestSavedDialogTitle', 'Заявку відправлено'),
@@ -816,6 +822,11 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
       return false;
     }
     if (d1RegistrationErrorCode(error) === 'registration-nickname-duplicate-region') {
+      if (auto) {
+        writeAutoSubmitMarker({ ...regionFormAutoSubmitMarkerData(values), status: 'duplicate', messageKey: 'region.errorNicknameDuplicateGuestMessage' });
+        setStatus(t('region.errorNicknameDuplicateGuestMessage', 'Заявка з таким нікнеймом уже є в активному циклі. Повторно такий самий нік не відправляється.'), 'warn');
+        return false;
+      }
       await showNicknameDuplicateDialog();
       return false;
     }
@@ -841,6 +852,30 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
   }
 }
 
+function regionFormAutoSubmitMarkerData(values = {}) {
+  return {
+    region: currentRegion || values.region || '',
+    cycleId: formSettings?.currentCycleId || values.cycleId || 'active',
+    farmId: selectedFarmId || values.farmId || 'main',
+    nickname: values.nickname || '',
+    uid: currentUser?.uid || '',
+    hash: autoSubmitSignature(values)
+  };
+}
+
+function showRegionFormAutoSubmitMarkerStatus(marker = null) {
+  const status = String(marker?.status || 'submitted');
+  if (status === 'duplicate') {
+    setStatus(t('region.errorNicknameDuplicateGuestMessage', 'Заявка з таким нікнеймом уже є в активному циклі. Повторно такий самий нік не відправляється.'), 'warn');
+    return;
+  }
+  if (status === 'alreadyExists') {
+    setStatus(t('region.requestAlreadySavedShort', 'Заявка для цього гравця вже є в активному циклі.'), 'success');
+    return;
+  }
+  setStatus(t('region.autoSubmittedCached', 'Автоматична заявка вже відправлена для цього циклу. Повторна перевірка D1 не виконувалась.'), 'success');
+}
+
 async function maybeAutoSubmitFromProfile(reason = '') {
   if (!currentUser || autoSubmitting || !autoFillFromProfileEnabled()) return false;
   const status = getRegionFormStatus(formSettings);
@@ -851,10 +886,10 @@ async function maybeAutoSubmitFromProfile(reason = '') {
     setStatus(t('region.autoProfileSavedClosed', 'Автозаповнення для цього гравця збережено. Форма зараз закрита, тому заявку можна буде відправити після відкриття реєстрації.'), 'warn');
     return false;
   }
-  const saved = await getMyWastelandRegistration(currentUser, currentRegion, selectedFarmId).catch(() => null);
-  if (saved) {
-    fillSavedRegistration(saved);
-    setStatus(t('region.requestAlreadySavedShort', 'Заявка для цього гравця вже є в активному циклі.'), 'success');
+  const markerData = regionFormAutoSubmitMarkerData(values);
+  const marker = readAutoSubmitMarker(markerData);
+  if (autoSubmitMarkerMatches(marker, markerData.hash)) {
+    showRegionFormAutoSubmitMarkerStatus(marker);
     return false;
   }
   const errors = validate(values);

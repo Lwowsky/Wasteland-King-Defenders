@@ -1628,6 +1628,7 @@ window.WKD_TRANSLATIONS.en = {
   'region.draftSaved': 'Current request data saved on this device.',
   'region.autoSubmitting': 'Automatically sending the request from profile...',
   'region.autoSubmitted': 'Automatic profile request sent.',
+  'region.autoSubmittedCached': 'Automatic request was already sent for this cycle. D1 was not checked again.',
   'region.autoProfileSavedClosed': 'Auto-fill is saved for this player. Registration is closed now, so the request can be sent after it opens.',
   'region.autoProfileReadyClosed': 'Auto-fill is enabled, but registration is closed now. The request was not sent.',
   'region.autoProfileReadyOpen': 'Auto-fill is enabled. Registration is open — the request will be sent automatically.',

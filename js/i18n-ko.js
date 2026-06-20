@@ -1628,6 +1628,7 @@ window.WKD_TRANSLATIONS.ko = {
   'region.draftSaved': '현재 신청 데이터가 이 기기에 저장되었습니다.',
   'region.autoSubmitting': '프로필에서 신청을 자동으로 보내는 중...',
   'region.autoSubmitted': '프로필 자동 신청이 전송되었습니다.',
+  'region.autoSubmittedCached': '이 주기에는 자동 신청이 이미 전송되었습니다. D1을 다시 확인하지 않았습니다.',
   'region.autoProfileSavedClosed': '이 플레이어의 자동 입력이 저장되었습니다. 지금은 등록이 닫혀 있어 열리면 보낼 수 있습니다.',
   'region.autoProfileReadyClosed': '자동 입력이 켜져 있지만 현재 등록이 닫혀 있습니다. 신청은 전송되지 않았습니다.',
   'region.autoProfileReadyOpen': '자동 입력이 켜져 있습니다. 등록이 열려 있어 신청이 자동으로 전송됩니다.',

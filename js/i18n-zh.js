@@ -1628,6 +1628,7 @@ window.WKD_TRANSLATIONS.zh = {
   'region.draftSaved': '当前申请数据已保存在此设备上。',
   'region.autoSubmitting': '正在从资料自动提交申请...',
   'region.autoSubmitted': '已提交资料自动申请。',
+  'region.autoSubmittedCached': '本周期的自动申请已提交。未再次检查 D1。',
   'region.autoProfileSavedClosed': '已为该玩家保存自动填写。当前报名已关闭，开启后即可提交申请。',
   'region.autoProfileReadyClosed': '自动填写已开启，但当前报名已关闭。申请未提交。',
   'region.autoProfileReadyOpen': '自动填写已开启。报名已开放，申请将自动提交。',

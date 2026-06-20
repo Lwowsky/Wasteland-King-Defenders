@@ -1628,6 +1628,7 @@ window.WKD_TRANSLATIONS.ja = {
   'region.draftSaved': '現在の申請データをこの端末に保存しました。',
   'region.autoSubmitting': 'プロフィールから自動で申請を送信しています...',
   'region.autoSubmitted': 'プロフィールからの自動申請を送信しました。',
+  'region.autoSubmittedCached': 'このサイクルでは自動申請はすでに送信済みです。D1 の再確認は行いませんでした。',
   'region.autoProfileSavedClosed': 'このプレイヤーの自動入力を保存しました。現在登録は閉じているため、開いた後に申請できます。',
   'region.autoProfileReadyClosed': '自動入力は有効ですが、現在登録は閉じています。申請は送信されていません。',
   'region.autoProfileReadyOpen': '自動入力が有効です。登録は開いているため、申請は自動送信されます。',

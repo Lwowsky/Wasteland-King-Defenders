@@ -1628,6 +1628,7 @@ window.WKD_TRANSLATIONS.de = {
   'region.draftSaved': 'Aktuelle Anfragedaten wurden auf diesem Gerät gespeichert.',
   'region.autoSubmitting': 'Anfrage wird automatisch aus dem Profil gesendet...',
   'region.autoSubmitted': 'Automatische Profil-Anfrage wurde gesendet.',
+  'region.autoSubmittedCached': 'Die automatische Anfrage wurde für diesen Zyklus bereits gesendet. D1 wurde nicht erneut geprüft.',
   'region.autoProfileSavedClosed': 'Automatisches Ausfüllen ist für diesen Spieler gespeichert. Die Registrierung ist jetzt geschlossen; die Anfrage kann nach der Öffnung gesendet werden.',
   'region.autoProfileReadyClosed': 'Automatisches Ausfüllen ist aktiviert, aber die Registrierung ist derzeit geschlossen. Die Anfrage wurde nicht gesendet.',
   'region.autoProfileReadyOpen': 'Automatisches Ausfüllen ist aktiviert. Die Registrierung ist geöffnet — die Anfrage wird automatisch gesendet.',
