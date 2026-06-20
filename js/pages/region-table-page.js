@@ -26,7 +26,7 @@ import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableS
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
 const SOURCE_MODE_KEY = 'wkd.players.sourceMode';
-const REGION_TABLE_PAGE_SIZE_KEY = 'wkd.regionTable.pageSize.v031';
+const REGION_TABLE_PAGE_SIZE_KEY = 'wkd.regionTable.pageSize.v032';
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 const tv = (key, fallback = '', vars = {}) => {
   let text = t(key, fallback);

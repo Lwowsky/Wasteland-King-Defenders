@@ -133,7 +133,7 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=019',
+  'region-table': './region-table-page.js?v=032',
   'region-settings': './region-settings-page.js?v=026',
   'action-log': './action-log-page.js?v=019'
 };
