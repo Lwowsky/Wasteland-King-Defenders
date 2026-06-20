@@ -310,6 +310,29 @@ async function ensureRegionTableSchema(db) {
         settings_json TEXT NOT NULL DEFAULT '{}'
       )`,
       `CREATE INDEX IF NOT EXISTS idx_region_form_settings_short_code ON region_form_settings(short_code)`,
+      `CREATE TABLE IF NOT EXISTS region_auto_submit_templates (
+        region TEXT NOT NULL,
+        uid TEXT NOT NULL DEFAULT '',
+        farm_id TEXT NOT NULL DEFAULT 'main',
+        nickname TEXT NOT NULL DEFAULT '',
+        nickname_key TEXT NOT NULL DEFAULT '',
+        enabled INTEGER NOT NULL DEFAULT 0,
+        template_hash TEXT NOT NULL DEFAULT '',
+        updated_at_ms INTEGER NOT NULL DEFAULT 0,
+        row_json TEXT NOT NULL DEFAULT '{}',
+        PRIMARY KEY (region, uid, farm_id)
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_region_auto_submit_templates_region_enabled ON region_auto_submit_templates(region, enabled)`,
+      `CREATE TABLE IF NOT EXISTS region_auto_submit_runs (
+        region TEXT NOT NULL,
+        cycle_id TEXT NOT NULL DEFAULT 'active',
+        version INTEGER NOT NULL DEFAULT 0,
+        templates_count INTEGER NOT NULL DEFAULT 0,
+        created_count INTEGER NOT NULL DEFAULT 0,
+        skipped_count INTEGER NOT NULL DEFAULT 0,
+        updated_at_ms INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (region, cycle_id)
+      )`,
       `CREATE TABLE IF NOT EXISTS final_plan_shares (
         code TEXT PRIMARY KEY,
         region TEXT NOT NULL,
@@ -1297,6 +1320,214 @@ async function saveRegionFormSettingsD1(db, payload = {}) {
   return { region, code, cycleId, version: nowMs, updatedAtMs: nowMs, settings: settingsWithLink };
 }
 
+
+function autoSubmitTemplateRowToObject(row = {}) {
+  const template = parseJson(row.row_json, {});
+  const region = normalizeRegion(row.region || template.region);
+  const farmId = clean(row.farm_id || template.farmId || 'main', 80) || 'main';
+  const uid = clean(row.uid || template.uid || '', 160);
+  const baseRow = sanitizeTableRow({
+    ...template,
+    region,
+    uid,
+    farmId,
+    nickname: row.nickname || template.nickname,
+    source: 'auto-submit-d1',
+    rowType: 'Автозаявка'
+  });
+  return {
+    region,
+    uid,
+    farmId,
+    nickname: clean(row.nickname || baseRow.nickname || '', 80),
+    nicknameKey: normalizedNickname(row.nickname_key || baseRow.nickname || ''),
+    enabled: Number(row.enabled || 0) === 1,
+    templateHash: clean(row.template_hash || template.templateHash || '', 80),
+    updatedAtMs: Number(row.updated_at_ms || 0) || 0,
+    row: baseRow
+  };
+}
+
+function autoSubmitTemplateHash(row = {}) {
+  const stable = JSON.stringify({
+    nickname: clean(row.nickname || '', 80),
+    alliance: clean(row.alliance || '', 12),
+    troopType: clean(row.troopType || '', 40),
+    tier: clean(row.tier || '', 12).toUpperCase(),
+    lairLevel: Number(row.lairLevel || 0) || 0,
+    marchSize: Number(row.marchSize || 0) || 0,
+    rallySize: Number(row.rallySize || 0) || 0,
+    readyToAttack: Boolean(row.readyToAttack),
+    captainReady: Boolean(row.captainReady),
+    shift: clean(row.shift || '', 40),
+    comment: clean(row.comment || '', 300),
+    extraEnabled: Boolean(row.extraEnabled),
+    extraSquads: Array.isArray(row.extraSquads) ? row.extraSquads : [],
+    extraTroopType: clean(row.extraTroopType || '', 40),
+    extraTier: clean(row.extraTier || '', 12).toUpperCase(),
+    customFields: row.customFields && typeof row.customFields === 'object' ? row.customFields : {}
+  });
+  let hash = 2166136261;
+  for (let i = 0; i < stable.length; i += 1) {
+    hash ^= stable.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+async function handleAutoSubmitTemplatePut(request, env) {
+  const db = regionTableDb(env);
+  if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
+  await ensureRegionTableSchema(db);
+  const user = await verifyFirebaseToken(request, env);
+  if (!user?.uid) return json({ ok: false, error: 'auth_required' }, 401, 'private, no-store');
+  let body = null;
+  try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
+  const region = normalizeRegion(body?.region || body?.row?.region);
+  const farmId = clean(body?.farmId || body?.row?.farmId || 'main', 80) || 'main';
+  if (!region) return json({ ok: false, error: 'region_required' }, 400);
+  const enabled = body?.enabled !== false && body?.row?.autoSubmitEnabled !== false;
+  const nowMs = Number(body?.updatedAtMs || 0) || Date.now();
+
+  if (!enabled) {
+    await db.prepare(`DELETE FROM region_auto_submit_templates WHERE region = ?1 AND uid = ?2 AND farm_id = ?3`)
+      .bind(region, user.uid, farmId)
+      .run();
+    return json({ ok: true, region, farmId, enabled: false, deleted: true, usage: { d1RowsWritten: 1 }, source: 'cloudflare-d1-auto-submit-template' }, 200, 'private, no-store');
+  }
+
+  const rawRow = body?.row && typeof body.row === 'object' ? body.row : {};
+  const row = sanitizeTableRow({
+    ...rawRow,
+    region,
+    uid: user.uid,
+    publicKey: '',
+    farmId,
+    id: `${user.uid}_${farmId}_template`,
+    source: 'auto-template-d1',
+    rowType: 'Автошаблон',
+    updatedAtMs: nowMs
+  });
+  if (!row.nickname) return json({ ok: false, error: 'registration_nickname_required' }, 400, 'private, no-store');
+  if (!row.alliance) return json({ ok: false, error: 'registration_alliance_required' }, 400, 'private, no-store');
+  if (!row.troopType || !row.tier || !row.shift) return json({ ok: false, error: 'registration_template_incomplete' }, 400, 'private, no-store');
+  const nicknameKey = normalizedNickname(row.nickname);
+  const templateHash = clean(body?.templateHash || autoSubmitTemplateHash(row), 80);
+  await db.prepare(
+    `INSERT INTO region_auto_submit_templates (region, uid, farm_id, nickname, nickname_key, enabled, template_hash, updated_at_ms, row_json)
+     VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6, ?7, ?8)
+     ON CONFLICT(region, uid, farm_id) DO UPDATE SET
+       nickname = excluded.nickname,
+       nickname_key = excluded.nickname_key,
+       enabled = 1,
+       template_hash = excluded.template_hash,
+       updated_at_ms = excluded.updated_at_ms,
+       row_json = excluded.row_json`
+  ).bind(region, user.uid, farmId, row.nickname, nicknameKey, templateHash, nowMs, JSON.stringify(row)).run();
+  return json({ ok: true, region, farmId, enabled: true, templateHash, usage: { d1RowsWritten: 1 }, source: 'cloudflare-d1-auto-submit-template' }, 200, 'private, no-store');
+}
+
+async function autoSubmitTemplatesForRegionCycle(db, region, cycleId = 'active', settings = {}) {
+  await ensureRegionTableSchema(db);
+  const safeRegion = normalizeRegion(region);
+  const safeCycle = normalizeCycleId(cycleId || settings.currentCycleId || 'active');
+  if (!safeRegion || !safeCycle) return { skipped: true, reason: 'region-cycle-required' };
+  if (!isRegionFormOpenD1(settings || {})) return { skipped: true, reason: 'form-closed' };
+  const previousRun = await db.prepare(`SELECT region, cycle_id, created_count, skipped_count FROM region_auto_submit_runs WHERE region = ?1 AND cycle_id = ?2 LIMIT 1`)
+    .bind(safeRegion, safeCycle)
+    .first()
+    .catch(() => null);
+  if (previousRun) {
+    return { skipped: true, reason: 'already-ran', createdCount: Number(previousRun.created_count || 0), skippedCount: Number(previousRun.skipped_count || 0), rowsRead: 1, rowsWritten: 0 };
+  }
+
+  const nowMs = Date.now();
+  const templateLimit = Math.max(100, Math.min(20000, Number(settings.autoSubmitLimit || 10000) || 10000));
+  await db.prepare(
+    `INSERT INTO region_auto_submit_runs (region, cycle_id, version, templates_count, created_count, skipped_count, updated_at_ms)
+     VALUES (?1, ?2, ?3, 0, 0, 0, ?4)`
+  ).bind(safeRegion, safeCycle, nowMs, nowMs).run();
+
+  const templatesCountRow = await db.prepare(
+    `SELECT COUNT(*) AS count FROM region_auto_submit_templates WHERE region = ?1 AND enabled = 1`
+  ).bind(safeRegion).first().catch(() => ({ count: 0 }));
+  const templatesCount = Math.max(0, Number(templatesCountRow?.count || 0) || 0);
+  const beforeCount = await countTableRows(db, safeRegion, safeCycle).catch(() => 0);
+
+  await db.prepare(
+    `INSERT OR IGNORE INTO region_table_rows
+      (region, cycle_id, id, uid, public_key, farm_id, nickname, nickname_key, alliance, troop_type, tier, shift, updated_at_ms, row_json)
+     SELECT
+       t.region,
+       ?2 AS cycle_id,
+       t.uid || '_' || COALESCE(NULLIF(t.farm_id, ''), 'main') || '_' || ?2 AS id,
+       t.uid,
+       '' AS public_key,
+       COALESCE(NULLIF(t.farm_id, ''), 'main') AS farm_id,
+       t.nickname,
+       t.nickname_key,
+       COALESCE(json_extract(t.row_json, '$.alliance'), '') AS alliance,
+       COALESCE(json_extract(t.row_json, '$.troopType'), '') AS troop_type,
+       COALESCE(json_extract(t.row_json, '$.tier'), '') AS tier,
+       COALESCE(json_extract(t.row_json, '$.shift'), '') AS shift,
+       ?3 AS updated_at_ms,
+       json_set(
+         t.row_json,
+         '$.id', t.uid || '_' || COALESCE(NULLIF(t.farm_id, ''), 'main') || '_' || ?2,
+         '$.cycleId', ?2,
+         '$.source', ?4,
+         '$.rowType', ?5,
+         '$.submittedAtMs', ?3,
+         '$.registeredAtMs', ?3,
+         '$.updatedAtMs', ?3
+       ) AS row_json
+     FROM (
+       SELECT * FROM region_auto_submit_templates
+       WHERE region = ?1
+         AND enabled = 1
+         AND uid != ''
+         AND nickname != ''
+         AND nickname_key != ''
+         AND COALESCE(json_extract(row_json, '$.alliance'), '') != ''
+         AND COALESCE(json_extract(row_json, '$.troopType'), '') != ''
+         AND COALESCE(json_extract(row_json, '$.tier'), '') != ''
+         AND COALESCE(json_extract(row_json, '$.shift'), '') != ''
+       GROUP BY nickname_key
+       ORDER BY updated_at_ms DESC
+       LIMIT ?6
+     ) AS t
+     WHERE NOT EXISTS (
+       SELECT 1 FROM region_table_rows r
+       WHERE r.region = t.region
+         AND r.cycle_id = ?2
+         AND r.nickname_key = t.nickname_key
+     )`
+  ).bind(safeRegion, safeCycle, nowMs, 'auto-submit-d1', 'Автозаявка', templateLimit).run();
+
+  const afterCount = await countTableRows(db, safeRegion, safeCycle).catch(() => beforeCount);
+  const createdCount = Math.max(0, afterCount - beforeCount);
+  const skippedCount = Math.max(0, templatesCount - createdCount);
+  if (createdCount > 0) {
+    await updateTableMeta(db, { region: safeRegion, cycleId: safeCycle, version: nowMs, settings: { ...(settings || {}), currentCycleId: safeCycle } }, afterCount);
+  }
+  await db.prepare(
+    `UPDATE region_auto_submit_runs
+     SET version = ?3, templates_count = ?4, created_count = ?5, skipped_count = ?6, updated_at_ms = ?7
+     WHERE region = ?1 AND cycle_id = ?2`
+  ).bind(safeRegion, safeCycle, nowMs, templatesCount, createdCount, skippedCount, nowMs).run();
+  return {
+    ok: true,
+    region: safeRegion,
+    cycleId: safeCycle,
+    templatesCount,
+    createdCount,
+    skippedCount,
+    rowsCount: afterCount,
+    rowsRead: Math.max(4, templatesCount + beforeCount + 2),
+    rowsWritten: createdCount + (createdCount > 0 ? 5 : 2)
+  };
+}
+
 async function handleRegionFormSettingsRead(request, env) {
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
@@ -1354,8 +1585,19 @@ async function handleRegionFormSettingsPut(request, env) {
       rows: []
     }).catch(() => null);
   }
+  const autoSubmitRun = isRegionFormOpenD1(form.settings || {})
+    ? await autoSubmitTemplatesForRegionCycle(db, region, form.cycleId || requestedCycleId, form.settings || {}).catch(error => ({ skipped: true, error: clean(error?.message || error, 120) }))
+    : { skipped: true, reason: 'form-closed' };
   await grantRegionAccess(db, region, user.uid, 'form-settings');
-  return json({ ok: true, form, usage: { d1RowsWritten: openNewCycle ? 3 : 1 }, source: 'cloudflare-d1-form-settings' });
+  const extraWrites = Number(autoSubmitRun?.rowsWritten || 0) || 0;
+  const extraReads = Number(autoSubmitRun?.rowsRead || 0) || 0;
+  return json({
+    ok: true,
+    form,
+    autoSubmit: autoSubmitRun,
+    usage: { d1RowsRead: extraReads, d1RowsWritten: (openNewCycle ? 3 : 1) + extraWrites },
+    source: 'cloudflare-d1-form-settings'
+  });
 }
 
 async function hasSavedRegionAccess(db, uid, region) {
@@ -5160,6 +5402,10 @@ export default {
 
       if (url.pathname === "/api/action-log/clear" && request.method === "POST") {
         return await handleActionLogClear(request, env);
+      }
+
+      if (url.pathname === "/api/region-auto-submit/template" && request.method === "PUT") {
+        return await handleAutoSubmitTemplatePut(request, env);
       }
 
       if (url.pathname === "/api/region-form/settings" && request.method === "GET") {

@@ -1628,6 +1628,7 @@ window.WKD_TRANSLATIONS.pl = {
   'region.draftSaved': 'Bieżące dane zgłoszenia zapisano na tym urządzeniu.',
   'region.autoSubmitting': 'Automatycznie wysyłam zgłoszenie z profilu...',
   'region.autoSubmitted': 'Automatyczne zgłoszenie z profilu zostało wysłane.',
+  'region.autoTemplateSavedForNextOpen': 'Szablon zapisano. Gdy formularz zostanie otwarty, Worker automatycznie doda zgłoszenie bez wejścia gracza na stronę.',
   'region.autoSubmittedCached': 'Automatyczne zgłoszenie zostało już wysłane w tym cyklu. D1 nie było sprawdzane ponownie.',
   'region.autoProfileSavedClosed': 'Autouzupełnianie dla tego gracza zapisano. Rejestracja jest teraz zamknięta, więc zgłoszenie będzie można wysłać po jej otwarciu.',
   'region.autoProfileReadyClosed': 'Autouzupełnianie jest włączone, ale rejestracja jest teraz zamknięta. Zgłoszenie nie zostało wysłane.',

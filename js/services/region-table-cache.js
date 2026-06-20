@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=252';
+import { trackCloudflareUsage } from './usage-tracker.js?v=024';
 
 const MAX_ROWS = 2000;
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -212,7 +212,7 @@ function autoSubmitMarkerKey(data = {}) {
   const safeFarm = cleanText(data.farmId || 'main', 80).replace(/[^A-Za-z0-9._:-]/g, '-').slice(0, 80) || 'main';
   const safeNick = autoSubmitNickKey(data.nickname || 'player');
   const safeUser = cleanText(data.uid || 'account', 120).replace(/[^A-Za-z0-9._:-]/g, '-').slice(0, 80) || 'account';
-  return `wkd.autoSubmit.v023.${safeRegion}.${safeCycle}.${safeUser}.${safeFarm}.${safeNick}`;
+  return `wkd.autoSubmit.v024.${safeRegion}.${safeCycle}.${safeUser}.${safeFarm}.${safeNick}`;
 }
 
 export function readAutoSubmitMarker(data = {}) {
@@ -253,6 +253,43 @@ export function clearAutoSubmitMarker(data = {}) {
 
 export function autoSubmitMarkerMatches(marker = null, hash = '') {
   return Boolean(marker?.hash && hash && marker.hash === String(hash || '') && ['submitted', 'alreadyExists', 'duplicate'].includes(String(marker.status || '')));
+}
+
+function autoSubmitTemplateSyncKey(data = {}) {
+  const safeRegion = cleanRegion(data.region) || 'region';
+  const safeFarm = cleanText(data.farmId || 'main', 80).replace(/[^A-Za-z0-9._:-]/g, '-').slice(0, 80) || 'main';
+  const safeUser = cleanText(data.uid || 'account', 120).replace(/[^A-Za-z0-9._:-]/g, '-').slice(0, 80) || 'account';
+  const safeNick = autoSubmitNickKey(data.nickname || 'player');
+  return `wkd.autoSubmitTemplate.v024.${safeRegion}.${safeUser}.${safeFarm}.${safeNick}`;
+}
+
+export function readAutoSubmitTemplateSyncMarker(data = {}) {
+  try {
+    const raw = localStorage.getItem(autoSubmitTemplateSyncKey(data));
+    if (!raw) return null;
+    const marker = JSON.parse(raw);
+    return marker && marker.hash ? marker : null;
+  } catch { return null; }
+}
+
+export function writeAutoSubmitTemplateSyncMarker(data = {}) {
+  if (!data?.hash) return false;
+  try {
+    localStorage.setItem(autoSubmitTemplateSyncKey(data), JSON.stringify({
+      hash: String(data.hash || ''),
+      enabled: data.enabled !== false,
+      savedAtMs: Date.now()
+    }));
+    return true;
+  } catch { return false; }
+}
+
+export function clearAutoSubmitTemplateSyncMarker(data = {}) {
+  try { localStorage.removeItem(autoSubmitTemplateSyncKey(data)); return true; } catch { return false; }
+}
+
+export function autoSubmitTemplateSyncMarkerMatches(marker = null, hash = '') {
+  return Boolean(marker?.hash && hash && marker.hash === String(hash || '') && marker.enabled !== false);
 }
 
 function sanitizeRegistrationValues(values = {}) {
@@ -813,6 +850,60 @@ export async function publishRegionFormSettings(user, payload = {}) {
 }
 
 
+
+
+export async function publishAutoSubmitTemplateD1(user, region, values = {}, options = {}) {
+  if (!isRegionTableCacheEnabled()) return { skipped: true };
+  const safeRegion = cleanRegion(region || values.region);
+  if (!safeRegion) throw new Error('region-required');
+  const token = await getFirebaseToken(user);
+  if (!token) throw new Error('auth-token-required');
+  const farmId = cleanText(values?.farmId || options?.farmId || 'main', 80) || 'main';
+  const enabled = options?.enabled !== false && values?.autoSubmitEnabled !== false;
+  const cleanValues = sanitizeRegistrationValues({ ...values, farmId });
+  const templateHash = autoSubmitSignature(cleanValues);
+  const row = sanitizeTableRow({
+    ...cleanValues,
+    id: `${cleanText(user?.uid || '', 120)}_${farmId}_template`,
+    uid: cleanText(user?.uid || '', 120),
+    farmId,
+    region: safeRegion,
+    source: 'auto-template-d1',
+    rowType: 'Автошаблон',
+    autoSubmitEnabled: enabled,
+    updatedAtMs: Date.now()
+  });
+  const data = await requestJson('/api/region-auto-submit/template', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      region: safeRegion,
+      farmId,
+      enabled,
+      templateHash,
+      row,
+      updatedAtMs: Date.now()
+    })
+  });
+  return { ...data, templateHash, region: safeRegion, farmId, enabled };
+}
+
+export async function syncAutoSubmitTemplateD1IfNeeded(user, region, values = {}, options = {}) {
+  const safeRegion = cleanRegion(region || values.region);
+  const uid = cleanText(user?.uid || '', 120);
+  const farmId = cleanText(values?.farmId || options?.farmId || 'main', 80) || 'main';
+  if (!safeRegion || !uid) return { skipped: true };
+  const enabled = options?.enabled !== false && values?.autoSubmitEnabled !== false;
+  const hash = autoSubmitSignature({ ...values, farmId });
+  const markerData = { region: safeRegion, uid, farmId, nickname: values.nickname || '', hash, enabled };
+  if (!options?.force && enabled && autoSubmitTemplateSyncMarkerMatches(readAutoSubmitTemplateSyncMarker(markerData), hash)) {
+    return { skipped: true, cached: true, templateHash: hash };
+  }
+  const result = await publishAutoSubmitTemplateD1(user, safeRegion, { ...values, farmId, autoSubmitEnabled: enabled }, { enabled, farmId });
+  if (enabled && result?.ok !== false) writeAutoSubmitTemplateSyncMarker(markerData);
+  if (!enabled) clearAutoSubmitTemplateSyncMarker(markerData);
+  return result;
+}
 
 export async function readMyRegionRegistrationD1(user, region, farmId = 'main', options = {}) {
   if (!isRegionTableCacheEnabled()) throw new Error('region-table-cache-disabled');

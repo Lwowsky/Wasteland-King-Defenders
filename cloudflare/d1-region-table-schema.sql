@@ -89,6 +89,31 @@ CREATE TABLE IF NOT EXISTS region_form_settings (
 );
 CREATE INDEX IF NOT EXISTS idx_region_form_settings_short_code ON region_form_settings(short_code);
 
+CREATE TABLE IF NOT EXISTS region_auto_submit_templates (
+  region TEXT NOT NULL,
+  uid TEXT NOT NULL DEFAULT '',
+  farm_id TEXT NOT NULL DEFAULT 'main',
+  nickname TEXT NOT NULL DEFAULT '',
+  nickname_key TEXT NOT NULL DEFAULT '',
+  enabled INTEGER NOT NULL DEFAULT 0,
+  template_hash TEXT NOT NULL DEFAULT '',
+  updated_at_ms INTEGER NOT NULL DEFAULT 0,
+  row_json TEXT NOT NULL DEFAULT '{}',
+  PRIMARY KEY (region, uid, farm_id)
+);
+CREATE INDEX IF NOT EXISTS idx_region_auto_submit_templates_region_enabled ON region_auto_submit_templates(region, enabled);
+
+CREATE TABLE IF NOT EXISTS region_auto_submit_runs (
+  region TEXT NOT NULL,
+  cycle_id TEXT NOT NULL DEFAULT 'active',
+  version INTEGER NOT NULL DEFAULT 0,
+  templates_count INTEGER NOT NULL DEFAULT 0,
+  created_count INTEGER NOT NULL DEFAULT 0,
+  skipped_count INTEGER NOT NULL DEFAULT 0,
+  updated_at_ms INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (region, cycle_id)
+);
+
 CREATE TABLE IF NOT EXISTS public_stats_pages (
   bucket INTEGER PRIMARY KEY,
   updated_at_ms INTEGER NOT NULL DEFAULT 0,

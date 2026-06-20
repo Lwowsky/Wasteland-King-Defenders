@@ -1626,6 +1626,7 @@ window.WKD_TRANSLATIONS.ar = {
   'region.draftSaved': 'تم حفظ بيانات الطلب الحالية على هذا الجهاز.',
   'region.autoSubmitting': 'يتم إرسال الطلب تلقائياً من الملف الشخصي...',
   'region.autoSubmitted': 'تم إرسال الطلب التلقائي من الملف الشخصي.',
+  'region.autoTemplateSavedForNextOpen': 'تم حفظ القالب. عند فتح النموذج، سيضيف Worker الطلب تلقائياً دون دخول اللاعب إلى الموقع.',
   'region.autoSubmittedCached': 'تم إرسال الطلب التلقائي بالفعل لهذه الدورة. لم يتم فحص D1 مرة أخرى.',
   'region.autoProfileSavedClosed': 'تم حفظ الملء التلقائي لهذا اللاعب. التسجيل مغلق الآن، ويمكن إرسال الطلب بعد فتحه.',
   'region.autoProfileReadyClosed': 'تم تفعيل الملء التلقائي، لكن التسجيل مغلق الآن. لم يتم إرسال الطلب.',
