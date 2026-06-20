@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="css/profile-page.css?v=006" />
   <link rel="stylesheet" href="css/players.css" />
   <link rel="stylesheet" href="css/admin-page.css?v=006" />
-  <link rel="stylesheet" href="css/region-page.css?v=030" />
+  <link rel="stylesheet" href="css/region-page.css?v=031" />
   <link rel="stylesheet" href="css/modal-import.css" />
   <link rel="stylesheet" href="css/modal-regions.css" />
   <link rel="stylesheet" href="css/modal-tiers.css" />
@@ -60,7 +60,7 @@
   <script type="module" src="js/player-manager-region-bridge.js?v=008"></script>
   <script type="module" src="js/auth-google.js?v=006"></script>
   <script type="module" src="js/notifications.js?v=006"></script>
-  <script type="module" src="js/pages/region-table-page.js?v=030"></script>
+  <script type="module" src="js/pages/region-table-page.js?v=031"></script>
 </head>
 <body class="notranslate">
   <div data-include="partials/header.html"></div>
@@ -108,19 +108,24 @@
         </div>
       </div>
 
-      <div class="region-table-controls">
+      <div class="region-table-switch-row" id="regionTableSwitchRow" hidden>
         <label class="region-control region-control--region" id="regionManagerSwitch" hidden>
           <span data-i18n="account.region">Регіон</span>
           <input id="regionLookupInput" type="text" inputmode="numeric" autocomplete="off" placeholder="987" data-i18n-placeholder="region.example987" list="regionLookupList" />
           <datalist id="regionLookupList"></datalist>
         </label>
         <button class="btn btn-primary region-open-btn" id="openRegionLookupBtn" type="button" hidden data-i18n="region.openRegion">Відкрити</button>
-        <label class="region-control region-control--nick"><span data-i18n="account.nickname">Нік</span><input id="regionNickSearch" type="search" placeholder="Lwowsky" /></label>
-        <label class="region-control region-control--ally"><span data-i18n="account.alliance">Альянс</span><input id="regionAllianceSearch" type="search" placeholder="YYY" maxlength="3" /></label>
-        <label class="region-control region-control--troop"><span data-i18n="playerEdit.troopType">Тип</span><select id="regionTroopFilter"><option value="all" data-i18n="common.all">Усі</option><option value="fighter" data-i18n="troop.fighter">Бійці</option><option value="rider" data-i18n="troop.rider">Наїзники</option><option value="shooter" data-i18n="troop.shooter">Стрільці</option></select></label>
+      </div>
+
+      <div class="filters-card region-table-controls">
+        <label class="region-control region-control--search"><span data-i18n="common.search">Пошук</span><input id="regionNickSearch" type="search" placeholder="Пошук за ніком / альянсом" data-i18n-placeholder="players.searchNickAlliance" /></label>
+        <input id="regionAllianceSearch" type="hidden" value="" />
+        <label class="region-control region-control--troop"><span data-i18n="playerEdit.troopType">Тип військ</span><select id="regionTroopFilter"><option value="all" data-i18n="common.all">Усі</option><option value="fighter" data-i18n="troop.fighter">Бійці</option><option value="rider" data-i18n="troop.rider">Наїзники</option><option value="shooter" data-i18n="troop.shooter">Стрільці</option></select></label>
+        <label class="region-control region-control--shift"><span data-i18n="common.shift">Зміна</span><select id="regionShiftFilter"><option value="all" data-i18n="common.all">Усі</option><option value="shift1" data-i18n="shift.shift1">Зміна 1</option><option value="shift2" data-i18n="shift.shift2">Зміна 2</option><option value="shift3" data-i18n="shift.shift3">Зміна 3</option><option value="shift4" data-i18n="shift.shift4">Зміна 4</option><option value="both" data-i18n="shift.both">Всі</option></select></label>
+        <label class="region-control region-control--status"><span data-i18n="common.status">Статус</span><select id="regionStatusFilter"><option value="all" data-i18n="common.all">Усі</option><option value="captains" data-i18n="players.captains">Капітани</option></select></label>
         <label class="region-control region-control--tier"><span data-i18n="playerEdit.tier">Тір</span><select id="regionTierFilter"><option value="all" data-i18n="common.all">Усі</option></select></label>
-        <label class="region-control region-control--shift"><span data-i18n="common.shift">Зміна</span><select id="regionShiftFilter"><option value="all" data-i18n="common.all">Усі</option><option value="shift1" data-i18n="shift.shift1">Зміна 1</option><option value="shift2" data-i18n="shift.shift2">Зміна 2</option><option value="shift3" data-i18n="shift.shift3">Зміна 3</option><option value="shift4" data-i18n="shift.shift4">Зміна 4</option><option value="both" data-i18n="shift.both">Обидві</option></select></label>
-        <label class="region-control region-control--rows"><span data-i18n="region.rowsPerPage">Рядків</span><select id="regionTablePageSize"><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></label>
+        <label class="region-control region-control--rows"><span data-i18n="region.rowsPerPage">Рядків</span><select id="regionTablePageSize"><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="all" data-i18n="common.all">Усі</option></select></label>
+        <button class="btn" id="regionResetFiltersBtn" type="button" data-i18n="players.resetFilters">Скинути фільтри</button>
       </div>
 
       <div class="admin-table-wrap">

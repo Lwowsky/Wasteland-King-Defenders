@@ -1039,6 +1039,8 @@ function tableRowsWhere(region, cycleId = 'active', options = {}) {
   if (tier && tier !== 'ALL') add('upper(tier) = ?', tier);
   const shift = clean(options.shift || '', 40).toLowerCase();
   if (shift && shift !== 'all') add('lower(shift) = ?', shift);
+  const status = clean(options.status || '', 40).toLowerCase();
+  if (status === 'captains' || status === 'captain') add("CAST(COALESCE(json_extract(row_json, '$.captainReady'), 0) AS INTEGER) = ?", 1);
   return { safeRegion, safeCycle, where: parts.join(' AND '), binds };
 }
 
@@ -2219,8 +2221,9 @@ async function handleRegionTableRead(request, env) {
   if (!allowed) return json({ ok: false, error: "region_access_denied" }, 403);
 
   const requestedPage = Number(url.searchParams.get('page') || 0) || 0;
-  const requestedPageSize = Number(url.searchParams.get('pageSize') || 0) || 0;
-  const hasServerFilters = requestedPage > 0 || requestedPageSize > 0 || ['search','alliance','troop','tier','shift','sort','dir'].some(key => url.searchParams.has(key));
+  const pageSizeParam = String(url.searchParams.get('pageSize') || '').trim().toLowerCase();
+  const requestedPageSize = pageSizeParam === 'all' ? -1 : (Number(pageSizeParam || 0) || 0);
+  const hasServerFilters = requestedPage > 0 || requestedPageSize !== 0 || ['search','alliance','troop','tier','shift','status','sort','dir'].some(key => url.searchParams.has(key));
   const settings = sanitizeSettings(parseJson(meta.settings_json, {}));
   if (!hasServerFilters) {
     const rows = await readTableRows(db, region, cycleId);
@@ -2230,7 +2233,6 @@ async function handleRegionTableRead(request, env) {
     return json({ ok: true, table, summary, source: 'cloudflare-d1-region-table-rows', usage: { d1RowsRead: rows.length + 1 } }, 200, "private, no-store");
   }
 
-  const pageSize = Math.max(10, Math.min(100, requestedPageSize || 20));
   const page = Math.max(1, requestedPage || 1);
   const filters = {
     search: clean(url.searchParams.get('search') || '', 120),
@@ -2238,12 +2240,14 @@ async function handleRegionTableRead(request, env) {
     troop: clean(url.searchParams.get('troop') || '', 40),
     tier: clean(url.searchParams.get('tier') || '', 12),
     shift: clean(url.searchParams.get('shift') || '', 40),
+    status: clean(url.searchParams.get('status') || '', 40),
     sort: clean(url.searchParams.get('sort') || '', 40),
     dir: clean(url.searchParams.get('dir') || '', 8)
   };
   const totalRows = await tableRowsTotal(db, region, cycleId, filters);
-  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
-  const safePage = Math.min(page, totalPages);
+  const pageSize = requestedPageSize === -1 ? Math.max(10, Math.min(20000, totalRows || 10)) : Math.max(10, Math.min(50, requestedPageSize || 20));
+  const totalPages = requestedPageSize === -1 ? 1 : Math.max(1, Math.ceil(totalRows / pageSize));
+  const safePage = requestedPageSize === -1 ? 1 : Math.min(page, totalPages);
   const rows = await readTableRows(db, region, cycleId, { ...filters, limit: pageSize, offset: (safePage - 1) * pageSize });
   const summary = await ensureRegionTableStats(db, region, cycleId).catch(() => regionTableStatsFromRows(rows));
   const table = rowToTable(meta, rows);

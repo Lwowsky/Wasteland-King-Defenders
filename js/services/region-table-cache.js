@@ -578,7 +578,7 @@ export async function readRegionTableSnapshot(user, region, options = {}) {
   if (!isRegionTableCacheEnabled()) throw new Error('region-table-cache-disabled');
   const safeRegion = cleanRegion(region);
   if (!safeRegion) throw new Error('region-required');
-  const paged = Boolean(options?.page || options?.pageSize || options?.search || options?.alliance || options?.troop || options?.tier || options?.shift || options?.sortField);
+  const paged = Boolean(options?.page || options?.pageSize || options?.search || options?.alliance || options?.troop || options?.tier || options?.shift || options?.status || options?.sortField);
   if (!paged && !options?.force) {
     const cached = readLocalTableCache('regionTableSnapshot', safeRegion, Number(options?.ttlMs) || REGION_TABLE_CACHE_TTL_MS);
     if (cached) return cached;
@@ -589,12 +589,14 @@ export async function readRegionTableSnapshot(user, region, options = {}) {
   params.set('region', safeRegion);
   if (paged) {
     params.set('page', String(Math.max(1, Number(options?.page) || 1)));
-    params.set('pageSize', String(Math.max(10, Math.min(100, Number(options?.pageSize) || 20))));
+    const pageSizeRaw = String(options?.pageSize || '').trim().toLowerCase();
+    params.set('pageSize', pageSizeRaw === 'all' ? 'all' : String(Math.max(10, Math.min(50, Number(options?.pageSize) || 20))));
     if (options?.search) params.set('search', cleanText(options.search, 120));
     if (options?.alliance) params.set('alliance', cleanText(options.alliance, 12));
     if (options?.troop && options.troop !== 'all') params.set('troop', cleanText(options.troop, 40));
     if (options?.tier && options.tier !== 'all') params.set('tier', cleanText(options.tier, 12).toUpperCase());
     if (options?.shift && options.shift !== 'all') params.set('shift', cleanText(options.shift, 40));
+    if (options?.status && options.status !== 'all') params.set('status', cleanText(options.status, 40));
     if (options?.sortField) params.set('sort', cleanText(options.sortField, 40));
     if (options?.sortDir) params.set('dir', String(options.sortDir).toLowerCase() === 'desc' || Number(options.sortDir) < 0 ? 'desc' : 'asc');
   }

@@ -20,13 +20,13 @@ import {
   updateRegionRegistration,
   deleteRegionRegistrations,
   regionRegistrationToPlayer
-} from '../services/region-db.js?v=030';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=030';
+} from '../services/region-db.js?v=031';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=031';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
 const SOURCE_MODE_KEY = 'wkd.players.sourceMode';
-const REGION_TABLE_PAGE_SIZE_KEY = 'wkd.regionTable.pageSize.v030';
+const REGION_TABLE_PAGE_SIZE_KEY = 'wkd.regionTable.pageSize.v031';
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 const tv = (key, fallback = '', vars = {}) => {
   let text = t(key, fallback);
@@ -86,13 +86,35 @@ let tableSort = { field: 'nickname', dir: 1 };
 let timerId = null;
 let ready = false;
 let tablePage = 1;
-let tablePageSize = Number(localStorage.getItem(REGION_TABLE_PAGE_SIZE_KEY) || 10) || 10;
+let tablePageSize = readRegionTablePageSize();
 let tableTotalRows = 0;
 let tableTotalPages = 1;
 let serverPagedTable = false;
 let filterDebounceId = null;
 let quietRegionTableStatus = '';
 let tableSummary = null;
+
+function readRegionTablePageSize() {
+  let raw = '10';
+  try { raw = String(localStorage.getItem(REGION_TABLE_PAGE_SIZE_KEY) || '10'); } catch {}
+  if (raw === 'all') return 'all';
+  const value = Number(raw) || 10;
+  return [10, 20, 50].includes(value) ? value : 10;
+}
+
+function pageSizeValue() {
+  return tablePageSize === 'all' ? 'all' : Math.max(10, Math.min(50, Number(tablePageSize) || 10));
+}
+
+function numericPageSizeForUi() {
+  if (tablePageSize === 'all') return Math.max(1, Number(tableTotalRows || rows.length) || 1);
+  return Math.max(10, Math.min(50, Number(tablePageSize) || 10));
+}
+
+function setRegionTablePageSize(value) {
+  tablePageSize = String(value) === 'all' ? 'all' : (Math.max(10, Math.min(50, Number(value) || 10)));
+  try { localStorage.setItem(REGION_TABLE_PAGE_SIZE_KEY, String(tablePageSize)); } catch {}
+}
 
 
 function normTag(value) { return String(value || '').trim(); }
@@ -234,10 +256,12 @@ async function populateRegionLookupList() {
 }
 
 function setManagerSwitch() {
+  const row = $('#regionTableSwitchRow');
   const field = $('#regionManagerSwitch');
   const button = $('#openRegionLookupBtn');
   const input = $('#regionLookupInput');
   canSwitchRegion = regionOptions.length > 1;
+  if (row) row.hidden = !canSwitchRegion;
   if (field) field.hidden = !canSwitchRegion;
   if (button) button.hidden = !canSwitchRegion;
   if (input) input.value = currentRegion || readRegionFromUrl() || '';
@@ -366,6 +390,7 @@ function tableFilterValues() {
     troop: $('#regionTroopFilter')?.value || 'all',
     tier: $('#regionTierFilter')?.value || 'all',
     shift: $('#regionShiftFilter')?.value || 'all',
+    status: $('#regionStatusFilter')?.value || 'all',
     sortField: tableSort.field,
     sortDir: tableSort.dir < 0 ? 'desc' : 'asc'
   };
@@ -400,6 +425,8 @@ function pageSummaryFromRows(list = rows) {
 function renderRegionStats() {
   const box = $('#regionTableStats');
   if (!box) return;
+  box.hidden = false;
+  box.removeAttribute('hidden');
   const fallback = pageSummaryFromRows(serverPagedTable ? [] : rows);
   const summary = tableSummary || fallback;
   const total = numberFromSummary(summary, 'totalCount', serverPagedTable ? tableTotalRows : rows.length);
@@ -426,8 +453,10 @@ function renderPager() {
   const pager = $('#regionTablePager');
   if (!pager) return;
   const total = Math.max(0, Number(tableTotalRows || rows.length) || 0);
-  tableTotalPages = Math.max(1, Number(tableTotalPages || Math.ceil(total / Math.max(1, tablePageSize))) || 1);
-  const hasPages = serverPagedTable || total > tablePageSize;
+  const effectivePageSize = numericPageSizeForUi();
+  if (tablePageSize === 'all') tableTotalPages = 1;
+  else tableTotalPages = Math.max(1, Number(tableTotalPages || Math.ceil(total / Math.max(1, effectivePageSize))) || 1);
+  const hasPages = tablePageSize !== 'all' && (serverPagedTable || total > effectivePageSize);
   pager.hidden = !hasPages;
   const info = $('#regionTablePageInfo');
   if (info) info.textContent = tv('regionSettings.archivePageInfo', 'Сторінка {page} / {pages}', { page: tablePage, pages: tableTotalPages }) + ` · ${total}`;
@@ -448,18 +477,23 @@ async function reloadTablePage(options = {}) {
 
 function filteredRows() {
   if (serverPagedTable) return rows;
-  const nick = String($('#regionNickSearch')?.value || '').trim().toLowerCase();
+  const search = String($('#regionNickSearch')?.value || '').trim().toLowerCase();
   const alliance = String($('#regionAllianceSearch')?.value || '').trim();
   const troop = $('#regionTroopFilter')?.value || 'all';
   const tier = $('#regionTierFilter')?.value || 'all';
   const shift = $('#regionShiftFilter')?.value || 'all';
+  const status = $('#regionStatusFilter')?.value || 'all';
   const list = rows.filter(row => {
-    if (nick && !String(row.nickname || '').toLowerCase().includes(nick)) return false;
+    if (search) {
+      const haystack = [row.nickname, row.alliance, row.troopLabel, row.troopType, row.tier, row.shiftLabel, row.shift].map(value => String(value || '').toLowerCase()).join(' ');
+      if (!haystack.includes(search)) return false;
+    }
     // Alliance tags are case-sensitive: YYY, yyy and YyY are different alliances.
     if (alliance && !String(row.alliance || '').trim().includes(alliance)) return false;
     if (troop !== 'all' && row.troopType !== troop) return false;
     if (tier !== 'all' && String(row.tier || '').trim().toUpperCase() !== tier) return false;
     if (shift !== 'all' && row.shift !== shift) return false;
+    if (status === 'captains' && !row.captainReady) return false;
     return true;
   });
   return [...list].sort(compareRows);
@@ -743,7 +777,7 @@ async function load(user, options = {}) {
     result = await readRegionTableSnapshot(user, allowedRegion, {
       force: Boolean(options?.forceD1),
       page: tablePage,
-      pageSize: tablePageSize,
+      pageSize: pageSizeValue(),
       ...tableFilterValues()
     }).catch(error => {
       if (isRegionAccessDeniedCacheError(error)) {
@@ -776,7 +810,7 @@ async function load(user, options = {}) {
   rows = result.rows || [];
   tableSummary = result.summary || result.table?.summary || result.stats || null;
   tablePage = Math.max(1, Number(result.page || tablePage) || 1);
-  tablePageSize = Math.max(10, Math.min(100, Number(result.pageSize || tablePageSize) || 10));
+  if (tablePageSize !== 'all') tablePageSize = Math.max(10, Math.min(50, Number(result.pageSize || tablePageSize) || 10));
   tableTotalRows = serverPagedTable ? Math.max(0, Number(result.totalRows || 0) || 0) : rows.length;
   tableTotalPages = serverPagedTable ? Math.max(1, Number(result.totalPages || 1) || 1) : Math.max(1, Math.ceil(rows.length / tablePageSize));
   currentSettings = result.settings || {};
@@ -830,7 +864,7 @@ function bind() {
   ['#regionNickSearch', '#regionAllianceSearch'].forEach(selector => {
     $(selector)?.addEventListener('input', scheduleReload);
   });
-  ['#regionTroopFilter', '#regionTierFilter', '#regionShiftFilter'].forEach(selector => {
+  ['#regionTroopFilter', '#regionTierFilter', '#regionShiftFilter', '#regionStatusFilter'].forEach(selector => {
     $(selector)?.addEventListener('change', () => reloadTablePage({ resetPage: true }));
   });
 
@@ -875,8 +909,23 @@ function bind() {
     reloadTablePage({ keepPage: true });
   });
   $('#regionTablePageSize')?.addEventListener('change', event => {
-    tablePageSize = Math.max(10, Math.min(100, Number(event.currentTarget.value) || 10));
-    localStorage.setItem(REGION_TABLE_PAGE_SIZE_KEY, String(tablePageSize));
+    setRegionTablePageSize(event.currentTarget.value);
+    reloadTablePage({ resetPage: true });
+  });
+  $('#regionResetFiltersBtn')?.addEventListener('click', () => {
+    const search = $('#regionNickSearch');
+    const alliance = $('#regionAllianceSearch');
+    const troop = $('#regionTroopFilter');
+    const tier = $('#regionTierFilter');
+    const shift = $('#regionShiftFilter');
+    const status = $('#regionStatusFilter');
+    if (search) search.value = '';
+    if (alliance) alliance.value = '';
+    if (troop) troop.value = 'all';
+    if (tier) tier.value = 'all';
+    if (shift) shift.value = 'all';
+    if (status) status.value = 'all';
+    setRegionTablePageSize('10');
     reloadTablePage({ resetPage: true });
   });
   $('#openRegionLookupBtn')?.addEventListener('click', () => openRegion($('#regionLookupInput')?.value || ''));
