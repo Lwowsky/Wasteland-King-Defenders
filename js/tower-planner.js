@@ -582,7 +582,8 @@ window.WKD = window.WKD || {};
         const published = normalizePlan(loaded?.plan || loaded || null);
         const sourceUpdatedAtMs = Number(loaded?.updatedAtMs || loaded?.updatedAt?.toMillis?.() || 0) || 0;
         const draft = canEditPlan() ? readRegionDraft(info.region || loaded?.region || '') : null;
-        if (draft?.plan && draft.dirty) {
+        const draftFresh = draft?.plan && draft.dirty && (!sourceUpdatedAtMs || Number(draft.sourceUpdatedAtMs || 0) >= sourceUpdatedAtMs);
+        if (draftFresh) {
           plan = draft.plan;
         } else {
           plan = published;

@@ -7,8 +7,8 @@ import {
   saveFarmWastelandProfile,
   saveSignedInUser
 } from '../services/user-db.js';
-import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=061';
-import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=061';
+import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=062';
+import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=062';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
