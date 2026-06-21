@@ -26,8 +26,8 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=056';
-import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=056';
+} from '../services/region-db.js?v=057';
+import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=057';
 import { makePublicShareUrl } from '../core/share-links.js?v=256';
 
 const $ = selector => document.querySelector(selector);
@@ -176,6 +176,10 @@ function canDeleteRegionAlliance(tag = '') {
 function canManageRotationSettings() {
   const role = currentRole();
   return Boolean(currentUser && (isOwnerAdmin() || role === 'admin' || role === 'moderator' || (role === 'consul' && normalizeRegion(currentGame().region) === normalizeRegion(currentRegion))));
+}
+function canViewRotationSettings() {
+  if (canManageRotationSettings()) return true;
+  return Boolean(currentUser && canLeadCurrentRotation(currentProfile || {}, currentRegion, currentUser, currentSettings || {}));
 }
 
 function normalizeAllianceTag(value = '') {
@@ -826,7 +830,7 @@ function fill(settings) {
   renderRuleLists();
   rotationDraft = { enabled: Boolean(settings.rotationEnabled), loop: 'rotationLoop' in settings ? Boolean(settings.rotationLoop) : true, activeIndex: Number(settings.rotationActiveIndex) || 0, alliances: normalizeRotation(settings.rotationAlliances || []) };
   updateRotationSummary(settings);
-  $('#openRotationModalBtn') && ($('#openRotationModalBtn').disabled = !canManageRotationSettings());
+  $('#openRotationModalBtn') && ($('#openRotationModalBtn').disabled = !canViewRotationSettings());
   $('#settingsEventStart').value = toUtcInputValue(settings.eventStartAtMs);
   $('#settingsCloseRule').value = settings.closeRule || 'hoursBeforeEvent';
   $('#settingsCloseHours').value = settings.closeHours || 24;
@@ -1140,13 +1144,15 @@ function ensureRotationModal() {
 
 
 function renderRotationModal() {
+  const canManageRotation = canManageRotationSettings();
+  const readOnly = !canManageRotation;
   const enabled = $('#rotationEnabled');
   const loop = $('#rotationLoop');
   const select = $('#rotationAllianceSelect');
   const listBox = $('#rotationAllianceList');
   const current = $('#rotationCurrentText');
-  if (enabled) enabled.checked = Boolean(rotationDraft.enabled);
-  if (loop) loop.checked = Boolean(rotationDraft.loop);
+  if (enabled) { enabled.checked = Boolean(rotationDraft.enabled); enabled.disabled = readOnly; }
+  if (loop) { loop.checked = Boolean(rotationDraft.loop); loop.disabled = readOnly; }
   const tags = collectAllianceTags().filter(tag => !rotationDraft.alliances.some(item => item.tag === tag));
   if (select) {
     select.innerHTML = tags.length
@@ -1163,22 +1169,22 @@ function renderRotationModal() {
   if (!listBox) return;
   listBox.innerHTML = normalized.length ? normalized.map((item, index) => {
     const activeClass = index === rotationDraft.activeIndex ? ' is-current' : '';
-    return `<article class="region-rotation-item${activeClass}" draggable="true" data-rotation-index="${index}">
+    return `<article class="region-rotation-item${activeClass}" draggable="${canManageRotation ? 'true' : 'false'}" data-rotation-index="${index}">
       <span class="region-rotation-drag" aria-hidden="true">☰</span>
       ${allianceBadge(item.tag, index)}
       <strong>${escapeHtml(item.name || item.tag)}</strong>
       <span class="region-rotation-current-badge">${index === rotationDraft.activeIndex ? escapeHtml(t('regionSettings.rotationCurrentBadge', 'Current')) : ''}</span>
       <div class="region-rotation-item-actions">
-        <button class="btn btn-sm" type="button" data-rotation-up="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
-        <button class="btn btn-sm" type="button" data-rotation-down="${index}" ${index === normalized.length - 1 ? 'disabled' : ''}>↓</button>
-        <button class="btn btn-sm" type="button" data-rotation-current="${index}">${escapeHtml(t('regionSettings.rotationSetCurrent', 'Set current'))}</button>
-        <button class="btn btn-sm farm-delete" type="button" data-rotation-delete="${index}">×</button>
+        <button class="btn btn-sm" type="button" data-rotation-up="${index}" ${readOnly || index === 0 ? 'disabled' : ''}>↑</button>
+        <button class="btn btn-sm" type="button" data-rotation-down="${index}" ${readOnly || index === normalized.length - 1 ? 'disabled' : ''}>↓</button>
+        <button class="btn btn-sm" type="button" data-rotation-current="${index}" ${readOnly ? 'disabled' : ''}>${escapeHtml(t('regionSettings.rotationSetCurrent', 'Set current'))}</button>
+        <button class="btn btn-sm farm-delete" type="button" data-rotation-delete="${index}" ${readOnly ? 'disabled' : ''}>×</button>
       </div>
     </article>`;
   }).join('') : `<div class="region-empty">${escapeHtml(t('regionSettings.rotationEmpty', 'No alliances in rotation yet.'))}</div>`;
 }
 function openRotationModal() {
-  if (!canManageRotationSettings()) { setStatus(t('regionSettings.rotationAccessDenied', 'Only the region consul, admin or moderator can configure rotation.'), 'error'); return; }
+  if (!canViewRotationSettings()) { setStatus(t('regionSettings.rotationAccessDenied', 'Only the region consul, admin or moderator can configure rotation.'), 'error'); return; }
   rotationDraft = {
     enabled: Boolean(currentSettings?.rotationEnabled ?? rotationDraft.enabled),
     loop: 'rotationLoop' in (currentSettings || {}) ? Boolean(currentSettings.rotationLoop) : Boolean(rotationDraft.loop ?? true),
@@ -1194,6 +1200,7 @@ function closeRotationModal() {
   $('#regionRotationBackdrop') && ($('#regionRotationBackdrop').hidden = true);
 }
 function addRotationAlliance() {
+  if (!canManageRotationSettings()) return;
   const picked = normalizeAllianceTag($('#rotationAllianceSelect')?.value);
   const manual = normalizeAllianceTag($('#rotationManualTag')?.value);
   const tag = manual || picked;
@@ -1211,6 +1218,7 @@ function addRotationAlliance() {
   renderRotationModal();
 }
 function moveRotationAlliance(from, to) {
+  if (!canManageRotationSettings()) return;
   const list = rotationDraft.alliances;
   if (to < 0 || to >= list.length || from === to) return;
   const [item] = list.splice(from, 1);
@@ -1221,6 +1229,7 @@ function moveRotationAlliance(from, to) {
   renderRotationModal();
 }
 async function deleteRotationAlliance(index) {
+  if (!canManageRotationSettings()) return;
   const item = rotationDraft.alliances[index];
   if (!item) return;
   const ok = window.WKD?.confirmDialog
