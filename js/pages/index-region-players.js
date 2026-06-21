@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=059';
-import { readRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError } from '../services/region-table-cache.js?v=059';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=060';
+import { readRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError } from '../services/region-table-cache.js?v=060';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -25,6 +25,7 @@ let loadingRegion = false;
 let loadingRegionKey = '';
 let regionLoadRequestId = 0;
 let loadedRegionAlliances = [];
+let currentRegionSettings = null;
 let controllerReady = false;
 
 const allianceTag3 = value => window.WKD?.allianceTag3 ? window.WKD.allianceTag3(value) : Array.from(String(value ?? '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join('');
@@ -447,6 +448,25 @@ function regionRoleForLocalImport(region = '') {
   return normalizeUserRole(farm?.role || 'player');
 }
 
+
+function actorAccessForRegion(region = loadedRegion || targetRegion()) {
+  const safeRegion = normalizeRegion(region || '');
+  const main = getGameProfile(currentProfile || {});
+  const match = [main, ...getUserFarms(currentProfile || {})].find(item => normalizeRegion(item?.region || '') === safeRegion) || main;
+  return {
+    uid: currentUser?.uid || '',
+    region: safeRegion,
+    alliance: allianceTag3(match?.alliance || main?.alliance || ''),
+    role: normalizeUserRole(match?.role || currentProfile?.role || 'player'),
+    rank: String(match?.rank || main?.rank || '').trim().toLowerCase()
+  };
+}
+
+function canPlanLoadedRegion(region = loadedRegion || targetRegion()) {
+  const safeRegion = normalizeRegion(region || '');
+  return Boolean(currentMode !== 'region' || (safeRegion && canEditRegionTowerPlan(currentProfile, safeRegion, currentUser, currentRegionSettings || {})));
+}
+
 function canMoveLocalToRegion() {
   const region = targetRegion();
   const role = regionRoleForLocalImport(region);
@@ -611,6 +631,7 @@ async function loadRegionRowsPage(force = false, regionOverride = '', pageOverri
     const resultRegion = normalizeRegion(result.region || requestedRegion || loadedRegion);
     if (requestId !== regionLoadRequestId || resultRegion !== requestedRegion) return;
     currentProfile = result.profile || currentProfile;
+    currentRegionSettings = result.settings || currentRegionSettings;
     loadedRegion = resultRegion;
     loadedRegionRows = (result.rows || [])
       .filter(row => !normalizeRegion(row.region || '') || normalizeRegion(row.region || '') === loadedRegion)
@@ -862,8 +883,8 @@ async function saveTowerPlanToActiveSource(plan = {}) {
   if (currentMode !== 'region') return { handled: false };
   if (!currentUser) throw new Error('auth-required');
   const region = loadedRegion || getGameProfile(currentProfile || {}).region;
-  if (!canManageRegion(currentProfile, region, currentUser)) throw new Error('region-plan-access-denied');
-  const result = await saveRegionTowerPlan(currentUser, region, plan);
+  if (!canPlanLoadedRegion(region)) throw new Error('region-plan-access-denied');
+  const result = await saveRegionTowerPlan(currentUser, region, plan, { actorAccess: actorAccessForRegion(region) });
   setNote(tv('players.towerPlanSaved', 'Turret plan saved in {region}.', { region: currentRegionLabel() }), 'success');
   return { handled: true, ...result };
 }
@@ -885,9 +906,19 @@ function getPlayersSourceInfo() {
     label: currentMode === 'region' ? currentRegionLabel() : t('playerManager.localList', 'local list'),
     canUpdate: currentMode !== 'region' || canManageRegion(currentProfile, region, currentUser),
     canDelete: currentMode !== 'region' || canDeleteRegionRegistration(currentProfile, region, currentUser),
-    canPlan: currentMode !== 'region' || canManageRegion(currentProfile, region, currentUser),
+    canPlan: canPlanLoadedRegion(region),
     canViewRegion: canUseRegionSource()
   };
+}
+
+
+async function shareRegionFinalPlan(payload = {}) {
+  if (!currentUser) throw new Error('auth-required');
+  const region = loadedRegion || targetRegion();
+  if (!canPlanLoadedRegion(region)) throw new Error('region-plan-access-denied');
+  const result = await shareRegionFinalPlanDb(currentUser, region, { ...payload, actorAccess: actorAccessForRegion(region) });
+  const url = result?.code ? `./public-plan.html?code=${encodeURIComponent(result.code)}` : '';
+  return { ...result, url };
 }
 
 async function setTowerPlannerSource(options = {}) {
@@ -980,6 +1011,7 @@ async function init() {
   window.WKD.getPlayersSourceInfo = getPlayersSourceInfo;
   window.WKD.loadTowerPlanFromActiveSource = loadTowerPlanFromActiveSource;
   window.WKD.saveTowerPlanToActiveSource = saveTowerPlanToActiveSource;
+  window.WKD.shareRegionFinalPlan = shareRegionFinalPlan;
   window.WKD.setTowerPlannerSource = setTowerPlannerSource;
   window.WKD.refreshTowerRegionOptions = refreshTowerRegionOptions;
   window.WKD.reloadRegionPlayersForTower = reloadRegionPlayersForTower;
