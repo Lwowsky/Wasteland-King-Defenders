@@ -1397,14 +1397,11 @@ async function canLeadCurrentRegionD1(db, env, user, region) {
 async function canLeadRegionByClientAccessD1(db, env, user, region, settings = {}, actorAccess = null) {
   const safeRegion = normalizeRegion(region);
   if (!user?.uid || !safeRegion || !actorAccess || actorAccess.uid !== user.uid) return false;
-  if (normalizeRegion(actorAccess.region) !== safeRegion) return false;
-  const role = directoryRole(actorAccess.role || '');
-  if (role === 'admin' || role === 'moderator' || role === 'consul') return true;
   const alliance = directoryAlliance(actorAccess.alliance || '');
-  if (!alliance || role !== 'officer' || directoryRankNumber(actorAccess.rank || '') < 4) return false;
+  if (!alliance || normalizeRegion(actorAccess.region) !== safeRegion) return false;
+  if (directoryRole(actorAccess.role || '') !== 'officer' || directoryRankNumber(actorAccess.rank || '') < 4) return false;
   const activeAlliance = activeAllianceFromSettings(settings || {});
   if (activeAlliance && activeAlliance !== alliance) return false;
-  if (activeAlliance === alliance) return true;
   const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
   if (access.isGlobal || accessHasCommandAlliance(access, safeRegion, alliance, 4)) return true;
   if (accessHasAlliance(access, safeRegion, alliance) && accessHasRegion(access, safeRegion)) return true;

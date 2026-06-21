@@ -26,8 +26,8 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=064';
-import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=064';
+} from '../services/region-db.js?v=065';
+import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=065';
 import { makePublicShareUrl } from '../core/share-links.js?v=256';
 
 const $ = selector => document.querySelector(selector);
@@ -919,7 +919,7 @@ async function save(event, overrides = {}) {
 
 async function startRegistrationNow() {
   if (!currentUser || !currentRegion) return;
-  const alreadyOpen = Boolean(getRegionFormStatus(currentSettings || {}).open);
+  const alreadyOpen = Boolean(currentSettings?.enabled || $('#settingsEnabled')?.value === 'true');
   const titleKey = alreadyOpen ? 'regionSettings.startNowAlreadyOpenTitle' : 'regionSettings.startNowConfirmTitle';
   const messageKey = alreadyOpen ? 'regionSettings.startNowAlreadyOpenMessage' : 'regionSettings.startNowConfirmMessage';
   const acceptKey = alreadyOpen ? 'regionSettings.startNowAlreadyOpenAccept' : 'regionSettings.startNow';
