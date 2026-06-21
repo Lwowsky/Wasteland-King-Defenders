@@ -873,6 +873,7 @@ export async function publishRegionFormSettings(user, payload = {}) {
   const cycleId = cleanText(payload.cycleId || payload.settings?.currentCycleId || '', 80);
   removeLocalJsonCache('regionFormSettings', safeRegion);
   if (code) removeLocalJsonCache('regionFormShare', code);
+  removeLocalTableCache('regionTableSnapshot', safeRegion);
   return requestJson('/api/region-form/settings', {
     method: 'PUT',
     headers: { Authorization: `Bearer ${token}` },
@@ -885,6 +886,11 @@ export async function publishRegionFormSettings(user, payload = {}) {
       settings: sanitizeSettings(payload.settings || {}),
       updatedAtMs: Number(payload.updatedAtMs) || Date.now()
     })
+  }).then(data => {
+    const normalized = normalizeRegionFormResponse(data);
+    if (normalized?.settings) writeLocalJsonCache('regionFormSettings', safeRegion, normalized);
+    if (normalized?.code) writeLocalJsonCache('regionFormShare', normalized.code, normalized);
+    return { ...data, normalized };
   }).catch(error => {
     if (window.WKD_DEBUG) console.warn('[WKD] region form settings D1 publish skipped:', error);
     return { ok: false, skipped: true, error: error.message };

@@ -1780,7 +1780,7 @@ async function handleRegionFormSettingsRead(request, env) {
   if (!region) return json({ ok: false, error: 'region_required' }, 400);
   const form = await readRegionFormSettingsD1(db, region);
   if (!form) return json({ ok: false, error: 'form_settings_not_found' }, 404);
-  return json({ ok: true, form, usage: { d1RowsRead: 1 }, source: 'cloudflare-d1-form-settings' }, 200, 'public, max-age=60');
+  return json({ ok: true, form, usage: { d1RowsRead: 1 }, source: 'cloudflare-d1-form-settings' }, 200, 'private, no-store');
 }
 
 async function handleRegionFormShareRead(request, env, codeValue) {
@@ -1808,16 +1808,36 @@ async function handleRegionFormSettingsPut(request, env) {
   const allowed = await canLeadCurrentRegionD1(db, env, user, region);
   if (!allowed) return json({ ok: false, error: 'region_leadership_required' }, 403);
   const previousForm = await readRegionFormSettingsD1(db, region).catch(() => null);
-  const requestedCycleId = normalizeCycleId(body?.cycleId || body?.settings?.currentCycleId || 'active');
-  const openNewCycle = Boolean(body?.openNewCycle || body?.forceNewCode || (previousForm?.cycleId && previousForm.cycleId !== requestedCycleId));
+  const nowMs = Number(body?.updatedAtMs || 0) || Date.now();
+  const incomingSettings = body?.settings && typeof body.settings === 'object' ? { ...body.settings } : {};
+  const requestedRawCycleId = normalizeCycleId(body?.cycleId || incomingSettings.currentCycleId || 'active');
+  const requestedOpenNewCycle = Boolean(body?.openNewCycle || body?.forceNewCode || (previousForm?.cycleId && previousForm.cycleId !== requestedRawCycleId));
+  const requestedCycleId = requestedOpenNewCycle && previousForm?.cycleId === requestedRawCycleId
+    ? normalizeCycleId(`cycle-${Number(incomingSettings.eventStartAtMs || incomingSettings.startAtMs || 0) || nowMs}-${nowMs}`)
+    : requestedRawCycleId;
+  const openNewCycle = Boolean(requestedOpenNewCycle);
+  const actorName = await readDirectoryActorName(db, user, region).catch(() => '')
+    || clean(incomingSettings.updatedByName || incomingSettings.openedByName || user?.name || user?.email || '', 120);
+  const settingsForSave = { ...incomingSettings, currentCycleId: requestedCycleId, updatedByName: actorName, updatedAtMs: nowMs };
+  if (openNewCycle || (settingsForSave.enabled && !previousForm?.settings?.enabled)) {
+    settingsForSave.openedAtMs = nowMs;
+    settingsForSave.openedByUid = user.uid;
+    settingsForSave.openedByName = actorName;
+    settingsForSave.openedByEmail = '';
+  }
+  if (settingsForSave.enabled === false || settingsForSave.open === false) {
+    settingsForSave.closedAtMs = Number(settingsForSave.closedAtMs || 0) || nowMs;
+    settingsForSave.closedByUid = user.uid;
+    settingsForSave.closedByName = actorName;
+  }
   const form = await saveRegionFormSettingsD1(db, {
     region,
     code: body?.code || body?.shortCode || '',
     cycleId: requestedCycleId,
     forceNewCode: Boolean(body?.forceNewCode || openNewCycle),
     openNewCycle,
-    updatedAtMs: body?.updatedAtMs,
-    settings: body?.settings || {},
+    updatedAtMs: nowMs,
+    settings: settingsForSave,
   });
   if (openNewCycle) {
     await saveTable(db, {
@@ -4808,6 +4828,18 @@ async function readDirectoryAccess(db, env, user) {
     `SELECT region, alliance, role, account_role, rank FROM notification_directory WHERE uid = ?1 AND deleted = 0 LIMIT 80`
   ).bind(user.uid).all();
   return directoryAccessFromRows(result?.results || [], env, user.uid);
+}
+async function readDirectoryActorName(db, user, region) {
+  const safeRegion = normalizeRegion(region);
+  if (!user?.uid || !safeRegion) return '';
+  const row = await db.prepare(
+    `SELECT nickname, display_name, email
+       FROM notification_directory
+      WHERE uid = ?1 AND region = ?2 AND deleted = 0
+      ORDER BY CASE WHEN role IN ('consul','officer') THEN 0 ELSE 1 END, updated_at_ms DESC
+      LIMIT 1`
+  ).bind(user.uid, safeRegion).first().catch(() => null);
+  return clean(row?.nickname || row?.display_name || user?.name || user?.email || '', 120);
 }
 function addDirectoryAccessWhere(where, params, access) {
   if (access.isGlobal) return;
