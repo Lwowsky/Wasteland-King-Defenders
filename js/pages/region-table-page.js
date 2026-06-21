@@ -21,8 +21,8 @@ import {
   updateRegionRegistration,
   deleteRegionRegistrations,
   regionRegistrationToPlayer
-} from '../services/region-db.js?v=044';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=044';
+} from '../services/region-db.js?v=045';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=045';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
@@ -631,8 +631,17 @@ function installRegionEditorBridge() {
     const existing = rowById(wanted);
     if (!existing) throw new Error('player-not-found');
     if (!canEditRegionRows(existing)) throw new Error('region-update-access-denied');
-    const result = await updateRegionRegistration(currentUser, currentRegion, wanted, values);
-    rows = rows.map(row => String(row.id || row.uid || '') === wanted ? mergeEditedRow(row, values, result) : row);
+    const payload = {
+      ...existing,
+      ...values,
+      id: existing.id || wanted,
+      uid: existing.uid || '',
+      publicKey: existing.publicKey || '',
+      farmId: existing.farmId || 'main',
+      cycleId: existing.cycleId || currentSettings?.currentCycleId || ''
+    };
+    const result = await updateRegionRegistration(currentUser, currentRegion, wanted, payload);
+    rows = rows.map(row => String(row.id || row.uid || '') === wanted ? mergeEditedRow(row, payload, result) : row);
     syncRegionEditorState();
     render();
     return { handled: true, updated: true, result };

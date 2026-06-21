@@ -1041,6 +1041,9 @@ function cleanDefinedRowPatch(values = {}) {
 function editValuesToD1Row(registrationId = '', values = {}) {
   const row = cleanDefinedRowPatch({
     id: cleanText(registrationId, 180),
+    uid: values.uid,
+    publicKey: values.publicKey,
+    farmId: values.farmId,
     nickname: values.name ?? values.nickname,
     alliance: values.alliance,
     troopType: values.troopType ?? values.troopLabel ?? values.role,
