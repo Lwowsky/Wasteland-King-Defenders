@@ -1376,7 +1376,7 @@ function activeAllianceFromSettings(settings = {}) {
   const row = list[idx] || {};
   return directoryAlliance(row.tag || row.id || fallback || '');
 }
-async function canLeadCurrentRegionD1(db, env, user, region) {
+async function canLeadRegionBySettingsD1(db, env, user, region, settings = {}) {
   const safeRegion = normalizeRegion(region);
   if (!user?.uid || !safeRegion) return false;
   if (isAdminUid(env, user.uid)) return true;
@@ -1384,10 +1384,15 @@ async function canLeadCurrentRegionD1(db, env, user, region) {
   if (access.isGlobal) return true;
   if (accessHasRegion(access, safeRegion) && accessHasRole(access, 'consul')) return true;
   if (!accessHasRegion(access, safeRegion)) return false;
-  const form = await readRegionFormSettingsD1(db, safeRegion).catch(() => null);
-  const activeAlliance = activeAllianceFromSettings(form?.settings || {});
+  const activeAlliance = activeAllianceFromSettings(settings || {});
   if (!activeAlliance) return false;
   return Boolean(accessHasCommandAlliance(access, safeRegion, activeAlliance, 4));
+}
+async function canLeadCurrentRegionD1(db, env, user, region) {
+  const safeRegion = normalizeRegion(region);
+  if (!user?.uid || !safeRegion) return false;
+  const form = await readRegionFormSettingsD1(db, safeRegion).catch(() => null);
+  return canLeadRegionBySettingsD1(db, env, user, safeRegion, form?.settings || {});
 }
 async function canEditRegionAllianceD1(db, env, user, region, alliance) {
   const safeRegion = normalizeRegion(region);
@@ -2391,11 +2396,15 @@ async function handleRegionTableRegistration(request, env) {
   }
 
   const isOwner = Boolean(user?.uid && (row.uid === user.uid || !row.uid));
+  const activeOfficerCanEdit = existingRow
+    ? (await canLeadRegionBySettingsD1(db, env, user, region, currentSettings)
+      || await canLeadCurrentRegionD1(db, env, user, region))
+    : false;
   const canWrite = user?.uid
     ? (isOwner
       || await canManageRegionD1(db, env, user, region)
       || (existingRow && await canEditRegionAllianceD1(db, env, user, region, row.alliance))
-      || (existingRow && await canLeadCurrentRegionD1(db, env, user, region)))
+      || activeOfficerCanEdit)
     : Boolean(isPublicRegistration && publicShareCode && row.nickname && row.publicKey);
   if (!canWrite) return json({ ok: false, error: "row_owner_mismatch" }, 403);
 
@@ -4755,13 +4764,23 @@ function directoryRowToObject(row = {}) {
     source: 'cloudflare-d1-directory'
   };
 }
+function directoryAccessRole(row = {}) {
+  const accountRole = directoryRole(row.account_role || row.accountRole || '');
+  const regionRole = directoryRole(row.role || '');
+  // Some cached directory rows keep account_role='player' while the regional
+  // role is already officer/consul. Prefer the stronger non-player role so
+  // Officer R4/R5 rights do not get lost in D1 access checks.
+  if (['admin', 'moderator'].includes(accountRole)) return accountRole;
+  if (regionRole !== 'player') return regionRole;
+  return accountRole || 'player';
+}
 function directoryAccessFromRows(rows = [], env, uid = '') {
   const roles = new Set();
   const regions = new Set();
   const alliances = new Set();
   const commandAlliances = [];
   (Array.isArray(rows) ? rows : []).forEach(row => {
-    const role = directoryRole(row.account_role || row.role || 'player');
+    const role = directoryAccessRole(row);
     roles.add(role);
     const region = normalizeRegion(row.region);
     const alliance = directoryAlliance(row.alliance);

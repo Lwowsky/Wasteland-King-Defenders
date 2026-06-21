@@ -27,7 +27,7 @@ const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
 const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STAFF_REFRESH_LIMIT = 5;
-const STAFF_CACHE_BUILD = 'v043-staff-edit-rights';
+const STAFF_CACHE_BUILD = 'v044-staff-directory-role-fix';
 
 const STAFF_PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const STAFF_PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -165,8 +165,8 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=043',
-  'region-settings': './region-settings-page.js?v=043',
+  'region-table': './region-table-page.js?v=044',
+  'region-settings': './region-settings-page.js?v=044',
   'action-log': './action-log-page.js?v=019'
 };
 const loadedStaffToolTabs = new Set();
