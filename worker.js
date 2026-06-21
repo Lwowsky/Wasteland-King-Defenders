@@ -1805,11 +1805,14 @@ async function handleRegionFormSettingsPut(request, env) {
   try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
   const region = normalizeRegion(body?.region || body?.settings?.region);
   if (!region) return json({ ok: false, error: 'region_required' }, 400);
-  const allowed = await canLeadCurrentRegionD1(db, env, user, region);
-  if (!allowed) return json({ ok: false, error: 'region_leadership_required' }, 403);
   const previousForm = await readRegionFormSettingsD1(db, region).catch(() => null);
-  const nowMs = Number(body?.updatedAtMs || 0) || Date.now();
   const incomingSettings = body?.settings && typeof body.settings === 'object' ? { ...body.settings } : {};
+  const previousSettingsForAccess = previousForm?.settings && typeof previousForm.settings === 'object' ? previousForm.settings : {};
+  const accessSettings = { ...previousSettingsForAccess, ...incomingSettings };
+  const allowed = await canLeadCurrentRegionD1(db, env, user, region)
+    || await canLeadRegionByClientAccessD1(db, env, user, region, accessSettings, body?.actorAccess || null);
+  if (!allowed) return json({ ok: false, error: 'region_leadership_required' }, 403);
+  const nowMs = Number(body?.updatedAtMs || 0) || Date.now();
   const requestedRawCycleId = normalizeCycleId(body?.cycleId || incomingSettings.currentCycleId || 'active');
   const requestedOpenNewCycle = Boolean(body?.openNewCycle || body?.forceNewCode || (previousForm?.cycleId && previousForm.cycleId !== requestedRawCycleId));
   const requestedCycleId = requestedOpenNewCycle && previousForm?.cycleId === requestedRawCycleId

@@ -884,6 +884,7 @@ export async function publishRegionFormSettings(user, payload = {}) {
       forceNewCode: Boolean(payload.forceNewCode),
       openNewCycle: Boolean(payload.openNewCycle),
       settings: sanitizeSettings(payload.settings || {}),
+      actorAccess: payload.actorAccess || null,
       updatedAtMs: Number(payload.updatedAtMs) || Date.now()
     })
   }).then(data => {
