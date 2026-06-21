@@ -2392,7 +2392,10 @@ async function handleRegionTableRegistration(request, env) {
 
   const isOwner = Boolean(user?.uid && (row.uid === user.uid || !row.uid));
   const canWrite = user?.uid
-    ? (isOwner || await canManageRegionD1(db, env, user, region) || (existingRow && await canEditRegionAllianceD1(db, env, user, region, row.alliance)))
+    ? (isOwner
+      || await canManageRegionD1(db, env, user, region)
+      || (existingRow && await canEditRegionAllianceD1(db, env, user, region, row.alliance))
+      || (existingRow && await canLeadCurrentRegionD1(db, env, user, region)))
     : Boolean(isPublicRegistration && publicShareCode && row.nickname && row.publicKey);
   if (!canWrite) return json({ ok: false, error: "row_owner_mismatch" }, 403);
 

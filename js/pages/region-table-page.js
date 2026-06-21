@@ -21,8 +21,8 @@ import {
   updateRegionRegistration,
   deleteRegionRegistrations,
   regionRegistrationToPlayer
-} from '../services/region-db.js?v=042';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=042';
+} from '../services/region-db.js?v=043';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=043';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
@@ -562,12 +562,9 @@ function actorAllianceForCurrentRegion() {
 function canEditRegionRows(row = null) {
   if (!currentUser || !currentRegion) return false;
   if (canManageRegion(currentProfile || {}, currentRegion, currentUser)) return true;
-  if (!row) return Boolean(canLeadCurrentRotation(currentProfile || {}, currentRegion, currentUser, currentSettings || {}));
-  const rowAlliance = String(row.alliance || '').trim().replace(/[\/\[\]#?]/g, '').slice(0, 3);
-  const activeAlliance = activeRotationAllianceFromSettings(currentSettings || {});
-  const actorAlliance = actorAllianceForCurrentRegion();
-  return Boolean(rowAlliance && activeAlliance && actorAlliance && rowAlliance === activeAlliance && actorAlliance === activeAlliance
-    && canLeadCurrentRotation(currentProfile || {}, currentRegion, currentUser, currentSettings || {}));
+  // Active-host officer R4/R5 can edit the current region table for this cycle.
+  // This edits only the request/table row, not the player's saved profile.
+  return Boolean(canLeadCurrentRotation(currentProfile || {}, currentRegion, currentUser, currentSettings || {}));
 }
 
 function canDeleteRegionRows() {

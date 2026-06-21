@@ -200,7 +200,7 @@ const clean = value => WKD.clean ? WKD.clean(value) : String(value ?? '').trim()
     if (info.mode === 'region' && !entry?.player?.regionRegistrationId) {
       setStatus(t('playerEdit.profileRowReadonly', 'This row came from a player profile. Only region table requests can be edited here.'), 'error');
     } else if (info.mode === 'region' && !editable) {
-      setStatus(t('playerManager.regionUpdateAccess', 'The region table can be edited by the consul or an officer of their region, a moderator, or an admin.'), 'error');
+      setStatus(t('playerManager.regionUpdateAccess', 'The region table can be edited by an admin, moderator, consul, or active-alliance R4/R5 officer.'), 'error');
     } else {
       setStatus('');
     }
@@ -242,7 +242,7 @@ const clean = value => WKD.clean ? WKD.clean(value) : String(value ?? '').trim()
   }
   function errorMessage(error) {
     const code = error?.message || String(error || '');
-    if (code === 'region-update-access-denied') return t('playerManager.regionUpdateAccess', 'The region table can be edited by the consul or an officer of their region, a moderator, or an admin.');
+    if (code === 'region-update-access-denied') return t('playerManager.regionUpdateAccess', 'The region table can be edited by an admin, moderator, consul, or active-alliance R4/R5 officer.');
     if (code === 'region-update-registration-only') return t('playerEdit.regionUpdateRegistrationOnly', 'This record came from a player profile. It cannot be changed as a base request.');
     if (code === 'region-delete-access-denied') return t('playerManager.regionDeleteAccess', 'Only the consul of their region, a moderator, or an admin can delete records from the base.');
     if (code === 'region-delete-registration-only') return t('playerEdit.regionDeleteRegistrationOnly', 'This record came from a player profile. It cannot be deleted as a base request.');

@@ -27,7 +27,7 @@ const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
 const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STAFF_REFRESH_LIMIT = 5;
-const STAFF_CACHE_BUILD = 'v042-staff-access-status';
+const STAFF_CACHE_BUILD = 'v043-staff-edit-rights';
 
 const STAFF_PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const STAFF_PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -165,8 +165,8 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=042',
-  'region-settings': './region-settings-page.js?v=042',
+  'region-table': './region-table-page.js?v=043',
+  'region-settings': './region-settings-page.js?v=043',
   'action-log': './action-log-page.js?v=019'
 };
 const loadedStaffToolTabs = new Set();
@@ -707,7 +707,8 @@ async function saveEdit() {
   } catch (error) {
     if (window.WKD_DEBUG) console.error('[WKD] staff save failed:', error);
     const code = String(error?.code || error?.message || '');
-    const details = code && !code.includes('FirebaseError') ? ` (${code})` : '';
+    const isTechnicalAccessCode = /permission-denied|region-update-access|row_owner_mismatch|access_denied|access-denied/i.test(code);
+    const details = code && !code.includes('FirebaseError') && !isTechnicalAccessCode ? ` (${code})` : '';
     setStatus(`${t('staff.saveFailed', 'Не вдалося зберегти. Перевір права для цього гравця.')}${details}`, 'error');
   }
 }

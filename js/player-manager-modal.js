@@ -530,7 +530,7 @@ const clean = value => WKD.clean ? WKD.clean(value) : String(value ?? '').trim()
   }
   function errorMessage(error) {
     const code = error?.message || String(error || '');
-    if (code.includes('region-update-access')) return t('playerManager.regionUpdateAccess', 'The region table can be edited by the consul or an officer of their region, a moderator, or an admin.');
+    if (code.includes('region-update-access')) return t('playerManager.regionUpdateAccess', 'The region table can be edited by an admin, moderator, consul, or active-alliance R4/R5 officer.');
     if (code.includes('region-delete-access')) return t('playerManager.regionDeleteAccess', 'Only the consul of their region, a moderator, or an admin can delete records from the base.');
     if (code.includes('auth-required')) return t('playerManager.authRequired', 'You must sign in to use the region table.');
     if (code.includes('profile-region')) return t('playerManager.profileRegion', 'Fill in your profile and region in the account.');
