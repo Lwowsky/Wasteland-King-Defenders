@@ -2825,7 +2825,10 @@ async function handleFinalPlanShareCreate(request, env) {
   catch { return json({ ok: false, error: 'bad_json' }, 400); }
   const plan = sanitizeFinalPlanPayload(body, user);
   if (!plan.code || !plan.region) return json({ ok: false, error: 'code_region_required' }, 400);
-  const allowed = await canLeadCurrentRegionD1(db, env, user, plan.region);
+  const form = await readRegionFormSettingsD1(db, plan.region).catch(() => null);
+  const settings = form?.settings || {};
+  const allowed = await canLeadRegionBySettingsD1(db, env, user, plan.region, settings)
+    || await canLeadRegionByClientAccessD1(db, env, user, plan.region, settings, body?.actorAccess || null);
   if (!allowed) return json({ ok: false, error: 'region_leadership_required' }, 403);
   await db.prepare(
     `INSERT INTO final_plan_shares (code, region, cycle_id, event_start_at_ms, title, shift, html, text, updated_at_ms, updated_by, updated_by_name, expires_at_ms, revoked)
@@ -3001,7 +3004,10 @@ async function handleTowerPlanPut(request, env) {
   try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
   const payload = sanitizeTowerPlanSnapshotBody(body, user);
   if (!payload.region) return json({ ok: false, error: 'region_required' }, 400);
-  const allowed = await canLeadCurrentRegionD1(db, env, user, payload.region);
+  const form = await readRegionFormSettingsD1(db, payload.region).catch(() => null);
+  const settings = form?.settings || {};
+  const allowed = await canLeadRegionBySettingsD1(db, env, user, payload.region, settings)
+    || await canLeadRegionByClientAccessD1(db, env, user, payload.region, settings, body?.actorAccess || null);
   if (!allowed) return json({ ok: false, error: 'region_plan_access_denied' }, 403);
   await db.prepare(
     `INSERT INTO region_tower_plans (region, cycle_id, version, updated_at_ms, updated_by, updated_by_name, plan_json)
@@ -3941,7 +3947,10 @@ async function handleRegionSharesRotate(request, env) {
   try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
   const region = normalizeRegion(body?.region);
   if (!region) return json({ ok: false, error: 'region_required' }, 400);
-  const allowed = await canLeadCurrentRegionD1(db, env, user, region);
+  const form = await readRegionFormSettingsD1(db, region).catch(() => null);
+  const settings = form?.settings || {};
+  const allowed = await canLeadRegionBySettingsD1(db, env, user, region, settings)
+    || await canLeadRegionByClientAccessD1(db, env, user, region, settings, body?.actorAccess || null);
   if (!allowed) return json({ ok: false, error: 'region_leadership_required' }, 403);
   const tableCodes = (await db.prepare(`SELECT code FROM region_table_shares WHERE region = ?1`).bind(region).all())?.results?.map(row => row.code) || [];
   const finalCodes = (await db.prepare(`SELECT code FROM final_plan_shares WHERE region = ?1`).bind(region).all())?.results?.map(row => row.code) || [];

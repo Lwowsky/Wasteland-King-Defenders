@@ -35,7 +35,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=026';
+} from '../services/region-db.js?v=056';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => { const value = window.WKD_t ? window.WKD_t(key) : ''; return (!value || value === key) ? (fallback || key) : value; };

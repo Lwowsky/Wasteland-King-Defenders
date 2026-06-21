@@ -179,7 +179,8 @@ export async function publishFinalPlanShare(user, payload = {}) {
     html: String(payload.html || '').slice(0, 700000),
     text: String(payload.text || '').slice(0, 50000),
     updatedByName: cleanText(payload.updatedByName || '', 160),
-    expiresAtMs: Number(payload.expiresAtMs) || 0
+    expiresAtMs: Number(payload.expiresAtMs) || 0,
+    actorAccess: payload.actorAccess || null
   };
   return requestJson('/api/final-plan/share', {
     method: 'POST',

@@ -13,7 +13,7 @@ import {
   createUserNotification,
   createRegionNotificationCampaign
 } from './user-db.js?v=005';
-import { readRegionFormShare as readRegionFormShareD1, readRegionFormSettings as readRegionFormSettingsD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=055';
+import { readRegionFormShare as readRegionFormShareD1, readRegionFormSettings as readRegionFormSettingsD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=056';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -329,6 +329,16 @@ function actorAllianceForRegion(profile = {}, region = '') {
 function actorRankForRegion(profile = {}, region = '') {
   const game = gameForRegion(profile || {}, region) || bestRegionGame(profile || {});
   return trim(game?.rank || '').toLowerCase();
+}
+function actorAccessForRegionPayload(user, profile = {}, region = '') {
+  const safeRegion = normalizeRegion(region);
+  return {
+    uid: user?.uid || '',
+    region: safeRegion,
+    alliance: actorAllianceForRegion(profile || {}, safeRegion),
+    role: roleForRegion(profile || {}, safeRegion, user),
+    rank: actorRankForRegion(profile || {}, safeRegion)
+  };
 }
 function rankNumber(value = '') {
   const m = String(value || '').match(/[1-5]/);
@@ -1059,11 +1069,11 @@ export async function cleanupOldEmailFields(user) {
 }
 
 
-async function rotateRegionPublicSharesForNewCycle(user, region) {
+async function rotateRegionPublicSharesForNewCycle(user, region, actorAccess = null) {
   try {
-    const mod = await import('./region-table-cache.js?v=055');
+    const mod = await import('./region-table-cache.js?v=056');
     if (!mod?.rotateRegionPublicShares) return null;
-    return await mod.rotateRegionPublicShares(user, region);
+    return await mod.rotateRegionPublicShares(user, region, actorAccess);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] public share rotation skipped:', error);
     return null;
@@ -1182,7 +1192,8 @@ export async function shareRegionFinalPlan(user, region, payload = {}) {
     updatedAtMs: nowMs,
     updatedBy: user.uid,
     updatedByName,
-    expiresAtMs: Number(payload.expiresAtMs) || 0
+    expiresAtMs: Number(payload.expiresAtMs) || 0,
+    actorAccess: payload.actorAccess || actorAccessForRegionPayload(user, profile || {}, safeRegion)
   };
   const d1 = await publishFinalPlanToD1Cache(user, sharePayload);
   if (!d1 || d1.ok === false || d1.skipped) throw new Error(d1?.error || 'final-plan-d1-share-required');
@@ -1207,7 +1218,7 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=055');
+    const mod = await import('./region-table-cache.js?v=056');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1217,7 +1228,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=055');
+    const mod = await import('./region-table-cache.js?v=056');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1228,7 +1239,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function updateRegionTableRowD1First(user, region, registrationId, values = {}, settings = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=055');
+    const mod = await import('./region-table-cache.js?v=056');
     return await mod.updateRegionTableRowD1(user, region, registrationId, values, settings, { updateOnly: true });
   } catch (error) {
     const status = Number(error?.status || 0) || 0;
@@ -1240,7 +1251,7 @@ async function updateRegionTableRowD1First(user, region, registrationId, values 
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=055');
+    const mod = await import('./region-table-cache.js?v=056');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1250,7 +1261,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=055');
+    const mod = await import('./region-table-cache.js?v=056');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1281,7 +1292,7 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
 
 async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=055');
+    const mod = await import('./region-table-cache.js?v=056');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readMyRegionRegistrationD1(user, region, farmId, options);
   } catch (error) {
@@ -1886,7 +1897,7 @@ export async function saveRegionSettings(user, region, settings) {
         rows: []
       }).catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] empty D1 table for new cycle skipped:', error); });
     }
-    await rotateRegionPublicSharesForNewCycle(user, safeRegion).catch(() => null);
+    await rotateRegionPublicSharesForNewCycle(user, safeRegion, actorAccessForRegionPayload(user, profile || {}, safeRegion)).catch(() => null);
   }
 
   if (!canManageFullRegion) {
@@ -2879,7 +2890,7 @@ function localImportRegistrationKey(row = {}) {
 
 async function readLocalImportRegionLockFromD1(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=055');
+    const mod = await import('./region-table-cache.js?v=056');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readLocalImportRegionLock(user, region);
   } catch (error) {
@@ -2890,7 +2901,7 @@ async function readLocalImportRegionLockFromD1(user, region) {
 
 async function commitLocalImportRegionLockToD1(user, region, payload = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=055');
+    const mod = await import('./region-table-cache.js?v=056');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.commitLocalImportRegionLock(user, region, payload);
   } catch (error) {
@@ -3166,7 +3177,7 @@ export async function getRegionTowerPlan(user, regionOverride = '', options = {}
   };
 }
 
-export async function saveRegionTowerPlan(user, region, plan = {}) {
+export async function saveRegionTowerPlan(user, region, plan = {}, options = {}) {
   if (!user) throw new Error('auth-required');
   let profile = null;
   let safeRegion = normalizeRegion(region);
@@ -3184,7 +3195,8 @@ export async function saveRegionTowerPlan(user, region, plan = {}) {
       cycleId: 'active',
       plan: cleanPlan,
       updatedAtMs,
-      updatedByName: getRegionActorName(profile || {}, safeRegion, user)
+      updatedByName: getRegionActorName(profile || {}, safeRegion, user),
+      actorAccess: options?.actorAccess || null
     });
     if (d1Result?.ok !== false && !d1Result?.skipped) {
       return { region: safeRegion, plan: cleanPlan, updatedAtMs, source: 'cloudflare-d1-tower-plan' };

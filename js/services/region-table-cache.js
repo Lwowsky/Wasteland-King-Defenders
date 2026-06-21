@@ -561,7 +561,7 @@ function sanitizeSettings(settings = {}) {
 }
 
 
-export async function rotateRegionPublicShares(user, region) {
+export async function rotateRegionPublicShares(user, region, actorAccess = null) {
   if (!isRegionTableCacheEnabled()) return { skipped: true };
   const token = await getFirebaseToken(user);
   if (!token) return { skipped: true };
@@ -570,7 +570,7 @@ export async function rotateRegionPublicShares(user, region) {
   return requestJson('/api/region-shares/rotate', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ region: safeRegion })
+    body: JSON.stringify({ region: safeRegion, actorAccess })
   });
 }
 
@@ -827,7 +827,8 @@ export async function publishRegionTowerPlanSnapshot(user, payload = {}) {
     cycleId: cleanText(payload.cycleId || payload.currentCycleId || 'active', 80) || 'active',
     plan: sanitizeTowerPlanPayload(payload.plan || {}),
     updatedAtMs: Number(payload.updatedAtMs) || Date.now(),
-    updatedByName: cleanText(payload.updatedByName || '', 160)
+    updatedByName: cleanText(payload.updatedByName || '', 160),
+    actorAccess: payload.actorAccess || null
   };
   removeLocalJsonCache('regionTowerPlan', safeRegion);
   return requestJson('/api/tower-plan', {

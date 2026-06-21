@@ -26,8 +26,8 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=055';
-import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=025';
+} from '../services/region-db.js?v=056';
+import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=056';
 import { makePublicShareUrl } from '../core/share-links.js?v=256';
 
 const $ = selector => document.querySelector(selector);

@@ -1,8 +1,8 @@
 import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=216';
 import { getFirebase, watchAuth } from './services/firebase-service.js';
-import { getGameProfile, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js?v=005';
-import { isExpectedRegionTableCacheError } from './services/region-table-cache.js?v=025';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=026';
+import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js?v=005';
+import { isExpectedRegionTableCacheError } from './services/region-table-cache.js?v=056';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=056';
 
 window.WKD = window.WKD || {};
 
@@ -54,6 +54,18 @@ function canEditAllianceColor(tag = '') {
   if (!wanted || !canUseRegion()) return false;
   if (canEditAllAllianceColors()) return true;
   return currentRole() === 'officer' && regionOf() === currentRegion && ownAlliance() === wanted && isRankR4R5();
+}
+function actorAccessForRegion(region = currentRegion) {
+  const safeRegion = String(region || '').replace(/[^0-9]/g, '');
+  const main = getGameProfile(currentProfile || {});
+  const match = [main, ...getUserFarms(currentProfile || {})].find(item => String(item?.region || '').replace(/[^0-9]/g, '') === safeRegion) || main;
+  return {
+    uid: currentUser?.uid || '',
+    region: safeRegion,
+    alliance: normTag(match?.alliance || main?.alliance || ''),
+    role: normalizeUserRole(match?.role || currentProfile?.role || 'player'),
+    rank: String(match?.rank || main?.rank || '').trim().toLowerCase()
+  };
 }
 function normalizeBool(value) {
   if (value === true || value === false) return value;
@@ -289,7 +301,7 @@ async function saveTowerPlanToActiveSource(plan = {}) {
   if (!currentUser) throw new Error('auth-required');
   const region = currentRegion || regionOf();
   if (!canPlanRegion(region)) throw new Error('region-plan-access-denied');
-  const result = await saveRegionTowerPlan(currentUser, region, plan);
+  const result = await saveRegionTowerPlan(currentUser, region, plan, { actorAccess: actorAccessForRegion(region) });
   return { handled: true, ...result };
 }
 
@@ -298,7 +310,7 @@ async function shareRegionFinalPlan(payload = {}) {
   if (!currentUser) throw new Error('auth-required');
   const region = currentRegion || regionOf();
   if (!canPlanRegion(region)) throw new Error('region-plan-access-denied');
-  const result = await shareRegionFinalPlanDb(currentUser, region, payload);
+  const result = await shareRegionFinalPlanDb(currentUser, region, { ...payload, actorAccess: actorAccessForRegion(region) });
   const url = makePublicShareUrl('./public-plan.html', result.code || '');
   rememberShareCode('finalPlan', result.code || '', { region });
   return { ...result, url };
