@@ -1402,7 +1402,10 @@ async function canLeadRegionByClientAccessD1(db, env, user, region, settings = {
   if (directoryRole(actorAccess.role || '') !== 'officer' || directoryRankNumber(actorAccess.rank || '') < 4) return false;
   if (activeAllianceFromSettings(settings || {}) !== alliance) return false;
   const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
-  return Boolean(access.isGlobal || (access.roles.has('officer') && Array.isArray(access.alliances) && access.alliances.includes(`${safeRegion}:${alliance}`)));
+  if (access.isGlobal || accessHasCommandAlliance(access, safeRegion, alliance, 4)) return true;
+  if (accessHasAlliance(access, safeRegion, alliance) && accessHasRegion(access, safeRegion)) return true;
+  return Boolean(await hasSavedRegionAccess(db, user.uid, safeRegion).catch(() => false)
+    || await activeRegionHasUid(db, safeRegion, user.uid).catch(() => false));
 }
 async function canEditRegionAllianceD1(db, env, user, region, alliance) {
   const safeRegion = normalizeRegion(region);
