@@ -1351,7 +1351,7 @@ window.WKD_TRANSLATIONS.pl = {
   "regionSettings.allianceDeleted": "Sojusz usunięty.",
   "regionSettings.allianceDeleteFailed": "Nie udało się usunąć sojuszu.",
   "regionSettings.signInRequired": "Zaloguj się przez Google, aby skonfigurować formularz.",
-  "regionSettings.accessDenied": "Formularz regionu może edytować tylko administrator, moderator, konsul albo oficer/R4 aktywnego sojuszu.",
+  "regionSettings.accessDenied": "Formularz regionu może edytować tylko administrator, moderator, konsul albo oficer R4/R5 aktywnego sojuszu.",
   "regionSettings.readyStatus": "Skonfiguruj formularz, czas zamknięcia i tajny link dla graczy swojego regionu.",
   "regionSettings.openFailed": "Nie udało się otworzyć ustawień regionu.",
   "region.regionPill": "{label} {region}",

@@ -1351,7 +1351,7 @@ window.WKD_TRANSLATIONS.en = {
   "regionSettings.allianceDeleted": "Alliance deleted.",
   "regionSettings.allianceDeleteFailed": "Could not delete alliance.",
   "regionSettings.signInRequired": "Sign in with Google to configure the form.",
-  "regionSettings.accessDenied": "Only an admin, moderator, consul, or active-alliance officer/R4 can edit the region form.",
+  "regionSettings.accessDenied": "Only an admin, moderator, consul, or active-alliance R4/R5 officer can edit the region form.",
   "regionSettings.readyStatus": "Configure the form, close time and secret link for players in your region.",
   "regionSettings.openFailed": "Could not open region settings.",
   "region.regionPill": "{label} {region}",

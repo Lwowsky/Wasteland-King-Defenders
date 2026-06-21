@@ -1351,7 +1351,7 @@ window.WKD_TRANSLATIONS.uk = {
   "regionSettings.allianceDeleted": "Альянс видалено.",
   "regionSettings.allianceDeleteFailed": "Не вдалося видалити альянс.",
   "regionSettings.signInRequired": "Щоб налаштовувати форму, потрібно увійти через Google.",
-  "regionSettings.accessDenied": "Форму регіону може змінювати тільки адмін, модератор, консул або офіцер/R4 активного альянсу.",
+  "regionSettings.accessDenied": "Форму регіону може змінювати тільки адмін, модератор, консул або офіцер R4/R5 активного альянсу.",
   "regionSettings.readyStatus": "Налаштуй форму, час закриття і секретне посилання для гравців свого регіону.",
   "regionSettings.openFailed": "Не вдалося відкрити налаштування регіону.",
   "region.regionPill": "{label} {region}",

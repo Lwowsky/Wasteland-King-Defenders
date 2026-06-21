@@ -341,7 +341,7 @@ export function canLeadCurrentRotation(profile = {}, region = '', actor = null, 
   const role = roleForRegion(profile, safeRegion, actor);
   if (['admin', 'moderator', 'consul'].includes(role)) return true;
   const ownRank = rankNumber(actorRankForRegion(profile, safeRegion));
-  if (role !== 'officer' && ownRank < 4) return false;
+  if (role !== 'officer' || ownRank < 4) return false;
   const active = activeRotationAlliance(settings);
   return Boolean(active && actorAllianceForRegion(profile, safeRegion) === active);
 }

@@ -1351,7 +1351,7 @@ window.WKD_TRANSLATIONS.de = {
   "regionSettings.allianceDeleted": "Allianz gelöscht.",
   "regionSettings.allianceDeleteFailed": "Allianz konnte nicht gelöscht werden.",
   "regionSettings.signInRequired": "Melde dich mit Google an, um das Formular zu konfigurieren.",
-  "regionSettings.accessDenied": "Das Regionsformular können nur Admin, Moderator, Konsul oder Offizier/R4 der aktiven Allianz bearbeiten.",
+  "regionSettings.accessDenied": "Das Regionsformular können nur Admin, Moderator, Konsul oder R4/R5-Offizier der aktiven Allianz bearbeiten.",
   "regionSettings.readyStatus": "Konfiguriere Formular, Schließzeit und geheimen Link für Spieler deiner Region.",
   "regionSettings.openFailed": "Regionseinstellungen konnten nicht geöffnet werden.",
   "region.regionPill": "{label} {region}",
