@@ -1394,6 +1394,16 @@ async function canLeadCurrentRegionD1(db, env, user, region) {
   const form = await readRegionFormSettingsD1(db, safeRegion).catch(() => null);
   return canLeadRegionBySettingsD1(db, env, user, safeRegion, form?.settings || {});
 }
+async function canLeadRegionByClientAccessD1(db, env, user, region, settings = {}, actorAccess = null) {
+  const safeRegion = normalizeRegion(region);
+  if (!user?.uid || !safeRegion || !actorAccess || actorAccess.uid !== user.uid) return false;
+  const alliance = directoryAlliance(actorAccess.alliance || '');
+  if (!alliance || normalizeRegion(actorAccess.region) !== safeRegion) return false;
+  if (directoryRole(actorAccess.role || '') !== 'officer' || directoryRankNumber(actorAccess.rank || '') < 4) return false;
+  if (activeAllianceFromSettings(settings || {}) !== alliance) return false;
+  const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
+  return Boolean(access.isGlobal || (access.roles.has('officer') && Array.isArray(access.alliances) && access.alliances.includes(`${safeRegion}:${alliance}`)));
+}
 async function canEditRegionAllianceD1(db, env, user, region, alliance) {
   const safeRegion = normalizeRegion(region);
   const safeAlliance = directoryAlliance(alliance);
@@ -2398,7 +2408,8 @@ async function handleRegionTableRegistration(request, env) {
   const isOwner = Boolean(user?.uid && (row.uid === user.uid || !row.uid));
   const activeOfficerCanEdit = existingRow
     ? (await canLeadRegionBySettingsD1(db, env, user, region, currentSettings)
-      || await canLeadCurrentRegionD1(db, env, user, region))
+      || await canLeadCurrentRegionD1(db, env, user, region)
+      || await canLeadRegionByClientAccessD1(db, env, user, region, currentSettings, body?.actorAccess || null))
     : false;
   const canWrite = user?.uid
     ? (isOwner

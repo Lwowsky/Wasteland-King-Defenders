@@ -21,8 +21,8 @@ import {
   updateRegionRegistration,
   deleteRegionRegistrations,
   regionRegistrationToPlayer
-} from '../services/region-db.js?v=045';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=045';
+} from '../services/region-db.js?v=046';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=046';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
@@ -559,6 +559,21 @@ function actorAllianceForCurrentRegion() {
   return clean(match?.alliance || main?.alliance || currentProfile?.alliance || '');
 }
 
+function actorAccessForRegionRequest() {
+  const clean = value => String(value || '').trim().replace(/[\/\[\]#?]/g, '').slice(0, 3);
+  const main = getGameProfile(currentProfile || {});
+  const farms = getUserFarms(currentProfile || {});
+  const region = String(currentRegion || '');
+  const match = [main, ...farms].find(item => String(item?.region || '').replace(/[^0-9]/g, '') === region) || main;
+  return {
+    uid: currentUser?.uid || '',
+    region,
+    alliance: clean(match?.alliance || main?.alliance || currentProfile?.alliance || ''),
+    role: String(match?.role || main?.role || currentProfile?.role || '').toLowerCase(),
+    rank: String(match?.rank || main?.rank || currentProfile?.rank || '').toLowerCase()
+  };
+}
+
 function canEditRegionRows(row = null) {
   if (!currentUser || !currentRegion) return false;
   if (canManageRegion(currentProfile || {}, currentRegion, currentUser)) return true;
@@ -638,7 +653,8 @@ function installRegionEditorBridge() {
       uid: existing.uid || '',
       publicKey: existing.publicKey || '',
       farmId: existing.farmId || 'main',
-      cycleId: existing.cycleId || currentSettings?.currentCycleId || ''
+      cycleId: existing.cycleId || currentSettings?.currentCycleId || '',
+      _actorAccess: actorAccessForRegionRequest()
     };
     const result = await updateRegionRegistration(currentUser, currentRegion, wanted, payload);
     rows = rows.map(row => String(row.id || row.uid || '') === wanted ? mergeEditedRow(row, payload, result) : row);

@@ -1085,6 +1085,7 @@ export async function updateRegionTableRowD1(user, region, registrationId, value
     region: safeRegion,
     settings: sanitizeSettings(settings || {}),
     row,
+    actorAccess: values?._actorAccess || null,
     forceUpdate: Boolean(options?.forceUpdate),
     updateOnly: true
   };
