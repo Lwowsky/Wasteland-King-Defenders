@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=047';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=047';
+} from '../services/region-db.js?v=048';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=048';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -206,6 +206,7 @@ async function saveDraft(values = readForm()) {
   const payload = { ...values, region: currentRegion, farmId: selectedFarmId || 'main', savedAtMs: Date.now(), cycleId: formSettings?.currentCycleId || '', autoSubmitEnabled: getAutoProfilePreference(currentRegion, selectedFarmId) };
   if (currentUser) {
     currentProfile = await saveFarmWastelandProfile(currentUser, selectedFarmId || 'main', payload);
+    await syncAutoSubmitTemplateFromCurrentForm(payload, { enabled: payload.autoSubmitEnabled, force: true });
     return payload;
   }
   writeJsonStorage(draftKey(), payload);
@@ -760,20 +761,22 @@ async function submitRegistrationD1First(values, options = {}) {
   });
 }
 
-async function syncAutoSubmitTemplateFromCurrentForm(values = {}) {
-  if (!currentUser || !currentRegion || !getAutoProfilePreference(currentRegion, selectedFarmId)) return { skipped: true };
-  if (!isRegionTableCacheEnabled?.()) return { skipped: true };
+async function syncAutoSubmitTemplateFromCurrentForm(values = {}, options = {}) {
+  if (!currentUser || !currentRegion || !isRegionTableCacheEnabled?.()) return { skipped: true };
   const farmId = selectedFarmId || values.farmId || 'main';
+  const enabled = options.enabled !== undefined
+    ? options.enabled !== false
+    : values.autoSubmitEnabled !== false && getAutoProfilePreference(currentRegion, farmId);
   try {
     return await syncAutoSubmitTemplateD1IfNeeded(currentUser, currentRegion, {
       ...values,
       region: currentRegion,
       farmId,
-      autoSubmitEnabled: true
+      autoSubmitEnabled: enabled
     }, {
       farmId,
-      enabled: true,
-      force: true
+      enabled,
+      force: options.force !== false
     });
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] auto-submit template sync from region form skipped:', error);
@@ -1180,7 +1183,10 @@ function bind() {
   $('#wrAutoFillProfile')?.addEventListener('change', event => {
     selectedFarmId = $('#wrSavedFarmSelect')?.value || selectedFarmId || 'main';
     const enabled = Boolean(event.currentTarget.checked);
-    setAutoProfilePreference(enabled).catch(error => console.warn('[WKD] auto profile preference save failed:', error));
+    setAutoProfilePreference(enabled).then(() => {
+      if (!enabled) return syncAutoSubmitTemplateFromCurrentForm({ ...readForm(), autoSubmitEnabled: false }, { enabled: false, force: true });
+      return null;
+    }).catch(error => console.warn('[WKD] auto profile preference save failed:', error));
     if (!enabled) {
       setStatus(t('region.autoProfileOff', 'Автозаповнення з профілю вимкнено для цього гравця.'), 'muted');
       return;
