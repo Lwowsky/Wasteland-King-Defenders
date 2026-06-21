@@ -1,8 +1,8 @@
 import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=216';
 import { getFirebase, watchAuth } from './services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js?v=005';
-import { isExpectedRegionTableCacheError } from './services/region-table-cache.js?v=060';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=060';
+import { isExpectedRegionTableCacheError } from './services/region-table-cache.js?v=061';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=061';
 
 window.WKD = window.WKD || {};
 
@@ -295,7 +295,7 @@ async function loadTowerPlanFromActiveSource() {
   if (currentMode !== 'region') return { handled: false, plan: null };
   if (!currentUser) throw new Error('auth-required');
   const region = currentRegion || regionOf();
-  const result = await getRegionTowerPlan(currentUser, region);
+  const result = await getRegionTowerPlan(currentUser, region, { forceD1: true });
   currentProfile = result.profile || currentProfile;
   currentRegion = result.region || currentRegion || region;
   return { handled: true, ...result };
