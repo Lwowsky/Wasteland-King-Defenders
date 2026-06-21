@@ -1,8 +1,8 @@
 import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=216';
 import { getFirebase, watchAuth } from './services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js?v=005';
-import { isExpectedRegionTableCacheError } from './services/region-table-cache.js?v=058';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=058';
+import { isExpectedRegionTableCacheError } from './services/region-table-cache.js?v=059';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=059';
 
 window.WKD = window.WKD || {};
 
@@ -32,7 +32,13 @@ function profileRegionOf(profile = currentProfile) { return String(getGameProfil
 function regionOf(profile = currentProfile) { return String(currentRegion || savedRegion() || profileRegionOf(profile) || '').trim(); }
 function canUseRegion() { return Boolean(currentUser && isProfileComplete(currentProfile)); }
 function canEditRegion(region = currentRegion) { return Boolean(currentUser && region && canManageRegion(currentProfile, region, currentUser)); }
-function canPlanRegion(region = currentRegion) { return Boolean(currentUser && region && canEditRegionTowerPlan(currentProfile, region, currentUser, currentRegionSettings || {})); }
+function canLeadRegionFallback(region = currentRegion) {
+  const safeRegion = String(region || '').replace(/[^0-9]/g, '');
+  return Boolean(currentUser && safeRegion && regionOf() === safeRegion && currentRole() === 'officer' && isRankR4R5() && ownAlliance());
+}
+function canPlanRegion(region = currentRegion) {
+  return Boolean(currentUser && region && (canEditRegionTowerPlan(currentProfile, region, currentUser, currentRegionSettings || {}) || canLeadRegionFallback(region)));
+}
 function canDeleteRegion(region = currentRegion) { return Boolean(currentUser && region && canDeleteRegionRegistration(currentProfile, region, currentUser)); }
 function rowKey(player = {}) { return String(player._rowId || player.id || player.uid || ''); }
 function normTag(value = '') { return Array.from(String(value || '').trim().replace(/[\/\[\]#?]/g, '')).slice(0, 3).join(''); }

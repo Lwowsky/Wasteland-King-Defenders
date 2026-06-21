@@ -1400,7 +1400,8 @@ async function canLeadRegionByClientAccessD1(db, env, user, region, settings = {
   const alliance = directoryAlliance(actorAccess.alliance || '');
   if (!alliance || normalizeRegion(actorAccess.region) !== safeRegion) return false;
   if (directoryRole(actorAccess.role || '') !== 'officer' || directoryRankNumber(actorAccess.rank || '') < 4) return false;
-  if (activeAllianceFromSettings(settings || {}) !== alliance) return false;
+  const activeAlliance = activeAllianceFromSettings(settings || {});
+  if (activeAlliance && activeAlliance !== alliance) return false;
   const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
   if (access.isGlobal || accessHasCommandAlliance(access, safeRegion, alliance, 4)) return true;
   if (accessHasAlliance(access, safeRegion, alliance) && accessHasRegion(access, safeRegion)) return true;
