@@ -13,10 +13,17 @@ import {
   createUserNotification,
   createRegionNotificationCampaign
 } from './user-db.js?v=005';
-import { readRegionFormShare as readRegionFormShareD1, readRegionFormSettings as readRegionFormSettingsD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=065';
+import { readRegionFormShare as readRegionFormShareD1, readRegionFormSettings as readRegionFormSettingsD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=066';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
+function boolValue(value) {
+  if (value === true || value === false) return value;
+  const text = trim(value).toLowerCase();
+  if (!text) return false;
+  if (/^(0|false|no|ні|нi|нет|nope|n)$/.test(text)) return false;
+  return /^(1|true|yes|так|да|はい|是|예|y)$/.test(text);
+}
 const MANAGER_ROLES = ['admin', 'moderator', 'consul', 'officer'];
 const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 const isOwnerEmail = email => OWNER_EMAILS.includes(String(email || '').trim().toLowerCase());
@@ -1071,7 +1078,7 @@ export async function cleanupOldEmailFields(user) {
 
 async function rotateRegionPublicSharesForNewCycle(user, region, actorAccess = null) {
   try {
-    const mod = await import('./region-table-cache.js?v=065');
+    const mod = await import('./region-table-cache.js?v=066');
     if (!mod?.rotateRegionPublicShares) return null;
     return await mod.rotateRegionPublicShares(user, region, actorAccess);
   } catch (error) {
@@ -1223,7 +1230,7 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=065');
+    const mod = await import('./region-table-cache.js?v=066');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1233,7 +1240,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=065');
+    const mod = await import('./region-table-cache.js?v=066');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1244,7 +1251,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function updateRegionTableRowD1First(user, region, registrationId, values = {}, settings = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=065');
+    const mod = await import('./region-table-cache.js?v=066');
     return await mod.updateRegionTableRowD1(user, region, registrationId, values, settings, { updateOnly: true });
   } catch (error) {
     const status = Number(error?.status || 0) || 0;
@@ -1256,7 +1263,7 @@ async function updateRegionTableRowD1First(user, region, registrationId, values 
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=065');
+    const mod = await import('./region-table-cache.js?v=066');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1266,7 +1273,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=065');
+    const mod = await import('./region-table-cache.js?v=066');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1297,7 +1304,7 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
 
 async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=065');
+    const mod = await import('./region-table-cache.js?v=066');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readMyRegionRegistrationD1(user, region, farmId, options);
   } catch (error) {
@@ -1338,7 +1345,7 @@ function sanitizeRegionTableRow(row = {}) {
     tier: trim(row.tier).toUpperCase().slice(0, 8),
     marchSize: numberValue(row.marchSize),
     rallySize: numberValue(row.rallySize),
-    captainReady: Boolean(row.captainReady),
+    captainReady: boolValue(row.captainReady),
     shift: trim(row.shift).slice(0, 40),
     shiftLabel: trim(row.shiftLabel).slice(0, 80)
   };
@@ -2170,7 +2177,7 @@ function normalizeRegistration(values = {}, user = null, profile = {}, region = 
     shk: trim(values.shk || game.shk),
     readyToJoin: values.readyToJoin !== false,
     readyToAttack: Boolean(values.readyToAttack),
-    captainReady: Boolean(values.captainReady),
+    captainReady: boolValue(values.captainReady),
     shift,
     shiftLabel: shiftLabel(shift, status),
     troopType: trim(values.troopType),
@@ -2446,7 +2453,7 @@ function playerToRegionRow(row = {}) {
     lairLevel: lairLevelValue(info.lairLevel),
     marchSize: numberValue(info.marchSize),
     rallySize: numberValue(info.rallySize),
-    captainReady: Boolean(info.captainReady),
+    captainReady: boolValue(info.captainReady),
     readyToJoin: Boolean(info.readyToJoin),
     readyToAttack: Boolean(info.readyToAttack),
     shift: trim(info.shift),
@@ -2643,7 +2650,7 @@ function cleanRegionRegistrationEditInput(input = {}, existingData = {}) {
     captureRegion: /^(1|true|yes|так|да|y)$/i.test(String(input.lair || input.captureRegion || '').trim()),
     marchSize: numberValue(input.march ?? input.marchSize),
     rallySize: numberValue(input.rally ?? input.rallySize),
-    captainReady: hasCaptainField ? Boolean(input.captain || input.captainReady) : Boolean(existingData.captainReady),
+    captainReady: hasCaptainField ? boolValue(input.captain ?? input.captainReady) : boolValue(existingData.captainReady),
     shift,
     shiftLabel: shiftLabel(shift)
   };
@@ -2853,7 +2860,7 @@ function playerToImportedRegistration(player = {}, user = {}, profile = {}, regi
     shk: '',
     readyToJoin: true,
     readyToAttack: false,
-    captainReady: Boolean(player.captain || player.captainReady),
+    captainReady: boolValue(player.captain ?? player.captainReady),
     shift,
     shiftLabel: shiftLabel(shift),
     troopType,
@@ -2895,7 +2902,7 @@ function localImportRegistrationKey(row = {}) {
 
 async function readLocalImportRegionLockFromD1(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=065');
+    const mod = await import('./region-table-cache.js?v=066');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readLocalImportRegionLock(user, region);
   } catch (error) {
@@ -2906,7 +2913,7 @@ async function readLocalImportRegionLockFromD1(user, region) {
 
 async function commitLocalImportRegionLockToD1(user, region, payload = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=065');
+    const mod = await import('./region-table-cache.js?v=066');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.commitLocalImportRegionLock(user, region, payload);
   } catch (error) {
@@ -3081,8 +3088,8 @@ export function regionRegistrationToPlayer(row = {}) {
   const cleanTroopType = normalizePlayerTroopType(rawTroopType);
   const rowShift = registrationShiftValue(row, info);
   const captainReady = Object.prototype.hasOwnProperty.call(row, 'captainReady')
-    ? Boolean(row.captainReady)
-    : Boolean(info.captainReady);
+    ? boolValue(row.captainReady)
+    : boolValue(info.captainReady);
   const isRegistration = row.source !== 'profile' && row.rowType !== 'Профіль';
   return {
     id: row.id || row.uid || '',
@@ -3098,6 +3105,7 @@ export function regionRegistrationToPlayer(row = {}) {
     tier: row.tier || info.tier || '',
     march: row.marchSize || info.marchSize || 0,
     rally: row.rallySize || info.rallySize || 0,
+    captain: captainReady,
     extraEnabled: Boolean(normalizeExtraSquads(row).length || normalizeExtraSquads(info).length),
     extraSquads: normalizeExtraSquads(row).length ? normalizeExtraSquads(row) : normalizeExtraSquads(info),
     extraTroopType: (normalizeExtraSquads(row)[0] || normalizeExtraSquads(info)[0] || {}).troopType || '',

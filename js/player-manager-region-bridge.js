@@ -1,8 +1,8 @@
 import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=216';
 import { getFirebase, watchAuth } from './services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js?v=005';
-import { isExpectedRegionTableCacheError } from './services/region-table-cache.js?v=065';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=065';
+import { isExpectedRegionTableCacheError } from './services/region-table-cache.js?v=066';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=066';
 
 window.WKD = window.WKD || {};
 
@@ -286,6 +286,12 @@ async function reloadRegionPlayersForTower(region = '', options = {}) {
   const requested = normalizeRegion(region || currentRegion || regionOf());
   if (!requested || !canUseRegion()) return loadedRows || [];
   await loadRegionRows(options.force === true, requested);
+  const staffRows = typeof window.WKD?.getStaffRegionTowerRows === 'function'
+    ? window.WKD.getStaffRegionTowerRows(requested)
+    : [];
+  if (Array.isArray(staffRows) && staffRows.length && (!loadedRows.length || !loadedRows.some(row => row.captain))) {
+    loadedRows = staffRows;
+  }
   if (currentMode === 'region') await showRowsForMode(false);
   return loadedRows || [];
 }

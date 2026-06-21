@@ -21,8 +21,8 @@ import {
   updateRegionRegistration,
   deleteRegionRegistrations,
   regionRegistrationToPlayer
-} from '../services/region-db.js?v=065';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=065';
+} from '../services/region-db.js?v=066';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=066';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
@@ -34,6 +34,13 @@ const tv = (key, fallback = '', vars = {}) => {
   Object.entries(vars).forEach(([name, value]) => { text = text.replaceAll(`{${name}}`, String(value)); });
   return text;
 };
+function boolValue(value) {
+  if (value === true || value === false) return value;
+  const text = String(value ?? '').trim().toLowerCase();
+  if (!text) return false;
+  if (/^(0|false|no|ні|нi|нет|nope|n)$/.test(text)) return false;
+  return /^(1|true|yes|так|да|はい|是|예|y)$/.test(text);
+}
 
 function isQuietRegionTableError(error = null) {
   return isExpectedRegionTableCacheError(error);
@@ -622,7 +629,7 @@ function mergeEditedRow(row = {}, values = {}, result = {}) {
     tier: patch.tier || values.tier || row.tier || '',
     marchSize: Number(patch.marchSize ?? values.march ?? values.marchSize ?? row.marchSize) || 0,
     rallySize: Number(patch.rallySize ?? values.rally ?? values.rallySize ?? row.rallySize) || 0,
-    captainReady: Object.prototype.hasOwnProperty.call(patch, 'captainReady') ? Boolean(patch.captainReady) : Boolean(values.captain ?? row.captainReady),
+    captainReady: Object.prototype.hasOwnProperty.call(patch, 'captainReady') ? boolValue(patch.captainReady) : boolValue(values.captain ?? row.captainReady),
     shift,
     shiftLabel: patch.shiftLabel || shiftLabel(shift, currentSettings) || row.shiftLabel || ''
   };

@@ -377,7 +377,7 @@ window.WKD = window.WKD || {};
     const info = sourceInfo();
     if (info.mode !== 'region') return false;
     const broken = sourceRowsHaveBrokenShifts();
-    if (!force && !broken) return false;
+    if (!force && !broken && players().length > 0) return false;
     if (typeof WKD.reloadRegionPlayersForTower !== 'function') return false;
     const key = `wkd.tower.regionRowsRefresh.${clean(info.region || '')}`;
     const last = Number(sessionStorage.getItem(key) || 0) || 0;

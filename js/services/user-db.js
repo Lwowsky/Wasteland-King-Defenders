@@ -42,6 +42,13 @@ export const ROLE_REQUEST_STATUS = {
 
 const REQUESTABLE_ROLES = ['admin', 'moderator', 'officer', 'consul'];
 const normalizeText = value => String(value ?? '').trim();
+function boolValue(value) {
+  if (value === true || value === false) return value;
+  const text = normalizeText(value).toLowerCase();
+  if (!text) return false;
+  if (/^(0|false|no|ні|нi|нет|nope|n)$/.test(text)) return false;
+  return /^(1|true|yes|так|да|はい|是|예|y)$/.test(text);
+}
 const normalizeRole = role => Object.hasOwn(USER_ROLES, role) ? role : 'player';
 const normalizeCountry = value => normalizeText(value).slice(0, 80);
 const normalizeCountryCode = value => normalizeText(value).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
@@ -178,7 +185,7 @@ export function normalizeWastelandProfile(raw = {}) {
     rallySize: normalizeText(raw.rallySize),
     readyToJoin: Boolean(raw.readyToJoin),
     readyToAttack: Boolean(raw.readyToAttack),
-    captainReady: Boolean(raw.captainReady),
+    captainReady: boolValue(raw.captainReady),
     shift: normalizeText(raw.shift),
     comment: normalizeText(raw.comment),
     extraEnabled: Boolean(extraSquads.length),

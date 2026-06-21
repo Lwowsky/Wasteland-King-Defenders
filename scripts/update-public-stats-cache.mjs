@@ -153,6 +153,13 @@ function publicKeyFor(playerKey = '') {
 function cleanString(value, max = 80) {
   return String(value ?? '').trim().slice(0, max);
 }
+function boolValue(value) {
+  if (value === true || value === false) return value;
+  const text = cleanString(value, 24).toLowerCase();
+  if (!text) return false;
+  if (/^(0|false|no|ні|нi|нет|nope|n)$/.test(text)) return false;
+  return /^(1|true|yes|так|да|はい|是|예|y)$/.test(text);
+}
 function sanitizeWastelandInfo(profile = null) {
   if (!profile || typeof profile !== 'object') return null;
   return {
@@ -161,7 +168,7 @@ function sanitizeWastelandInfo(profile = null) {
     tier: cleanString(profile.tier, 12),
     marchSize: cleanString(profile.marchSize, 24),
     rallySize: cleanString(profile.rallySize, 24),
-    captainReady: Boolean(profile.captainReady),
+    captainReady: boolValue(profile.captainReady),
     readyToJoin: Boolean(profile.readyToJoin),
     readyToAttack: Boolean(profile.readyToAttack),
     shift: cleanString(profile.shift, 24),

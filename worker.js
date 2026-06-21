@@ -166,6 +166,13 @@ function clean(value, max = MAX_FIELD_LENGTH) {
     .trim()
     .slice(0, max);
 }
+function boolValue(value) {
+  if (value === true || value === false) return value;
+  const text = clean(value, 24).toLowerCase();
+  if (!text) return false;
+  if (/^(0|false|no|ні|нi|нет|nope|n)$/.test(text)) return false;
+  return /^(1|true|yes|так|да|はい|是|예|y)$/.test(text);
+}
 
 function normalizeRegion(value) {
   return clean(value, 20)
@@ -804,7 +811,7 @@ function sanitizeTableRow(row = {}) {
     lairLevel: numberValue(row.lairLevel),
     marchSize: numberValue(row.marchSize),
     rallySize: numberValue(row.rallySize),
-    captainReady: Boolean(row.captainReady),
+    captainReady: boolValue(row.captainReady),
     readyToJoin: Boolean(row.readyToJoin),
     readyToAttack: Boolean(row.readyToAttack),
     shift: clean(row.shift || "", 40),
@@ -1596,7 +1603,7 @@ function autoSubmitTemplateHash(row = {}) {
     marchSize: Number(row.marchSize || 0) || 0,
     rallySize: Number(row.rallySize || 0) || 0,
     readyToAttack: Boolean(row.readyToAttack),
-    captainReady: Boolean(row.captainReady),
+    captainReady: boolValue(row.captainReady),
     shift: clean(row.shift || '', 40),
     comment: clean(row.comment || '', 300),
     extraEnabled: Boolean(row.extraEnabled),
@@ -3084,7 +3091,7 @@ function sanitizePublicStatsWasteland(profile = null) {
     tier: clean(profile.tier, 12).toUpperCase(),
     marchSize: clean(profile.marchSize, 24),
     rallySize: clean(profile.rallySize, 24),
-    captainReady: Boolean(profile.captainReady),
+    captainReady: boolValue(profile.captainReady),
     readyToJoin: Boolean(profile.readyToJoin),
     readyToAttack: Boolean(profile.readyToAttack),
     shift: clean(profile.shift, 24),

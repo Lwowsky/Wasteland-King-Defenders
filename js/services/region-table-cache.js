@@ -13,6 +13,13 @@ function cleanText(value = '', max = 120) {
     .trim()
     .slice(0, max);
 }
+function boolValue(value) {
+  if (value === true || value === false) return value;
+  const text = cleanText(value, 24).toLowerCase();
+  if (!text) return false;
+  if (/^(0|false|no|ні|нi|нет|nope|n)$/.test(text)) return false;
+  return /^(1|true|yes|так|да|はい|是|예|y)$/.test(text);
+}
 
 function cleanRegion(value = '') {
   return cleanText(value, 20).replace(/[^0-9]/g, '').slice(0, 8);
@@ -305,7 +312,7 @@ function sanitizeRegistrationValues(values = {}) {
     rallySize: numberValue(values.rallySize),
     readyToJoin: values.readyToJoin !== false,
     readyToAttack: Boolean(values.readyToAttack),
-    captainReady: Boolean(values.captainReady),
+    captainReady: boolValue(values.captainReady),
     shift: cleanText(values.shift || '', 40),
     comment: cleanText(values.comment || '', 300),
     extraEnabled: Boolean(values.extraEnabled || (Array.isArray(values.extraSquads) && values.extraSquads.length)),
@@ -445,7 +452,7 @@ function sanitizeTableRow(row = {}) {
     lairLevel: numberValue(row.lairLevel || row.wastelandProfile?.lairLevel),
     marchSize: numberValue(row.marchSize || row.wastelandProfile?.marchSize),
     rallySize: numberValue(row.rallySize || row.wastelandProfile?.rallySize),
-    captainReady: Boolean(row.captainReady ?? row.wastelandProfile?.captainReady),
+    captainReady: boolValue(row.captainReady ?? row.wastelandProfile?.captainReady),
     readyToJoin: Boolean(row.readyToJoin ?? row.wastelandProfile?.readyToJoin),
     readyToAttack: Boolean(row.readyToAttack ?? row.wastelandProfile?.readyToAttack),
     shift: cleanText(row.shift || row.wastelandProfile?.shift || '', 40),

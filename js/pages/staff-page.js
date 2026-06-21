@@ -24,6 +24,20 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&am
 const normalizeRegion = value => String(value || '').replace(/[^0-9]/g, '');
 const normalizeAlliance = value => String(value || '').trim().toUpperCase().slice(0, 3);
 const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
+function boolValue(value) {
+  if (value === true || value === false) return value;
+  const text = String(value ?? '').trim().toLowerCase();
+  if (!text) return false;
+  if (/^(0|false|no|ні|нi|нет|nope|n)$/.test(text)) return false;
+  return /^(1|true|yes|так|да|はい|是|예|y)$/.test(text);
+}
+function towerRoleFromTroop(value = '') {
+  const text = String(value || '').trim().toLowerCase();
+  if (text === 'fighter') return 'Fighter';
+  if (text === 'rider') return 'Rider';
+  if (text === 'shooter') return 'Shooter';
+  return value || '—';
+}
 const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
 const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STAFF_REFRESH_LIMIT = 5;
@@ -165,8 +179,8 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=065',
-  'region-settings': './region-settings-page.js?v=065',
+  'region-table': './region-table-page.js?v=066',
+  'region-settings': './region-settings-page.js?v=066',
   'action-log': './action-log-page.js?v=019'
 };
 const loadedStaffToolTabs = new Set();
@@ -360,7 +374,7 @@ function normalizeStaffSnapshotRow(row = {}) {
     tier: row.tier || wasteland.tier || '',
     marchSize: row.marchSize || wasteland.marchSize || '',
     rallySize: row.rallySize || wasteland.rallySize || '',
-    captainReady: Boolean(row.captainReady ?? wasteland.captainReady),
+    captainReady: boolValue(row.captainReady ?? wasteland.captainReady),
     shift: row.shift || wasteland.shift || ''
   };
 }
@@ -449,6 +463,38 @@ function applyLocalStaffFilters({ statusMessage = '' } = {}) {
   renderRows();
   scopeBadge();
   if (statusMessage) setStatus(statusMessage, 'success');
+}
+function staffRowToTowerPlayer(row = {}, index = 0) {
+  const normalized = normalizeStaffSnapshotRow(row);
+  const id = normalized.id || normalized.uid || `${normalized.nickname || 'player'}-${index + 1}`;
+  const troopType = normalized.troopType || normalized.wastelandProfile?.troopType || '';
+  const captain = boolValue(normalized.captainReady ?? normalized.wastelandProfile?.captainReady);
+  return {
+    id,
+    _rowId: id,
+    regionRegistrationId: normalized.regionRegistrationId || normalized.registrationId || '',
+    regionNumber: normalizeRegion(normalized.region),
+    name: normalized.nickname || normalized.gameNick || normalized.name || '',
+    alliance: normalizeAlliance(normalized.alliance || ''),
+    role: towerRoleFromTroop(troopType),
+    troopType,
+    tier: String(normalized.tier || normalized.wastelandProfile?.tier || '').trim().toUpperCase(),
+    march: Number(normalized.marchSize || normalized.wastelandProfile?.marchSize || 0) || 0,
+    rally: Number(normalized.rallySize || normalized.wastelandProfile?.rallySize || 0) || 0,
+    captain,
+    captainReady: captain ? 'Так' : 'Ні',
+    shift: normalized.shift || normalized.wastelandProfile?.shift || 'both',
+    shiftLabel: normalized.shiftLabel || '',
+    source: 'staff-region-cache'
+  };
+}
+function staffRegionTowerRows(region = '') {
+  const safeRegion = normalizeRegion(region || $('#staffRegionSelect')?.value || '');
+  if (!safeRegion) return [];
+  return dedupeStaffRowsHard(staffSnapshotRows)
+    .filter(row => !row.deleted && !row.blocked && staffRowVisibleForRegion(row, safeRegion, true))
+    .map(staffRowToTowerPlayer)
+    .filter(row => row.name);
 }
 async function readStaffPublicSnapshotRows(region = '', { force = false } = {}) {
   const safeRegion = normalizeRegion(region);
@@ -768,6 +814,9 @@ document.addEventListener('wkd:partials-ready', () => {
   initStaffPage();
 });
 document.addEventListener('DOMContentLoaded', () => setTimeout(initStaffPage, 0));
+
+window.WKD = window.WKD || {};
+window.WKD.getStaffRegionTowerRows = staffRegionTowerRows;
 document.addEventListener('wkd:language-changed', () => {
   document.querySelectorAll('.staff-drawer-tabs').forEach(node => node.remove());
   scopeBadge();

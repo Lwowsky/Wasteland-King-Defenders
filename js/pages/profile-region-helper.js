@@ -7,8 +7,8 @@ import {
   saveFarmWastelandProfile,
   saveSignedInUser
 } from '../services/user-db.js';
-import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=065';
-import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=065';
+import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=066';
+import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=066';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -24,6 +24,13 @@ const allianceTag3 = value => window.WKD?.allianceTag3
 const tiers = Array.from({ length: 14 }, (_, i) => `T${14 - i}`);
 const allShifts = ['shift1', 'shift2', 'shift3', 'shift4', 'both'];
 let availableShifts = ['shift1', 'shift2'];
+function boolValue(value) {
+  if (value === true || value === false) return value;
+  const text = String(value ?? '').trim().toLowerCase();
+  if (!text) return false;
+  if (/^(0|false|no|ні|нi|нет|nope|n)$/.test(text)) return false;
+  return /^(1|true|yes|так|да|はい|是|예|y)$/.test(text);
+}
 function shiftLabel(id) {
   return {
     shift1: t('shift.shift1', 'Зміна 1'),
@@ -288,8 +295,8 @@ function setRegionForm(data = {}) {
   $('#wrLairLevel') && ($('#wrLairLevel').value = data.lairLevel || data.lair || '');
   $('#wrMarch') && ($('#wrMarch').value = data.marchSize || '');
   $('#wrRally') && ($('#wrRally').value = data.rallySize || '');
-  $('#wrReadyAttack') && ($('#wrReadyAttack').checked = Boolean(data.readyToAttack));
-  $('#wrCaptain') && ($('#wrCaptain').checked = Boolean(data.captainReady));
+  $('#wrReadyAttack') && ($('#wrReadyAttack').checked = boolValue(data.readyToAttack));
+  $('#wrCaptain') && ($('#wrCaptain').checked = boolValue(data.captainReady));
   const shift = normalizeShiftForAvailable(data.shift || 'shift1');
   const shiftInput = $(`input[name="wrShift"][value="${shift}"]`);
   if (shiftInput) shiftInput.checked = true;

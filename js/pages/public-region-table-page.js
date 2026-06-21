@@ -1,6 +1,6 @@
-import { troopLabel, shiftLabel } from '../services/region-db.js?v=065';
+import { troopLabel, shiftLabel } from '../services/region-db.js?v=066';
 import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=252';
-import { isRegionTableCacheEnabled, readRegionTableShare } from '../services/region-table-cache.js?v=065';
+import { isRegionTableCacheEnabled, readRegionTableShare } from '../services/region-table-cache.js?v=066';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -39,6 +39,13 @@ function formatDate(value) {
   catch { return new Date(ms).toLocaleString(); }
 }
 function normalizeText(value) { return String(value || '').trim().toLowerCase(); }
+function boolValue(value) {
+  if (value === true || value === false) return value;
+  const text = normalizeText(value);
+  if (!text) return false;
+  if (/^(0|false|no|ні|нi|нет|nope|n)$/.test(text)) return false;
+  return /^(1|true|yes|так|да|はい|是|예|y)$/.test(text);
+}
 function tierNumber(value = '') { return Number(String(value || '').replace(/[^0-9]/g, '')) || 0; }
 function isBothShift(value = '') {
   const raw = normalizeText(value);
@@ -58,7 +65,7 @@ function rowHtml(row = {}) {
   const alliance = (badges.alliance || ((tag)=>`<span class="alliance-badge"><span class="badge-dot"></span><span>${esc(tag || '—')}</span></span>`))(row.alliance || '—', { region: row.region });
   const troop = (badges.troop || ((type,label)=>`<span class="tag ${esc(type || '')}">${esc(label || type || '—')}</span>`))(row.troopType, troopLabel(row.troopType) || row.troopLabel || '—');
   const tier = (badges.tier || (value => esc(value || '—')))(row.tier);
-  const captain = (badges.captain || (value => `<span class="captain-badge ${value ? 'yes' : 'no'}">${esc(value ? t('common.yes','Так') : t('common.no','Ні'))}</span>`))(Boolean(row.captainReady));
+  const captain = (badges.captain || (value => `<span class="captain-badge ${value ? 'yes' : 'no'}">${esc(value ? t('common.yes','Так') : t('common.no','Ні'))}</span>`))(boolValue(row.captainReady));
   const shift = (badges.shift || ((value,label)=>`<span class="shift-badge">${esc(label || value || '—')}</span>`))(row.shift, shiftLabel(row.shift) || row.shiftLabel || '—');
   const registered = formatDate(registeredMs(row));
   const labels = {

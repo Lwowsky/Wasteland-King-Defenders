@@ -2064,6 +2064,7 @@ window.WKD_TRANSLATIONS.zh = {
   "players.localDuplicateNamesList": 'Duplicate nicknames',
   "players.regionToLocalPreparing": 'Loading the region table from D1 cache...',
   "players.localToRegionGlobalRateLimited": 'Import to R{region} was already performed. Try again in {time}.',
+  "region.autoProfileTierMismatch": "自动报名未发送：个人资料为 {profileTier}，但当前表单最低要求为 {minTier}。请手动检查数据。",
   // v171 local import translations and syntax guard
 
   "players.localToRegionConfirmTitle": "将本地列表移到地区？",

@@ -2064,6 +2064,7 @@ window.WKD_TRANSLATIONS.pl = {
   "players.localDuplicateNamesList": 'Duplicate nicknames',
   "players.regionToLocalPreparing": 'Loading the region table from D1 cache...',
   "players.localToRegionGlobalRateLimited": 'Import to R{region} was already performed. Try again in {time}.',
+  "region.autoProfileTierMismatch": "Automatyczne zgłoszenie nie zostało wysłane: w profilu jest {profileTier}, ale minimum formularza to teraz {minTier}. Sprawdź dane ręcznie.",
   // v171 local import translations and syntax guard
 
   "players.localToRegionConfirmTitle": "Przenieść listę lokalną do regionu?",

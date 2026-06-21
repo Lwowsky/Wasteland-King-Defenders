@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=065';
-import { readRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError } from '../services/region-table-cache.js?v=065';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=066';
+import { readRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError } from '../services/region-table-cache.js?v=066';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -40,6 +40,13 @@ const tv = (key, fallback = '', vars = {}) => {
   });
   return text;
 };
+function boolValue(value) {
+  if (value === true || value === false) return value;
+  const text = String(value ?? '').trim().toLowerCase();
+  if (!text) return false;
+  if (/^(0|false|no|ні|нi|нет|nope|n)$/.test(text)) return false;
+  return /^(1|true|yes|так|да|はい|是|예|y)$/.test(text);
+}
 
 function formatRemainingTime(ms = 0) {
   const totalMinutes = Math.max(0, Math.ceil(Number(ms || 0) / 60000));
@@ -119,8 +126,8 @@ function mergePlayerValues(player = {}, values = {}) {
     tier: String(values.tier ?? player.tier ?? 'T10').trim().toUpperCase(),
     march: Number(values.march ?? player.march ?? 0) || 0,
     rally: Number(values.rally ?? player.rally ?? 0) || 0,
-    captain: Boolean(values.captain ?? player.captain),
-    captainReady: Boolean(values.captain ?? player.captain) ? t('common.yes', 'Yes') : t('common.no', 'No'),
+    captain: boolValue(values.captain ?? player.captain),
+    captainReady: boolValue(values.captain ?? player.captain) ? t('common.yes', 'Yes') : t('common.no', 'No'),
     shift: values.shift || player.shift || 'both',
     lair: String(values.lair ?? player.lair ?? '').trim(),
     placement: values.placement || player.placement || t('tower.reserve', 'Reserve')

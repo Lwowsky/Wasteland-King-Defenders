@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=065';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=065';
+} from '../services/region-db.js?v=066';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=066';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -133,6 +133,13 @@ function readJsonStorage(key) {
 function writeJsonStorage(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
 }
+function boolValue(value) {
+  if (value === true || value === false) return value;
+  const text = String(value ?? '').trim().toLowerCase();
+  if (!text) return false;
+  if (/^(0|false|no|ні|нi|нет|nope|n)$/.test(text)) return false;
+  return /^(1|true|yes|так|да|はい|是|예|y)$/.test(text);
+}
 function activeFarmProfile(profile = currentProfile, farmId = selectedFarmId) {
   return getFarmById(profile || {}, farmId || 'main') || getGameProfile(profile || {});
 }
@@ -157,7 +164,7 @@ function getAutoProfilePreference(region = currentRegion, farmId = selectedFarmI
 }
 async function setAutoProfilePreference(enabled, region = currentRegion, farmId = selectedFarmId) {
   if (!currentUser) return currentProfile;
-  const values = { ...(accountDraft(currentProfile, farmId) || {}), ...readForm(), autoSubmitEnabled: enabled };
+  const values = { ...(accountDraft(currentProfile, farmId) || {}), autoSubmitEnabled: enabled };
   currentProfile = await saveFarmWastelandProfile(currentUser, farmId || 'main', values);
   return currentProfile;
 }
@@ -590,8 +597,8 @@ function fillSavedRegistration(row, options = {}) {
   $('#wrLairLevel') && ($('#wrLairLevel').value = row.lairLevel || row.lair || '');
   $('#wrMarch').value = row.marchSize || '';
   $('#wrRally').value = row.rallySize || '';
-  $('#wrReadyAttack') && ($('#wrReadyAttack').checked = copyEventFields ? Boolean(row.readyToAttack) : false);
-  $('#wrCaptain') && ($('#wrCaptain').checked = copyEventFields ? Boolean(row.captainReady) : false);
+  $('#wrReadyAttack') && ($('#wrReadyAttack').checked = copyEventFields ? boolValue(row.readyToAttack) : false);
+  $('#wrCaptain') && ($('#wrCaptain').checked = copyEventFields ? boolValue(row.captainReady) : false);
   const shift = copyEventFields ? $(`input[name="wrShift"][value="${row.shift}"]`) : null;
   if (shift) shift.checked = true;
   $('#wrComment').value = copyEventFields ? (row.comment || '') : '';
@@ -910,6 +917,12 @@ async function maybeAutoSubmitFromProfile(reason = '') {
   const status = getRegionFormStatus(formSettings);
   fillProfileFields(currentProfile, selectedFarmId);
   const values = readForm();
+  const profileValues = accountDraft(currentProfile, selectedFarmId) || {};
+  const profileTier = String(profileValues.tier || '').trim().toUpperCase();
+  if (profileTier && values.tier !== profileTier) {
+    setStatus(tv('region.autoProfileTierMismatch', 'Автоматичну заявку не відправлено: у профілі вказано {profileTier}, але мінімум форми зараз {minTier}. Перевір дані вручну.', { profileTier, minTier: formSettings?.minTier || 'T10' }), 'warn');
+    return false;
+  }
   await saveDraft(values);
   if (!status.open) {
     setStatus(t('region.autoProfileSavedClosed', 'Автозаповнення для цього гравця збережено. Форма зараз закрита, тому заявку можна буде відправити після відкриття реєстрації.'), 'warn');

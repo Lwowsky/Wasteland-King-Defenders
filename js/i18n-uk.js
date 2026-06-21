@@ -2067,6 +2067,7 @@ window.WKD_TRANSLATIONS.uk = {
   "players.localDuplicateNamesList": 'Ніки з повторами',
   "players.regionToLocalPreparing": 'Завантажую регіональну таблицю з кешу D1...',
   "players.localToRegionGlobalRateLimited": 'Перенос у R{region} уже виконували. Повторити можна через {time}.',
+  "region.autoProfileTierMismatch": "Автоматичну заявку не відправлено: у профілі вказано {profileTier}, але мінімум форми зараз {minTier}. Перевір дані вручну.",
   // v171 local import translations and syntax guard
 
   "players.localToRegionConfirmTitle": "Перенести локальний список у регіон?",

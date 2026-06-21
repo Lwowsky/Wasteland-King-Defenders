@@ -2064,6 +2064,7 @@ window.WKD_TRANSLATIONS.ko = {
   "players.localDuplicateNamesList": 'Duplicate nicknames',
   "players.regionToLocalPreparing": 'Loading the region table from D1 cache...',
   "players.localToRegionGlobalRateLimited": 'Import to R{region} was already performed. Try again in {time}.',
+  "region.autoProfileTierMismatch": "자동 등록을 보내지 않았습니다. 프로필은 {profileTier}이지만 현재 양식 최소 조건은 {minTier}입니다. 수동으로 확인하세요.",
   // v171 local import translations and syntax guard
 
   "players.localToRegionConfirmTitle": "로컬 목록을 지역으로 옮길까요?",
