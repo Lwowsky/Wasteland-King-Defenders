@@ -27,7 +27,7 @@ const normalizeRank = value => String(value || 'p1').trim().toLowerCase();
 const STAFF_CACHE_TTL_MS = 30 * 60 * 1000;
 const STAFF_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const STAFF_REFRESH_LIMIT = 5;
-const STAFF_CACHE_BUILD = 'v039-staff-cross-region-farms';
+const STAFF_CACHE_BUILD = 'v042-staff-access-status';
 
 const STAFF_PUBLIC_STATS_PLAYERS_FILE = 'stats-players.json';
 const STAFF_PUBLIC_STATS_FARMS_FILE = 'stats-farms.json';
@@ -165,8 +165,8 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=041',
-  'region-settings': './region-settings-page.js?v=026',
+  'region-table': './region-table-page.js?v=042',
+  'region-settings': './region-settings-page.js?v=042',
   'action-log': './action-log-page.js?v=019'
 };
 const loadedStaffToolTabs = new Set();
@@ -232,6 +232,11 @@ function actorGames(profile = {}) {
 function setStatus(message, type = 'muted') {
   const el = $('#staffStatus');
   if (!el) return;
+  // This element has data-i18n in HTML for the initial text only.
+  // Once runtime status is set, remove i18n attributes so language refreshes
+  // do not overwrite "access confirmed / load failed" back to "loading access".
+  el.removeAttribute('data-i18n');
+  el.removeAttribute('data-i18n-placeholder');
   el.textContent = message;
   el.className = `auth-status ${type ? `is-${type}` : ''}`;
 }
