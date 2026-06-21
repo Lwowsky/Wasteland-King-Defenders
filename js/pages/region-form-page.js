@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=026';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches } from '../services/region-table-cache.js?v=025';
+} from '../services/region-db.js?v=047';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=047';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -760,6 +760,27 @@ async function submitRegistrationD1First(values, options = {}) {
   });
 }
 
+async function syncAutoSubmitTemplateFromCurrentForm(values = {}) {
+  if (!currentUser || !currentRegion || !getAutoProfilePreference(currentRegion, selectedFarmId)) return { skipped: true };
+  if (!isRegionTableCacheEnabled?.()) return { skipped: true };
+  const farmId = selectedFarmId || values.farmId || 'main';
+  try {
+    return await syncAutoSubmitTemplateD1IfNeeded(currentUser, currentRegion, {
+      ...values,
+      region: currentRegion,
+      farmId,
+      autoSubmitEnabled: true
+    }, {
+      farmId,
+      enabled: true,
+      force: true
+    });
+  } catch (error) {
+    if (window.WKD_DEBUG) console.warn('[WKD] auto-submit template sync from region form skipped:', error);
+    return { ok: false, skipped: true, error: error?.message || String(error) };
+  }
+}
+
 async function submitCurrentRegistration(values, { auto = false, forceUpdate = false } = {}) {
   try {
     setStatus(auto ? t('region.autoSubmitting', 'Автоматично відправляю заявку з профілю...') : t('region.savingRequest', 'Saving request...'), 'muted');
@@ -779,6 +800,11 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
       }
       return submitCurrentRegistration(values, { auto, forceUpdate: true });
     }
+
+    // Keep the server auto-submit template in D1 in sync with the latest submitted
+    // profile/form values. Table editor changes stay isolated to the active row and
+    // do not update this template.
+    await syncAutoSubmitTemplateFromCurrentForm(values);
 
     // D1 registration is the submitted request. Do not also save the same data into
     // the account draft automatically; that Firestore write is only needed when the
