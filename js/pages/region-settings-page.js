@@ -919,12 +919,18 @@ async function save(event, overrides = {}) {
 
 async function startRegistrationNow() {
   if (!currentUser || !currentRegion) return;
-  const message = t('regionSettings.startNowConfirmMessage', 'The form will open immediately and a new clean cycle will be created. The player table and tower plan will be cleared.');
+  const alreadyOpen = Boolean(getRegionFormStatus(currentSettings || {}).open);
+  const titleKey = alreadyOpen ? 'regionSettings.startNowAlreadyOpenTitle' : 'regionSettings.startNowConfirmTitle';
+  const messageKey = alreadyOpen ? 'regionSettings.startNowAlreadyOpenMessage' : 'regionSettings.startNowConfirmMessage';
+  const acceptKey = alreadyOpen ? 'regionSettings.startNowAlreadyOpenAccept' : 'regionSettings.startNow';
+  const message = t(messageKey, alreadyOpen
+    ? 'The registration form is already open. Starting it again will create a new clean cycle and clear the current player table and turrets. Continue?'
+    : 'The form will open immediately and a new clean cycle will be created. The player table and tower plan will be cleared.');
   const ok = window.WKD?.confirmDialog
     ? await window.WKD.confirmDialog({
-        title: t('regionSettings.startNowConfirmTitle', 'Start registration now?'),
+        title: t(titleKey, alreadyOpen ? 'Registration is already running' : 'Start registration now?'),
         message,
-        acceptText: t('regionSettings.startNow', 'Start now'),
+        acceptText: t(acceptKey, alreadyOpen ? 'Yes, start a new cycle' : 'Start now'),
         cancelText: t('ui.cancel', 'Cancel')
       })
     : window.confirm(message);
