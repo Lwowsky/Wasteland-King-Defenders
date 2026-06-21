@@ -1817,9 +1817,8 @@ async function handleRegionFormSettingsPut(request, env) {
     : requestedRawCycleId;
   const openNewCycle = Boolean(requestedOpenNewCycle);
   const actorName = await readDirectoryActorName(db, user, region).catch(() => '')
-    || clean(user?.name || user?.email || incomingSettings.updatedByName || incomingSettings.openedByName || '', 120);
-  const previousSettings = previousForm?.settings && typeof previousForm.settings === 'object' ? previousForm.settings : {};
-  const settingsForSave = { ...previousSettings, ...incomingSettings, currentCycleId: requestedCycleId, updatedByName: actorName, updatedAtMs: nowMs };
+    || clean(incomingSettings.updatedByName || incomingSettings.openedByName || user?.name || user?.email || '', 120);
+  const settingsForSave = { ...incomingSettings, currentCycleId: requestedCycleId, updatedByName: actorName, updatedAtMs: nowMs };
   if (openNewCycle || (settingsForSave.enabled && !previousForm?.settings?.enabled)) {
     settingsForSave.openedAtMs = nowMs;
     settingsForSave.openedByUid = user.uid;

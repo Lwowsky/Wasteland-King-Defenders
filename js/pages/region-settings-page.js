@@ -26,7 +26,7 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=049';
+} from '../services/region-db.js?v=051';
 import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=025';
 import { makePublicShareUrl } from '../core/share-links.js?v=256';
 

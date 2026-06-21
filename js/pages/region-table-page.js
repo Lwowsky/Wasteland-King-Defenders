@@ -21,8 +21,8 @@ import {
   updateRegionRegistration,
   deleteRegionRegistrations,
   regionRegistrationToPlayer
-} from '../services/region-db.js?v=049';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=049';
+} from '../services/region-db.js?v=051';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=051';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
