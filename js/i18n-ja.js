@@ -1627,6 +1627,7 @@ window.WKD_TRANSLATIONS.ja = {
   'players.regionSwitchLabel': '地域',
 
   'common.continue': '続ける',
+  'common.ok': 'OK',
   'regionForm.saveDraft': 'テンプレートとして保存',
   'region.draftSaved': '現在の申請データをこの端末に保存しました。',
   'region.autoSubmitting': 'プロフィールから自動で申請を送信しています...',
@@ -2065,6 +2066,7 @@ window.WKD_TRANSLATIONS.ja = {
   "players.regionToLocalPreparing": 'Loading the region table from D1 cache...',
   "players.localToRegionGlobalRateLimited": 'Import to R{region} was already performed. Try again in {time}.',
   "region.autoProfileTierMismatch": "自動登録は送信されませんでした。プロフィールは {profileTier} ですが、現在のフォーム最低条件は {minTier} です。手動で確認してください。",
+  "profile.formDataSavedAutoTierMismatch": "フォームテンプレートをプロフィールに保存しました。自動登録は送信されませんでした。プロフィールは {profileTier} ですが、現在のフォーム最低条件は {minTier} です。手動で確認してください。",
   // v171 local import translations and syntax guard
 
   "players.localToRegionConfirmTitle": "ローカルリストを地域に移動しますか？",

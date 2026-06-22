@@ -1627,6 +1627,7 @@ window.WKD_TRANSLATIONS.pl = {
   'players.regionSwitchLabel': 'Region',
 
   'common.continue': 'Kontynuuj',
+  'common.ok': 'OK',
   'regionForm.saveDraft': 'Zapisz jako szablon',
   'region.draftSaved': 'Bieżące dane zgłoszenia zapisano na tym urządzeniu.',
   'region.autoSubmitting': 'Automatycznie wysyłam zgłoszenie z profilu...',
@@ -2065,6 +2066,7 @@ window.WKD_TRANSLATIONS.pl = {
   "players.regionToLocalPreparing": 'Loading the region table from D1 cache...',
   "players.localToRegionGlobalRateLimited": 'Import to R{region} was already performed. Try again in {time}.',
   "region.autoProfileTierMismatch": "Automatyczne zgłoszenie nie zostało wysłane: w profilu jest {profileTier}, ale minimum formularza to teraz {minTier}. Sprawdź dane ręcznie.",
+  "profile.formDataSavedAutoTierMismatch": "Szablon formularza zapisano w profilu. Automatyczne zgłoszenie nie zostało wysłane: w profilu jest {profileTier}, ale minimum formularza to teraz {minTier}. Sprawdź dane ręcznie.",
   // v171 local import translations and syntax guard
 
   "players.localToRegionConfirmTitle": "Przenieść listę lokalną do regionu?",

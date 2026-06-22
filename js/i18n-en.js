@@ -1627,6 +1627,7 @@ window.WKD_TRANSLATIONS.en = {
   'players.regionSwitchLabel': 'Region',
 
   'common.continue': 'Continue',
+  'common.ok': 'OK',
   'regionForm.saveDraft': 'Save as template',
   'region.draftSaved': 'Current request data saved on this device.',
   'region.autoSubmitting': 'Automatically sending the request from profile...',
@@ -2068,6 +2069,7 @@ window.WKD_TRANSLATIONS.en = {
   "players.regionToLocalPreparing": 'Loading the region table from D1 cache...',
   "players.localToRegionGlobalRateLimited": 'Import to R{region} was already performed. Try again in {time}.',
   "region.autoProfileTierMismatch": "Auto registration was not sent: the profile has {profileTier}, but the form minimum is now {minTier}. Check the data manually.",
+  "profile.formDataSavedAutoTierMismatch": "The form template was saved to the profile. Auto registration was not sent: the profile has {profileTier}, but the form minimum is now {minTier}. Check the data manually.",
   // v171 local import translations and syntax guard
 
   "players.localToRegionConfirmTitle": "Move local list to region?",

@@ -1627,6 +1627,7 @@ window.WKD_TRANSLATIONS.ru = {
   'players.regionSwitchLabel': 'Регион',
 
   'common.continue': 'Продолжить',
+  'common.ok': 'ОК',
   'regionForm.saveDraft': 'Сохранить как шаблон',
   'region.draftSaved': 'Текущие данные заявки сохранены на этом устройстве.',
   'region.autoSubmitting': 'Автоматически отправляю заявку из профиля...',
@@ -2065,6 +2066,7 @@ window.WKD_TRANSLATIONS.ru = {
   "players.regionToLocalPreparing": 'Loading the region table from D1 cache...',
   "players.localToRegionGlobalRateLimited": 'Import to R{region} was already performed. Try again in {time}.',
   "region.autoProfileTierMismatch": "Автоматическая заявка не отправлена: в профиле указано {profileTier}, но минимум формы сейчас {minTier}. Проверь данные вручную.",
+  "profile.formDataSavedAutoTierMismatch": "Шаблон формы сохранён в профиле. Автоматическая заявка не отправлена: в профиле указано {profileTier}, но минимум формы сейчас {minTier}. Проверь данные вручную.",
   // v171 local import translations and syntax guard
 
   "players.localToRegionConfirmTitle": "Перенести локальный список в регион?",

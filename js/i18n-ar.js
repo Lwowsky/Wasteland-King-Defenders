@@ -1625,6 +1625,7 @@ window.WKD_TRANSLATIONS.ar = {
   'players.regionSwitchLabel': 'المنطقة',
 
   'common.continue': 'متابعة',
+  'common.ok': 'موافق',
   'regionForm.saveDraft': 'حفظ كقالب',
   'region.draftSaved': 'تم حفظ بيانات الطلب الحالية على هذا الجهاز.',
   'region.autoSubmitting': 'يتم إرسال الطلب تلقائياً من الملف الشخصي...',
@@ -2063,6 +2064,7 @@ window.WKD_TRANSLATIONS.ar = {
   "players.regionToLocalPreparing": 'Loading the region table from D1 cache...',
   "players.localToRegionGlobalRateLimited": 'Import to R{region} was already performed. Try again in {time}.',
   "region.autoProfileTierMismatch": "لم يتم إرسال التسجيل التلقائي: الملف الشخصي يحتوي على {profileTier}، لكن الحد الأدنى للنموذج الآن هو {minTier}. تحقق من البيانات يدويا.",
+  "profile.formDataSavedAutoTierMismatch": "تم حفظ قالب النموذج في الملف الشخصي. لم يتم إرسال التسجيل التلقائي: الملف الشخصي يحتوي على {profileTier}، لكن الحد الأدنى للنموذج الآن هو {minTier}. تحقق من البيانات يدويا.",
   // v171 local import translations and syntax guard
 
   "players.localToRegionConfirmTitle": "نقل القائمة المحلية إلى المنطقة؟",

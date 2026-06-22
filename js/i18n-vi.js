@@ -1627,6 +1627,7 @@ window.WKD_TRANSLATIONS.vi = {
   'players.regionSwitchLabel': 'Khu vực',
 
   'common.continue': 'Tiếp tục',
+  'common.ok': 'OK',
   'regionForm.saveDraft': 'Lưu làm mẫu',
   'region.draftSaved': 'Dữ liệu đơn hiện tại đã được lưu trên thiết bị này.',
   'region.autoSubmitting': 'Đang tự động gửi đơn từ hồ sơ...',
@@ -2065,6 +2066,7 @@ window.WKD_TRANSLATIONS.vi = {
   "players.regionToLocalPreparing": 'Loading the region table from D1 cache...',
   "players.localToRegionGlobalRateLimited": 'Import to R{region} was already performed. Try again in {time}.',
   "region.autoProfileTierMismatch": "Đơn đăng ký tự động chưa được gửi: hồ sơ có {profileTier}, nhưng mức tối thiểu của biểu mẫu hiện là {minTier}. Hãy kiểm tra thủ công.",
+  "profile.formDataSavedAutoTierMismatch": "Mẫu biểu mẫu đã được lưu vào hồ sơ. Đơn đăng ký tự động chưa được gửi: hồ sơ có {profileTier}, nhưng mức tối thiểu của biểu mẫu hiện là {minTier}. Hãy kiểm tra thủ công.",
   // v171 local import translations and syntax guard
 
   "players.localToRegionConfirmTitle": "Chuyển danh sách cục bộ vào khu vực?",

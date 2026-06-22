@@ -7,8 +7,8 @@ import {
   saveFarmWastelandProfile,
   saveSignedInUser
 } from '../services/user-db.js';
-import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=067';
-import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=067';
+import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=068';
+import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=068';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -558,7 +558,10 @@ async function saveProfileRegionData(event) {
     if (values.autoSubmitEnabled) {
       const result = await autoSubmitProfileRegionData(values, farm, { reason: 'save' });
       if (result?.invalidTier) {
-        setStickyStatus(`${t('profile.formDataSaved', 'Шаблон форми збережено в профілі. На Пустош нічого не відправлено.')} ${autoProfileTierMismatchMessage(values, currentRegionSettings)}`, 'warn');
+        setStickyStatus(tv('profile.formDataSavedAutoTierMismatch', 'The form template was saved to the profile. Auto registration was not sent: the profile has {profileTier}, but the form minimum is now {minTier}. Check the data manually.', {
+          profileTier: String(values.tier || '').trim().toUpperCase() || '—',
+          minTier: currentRegionSettings?.minTier || 'T10'
+        }), 'warn');
         return;
       }
       if (result?.invalid) return;

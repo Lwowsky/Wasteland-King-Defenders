@@ -1627,6 +1627,7 @@ window.WKD_TRANSLATIONS.zh = {
   'players.regionSwitchLabel': '区域',
 
   'common.continue': '继续',
+  'common.ok': '确定',
   'regionForm.saveDraft': '保存为模板',
   'region.draftSaved': '当前申请数据已保存在此设备上。',
   'region.autoSubmitting': '正在从资料自动提交申请...',
@@ -2065,6 +2066,7 @@ window.WKD_TRANSLATIONS.zh = {
   "players.regionToLocalPreparing": 'Loading the region table from D1 cache...',
   "players.localToRegionGlobalRateLimited": 'Import to R{region} was already performed. Try again in {time}.',
   "region.autoProfileTierMismatch": "自动报名未发送：个人资料为 {profileTier}，但当前表单最低要求为 {minTier}。请手动检查数据。",
+  "profile.formDataSavedAutoTierMismatch": "表单模板已保存到资料中。自动报名未发送：个人资料为 {profileTier}，但当前表单最低要求为 {minTier}。请手动检查数据。",
   // v171 local import translations and syntax guard
 
   "players.localToRegionConfirmTitle": "将本地列表移到地区？",

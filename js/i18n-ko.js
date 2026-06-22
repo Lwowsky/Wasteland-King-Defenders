@@ -1627,6 +1627,7 @@ window.WKD_TRANSLATIONS.ko = {
   'players.regionSwitchLabel': '지역',
 
   'common.continue': '계속',
+  'common.ok': '확인',
   'regionForm.saveDraft': '템플릿으로 저장',
   'region.draftSaved': '현재 신청 데이터가 이 기기에 저장되었습니다.',
   'region.autoSubmitting': '프로필에서 신청을 자동으로 보내는 중...',
@@ -2065,6 +2066,7 @@ window.WKD_TRANSLATIONS.ko = {
   "players.regionToLocalPreparing": 'Loading the region table from D1 cache...',
   "players.localToRegionGlobalRateLimited": 'Import to R{region} was already performed. Try again in {time}.',
   "region.autoProfileTierMismatch": "자동 등록을 보내지 않았습니다. 프로필은 {profileTier}이지만 현재 양식 최소 조건은 {minTier}입니다. 수동으로 확인하세요.",
+  "profile.formDataSavedAutoTierMismatch": "양식 템플릿이 프로필에 저장되었습니다. 자동 등록을 보내지 않았습니다. 프로필은 {profileTier}이지만 현재 양식 최소 조건은 {minTier}입니다. 수동으로 확인하세요.",
   // v171 local import translations and syntax guard
 
   "players.localToRegionConfirmTitle": "로컬 목록을 지역으로 옮길까요?",

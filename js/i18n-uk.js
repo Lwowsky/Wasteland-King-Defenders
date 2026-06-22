@@ -1627,6 +1627,7 @@ window.WKD_TRANSLATIONS.uk = {
   'players.regionSwitchLabel': 'Регіон',
 
   'common.continue': 'Продовжити',
+  'common.ok': 'Ок',
   'regionForm.saveDraft': 'Зберегти як шаблон',
   'region.draftSaved': 'Поточні дані заявки збережено на цьому пристрої.',
   'region.autoSubmitting': 'Автоматично відправляю заявку з профілю...',
@@ -2068,6 +2069,7 @@ window.WKD_TRANSLATIONS.uk = {
   "players.regionToLocalPreparing": 'Завантажую регіональну таблицю з кешу D1...',
   "players.localToRegionGlobalRateLimited": 'Перенос у R{region} уже виконували. Повторити можна через {time}.',
   "region.autoProfileTierMismatch": "Автоматичну заявку не відправлено: у профілі вказано {profileTier}, але мінімум форми зараз {minTier}. Перевір дані вручну.",
+  "profile.formDataSavedAutoTierMismatch": "Шаблон форми збережено в профілі. Автоматичну заявку не відправлено: у профілі вказано {profileTier}, але мінімум форми зараз {minTier}. Перевір дані вручну.",
   // v171 local import translations and syntax guard
 
   "players.localToRegionConfirmTitle": "Перенести локальний список у регіон?",
