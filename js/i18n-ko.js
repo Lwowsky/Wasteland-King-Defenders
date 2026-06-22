@@ -1670,8 +1670,6 @@ window.WKD_TRANSLATIONS.ko = {
   "actionLog.type.registration_closed": "등록 종료",
   "actionLog.type.registration_settings_saved": "지역 양식 저장",
   "actionLog.type.registration_submitted": "신청 제출",
-  "actionLog.type.region_player_updated": "지역 플레이어 업데이트",
-  "actionLog.regionPlayerUpdated": "지역 테이블의 플레이어를 업데이트했습니다",
   "actionLog.type.tower_plan_saved": "타워 계획 저장",
   "actionLog.type.final_plan_shared": "최종 계획 링크 생성",
   'actionLog.type.region_table_shared': '지역 표 링크 생성',

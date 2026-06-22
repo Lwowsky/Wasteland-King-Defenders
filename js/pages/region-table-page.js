@@ -1,4 +1,4 @@
-import { makePublicShareUrl, rememberShareCode } from '../core/share-links.js?v=073';
+import { makePublicShareUrl, rememberShareCode } from '../core/share-links.js?v=074';
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, saveSignedInUser } from '../services/user-db.js';
 import {
@@ -21,8 +21,8 @@ import {
   updateRegionRegistration,
   deleteRegionRegistrations,
   regionRegistrationToPlayer
-} from '../services/region-db.js?v=073';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=073';
+} from '../services/region-db.js?v=074';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=074';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
@@ -883,7 +883,8 @@ async function load(user, options = {}) {
       region: result.region,
       cycleId: result.settings?.currentCycleId || '',
       settings: result.settings || {},
-      rows: result.rows || []
+      rows: result.rows || [],
+      actorAccess: actorAccessForRegionRequest()
     });
     serverPagedTable = false;
   }

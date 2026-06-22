@@ -95,11 +95,11 @@ export async function createRegionActionLogD1(user, payload = {}) {
   if (!row.region) throw new Error('region-required');
   return requestJson('/api/action-log', user, {
     method: 'POST',
-    body: JSON.stringify(row)
+    body: JSON.stringify({ ...row, actorAccess: payload.actorAccess || null })
   });
 }
 
-export async function listRegionActionLogsD1(user, region, { limitCount = 20, cursorMs = 0, alliance = '' } = {}) {
+export async function listRegionActionLogsD1(user, region, { limitCount = 20, cursorMs = 0, alliance = '', actorAccess = null } = {}) {
   if (!isActionLogCacheEnabled()) throw new Error('action-log-cache-disabled');
   const safeRegion = cleanRegion(region);
   if (!safeRegion) throw new Error('region-required');
@@ -109,6 +109,7 @@ export async function listRegionActionLogsD1(user, region, { limitCount = 20, cu
   if (Number(cursorMs) > 0) params.set('cursorMs', String(Number(cursorMs)));
   const safeAlliance = cleanText(alliance || '', 40).toUpperCase();
   if (safeAlliance) params.set('alliance', safeAlliance);
+  if (actorAccess) params.set('actorAccess', JSON.stringify(actorAccess));
   const data = await requestJson(`/api/action-log?${params.toString()}`, user);
   return {
     ...data,

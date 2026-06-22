@@ -1668,8 +1668,6 @@ window.WKD_TRANSLATIONS.ar = {
   "actionLog.type.registration_closed": "أغلق التسجيل",
   "actionLog.type.registration_settings_saved": "حفظ نموذج المنطقة",
   "actionLog.type.registration_submitted": "أرسل الطلب",
-  "actionLog.type.region_player_updated": "تم تحديث لاعب المنطقة",
-  "actionLog.regionPlayerUpdated": "تم تحديث لاعب في جدول المنطقة",
   "actionLog.type.tower_plan_saved": "حفظ خطة الأبراج",
   "actionLog.type.final_plan_shared": "أنشأ رابط الخطة النهائية",
   'actionLog.type.region_table_shared': 'أنشأ رابط جدول المنطقة',

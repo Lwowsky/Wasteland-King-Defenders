@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=073';
+import { trackCloudflareUsage } from './usage-tracker.js?v=074';
 
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
 const SHARE_TABLE_CACHE_TTL_MS = 10 * 60 * 1000;
@@ -1149,7 +1149,8 @@ export async function publishRegionTableSnapshot(user, payload = {}) {
       region: safeRegion,
       cycleId: cleanText(payload.cycleId || payload.settings?.currentCycleId || 'active', 80),
       settings: sanitizeSettings(payload.settings || {}),
-      rows
+      rows,
+      actorAccess: payload.actorAccess || null
     })
   }).then(result => {
     if (result?.ok !== false) writeLocalTableCache('regionTableSnapshot', safeRegion, { region: safeRegion, settings: sanitizeSettings(payload.settings || {}), rows, version: Date.now() });

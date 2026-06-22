@@ -1670,8 +1670,6 @@ window.WKD_TRANSLATIONS.uk = {
   'actionLog.type.registration_closed': 'Закрив реєстрацію',
   'actionLog.type.registration_settings_saved': 'Зберіг форму регіону',
   'actionLog.type.registration_submitted': 'Подав заявку',
-  'actionLog.type.region_player_updated': 'Оновив гравця регіону',
-  'actionLog.regionPlayerUpdated': 'Оновлено гравця в таблиці регіону',
   'actionLog.type.tower_plan_saved': 'Зберіг розподіл турелей',
   'actionLog.type.final_plan_shared': 'Створив посилання фінального плану',
   'actionLog.type.region_table_shared': 'Створив посилання таблиці регіону',

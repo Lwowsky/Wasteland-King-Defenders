@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=073';
-import { readRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError } from '../services/region-table-cache.js?v=073';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=074';
+import { readRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError } from '../services/region-table-cache.js?v=074';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -773,7 +773,7 @@ async function copyLocalToRegion() {
     const result = await importLocalPlayersToRegion(currentUser, rowsForImport, regionToImport, { mode: selection.mode, dedupe: false });
     const region = result.region || regionToImport;
     if (selection.resetTowerPlan === true) {
-      await saveRegionTowerPlan(currentUser, region, { version: 1, updatedAtMs: Date.now(), regions: { home: {}, region2: {}, region3: {} } }).catch(error => console.warn('tower plan reset skipped', error));
+      await saveRegionTowerPlan(currentUser, region, { version: 1, updatedAtMs: Date.now(), regions: { home: {}, region2: {}, region3: {} } }, { actorAccess: actorAccessForRegion(region) }).catch(error => console.warn('tower plan reset skipped', error));
       document.dispatchEvent(new CustomEvent('wkd:tower-plan-hard-reset', { detail: { source: 'local-to-region' } }));
     }
     loadedRegionRows = [];
@@ -861,7 +861,7 @@ async function updatePlayerInActiveSource(id, values = {}) {
 
   const stateRow = WKD.state.players.find(player => rowKey(player) === wanted);
   if (!stateRow?.regionRegistrationId) throw new Error('region-update-registration-only');
-  if (!canPlanLoadedRegion(loadedRegion || getGameProfile(currentProfile || {}).region)) {
+  if (!canManageRegion(currentProfile, loadedRegion || getGameProfile(currentProfile || {}).region, currentUser)) {
     throw new Error('region-update-access-denied');
   }
 
@@ -911,7 +911,7 @@ function getPlayersSourceInfo() {
     mode: currentMode,
     region,
     label: currentMode === 'region' ? currentRegionLabel() : t('playerManager.localList', 'local list'),
-    canUpdate: currentMode !== 'region' || canPlanLoadedRegion(region),
+    canUpdate: currentMode !== 'region' || canManageRegion(currentProfile, region, currentUser),
     canDelete: currentMode !== 'region' || canDeleteRegionRegistration(currentProfile, region, currentUser),
     canPlan: canPlanLoadedRegion(region),
     canViewRegion: canUseRegionSource()

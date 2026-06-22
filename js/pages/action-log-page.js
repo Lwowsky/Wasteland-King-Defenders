@@ -1,12 +1,12 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { canUseAdminPanel, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole } from '../services/user-db.js?v=073';
-import { canLeadCurrentRotation, getManagedRegionOptions, getRegionSettings, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=073';
+import { canUseAdminPanel, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole } from '../services/user-db.js?v=074';
+import { canLeadCurrentRotation, getManagedRegionOptions, getRegionSettings, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=074';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
 const PAGE_SIZE = 20;
-const ACTION_LOG_CACHE_BUILD = 'v253-auto-d1-load';
+const ACTION_LOG_CACHE_BUILD = 'v252-manual-local';
 const ACTION_LOG_CACHE_TTL_MS = 30 * 60 * 1000;
 const ACTION_LOG_REFRESH_WINDOW_MS = 10 * 60 * 1000;
 const ACTION_LOG_REFRESH_LIMIT = 10;
@@ -243,7 +243,6 @@ async function load(user, region = '') {
   rememberRegion(currentRegion);
   renderRegionList();
   showActionLogCache(currentRegion);
-  loadPage(currentRegion, 'reset').catch(console.error);
 }
 function bind() {
   $('#actionLogOpenBtn')?.addEventListener('click', () => { const region = normalizeRegion($('#actionLogRegionInput')?.value || ''); rememberRegion(region); load(currentUser, region).catch(console.error); });

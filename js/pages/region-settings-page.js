@@ -1,5 +1,5 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getFarmById, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=073';
+import { getFarmById, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=074';
 import {
   canManageRegion,
   canLeadCurrentRotation,
@@ -26,9 +26,9 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=073';
-import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=073';
-import { makePublicShareUrl } from '../core/share-links.js?v=073';
+} from '../services/region-db.js?v=074';
+import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=074';
+import { makePublicShareUrl } from '../core/share-links.js?v=074';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -574,7 +574,8 @@ async function restoreArchiveCycleToActiveD1() {
       region: currentRegion,
       cycleId: archiveSelectedCycleId,
       settings,
-      rows: result.rows
+      rows: result.rows,
+      actorAccess: actorAccessForCurrentRegion()
     });
     if (publishResult?.ok === false || publishResult?.skipped) throw new Error(publishResult?.error || 'restore-skipped');
     await loadArchiveCycles(true);

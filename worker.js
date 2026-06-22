@@ -1348,6 +1348,29 @@ function directoryRankNumber(value = '') {
   const match = String(value || '').match(/[1-5]/);
   return match ? Number(match[0]) : 1;
 }
+function actorAccessForRequest(user, region, actorAccess = null) {
+  const safeRegion = normalizeRegion(region);
+  if (!user?.uid || !safeRegion || !actorAccess || actorAccess.uid !== user.uid) return null;
+  if (normalizeRegion(actorAccess.region) !== safeRegion) return null;
+  return {
+    region: safeRegion,
+    alliance: directoryAlliance(actorAccess.alliance || ''),
+    role: directoryRole(actorAccess.role || ''),
+    rank: directoryRankNumber(actorAccess.rank || '')
+  };
+}
+function actorAccessCanManageRegion(user, region, actorAccess = null) {
+  const actor = actorAccessForRequest(user, region, actorAccess);
+  return Boolean(actor && ['admin', 'moderator', 'consul'].includes(actor.role));
+}
+function actorAccessCanLeadRegion(user, region, settings = {}, actorAccess = null) {
+  const actor = actorAccessForRequest(user, region, actorAccess);
+  if (!actor) return false;
+  if (['admin', 'moderator', 'consul'].includes(actor.role)) return true;
+  if (actor.role !== 'officer' || actor.rank < 4 || !actor.alliance) return false;
+  const activeAlliance = activeAllianceFromSettings(settings || {});
+  return Boolean(activeAlliance && activeAlliance === actor.alliance);
+}
 function accessHasCommandAlliance(access, region, alliance, minRank = 4) {
   const safeRegion = normalizeRegion(region);
   const safeAlliance = directoryAlliance(alliance);
@@ -1390,10 +1413,7 @@ async function canLeadRegionBySettingsD1(db, env, user, region, settings = {}) {
   const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
   if (access.isGlobal) return true;
   if (accessHasRegion(access, safeRegion) && accessHasRole(access, 'consul')) return true;
-  if (!accessHasRegion(access, safeRegion)) return false;
-  const activeAlliance = activeAllianceFromSettings(settings || {});
-  if (!activeAlliance) return false;
-  return Boolean(accessHasCommandAlliance(access, safeRegion, activeAlliance, 4));
+  return false;
 }
 async function canLeadCurrentRegionD1(db, env, user, region) {
   const safeRegion = normalizeRegion(region);
@@ -1403,14 +1423,8 @@ async function canLeadCurrentRegionD1(db, env, user, region) {
 }
 async function canLeadRegionByClientAccessD1(db, env, user, region, settings = {}, actorAccess = null) {
   const safeRegion = normalizeRegion(region);
-  if (!user?.uid || !safeRegion || !actorAccess || actorAccess.uid !== user.uid) return false;
-  const alliance = directoryAlliance(actorAccess.alliance || '');
-  if (!alliance || normalizeRegion(actorAccess.region) !== safeRegion) return false;
-  if (directoryRole(actorAccess.role || '') !== 'officer' || directoryRankNumber(actorAccess.rank || '') < 4) return false;
-  const activeAlliance = activeAllianceFromSettings(settings || {});
-  if (activeAlliance && activeAlliance !== alliance) return false;
-  const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
-  if (access.isGlobal || accessHasCommandAlliance(access, safeRegion, alliance, 4)) return true;
+  if (!user?.uid || !safeRegion) return false;
+  if (actorAccessCanLeadRegion(user, safeRegion, settings || {}, actorAccess)) return true;
   return false;
 }
 async function canEditRegionAllianceD1(db, env, user, region, alliance) {
@@ -2540,8 +2554,11 @@ async function handleRegionTableSnapshot(request, env) {
     .map((row) => sanitizeTableRow({ ...row, region }))
     .filter((row) => row.nickname);
   const emptyNewCycleSnapshot = rows.length === 0 && Boolean(body?.settings?.currentCycleId || body?.cycleId);
+  const form = await readRegionFormSettingsD1(db, region).catch(() => null);
+  const settingsForAccess = form?.settings || body?.settings || {};
   const allowed = await canWriteRegionD1(db, env, user, region)
-    || (emptyNewCycleSnapshot && await canLeadCurrentRegionD1(db, env, user, region));
+    || (emptyNewCycleSnapshot && await canLeadCurrentRegionD1(db, env, user, region))
+    || await canLeadRegionByClientAccessD1(db, env, user, region, settingsForAccess, body?.actorAccess || null);
   if (!allowed) return json({ ok: false, error: "region_access_denied" }, 403);
   const table = await saveTable(db, {
     region,
@@ -3515,16 +3532,22 @@ async function handleActionLogList(request, env) {
   const url = new URL(request.url);
   const region = normalizeRegion(url.searchParams.get("region"));
   if (!region) return json({ ok: false, error: "region_required" }, 400);
+  const actorAccess = parseJson(url.searchParams.get("actorAccess") || "null", null);
   const access = await readRegionLeadershipAccess(db, env, user, region);
   const form = await readRegionFormSettingsD1(db, region).catch(() => null);
   const canRead = Boolean(access.isGlobal
     || (accessHasRegion(access, region) && accessHasRole(access, 'consul'))
-    || await canLeadRegionBySettingsD1(db, env, user, region, form?.settings || {}));
+    || await canLeadRegionBySettingsD1(db, env, user, region, form?.settings || {})
+    || await canLeadRegionByClientAccessD1(db, env, user, region, form?.settings || {}, actorAccess));
   if (!canRead) return json({ ok: false, error: "action_log_access_denied" }, 403, "private, no-store");
   const limitValue = Math.max(1, Math.min(20, Number(url.searchParams.get("limit")) || 20));
   const cursorMs = Number(url.searchParams.get("cursorMs")) || 0;
   let alliance = clean(url.searchParams.get("alliance") || "", 40);
-  if (!access.isGlobal && !accessHasRole(access, 'consul')) {
+  const actor = actorAccessForRequest(user, region, actorAccess);
+  if (!access.isGlobal && !accessHasRole(access, 'consul') && actor?.role !== 'admin' && actor?.role !== 'moderator' && actor?.role !== 'consul') {
+    if (actor?.alliance) alliance = actor.alliance;
+  }
+  if (!access.isGlobal && !accessHasRole(access, 'consul') && !alliance) {
     const own = (access.alliances || []).find(pair => pair.startsWith(`${region}:`)) || '';
     alliance = directoryAlliance(own.split(':')[1] || alliance);
   }
@@ -3559,14 +3582,18 @@ async function handleActionLogCreate(request, env) {
   const region = normalizeRegion(body?.region);
   if (!region) return json({ ok: false, error: "region_required" }, 400);
   const access = await readRegionLeadershipAccess(db, env, user, region);
-  const allowed = Boolean(access.isGlobal || (accessHasRegion(access, region) && (accessHasRole(access, 'consul') || accessHasRole(access, 'officer'))));
+  const form = await readRegionFormSettingsD1(db, region).catch(() => null);
+  const actor = actorAccessForRequest(user, region, body?.actorAccess || null);
+  const allowed = Boolean(access.isGlobal
+    || (accessHasRegion(access, region) && accessHasRole(access, 'consul'))
+    || await canLeadRegionByClientAccessD1(db, env, user, region, form?.settings || {}, body?.actorAccess || null));
   if (!allowed) return json({ ok: false, error: "action_log_access_denied" }, 403, "private, no-store");
   const createdAtMs = Date.now();
   const id = clean(crypto.randomUUID(), 120);
   const details = sanitizeActionDetails(body?.details || {});
-  const ownAllianceForLog = !access.isGlobal && !accessHasRole(access, 'consul')
+  const ownAllianceForLog = actor?.alliance || (!access.isGlobal && !accessHasRole(access, 'consul')
     ? directoryAlliance(((access.alliances || []).find(pair => pair.startsWith(`${region}:`)) || '').split(':')[1] || '')
-    : directoryAlliance(body?.alliance || body?.actorAlliance || '');
+    : directoryAlliance(body?.alliance || body?.actorAlliance || ''));
   const row = {
     id,
     region,
@@ -3574,7 +3601,7 @@ async function handleActionLogCreate(request, env) {
     actorUid: clean(user.uid || "", 160),
     actorName: clean(body?.actorName || user.name || user.email || user.uid || "", 160),
     actorAlliance: ownAllianceForLog,
-    actorRole: access.isGlobal ? 'admin' : (accessHasRole(access, 'consul') ? 'consul' : (accessHasRole(access, 'officer') ? 'officer' : 'player')),
+    actorRole: actor?.role || (access.isGlobal ? 'admin' : (accessHasRole(access, 'consul') ? 'consul' : (accessHasRole(access, 'officer') ? 'officer' : 'player'))),
     alliance: ownAllianceForLog,
     targetUid: clean(body?.targetUid || "", 160),
     targetName: clean(body?.targetName || "", 160),

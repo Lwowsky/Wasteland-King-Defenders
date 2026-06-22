@@ -1670,8 +1670,6 @@ window.WKD_TRANSLATIONS.de = {
   "actionLog.type.registration_closed": "Registrierung geschlossen",
   "actionLog.type.registration_settings_saved": "Regionsformular gespeichert",
   "actionLog.type.registration_submitted": "Anfrage gesendet",
-  "actionLog.type.region_player_updated": "Regionsspieler aktualisiert",
-  "actionLog.regionPlayerUpdated": "Spieler in der Regionstabelle aktualisiert",
   "actionLog.type.tower_plan_saved": "Turmplan gespeichert",
   "actionLog.type.final_plan_shared": "Finalplan-Link erstellt",
   'actionLog.type.region_table_shared': 'Regionstabellen-Link erstellt',

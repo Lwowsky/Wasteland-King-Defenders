@@ -1670,8 +1670,6 @@ window.WKD_TRANSLATIONS.vi = {
   "actionLog.type.registration_closed": "Đã đóng đăng ký",
   "actionLog.type.registration_settings_saved": "Đã lưu biểu mẫu khu vực",
   "actionLog.type.registration_submitted": "Đã gửi đơn",
-  "actionLog.type.region_player_updated": "Đã cập nhật người chơi khu vực",
-  "actionLog.regionPlayerUpdated": "Đã cập nhật người chơi trong bảng khu vực",
   "actionLog.type.tower_plan_saved": "Đã lưu kế hoạch tháp",
   "actionLog.type.final_plan_shared": "Đã tạo liên kết kế hoạch cuối",
   'actionLog.type.region_table_shared': 'Đã tạo liên kết bảng khu vực',

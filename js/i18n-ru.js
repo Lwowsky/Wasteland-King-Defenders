@@ -1670,8 +1670,6 @@ window.WKD_TRANSLATIONS.ru = {
   'actionLog.type.registration_closed': 'Закрыл регистрацию',
   'actionLog.type.registration_settings_saved': 'Сохранил форму региона',
   'actionLog.type.registration_submitted': 'Отправил заявку',
-  'actionLog.type.region_player_updated': 'Обновил игрока региона',
-  'actionLog.regionPlayerUpdated': 'Игрок обновлён в таблице региона',
   'actionLog.type.tower_plan_saved': 'Сохранил план турелей',
   'actionLog.type.final_plan_shared': 'Создал ссылку финального плана',
   'actionLog.type.region_table_shared': 'Создал ссылку таблицы региона',

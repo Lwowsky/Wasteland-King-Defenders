@@ -1670,8 +1670,6 @@ window.WKD_TRANSLATIONS.pl = {
   'actionLog.type.registration_closed': 'Zamknął rejestrację',
   'actionLog.type.registration_settings_saved': 'Zapisał formularz regionu',
   'actionLog.type.registration_submitted': 'Wysłał zgłoszenie',
-  'actionLog.type.region_player_updated': 'Zaktualizował gracza regionu',
-  'actionLog.regionPlayerUpdated': 'Zaktualizowano gracza w tabeli regionu',
   'actionLog.type.tower_plan_saved': 'Zapisał plan wież',
   'actionLog.type.final_plan_shared': 'Utworzył link planu końcowego',
   'actionLog.type.region_table_shared': 'Utworzył link do tabeli regionu',
