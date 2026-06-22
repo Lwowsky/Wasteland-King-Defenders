@@ -7,8 +7,8 @@ import {
   saveFarmWastelandProfile,
   saveSignedInUser
 } from '../services/user-db.js';
-import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=068';
-import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=068';
+import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=069';
+import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=069';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -76,18 +76,35 @@ let currentRegionSettings = null;
 let ready = false;
 let profileRegionStatusLockUntil = 0;
 let autoSubmitInProgress = false;
+let profileRegionStatusI18n = null;
 
-function setStatus(text, type = 'muted') {
+function translateStatusEntry(entry = null) {
+  if (!entry?.key) return '';
+  return tv(entry.key, entry.fallback || entry.key, entry.vars || {});
+}
+
+function setStatus(text, type = 'muted', i18nEntry = null) {
   const box = $('#regionStatus');
   if (!box) return;
   box.removeAttribute('data-i18n');
   box.textContent = text;
   box.dataset.type = type;
+  profileRegionStatusI18n = i18nEntry ? { ...i18nEntry, type } : null;
+}
+
+function setStatusKey(key, fallback = '', type = 'muted', vars = {}) {
+  const entry = { key, fallback, vars };
+  setStatus(translateStatusEntry(entry), type, entry);
 }
 
 function setStickyStatus(text, type = 'success', durationMs = 18000) {
   profileRegionStatusLockUntil = Date.now() + durationMs;
   setStatus(text, type);
+}
+
+function setStickyStatusKey(key, fallback = '', type = 'success', vars = {}, durationMs = 18000) {
+  profileRegionStatusLockUntil = Date.now() + durationMs;
+  setStatusKey(key, fallback, type, vars);
 }
 
 function profileStatusLocked() {
@@ -324,16 +341,23 @@ async function fillSelectedFarm() {
   });
   $('#regionNumberPill') && ($('#regionNumberPill').textContent = farm.region ? `R${farm.region}` : 'R—');
   if (!profileStatusLocked()) {
-    const status = getRegionFormStatus(currentRegionSettings || {});
-    if (!farm.region) {
-      setStatus(t('profile.regionRequiredFirst', 'First set the region for this player in the “Profile” tab.'), 'warn');
-    } else if (saved.autoSubmitEnabled && status.open) {
-      setStatus(t('region.autoProfileReadyOpen', 'Автозаповнення увімкнено. Форма відкрита — заявка буде відправлена автоматично.'), 'muted');
-    } else if (saved.autoSubmitEnabled) {
-      setStatus(t('region.autoProfileReadyClosed', 'Автозаповнення увімкнено, але форма зараз закрита. Заявка не відправлена.'), 'warn');
-    } else {
-      setStatus(t('profile.regionFormFillHelp', 'Заповни дані для Пустоші й натисни «Зберегти як шаблон». На Пустош нічого не відправляється, якщо автозаповнення вимкнено або форма закрита.'), 'muted');
-    }
+    refreshProfileStatusText();
+  }
+}
+
+function refreshProfileStatusText() {
+  if (profileStatusLocked()) return;
+  const farm = getFarmById(profile || {}, selectedFarmId) || getGameProfile(profile || {});
+  const saved = farm?.wastelandProfile || {};
+  const status = getRegionFormStatus(currentRegionSettings || {});
+  if (!farm?.region) {
+    setStatusKey('profile.regionRequiredFirst', 'First set the region for this player in the “Profile” tab.', 'warn');
+  } else if (saved.autoSubmitEnabled && status.open) {
+    setStatusKey('region.autoProfileReadyOpen', 'Auto-fill is enabled. Registration is open — the request will be sent automatically.', 'muted');
+  } else if (saved.autoSubmitEnabled) {
+    setStatusKey('region.autoProfileReadyClosed', 'Auto-fill is enabled, but registration is closed now. The request was not sent.', 'warn');
+  } else {
+    setStatusKey('profile.regionFormFillHelp', 'Fill in Wasteland data and press “Save as template”. Nothing is sent to Wasteland here.', 'muted');
   }
 }
 
@@ -368,6 +392,15 @@ function toggleExtraFields() {
 function prepareProfileForm() {
   $('#regionCountdownBox') && ($('#regionCountdownBox').hidden = true);
   $('#wrRegionSelectWrap') && ($('#wrRegionSelectWrap').hidden = true);
+  renderProfileRegionChrome();
+  renderTroopOptions();
+  fillTierSelect($('#wrTier'), 'T10');
+  fillExtraTierSelects({});
+  renderShiftOptions('shift1');
+  $('#wastelandForm') && ($('#wastelandForm').hidden = false);
+}
+
+function renderProfileRegionChrome() {
   $('#regionFormState') && ($('#regionFormState').textContent = t('profile.savingToProfile', 'Saving to profile'));
   $('#regionFormState')?.classList.add('region-pill--open');
   $('#regionFormTitleText') && ($('#regionFormTitleText').textContent = t('profile.regionFormDataTitle', 'Region form data'));
@@ -382,11 +415,6 @@ function prepareProfileForm() {
   $('#resetWastelandFormBtn') && ($('#resetWastelandFormBtn').textContent = t('profile.clearFormData', 'Очистити форму'));
   const submit = $('#wastelandForm button[type="submit"]');
   if (submit) submit.textContent = t('profile.saveFormData', 'Зберегти як шаблон');
-  renderTroopOptions();
-  fillTierSelect($('#wrTier'), 'T10');
-  fillExtraTierSelects({});
-  renderShiftOptions('shift1');
-  $('#wastelandForm') && ($('#wastelandForm').hidden = false);
 }
 
 
@@ -399,10 +427,14 @@ function duplicateRequestMessage() {
 }
 
 function autoProfileTierMismatchMessage(values = {}, settings = currentRegionSettings || {}) {
-  return tv('region.autoProfileTierMismatch', 'Автоматичну заявку не відправлено: у профілі вказано {profileTier}, але мінімум форми зараз {minTier}. Перевір дані вручну.', {
+  return tv('region.autoProfileTierMismatch', 'Auto registration was not sent: the profile has {profileTier}, but the form minimum is now {minTier}. Check the data manually.', autoProfileTierMismatchVars(values, settings));
+}
+
+function autoProfileTierMismatchVars(values = {}, settings = currentRegionSettings || {}) {
+  return {
     profileTier: String(values.tier || '').trim().toUpperCase() || '—',
     minTier: settings?.minTier || 'T10'
-  });
+  };
 }
 
 function autoSubmitMarkerData(values = {}, farm = {}, settings = {}) {
@@ -515,7 +547,7 @@ async function autoSubmitProfileRegionData(values = {}, farm = {}, options = {})
       return { skipped: true, duplicate: true };
     }
     if (code === 'registration-invalid-tier') {
-      setStickyStatus(autoProfileTierMismatchMessage(values, settings), 'warn');
+      setStickyStatusKey('region.autoProfileTierMismatch', 'Auto registration was not sent: the profile has {profileTier}, but the form minimum is now {minTier}. Check the data manually.', 'warn', autoProfileTierMismatchVars(values, settings));
       return { skipped: true, invalid: true, invalidTier: true };
     }
     throw error;
@@ -558,10 +590,7 @@ async function saveProfileRegionData(event) {
     if (values.autoSubmitEnabled) {
       const result = await autoSubmitProfileRegionData(values, farm, { reason: 'save' });
       if (result?.invalidTier) {
-        setStickyStatus(tv('profile.formDataSavedAutoTierMismatch', 'The form template was saved to the profile. Auto registration was not sent: the profile has {profileTier}, but the form minimum is now {minTier}. Check the data manually.', {
-          profileTier: String(values.tier || '').trim().toUpperCase() || '—',
-          minTier: currentRegionSettings?.minTier || 'T10'
-        }), 'warn');
+        setStickyStatusKey('profile.formDataSavedAutoTierMismatch', 'The form template was saved to the profile. Auto registration was not sent: the profile has {profileTier}, but the form minimum is now {minTier}. Check the data manually.', 'warn', autoProfileTierMismatchVars(values, currentRegionSettings));
         return;
       }
       if (result?.invalid) return;
@@ -598,6 +627,7 @@ function openRegionForm() {
 
 
 function handleLanguageChange() {
+  renderProfileRegionChrome();
   const selectedTroop = $('#wrTroopType')?.value || '';
   const selectedShift = $('input[name="wrShift"]:checked')?.value || 'shift1';
   const extraEnabled = Boolean($('#wrExtraEnabled')?.checked);
@@ -612,6 +642,11 @@ function handleLanguageChange() {
     input.checked = Boolean(extraByType[input.dataset.extraTroop]);
   });
   toggleExtraFields();
+  if (profileRegionStatusI18n && profileStatusLocked()) {
+    setStatus(translateStatusEntry(profileRegionStatusI18n), profileRegionStatusI18n.type || 'muted', profileRegionStatusI18n);
+  } else {
+    refreshProfileStatusText();
+  }
 }
 
 function bind() {
