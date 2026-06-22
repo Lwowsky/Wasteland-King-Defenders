@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=069';
-import { readRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError } from '../services/region-table-cache.js?v=069';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=070';
+import { readRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError } from '../services/region-table-cache.js?v=070';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
