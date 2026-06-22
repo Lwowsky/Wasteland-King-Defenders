@@ -41,7 +41,7 @@ let lastStatusState = null;
 
 function statusTextFromState(state = {}) {
   if (!state?.key) return '';
-  const vars = state.vars || {};
+  const vars = statusVars(state.vars || {});
   return Object.keys(vars).length
     ? tv(state.key, state.fallback || state.key, vars)
     : t(state.key, state.fallback || state.key);
@@ -50,6 +50,14 @@ function statusTextFromState(state = {}) {
 function setStatusKey(key, fallback = '', type = 'muted', vars = {}) {
   const state = { key, fallback, vars, type };
   setStatus(statusTextFromState(state), type, state);
+}
+
+function statusVars(vars = {}) {
+  const next = { ...vars };
+  if (next.roleKey) next.role = roleLabel(next.roleKey);
+  if (next.farmKey === 'main') next.farm = t('account.mainPlayerGenitive', 'main player');
+  if (next.farmKey === 'farm') next.farm = t('account.farmGenitive', 'farm');
+  return next;
 }
 
 function setStatus(text, type = 'muted', state = null) {
@@ -327,11 +335,21 @@ function validate(values) {
 
 function buildSavedMessage(profile = {}) {
   const request = getActiveRoleRequest(profile);
-  const farmName = currentFarmId === 'main' ? t('account.mainPlayerGenitive', 'main player') : t('account.farmGenitive', 'farm');
   if (request?.status === 'pending') {
-    return tv('account.savedPending', '{farm} data saved. Role request “{role}” is waiting for admin approval.', { farm: farmName, role: roleLabel(request.requestedRole) });
+    const farmKey = currentFarmId === 'main' ? 'main' : 'farm';
+    return statusTextFromState({ key: 'account.savedPending', fallback: '{farm} data saved. Role request “{role}” is waiting for admin approval.', vars: { farmKey, roleKey: request.requestedRole } });
   }
   return currentFarmId === 'main' ? t('account.savedMain', 'Main player data saved.') : t('account.savedFarm', 'Farm data saved.');
+}
+
+function setSavedStatus(profile = {}) {
+  const request = getActiveRoleRequest(profile);
+  if (request?.status === 'pending') {
+    const farmKey = currentFarmId === 'main' ? 'main' : 'farm';
+    setStatusKey('account.savedPending', '{farm} data saved. Role request “{role}” is waiting for admin approval.', 'warn', { farmKey, roleKey: request.requestedRole });
+    return;
+  }
+  setStatus(buildSavedMessage(profile), 'success');
 }
 
 function needsRegionRoleReset(values) {
@@ -394,7 +412,7 @@ async function handleSave(event) {
     currentFarmId = values.farmId || 'main';
     fillForm(currentProfile);
     document.dispatchEvent(new CustomEvent('wkd:profile-updated', { detail: { profile: currentProfile } }));
-    setStatus(buildSavedMessage(currentProfile), getActiveRoleRequest(currentProfile)?.status === 'pending' ? 'warn' : 'success');
+    setSavedStatus(currentProfile);
 
     if (document.body.dataset.accountPage === 'register') {
       setTimeout(() => { window.location.href = 'profile.html'; }, 900);
@@ -623,7 +641,7 @@ async function initAccountPage() {
       } else {
         const request = getActiveRoleRequest(currentProfile);
         if (request?.status === 'pending') {
-          setStatusKey('account.requestPending', 'Role request “{role}” is waiting for approval.', 'warn', { role: roleLabel(request.requestedRole) });
+          setStatusKey('account.requestPending', 'Role request “{role}” is waiting for approval.', 'warn', { roleKey: request.requestedRole });
         } else if (page === 'register') {
           setStatusKey('account.fillMainFirst', 'Fill in the main player data for the first registration.', 'muted');
         } else {
