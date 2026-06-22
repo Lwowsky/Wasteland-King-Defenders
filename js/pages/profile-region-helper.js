@@ -7,8 +7,8 @@ import {
   saveFarmWastelandProfile,
   saveSignedInUser
 } from '../services/user-db.js';
-import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=066';
-import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=066';
+import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=067';
+import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=067';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -398,6 +398,13 @@ function duplicateRequestMessage() {
   return t('region.errorNicknameDuplicateGuestMessage', 'Заявка з таким нікнеймом уже є в активному циклі. Повторно такий самий нік не відправляється.');
 }
 
+function autoProfileTierMismatchMessage(values = {}, settings = currentRegionSettings || {}) {
+  return tv('region.autoProfileTierMismatch', 'Автоматичну заявку не відправлено: у профілі вказано {profileTier}, але мінімум форми зараз {minTier}. Перевір дані вручну.', {
+    profileTier: String(values.tier || '').trim().toUpperCase() || '—',
+    minTier: settings?.minTier || 'T10'
+  });
+}
+
 function autoSubmitMarkerData(values = {}, farm = {}, settings = {}) {
   return {
     region: farm?.region || values.region || '',
@@ -507,6 +514,10 @@ async function autoSubmitProfileRegionData(values = {}, farm = {}, options = {})
       setStickyStatus(duplicateRequestMessage(), 'warn');
       return { skipped: true, duplicate: true };
     }
+    if (code === 'registration-invalid-tier') {
+      setStickyStatus(autoProfileTierMismatchMessage(values, settings), 'warn');
+      return { skipped: true, invalid: true, invalidTier: true };
+    }
     throw error;
   } finally {
     autoSubmitInProgress = false;
@@ -546,6 +557,11 @@ async function saveProfileRegionData(event) {
     await syncServerAutoSubmitTemplate(values, farm, { force: true });
     if (values.autoSubmitEnabled) {
       const result = await autoSubmitProfileRegionData(values, farm, { reason: 'save' });
+      if (result?.invalidTier) {
+        setStickyStatus(`${t('profile.formDataSaved', 'Шаблон форми збережено в профілі. На Пустош нічого не відправлено.')} ${autoProfileTierMismatchMessage(values, currentRegionSettings)}`, 'warn');
+        return;
+      }
+      if (result?.invalid) return;
       if (!result?.closed && !result?.invalid) return;
       if (result?.closed) {
         setStickyStatus(t('region.autoTemplateSavedForNextOpen', 'Шаблон збережено. Коли форму відкриють, Worker автоматично додасть заявку без входу гравця на сайт.'), 'success');
