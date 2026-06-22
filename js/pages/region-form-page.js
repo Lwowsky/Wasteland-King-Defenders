@@ -1,4 +1,4 @@
-import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=074';
+import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=075';
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile, saveFarmWastelandProfile } from '../services/user-db.js';
 import {
@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=074';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=074';
+} from '../services/region-db.js?v=075';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=075';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -1034,9 +1034,10 @@ async function loadSignedInForm(user) {
   currentUser = user;
   await saveSignedInUser(user).catch(() => null);
   currentProfile = await getUserProfile(user.uid).catch(() => null);
+  let linkSettings = null;
   if (shortCodeFromLink) {
     try {
-      await resolveShortLinkSettings();
+      linkSettings = await resolveShortLinkSettings();
     } catch (error) {
       console.warn('[WKD] short link ignored for signed-in player:', error);
       shortCodeFromLink = '';
@@ -1060,7 +1061,7 @@ async function loadSignedInForm(user) {
     const matchFarmId = firstFarmIdForRegion(currentProfile, currentRegion);
     if (matchFarmId) selectedFarmId = matchFarmId;
   }
-  const settings = await loadRegionFormSettings(currentRegion);
+  const settings = linkSettings || await loadRegionFormSettings(currentRegion);
   $('#openRegionTableBtn').hidden = !canViewRegion(currentProfile, currentRegion, currentUser);
   const open = await prepareForm(settings);
   renderSavedFarmTools(currentProfile);

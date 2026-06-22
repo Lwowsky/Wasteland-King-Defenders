@@ -1831,10 +1831,12 @@ async function handleRegionFormSettingsPut(request, env) {
   const previousForm = await readRegionFormSettingsD1(db, region).catch(() => null);
   let incomingSettings = body?.settings && typeof body.settings === 'object' ? { ...body.settings } : {};
   const previousSettingsForAccess = previousForm?.settings && typeof previousForm.settings === 'object' ? previousForm.settings : {};
-  const canManageFullRegion = await canManageRegionD1(db, env, user, region);
+  const hasActorAccess = Boolean(actorAccessForRequest(user, region, body?.actorAccess || null));
+  const canManageFullRegion = actorAccessCanManageRegion(user, region, body?.actorAccess || null)
+    || (!hasActorAccess && await canManageRegionD1(db, env, user, region));
   const allowed = canManageFullRegion
-    || await canLeadRegionBySettingsD1(db, env, user, region, previousSettingsForAccess)
-    || await canLeadRegionByClientAccessD1(db, env, user, region, previousSettingsForAccess, body?.actorAccess || null);
+    || await canLeadRegionByClientAccessD1(db, env, user, region, previousSettingsForAccess, body?.actorAccess || null)
+    || (!hasActorAccess && await canLeadRegionBySettingsD1(db, env, user, region, previousSettingsForAccess));
   if (!allowed) return json({ ok: false, error: 'region_leadership_required' }, 403);
   if (!canManageFullRegion) {
     incomingSettings = {
@@ -2399,8 +2401,16 @@ async function handleRegionTableRegistration(request, env) {
   if (!user?.uid && !isPublicRegistration) return json({ ok: false, error: "auth_required" }, 401);
 
   let canonicalForm = null;
-  if (!user?.uid) {
-    const shareCode = normalizeCode(body?.shareCode || "");
+  const submittedShareCode = normalizeCode(body?.shareCode || "");
+  if (isPublicRegistration && submittedShareCode) {
+    canonicalForm = await readRegionFormShareD1(db, submittedShareCode);
+    if (!canonicalForm) return json({ ok: false, error: "share_not_found" }, 404);
+    if (normalizeRegion(canonicalForm.region) !== region) return json({ ok: false, error: "share_region_mismatch" }, 403);
+    const canonicalCycleId = normalizeCycleId(canonicalForm.cycleId || canonicalForm.settings?.currentCycleId || "active");
+    cycleId = canonicalCycleId || cycleId;
+    if (!isRegionFormOpenD1(canonicalForm.settings || {})) return json({ ok: false, error: "region_form_closed" }, 423, "private, no-store");
+  } else if (!user?.uid) {
+    const shareCode = submittedShareCode;
     if (!shareCode) return json({ ok: false, error: "share_code_required" }, 403);
     canonicalForm = await readRegionFormShareD1(db, shareCode);
     if (!canonicalForm) return json({ ok: false, error: "share_not_found" }, 404);
@@ -2468,16 +2478,18 @@ async function handleRegionTableRegistration(request, env) {
   }
 
   const isOwner = Boolean(user?.uid && (row.uid === user.uid || !row.uid));
+  const hasActorAccess = Boolean(actorAccessForRequest(user, region, body?.actorAccess || null));
   const activeOfficerCanEdit = existingRow
-    ? (await canLeadRegionBySettingsD1(db, env, user, region, currentSettings)
-      || await canLeadCurrentRegionD1(db, env, user, region)
-      || await canLeadRegionByClientAccessD1(db, env, user, region, currentSettings, body?.actorAccess || null))
+    ? (await canLeadRegionByClientAccessD1(db, env, user, region, currentSettings, body?.actorAccess || null)
+      || (!hasActorAccess && await canLeadRegionBySettingsD1(db, env, user, region, currentSettings))
+      || (!hasActorAccess && await canLeadCurrentRegionD1(db, env, user, region)))
     : false;
   const canWrite = user?.uid
     ? (isOwner
-      || await canManageRegionD1(db, env, user, region)
-      || (existingRow && await canEditRegionAllianceD1(db, env, user, region, row.alliance))
-      || activeOfficerCanEdit)
+      || actorAccessCanManageRegion(user, region, body?.actorAccess || null)
+      || activeOfficerCanEdit
+      || (!hasActorAccess && await canManageRegionD1(db, env, user, region))
+      || (!hasActorAccess && existingRow && await canEditRegionAllianceD1(db, env, user, region, row.alliance)))
     : Boolean(isPublicRegistration && publicShareCode && row.nickname && row.publicKey);
   if (!canWrite) return json({ ok: false, error: "row_owner_mismatch" }, 403);
 
@@ -2556,9 +2568,11 @@ async function handleRegionTableSnapshot(request, env) {
   const emptyNewCycleSnapshot = rows.length === 0 && Boolean(body?.settings?.currentCycleId || body?.cycleId);
   const form = await readRegionFormSettingsD1(db, region).catch(() => null);
   const settingsForAccess = form?.settings || body?.settings || {};
-  const allowed = await canWriteRegionD1(db, env, user, region)
-    || (emptyNewCycleSnapshot && await canLeadCurrentRegionD1(db, env, user, region))
-    || await canLeadRegionByClientAccessD1(db, env, user, region, settingsForAccess, body?.actorAccess || null);
+  const hasActorAccess = Boolean(actorAccessForRequest(user, region, body?.actorAccess || null));
+  const allowed = actorAccessCanManageRegion(user, region, body?.actorAccess || null)
+    || await canLeadRegionByClientAccessD1(db, env, user, region, settingsForAccess, body?.actorAccess || null)
+    || (!hasActorAccess && emptyNewCycleSnapshot && await canLeadCurrentRegionD1(db, env, user, region))
+    || (!hasActorAccess && await canWriteRegionD1(db, env, user, region));
   if (!allowed) return json({ ok: false, error: "region_access_denied" }, 403);
   const table = await saveTable(db, {
     region,
@@ -2868,8 +2882,9 @@ async function handleFinalPlanShareCreate(request, env) {
   if (!plan.code || !plan.region) return json({ ok: false, error: 'code_region_required' }, 400);
   const form = await readRegionFormSettingsD1(db, plan.region).catch(() => null);
   const settings = form?.settings || {};
-  const allowed = await canLeadRegionBySettingsD1(db, env, user, plan.region, settings)
-    || await canLeadRegionByClientAccessD1(db, env, user, plan.region, settings, body?.actorAccess || null);
+  const hasActorAccess = Boolean(actorAccessForRequest(user, plan.region, body?.actorAccess || null));
+  const allowed = await canLeadRegionByClientAccessD1(db, env, user, plan.region, settings, body?.actorAccess || null)
+    || (!hasActorAccess && await canLeadRegionBySettingsD1(db, env, user, plan.region, settings));
   if (!allowed) return json({ ok: false, error: 'region_leadership_required' }, 403);
   await db.prepare(
     `INSERT INTO final_plan_shares (code, region, cycle_id, event_start_at_ms, title, shift, html, text, updated_at_ms, updated_by, updated_by_name, expires_at_ms, revoked)
@@ -3047,8 +3062,9 @@ async function handleTowerPlanPut(request, env) {
   if (!payload.region) return json({ ok: false, error: 'region_required' }, 400);
   const form = await readRegionFormSettingsD1(db, payload.region).catch(() => null);
   const settings = form?.settings || {};
-  const allowed = await canLeadRegionBySettingsD1(db, env, user, payload.region, settings)
-    || await canLeadRegionByClientAccessD1(db, env, user, payload.region, settings, body?.actorAccess || null);
+  const hasActorAccess = Boolean(actorAccessForRequest(user, payload.region, body?.actorAccess || null));
+  const allowed = await canLeadRegionByClientAccessD1(db, env, user, payload.region, settings, body?.actorAccess || null)
+    || (!hasActorAccess && await canLeadRegionBySettingsD1(db, env, user, payload.region, settings));
   if (!allowed) return json({ ok: false, error: 'region_plan_access_denied' }, 403);
   await db.prepare(
     `INSERT INTO region_tower_plans (region, cycle_id, version, updated_at_ms, updated_by, updated_by_name, plan_json)
@@ -3535,10 +3551,12 @@ async function handleActionLogList(request, env) {
   const actorAccess = parseJson(url.searchParams.get("actorAccess") || "null", null);
   const access = await readRegionLeadershipAccess(db, env, user, region);
   const form = await readRegionFormSettingsD1(db, region).catch(() => null);
-  const canRead = Boolean(access.isGlobal
-    || (accessHasRegion(access, region) && accessHasRole(access, 'consul'))
-    || await canLeadRegionBySettingsD1(db, env, user, region, form?.settings || {})
-    || await canLeadRegionByClientAccessD1(db, env, user, region, form?.settings || {}, actorAccess));
+  const hasActorAccess = Boolean(actorAccessForRequest(user, region, actorAccess));
+  const canRead = Boolean(actorAccessCanManageRegion(user, region, actorAccess)
+    || await canLeadRegionByClientAccessD1(db, env, user, region, form?.settings || {}, actorAccess)
+    || (!hasActorAccess && access.isGlobal)
+    || (!hasActorAccess && (accessHasRegion(access, region) && accessHasRole(access, 'consul')))
+    || (!hasActorAccess && await canLeadRegionBySettingsD1(db, env, user, region, form?.settings || {})));
   if (!canRead) return json({ ok: false, error: "action_log_access_denied" }, 403, "private, no-store");
   const limitValue = Math.max(1, Math.min(20, Number(url.searchParams.get("limit")) || 20));
   const cursorMs = Number(url.searchParams.get("cursorMs")) || 0;
@@ -3584,9 +3602,11 @@ async function handleActionLogCreate(request, env) {
   const access = await readRegionLeadershipAccess(db, env, user, region);
   const form = await readRegionFormSettingsD1(db, region).catch(() => null);
   const actor = actorAccessForRequest(user, region, body?.actorAccess || null);
-  const allowed = Boolean(access.isGlobal
-    || (accessHasRegion(access, region) && accessHasRole(access, 'consul'))
-    || await canLeadRegionByClientAccessD1(db, env, user, region, form?.settings || {}, body?.actorAccess || null));
+  const hasActorAccess = Boolean(actor);
+  const allowed = Boolean(actorAccessCanManageRegion(user, region, body?.actorAccess || null)
+    || await canLeadRegionByClientAccessD1(db, env, user, region, form?.settings || {}, body?.actorAccess || null)
+    || (!hasActorAccess && access.isGlobal)
+    || (!hasActorAccess && accessHasRegion(access, region) && accessHasRole(access, 'consul')));
   if (!allowed) return json({ ok: false, error: "action_log_access_denied" }, 403, "private, no-store");
   const createdAtMs = Date.now();
   const id = clean(crypto.randomUUID(), 120);
@@ -4003,8 +4023,9 @@ async function handleRegionSharesRotate(request, env) {
   if (!region) return json({ ok: false, error: 'region_required' }, 400);
   const form = await readRegionFormSettingsD1(db, region).catch(() => null);
   const settings = form?.settings || {};
-  const allowed = await canLeadRegionBySettingsD1(db, env, user, region, settings)
-    || await canLeadRegionByClientAccessD1(db, env, user, region, settings, body?.actorAccess || null);
+  const hasActorAccess = Boolean(actorAccessForRequest(user, region, body?.actorAccess || null));
+  const allowed = await canLeadRegionByClientAccessD1(db, env, user, region, settings, body?.actorAccess || null)
+    || (!hasActorAccess && await canLeadRegionBySettingsD1(db, env, user, region, settings));
   if (!allowed) return json({ ok: false, error: 'region_leadership_required' }, 403);
   const tableCodes = (await db.prepare(`SELECT code FROM region_table_shares WHERE region = ?1`).bind(region).all())?.results?.map(row => row.code) || [];
   const finalCodes = (await db.prepare(`SELECT code FROM final_plan_shares WHERE region = ?1`).bind(region).all())?.results?.map(row => row.code) || [];

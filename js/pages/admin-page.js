@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=074';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=074';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=074';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=074';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=075';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=075';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=075';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=075';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=074';
+} from '../services/user-db.js?v=075';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -35,7 +35,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=074';
+} from '../services/region-db.js?v=075';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => { const value = window.WKD_t ? window.WKD_t(key) : ''; return (!value || value === key) ? (fallback || key) : value; };
@@ -1842,8 +1842,12 @@ async function handleUserAction(event) {
     setStatus(t('admin.savingPlayer', 'Зберігаю гравця...'), 'muted');
     const editableUid = editableUidForAdminRow(targetRow, uid);
     if (!editableUid) throw new Error('public-player-not-found');
-    if (farmId && farmId !== 'main') await updateFarmByAdmin(editableUid, farmId, values);
-    else await updateUserByAdmin(editableUid, values);
+    const savedProfile = farmId && farmId !== 'main'
+      ? await updateFarmByAdmin(editableUid, farmId, values)
+      : await updateUserByAdmin(editableUid, values);
+    if (editableUid === currentUser?.uid) {
+      document.dispatchEvent(new CustomEvent('wkd:profile-updated', { detail: { profile: savedProfile, region: values.region || '' } }));
+    }
     editUid = null;
     await Promise.all([loadPlayersPage({ reset: false }), loadAdminCounters(true)]);
     setStatus(t('admin.playerUpdated', 'Player updated.'), 'success');

@@ -511,6 +511,19 @@ window.WKD = window.WKD || {};
   function sourceInfo() {
     return WKD.getPlayersSourceInfo?.() || { mode: 'local', label: tr('playerManager.localList', 'локального списку'), canUpdate: true, region: '' };
   }
+  let lastAccessRefreshAt = 0;
+  async function refreshAccessNow(reason = 'tower') {
+    if (typeof WKD.refreshRegionAccessNow !== 'function') return sourceInfo();
+    const now = Date.now();
+    if (now - lastAccessRefreshAt < 3000) return sourceInfo();
+    lastAccessRefreshAt = now;
+    try {
+      await WKD.refreshRegionAccessNow({ reason });
+    } catch (error) {
+      if (window.WKD_DEBUG) console.warn('[WKD] tower access refresh skipped:', error);
+    }
+    return sourceInfo();
+  }
   function canEditPlan() {
     const info = sourceInfo();
     return info.mode !== 'region' || Boolean(info.canPlan ?? info.canUpdate);
@@ -610,6 +623,7 @@ window.WKD = window.WKD || {};
     return plan;
   }
   async function savePlan(show = true) {
+    await refreshAccessNow('tower-save');
     plan.updatedAtMs = Date.now();
     const info = sourceInfo();
     if (info.mode === 'region') {
@@ -627,6 +641,7 @@ window.WKD = window.WKD || {};
     return true;
   }
   async function publishPlan(showConfirm = true) {
+    await refreshAccessNow('tower-publish');
     const info = sourceInfo();
     if (info.mode !== 'region') return savePlan(true);
     if (typeof WKD.saveTowerPlanToActiveSource !== 'function') return false;
@@ -2306,6 +2321,7 @@ window.WKD = window.WKD || {};
     if (!ensureTowerPlannerBound()) { WKD.showNotice?.(tr('tower.plannerLoading', 'Розподіл по турелях ще завантажується. Спробуй ще раз.')); return; }
     const root = modal();
     if (!root) return;
+    await refreshAccessNow('tower-open');
     lastTrigger = trigger || document.activeElement;
     activeTab = tab;
     root.classList.add('is-open');
@@ -2327,6 +2343,7 @@ window.WKD = window.WKD || {};
     if (!ensureTowerPlannerBound()) { WKD.showNotice?.(tr('tower.finalLoading', 'Фінальний план ще завантажується. Спробуй ще раз.')); return; }
     const root = finalModal();
     if (!root) return;
+    await refreshAccessNow('final-open');
     lastTrigger = trigger || document.activeElement;
     root.classList.add('is-open');
     root.setAttribute('aria-hidden', 'false');

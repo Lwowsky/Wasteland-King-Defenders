@@ -11,7 +11,7 @@ import {
   staffRankOptionsForTarget,
   staffRoleOptionsForTarget,
   updateRegionPlayerByStaff
-} from '../services/user-db.js?v=074';
+} from '../services/user-db.js?v=075';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : fallback;
@@ -179,9 +179,9 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=074',
-  'region-settings': './region-settings-page.js?v=074',
-  'action-log': './action-log-page.js?v=074'
+  'region-table': './region-table-page.js?v=075',
+  'region-settings': './region-settings-page.js?v=075',
+  'action-log': './action-log-page.js?v=075'
 };
 const loadedStaffToolTabs = new Set();
 
@@ -742,11 +742,15 @@ async function saveEdit() {
     setStatus(t('staff.saving', 'Зберігаю зміни...'), 'muted');
     const editableUid = editRow.uid || await resolvePublicPlayerUidForEdit(editRow);
     if (!editableUid) throw new Error('public-player-not-found');
-    await updateRegionPlayerByStaff(editableUid, {
+    const savedProfile = await updateRegionPlayerByStaff(editableUid, {
       region: editRow.region,
       rank: $('#staffEditRank')?.value || editRow.rank || 'p1',
       role: $('#staffEditRole')?.value || editRow.role || 'player'
     });
+    if (editableUid === currentUser?.uid) {
+      currentProfile = savedProfile || await getUserProfile(currentUser.uid, { forceRefresh: true }).catch(() => currentProfile);
+      document.dispatchEvent(new CustomEvent('wkd:profile-updated', { detail: { profile: currentProfile, region: editRow.region } }));
+    }
     closeEdit();
     await loadRows({ force: true, skipRateLimit: true });
     setStatus(t('staff.saved', 'Зміни збережено.'), 'success');

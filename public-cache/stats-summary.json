@@ -1,8 +1,8 @@
 {
   "version": 1,
   "source": "cloudflare-d1-public-stats",
-  "generatedAt": "2026-06-22T08:58:56.356Z",
-  "lastFullRebuildDate": "2026-06-22",
+  "generatedAt": "2026-06-17T15:27:09.672Z",
+  "lastFullRebuildDate": "2026-06-17",
   "totalPlayers": 2,
   "totalFarms": 3,
   "totalRows": 5,
@@ -23,12 +23,14 @@
     "DIO": 1
   },
   "ranks": {
-    "p4": 2
+    "p4": 1,
+    "p1": 1
   },
   "ranksWithFarms": {
-    "p4": 2,
+    "p4": 1,
+    "p3": 1,
     "p2": 2,
-    "p3": 1
+    "p1": 1
   },
   "shkTiers": {
     "t12": 1,
@@ -40,10 +42,12 @@
     "t9": 1
   },
   "roles": {
-    "admin": 2
+    "admin": 1,
+    "consul": 1
   },
   "rolesWithFarms": {
-    "admin": 5
+    "admin": 4,
+    "consul": 1
   },
   "countries": {
     "UA": 1,
@@ -54,7 +58,7 @@
     "JP": 1
   },
   "processedChanges": 0,
-  "d1Version": 1782100749554,
-  "d1UpdatedAtMs": 1782100749554,
+  "d1Version": 1781708333694,
+  "d1UpdatedAtMs": 1781708333694,
   "d1Buckets": 64
 }
