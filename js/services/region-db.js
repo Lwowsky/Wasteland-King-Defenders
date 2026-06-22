@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=072';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=072';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=073';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=073';
 import {
   getUserProfile,
   getFarmById,
@@ -12,8 +12,8 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=072';
-import { readRegionFormShare as readRegionFormShareD1, readRegionFormSettings as readRegionFormSettingsD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=072';
+} from './user-db.js?v=073';
+import { readRegionFormShare as readRegionFormShareD1, readRegionFormSettings as readRegionFormSettingsD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=073';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -926,6 +926,7 @@ function actionLabel(action = '') {
     registration_closed: 'Закрив реєстрацію',
     registration_settings_saved: 'Зберіг форму регіону',
     registration_submitted: 'Подав заявку',
+    region_player_updated: 'Оновив гравця регіону',
     tower_plan_saved: 'Зберіг розподіл турелей',
     final_plan_shared: 'Створив посилання фінального плану',
     alliance_saved: 'Змінив альянс регіону',
@@ -946,7 +947,7 @@ function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
 }
 
 async function actionLogCacheModule() {
-  return import('./action-log-cache.js?v=072');
+  return import('./action-log-cache.js?v=073');
 }
 
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
@@ -1078,7 +1079,7 @@ export async function cleanupOldEmailFields(user) {
 
 async function rotateRegionPublicSharesForNewCycle(user, region, actorAccess = null) {
   try {
-    const mod = await import('./region-table-cache.js?v=072');
+    const mod = await import('./region-table-cache.js?v=073');
     if (!mod?.rotateRegionPublicShares) return null;
     return await mod.rotateRegionPublicShares(user, region, actorAccess);
   } catch (error) {
@@ -1226,7 +1227,7 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=072');
+    const mod = await import('./region-table-cache.js?v=073');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1236,7 +1237,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=072');
+    const mod = await import('./region-table-cache.js?v=073');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1247,7 +1248,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function updateRegionTableRowD1First(user, region, registrationId, values = {}, settings = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=072');
+    const mod = await import('./region-table-cache.js?v=073');
     return await mod.updateRegionTableRowD1(user, region, registrationId, values, settings, { updateOnly: true });
   } catch (error) {
     const status = Number(error?.status || 0) || 0;
@@ -1259,7 +1260,7 @@ async function updateRegionTableRowD1First(user, region, registrationId, values 
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=072');
+    const mod = await import('./region-table-cache.js?v=073');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1269,7 +1270,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=072');
+    const mod = await import('./region-table-cache.js?v=073');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1300,7 +1301,7 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
 
 async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=072');
+    const mod = await import('./region-table-cache.js?v=073');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readMyRegionRegistrationD1(user, region, farmId, options);
   } catch (error) {
@@ -1311,7 +1312,7 @@ async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', opti
 
 async function readFinalPlanFromD1Cache(code, options = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=072');
+    const mod = await import('./final-plan-cache.js?v=073');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.readFinalPlanShare(code, options);
   } catch (error) {
@@ -1322,7 +1323,7 @@ async function readFinalPlanFromD1Cache(code, options = {}) {
 
 async function publishFinalPlanToD1Cache(user, payload = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=072');
+    const mod = await import('./final-plan-cache.js?v=073');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.publishFinalPlanShare(user, payload);
   } catch (error) {
@@ -2687,11 +2688,21 @@ export async function updateRegionRegistration(user, region, registrationId, val
     }
   }
 
-  const d1Update = await updateRegionTableRowD1First(user, safeRegion, id, values, values?.cycleId ? { currentCycleId: values.cycleId } : {});
+  const actorAccess = actorAccessForRegionPayload(user, profile || {}, safeRegion);
+  const d1Update = await updateRegionTableRowD1First(user, safeRegion, id, { ...values, _actorAccess: actorAccess }, values?.cycleId ? { currentCycleId: values.cycleId } : {});
   if (d1Update?.ok) {
     removeCache(`regionRegistrations.${safeRegion}.no-cycle.v139`);
     const cycle = trim(d1Update?.table?.cycleId || d1Update?.cycleId || values?.cycleId || '');
     if (cycle) removeCache(`regionRegistrations.${safeRegion}.${cycle}.v139`);
+    if (!d1Update.notWritten && !d1Update.unchanged) {
+      writeRegionActionLog(null, user, profile, safeRegion, 'region_player_updated', {
+        targetName: trim(values?.name || values?.nickname || d1Update?.row?.nickname || ''),
+        targetUid: trim(d1Update?.row?.uid || values?.uid || ''),
+        alliance: trim(values?.alliance || d1Update?.row?.alliance || ''),
+        summary: serviceT('actionLog.regionPlayerUpdated', 'Оновлено гравця в таблиці регіону'),
+        noFirebaseFallback: true
+      }).catch(() => null);
+    }
     return {
       region: safeRegion,
       id,
@@ -2911,7 +2922,7 @@ function localImportRegistrationKey(row = {}) {
 
 async function readLocalImportRegionLockFromD1(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=072');
+    const mod = await import('./region-table-cache.js?v=073');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readLocalImportRegionLock(user, region);
   } catch (error) {
@@ -2922,7 +2933,7 @@ async function readLocalImportRegionLockFromD1(user, region) {
 
 async function commitLocalImportRegionLockToD1(user, region, payload = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=072');
+    const mod = await import('./region-table-cache.js?v=073');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.commitLocalImportRegionLock(user, region, payload);
   } catch (error) {
@@ -3208,6 +3219,7 @@ export async function saveRegionTowerPlan(user, region, plan = {}, options = {})
     safeRegion = normalizeRegion(getGameProfile(profile || {}).region);
   }
   if (!safeRegion) throw new Error('region-required');
+  if (!profile) profile = await getUserProfile(user.uid, { forceRefresh: true }).catch(() => null);
   const cleanPlan = plan && typeof plan === 'object' ? plan : {};
   const updatedAtMs = Date.now();
 
@@ -3218,9 +3230,10 @@ export async function saveRegionTowerPlan(user, region, plan = {}, options = {})
       plan: cleanPlan,
       updatedAtMs,
       updatedByName: getRegionActorName(profile || {}, safeRegion, user),
-      actorAccess: options?.actorAccess || null
+      actorAccess: options?.actorAccess || actorAccessForRegionPayload(user, profile || {}, safeRegion)
     });
     if (d1Result?.ok !== false && !d1Result?.skipped) {
+      writeRegionActionLog(null, user, profile, safeRegion, 'tower_plan_saved', { summary: 'Оновлено регіональний розподіл турелей', noFirebaseFallback: true }).catch(() => null);
       return { region: safeRegion, plan: cleanPlan, updatedAtMs, source: 'cloudflare-d1-tower-plan' };
     }
   } catch (error) {

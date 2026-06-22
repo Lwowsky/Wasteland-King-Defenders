@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=072';
-import { readRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError } from '../services/region-table-cache.js?v=072';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=073';
+import { readRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError } from '../services/region-table-cache.js?v=073';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -861,7 +861,7 @@ async function updatePlayerInActiveSource(id, values = {}) {
 
   const stateRow = WKD.state.players.find(player => rowKey(player) === wanted);
   if (!stateRow?.regionRegistrationId) throw new Error('region-update-registration-only');
-  if (!canManageRegion(currentProfile, loadedRegion || getGameProfile(currentProfile || {}).region, currentUser)) {
+  if (!canPlanLoadedRegion(loadedRegion || getGameProfile(currentProfile || {}).region)) {
     throw new Error('region-update-access-denied');
   }
 
@@ -911,7 +911,7 @@ function getPlayersSourceInfo() {
     mode: currentMode,
     region,
     label: currentMode === 'region' ? currentRegionLabel() : t('playerManager.localList', 'local list'),
-    canUpdate: currentMode !== 'region' || canManageRegion(currentProfile, region, currentUser),
+    canUpdate: currentMode !== 'region' || canPlanLoadedRegion(region),
     canDelete: currentMode !== 'region' || canDeleteRegionRegistration(currentProfile, region, currentUser),
     canPlan: canPlanLoadedRegion(region),
     canViewRegion: canUseRegionSource()

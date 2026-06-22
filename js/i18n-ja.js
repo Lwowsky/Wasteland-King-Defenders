@@ -1670,6 +1670,8 @@ window.WKD_TRANSLATIONS.ja = {
   "actionLog.type.registration_closed": "登録を終了",
   "actionLog.type.registration_settings_saved": "地域フォームを保存",
   "actionLog.type.registration_submitted": "申請を送信",
+  "actionLog.type.region_player_updated": "地域プレイヤーを更新",
+  "actionLog.regionPlayerUpdated": "地域テーブルのプレイヤーを更新しました",
   "actionLog.type.tower_plan_saved": "タワー計画を保存",
   "actionLog.type.final_plan_shared": "最終計画リンクを作成",
   'actionLog.type.region_table_shared': '地域テーブルのリンクを作成',

@@ -1670,6 +1670,8 @@ window.WKD_TRANSLATIONS.zh = {
   "actionLog.type.registration_closed": "关闭注册",
   "actionLog.type.registration_settings_saved": "保存地区表单",
   "actionLog.type.registration_submitted": "提交申请",
+  "actionLog.type.region_player_updated": "已更新地区玩家",
+  "actionLog.regionPlayerUpdated": "已更新地区表中的玩家",
   "actionLog.type.tower_plan_saved": "保存炮塔计划",
   "actionLog.type.final_plan_shared": "创建最终计划链接",
   'actionLog.type.region_table_shared': '已创建地区表格链接',

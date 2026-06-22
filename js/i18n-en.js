@@ -1670,6 +1670,8 @@ window.WKD_TRANSLATIONS.en = {
   'actionLog.type.registration_closed': 'Closed registration',
   'actionLog.type.registration_settings_saved': 'Saved region form',
   'actionLog.type.registration_submitted': 'Submitted request',
+  'actionLog.type.region_player_updated': 'Updated region player',
+  'actionLog.regionPlayerUpdated': 'Updated a player in the region table',
   'actionLog.type.tower_plan_saved': 'Saved tower plan',
   'actionLog.type.final_plan_shared': 'Created final-plan link',
   'actionLog.type.region_table_shared': 'Created region table link',
