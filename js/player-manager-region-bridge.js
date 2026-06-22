@@ -1,8 +1,8 @@
-import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=216';
+import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=072';
 import { getFirebase, watchAuth } from './services/firebase-service.js';
-import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js?v=005';
-import { isExpectedRegionTableCacheError } from './services/region-table-cache.js?v=071';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=071';
+import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js?v=072';
+import { isExpectedRegionTableCacheError } from './services/region-table-cache.js?v=072';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=072';
 
 window.WKD = window.WKD || {};
 
@@ -31,13 +31,18 @@ function savedRegion() { return String(localStorage.getItem(REGION_KEY) || '').r
 function profileRegionOf(profile = currentProfile) { return String(getGameProfile(profile || {}).region || '').replace(/[^0-9]/g, ''); }
 function regionOf(profile = currentProfile) { return String(currentRegion || savedRegion() || profileRegionOf(profile) || '').trim(); }
 function canUseRegion() { return Boolean(currentUser && isProfileComplete(currentProfile)); }
-function canEditRegion(region = currentRegion) { return Boolean(currentUser && region && canManageRegion(currentProfile, region, currentUser)); }
+function canEditRegion(region = currentRegion) {
+  return Boolean(currentUser && region && (
+    canManageRegion(currentProfile, region, currentUser)
+    || canEditRegionTowerPlan(currentProfile, region, currentUser, currentRegionSettings || {})
+  ));
+}
 function canLeadRegionFallback(region = currentRegion) {
   const safeRegion = String(region || '').replace(/[^0-9]/g, '');
   return Boolean(currentUser && safeRegion && regionOf() === safeRegion && currentRole() === 'officer' && isRankR4R5() && ownAlliance());
 }
 function canPlanRegion(region = currentRegion) {
-  return Boolean(currentUser && region && (canEditRegionTowerPlan(currentProfile, region, currentUser, currentRegionSettings || {}) || canLeadRegionFallback(region)));
+  return Boolean(currentUser && region && canEditRegionTowerPlan(currentProfile, region, currentUser, currentRegionSettings || {}));
 }
 function canDeleteRegion(region = currentRegion) { return Boolean(currentUser && region && canDeleteRegionRegistration(currentProfile, region, currentUser)); }
 function rowKey(player = {}) { return String(player._rowId || player.id || player.uid || ''); }
@@ -412,7 +417,7 @@ async function handleAuth(user) {
   currentRegion = '';
   loadedRows = [];
   if (currentUser) {
-    currentProfile = await getUserProfile(currentUser.uid).catch(() => null);
+    currentProfile = await getUserProfile(currentUser.uid, { forceRefresh: true }).catch(() => null);
     currentRegion = savedRegion() || profileRegionOf(currentProfile);
   }
   authReadyResolve?.();
@@ -425,6 +430,16 @@ async function handleAuth(user) {
 }
 
 watchAuth(handleAuth).catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] player manager auth bridge skipped:', error); });
+
+async function refreshRegionBridgeAccess(detail = {}) {
+  if (!currentUser) return;
+  currentProfile = await getUserProfile(currentUser.uid, { forceRefresh: true }).catch(() => currentProfile);
+  const region = String(detail.region || currentRegion || regionOf() || '').replace(/[^0-9]/g, '');
+  if (region && (!currentRegion || currentRegion === region)) currentRegion = region;
+  if (detail.settings && typeof detail.settings === 'object') currentRegionSettings = detail.settings;
+  document.dispatchEvent(new CustomEvent('wkd:player-manager-source-changed', { detail: sourceInfo() }));
+  refreshTowerRegionOptions().catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] tower regions access refresh skipped:', error); });
+}
 
 window.WKD.getPlayersSourceInfo = sourceInfo;
 window.WKD.loadTowerPlanFromActiveSource = loadTowerPlanFromActiveSource;
@@ -457,4 +472,10 @@ window.WKD.playerManagerRegion = {
 document.addEventListener('wkd:language-changed', () => {
   refreshTowerRegionOptions().catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] tower regions language refresh skipped:', error); });
   document.dispatchEvent(new CustomEvent('wkd:player-manager-source-changed', { detail: sourceInfo() }));
+});
+document.addEventListener('wkd:region-settings-updated', event => {
+  refreshRegionBridgeAccess(event.detail || {}).catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] region bridge access refresh skipped:', error); });
+});
+document.addEventListener('wkd:profile-updated', () => {
+  refreshRegionBridgeAccess({}).catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] region bridge profile refresh skipped:', error); });
 });

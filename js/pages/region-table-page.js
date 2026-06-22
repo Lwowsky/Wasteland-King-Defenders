@@ -1,4 +1,4 @@
-import { makePublicShareUrl, rememberShareCode } from '../core/share-links.js?v=256';
+import { makePublicShareUrl, rememberShareCode } from '../core/share-links.js?v=072';
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, saveSignedInUser } from '../services/user-db.js';
 import {
@@ -21,8 +21,8 @@ import {
   updateRegionRegistration,
   deleteRegionRegistrations,
   regionRegistrationToPlayer
-} from '../services/region-db.js?v=071';
-import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=071';
+} from '../services/region-db.js?v=072';
+import { isRegionTableCacheEnabled, readRegionTableSnapshot, publishRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from '../services/region-table-cache.js?v=072';
 
 const $ = selector => document.querySelector(selector);
 const ACTIVE_REGION_KEY = 'wkd.players.activeRegion';
@@ -845,7 +845,7 @@ async function load(user, options = {}) {
     return;
   }
   await saveSignedInUser(user).catch(() => null);
-  const profile = await getUserProfile(user.uid).catch(() => null);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true }).catch(() => null);
   currentProfile = profile;
   const requestedRegion = readRegionFromUrl() || readStoredActiveRegion();
   const canUseRequestedRegion = Boolean(requestedRegion && (canViewAnyRegion(profile || {}, user) || canViewRegion(profile || {}, requestedRegion, user)));
@@ -1018,7 +1018,16 @@ function bind() {
   $('#openWastelandRegisterBtn')?.addEventListener('click', () => { window.location.href = `region-form.html?r=${currentRegion}`; });
   $('#openRegionSettingsBtn')?.addEventListener('click', () => { window.location.href = `region-settings.html?region=${currentRegion}`; });
   $('#shareRegionTableBtn')?.addEventListener('click', () => shareRegionTableLink());
-  document.addEventListener('wkd:language-changed', handleLanguageChange);
+document.addEventListener('wkd:language-changed', handleLanguageChange);
+document.addEventListener('wkd:region-settings-updated', async event => {
+  const detail = event.detail || {};
+  if (detail.settings && (!detail.region || normalizeRegion(detail.region) === normalizeRegion(currentRegion))) {
+    currentSettings = detail.settings;
+  }
+  if (currentUser) currentProfile = await getUserProfile(currentUser.uid, { forceRefresh: true }).catch(() => currentProfile);
+  installRegionEditorBridge();
+  render();
+});
   document.addEventListener('wkd:time-display-changed', startCycleTimer);
 }
 

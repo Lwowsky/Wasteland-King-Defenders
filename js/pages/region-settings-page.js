@@ -1,5 +1,5 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getFarmById, getGameProfile, getUserFarms, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=256';
+import { getFarmById, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=072';
 import {
   canManageRegion,
   canLeadCurrentRotation,
@@ -26,9 +26,9 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=071';
-import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=071';
-import { makePublicShareUrl } from '../core/share-links.js?v=256';
+} from '../services/region-db.js?v=072';
+import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=072';
+import { makePublicShareUrl } from '../core/share-links.js?v=072';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -157,6 +157,15 @@ function currentRole() {
 }
 function ownAlliance() { return normalizeAllianceTag(currentGame().alliance); }
 function ownRank() { return trim(currentGame().rank).toLowerCase(); }
+function actorAccessForCurrentRegion() {
+  return {
+    uid: currentUser?.uid || '',
+    region: normalizeRegion(currentRegion),
+    alliance: ownAlliance(),
+    role: currentRole(),
+    rank: ownRank()
+  };
+}
 function isOwnerAdmin() { return String(currentUser?.email || '').trim().toLowerCase() === 'vovapotaychuk@gmail.com'; }
 function isRankR4R5(rank = ownRank()) {
   return ['p4', 'p5', 'r4', 'r5', '4', '5'].includes(trim(rank).toLowerCase());
@@ -175,7 +184,7 @@ function canEditRegionAllianceColor(tag = '') {
   const rank = ownRank();
   if (!sameRegion || !ownTag) return false;
   if (currentRole() === 'officer' && isRankR4R5(rank)) return true;
-  return ['p5', 'r5', '5'].includes(rank);
+  return false;
 }
 function canDeleteRegionAlliance(tag = '') {
   return canEditAllAllianceColors();
@@ -908,10 +917,11 @@ async function save(event, overrides = {}) {
     currentShareCode = currentSettings.shortLinkCode || currentShareCode;
     const openedNewCycle = Boolean(currentSettings.openedNewCycle || values.openNewCycle);
     if (openedNewCycle) {
-      await saveRegionTowerPlan(currentUser, currentRegion, { version: 1, updatedAtMs: Date.now(), regions: { home: {}, region2: {}, region3: {} } }).catch(error => console.warn('tower plan reset skipped', error));
+      await saveRegionTowerPlan(currentUser, currentRegion, { version: 1, updatedAtMs: Date.now(), regions: { home: {}, region2: {}, region3: {} } }, { actorAccess: actorAccessForCurrentRegion() }).catch(error => console.warn('tower plan reset skipped', error));
       window.WKD?.resetTowerPlannerPlan?.('registration-form-new-cycle');
       document.dispatchEvent(new CustomEvent('wkd:tower-plan-hard-reset', { detail: { source: 'registration-form-new-cycle' } }));
     }
+    document.dispatchEvent(new CustomEvent('wkd:region-settings-updated', { detail: { region: currentRegion, settings: currentSettings, openedNewCycle } }));
     fill(currentSettings);
     await refreshAlliances().catch(error => console.warn('Alliance refresh skipped after settings save', error));
     const note = openedNewCycle ? ` ${t('regionSettings.newCycleSavedNote', 'New cycle opened: the table shows a clean list, and old requests remain in the previous cycle.')}` : '';
@@ -1340,15 +1350,15 @@ async function load(user) {
   }
   await saveSignedInUser(user).catch(() => null);
   const { profile, region } = await getMyRegionContext(user, readRegionFromUrl());
-  currentProfile = profile;
+  currentProfile = await getUserProfile(user.uid, { forceRefresh: true }).catch(() => profile);
   currentRegion = region;
-  currentCanViewAnyRegion = canViewAnyRegion(profile, user);
+  currentCanViewAnyRegion = canViewAnyRegion(currentProfile, user);
   updateRegionPill(region);
   await refreshRegionSwitcher();
 
   const baseSettings = await loadRegionEditorSettings(region);
-  const canManageFullRegion = canManageRegion(profile, region, user);
-  const canLeadActiveRotation = canLeadCurrentRotation(profile, region, user, baseSettings || {});
+  const canManageFullRegion = canManageRegion(currentProfile, region, user);
+  const canLeadActiveRotation = canLeadCurrentRotation(currentProfile, region, user, baseSettings || {});
   if (!canManageFullRegion && !canLeadActiveRotation) {
     setStatus(t('regionSettings.accessDenied', 'Only an admin, moderator, consul, or active-alliance R4/R5 officer can edit the region form.'), 'error');
     return;

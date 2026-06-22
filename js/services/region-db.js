@@ -1,6 +1,6 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=252';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=252';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=072';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=072';
 import {
   getUserProfile,
   getFarmById,
@@ -12,8 +12,8 @@ import {
   timestampToMs,
   createUserNotification,
   createRegionNotificationCampaign
-} from './user-db.js?v=005';
-import { readRegionFormShare as readRegionFormShareD1, readRegionFormSettings as readRegionFormSettingsD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=071';
+} from './user-db.js?v=072';
+import { readRegionFormShare as readRegionFormShareD1, readRegionFormSettings as readRegionFormSettingsD1, publishRegionFormSettings, readRegionTowerPlanSnapshot, publishRegionTowerPlanSnapshot, readRegionAlliancesD1, saveRegionAllianceD1, deleteRegionAllianceD1, deleteRegionTableRowsD1, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError, isRegionSnapshotMissingCacheError } from './region-table-cache.js?v=072';
 
 const trim = value => String(value ?? '').trim();
 const toUpper = value => trim(value).toUpperCase();
@@ -527,7 +527,7 @@ export async function listRegionCatalog({ includeInactive = false, skipPublicPla
 export async function createManualRegion(user, values = {}) {
   if (!user) throw new Error('auth-required');
   const { db, firestoreMod } = await getFirebaseParts();
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   if (!canCreateManualRegion(profile, user)) throw new Error('manual-region-access-denied');
   const safeRegion = normalizeRegion(values.region || values.id);
   if (!safeRegion) throw new Error('region-required');
@@ -557,7 +557,7 @@ export async function createManualRegion(user, values = {}) {
 export async function archiveManualRegion(user, region, active = false) {
   if (!user) throw new Error('auth-required');
   const { db, firestoreMod } = await getFirebaseParts();
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   if (!canCreateManualRegion(profile, user)) throw new Error('manual-region-access-denied');
   const safeRegion = normalizeRegion(region);
   if (!safeRegion) throw new Error('region-required');
@@ -879,7 +879,7 @@ async function getFirebaseParts() {
 
 export async function getMyRegionContext(user, preferredRegion = '') {
   if (!user) throw new Error('auth-required');
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   const requestedRegion = normalizeRegion(preferredRegion);
   const fallbackGame = bestRegionGame(profile || {});
   const fallbackRegion = normalizeRegion(fallbackGame.region);
@@ -946,7 +946,7 @@ function canDeleteRegionActionLogs(profile = {}, region = '', actor = null) {
 }
 
 async function actionLogCacheModule() {
-  return import('./action-log-cache.js?v=008');
+  return import('./action-log-cache.js?v=072');
 }
 
 async function writeRegionActionLog(firebase, user, profile = {}, region = '', action = '', details = {}) {
@@ -1031,7 +1031,7 @@ export async function clearRegionActionLogs(user, regionOverride = '', { olderTh
 export async function getSecurityOverview(user) {
   if (!user) throw new Error('auth-required');
   const { db, firestoreMod } = await getFirebaseParts();
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   if (!canViewAnyRegion(profile || {}, user)) throw new Error('security-access-denied');
   const regionsSnap = await firestoreMod.getDocs(firestoreMod.collection(db, 'regions')).catch(() => ({ docs: [] }));
   trackReads(Math.max(1, regionsSnap.docs.length));
@@ -1053,7 +1053,7 @@ export async function getSecurityOverview(user) {
 export async function cleanupOldEmailFields(user) {
   if (!user) throw new Error('auth-required');
   const { db, firestoreMod } = await getFirebaseParts();
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   if (!canViewAnyRegion(profile || {}, user)) throw new Error('security-access-denied');
   const regionsSnap = await firestoreMod.getDocs(firestoreMod.collection(db, 'regions')).catch(() => ({ docs: [] }));
   let cleaned = 0;
@@ -1078,7 +1078,7 @@ export async function cleanupOldEmailFields(user) {
 
 async function rotateRegionPublicSharesForNewCycle(user, region, actorAccess = null) {
   try {
-    const mod = await import('./region-table-cache.js?v=071');
+    const mod = await import('./region-table-cache.js?v=072');
     if (!mod?.rotateRegionPublicShares) return null;
     return await mod.rotateRegionPublicShares(user, region, actorAccess);
   } catch (error) {
@@ -1122,7 +1122,7 @@ export async function getRegionShareLinkCode(user, region) {
   if (!user) throw new Error('auth-required');
   const firebase = await getFirebaseParts();
   const { db, firestoreMod } = firebase;
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   const safeRegion = normalizeRegion(region);
   if (!canManageRegion(profile, safeRegion, user)) throw new Error('region-access-denied');
   const privateRef = firestoreMod.doc(db, 'regions', safeRegion, 'privateSettings', 'shortLink');
@@ -1177,16 +1177,12 @@ async function saveRegionFinalPlanShareLink({ db, firestoreMod }, user, region, 
 
 export async function shareRegionFinalPlan(user, region, payload = {}) {
   if (!user) throw new Error('auth-required');
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   const safeRegion = normalizeRegion(region);
   if (!safeRegion) throw new Error('region-required');
   const settings = await getRegionSettings(safeRegion);
   const actorAccess = payload.actorAccess || actorAccessForRegionPayload(user, profile || {}, safeRegion);
-  const clientOfficerOk = actorAccess?.uid === user.uid
-    && normalizeRegion(actorAccess.region || '') === safeRegion
-    && normalizeUserRole(actorAccess.role || '') === 'officer'
-    && rankNumber(actorAccess.rank || '') >= 4;
-  if (!canEditRegionTowerPlan(profile, safeRegion, user, settings) && !clientOfficerOk) throw new Error('region-plan-access-denied');
+  if (!canEditRegionTowerPlan(profile, safeRegion, user, settings)) throw new Error('region-plan-access-denied');
   const cleanHtml = trim(payload.html).slice(0, 700000);
   const cleanText = trim(payload.text).slice(0, 50000);
   const code = makeShortLinkCode();
@@ -1230,7 +1226,7 @@ export async function resolveRegionFinalPlanShare(codeValue, options = {}) {
 
 async function mirrorRegistrationToRegionTableCache(user, region, row, settings) {
   try {
-    const mod = await import('./region-table-cache.js?v=071');
+    const mod = await import('./region-table-cache.js?v=072');
     return await mod.mirrorRegionRegistration(user, region, row, settings);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON mirror unavailable:', error);
@@ -1240,7 +1236,7 @@ async function mirrorRegistrationToRegionTableCache(user, region, row, settings)
 
 async function publishSnapshotToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=071');
+    const mod = await import('./region-table-cache.js?v=072');
     return await mod.publishRegionTableSnapshot(user, payload);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON snapshot unavailable:', error);
@@ -1251,7 +1247,7 @@ async function publishSnapshotToRegionTableCache(user, payload) {
 
 async function updateRegionTableRowD1First(user, region, registrationId, values = {}, settings = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=071');
+    const mod = await import('./region-table-cache.js?v=072');
     return await mod.updateRegionTableRowD1(user, region, registrationId, values, settings, { updateOnly: true });
   } catch (error) {
     const status = Number(error?.status || 0) || 0;
@@ -1263,7 +1259,7 @@ async function updateRegionTableRowD1First(user, region, registrationId, values 
 
 async function publishShareToRegionTableCache(user, payload) {
   try {
-    const mod = await import('./region-table-cache.js?v=071');
+    const mod = await import('./region-table-cache.js?v=072');
     return await mod.publishRegionTableShare(user, payload);
   } catch (error) {
     if (window.WKD_DEBUG) console.warn('[WKD] region table JSON share unavailable:', error);
@@ -1273,7 +1269,7 @@ async function publishShareToRegionTableCache(user, payload) {
 
 async function readSnapshotFromRegionTableCache(user, region, options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=071');
+    const mod = await import('./region-table-cache.js?v=072');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readRegionTableSnapshot(user, region, options);
   } catch (error) {
@@ -1304,7 +1300,7 @@ async function readSnapshotFromRegionTableCache(user, region, options = {}) {
 
 async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', options = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=071');
+    const mod = await import('./region-table-cache.js?v=072');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readMyRegionRegistrationD1(user, region, farmId, options);
   } catch (error) {
@@ -1315,7 +1311,7 @@ async function readMyRegistrationFromD1Cache(user, region, farmId = 'main', opti
 
 async function readFinalPlanFromD1Cache(code, options = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=252');
+    const mod = await import('./final-plan-cache.js?v=072');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.readFinalPlanShare(code, options);
   } catch (error) {
@@ -1326,7 +1322,7 @@ async function readFinalPlanFromD1Cache(code, options = {}) {
 
 async function publishFinalPlanToD1Cache(user, payload = {}) {
   try {
-    const mod = await import('./final-plan-cache.js?v=252');
+    const mod = await import('./final-plan-cache.js?v=072');
     if (!mod.isFinalPlanCacheEnabled?.()) return null;
     return await mod.publishFinalPlanShare(user, payload);
   } catch (error) {
@@ -1353,7 +1349,7 @@ function sanitizeRegionTableRow(row = {}) {
 
 export async function shareRegionTable(user, region) {
   if (!user) throw new Error('auth-required');
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   const safeRegion = normalizeRegion(region || getGameProfile(profile || {}).region);
   if (!safeRegion) throw new Error('region-required');
   if (!canManageRegion(profile, safeRegion, user)) throw new Error('region-table-share-denied');
@@ -1426,7 +1422,7 @@ function registrationCleanupCutoffMs(retentionDays = REGION_REGISTRATION_RETENTI
 async function registrationCleanupContext(user, regionOverride = '') {
   if (!user) return { skipped: 'auth-required', region: normalizeRegion(regionOverride) };
   const { db, firestoreMod } = await getFirebaseParts();
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   const safeRegion = normalizeRegion(regionOverride || getGameProfile(profile || {}).region);
   if (!safeRegion) throw new Error('region-required');
   if (!canManageRegion(profile, safeRegion, user)) return { db, firestoreMod, profile, region: safeRegion, skipped: 'region-access-denied' };
@@ -1580,7 +1576,7 @@ export async function cleanupOldRegionRegistrations(user, regionOverride = '', o
 export async function cleanupOldPublicDocuments(user, options = {}) {
   if (!user) return { deletedCount: 0, skipped: 'auth-required' };
   const { db, firestoreMod } = await getFirebaseParts();
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   if (!(isOwnerEmail(user.email) || normalizeUserRole(profile?.role || 'player') === 'admin')) {
     return { deletedCount: 0, skipped: 'admin-required' };
   }
@@ -1612,7 +1608,7 @@ export async function cleanupOldPublicDocuments(user, options = {}) {
 export async function ensureRegionRegistrationRunInfo(user, regionOverride = '') {
   if (!user) return null;
   const { db, firestoreMod } = await getFirebaseParts();
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   const safeRegion = normalizeRegion(regionOverride || getGameProfile(profile || {}).region);
   if (!safeRegion || !canManageRegion(profile, safeRegion, user)) return null;
   const current = await getRegionSettings(safeRegion).catch(() => null);
@@ -1694,13 +1690,28 @@ async function ensureSettingsAlliancesInD1(user, region, settings = {}) {
 export async function saveRegionSettings(user, region, settings) {
   if (!user) throw new Error('auth-required');
   const { db, firestoreMod } = await getFirebaseParts();
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   const safeRegion = normalizeRegion(region);
   const oldSettings = await getRegionSettingsD1First(safeRegion).catch(() => mergeRegionSettings({}));
-  const actionSettings = { ...oldSettings, ...settings };
   const canManageFullRegion = canManageRegion(profile, safeRegion, user);
-  const canLeadActiveRotation = canLeadCurrentRotation(profile, safeRegion, user, actionSettings);
+  const canLeadActiveRotation = canLeadCurrentRotation(profile, safeRegion, user, oldSettings);
   if (!canManageFullRegion && !canLeadActiveRotation) throw new Error('region-access-denied');
+
+  if (!canManageFullRegion) {
+    settings = {
+      ...settings,
+      hostAlliance: oldSettings.hostAlliance || '',
+      activeHostAlliance: oldSettings.activeHostAlliance || '',
+      rotationEnabled: Boolean(oldSettings.rotationEnabled),
+      rotationLoop: Boolean(oldSettings.rotationLoop),
+      rotationActiveIndex: Number(oldSettings.rotationActiveIndex) || 0,
+      rotationClosedActiveIndex: oldSettings.rotationClosedActiveIndex,
+      rotationNextActiveIndex: oldSettings.rotationNextActiveIndex,
+      rotationHandoverAtMs: Number(oldSettings.rotationHandoverAtMs) || 0,
+      rotationAlliances: oldSettings.rotationAlliances || []
+    };
+  }
+  const actionSettings = { ...oldSettings, ...settings };
 
   if ((settings.forceOpenNow || settings.forceCloseNow || 'enabled' in settings || settings.openNewCycle) && !canOpenCloseRegion(profile, safeRegion, user, actionSettings)) throw new Error('region-open-close-denied');
   const forceOpenNow = Boolean(settings.forceOpenNow);
@@ -1993,8 +2004,6 @@ export function canManageAllianceColors(profile = {}, region = '', tag = '', act
   if (role === 'admin' || role === 'moderator') return true;
   if (role === 'consul' && sameRegion) return true;
   if (role === 'officer' && sameRegion && ownAlliance && ['p4', 'p5', 'r4', 'r5', '4', '5'].includes(rank)) return true;
-  // R5/P5 can edit only their own alliance record. They still cannot delete alliances.
-  if (sameRegion && ownAlliance && ['p5', 'r5', '5'].includes(rank)) return true;
   return false;
 }
 
@@ -2006,7 +2015,7 @@ export function canDeleteRegionAllianceTag(profile = {}, region = '', actor = nu
 
 export async function saveRegionAllianceColor(user, region, tagValue, hueValue = null) {
   if (!user) throw new Error('auth-required');
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   const safeRegion = normalizeRegion(region);
   const tag = normalizeAllianceTag(tagValue);
   if (!safeRegion || !tag || Array.from(tag).length !== 3) throw new Error('alliance-color-required');
@@ -2041,7 +2050,7 @@ export async function saveRegionAllianceColor(user, region, tagValue, hueValue =
 
 export async function saveRegionAlliance(user, region, values = {}) {
   if (!user) throw new Error('auth-required');
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   const safeRegion = normalizeRegion(region);
   const tag = normalizeAllianceTag(values.tag || values.id);
   if (!tag || Array.from(tag).length !== 3) throw new Error('alliance-tag-required');
@@ -2105,7 +2114,7 @@ export async function saveRegionAlliance(user, region, values = {}) {
 
 export async function deleteRegionAlliance(user, region, allianceId) {
   if (!user) throw new Error('auth-required');
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   const safeRegion = normalizeRegion(region);
   const tag = normalizeAllianceTag(allianceId);
   if (!tag) throw new Error('alliance-tag-required');
@@ -2327,7 +2336,7 @@ export async function saveWastelandRegistration(user, values, regionOverride = '
   let region = safeRegion;
 
   if (user && safeRegion) {
-    profile = await getUserProfile(user.uid);
+    profile = await getUserProfile(user.uid, { forceRefresh: true });
     region = safeRegion;
   } else if (user) {
     const context = await getMyRegionContext(user);
@@ -2588,7 +2597,7 @@ export async function deleteRegionRegistrations(user, region, registrationIds = 
     .filter(Boolean);
   if (!ids.length) return { count: 0 };
 
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   const safeRegion = normalizeRegion(region || getGameProfile(profile || {}).region);
   if (!safeRegion) throw new Error('region-required');
   if (!canDeleteRegionRegistration(profile, safeRegion, user)) throw new Error('region-delete-access-denied');
@@ -2667,7 +2676,7 @@ export async function updateRegionRegistration(user, region, registrationId, val
   if (!id) throw new Error('region-update-registration-only');
 
   const { db, firestoreMod } = await getFirebaseParts();
-  const profile = await getUserProfile(user.uid);
+  const profile = await getUserProfile(user.uid, { forceRefresh: true });
   const safeRegion = normalizeRegion(region || getGameProfile(profile || {}).region);
   if (!safeRegion) throw new Error('region-required');
   let regionAccessSettings = null;
@@ -2902,7 +2911,7 @@ function localImportRegistrationKey(row = {}) {
 
 async function readLocalImportRegionLockFromD1(user, region) {
   try {
-    const mod = await import('./region-table-cache.js?v=071');
+    const mod = await import('./region-table-cache.js?v=072');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.readLocalImportRegionLock(user, region);
   } catch (error) {
@@ -2913,7 +2922,7 @@ async function readLocalImportRegionLockFromD1(user, region) {
 
 async function commitLocalImportRegionLockToD1(user, region, payload = {}) {
   try {
-    const mod = await import('./region-table-cache.js?v=071');
+    const mod = await import('./region-table-cache.js?v=072');
     if (!mod.isRegionTableCacheEnabled?.()) return null;
     return await mod.commitLocalImportRegionLock(user, region, payload);
   } catch (error) {
@@ -3195,7 +3204,7 @@ export async function saveRegionTowerPlan(user, region, plan = {}, options = {})
   let profile = null;
   let safeRegion = normalizeRegion(region);
   if (!safeRegion) {
-    profile = await getUserProfile(user.uid);
+    profile = await getUserProfile(user.uid, { forceRefresh: true });
     safeRegion = normalizeRegion(getGameProfile(profile || {}).region);
   }
   if (!safeRegion) throw new Error('region-required');
@@ -3219,7 +3228,7 @@ export async function saveRegionTowerPlan(user, region, plan = {}, options = {})
   }
 
   const { db, firestoreMod } = await getFirebaseParts();
-  if (!profile) profile = await getUserProfile(user.uid);
+  if (!profile) profile = await getUserProfile(user.uid, { forceRefresh: true });
   const settings = await getRegionSettings(safeRegion).catch(() => mergeRegionSettings({}));
   if (!canEditRegionTowerPlan(profile, safeRegion, user, settings)) throw new Error('region-plan-access-denied');
   await firestoreMod.setDoc(

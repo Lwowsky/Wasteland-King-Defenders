@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser } from '../services/user-db.js';
-import { getSecurityOverview, cleanupOldEmailFields } from '../services/region-db.js?v=071';
+import { getSecurityOverview, cleanupOldEmailFields } from '../services/region-db.js?v=072';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));

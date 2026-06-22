@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=266';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=266';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=274';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=072';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=072';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=072';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -18,7 +18,7 @@ import {
   readNotificationBellD1,
   setNotificationSummaryD1,
   upsertNotificationDirectoryD1
-} from './notifications-d1.js?v=266';
+} from './notifications-d1.js?v=072';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -234,10 +234,10 @@ function canAssignRankForTarget(actor = null, actorProfile = null, target = {}, 
   const actorRank = rankNum(actorGame.rank);
   const sameAlliance = normalizeAllianceTag(actorGame.alliance) === normalizeAllianceTag(target.alliance);
   if (actorRole === 'consul' && gameRegion(actorGame) === gameRegion(target)) return true;
-  if (sameAlliance && actorRank >= 5) return wantedRank <= 4;
+  if (sameAlliance && actorRole === 'officer' && actorRank >= 5) return wantedRank <= 4;
   // R4/P4 may use the region panel for the active alliance, but it must not
   // create new R4/R5 players. It can only keep normal P1-P3 ranks in staff edits.
-  if (sameAlliance && actorRank >= 4) return wantedRank <= 3;
+  if (sameAlliance && actorRole === 'officer' && actorRank >= 4) return wantedRank <= 3;
   return wantedRank <= 3;
 }
 function canRegionalEditTarget(actor = null, actorProfile = null, target = {}, oldTarget = {}) {
@@ -251,13 +251,10 @@ function canRegionalEditTarget(actor = null, actorProfile = null, target = {}, o
   if (actorRole === 'consul' && gameRegion(actorGame) === gameRegion(target)) {
     return ['player', 'officer'].includes(wantedRole) && canAssignRankForTarget(actor, actorProfile, target, oldTarget);
   }
-  if (sameAlliance && actorRole === 'officer') {
+  if (sameAlliance && actorRole === 'officer' && actorRank >= 5) {
     return wantedRole === normalizeRole(oldTarget.role || 'player') && canAssignRankForTarget(actor, actorProfile, target, oldTarget);
   }
-  if (sameAlliance && actorRank >= 5) {
-    return wantedRole === normalizeRole(oldTarget.role || 'player') && canAssignRankForTarget(actor, actorProfile, target, oldTarget);
-  }
-  if (sameAlliance && actorRank >= 4) {
+  if (sameAlliance && actorRole === 'officer' && actorRank >= 4) {
     return wantedRole === normalizeRole(oldTarget.role || 'player') && canAssignRankForTarget(actor, actorProfile, target, oldTarget);
   }
   return false;
@@ -3074,6 +3071,7 @@ export async function updateUserByAdmin(uid, values) {
   if (oldProfile?.role !== role) changed.push(`${serviceT('account.role','Роль')}: ${roleLabel(role)}`);
   if (changed.length) await createUserNotification(uid, { type:'profile_changed', title: serviceT('notifications.profileChanged','Профіль оновлено'), message: changed.join(' · '), region: clean.region, alliance: clean.alliance }).catch(() => null);
   const savedProfile = await getUserProfile(uid, { forceRefresh: true });
+  await mirrorNotificationDirectoryIndexes([makeAdminUserIndex(savedProfile || {})], 'admin-main').catch(error => console.warn('Notification directory sync failed after admin main update', error));
   await syncProfileIndexLocks(db, firestoreMod, uid, oldProfile || {}, savedProfile || {}).catch(error => console.warn('Profile index sync failed after admin main update', error));
   return savedProfile;
 }
@@ -3098,9 +3096,7 @@ export function canStaffEditPlayer(user = null, actorProfile = null, target = {}
   const actorRank = rankNum(actorGame.rank);
   const sameAlliance = normalizeAllianceTag(actorGame.alliance) === targetAlliance;
   if (actorRole === 'consul' && gameRegion(actorGame) === targetRegion) return true;
-  if (sameAlliance && actorRole === 'officer') return true;
-  if (sameAlliance && actorRank >= 5) return true;
-  if (sameAlliance && actorRank >= 4) return true;
+  if (sameAlliance && actorRole === 'officer' && actorRank >= 4) return true;
   return false;
 }
 
@@ -3114,8 +3110,8 @@ export function staffRankOptionsForTarget(user = null, actorProfile = null, targ
   const actorRank = rankNum(actorGame.rank);
   const sameAlliance = normalizeAllianceTag(actorGame.alliance) === targetAlliance;
   if (actorRole === 'consul' && gameRegion(actorGame) === targetRegion) return ['p1', 'p2', 'p3', 'p4', 'p5'];
-  if (sameAlliance && actorRank >= 5) return ['p1', 'p2', 'p3', 'p4'];
-  if (sameAlliance && actorRank >= 4) return ['p1', 'p2', 'p3'];
+  if (sameAlliance && actorRole === 'officer' && actorRank >= 5) return ['p1', 'p2', 'p3', 'p4'];
+  if (sameAlliance && actorRole === 'officer' && actorRank >= 4) return ['p1', 'p2', 'p3'];
   return ['p1', 'p2', 'p3'];
 }
 
@@ -3133,7 +3129,7 @@ export async function listStaffRegionPlayers(options = {}) {
   if (!firebase) return { users: [], reads: 0, region: '', allianceLocked: false };
   const { db, firestoreMod } = firebase;
   const actor = firebase.auth?.currentUser || null;
-  const actorProfile = actor ? await getUserProfile(actor.uid).catch(() => null) : null;
+  const actorProfile = actor ? await getUserProfile(actor.uid, { forceRefresh: true }).catch(() => null) : null;
   if (!canUseStaffPanel(actor, actorProfile)) throw new Error('staff-only');
 
   const requestedRegion = normalizeText(options.region || '').replace(/[^0-9]/g, '');
@@ -3241,6 +3237,11 @@ export async function updateRegionPlayerByStaff(uid, values = {}) {
     alliance: oldPublic.alliance || ''
   }).catch(() => null);
   await markStatsChanged(db, firestoreMod, uid, 'profile_changed', 'staff-panel').catch(() => null);
+  const freshProfile = await getUserProfile(uid, { forceRefresh: true }).catch(() => null);
+  if (freshProfile) {
+    await mirrorNotificationDirectoryIndexes([makeAdminUserIndex(freshProfile)], 'staff-panel').catch(error => console.warn('Notification directory sync failed after staff update', error));
+    await mirrorPublicStatsFromPublicPlayer(makePublicPlayer(freshProfile), 'staff-panel').catch(() => null);
+  }
   return { ...oldPublic, ...patch, updatedAt: Date.now() };
 }
 

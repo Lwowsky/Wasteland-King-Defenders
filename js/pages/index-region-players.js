@@ -1,7 +1,7 @@
 import { watchAuth } from '../services/firebase-service.js';
 import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from '../services/user-db.js';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=071';
-import { readRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError } from '../services/region-table-cache.js?v=071';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, commitLocalImportRegionLock, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, importLocalPlayersToRegion, listRegionCatalog, listRegionRegistrations, normalizeRegion, readLocalImportRegionLock, regionRegistrationToPlayer, saveRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, updateRegionRegistration, listRegionAlliances } from '../services/region-db.js?v=072';
+import { readRegionTableSnapshot, isExpectedRegionTableCacheError, isRegionAccessDeniedCacheError } from '../services/region-table-cache.js?v=072';
 
 const REGION_SOURCE = 'regionForm';
 const SOURCE_KEY = 'wkd.players.sourceMode';
@@ -959,7 +959,7 @@ function bindTabs() {
 
 async function handleAuth(user) {
   currentUser = user;
-  currentProfile = user ? await getUserProfile(user.uid).catch(() => null) : null;
+  currentProfile = user ? await getUserProfile(user.uid, { forceRefresh: true }).catch(() => null) : null;
   loadedRegionRows = [];
   loadedRegion = '';
   currentMode = normalizeMode(localStorage.getItem(SOURCE_KEY) || currentMode || 'region');
@@ -1037,6 +1037,16 @@ async function init() {
       return;
     }
     if (currentMode === 'local') window.setTimeout(renderCurrentRows, 50);
+  });
+  document.addEventListener('wkd:region-settings-updated', async event => {
+    const detail = event.detail || {};
+    if (detail.settings && (!detail.region || normalizeRegion(detail.region) === normalizeRegion(loadedRegion || targetRegion()))) {
+      currentRegionSettings = detail.settings;
+    }
+    if (currentUser) currentProfile = await getUserProfile(currentUser.uid, { forceRefresh: true }).catch(() => currentProfile);
+    updateTabs();
+    await refreshTowerRegionOptions().catch(() => null);
+    document.dispatchEvent(new CustomEvent('wkd:player-manager-source-changed', { detail: getPlayersSourceInfo() }));
   });
 
   document.addEventListener('wkd:profile-updated', () => {

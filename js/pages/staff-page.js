@@ -11,7 +11,7 @@ import {
   staffRankOptionsForTarget,
   staffRoleOptionsForTarget,
   updateRegionPlayerByStaff
-} from '../services/user-db.js?v=019';
+} from '../services/user-db.js?v=072';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : fallback;
@@ -179,9 +179,9 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=071',
-  'region-settings': './region-settings-page.js?v=071',
-  'action-log': './action-log-page.js?v=019'
+  'region-table': './region-table-page.js?v=072',
+  'region-settings': './region-settings-page.js?v=072',
+  'action-log': './action-log-page.js?v=072'
 };
 const loadedStaffToolTabs = new Set();
 
@@ -599,7 +599,7 @@ async function loadRows(options = {}) {
     setStatus(t('staff.noRegion', 'Немає регіону для завантаження.'), 'warn');
     return;
   }
-  if (force && !manualStaffRefreshAllowed(region)) {
+  if (force && !options?.skipRateLimit && !manualStaffRefreshAllowed(region)) {
     setStatus(t('staff.refreshLimited', 'Оновлення обмежено: максимум 5 разів за 10 хвилин для цього регіону.'), 'warn');
     return;
   }
@@ -748,7 +748,7 @@ async function saveEdit() {
       role: $('#staffEditRole')?.value || editRow.role || 'player'
     });
     closeEdit();
-    await loadRows();
+    await loadRows({ force: true, skipRateLimit: true });
     setStatus(t('staff.saved', 'Зміни збережено.'), 'success');
   } catch (error) {
     if (window.WKD_DEBUG) console.error('[WKD] staff save failed:', error);
@@ -794,7 +794,7 @@ async function initStaffPage() {
       denyGuardedStaffPage();
       return;
     }
-    currentProfile = await getUserProfile(user.uid).catch(() => null);
+    currentProfile = await getUserProfile(user.uid, { forceRefresh: true }).catch(() => null);
     if (!canUseStaffPanel(user, currentProfile)) {
       denyGuardedStaffPage();
       return;

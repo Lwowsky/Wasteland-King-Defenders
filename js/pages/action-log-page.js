@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { canUseAdminPanel, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole } from '../services/user-db.js?v=008';
-import { getManagedRegionOptions, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=071';
+import { canUseAdminPanel, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole } from '../services/user-db.js?v=072';
+import { canLeadCurrentRotation, getManagedRegionOptions, getRegionSettings, listRegionActionLogs, listRegionCatalog, normalizeRegion, readRegionFromUrl, formatUserDate } from '../services/region-db.js?v=072';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -101,7 +101,8 @@ function firstAllowedRegion() {
   return normalizeRegion(regionOptions[0]?.region || regionOptions[0]?.id || regionOptions[0] || '');
 }
 function resolveTargetRegion(region = '') {
-  return normalizeRegion(region || currentRegion || readRegionFromUrl() || readStoredRegion() || firstAllowedRegion());
+  const wanted = normalizeRegion(region || currentRegion || readRegionFromUrl() || readStoredRegion() || firstAllowedRegion());
+  return regionOptions.some(item => normalizeRegion(item.region || item.id || item) === wanted) ? wanted : firstAllowedRegion();
 }
 
 function setStatus(text, type = 'muted') {
@@ -127,6 +128,14 @@ function renderRegionList() {
 function profileRegions(profile = {}) {
   const main = getGameProfile(profile || {});
   return [main, ...getUserFarms(profile || {})].map(game => normalizeRegion(game.region || '')).filter(Boolean);
+}
+async function activeOfficerActionLogRegions(profile = {}, user = null) {
+  const regions = [...new Set(profileRegions(profile || {}))];
+  const checks = await Promise.all(regions.map(async region => {
+    const settings = await getRegionSettings(region).catch(() => ({}));
+    return canLeadCurrentRotation(profile || {}, region, user, settings || {}) ? { region } : null;
+  }));
+  return checks.filter(Boolean);
 }
 function canDeleteLogs() {
   return false;
@@ -215,11 +224,20 @@ async function load(user, region = '') {
     render();
     return;
   }
-  currentProfile = await getUserProfile(user.uid).catch(() => null);
+  currentProfile = await getUserProfile(user.uid, { forceRefresh: true }).catch(() => null);
   if (canUseAdminPanel(user, currentProfile) && ['admin','moderator'].includes(String(currentProfile?.role || '').toLowerCase())) {
     regionOptions = await listRegionCatalog({ includeInactive: true, skipPublicPlayers: true }).catch(() => []);
   } else {
-    regionOptions = getManagedRegionOptions(currentProfile || {}, user).map(region => ({ region }));
+    const managed = getManagedRegionOptions(currentProfile || {}, user).map(region => ({ region }));
+    regionOptions = managed.length ? managed : await activeOfficerActionLogRegions(currentProfile || {}, user);
+  }
+  if (!regionOptions.length) {
+    currentRegion = '';
+    rows = [];
+    setStatus(t('actionLog.accessDenied', 'Немає доступу до журналу цього регіону.'), 'error');
+    renderRegionList();
+    render();
+    return;
   }
   currentRegion = resolveTargetRegion(region || readStoredRegion());
   rememberRegion(currentRegion);

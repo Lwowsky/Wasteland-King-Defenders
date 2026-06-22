@@ -1411,9 +1411,7 @@ async function canLeadRegionByClientAccessD1(db, env, user, region, settings = {
   if (activeAlliance && activeAlliance !== alliance) return false;
   const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
   if (access.isGlobal || accessHasCommandAlliance(access, safeRegion, alliance, 4)) return true;
-  if (accessHasAlliance(access, safeRegion, alliance) && accessHasRegion(access, safeRegion)) return true;
-  return Boolean(await hasSavedRegionAccess(db, user.uid, safeRegion).catch(() => false)
-    || await activeRegionHasUid(db, safeRegion, user.uid).catch(() => false));
+  return false;
 }
 async function canEditRegionAllianceD1(db, env, user, region, alliance) {
   const safeRegion = normalizeRegion(region);
@@ -1817,12 +1815,27 @@ async function handleRegionFormSettingsPut(request, env) {
   const region = normalizeRegion(body?.region || body?.settings?.region);
   if (!region) return json({ ok: false, error: 'region_required' }, 400);
   const previousForm = await readRegionFormSettingsD1(db, region).catch(() => null);
-  const incomingSettings = body?.settings && typeof body.settings === 'object' ? { ...body.settings } : {};
+  let incomingSettings = body?.settings && typeof body.settings === 'object' ? { ...body.settings } : {};
   const previousSettingsForAccess = previousForm?.settings && typeof previousForm.settings === 'object' ? previousForm.settings : {};
-  const accessSettings = { ...previousSettingsForAccess, ...incomingSettings };
-  const allowed = await canLeadCurrentRegionD1(db, env, user, region)
-    || await canLeadRegionByClientAccessD1(db, env, user, region, accessSettings, body?.actorAccess || null);
+  const canManageFullRegion = await canManageRegionD1(db, env, user, region);
+  const allowed = canManageFullRegion
+    || await canLeadRegionBySettingsD1(db, env, user, region, previousSettingsForAccess)
+    || await canLeadRegionByClientAccessD1(db, env, user, region, previousSettingsForAccess, body?.actorAccess || null);
   if (!allowed) return json({ ok: false, error: 'region_leadership_required' }, 403);
+  if (!canManageFullRegion) {
+    incomingSettings = {
+      ...incomingSettings,
+      hostAlliance: previousSettingsForAccess.hostAlliance || '',
+      activeHostAlliance: previousSettingsForAccess.activeHostAlliance || '',
+      rotationEnabled: Boolean(previousSettingsForAccess.rotationEnabled),
+      rotationLoop: Boolean(previousSettingsForAccess.rotationLoop),
+      rotationActiveIndex: Number(previousSettingsForAccess.rotationActiveIndex) || 0,
+      rotationClosedActiveIndex: previousSettingsForAccess.rotationClosedActiveIndex,
+      rotationNextActiveIndex: previousSettingsForAccess.rotationNextActiveIndex,
+      rotationHandoverAtMs: Number(previousSettingsForAccess.rotationHandoverAtMs) || 0,
+      rotationAlliances: previousSettingsForAccess.rotationAlliances || []
+    };
+  }
   const nowMs = Number(body?.updatedAtMs || 0) || Date.now();
   const requestedRawCycleId = normalizeCycleId(body?.cycleId || incomingSettings.currentCycleId || 'active');
   const requestedOpenNewCycle = Boolean(body?.openNewCycle || body?.forceNewCode || (previousForm?.cycleId && previousForm.cycleId !== requestedRawCycleId));
@@ -3503,7 +3516,10 @@ async function handleActionLogList(request, env) {
   const region = normalizeRegion(url.searchParams.get("region"));
   if (!region) return json({ ok: false, error: "region_required" }, 400);
   const access = await readRegionLeadershipAccess(db, env, user, region);
-  const canRead = Boolean(access.isGlobal || (accessHasRegion(access, region) && (accessHasRole(access, 'consul') || accessHasRole(access, 'officer'))));
+  const form = await readRegionFormSettingsD1(db, region).catch(() => null);
+  const canRead = Boolean(access.isGlobal
+    || (accessHasRegion(access, region) && accessHasRole(access, 'consul'))
+    || await canLeadRegionBySettingsD1(db, env, user, region, form?.settings || {}));
   if (!canRead) return json({ ok: false, error: "action_log_access_denied" }, 403, "private, no-store");
   const limitValue = Math.max(1, Math.min(20, Number(url.searchParams.get("limit")) || 20));
   const cursorMs = Number(url.searchParams.get("cursorMs")) || 0;
