@@ -10,7 +10,7 @@
     "countryCode": "UA",
     "farmCount": 3,
     "createdAt": "2026-05-27T13:51:55.337Z",
-    "updatedAt": "2026-06-21T21:48:35.243Z",
+    "updatedAt": "2026-06-17T14:58:53.017Z",
     "profileVisibility": {
       "showWastelandInfo": true,
       "showFarmsInfo": true
@@ -25,10 +25,23 @@
       "readyToJoin": true,
       "readyToAttack": true,
       "shift": "shift1",
-      "extraEnabled": false,
-      "extraSquads": [],
-      "extraTroopType": "",
-      "extraTier": ""
+      "extraEnabled": true,
+      "extraSquads": [
+        {
+          "troopType": "fighter",
+          "tier": "T12"
+        },
+        {
+          "troopType": "rider",
+          "tier": "T12"
+        },
+        {
+          "troopType": "shooter",
+          "tier": "T12"
+        }
+      ],
+      "extraTroopType": "fighter",
+      "extraTier": "T12"
     }
   },
   {
@@ -36,13 +49,13 @@
     "nickname": "アユシュカさん",
     "region": "987",
     "alliance": "YYY",
-    "rank": "P3",
+    "rank": "P1",
     "shk": "26",
-    "role": "admin",
+    "role": "consul",
     "countryCode": "JP",
     "farmCount": 0,
     "createdAt": "2026-06-15T08:40:15.270Z",
-    "updatedAt": null,
+    "updatedAt": "2026-06-17T13:13:30.865Z",
     "profileVisibility": {
       "showWastelandInfo": false,
       "showFarmsInfo": false

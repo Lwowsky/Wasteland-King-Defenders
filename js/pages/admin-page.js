@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=076';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=076';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=076';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=076';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=077';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=077';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=077';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=077';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=076';
+} from '../services/user-db.js?v=077';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -35,7 +35,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=076';
+} from '../services/region-db.js?v=077';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => { const value = window.WKD_t ? window.WKD_t(key) : ''; return (!value || value === key) ? (fallback || key) : value; };

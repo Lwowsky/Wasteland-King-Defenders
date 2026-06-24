@@ -1,8 +1,8 @@
-import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=076';
+import { makePublicShareUrl, rememberShareCode } from './core/share-links.js?v=077';
 import { getFirebase, watchAuth } from './services/firebase-service.js';
-import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js?v=076';
-import { isExpectedRegionTableCacheError } from './services/region-table-cache.js?v=076';
-import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=076';
+import { getGameProfile, getUserFarms, getUserProfile, isProfileComplete, normalizeUserRole } from './services/user-db.js?v=077';
+import { isExpectedRegionTableCacheError } from './services/region-table-cache.js?v=077';
+import { canDeleteRegionRegistration, canEditRegionTowerPlan, canManageRegion, deleteRegionAlliance as deleteRegionAllianceDb, deleteRegionRegistrations, getManagedRegionOptions, getRegionTowerPlan, shareRegionFinalPlan as shareRegionFinalPlanDb, listRegionAlliances as listRegionAlliancesDb, listRegionCatalog, listRegionRegistrations, regionRegistrationToPlayer, saveRegionAlliance as saveRegionAllianceDb, saveRegionTowerPlan, updateRegionRegistration } from './services/region-db.js?v=077';
 
 window.WKD = window.WKD || {};
 

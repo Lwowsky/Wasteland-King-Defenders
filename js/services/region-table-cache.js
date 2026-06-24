@@ -1,10 +1,15 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=076';
+import { trackCloudflareUsage } from './usage-tracker.js?v=077';
 
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
 const SHARE_TABLE_CACHE_TTL_MS = 10 * 60 * 1000;
 const REGION_FORM_SETTINGS_TTL_MS = 5 * 60 * 1000;
 const TOWER_PLAN_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const PUBLIC_SHARE_INDEX_URL = '/public-cache/share/index.json';
+const PUBLIC_SHARE_INDEX_TTL_MS = 5 * 60 * 1000;
+
+let publicShareIndexCache = { loadedAtMs: 0, files: new Set() };
+let publicShareIndexPromise = null;
 
 function cleanText(value = '', max = 120) {
   return String(value ?? '')
@@ -47,6 +52,41 @@ function apiUrl(path = '') {
   const safePath = String(path || '').startsWith('/') ? String(path || '') : `/${path || ''}`;
   if (!base) return safePath;
   return `${base}${safePath}`;
+}
+
+function publicShareIndexPath(path = '') {
+  return String(path || '').split('?')[0].replace(/\\/g, '/').replace(/^\/+/, '');
+}
+
+async function readPublicShareIndex(options = {}) {
+  const now = Date.now();
+  if (!options?.force && publicShareIndexCache.loadedAtMs && now - publicShareIndexCache.loadedAtMs < PUBLIC_SHARE_INDEX_TTL_MS) {
+    return publicShareIndexCache.files;
+  }
+  if (publicShareIndexPromise && !options?.force) return publicShareIndexPromise;
+  publicShareIndexPromise = (async () => {
+    try {
+      const response = await fetch(PUBLIC_SHARE_INDEX_URL, { cache: 'no-store', headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error(`public-share-index-${response.status}`);
+      const data = await response.json().catch(() => null);
+      const files = new Set((Array.isArray(data?.files) ? data.files : []).map(publicShareIndexPath).filter(Boolean));
+      publicShareIndexCache = { loadedAtMs: Date.now(), files };
+      return files;
+    } catch {
+      publicShareIndexCache = { loadedAtMs: Date.now(), files: new Set() };
+      return publicShareIndexCache.files;
+    } finally {
+      publicShareIndexPromise = null;
+    }
+  })();
+  return publicShareIndexPromise;
+}
+
+async function publicShareSnapshotListed(path = '', options = {}) {
+  const cleanPath = publicShareIndexPath(path);
+  if (!cleanPath) return false;
+  const files = await readPublicShareIndex({ force: Boolean(options?.forceIndex) });
+  return files.has(cleanPath);
 }
 
 async function getFirebaseToken(user) {
@@ -362,6 +402,12 @@ async function requestJson(path, options = {}) {
 }
 
 async function requestPublicSnapshotJson(path, options = {}) {
+  if (options?.requireIndex !== false && !await publicShareSnapshotListed(path, options)) {
+    const error = new Error('public-share-snapshot-not-exported');
+    error.status = 404;
+    error.code = 'public-share-snapshot-not-exported';
+    throw error;
+  }
   const response = await fetch(String(path || ''), {
     cache: options?.cache || 'default',
     headers: { Accept: 'application/json', ...(options?.headers || {}) }
@@ -640,7 +686,7 @@ export async function readRegionTableShare(code, options = {}) {
   }
   let data = null;
   try {
-    data = await requestPublicSnapshotJson(publicRegionTableSnapshotUrl(safeCode));
+    data = await requestPublicSnapshotJson(publicRegionTableSnapshotUrl(safeCode), { cache: options?.force ? 'no-store' : 'default' });
     data = await hydratePagedRegionTableShareData(data, safeCode);
   } catch (snapshotError) {
     data = await requestJson(`/api/region-table/share/${encodeURIComponent(safeCode)}`);
@@ -861,7 +907,7 @@ export async function readRegionFormShare(code, options = {}) {
   }
   let data = null;
   try {
-    data = await requestPublicSnapshotJson(publicRegionFormSnapshotUrl(safeCode));
+    data = await requestPublicSnapshotJson(publicRegionFormSnapshotUrl(safeCode), { cache: options?.force ? 'no-store' : 'default' });
   } catch (snapshotError) {
     data = await requestJson(`/api/region-form/share/${encodeURIComponent(safeCode)}`);
   }

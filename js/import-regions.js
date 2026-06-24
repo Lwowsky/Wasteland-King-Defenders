@@ -106,7 +106,7 @@ WKD.updateShiftVisibility = () => {
   }
 
   const filter = WKD.$('#shiftFilter');
-  if (filter?.value !== 'all' && filter?.value !== 'both') {
+  if (filter && filter.value !== 'all' && filter.value !== 'both') {
     const chosen = Number(filter.value.replace('shift', ''));
     if (chosen > count) filter.value = 'all';
   }
