@@ -81,12 +81,14 @@ async function main() {
   for (const filePath of existing) {
     const normalized = filePath.replace(/\\/g, '/');
     if (active.has(normalized)) continue;
-    if (!normalized.includes('/rt/') && !normalized.includes('/p/')) continue;
+    if (!normalized.includes('/f/') && !normalized.includes('/rt/') && !normalized.includes('/p/')) continue;
     await fs.rm(filePath, { force: true });
     removed += 1;
   }
+  await fs.mkdir(path.join(CACHE_ROOT, 'f'), { recursive: true });
   await fs.mkdir(path.join(CACHE_ROOT, 'rt'), { recursive: true });
   await fs.mkdir(path.join(CACHE_ROOT, 'p'), { recursive: true });
+  await fs.writeFile(path.join(CACHE_ROOT, 'f', '.gitkeep'), '', 'utf8').catch(() => {});
   await fs.writeFile(path.join(CACHE_ROOT, 'rt', '.gitkeep'), '', 'utf8').catch(() => {});
   await fs.writeFile(path.join(CACHE_ROOT, 'p', '.gitkeep'), '', 'utf8').catch(() => {});
   info(`Snapshot export finished: written=${written}, removed=${removed}.`);

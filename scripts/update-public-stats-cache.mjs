@@ -56,6 +56,10 @@ function statsRegionFilePath(region = '') {
   const safe = String(region || '').replace(/[^0-9]/g, '').slice(0, 8);
   return path.join(REGION_PLAYERS_DIR, `stats-players-R${safe}.json`);
 }
+function statsRegionFarmsFilePath(region = '') {
+  const safe = String(region || '').replace(/[^0-9]/g, '').slice(0, 8);
+  return path.join(REGION_PLAYERS_DIR, `stats-farms-R${safe}.json`);
+}
 function statsAllChunkFilePath(page = 1) {
   return path.join(REGION_PLAYERS_DIR, `stats-players-all-page-${pageNumber(page)}.json`);
 }
@@ -389,13 +393,76 @@ function splitPublicStatsFiles(publicPlayers = []) {
   return { players: sortPublicPlayers(players), farms: farms.sort((a, b) => String(a.region || '').localeCompare(String(b.region || ''), 'uk', { numeric: true }) || String(a.ownerNickname || '').localeCompare(String(b.ownerNickname || ''), 'uk', { numeric: true }) || String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk', { numeric: true })) };
 }
 
+function publicStatsRegionKey(value = '') {
+  return String(value || '').replace(/[^0-9]/g, '').slice(0, 8);
+}
+
+function publicPlayerRegionSet(player = {}) {
+  const regions = new Set();
+  const mainRegion = publicStatsRegionKey(player.region);
+  if (mainRegion) regions.add(mainRegion);
+  (Array.isArray(player.farms) ? player.farms : []).forEach(farm => {
+    const farmRegion = publicStatsRegionKey(farm?.region);
+    if (farmRegion) regions.add(farmRegion);
+  });
+  return regions;
+}
+
+async function writeRegionScopedStatsFiles(publicPlayers = []) {
+  const playerBuckets = new Map();
+  const farmBuckets = new Map();
+  const addPlayer = (region, row) => {
+    if (!region || !row?.publicKey) return;
+    if (!playerBuckets.has(region)) playerBuckets.set(region, new Map());
+    playerBuckets.get(region).set(row.publicKey, row);
+  };
+  const addFarm = (region, row) => {
+    if (!region || !row?.nickname) return;
+    if (!farmBuckets.has(region)) farmBuckets.set(region, []);
+    farmBuckets.get(region).push(row);
+  };
+
+  dedupePublicPlayers(publicPlayers).forEach(owner => {
+    const compactOwner = compactPublicPlayerForStats(owner);
+    if (!compactOwner?.publicKey || !compactOwner?.nickname) return;
+    publicPlayerRegionSet(owner).forEach(region => addPlayer(region, compactOwner));
+    if (!owner?.profileVisibility?.showFarmsInfo) return;
+    (Array.isArray(owner.farms) ? owner.farms : [])
+      .filter(farm => farm && (farm.nickname || farm.region || farm.alliance))
+      .forEach((farm, index) => {
+        const farmRow = compactFarmForStats(owner, farm, index);
+        const farmRegion = publicStatsRegionKey(farmRow.region);
+        addFarm(farmRegion, farmRow);
+        if (farmRegion) addPlayer(farmRegion, compactOwner);
+      });
+  });
+
+  const regions = [...new Set([...playerBuckets.keys(), ...farmBuckets.keys()])].sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
+  await Promise.all(regions.flatMap(region => {
+    const players = sortPublicPlayers([...((playerBuckets.get(region) || new Map()).values())]);
+    const farms = [...(farmBuckets.get(region) || [])].sort((a, b) => String(a.ownerNickname || '').localeCompare(String(b.ownerNickname || ''), 'uk', { numeric: true }) || String(a.nickname || '').localeCompare(String(b.nickname || ''), 'uk', { numeric: true }));
+    return [
+      writeJson(statsRegionFilePath(region), players),
+      writeJson(statsRegionFarmsFilePath(region), farms)
+    ];
+  }));
+  await writeJson(REGION_INDEX_CACHE_PATH, regions.map(region => ({
+    region,
+    playersFile: `stats-players-R${region}.json`,
+    farmsFile: `stats-farms-R${region}.json`,
+    players: (playerBuckets.get(region) || new Map()).size,
+    farms: (farmBuckets.get(region) || []).length
+  })));
+  return regions;
+}
+
 function statsVersionToken(summary = {}, files = {}) {
   const sourceVersion = String(summary.d1Version || summary.d1UpdatedAtMs || 'static');
   const generated = String(Date.parse(summary.generatedAt || '') || Date.now());
   return `${sourceVersion}-${generated}`;
 }
 
-function buildStatsVersion(summary = {}, files = {}) {
+function buildStatsVersion(summary = {}, files = {}, regions = []) {
   return {
     version: statsVersionToken(summary, files),
     generatedAt: summary.generatedAt || new Date().toISOString(),
@@ -408,7 +475,8 @@ function buildStatsVersion(summary = {}, files = {}) {
     totalFarms: Math.max(0, Number(summary.totalFarms || 0)),
     totalRows: Math.max(0, Number(summary.totalRows || 0)),
     playersRows: Array.isArray(files.players) ? files.players.length : 0,
-    farmRows: Array.isArray(files.farms) ? files.farms.length : 0
+    farmRows: Array.isArray(files.farms) ? files.farms.length : 0,
+    regionFiles: Array.isArray(regions) ? regions.length : 0
   };
 }
 
@@ -416,7 +484,7 @@ async function cleanupObsoleteStatsFiles() {
   const dir = path.dirname(PLAYERS_CACHE_PATH);
   let entries = [];
   try { entries = await fs.readdir(dir); } catch { return 0; }
-  const obsolete = entries.filter(name => /^stats-players-(?:all-page|R\d+(?:-page)?|index)\b.*\.json$/i.test(name) || name === 'stats-regions.json');
+  const obsolete = entries.filter(name => /^stats-players-(?:all-page|R\d+(?:-page)?|index)\b.*\.json$/i.test(name) || /^stats-farms-R\d+\.json$/i.test(name) || name === 'stats-regions.json');
   await Promise.all(obsolete.map(name => fs.unlink(path.join(dir, name)).catch(() => null)));
   return obsolete.length;
 }
@@ -433,10 +501,11 @@ async function writePublicStatsFiles(summary = {}, publicPlayers = []) {
     d1Buckets: summary?.d1Buckets || 0
   });
   await cleanupObsoleteStatsFiles();
+  const regions = await writeRegionScopedStatsFiles(cleanSource);
   await writeJson(SUMMARY_CACHE_PATH, finalSummary);
   await writeJson(PLAYERS_CACHE_PATH, files.players);
   await writeJson(FARMS_CACHE_PATH, files.farms);
-  await writeJson(VERSION_CACHE_PATH, buildStatsVersion(finalSummary, files));
+  await writeJson(VERSION_CACHE_PATH, buildStatsVersion(finalSummary, files, regions));
   return { summary: finalSummary, publicPlayers: files.players, publicFarms: files.farms };
 }
 

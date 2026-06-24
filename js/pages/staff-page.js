@@ -11,7 +11,7 @@ import {
   staffRankOptionsForTarget,
   staffRoleOptionsForTarget,
   updateRegionPlayerByStaff
-} from '../services/user-db.js?v=075';
+} from '../services/user-db.js?v=076';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : fallback;
@@ -85,12 +85,22 @@ async function fetchStaffPublicStatsVersion({ force = false } = {}) {
     return null;
   }
 }
-async function fetchStaffPublicStatsPlayers({ force = false } = {}) {
-  const list = await fetchStaffPublicCacheJson(STAFF_PUBLIC_STATS_PLAYERS_FILE, { force });
+async function fetchStaffPublicStatsPlayers(region = '', { force = false } = {}) {
+  const safeRegion = normalizeRegion(region);
+  const file = safeRegion ? `stats-players-R${safeRegion}.json` : STAFF_PUBLIC_STATS_PLAYERS_FILE;
+  const list = await fetchStaffPublicCacheJson(file, { force }).catch(error => {
+    if (!safeRegion) throw error;
+    return fetchStaffPublicCacheJson(STAFF_PUBLIC_STATS_PLAYERS_FILE, { force });
+  });
   return Array.isArray(list) ? list : [];
 }
-async function fetchStaffPublicStatsFarms({ force = false } = {}) {
-  const list = await fetchStaffPublicCacheJson(STAFF_PUBLIC_STATS_FARMS_FILE, { force });
+async function fetchStaffPublicStatsFarms(region = '', { force = false } = {}) {
+  const safeRegion = normalizeRegion(region);
+  const file = safeRegion ? `stats-farms-R${safeRegion}.json` : STAFF_PUBLIC_STATS_FARMS_FILE;
+  const list = await fetchStaffPublicCacheJson(file, { force }).catch(error => {
+    if (!safeRegion) throw error;
+    return fetchStaffPublicCacheJson(STAFF_PUBLIC_STATS_FARMS_FILE, { force });
+  });
   return Array.isArray(list) ? list : [];
 }
 function staffRowTime(row = {}) {
@@ -179,9 +189,9 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=075',
-  'region-settings': './region-settings-page.js?v=075',
-  'action-log': './action-log-page.js?v=075'
+  'region-table': './region-table-page.js?v=076',
+  'region-settings': './region-settings-page.js?v=076',
+  'action-log': './action-log-page.js?v=076'
 };
 const loadedStaffToolTabs = new Set();
 
@@ -500,8 +510,8 @@ async function readStaffPublicSnapshotRows(region = '', { force = false } = {}) 
   const safeRegion = normalizeRegion(region);
   const version = await fetchStaffPublicStatsVersion({ force }).catch(() => null);
   const [publicPlayers, publicFarms] = await Promise.all([
-    fetchStaffPublicStatsPlayers({ force }).catch(() => []),
-    fetchStaffPublicStatsFarms({ force }).catch(() => [])
+    fetchStaffPublicStatsPlayers(safeRegion, { force }).catch(() => []),
+    fetchStaffPublicStatsFarms(safeRegion, { force }).catch(() => [])
   ]);
   const allPlayerRows = (Array.isArray(publicPlayers) ? publicPlayers : [])
     .map(row => normalizeStaffSnapshotRow({ ...row, farmId: row.farmId || 'main', __isFarm: false, __publicSnapshotOnly: true }));
@@ -520,7 +530,7 @@ async function readStaffPublicSnapshotRows(region = '', { force = false } = {}) 
     .map(row => normalizeStaffSnapshotRow({ ...row, __linkedOwnerContext: true, __publicSnapshotOnly: true }));
   const rows = mergeStaffRows(playerRows, [...farmRows, ...ownerRows]);
   return {
-    source: 'public-cache/stats-players.json + stats-farms.json',
+    source: safeRegion ? `public-cache/stats-players-R${safeRegion}.json + stats-farms-R${safeRegion}.json` : 'public-cache/stats-players.json + stats-farms.json',
     version: String(version?.version || version?.updatedAt || ''),
     region: safeRegion,
     rows,

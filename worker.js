@@ -1896,6 +1896,10 @@ async function handleRegionFormSettingsPut(request, env) {
     ? await autoSubmitTemplatesForRegionCycle(db, region, form.cycleId || requestedCycleId, form.settings || {}).catch(error => ({ skipped: true, error: clean(error?.message || error, 120) }))
     : { skipped: true, reason: 'form-closed' };
   await grantRegionAccess(db, region, user.uid, 'form-settings');
+  const oldCode = normalizeCode(previousForm?.code || '');
+  const newCode = normalizeCode(form?.code || '');
+  if (oldCode) await deletePublicShareCache(request, 'snapshot-region-form', oldCode);
+  if (newCode && newCode !== oldCode) await deletePublicShareCache(request, 'snapshot-region-form', newCode);
   const extraWrites = Number(autoSubmitRun?.rowsWritten || 0) || 0;
   const extraReads = Number(autoSubmitRun?.rowsRead || 0) || 0;
   return json({
@@ -3388,13 +3392,19 @@ function regionTableSharePageFileName(code = '', page = 1) {
   return safeCode ? `public-cache/share/rt/${safeCode}/page-${safePage}.json` : '';
 }
 
+function exportedSnapshotKind(kind = '') {
+  if (kind === 'p') return 'final-plan';
+  if (kind === 'f') return 'region-form';
+  return 'region-table';
+}
+
 function exportedSharePayload(payload = {}, kind = '', code = '') {
   const now = Date.now();
   return {
     ...(payload || {}),
     usage: { d1RowsRead: 0, d1RowsWritten: 0 },
     snapshot: {
-      kind: kind === 'p' ? 'final-plan' : 'region-table',
+      kind: exportedSnapshotKind(kind),
       static: true,
       exported: true,
       code: normalizeCode(code),
@@ -3461,12 +3471,56 @@ function exportedRegionTableShareFiles(payload = {}, code = '') {
   return [{ kind: 'rt', code: safeCode, path: shareSnapshotFileName('rt', safeCode), data: indexPayload }, ...files];
 }
 
+async function buildRegionFormSharePayload(env, codeValue) {
+  const code = normalizeCode(codeValue);
+  if (!code) return { response: json({ ok: false, error: 'share_code_required' }, 400) };
+  const db = regionTableDb(env);
+  if (!db) return { response: json({ ok: false, error: 'd1_not_configured' }, 500) };
+  await ensureRegionTableSchema(db);
+  const form = await readRegionFormShareD1(db, code);
+  if (!form) return { response: json({ ok: false, error: 'share_not_found' }, 404) };
+  const alliances = await readPublicRegionAlliancesD1(db, form.region);
+  const fallbackAlliances = Array.isArray(form.settings?.rotationAlliances) ? form.settings.rotationAlliances : [];
+  return {
+    code,
+    payload: {
+      ok: true,
+      form,
+      alliances: alliances.length ? alliances : fallbackAlliances,
+      usage: { d1RowsRead: Math.max(1, alliances.length || fallbackAlliances.length || 1), d1RowsWritten: 0 },
+      cache: { enabled: isPublicShareCacheEnabled(env), ttlSeconds: publicShareCacheSeconds(env), source: 'public-share-cache' },
+      source: 'cloudflare-d1-form-settings'
+    }
+  };
+}
+
+async function handlePublicRegionFormSnapshot(request, env, codeValue) {
+  const code = normalizeCode(codeValue);
+  if (!code) return json({ ok: false, error: 'share_code_required' }, 400);
+  const cached = await readPublicShareCache(request, env, 'snapshot-region-form', code);
+  if (cached) return cached;
+  const built = await buildRegionFormSharePayload(env, code);
+  if (built.response) return built.response;
+  const payload = {
+    ...built.payload,
+    snapshot: { kind: 'region-form', static: true, code, generatedAtMs: Date.now(), ttlSeconds: publicShareCacheSeconds(env) },
+    cache: { ...(built.payload.cache || {}), source: 'public-static-snapshot', workerRequest: 1 }
+  };
+  return writePublicShareCache(request, env, 'snapshot-region-form', code, payload, publicShareCacheSeconds(env));
+}
+
 async function handlePublicShareSnapshotExport(request, env) {
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
   if (statsSecret(env) && !hasValidStatsSecret(request, env)) return json({ ok: false, error: 'stats_secret_required' }, 403);
   await ensureRegionTableSchema(db);
   const now = Date.now();
+  const formRows = await db.prepare(
+    `SELECT short_code AS code FROM region_form_settings
+      WHERE short_code != ''
+      ORDER BY updated_at_ms DESC
+      LIMIT 500`
+  ).all();
   const tableRows = await db.prepare(
     `SELECT code FROM region_table_shares
       WHERE revoked = 0 AND (expires_at_ms = 0 OR expires_at_ms > ?1)
@@ -3480,6 +3534,13 @@ async function handlePublicShareSnapshotExport(request, env) {
       LIMIT 500`
   ).bind(now).all();
   const files = [];
+  for (const row of formRows?.results || []) {
+    const code = normalizeCode(row?.code);
+    if (!code) continue;
+    const built = await buildRegionFormSharePayload(env, code);
+    if (built.response || !built.payload?.ok) continue;
+    files.push({ kind: 'f', code, path: shareSnapshotFileName('f', code), data: exportedSharePayload(built.payload, 'f', code) });
+  }
   for (const row of tableRows?.results || []) {
     const code = normalizeCode(row?.code);
     if (!code) continue;
@@ -3502,6 +3563,7 @@ async function handlePublicShareSnapshotExport(request, env) {
     files,
     counts: {
       total: files.length,
+      forms: files.filter(file => file.kind === 'f').length,
       regionTables: files.filter(file => file.kind === 'rt').length,
       finalPlans: files.filter(file => file.kind === 'p').length
     },
@@ -5883,6 +5945,12 @@ export default {
         return await handleRegionFormShareRead(request, env, regionFormShareMatch[1]);
       }
 
+      const publicRegionFormSnapshotMatch = url.pathname.match(/^\/public-cache\/share\/f\/([A-Za-z0-9_-]{6,140})\.json$/);
+      if (publicRegionFormSnapshotMatch && request.method === "GET") {
+        const staticSnapshot = await readStaticPublicCacheAsset(request, env);
+        if (staticSnapshot) return staticSnapshot;
+        return await handlePublicRegionFormSnapshot(request, env, publicRegionFormSnapshotMatch[1]);
+      }
 
       const publicRegionTableSnapshotMatch = url.pathname.match(/^\/public-cache\/share\/rt\/([A-Za-z0-9_-]{6,140})\.json$/);
       if (publicRegionTableSnapshotMatch && request.method === "GET") {
