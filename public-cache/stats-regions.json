@@ -1,0 +1,16 @@
+[
+  {
+    "region": "982",
+    "playersFile": "stats-players-R982.json",
+    "farmsFile": "stats-farms-R982.json",
+    "players": 1,
+    "farms": 1
+  },
+  {
+    "region": "987",
+    "playersFile": "stats-players-R987.json",
+    "farmsFile": "stats-farms-R987.json",
+    "players": 2,
+    "farms": 2
+  }
+]

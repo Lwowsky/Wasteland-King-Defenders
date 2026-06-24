@@ -1,0 +1,30 @@
+[
+  {
+    "ownerPublicKey": "6db42f5a72b0b64b1b0c2916",
+    "ownerNickname": "Lwowsky",
+    "farmKey": "farm-1780412538097",
+    "nickname": "炎Shɪsuɪ숬Uchiha炎",
+    "region": "982",
+    "alliance": "DIO",
+    "rank": "P3",
+    "shk": "24",
+    "role": "admin",
+    "createdAt": "2026-05-27T13:51:55.337Z",
+    "updatedAt": "2026-06-21T21:48:35.243Z",
+    "wastelandProfile": {
+      "lairLevel": "39",
+      "troopType": "rider",
+      "tier": "T10",
+      "marchSize": "251000",
+      "rallySize": "1400000",
+      "captainReady": true,
+      "readyToJoin": true,
+      "readyToAttack": true,
+      "shift": "shift1",
+      "extraEnabled": false,
+      "extraSquads": [],
+      "extraTroopType": "",
+      "extraTier": ""
+    }
+  }
+]

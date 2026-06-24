@@ -30,22 +30,5 @@
       "extraTroopType": "",
       "extraTier": ""
     }
-  },
-  {
-    "publicKey": "cf2d00338f78d42530684d04",
-    "nickname": "アユシュカさん",
-    "region": "987",
-    "alliance": "YYY",
-    "rank": "P3",
-    "shk": "26",
-    "role": "admin",
-    "countryCode": "JP",
-    "farmCount": 0,
-    "createdAt": "2026-06-15T08:40:15.270Z",
-    "updatedAt": null,
-    "profileVisibility": {
-      "showWastelandInfo": false,
-      "showFarmsInfo": false
-    }
   }
 ]
