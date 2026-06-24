@@ -1,7 +1,7 @@
 import { getFirebase } from './firebase-service.js';
-import { readCache, writeCache, removeCache } from './local-cache.js?v=077';
-import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=077';
-import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=077';
+import { readCache, writeCache, removeCache } from './local-cache.js?v=078';
+import { trackReads, trackWrites, trackDeletes } from './usage-tracker.js?v=078';
+import { mirrorPublicStatsPlayer } from './public-stats-cache.js?v=078';
 import {
   createNotificationCampaignD1,
   createNotificationD1,
@@ -18,7 +18,7 @@ import {
   readNotificationBellD1,
   setNotificationSummaryD1,
   upsertNotificationDirectoryD1
-} from './notifications-d1.js?v=077';
+} from './notifications-d1.js?v=078';
 
 export const OWNER_EMAILS = ['vovapotaychuk@gmail.com'];
 export const ADMIN_EMAILS = OWNER_EMAILS;
@@ -2028,21 +2028,6 @@ function buildAdminUsersIndexQuery(firestoreMod, db, { cursor = null, direction 
   return firestoreMod.query(...clauses);
 }
 
-function buildAdminUsersQuery(firestoreMod, db, { cursor = null, direction = 'next', pageSize = 10, filters = {}, strictProfileComplete = true, serverFilters = true } = {}) {
-  const clauses = [firestoreMod.collection(db, 'users')];
-  const role = adminRoleFilterValue(filters.role || 'all');
-  if (strictProfileComplete) clauses.push(firestoreMod.where('profileComplete', '==', true));
-  if (serverFilters && role && role !== 'all') clauses.push(firestoreMod.where('role', '==', role));
-  clauses.push(firestoreMod.orderBy('createdAt', 'desc'));
-  if (cursor) {
-    if (direction === 'prev') clauses.push(firestoreMod.endBefore(cursor), firestoreMod.limitToLast(pageSize));
-    else clauses.push(firestoreMod.startAfter(cursor), firestoreMod.limit(pageSize));
-  } else {
-    clauses.push(firestoreMod.limit(pageSize));
-  }
-  return firestoreMod.query(...clauses);
-}
-
 function buildLegacyAdminUsersQuery(firestoreMod, db, { pageSize = 10 } = {}) {
   return firestoreMod.query(firestoreMod.collection(db, 'users'), firestoreMod.limit(Math.max(1, Math.min(100, Number(pageSize) || 10))));
 }
@@ -2365,18 +2350,13 @@ export async function listRegisteredUsersPage(options = {}) {
   }
 
   // One-time self-healing fallback for old profiles that do not yet have adminUsersIndex docs.
-  // Important: for active searches, a zero-result indexed query stays cheap and does NOT scan users.
-  // If the player is old and missing from the index, publicPlayers search repairs the index without scanning users.
+  // Keep this as a small plain users read: filtered/orderBy fallbacks can require Firestore composite indexes.
+  // Active searches still stay cheap because publicPlayers/exact queries above repair the index without scanning users.
   const shouldTryUsersFallback = !options?.cursor && ((!hasFilters && mapped.length < queryPageSize) || (!mapped.length && indexQueryFailed));
   if (shouldTryUsersFallback) {
     try {
       const fallbackLimit = hasFilters ? Math.max(pageSize + 1, Math.min(100, Number(options?.scanLimit || 50))) : pageSize + 1;
-      const userSnap = await firestoreMod.getDocs(buildAdminUsersQuery(firestoreMod, db, {
-        pageSize: fallbackLimit,
-        filters,
-        strictProfileComplete: true,
-        serverFilters: true
-      }));
+      const userSnap = await firestoreMod.getDocs(buildLegacyAdminUsersQuery(firestoreMod, db, { pageSize: fallbackLimit }));
       readCount += Math.max(1, userSnap.docs.length);
       mergeUniqueDocs(rawDocs, userSnap.docs || []);
       mapped = mergeAdminUserRows(mapped, mapAdminUserDocs(userSnap.docs || [], filters));
@@ -2387,20 +2367,6 @@ export async function listRegisteredUsersPage(options = {}) {
       queryMode = indexedCount ? `${queryMode}+self-healed-${indexedCount}` : `${queryMode}+users-fallback`;
     } catch (fallbackError) {
       console.warn('[WKD] admin users small fallback failed:', fallbackError?.code || fallbackError?.message || fallbackError);
-    }
-  }
-
-  if (shouldTryUsersFallback && !mapped.length) {
-    try {
-      const legacyLimit = hasFilters ? Math.max(pageSize + 1, Math.min(100, Number(options?.scanLimit || 50))) : pageSize + 1;
-      const legacySnapshot = await firestoreMod.getDocs(buildLegacyAdminUsersQuery(firestoreMod, db, { pageSize: legacyLimit }));
-      readCount += Math.max(1, legacySnapshot.docs.length);
-      mergeUniqueDocs(rawDocs, legacySnapshot.docs || []);
-      mapped = mergeAdminUserRows(mapped, mapAdminUserDocs(legacySnapshot.docs || [], filters));
-      const indexedCount = await writeAdminUserIndexesForDocs(db, firestoreMod, legacySnapshot.docs || []).catch(() => 0);
-      queryMode = indexedCount ? `${queryMode}+legacy-self-healed-${indexedCount}` : `${queryMode}+legacy-fallback`;
-    } catch (legacyError) {
-      console.warn('[WKD] legacy admin users fallback failed:', legacyError?.code || legacyError?.message || legacyError);
     }
   }
 

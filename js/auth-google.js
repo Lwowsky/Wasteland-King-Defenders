@@ -1,5 +1,5 @@
 import { isFirebaseConfigured, getFirebase, watchAuth } from './services/firebase-service.js';
-import { canUseAdminPanel, canUseStaffPanel, getUserProfile, isProfileComplete } from './services/user-db.js?v=077';
+import { canUseAdminPanel, canUseStaffPanel, getUserProfile, isProfileComplete } from './services/user-db.js?v=078';
 
 const $ = selector => document.querySelector(selector);
 const shellT = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : fallback;
