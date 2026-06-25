@@ -11,7 +11,7 @@ import {
   staffRankOptionsForTarget,
   staffRoleOptionsForTarget,
   updateRegionPlayerByStaff
-} from '../services/user-db.js?v=078';
+} from '../services/user-db.js?v=079';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : fallback;
@@ -189,9 +189,9 @@ function badge(name, value, fallback = '') {
 }
 
 const STAFF_TOOL_MODULES = {
-  'region-table': './region-table-page.js?v=078',
-  'region-settings': './region-settings-page.js?v=078',
-  'action-log': './action-log-page.js?v=078'
+  'region-table': './region-table-page.js?v=079',
+  'region-settings': './region-settings-page.js?v=079',
+  'action-log': './action-log-page.js?v=079'
 };
 const loadedStaffToolTabs = new Set();
 

@@ -1,4 +1,4 @@
-import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=078';
+import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=079';
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile, saveFarmWastelandProfile } from '../services/user-db.js';
 import {
@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=078';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=078';
+} from '../services/region-db.js?v=079';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=079';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -615,16 +615,22 @@ function fillSavedRegistration(row, options = {}) {
 
 function toggleExtraFields() {
   const enabled = Boolean($('#wrExtraEnabled')?.checked);
+  const mainTroop = $('#wrTroopType')?.value || '';
   const fields = $('#extraTroopFields');
   if (!fields) return;
   fields.hidden = false;
   fields.classList.toggle('is-disabled', !enabled);
-  fields.querySelectorAll('[data-extra-troop]').forEach(input => { input.disabled = !enabled; });
+  fields.querySelectorAll('[data-extra-troop]').forEach(input => {
+    const isMainTroop = Boolean(mainTroop && input.dataset.extraTroop === mainTroop);
+    if (isMainTroop) input.checked = false;
+    input.disabled = !enabled || isMainTroop;
+  });
   fields.querySelectorAll('.region-extra-card').forEach(card => {
     const troop = card.dataset.extraCard || '';
     const input = card.querySelector(`[data-extra-troop="${troop}"]`);
-    const active = enabled && Boolean(input?.checked);
-    card.classList.toggle('is-disabled', !enabled);
+    const isMainTroop = Boolean(mainTroop && troop === mainTroop);
+    const active = enabled && !isMainTroop && Boolean(input?.checked);
+    card.classList.toggle('is-disabled', !enabled || isMainTroop);
     card.classList.toggle('is-extra-selected', active);
     card.querySelectorAll('[data-extra-tier]').forEach(select => { select.disabled = !active; });
   });
@@ -632,13 +638,14 @@ function toggleExtraFields() {
 
 function readExtraSquads() {
   if (!$('#wrExtraEnabled')?.checked) return [];
+  const mainTroop = $('#wrTroopType')?.value || '';
   return [...document.querySelectorAll('[data-extra-troop]:checked')]
     .map(input => {
       const troopType = input.dataset.extraTroop || '';
       const tier = document.querySelector(`[data-extra-tier="${troopType}"]`)?.value || '';
       return { troopType, tier };
     })
-    .filter(item => item.troopType);
+    .filter(item => item.troopType && item.troopType !== mainTroop);
 }
 
 function readForm() {
@@ -675,6 +682,9 @@ function validate(values) {
   if (!values.nickname?.trim()) errors.push(t('region.errorNickname', 'Enter nickname.'));
   if (!values.alliance?.trim()) errors.push(t('region.errorAlliance', 'Enter alliance.'));
   if (!values.troopType) errors.push(t('region.errorMainTroop', 'Choose the main troop type.'));
+  if (!String(values.lairLevel || '').trim() || Number(String(values.lairLevel || '').replace(/[^0-9]/g, '')) <= 0) errors.push(t('region.errorLairRequired', 'Enter lair level.'));
+  if (!String(values.marchSize || '').trim() || Number(String(values.marchSize || '').replace(/[^0-9]/g, '')) <= 0) errors.push(t('region.errorMarchRequired', 'Enter march size.'));
+  if (!String(values.rallySize || '').trim() || Number(String(values.rallySize || '').replace(/[^0-9]/g, '')) <= 0) errors.push(t('region.errorRallyRequired', 'Enter rally size.'));
   if (!values.shift) errors.push(t('region.errorShift', 'Choose a shift.'));
   if (values.tier && !getAllowedTiers(formSettings || {}).includes(values.tier)) errors.push(tv('region.errorMinTier', 'Minimum tier in this region: {tier}.', { tier: formSettings?.minTier || 'T10' }));
   const troops = ['fighter', 'rider', 'shooter', ...(formSettings?.customTroopTypes || []).map(item => item.id)];
@@ -682,6 +692,7 @@ function validate(values) {
   if ($('#wrExtraEnabled')?.checked && !values.extraSquads.length) errors.push(t('region.errorExtraTroopRequired', 'Select at least one troop type for the additional squad.'));
   values.extraSquads.forEach(item => {
     if (!troops.includes(item.troopType)) errors.push(t('region.errorExtraTroopAllowed', 'Additional troop type must be from the region list.'));
+    if (item.troopType === values.troopType) errors.push(t('region.errorExtraSameAsMain', 'Additional troop type cannot be the same as the main troop type.'));
     if (!item.tier) errors.push(t('region.errorExtraTier', 'Choose a tier for the additional squad.'));
     if (item.tier && !getAllowedTiers(formSettings || {}).includes(item.tier)) errors.push(tv('region.errorExtraMinTier', 'Additional tier must be at least: {tier}.', { tier: formSettings?.minTier || 'T10' }));
   });
@@ -1191,6 +1202,7 @@ function bind() {
   $('#wastelandForm')?.addEventListener('submit', handleSubmit);
   $('#wrAllianceSelect')?.addEventListener('change', event => setAllianceInputValue(event.currentTarget.value));
   $('#wrAlliance')?.addEventListener('input', event => syncAllianceSelect(event.currentTarget.value));
+  $('#wrTroopType')?.addEventListener('change', toggleExtraFields);
   document.addEventListener('change', event => {
     if (event.target?.matches?.('#wrExtraEnabled, [data-extra-troop]')) toggleExtraFields();
   });

@@ -1,5 +1,5 @@
 import { regionTableCacheConfig } from '../config/region-table-cache.config.js';
-import { trackCloudflareUsage } from './usage-tracker.js?v=078';
+import { trackCloudflareUsage } from './usage-tracker.js?v=079';
 
 const REGION_TABLE_CACHE_TTL_MS = 30 * 60 * 1000;
 const SHARE_TABLE_CACHE_TTL_MS = 10 * 60 * 1000;
@@ -339,13 +339,14 @@ export function autoSubmitTemplateSyncMarkerMatches(marker = null, hash = '') {
 }
 
 function sanitizeRegistrationValues(values = {}) {
+  const mainTroop = cleanText(values.troopType || '', 40);
   return {
     farmId: cleanText(values.farmId || 'main', 80) || 'main',
     nickname: cleanText(values.nickname || values.gameNick || values.name || '', 80),
     alliance: cleanText(values.alliance || '', 12),
     rank: cleanText(values.rank || '', 16).toLowerCase(),
     shk: cleanText(values.shk || '', 12),
-    troopType: cleanText(values.troopType || '', 40),
+    troopType: mainTroop,
     tier: cleanText(values.tier || '', 12).toUpperCase(),
     lairLevel: numberValue(values.lairLevel),
     marchSize: numberValue(values.marchSize),
@@ -357,7 +358,7 @@ function sanitizeRegistrationValues(values = {}) {
     comment: cleanText(values.comment || '', 300),
     extraEnabled: Boolean(values.extraEnabled || (Array.isArray(values.extraSquads) && values.extraSquads.length)),
     extraSquads: Array.isArray(values.extraSquads)
-      ? values.extraSquads.map(item => ({ troopType: cleanText(item?.troopType || '', 40), tier: cleanText(item?.tier || '', 12).toUpperCase() })).filter(item => item.troopType && item.tier).slice(0, 8)
+      ? values.extraSquads.map(item => ({ troopType: cleanText(item?.troopType || '', 40), tier: cleanText(item?.tier || '', 12).toUpperCase() })).filter(item => item.troopType && item.troopType !== mainTroop && item.tier).slice(0, 8)
       : [],
     extraTroopType: cleanText(values.extraTroopType || '', 40),
     extraTier: cleanText(values.extraTier || '', 12).toUpperCase(),

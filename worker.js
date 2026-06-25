@@ -789,6 +789,7 @@ function stablePublicRegistrationKey(region = '', cycleId = '', shareCode = '', 
 }
 
 function sanitizeTableRow(row = {}) {
+  const mainTroop = clean(row.troopType || "", 40);
   const id = clean(
     row.id || row.uid || row.publicKey || row.nickname || crypto.randomUUID(),
     180,
@@ -805,7 +806,7 @@ function sanitizeTableRow(row = {}) {
     shk: clean(row.shk || "", 12),
     role: clean(row.role || "player", 40).toLowerCase(),
     roleLabel: clean(row.roleLabel || "", 80),
-    troopType: clean(row.troopType || "", 40),
+    troopType: mainTroop,
     troopLabel: clean(row.troopLabel || "", 80),
     tier: clean(row.tier || "", 12).toUpperCase(),
     lairLevel: numberValue(row.lairLevel),
@@ -818,7 +819,12 @@ function sanitizeTableRow(row = {}) {
     shiftLabel: clean(row.shiftLabel || "", 80),
     comment: clean(row.comment || "", 300),
     extraEnabled: Boolean(row.extraEnabled || (Array.isArray(row.extraSquads) && row.extraSquads.length)),
-    extraSquads: Array.isArray(row.extraSquads) ? row.extraSquads.slice(0, 8) : [],
+    extraSquads: Array.isArray(row.extraSquads)
+      ? row.extraSquads
+        .map(item => ({ troopType: clean(item?.troopType || "", 40), tier: clean(item?.tier || "", 12).toUpperCase() }))
+        .filter(item => item.troopType && item.troopType !== mainTroop && item.tier)
+        .slice(0, 8)
+      : [],
     extraTroopType: clean(row.extraTroopType || "", 40),
     extraTier: clean(row.extraTier || "", 12).toUpperCase(),
     customFields:
@@ -2475,6 +2481,16 @@ async function handleRegionTableRegistration(request, env) {
   const row = sanitizeTableRow(mergedRawRow);
   if (!row.nickname) return json({ ok: false, error: "registration_nickname_required" }, 400);
   if (isRegionFormSubmission(body)) {
+    if (!row.alliance) return json({ ok: false, error: "registration_alliance_required" }, 400, "private, no-store");
+    if (!row.troopType) return json({ ok: false, error: "registration_troop_required" }, 400, "private, no-store");
+    if (!row.tier) return json({ ok: false, error: "registration_tier_required" }, 400, "private, no-store");
+    if (!row.shift) return json({ ok: false, error: "registration_shift_required" }, 400, "private, no-store");
+    if (!row.lairLevel) return json({ ok: false, error: "registration_lair_required" }, 400, "private, no-store");
+    if (!row.marchSize) return json({ ok: false, error: "registration_march_required" }, 400, "private, no-store");
+    if (!row.rallySize) return json({ ok: false, error: "registration_rally_required" }, 400, "private, no-store");
+    if (row.extraEnabled && (!Array.isArray(row.extraSquads) || !row.extraSquads.length)) {
+      return json({ ok: false, error: "registration_invalid_extra_troop" }, 400, "private, no-store");
+    }
     const minTierNumber = tierNumberForAutoSubmit(currentSettings?.minTier || 'T10') || 10;
     if (tierNumberForAutoSubmit(row.tier) < minTierNumber) {
       return json({ ok: false, error: "registration-invalid-tier", minTier: currentSettings?.minTier || 'T10' }, 400, "private, no-store");
