@@ -1,4 +1,4 @@
-import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=080';
+import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=081';
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile, saveFarmWastelandProfile } from '../services/user-db.js';
 import {
@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=080';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=080';
+} from '../services/region-db.js?v=081';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=081';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -92,6 +92,7 @@ let countdownId = null;
 let ready = false;
 
 let autoSubmitting = false;
+let currentStatusI18n = null;
 
 async function loadRegionFormSettings(region) {
   const safeRegion = String(region || '').trim().replace(/[^0-9]/g, '');
@@ -231,9 +232,21 @@ function clearDraft() {
   try { localStorage.removeItem(draftKey()); } catch {}
 }
 
-function setStatus(text, type = 'muted') {
+function renderStatusI18n() {
+  if (!currentStatusI18n) return;
+  const { key, fallback, vars, type } = currentStatusI18n;
+  setStatus(tv(key, fallback, vars), type, { keepI18n: true });
+}
+
+function setStatusKey(key, fallback = '', vars = {}, type = 'muted') {
+  currentStatusI18n = { key, fallback, vars, type };
+  renderStatusI18n();
+}
+
+function setStatus(text, type = 'muted', options = {}) {
   const box = $('#regionStatus');
   if (!box) return;
+  if (!options.keepI18n) currentStatusI18n = null;
   box.removeAttribute('data-i18n');
   box.textContent = text;
   box.dataset.type = type;
@@ -835,7 +848,7 @@ async function submitCurrentRegistration(values, { auto = false, forceUpdate = f
     if (currentRegion) localStorage.setItem('wkd.players.activeRegion', currentRegion);
     window.dispatchEvent(new CustomEvent('wkd:region-registration-saved', { detail: { region: currentRegion, farmId: savedRequest?.farmId || values.farmId || 'main' } }));
     if (!currentUser) {
-      setStatus(t('region.requestSavedDialogTitle', 'Заявку відправлено'), 'success');
+      setStatusKey('region.requestSavedDialogTitle', 'Заявку відправлено', {}, 'success');
       window.WKD?.actionDoneDialog?.({
         title: t('region.requestSavedDialogTitle', 'Заявку відправлено'),
         message: tv('region.requestSavedDialogMessage', 'Заявку для регіону R{region} збережено. Її вже видно у таблиці регіону.', { region: currentRegion }),
@@ -1038,7 +1051,7 @@ async function loadPublicForm(region) {
   if (!open) return;
   const draft = loadDraft();
   if (draft) fillSavedRegistration(draft);
-  setStatus(t('region.publicCanSubmit', 'You can fill out the request without Google sign-in. After sending, only a consul or officer can edit it.'), 'muted');
+  setStatusKey('region.publicCanSubmit', 'You can fill out the request without Google sign-in. After sending, only a consul or officer can edit it.', {}, 'muted');
 }
 
 async function loadSignedInForm(user) {
@@ -1175,6 +1188,7 @@ function handleLanguageChange() {
   $('#regionNumberPill') && ($('#regionNumberPill').textContent = regionPillText());
   $('#regionFormTitleText') && ($('#regionFormTitleText').textContent = settingsTitle(formSettings));
   $('#regionFormDescText') && ($('#regionFormDescText').textContent = settingsDescription(formSettings));
+  renderStatusI18n();
   const selectedTroop = $('#wrTroopType')?.value || '';
   const selectedShift = $('input[name="wrShift"]:checked')?.value || '';
   const extraEnabled = Boolean($('#wrExtraEnabled')?.checked);
