@@ -55,13 +55,13 @@
     </div>
 
     <div class="region-grid">
-      <label class="region-field"><span data-i18n="account.nickname">Нік у грі <b>*</b></span><input id="wrNickname" required autocomplete="off" /></label>
-      <label class="region-field"><span data-i18n="account.alliance">Альянс <b>*</b></span><div class="region-alliance-control"><input id="wrAlliance" required maxlength="3" autocomplete="off" list="wrAllianceList" /><select id="wrAllianceSelect" class="region-alliance-select" aria-label="Альянс" hidden></select><datalist id="wrAllianceList"></datalist></div></label>
-      <label class="region-field"><span data-i18n="regionForm.mainTroopType">Основний тип військ <b>*</b></span><select id="wrTroopType" required><option value="" data-i18n="common.selectType">Вибери тип</option><option value="fighter" data-i18n="troop.fighter">Бійці</option><option value="rider" data-i18n="troop.rider">Наїзники</option><option value="shooter" data-i18n="troop.shooter">Стрільці</option></select></label>
-      <label class="region-field"><span data-i18n="playerEdit.tier">Тір <b>*</b></span><select id="wrTier" required></select></label>
-      <label class="region-field"><span data-i18n="regionForm.lairLevel">Рівень лігва <b>*</b></span><input id="wrLairLevel" inputmode="numeric" required placeholder="Наприклад: 45" data-i18n-placeholder="regionForm.example45" /></label>
-      <label class="region-field"><span data-i18n="regionForm.marchSize">Розмір маршу <b>*</b></span><input id="wrMarch" inputmode="numeric" required placeholder="Наприклад: 301000" data-i18n-placeholder="regionForm.example301000" /></label>
-      <label class="region-field"><span data-i18n="regionForm.rallySize">Розмір ралі <b>*</b></span><input id="wrRally" inputmode="numeric" required placeholder="Наприклад: 1350000" data-i18n-placeholder="regionForm.example1350000" /></label>
+      <label class="region-field region-field--required"><span class="region-required-head"><span data-i18n="account.nickname">Нік у грі</span><em class="required-badge" data-i18n="common.requiredField">Обов’язково</em></span><input id="wrNickname" required autocomplete="off" /></label>
+      <label class="region-field region-field--required"><span class="region-required-head"><span data-i18n="account.alliance">Альянс</span><em class="required-badge" data-i18n="common.requiredField">Обов’язково</em></span><div class="region-alliance-control"><input id="wrAlliance" required maxlength="3" autocomplete="off" list="wrAllianceList" /><select id="wrAllianceSelect" class="region-alliance-select" aria-label="Альянс" hidden></select><datalist id="wrAllianceList"></datalist></div></label>
+      <label class="region-field region-field--required"><span class="region-required-head"><span data-i18n="regionForm.mainTroopType">Основний тип військ</span><em class="required-badge" data-i18n="common.requiredField">Обов’язково</em></span><select id="wrTroopType" required><option value="" data-i18n="common.selectType">Вибери тип</option><option value="fighter" data-i18n="troop.fighter">Бійці</option><option value="rider" data-i18n="troop.rider">Наїзники</option><option value="shooter" data-i18n="troop.shooter">Стрільці</option></select></label>
+      <label class="region-field region-field--required"><span class="region-required-head"><span data-i18n="playerEdit.tier">Тір</span><em class="required-badge" data-i18n="common.requiredField">Обов’язково</em></span><select id="wrTier" required></select></label>
+      <label class="region-field region-field--required"><span class="region-required-head"><span data-i18n="regionForm.lairLevel">Рівень лігва</span><em class="required-badge" data-i18n="common.requiredField">Обов’язково</em></span><input id="wrLairLevel" inputmode="numeric" required placeholder="Наприклад: 45" data-i18n-placeholder="regionForm.example45" /></label>
+      <label class="region-field region-field--required"><span class="region-required-head"><span data-i18n="regionForm.marchSize">Розмір маршу</span><em class="required-badge" data-i18n="common.requiredField">Обов’язково</em></span><input id="wrMarch" inputmode="numeric" required placeholder="Наприклад: 301000" data-i18n-placeholder="regionForm.example301000" /></label>
+      <label class="region-field region-field--required"><span class="region-required-head"><span data-i18n="regionForm.rallySize">Розмір ралі</span><em class="required-badge" data-i18n="common.requiredField">Обов’язково</em></span><input id="wrRally" inputmode="numeric" required placeholder="Наприклад: 1350000" data-i18n-placeholder="regionForm.example1350000" /></label>
       <div class="region-field region-field--full">
         <span data-i18n="regionForm.readiness">Готовність</span>
         <div class="region-check-grid">
@@ -69,8 +69,8 @@
           <label class="region-check"><input id="wrCaptain" type="checkbox" /> <span data-i18n="regionForm.captainReady">Готовий бути капітаном</span></label>
         </div>
       </div>
-      <div class="region-field region-field--full">
-        <span data-i18n="regionForm.shiftAvailability">Доступність по змінах <b>*</b></span>
+      <div class="region-field region-field--full region-field--required">
+        <span class="region-required-head"><span data-i18n="regionForm.shiftAvailability">Доступність по змінах</span><em class="required-badge" data-i18n="common.requiredField">Обов’язково</em></span>
         <div class="region-check-grid" id="wrShiftOptions"></div>
       </div>
       <div class="region-field region-field--full" id="extraTroopPanel">

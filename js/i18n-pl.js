@@ -38,6 +38,7 @@ window.WKD_TRANSLATIONS.pl = {
   "admin.actions": "Akcje",
   "common.approve": "Zatwierdź",
   "common.decline": "Odrzuć",
+  "common.requiredField": "Wymagane",
   "admin.accessConfirmed": "Dostęp administratora potwierdzony. Ładowanie danych...",
   "admin.actionFailed": "Nie udało się wykonać akcji. Sprawdź uprawnienia.",
   "admin.approveRoleMessage": "Gracz otrzyma wybraną rolę.",

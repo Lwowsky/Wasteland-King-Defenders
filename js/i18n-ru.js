@@ -38,6 +38,7 @@ window.WKD_TRANSLATIONS.ru = {
   "admin.actions": "Действия",
   "common.approve": "Подтвердить",
   "common.decline": "Отклонить",
+  "common.requiredField": "Обязательно",
   "admin.accessConfirmed": "Админ-доступ подтверждён. Загружаю данные...",
   "admin.actionFailed": "Не удалось выполнить действие. Проверь права доступа.",
   "admin.approveRoleMessage": "Игрок получит запрошенную роль.",

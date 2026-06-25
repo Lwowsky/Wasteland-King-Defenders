@@ -38,6 +38,7 @@ window.WKD_TRANSLATIONS.ja = {
   "admin.actions": "操作",
   "common.approve": "承認",
   "common.decline": "却下",
+  "common.requiredField": "必須",
   "admin.accessConfirmed": "管理者アクセスを確認しました。データを読み込み中...",
   "admin.actionFailed": "操作を完了できませんでした。権限を確認してください。",
   "admin.approveRoleMessage": "プレイヤーに申請された役割が付与されます。",

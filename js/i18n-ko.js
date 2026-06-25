@@ -38,6 +38,7 @@ window.WKD_TRANSLATIONS.ko = {
   "admin.actions": "작업",
   "common.approve": "승인",
   "common.decline": "거절",
+  "common.requiredField": "필수",
   "admin.accessConfirmed": "관리자 접근이 확인되었습니다. 데이터 로딩 중...",
   "admin.actionFailed": "작업을 완료하지 못했습니다. 권한을 확인하세요.",
   "admin.approveRoleMessage": "플레이어가 요청한 역할을 받습니다.",

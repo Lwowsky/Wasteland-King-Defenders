@@ -38,6 +38,7 @@ window.WKD_TRANSLATIONS.zh = {
   "admin.actions": "操作",
   "common.approve": "批准",
   "common.decline": "拒绝",
+  "common.requiredField": "必填",
   "admin.accessConfirmed": "管理员权限已确认。正在加载数据...",
   "admin.actionFailed": "无法完成操作。请检查权限。",
   "admin.approveRoleMessage": "玩家将获得所申请的角色。",

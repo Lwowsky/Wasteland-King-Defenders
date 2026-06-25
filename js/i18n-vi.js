@@ -38,6 +38,7 @@ window.WKD_TRANSLATIONS.vi = {
   "admin.actions": "Hành động",
   "common.approve": "Duyệt",
   "common.decline": "Từ chối",
+  "common.requiredField": "Bắt buộc",
   "admin.accessConfirmed": "Đã xác nhận quyền quản trị. Đang tải dữ liệu...",
   "admin.actionFailed": "Không thể thực hiện thao tác. Kiểm tra quyền truy cập.",
   "admin.approveRoleMessage": "Người chơi sẽ nhận vai trò đã yêu cầu.",

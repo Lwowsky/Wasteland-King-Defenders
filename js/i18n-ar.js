@@ -38,6 +38,7 @@ window.WKD_TRANSLATIONS.ar = {
   "admin.actions": "الإجراءات",
   "common.approve": "موافقة",
   "common.decline": "رفض",
+  "common.requiredField": "مطلوب",
   "admin.accessConfirmed": "تم تأكيد وصول المسؤول. جارٍ تحميل البيانات...",
   "admin.actionFailed": "تعذر تنفيذ الإجراء. تحقق من الصلاحيات.",
   "admin.approveRoleMessage": "سيحصل اللاعب على الدور المطلوب.",

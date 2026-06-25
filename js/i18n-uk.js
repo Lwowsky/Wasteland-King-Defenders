@@ -38,6 +38,7 @@ window.WKD_TRANSLATIONS.uk = {
   "admin.actions": "Дії",
   "common.approve": "Підтвердити",
   "common.decline": "Відхилити",
+  "common.requiredField": "Обов’язково",
   "admin.accessConfirmed": "Адмін-доступ підтверджено. Завантажую дані...",
   "admin.actionFailed": "Не вдалося виконати дію. Перевір права доступу.",
   "admin.approveRoleMessage": "Гравець отримає запитану роль.",

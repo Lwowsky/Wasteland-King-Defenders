@@ -38,6 +38,7 @@ window.WKD_TRANSLATIONS.en = {
   "admin.actions": "Actions",
   "common.approve": "Approve",
   "common.decline": "Decline",
+  "common.requiredField": "Required",
   "admin.accessConfirmed": "Admin access confirmed. Loading data...",
   "admin.actionFailed": "Could not complete the action. Check access rights.",
   "admin.approveRoleMessage": "The player will receive the requested role.",

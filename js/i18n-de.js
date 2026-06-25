@@ -38,6 +38,7 @@ window.WKD_TRANSLATIONS.de = {
   "admin.actions": "Aktionen",
   "common.approve": "Bestätigen",
   "common.decline": "Ablehnen",
+  "common.requiredField": "Pflichtfeld",
   "admin.accessConfirmed": "Admin-Zugriff bestätigt. Daten werden geladen...",
   "admin.actionFailed": "Aktion konnte nicht ausgeführt werden. Rechte prüfen.",
   "admin.approveRoleMessage": "Der Spieler erhält die angefragte Rolle.",
