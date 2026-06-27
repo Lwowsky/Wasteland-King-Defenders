@@ -1,7 +1,7 @@
 {
   "version": 1,
   "source": "cloudflare-d1-public-stats",
-  "generatedAt": "2026-06-27T14:02:36.134Z",
+  "generatedAt": "2026-06-27T15:22:49.719Z",
   "lastFullRebuildDate": "2026-06-27",
   "totalPlayers": 2,
   "totalFarms": 3,
@@ -24,12 +24,13 @@
   },
   "ranks": {
     "p4": 1,
-    "p3": 1
+    "p5": 1
   },
   "ranksWithFarms": {
     "p4": 1,
     "p2": 2,
-    "p3": 2
+    "p3": 1,
+    "p5": 1
   },
   "shkTiers": {
     "t12": 1,
@@ -41,10 +42,12 @@
     "t9": 1
   },
   "roles": {
-    "admin": 2
+    "admin": 1,
+    "consul": 1
   },
   "rolesWithFarms": {
-    "admin": 5
+    "admin": 4,
+    "consul": 1
   },
   "countries": {
     "UA": 1,
