@@ -1,7 +1,7 @@
 {
   "version": 1,
   "source": "cloudflare-d1-public-stats",
-  "generatedAt": "2026-06-27T11:43:15.117Z",
+  "generatedAt": "2026-06-27T14:02:36.134Z",
   "lastFullRebuildDate": "2026-06-27",
   "totalPlayers": 2,
   "totalFarms": 3,
@@ -58,7 +58,7 @@
     "JP": 1
   },
   "processedChanges": 0,
-  "d1Version": 1782544678228,
-  "d1UpdatedAtMs": 1782544678228,
+  "d1Version": 1782565779251,
+  "d1UpdatedAtMs": 1782565779251,
   "d1Buckets": 64
 }
