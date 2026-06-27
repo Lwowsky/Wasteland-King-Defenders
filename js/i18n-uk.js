@@ -2562,4 +2562,9 @@ window.WKD_TRANSLATIONS.uk = {
   'players.resetFilters': "Скинути фільтри",
 
 
+  'common.selectTier': 'Вибери тір',
+  'region.errorTier': 'Вибери тір.',
+  'confirm.availableIn': '{action} ({seconds} с)',
+  'regionSettings.closeNowDialogTitle': 'Реєстрацію закрито',
+  'regionSettings.closeNowDialogMessage': 'Форму регіону R{region} успішно закрито. Заявки поточного циклу залишилися в таблиці.',
 };

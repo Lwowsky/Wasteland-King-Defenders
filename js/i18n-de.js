@@ -2562,4 +2562,9 @@ window.WKD_TRANSLATIONS.de = {
   'players.resetFilters': "Filter zurücksetzen",
 
 
+  'common.selectTier': 'Stufe auswählen',
+  'region.errorTier': 'Wähle eine Stufe aus.',
+  'confirm.availableIn': '{action} ({seconds} s)',
+  'regionSettings.closeNowDialogTitle': 'Registrierung geschlossen',
+  'regionSettings.closeNowDialogMessage': 'Das Formular für Region R{region} wurde erfolgreich geschlossen. Anmeldungen des aktuellen Zyklus bleiben in der Tabelle.',
 };

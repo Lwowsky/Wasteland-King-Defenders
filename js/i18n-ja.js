@@ -2562,4 +2562,9 @@ window.WKD_TRANSLATIONS.ja = {
   'players.resetFilters': "フィルターをリセット",
 
 
+  'common.selectTier': 'ティアを選択',
+  'region.errorTier': 'ティアを選択してください。',
+  'confirm.availableIn': '{action}（{seconds}秒）',
+  'regionSettings.closeNowDialogTitle': '登録を閉じました',
+  'regionSettings.closeNowDialogMessage': '地域 R{region} のフォームを閉じました。現在のサイクルの申請は表に残ります。',
 };

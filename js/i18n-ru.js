@@ -2562,4 +2562,9 @@ window.WKD_TRANSLATIONS.ru = {
   'players.resetFilters': "Сбросить фильтры",
 
 
+  'common.selectTier': 'Выберите тир',
+  'region.errorTier': 'Выберите тир.',
+  'confirm.availableIn': '{action} ({seconds} с)',
+  'regionSettings.closeNowDialogTitle': 'Регистрация закрыта',
+  'regionSettings.closeNowDialogMessage': 'Форма региона R{region} успешно закрыта. Заявки текущего цикла остались в таблице.',
 };

@@ -1,6 +1,6 @@
-import { troopLabel, shiftLabel } from '../services/region-db.js?v=081';
-import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=081';
-import { isRegionTableCacheEnabled, readRegionTableShare } from '../services/region-table-cache.js?v=081';
+import { troopLabel, shiftLabel } from '../services/region-db.js?v=082';
+import { readShareCode, keepShareCodeInUrl } from '../core/share-links.js?v=082';
+import { isRegionTableCacheEnabled, readRegionTableShare } from '../services/region-table-cache.js?v=082';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];

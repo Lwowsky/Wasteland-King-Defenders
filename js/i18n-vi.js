@@ -2562,4 +2562,9 @@ window.WKD_TRANSLATIONS.vi = {
   'players.resetFilters': "Đặt lại bộ lọc",
 
 
+  'common.selectTier': 'Chọn bậc',
+  'region.errorTier': 'Hãy chọn bậc.',
+  'confirm.availableIn': '{action} ({seconds} giây)',
+  'regionSettings.closeNowDialogTitle': 'Đã đóng đăng ký',
+  'regionSettings.closeNowDialogMessage': 'Đã đóng thành công biểu mẫu khu vực R{region}. Các yêu cầu của chu kỳ hiện tại vẫn còn trong bảng.',
 };

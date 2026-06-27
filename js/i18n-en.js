@@ -2562,4 +2562,9 @@ window.WKD_TRANSLATIONS.en = {
   'players.resetFilters': "Reset filters",
 
 
+  'common.selectTier': 'Select tier',
+  'region.errorTier': 'Select a tier.',
+  'confirm.availableIn': '{action} ({seconds} s)',
+  'regionSettings.closeNowDialogTitle': 'Registration closed',
+  'regionSettings.closeNowDialogMessage': 'The form for region R{region} was closed successfully. Current-cycle requests remain in the table.',
 };

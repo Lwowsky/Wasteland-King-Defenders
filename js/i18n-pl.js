@@ -2562,4 +2562,9 @@ window.WKD_TRANSLATIONS.pl = {
   'players.resetFilters': "Wyczyść filtry",
 
 
+  'common.selectTier': 'Wybierz tier',
+  'region.errorTier': 'Wybierz tier.',
+  'confirm.availableIn': '{action} ({seconds} s)',
+  'regionSettings.closeNowDialogTitle': 'Rejestracja zamknięta',
+  'regionSettings.closeNowDialogMessage': 'Formularz regionu R{region} został pomyślnie zamknięty. Zgłoszenia z bieżącego cyklu pozostały w tabeli.',
 };

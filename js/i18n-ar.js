@@ -2560,4 +2560,9 @@ window.WKD_TRANSLATIONS.ar = {
   'players.resetFilters': "إعادة ضبط الفلاتر",
 
 
+  'common.selectTier': 'اختر المستوى',
+  'region.errorTier': 'اختر المستوى.',
+  'confirm.availableIn': '{action} ({seconds} ث)',
+  'regionSettings.closeNowDialogTitle': 'تم إغلاق التسجيل',
+  'regionSettings.closeNowDialogMessage': 'تم إغلاق نموذج المنطقة R{region} بنجاح. ستبقى طلبات الدورة الحالية في الجدول.',
 };

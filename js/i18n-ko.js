@@ -2562,4 +2562,9 @@ window.WKD_TRANSLATIONS.ko = {
   'players.resetFilters': "필터 초기화",
 
 
+  'common.selectTier': '티어 선택',
+  'region.errorTier': '티어를 선택하세요.',
+  'confirm.availableIn': '{action} ({seconds}초)',
+  'regionSettings.closeNowDialogTitle': '등록이 닫혔습니다',
+  'regionSettings.closeNowDialogMessage': '지역 R{region} 양식을 닫았습니다. 현재 사이클의 신청은 표에 유지됩니다.',
 };

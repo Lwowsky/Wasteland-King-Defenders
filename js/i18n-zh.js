@@ -2562,4 +2562,9 @@ window.WKD_TRANSLATIONS.zh = {
   'players.resetFilters': "重置筛选",
 
 
+  'common.selectTier': '选择等级',
+  'region.errorTier': '请选择等级。',
+  'confirm.availableIn': '{action}（{seconds}秒）',
+  'regionSettings.closeNowDialogTitle': '注册已关闭',
+  'regionSettings.closeNowDialogMessage': 'R{region} 区域的表单已成功关闭。当前周期的申请仍保留在表格中。',
 };

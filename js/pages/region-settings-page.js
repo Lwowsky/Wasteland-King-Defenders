@@ -1,5 +1,5 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { getFarmById, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=081';
+import { getFarmById, getGameProfile, getUserFarms, getUserProfile, normalizeUserRole, saveSignedInUser } from '../services/user-db.js?v=082';
 import {
   canManageRegion,
   canLeadCurrentRotation,
@@ -26,9 +26,9 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=081';
-import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=081';
-import { makePublicShareUrl } from '../core/share-links.js?v=081';
+} from '../services/region-db.js?v=082';
+import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=082';
+import { makePublicShareUrl } from '../core/share-links.js?v=082';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -949,7 +949,8 @@ async function startRegistrationNow() {
         title: t(titleKey, alreadyOpen ? 'Registration is already running' : 'Start registration now?'),
         message,
         acceptText: t(acceptKey, alreadyOpen ? 'Yes, start a new cycle' : 'Start now'),
-        cancelText: t('ui.cancel', 'Cancel')
+        cancelText: t('ui.cancel', 'Cancel'),
+        delaySeconds: 10
       })
     : window.confirm(message);
   if (!ok) return;
@@ -980,7 +981,8 @@ async function closeRegistrationNow() {
         title: t('regionSettings.closeNowConfirmTitle', 'Close registration now?'),
         message,
         acceptText: t('regionSettings.closeNow', 'Close registration'),
-        cancelText: t('ui.cancel', 'Cancel')
+        cancelText: t('ui.cancel', 'Cancel'),
+        delaySeconds: 10
       })
     : window.confirm(message);
   if (!ok) return;
@@ -993,6 +995,11 @@ async function closeRegistrationNow() {
   updatePreview();
   await save({ preventDefault() {} }, { enabled: false, autoOpenEnabled: false, openNewCycle: false, forceCloseNow: true });
   setStatus(t('regionSettings.closeNowSaved', 'Registration has been closed.'), 'success');
+  window.WKD?.actionDoneDialog?.({
+    title: t('regionSettings.closeNowDialogTitle', 'Реєстрацію закрито'),
+    message: tv('regionSettings.closeNowDialogMessage', 'Форму регіону R{region} успішно закрито. Заявки поточного циклу залишилися в таблиці.', { region: currentRegion }),
+    href: 'index.html'
+  });
 }
 
 function clearAllianceForm() {

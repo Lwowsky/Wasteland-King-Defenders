@@ -7,8 +7,8 @@ import {
   saveFarmWastelandProfile,
   saveSignedInUser
 } from '../services/user-db.js';
-import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=081';
-import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=081';
+import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=082';
+import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=082';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -111,9 +111,14 @@ function profileStatusLocked() {
   return Date.now() < profileRegionStatusLockUntil;
 }
 
-function fillTierSelect(select, selected = 'T10') {
+function fillTierSelect(select, selected = '', options = {}) {
   if (!select) return;
-  select.innerHTML = tiers.map(tier => `<option value="${tier}" ${tier === selected ? 'selected' : ''}>${tier}</option>`).join('');
+  const allowEmpty = Boolean(options.allowEmpty);
+  const value = tiers.includes(selected) ? selected : (allowEmpty ? '' : 'T10');
+  const placeholder = allowEmpty
+    ? `<option value="" ${value ? '' : 'selected'}>${esc(t('common.selectTier', 'Вибери тір'))}</option>`
+    : '';
+  select.innerHTML = placeholder + tiers.map(tier => `<option value="${tier}" ${tier === value ? 'selected' : ''}>${tier}</option>`).join('');
 }
 
 function fillExtraTierSelects(selectedByType = {}) {
@@ -308,7 +313,7 @@ function setRegionForm(data = {}) {
   syncAllianceSelect(data.alliance || '');
   $('#wrAutoFillProfile') && ($('#wrAutoFillProfile').checked = Boolean(data.autoSubmitEnabled));
   $('#wrTroopType') && ($('#wrTroopType').value = data.troopType || '');
-  $('#wrTier') && ($('#wrTier').value = data.tier || 'T10');
+  fillTierSelect($('#wrTier'), data.tier || '', { allowEmpty: true });
   $('#wrLairLevel') && ($('#wrLairLevel').value = data.lairLevel || data.lair || '');
   $('#wrMarch') && ($('#wrMarch').value = data.marchSize || '');
   $('#wrRally') && ($('#wrRally').value = data.rallySize || '');
@@ -374,16 +379,22 @@ function renderFarmSelect() {
 
 function toggleExtraFields() {
   const enabled = Boolean($('#wrExtraEnabled')?.checked);
+  const mainTroop = $('#wrTroopType')?.value || '';
   const fields = $('#extraTroopFields');
   if (!fields) return;
   fields.hidden = false;
   fields.classList.toggle('is-disabled', !enabled);
-  fields.querySelectorAll('[data-extra-troop]').forEach(input => { input.disabled = !enabled; });
+  fields.querySelectorAll('[data-extra-troop]').forEach(input => {
+    const isMainTroop = Boolean(mainTroop && input.dataset.extraTroop === mainTroop);
+    if (isMainTroop) input.checked = false;
+    input.disabled = !enabled || isMainTroop;
+  });
   fields.querySelectorAll('.region-extra-card').forEach(card => {
     const troop = card.dataset.extraCard || '';
     const input = card.querySelector(`[data-extra-troop="${troop}"]`);
-    const active = enabled && Boolean(input?.checked);
-    card.classList.toggle('is-disabled', !enabled);
+    const isMainTroop = Boolean(mainTroop && troop === mainTroop);
+    const active = enabled && !isMainTroop && Boolean(input?.checked);
+    card.classList.toggle('is-disabled', !enabled || isMainTroop);
     card.classList.toggle('is-extra-selected', active);
     card.querySelectorAll('[data-extra-tier]').forEach(select => { select.disabled = !active; });
   });
@@ -394,7 +405,7 @@ function prepareProfileForm() {
   $('#wrRegionSelectWrap') && ($('#wrRegionSelectWrap').hidden = true);
   renderProfileRegionChrome();
   renderTroopOptions();
-  fillTierSelect($('#wrTier'), 'T10');
+  fillTierSelect($('#wrTier'), '', { allowEmpty: true });
   fillExtraTierSelects({});
   renderShiftOptions('shift1');
   $('#wastelandForm') && ($('#wastelandForm').hidden = false);
@@ -466,6 +477,10 @@ function validateProfileRegionData(values = {}, farm = {}) {
   if (!String(values.nickname || '').trim()) errors.push(t('region.errorNickname', 'Введи нікнейм.'));
   if (!String(values.alliance || '').trim()) errors.push(t('region.errorAlliance', 'Введи альянс.'));
   if (!String(values.troopType || '').trim()) errors.push(t('region.errorMainTroop', 'Вибери основний тип військ.'));
+  if (!String(values.tier || '').trim()) errors.push(t('region.errorTier', 'Вибери тір.'));
+  if (!String(values.lairLevel || '').trim() || Number(String(values.lairLevel || '').replace(/[^0-9]/g, '')) <= 0) errors.push(t('region.errorLairRequired', 'Введи рівень лігва.'));
+  if (!String(values.marchSize || '').trim() || Number(String(values.marchSize || '').replace(/[^0-9]/g, '')) <= 0) errors.push(t('region.errorMarchRequired', 'Введи розмір маршу.'));
+  if (!String(values.rallySize || '').trim() || Number(String(values.rallySize || '').replace(/[^0-9]/g, '')) <= 0) errors.push(t('region.errorRallyRequired', 'Введи розмір ралі.'));
   if (!String(values.shift || '').trim()) errors.push(t('region.errorShift', 'Вибери зміну.'));
   if (!farm?.region) errors.push(t('profile.saveProfileRegionFirst', 'Спочатку збережи регіон у вкладці “Профіль”.'));
   return errors;

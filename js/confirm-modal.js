@@ -19,8 +19,12 @@ WKD.confirmDialog = options => new Promise(resolve => {
   note.hidden = noteText === '';
   icon.textContent = options?.icon || '⚠';
   accept.removeAttribute('data-i18n');
-  accept.textContent = options?.acceptText || window.WKD_t?.('common.confirm') || 'Confirm';
+  const acceptText = options?.acceptText || window.WKD_t?.('common.confirm') || 'Confirm';
+  accept.textContent = acceptText;
   accept.className = options?.acceptClass || 'btn btn-danger-solid';
+  const delaySeconds = Math.max(0, Math.floor(Number(options?.delaySeconds) || 0));
+  let remainingSeconds = delaySeconds;
+  let delayTimer = null;
 
   const requiredText = String(options?.confirmText || '').trim();
   if (inputWrap && input && inputLabel && inputHint) {
@@ -35,7 +39,7 @@ WKD.confirmDialog = options => new Promise(resolve => {
       inputWrap.hidden = true;
       input.value = '';
       input.placeholder = '';
-      accept.disabled = false;
+      accept.disabled = delaySeconds > 0;
     }
   }
 
@@ -47,11 +51,17 @@ WKD.confirmDialog = options => new Promise(resolve => {
   modal.setAttribute('aria-hidden', 'false');
 
   const syncConfirmState = () => {
-    if (!requiredText || !input) {
-      accept.disabled = false;
-      return;
+    const waiting = remainingSeconds > 0;
+    const textMismatch = Boolean(requiredText && input && input.value.trim() !== requiredText);
+    accept.disabled = waiting || textMismatch;
+    if (waiting) {
+      const template = options?.delayText || window.WKD_t?.('confirm.availableIn') || '{action} ({seconds} s)';
+      accept.textContent = template
+        .replaceAll('{action}', acceptText)
+        .replaceAll('{seconds}', String(remainingSeconds));
+    } else {
+      accept.textContent = acceptText;
     }
-    accept.disabled = input.value.trim() !== requiredText;
   };
 
   const finish = value => {
@@ -60,6 +70,7 @@ WKD.confirmDialog = options => new Promise(resolve => {
     accept.removeEventListener('click', onAccept);
     WKD.$$('[data-confirm-cancel]', modal).forEach(btn => btn.removeEventListener('click', onCancel));
     input?.removeEventListener('input', onInput);
+    if (delayTimer) clearInterval(delayTimer);
     if (inputWrap) inputWrap.hidden = true;
     if (input) {
       input.value = '';
@@ -75,6 +86,16 @@ WKD.confirmDialog = options => new Promise(resolve => {
   WKD.$$('[data-confirm-cancel]', modal).forEach(btn => btn.addEventListener('click', onCancel));
   input?.addEventListener('input', onInput);
   syncConfirmState();
+  if (delaySeconds > 0) {
+    delayTimer = setInterval(() => {
+      remainingSeconds = Math.max(0, remainingSeconds - 1);
+      syncConfirmState();
+      if (!remainingSeconds && delayTimer) {
+        clearInterval(delayTimer);
+        delayTimer = null;
+      }
+    }, 1000);
+  }
   if (requiredText && input) setTimeout(() => input.focus(), 10);
 });
 

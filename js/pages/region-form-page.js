@@ -1,4 +1,4 @@
-import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=081';
+import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=082';
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile, saveFarmWastelandProfile } from '../services/user-db.js';
 import {
@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=081';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=081';
+} from '../services/region-db.js?v=082';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=082';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -252,11 +252,15 @@ function setStatus(text, type = 'muted', options = {}) {
   box.dataset.type = type;
 }
 
-function fillTierSelect(select, selected = 'T10', settings = formSettings) {
+function fillTierSelect(select, selected = '', settings = formSettings, options = {}) {
   if (!select) return;
   const allowed = getAllowedTiers(settings || {});
-  const value = allowed.includes(selected) ? selected : allowed[0] || 'T10';
-  select.innerHTML = allowed.map(tier => `<option value="${tier}" ${tier === value ? 'selected' : ''}>${tier}</option>`).join('');
+  const allowEmpty = Boolean(options.allowEmpty);
+  const value = allowed.includes(selected) ? selected : (allowEmpty ? '' : allowed[0] || 'T10');
+  const placeholder = allowEmpty
+    ? `<option value="" ${value ? '' : 'selected'}>${esc(t('common.selectTier', 'Вибери тір'))}</option>`
+    : '';
+  select.innerHTML = placeholder + allowed.map(tier => `<option value="${tier}" ${tier === value ? 'selected' : ''}>${tier}</option>`).join('');
 }
 
 function fillExtraTierSelects(selectedByType = {}, settings = formSettings) {
@@ -605,7 +609,7 @@ function fillSavedRegistration(row, options = {}) {
   $('#wrAlliance').value = row.alliance || $('#wrAlliance').value;
   syncAllianceSelect($('#wrAlliance')?.value || '');
   renderTroopOptions(formSettings);
-  fillTierSelect($('#wrTier'), row.tier || 'T10', formSettings);
+  fillTierSelect($('#wrTier'), row.tier || '', formSettings, { allowEmpty: true });
   $('#wrTroopType').value = row.troopType || '';
   $('#wrLairLevel') && ($('#wrLairLevel').value = row.lairLevel || row.lair || '');
   $('#wrMarch').value = row.marchSize || '';
@@ -695,6 +699,7 @@ function validate(values) {
   if (!values.nickname?.trim()) errors.push(t('region.errorNickname', 'Enter nickname.'));
   if (!values.alliance?.trim()) errors.push(t('region.errorAlliance', 'Enter alliance.'));
   if (!values.troopType) errors.push(t('region.errorMainTroop', 'Choose the main troop type.'));
+  if (!values.tier) errors.push(t('region.errorTier', 'Choose a tier.'));
   if (!String(values.lairLevel || '').trim() || Number(String(values.lairLevel || '').replace(/[^0-9]/g, '')) <= 0) errors.push(t('region.errorLairRequired', 'Enter lair level.'));
   if (!String(values.marchSize || '').trim() || Number(String(values.marchSize || '').replace(/[^0-9]/g, '')) <= 0) errors.push(t('region.errorMarchRequired', 'Enter march size.'));
   if (!String(values.rallySize || '').trim() || Number(String(values.rallySize || '').replace(/[^0-9]/g, '')) <= 0) errors.push(t('region.errorRallyRequired', 'Enter rally size.'));
@@ -1022,7 +1027,7 @@ async function prepareForm(settings) {
   const extraPanel = $('#extraTroopPanel');
   if (extraPanel) extraPanel.hidden = !settings.allowExtraTroop;
   renderTroopOptions(settings);
-  fillTierSelect($('#wrTier'), settings.minTier || 'T10', settings);
+  fillTierSelect($('#wrTier'), '', settings, { allowEmpty: true });
   fillExtraTierSelects({}, settings);
   renderCustomFields(settings, {});
   renderShiftOptions(settings);
