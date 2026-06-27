@@ -1,6 +1,6 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { saveSignedInUser } from '../services/user-db.js';
-import { getSecurityOverview, cleanupOldEmailFields } from '../services/region-db.js?v=082';
+import { getUserProfile, isAdminUser, saveSignedInUser } from '../services/user-db.js';
+import { getSecurityOverview, cleanupOldEmailFields } from '../services/region-db.js?v=083';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -9,6 +9,7 @@ let overview = null;
 let ready = false;
 let loadedOnce = false;
 let currentUser = null;
+let adminAccessGranted = false;
 const SECURITY_CACHE_TTL_MS = 5 * 60 * 1000;
 const SECURITY_CACHE_VERSION = 'v145';
 
@@ -65,7 +66,7 @@ function render() {
   if (actions) actions.hidden = !Number(overview.oldEmailFields || 0);
 }
 async function handleCleanupEmails() {
-  if (!currentUser) return;
+  if (!currentUser || !adminAccessGranted) return;
   const ok = !window.WKD?.confirmDialog || await window.WKD.confirmDialog({
     title: t('security.cleanupEmails', 'Очистити старі email-поля'),
     message: t('security.cleanupConfirm', 'Email-поля будуть прибрані з документів регіонів. Профілі користувачів не зміняться.'),
@@ -88,6 +89,12 @@ function shouldLoadImmediately() {
 async function load(user, { force = false } = {}) {
   currentUser = user || currentUser || null;
   if (!currentUser) { setStatus(t('security.authRequired', 'Увійди через Google.'), 'warn'); return; }
+  const profile = await getUserProfile(currentUser.uid).catch(() => null);
+  adminAccessGranted = isAdminUser(currentUser, profile);
+  if (!adminAccessGranted) {
+    if (/security\.html$/i.test(location.pathname)) window.location.replace('404.html?private=1');
+    return;
+  }
   if (loadedOnce && !force) return;
   loadedOnce = true;
   const cached = !force ? readSecurityCache(currentUser) : null;

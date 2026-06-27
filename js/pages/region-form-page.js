@@ -1,4 +1,4 @@
-import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=082';
+import { readShareCode, keepShareCodeInUrl, makePublicShareUrl } from '../core/share-links.js?v=083';
 import { watchAuth } from '../services/firebase-service.js';
 import { saveSignedInUser, getFarmById, getGameProfile, getUserFarms, getUserProfile, saveFarmWastelandProfile } from '../services/user-db.js';
 import {
@@ -24,8 +24,8 @@ import {
   listRegionAlliances,
   getAllowedTiers,
   troopLabel
-} from '../services/region-db.js?v=082';
-import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=082';
+} from '../services/region-db.js?v=083';
+import { saveRegionRegistrationD1First, isRegionTableCacheEnabled, readRegionFormSettings, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=083';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -949,7 +949,12 @@ async function maybeAutoSubmitFromProfile(reason = '') {
   const profileValues = accountDraft(currentProfile, selectedFarmId) || {};
   const profileTier = String(profileValues.tier || '').trim().toUpperCase();
   if (profileTier && values.tier !== profileTier) {
-    setStatus(tv('region.autoProfileTierMismatch', 'Автоматичну заявку не відправлено: у профілі вказано {profileTier}, але мінімум форми зараз {minTier}. Перевір дані вручну.', { profileTier, minTier: formSettings?.minTier || 'T10' }), 'warn');
+    setStatusKey(
+      'region.autoProfileTierMismatch',
+      'Автоматичну заявку не відправлено: у профілі вказано {profileTier}, але мінімум форми зараз {minTier}. Перевір дані вручну.',
+      { profileTier, minTier: formSettings?.minTier || 'T10' },
+      'warn'
+    );
     return false;
   }
   await saveDraft(values);
@@ -1195,11 +1200,13 @@ function handleLanguageChange() {
   $('#regionFormDescText') && ($('#regionFormDescText').textContent = settingsDescription(formSettings));
   renderStatusI18n();
   const selectedTroop = $('#wrTroopType')?.value || '';
+  const selectedTier = $('#wrTier')?.value || '';
   const selectedShift = $('input[name="wrShift"]:checked')?.value || '';
   const extraEnabled = Boolean($('#wrExtraEnabled')?.checked);
   const extraSquads = readExtraSquads();
   const extraByType = Object.fromEntries(extraSquads.map(item => [item.troopType, item.tier]));
   renderTroopOptions(formSettings);
+  fillTierSelect($('#wrTier'), selectedTier, formSettings, { allowEmpty: true });
   renderAllianceOptions();
   if (selectedTroop) $('#wrTroopType') && ($('#wrTroopType').value = selectedTroop);
   renderShiftOptions(formSettings);

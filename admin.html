@@ -11,37 +11,37 @@
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/header.css" />
   <link rel="stylesheet" href="css/auth-page.css" />
-  <link rel="stylesheet" href="css/profile-page.css?v=082" />
-  <link rel="stylesheet" href="css/admin-page.css?v=082" />
-  <link rel="stylesheet" href="css/region-page.css?v=082" />
+  <link rel="stylesheet" href="css/profile-page.css?v=083" />
+  <link rel="stylesheet" href="css/admin-page.css?v=083" />
+  <link rel="stylesheet" href="css/region-page.css?v=083" />
   <link rel="stylesheet" href="css/confirm-modal.css" />
   <link rel="stylesheet" href="css/responsive.css" />
   <style>body.access-guard-pending main{visibility:hidden}body.access-guard-pending::before{content:"";position:fixed;inset:0;background:#050b18;z-index:9999}</style>
-  <script defer src="js/i18n.js?v=082"></script>
-  <script defer src="js/i18n-uk.js?v=082"></script>
-  <script defer src="js/i18n-en.js?v=082"></script>
-  <script defer src="js/i18n-ru.js?v=082"></script>
-  <script defer src="js/i18n-pl.js?v=082"></script>
-  <script defer src="js/i18n-de.js?v=082"></script>
-  <script defer src="js/i18n-ja.js?v=082"></script>
-  <script defer src="js/i18n-zh.js?v=082"></script>
-  <script defer src="js/i18n-ko.js?v=082"></script>
-  <script defer src="js/i18n-vi.js?v=082"></script>
-  <script defer src="js/i18n-ar.js?v=082"></script>
-  <script defer src="js/i18n-autokeys.js?v=082"></script>
+  <script defer src="js/i18n.js?v=083"></script>
+  <script defer src="js/i18n-uk.js?v=083"></script>
+  <script defer src="js/i18n-en.js?v=083"></script>
+  <script defer src="js/i18n-ru.js?v=083"></script>
+  <script defer src="js/i18n-pl.js?v=083"></script>
+  <script defer src="js/i18n-de.js?v=083"></script>
+  <script defer src="js/i18n-ja.js?v=083"></script>
+  <script defer src="js/i18n-zh.js?v=083"></script>
+  <script defer src="js/i18n-ko.js?v=083"></script>
+  <script defer src="js/i18n-vi.js?v=083"></script>
+  <script defer src="js/i18n-ar.js?v=083"></script>
+  <script defer src="js/i18n-autokeys.js?v=083"></script>
   <script defer src="js/core/dom.js"></script>
   <script defer src="js/core/assets-loader.js"></script>
-  <script defer src="js/badges.js?v=082"></script>
-  <script defer src="js/core/partials.js?v=082"></script>
-  <script defer src="js/header.js?v=082"></script>
+  <script defer src="js/badges.js?v=083"></script>
+  <script defer src="js/core/partials.js?v=083"></script>
+  <script defer src="js/header.js?v=083"></script>
   <script defer src="js/core/state.js"></script>
-  <script defer src="js/confirm-modal.js?v=082"></script>
-  <script defer src="js/core/app-boot.js?v=082"></script>
-  <script defer src="js/app-login-shell.js?v=082"></script>
-  <script type="module" src="js/auth-google.js?v=082"></script>
-  <script type="module" src="js/notifications.js?v=082"></script>
-  <script type="module" src="js/pages/admin-page.js?v=082"></script>
-  <script type="module" src="js/pages/security-page.js?v=082"></script>
+  <script defer src="js/confirm-modal.js?v=083"></script>
+  <script defer src="js/core/app-boot.js?v=083"></script>
+  <script defer src="js/app-login-shell.js?v=083"></script>
+  <script type="module" src="js/auth-google.js?v=083"></script>
+  <script type="module" src="js/notifications.js?v=083"></script>
+  <script type="module" src="js/pages/admin-page.js?v=083"></script>
+  <script type="module" src="js/pages/security-page.js?v=083"></script>
 </head>
 <body class="notranslate access-guard-pending">
   <div data-include="partials/header.html"></div>
@@ -72,12 +72,12 @@
 
       <div class="admin-tabs" role="tablist" aria-label="Адмінка">
         <button class="admin-tab is-active" type="button" data-admin-tab="players" data-i18n="admin.registeredPlayers">Зареєстровані гравці</button>
-        <button class="admin-tab admin-limits-only" type="button" data-admin-tab="incomplete" data-i18n="admin.incompleteProfiles">Неповні профілі</button>
+        <button class="admin-tab" type="button" data-admin-tab="incomplete" data-i18n="admin.incompleteProfiles">Неповні профілі</button>
         <button class="admin-tab" type="button" data-admin-tab="requests" data-i18n="admin.roleRequests">Заявки на ролі</button>
         <button class="admin-tab" type="button" data-admin-tab="regions" data-i18n="admin.regionsTab">Регіони</button>
-        <button class="admin-tab" type="button" data-admin-tab="security" data-i18n="security.title">Безпека</button>
-        <button class="admin-tab admin-limits-only" type="button" data-admin-tab="clean" data-i18n="admin.cleanTab" hidden>Чистка</button>
-        <button class="admin-tab admin-limits-only" type="button" data-admin-tab="limits" data-i18n="admin.limitsTab" hidden>Ліміти</button>
+        <button class="admin-tab admin-owner-only" type="button" data-admin-tab="security" data-i18n="security.title" hidden>Безпека</button>
+        <button class="admin-tab admin-owner-only" type="button" data-admin-tab="clean" data-i18n="admin.cleanTab" hidden>Чистка</button>
+        <button class="admin-tab admin-owner-only" type="button" data-admin-tab="limits" data-i18n="admin.limitsTab" hidden>Ліміти</button>
       </div>
 
       <section class="admin-section is-active" id="adminPlayersSection" data-admin-panel="players">
@@ -217,7 +217,7 @@
         </div>
       </section>
 
-      <section class="admin-section" id="adminSecuritySection" data-admin-panel="security">
+      <section class="admin-section admin-owner-only" id="adminSecuritySection" data-admin-panel="security" hidden>
         <div class="security-page">
           <div class="auth-status" id="securityStatus" data-i18n="security.loading">Перевіряю безпеку...</div>
           <div class="security-grid" id="securityGrid"></div>
@@ -227,7 +227,7 @@
           </div>
         </div>
       </section>
-      <section class="admin-section admin-limits-only" id="adminCleanSection" data-admin-panel="clean" hidden>
+      <section class="admin-section admin-owner-only" id="adminCleanSection" data-admin-panel="clean" hidden>
         <div class="admin-limit-head">
           <div>
             <h3 data-i18n="admin.cleanTitle">Чистка</h3>
@@ -293,7 +293,7 @@
           </div>
         </div>
       </section>
-      <section class="admin-section admin-limits-only" id="adminLimitsSection" data-admin-panel="limits" hidden>
+      <section class="admin-section admin-owner-only" id="adminLimitsSection" data-admin-panel="limits" hidden>
         <div class="admin-limit-head">
           <div>
             <h3 data-i18n="admin.limitsTitle">Ліміти</h3>

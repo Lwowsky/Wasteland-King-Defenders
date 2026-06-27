@@ -7,8 +7,8 @@ import {
   saveFarmWastelandProfile,
   saveSignedInUser
 } from '../services/user-db.js';
-import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=082';
-import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=082';
+import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=083';
+import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=083';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -644,11 +644,13 @@ function openRegionForm() {
 function handleLanguageChange() {
   renderProfileRegionChrome();
   const selectedTroop = $('#wrTroopType')?.value || '';
+  const selectedTier = $('#wrTier')?.value || '';
   const selectedShift = $('input[name="wrShift"]:checked')?.value || 'shift1';
   const extraEnabled = Boolean($('#wrExtraEnabled')?.checked);
   const extraSquads = readExtraSquads();
   const extraByType = Object.fromEntries(extraSquads.map(item => [item.troopType, item.tier]));
   renderTroopOptions();
+  fillTierSelect($('#wrTier'), selectedTier, { allowEmpty: true });
   if (selectedTroop) $('#wrTroopType') && ($('#wrTroopType').value = selectedTroop);
   renderShiftOptions(normalizeShiftForAvailable(selectedShift));
   $('#wrExtraEnabled') && ($('#wrExtraEnabled').checked = extraEnabled);

@@ -1,8 +1,8 @@
 import { watchAuth } from '../services/firebase-service.js';
-import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=082';
-import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=082';
-import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=082';
-import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=082';
+import { cleanupD1Archives, inspectD1Storage, inspectSecretLinks, rotateSecretLinks, scanD1Archives } from '../services/d1-archive-cleanup.js?v=083';
+import { fetchRealCloudflareUsage, getCachedCloudflareUsage, clearCachedCloudflareUsage } from '../services/cloudflare-usage.js?v=083';
+import { fetchGitHubUsage, getCachedGitHubUsage, clearCachedGitHubUsage } from '../services/github-usage.js?v=083';
+import { getUsageEstimate, resetUsageEstimate } from '../services/usage-tracker.js?v=083';
 import {
   approveRoleRequest,
   declineRoleRequest,
@@ -26,7 +26,7 @@ import {
   deleteUserProfileByAdmin,
   scanOldFirebaseArchives,
   cleanupOldFirebaseArchives
-} from '../services/user-db.js?v=082';
+} from '../services/user-db.js?v=083';
 import {
   archiveManualRegion,
   cleanupOldPublicDocuments,
@@ -35,7 +35,7 @@ import {
   inspectOldRegionRegistrations,
   listRegionCatalog,
   normalizeRegion
-} from '../services/region-db.js?v=082';
+} from '../services/region-db.js?v=083';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => { const value = window.WKD_t ? window.WKD_t(key) : ''; return (!value || value === key) ? (fallback || key) : value; };
@@ -334,15 +334,15 @@ function updateRebuildIndexAccess() {
   if (btn) btn.hidden = !canRebuildAdminIndex();
 }
 
-function setLimitsAccess(enabled) {
-  document.querySelectorAll('.admin-limits-only').forEach(el => {
+function setAdminOwnerAccess(enabled) {
+  document.querySelectorAll('.admin-owner-only').forEach(el => {
     if (el.matches('[data-admin-panel]')) {
       el.hidden = !enabled || !el.classList.contains('is-active');
       return;
     }
     el.hidden = !enabled;
   });
-  if (!enabled && ['limits','clean'].includes(window.location.hash.replace('#', ''))) switchTab('players');
+  if (!enabled && ['security', 'clean', 'limits'].includes(window.location.hash.replace('#', ''))) switchTab('players');
 }
 
 function sortRows(a, b) {
@@ -2018,7 +2018,7 @@ async function loadAdminData() {
 
 function switchTab(tab) {
   const requested = tab || 'players';
-  const safeTab = (requested === 'limits' || requested === 'clean') && !canUseLimitsPanel() ? 'players' : requested;
+  const safeTab = ['security', 'clean', 'limits'].includes(requested) && !canUseLimitsPanel() ? 'players' : requested;
   document.querySelectorAll('[data-admin-tab]').forEach(button => {
     const active = button.dataset.adminTab === safeTab;
     button.classList.toggle('is-active', active);
@@ -2138,11 +2138,11 @@ async function initAdminPage() {
     revealGuardedAdminPage();
 
     document.querySelectorAll('[data-admin-tab], [data-admin-panel]').forEach(el => {
-      if (el.classList.contains('admin-limits-only')) return;
+      if (el.classList.contains('admin-owner-only')) return;
       if (el.matches('[data-admin-panel]')) el.hidden = !el.classList.contains('is-active');
       else el.hidden = false;
     });
-    setLimitsAccess(canUseLimitsPanel(user, currentProfile));
+    setAdminOwnerAccess(canUseLimitsPanel(user, currentProfile));
     updateRebuildIndexAccess();
     openInitialAdminTab();
     setStatus(t('admin.loadingPanel', 'Loading admin panel...'), 'muted');
