@@ -7,8 +7,8 @@ import {
   saveFarmWastelandProfile,
   saveSignedInUser
 } from '../services/user-db.js';
-import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=083';
-import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=083';
+import { getRegionSettings, getRegionFormStatus, listRegionAlliances } from '../services/region-db.js?v=084';
+import { isRegionTableCacheEnabled, saveRegionRegistrationD1First, readRegionFormSettings as readRegionFormSettingsD1, autoSubmitSignature, readAutoSubmitMarker, writeAutoSubmitMarker, autoSubmitMarkerMatches, syncAutoSubmitTemplateD1IfNeeded } from '../services/region-table-cache.js?v=084';
 
 const $ = selector => document.querySelector(selector);
 const t = (key, fallback = '') => window.WKD_t ? window.WKD_t(key) : (fallback || key);
@@ -433,6 +433,10 @@ function profileD1ErrorCode(error) {
   return String(error?.data?.error || error?.message || '').trim();
 }
 
+function isRegistrationClosedError(error) {
+  return ['region_form_closed', 'region-form-closed'].includes(profileD1ErrorCode(error));
+}
+
 function duplicateRequestMessage() {
   return t('region.errorNicknameDuplicateGuestMessage', 'Заявка з таким нікнеймом уже є в активному циклі. Повторно такий самий нік не відправляється.');
 }
@@ -556,6 +560,14 @@ async function autoSubmitProfileRegionData(values = {}, farm = {}, options = {})
     return result;
   } catch (error) {
     const code = profileD1ErrorCode(error);
+    if (isRegistrationClosedError(error)) {
+      setStickyStatusKey(
+        'region.autoProfileSavedClosed',
+        'Автозаповнення збережено. Форма зараз закрита, тому заявка не відправлена.',
+        'warn'
+      );
+      return { skipped: true, closed: true };
+    }
     if (code === 'registration-nickname-duplicate-region') {
       writeAutoSubmitMarker({ ...markerData, status: 'duplicate', messageKey: 'region.errorNicknameDuplicateGuestMessage' });
       setStickyStatus(duplicateRequestMessage(), 'warn');
@@ -617,8 +629,16 @@ async function saveProfileRegionData(event) {
     }
     setStickyStatus(t('profile.formDataSaved', 'Шаблон форми збережено в профілі. На Пустош нічого не відправлено.'), 'success');
   } catch (error) {
-    console.error(error);
     const code = profileD1ErrorCode(error);
+    if (isRegistrationClosedError(error)) {
+      setStickyStatusKey(
+        'region.autoTemplateSavedForNextOpen',
+        'Шаблон збережено. Коли форму відкриють, Worker автоматично додасть заявку без входу гравця на сайт.',
+        'success'
+      );
+      return;
+    }
+    console.error(error);
     if (code === 'registration-nickname-duplicate-region') {
       setStickyStatus(duplicateRequestMessage(), 'warn');
       return;
@@ -723,10 +743,17 @@ async function load(user) {
   renderFarmSelect();
   await fillSelectedFarm();
   autoSubmitSavedTemplateIfEnabled('load').catch(error => {
-    console.error(error);
     const code = profileD1ErrorCode(error);
-    if (code === 'registration-nickname-duplicate-region') setStickyStatus(duplicateRequestMessage(), 'warn');
+    const registrationClosed = isRegistrationClosedError(error);
+    if (registrationClosed) {
+      setStickyStatusKey(
+        'region.autoProfileReadyClosed',
+        'Автозаповнення увімкнено, але форма зараз закрита. Заявка не відправлена.',
+        'warn'
+      );
+    } else if (code === 'registration-nickname-duplicate-region') setStickyStatus(duplicateRequestMessage(), 'warn');
     else setStickyStatus(`${t('profile.formDataSaveFailed', 'Не вдалося зберегти шаблон. Перевір права доступу або Google-вхід.')}${code ? ` (${code})` : ''}`, 'error');
+    if (!registrationClosed) console.error(error);
   });
 }
 

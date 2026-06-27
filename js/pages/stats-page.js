@@ -1,5 +1,5 @@
 import { formatUserDate, roleLabel } from '../services/user-db.js';
-import { troopLabel } from '../services/region-db.js?v=083';
+import { troopLabel } from '../services/region-db.js?v=084';
 import { localizedCountry } from '../services/country-utils.js';
 
 const $ = selector => document.querySelector(selector);
