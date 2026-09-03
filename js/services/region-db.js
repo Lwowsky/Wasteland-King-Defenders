@@ -1956,17 +1956,19 @@ export async function listRegionAlliances(region) {
   if (!safeRegion) throw new Error('region-required');
 
   const actor = await getCurrentFirebaseUser();
-  let d1WasEmpty = false;
   if (actor) {
     try {
       const result = await readRegionAlliancesD1(actor, safeRegion);
-      if (Array.isArray(result?.items) && result.items.length) return result.items;
-      d1WasEmpty = Array.isArray(result?.items) && result.items.length === 0;
+      // D1 is authoritative once the request succeeds. An empty array is a real
+      // empty list, not a signal to restore old Firestore records. Treating it as
+      // a fallback condition resurrected alliances after the last D1 row was deleted.
+      if (Array.isArray(result?.items)) return result.items;
     } catch (error) {
       if (window.WKD_DEBUG) console.warn('[WKD] D1 alliance list unavailable, using legacy fallback:', error?.message || error);
     }
   }
 
+  // Legacy fallback is used only when D1 cannot be read at all.
   const { db, firestoreMod } = await getFirebaseParts();
   const snapshot = await firestoreMod.getDocs(firestoreMod.collection(db, 'regions', safeRegion, 'alliances'));
   trackReads(Math.max(1, snapshot.docs.length));
@@ -1981,17 +1983,7 @@ export async function listRegionAlliances(region) {
       seen.set(key, { ...data, ...current, id: key, tag: key, name: current.name || data.name || key });
     }
   });
-  const items = [...seen.values()].sort((a, b) => String(a.tag || a.id).localeCompare(String(b.tag || b.id), 'uk'));
-  if (actor && items.length && d1WasEmpty) {
-    Promise.allSettled(items.map(item => saveRegionAllianceD1(actor, safeRegion, {
-      tag: item.tag || item.id,
-      name: item.name || item.tag || item.id,
-      note: item.note || '',
-      colorHue: item.colorHue ?? null,
-      colorMode: item.colorMode || (item.colorHue == null ? 'auto' : 'manual')
-    }))).catch(error => { if (window.WKD_DEBUG) console.warn('[WKD] legacy alliances D1 migration skipped:', error); });
-  }
-  return items;
+  return [...seen.values()].sort((a, b) => String(a.tag || a.id).localeCompare(String(b.tag || b.id), 'uk'));
 }
 
 
@@ -2121,21 +2113,39 @@ export async function deleteRegionAlliance(user, region, allianceId) {
   const tag = normalizeAllianceTag(allianceId);
   if (!tag) throw new Error('alliance-tag-required');
   if (!canDeleteRegionAllianceTag(profile, safeRegion, user)) throw new Error('region-access-denied');
+
+  let d1Deleted = false;
+  let d1Error = null;
   try {
     const result = await deleteRegionAllianceD1(user, safeRegion, tag);
-    if (result?.ok !== false) {
-      await writeRegionActionLog(null, user, profile, safeRegion, 'alliance_deleted', { alliance: tag, summary: tag });
-      return { region: safeRegion, tag, d1Only: true };
-    }
+    d1Deleted = result?.ok !== false;
   } catch (error) {
-    if (window.WKD_DEBUG) console.warn('[WKD] D1 alliance delete fallback:', error?.message || error);
+    d1Error = error;
+    if (window.WKD_DEBUG) console.warn('[WKD] D1 alliance delete:', error?.message || error);
   }
 
-  const { db, firestoreMod } = await getFirebaseParts();
-  await firestoreMod.deleteDoc(firestoreMod.doc(db, 'regions', safeRegion, 'alliances', tag));
-  trackDeletes(1);
-  await writeRegionActionLog({ db, firestoreMod }, user, profile, safeRegion, 'alliance_deleted', { alliance: tag, summary: tag });
-  return { region: safeRegion, tag };
+  // Keep the legacy Firestore copy in sync even when D1 succeeds. Otherwise, when
+  // the D1 list becomes empty, listRegionAlliances() can fall back to Firestore and
+  // silently recreate an alliance that was already deleted.
+  let firestoreDeleted = false;
+  let firestoreError = null;
+  try {
+    const { db, firestoreMod } = await getFirebaseParts();
+    await firestoreMod.deleteDoc(firestoreMod.doc(db, 'regions', safeRegion, 'alliances', tag));
+    trackDeletes(1);
+    firestoreDeleted = true;
+  } catch (error) {
+    firestoreError = error;
+    if (window.WKD_DEBUG) console.warn('[WKD] Firestore alliance delete:', error?.message || error);
+  }
+
+  // A D1 permission denial must never be hidden by a successful Firestore fallback,
+  // because the D1 record would remain authoritative and immediately reappear.
+  if (d1Error && isRegionAccessDeniedCacheError(d1Error)) throw d1Error;
+  if (!d1Deleted && !firestoreDeleted) throw (d1Error || firestoreError || new Error('alliance-delete-failed'));
+
+  await writeRegionActionLog(null, user, profile, safeRegion, 'alliance_deleted', { alliance: tag, summary: tag });
+  return { region: safeRegion, tag, d1Deleted, firestoreDeleted };
 }
 
 function numberValue(value) {

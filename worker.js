@@ -632,6 +632,11 @@ function isAdminUid(env, uid = "") {
   return Boolean(uid && admins.has(uid));
 }
 
+function isOwnerAdminUser(env, user = null) {
+  const email = clean(user?.email || '', 160).toLowerCase();
+  return isAdminUid(env, user?.uid || '') || email === 'vovapotaychuk@gmail.com';
+}
+
 function sanitizeCustomShifts(items = []) {
   return Array.isArray(items)
     ? items
@@ -1350,6 +1355,11 @@ function accessHasAlliance(access, region, alliance) {
 function accessHasRole(access, role) {
   return Boolean(access?.roles instanceof Set && access.roles.has(role));
 }
+function accessHasRegionRole(access, region, role) {
+  const safeRegion = normalizeRegion(region);
+  const safeRole = directoryRole(role || '');
+  return Boolean(safeRegion && safeRole && access?.regionRoles instanceof Set && access.regionRoles.has(`${safeRegion}:${safeRole}`));
+}
 function directoryRankNumber(value = '') {
   const match = String(value || '').match(/[1-5]/);
   return match ? Number(match[0]) : 1;
@@ -1385,24 +1395,24 @@ function accessHasCommandAlliance(access, region, alliance, minRank = 4) {
 }
 async function readRegionLeadershipAccess(db, env, user, region) {
   const safeRegion = normalizeRegion(region);
-  if (!user?.uid || !safeRegion) return { isGlobal: false, roles: new Set(), regions: [], alliances: [], commandAlliances: [] };
+  if (!user?.uid || !safeRegion) return { isGlobal: false, roles: new Set(), regionRoles: new Set(), regions: [], alliances: [], commandAlliances: [] };
   const access = await readDirectoryAccess(db, env, user).catch(() => null);
-  if (!access) return { isGlobal: isAdminUid(env, user.uid), roles: new Set(), regions: [], alliances: [], commandAlliances: [] };
+  if (!access) return { isGlobal: isOwnerAdminUser(env, user), roles: new Set(), regionRoles: new Set(), regions: [], alliances: [], commandAlliances: [] };
   return access;
 }
 async function canReadRegionD1(db, env, user, region) {
   const safeRegion = normalizeRegion(region);
   if (!user?.uid || !safeRegion) return false;
-  if (isAdminUid(env, user.uid)) return true;
+  if (isOwnerAdminUser(env, user)) return true;
   const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
   return Boolean(access.isGlobal || accessHasRegion(access, safeRegion) || await hasSavedRegionAccess(db, user.uid, safeRegion) || await activeRegionHasUid(db, safeRegion, user.uid));
 }
 async function canManageRegionD1(db, env, user, region) {
   const safeRegion = normalizeRegion(region);
   if (!user?.uid || !safeRegion) return false;
-  if (isAdminUid(env, user.uid)) return true;
+  if (isOwnerAdminUser(env, user)) return true;
   const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
-  return Boolean(access.isGlobal || (accessHasRegion(access, safeRegion) && accessHasRole(access, 'consul')));
+  return Boolean(access.isGlobal || accessHasRegionRole(access, safeRegion, 'consul'));
 }
 function activeAllianceFromSettings(settings = {}) {
   const list = Array.isArray(settings.rotationAlliances) ? settings.rotationAlliances : [];
@@ -1415,10 +1425,10 @@ function activeAllianceFromSettings(settings = {}) {
 async function canLeadRegionBySettingsD1(db, env, user, region, settings = {}) {
   const safeRegion = normalizeRegion(region);
   if (!user?.uid || !safeRegion) return false;
-  if (isAdminUid(env, user.uid)) return true;
+  if (isOwnerAdminUser(env, user)) return true;
   const access = await readRegionLeadershipAccess(db, env, user, safeRegion);
   if (access.isGlobal) return true;
-  if (accessHasRegion(access, safeRegion) && accessHasRole(access, 'consul')) return true;
+  if (accessHasRegionRole(access, safeRegion, 'consul')) return true;
   return false;
 }
 async function canLeadCurrentRegionD1(db, env, user, region) {
@@ -1499,6 +1509,39 @@ async function handleRegionAlliancesPut(request, env) {
   return json({ ok: true, region, item: { ...item, updatedAtMs: nowMs, updatedBy: user.uid }, usage: { d1RowsWritten: 1 }, source: 'cloudflare-d1-region-alliances' });
 }
 
+function removeAllianceFromD1Settings(settings = {}, tagValue = '') {
+  const tag = directoryAlliance(tagValue);
+  const oldList = sanitizeRotationAlliances(settings.rotationAlliances || []);
+  const newList = oldList.filter(item => directoryAlliance(item.tag) !== tag);
+  const clampIndex = value => newList.length ? Math.max(0, Math.min(newList.length - 1, Number(value) || 0)) : 0;
+  const remapIndex = (value, fallback = 0) => {
+    if (!newList.length) return 0;
+    const oldIndex = Math.max(0, Math.min(Math.max(0, oldList.length - 1), Number(value) || 0));
+    const oldTag = directoryAlliance(oldList[oldIndex]?.tag || '');
+    const sameTagIndex = oldTag ? newList.findIndex(item => directoryAlliance(item.tag) === oldTag) : -1;
+    return sameTagIndex >= 0 ? sameTagIndex : clampIndex(fallback);
+  };
+
+  const activeIndex = remapIndex(settings.rotationActiveIndex, settings.rotationActiveIndex);
+  const closedIndex = remapIndex(settings.rotationClosedActiveIndex, activeIndex);
+  const nextIndex = remapIndex(settings.rotationNextActiveIndex, nextRotationIndexD1(closedIndex, newList, settings.rotationLoop !== false));
+  const oldHost = directoryAlliance(settings.hostAlliance || '');
+  const oldActiveHost = directoryAlliance(settings.activeHostAlliance || '');
+  const fallbackHost = directoryAlliance(newList[activeIndex]?.tag || '');
+
+  return {
+    ...settings,
+    hostAlliance: oldHost === tag ? fallbackHost : oldHost,
+    activeHostAlliance: oldActiveHost === tag ? (fallbackHost || (oldHost === tag ? '' : oldHost)) : oldActiveHost,
+    rotationEnabled: Boolean(settings.rotationEnabled) && newList.length > 0,
+    rotationActiveIndex: activeIndex,
+    rotationClosedActiveIndex: closedIndex,
+    rotationNextActiveIndex: nextIndex,
+    rotationAlliances: newList,
+    updatedAtMs: Date.now()
+  };
+}
+
 async function handleRegionAlliancesDelete(request, env) {
   const db = regionTableDb(env);
   if (!db) return json({ ok: false, error: 'd1_not_configured' }, 500);
@@ -1507,11 +1550,43 @@ async function handleRegionAlliancesDelete(request, env) {
   let body = null;
   try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_json' }, 400); }
   const region = normalizeRegion(body?.region);
-  const tag = clean(body?.tag || body?.id || '', 12);
+  const tag = directoryAlliance(body?.tag || body?.id || '');
   if (!region || !tag) return json({ ok: false, error: 'alliance_tag_required' }, 400);
+  // Admin and Moderator are global managers. Consul can manage only a region they
+  // are assigned to in the trusted D1 directory. The owner email is also accepted
+  // from the verified Firebase ID token as a fallback if the configured UID changes.
   if (!await canManageRegionD1(db, env, user, region)) return json({ ok: false, error: 'region_access_denied' }, 403);
+
   await db.prepare(`DELETE FROM region_alliances WHERE region = ?1 AND tag = ?2`).bind(region, tag).run();
-  return json({ ok: true, region, tag, usage: { d1RowsWritten: 1 }, source: 'cloudflare-d1-region-alliances' });
+
+  // Remove stale host/rotation references in D1 as part of the same server action.
+  // Without this, a deleted alliance can be reconstructed from form settings.
+  let settingsUpdated = false;
+  const form = await readRegionFormSettingsD1(db, region).catch(() => null);
+  if (form?.settings) {
+    const cleanedSettings = removeAllianceFromD1Settings(form.settings, tag);
+    const before = JSON.stringify(sanitizeSettings(form.settings));
+    const after = JSON.stringify(sanitizeSettings(cleanedSettings));
+    if (before !== after) {
+      await saveRegionFormSettingsD1(db, {
+        region,
+        code: form.code || '',
+        cycleId: form.cycleId || cleanedSettings.currentCycleId || 'active',
+        settings: cleanedSettings,
+        updatedAtMs: Date.now()
+      });
+      settingsUpdated = true;
+    }
+  }
+
+  return json({
+    ok: true,
+    region,
+    tag,
+    settingsUpdated,
+    usage: { d1RowsWritten: settingsUpdated ? 2 : 1 },
+    source: 'cloudflare-d1-region-alliances'
+  });
 }
 
 
@@ -4973,6 +5048,7 @@ function directoryAccessRole(row = {}) {
 }
 function directoryAccessFromRows(rows = [], env, uid = '') {
   const roles = new Set();
+  const regionRoles = new Set();
   const regions = new Set();
   const alliances = new Set();
   const commandAlliances = [];
@@ -4981,13 +5057,16 @@ function directoryAccessFromRows(rows = [], env, uid = '') {
     roles.add(role);
     const region = normalizeRegion(row.region);
     const alliance = directoryAlliance(row.alliance);
-    if (region) regions.add(region);
+    if (region) {
+      regions.add(region);
+      regionRoles.add(`${region}:${role}`);
+    }
     if (region && alliance) alliances.add(`${region}:${alliance}`);
     const rank = directoryRankNumber(row.rank || '');
     if (region && alliance && role === 'officer' && rank >= 4) commandAlliances.push({ region, alliance, rank });
   });
   const isGlobal = isAdminUid(env, uid) || roles.has('admin') || roles.has('moderator');
-  return { isGlobal, roles, regions: [...regions], alliances: [...alliances], commandAlliances };
+  return { isGlobal, roles, regionRoles, regions: [...regions], alliances: [...alliances], commandAlliances };
 }
 async function readDirectoryAccess(db, env, user) {
   const result = await db.prepare(

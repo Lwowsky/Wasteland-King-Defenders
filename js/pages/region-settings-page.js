@@ -26,7 +26,7 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=084';
+} from '../services/region-db.js?v=085';
 import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=084';
 import { makePublicShareUrl } from '../core/share-links.js?v=084';
 
@@ -1104,16 +1104,41 @@ function editAlliance(id) {
   setAllianceStatus(tv('regionSettings.editingAlliance', 'Editing alliance {tag}.', { tag: alliance.tag || alliance.id }), 'muted');
 }
 
+function settingsWithoutAlliance(settings = {}, tagValue = '') {
+  const tag = normalizeAllianceTag(tagValue);
+  const previousRotation = normalizeRotation(settings.rotationAlliances || rotationDraft.alliances || []);
+  const removedIndex = previousRotation.findIndex(item => normalizeAllianceTag(item.tag) === tag);
+  const rotationAlliances = previousRotation.filter(item => normalizeAllianceTag(item.tag) !== tag);
+  let rotationActiveIndex = Math.max(0, Number(settings.rotationActiveIndex ?? rotationDraft.activeIndex) || 0);
+  if (removedIndex >= 0 && removedIndex < rotationActiveIndex) rotationActiveIndex -= 1;
+  if (rotationActiveIndex >= rotationAlliances.length) rotationActiveIndex = Math.max(0, rotationAlliances.length - 1);
+
+  const hostAlliance = normalizeAllianceTag(settings.hostAlliance || '') === tag ? '' : normalizeAllianceTag(settings.hostAlliance || '');
+  const activeHostAlliance = normalizeAllianceTag(settings.activeHostAlliance || '') === tag
+    ? (rotationAlliances[rotationActiveIndex]?.tag || hostAlliance || '')
+    : normalizeAllianceTag(settings.activeHostAlliance || '');
+
+  return {
+    ...settings,
+    hostAlliance,
+    activeHostAlliance,
+    rotationEnabled: Boolean(settings.rotationEnabled) && rotationAlliances.length > 0,
+    rotationActiveIndex,
+    rotationAlliances
+  };
+}
+
 async function removeAlliance(id) {
   const alliance = currentAlliances.find(item => item.id === id);
-  if (!canDeleteRegionAlliance(alliance?.tag || id)) {
+  const tag = normalizeAllianceTag(alliance?.tag || id);
+  if (!canDeleteRegionAlliance(tag)) {
     setAllianceStatus(t('regionSettings.allianceDeleteFailed', 'Could not delete alliance.'), 'error');
     return;
   }
   const ok = window.WKD?.confirmDialog
     ? await window.WKD.confirmDialog({
       title: t('regionSettings.deleteAllianceTitle', 'Delete alliance?'),
-      message: tv('regionSettings.deleteAllianceMessage', 'Alliance {tag} will be removed from this region list.', { tag: alliance?.tag || id }),
+      message: tv('regionSettings.deleteAllianceMessage', 'Alliance {tag} will be removed from this region list.', { tag }),
       note: t('regionSettings.deleteAllianceNote', 'Player requests will not be deleted.'),
       icon: '✕',
       acceptText: t('common.delete', 'Delete')
@@ -1122,9 +1147,33 @@ async function removeAlliance(id) {
   if (!ok) return;
   try {
     setAllianceStatus(t('regionSettings.deletingAlliance', 'Deleting alliance...'), 'muted');
-    await deleteRegionAlliance(currentUser, currentRegion, id);
-    if (editingAllianceId === id) clearAllianceForm();
+
+    // Remove every settings reference first, otherwise refreshAlliances() can recreate
+    // the alliance from hostAlliance/rotationAlliances immediately after deletion.
+    const uiSettings = { ...(currentSettings || {}), ...read() };
+    const cleanSettings = settingsWithoutAlliance(uiSettings, tag);
+    const wasReferenced = normalizeAllianceTag(uiSettings.hostAlliance || '') === tag
+      || normalizeAllianceTag(uiSettings.activeHostAlliance || '') === tag
+      || normalizeRotation(uiSettings.rotationAlliances || []).some(item => normalizeAllianceTag(item.tag) === tag);
+
+    if (wasReferenced) {
+      currentSettings = await saveRegionSettings(currentUser, currentRegion, cleanSettings);
+      rotationDraft = {
+        enabled: Boolean(currentSettings.rotationEnabled),
+        loop: 'rotationLoop' in currentSettings ? Boolean(currentSettings.rotationLoop) : true,
+        activeIndex: Number(currentSettings.rotationActiveIndex) || 0,
+        alliances: normalizeRotation(currentSettings.rotationAlliances || [])
+      };
+      $('#settingsHostAlliance') && ($('#settingsHostAlliance').value = currentSettings.hostAlliance || '');
+      updateRotationSummary(currentSettings);
+    }
+
+    await deleteRegionAlliance(currentUser, currentRegion, tag);
+    currentAlliances = currentAlliances.filter(item => normalizeAllianceTag(item.tag || item.id) !== tag);
+    if (editingAllianceId === id || normalizeAllianceTag(editingAllianceId) === tag) clearAllianceForm();
     await refreshAlliances();
+    updateHostAllianceDatalist();
+    renderRotationModal();
     setAllianceStatus(t('regionSettings.allianceDeleted', 'Alliance deleted.'), 'success');
   } catch (error) {
     console.error(error);
