@@ -1308,8 +1308,11 @@ export async function deleteRegionAllianceD1(user, region, tagValue = '') {
   const token = await getFirebaseToken(user);
   if (!token) throw new Error('auth-token-required');
   removeLocalJsonCache('regionAlliances', safeRegion);
-  return requestJson('/api/region-alliances', {
-    method: 'DELETE',
+  // Use a dedicated POST action for cross-origin deletion. The site runs on
+  // lwowsky.uk while D1 lives on workers.dev, so this avoids browsers blocking
+  // the request when an older CORS preflight cache does not advertise DELETE.
+  return requestJson('/api/region-alliances/delete?v=086', {
+    method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify({ region: safeRegion, tag })
   });

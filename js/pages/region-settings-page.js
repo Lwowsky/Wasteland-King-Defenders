@@ -26,8 +26,8 @@ import {
   formatUtcAndLocal,
   getRegionLifecycle,
   getRegionActorName
-} from '../services/region-db.js?v=085';
-import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=084';
+} from '../services/region-db.js?v=086';
+import { listRegionCycleArchiveD1, publishRegionTableSnapshot, readFullRegionCycleArchiveD1, readRegionCycleArchiveD1, readRegionFormSettings as readRegionFormSettingsD1 } from '../services/region-table-cache.js?v=086';
 import { makePublicShareUrl } from '../core/share-links.js?v=084';
 
 const $ = selector => document.querySelector(selector);
@@ -1145,39 +1145,66 @@ async function removeAlliance(id) {
     })
     : window.confirm(t('regionSettings.deleteAllianceTitle', 'Delete alliance?'));
   if (!ok) return;
+
   try {
     setAllianceStatus(t('regionSettings.deletingAlliance', 'Deleting alliance...'), 'muted');
 
-    // Remove every settings reference first, otherwise refreshAlliances() can recreate
-    // the alliance from hostAlliance/rotationAlliances immediately after deletion.
+    // Delete the authoritative D1/Firestore alliance first. Previously the page
+    // tried to save form settings before deleting, so any settings permission or
+    // network error prevented the Delete request from ever being sent.
+    await deleteRegionAlliance(currentUser, currentRegion, tag);
+
     const uiSettings = { ...(currentSettings || {}), ...read() };
     const cleanSettings = settingsWithoutAlliance(uiSettings, tag);
     const wasReferenced = normalizeAllianceTag(uiSettings.hostAlliance || '') === tag
       || normalizeAllianceTag(uiSettings.activeHostAlliance || '') === tag
       || normalizeRotation(uiSettings.rotationAlliances || []).some(item => normalizeAllianceTag(item.tag) === tag);
 
+    // Update local state immediately so refreshAlliances() cannot put the deleted
+    // tag back on screen. The Worker already removes D1 host/rotation references.
+    currentSettings = cleanSettings;
+    rotationDraft = {
+      enabled: Boolean(cleanSettings.rotationEnabled),
+      loop: 'rotationLoop' in cleanSettings ? Boolean(cleanSettings.rotationLoop) : true,
+      activeIndex: Number(cleanSettings.rotationActiveIndex) || 0,
+      alliances: normalizeRotation(cleanSettings.rotationAlliances || [])
+    };
+    $('#settingsHostAlliance') && ($('#settingsHostAlliance').value = cleanSettings.hostAlliance || '');
+    updateRotationSummary(cleanSettings);
+
+    // Best-effort legacy settings sync. A failure here must not undo a successful
+    // alliance deletion from D1.
     if (wasReferenced) {
-      currentSettings = await saveRegionSettings(currentUser, currentRegion, cleanSettings);
-      rotationDraft = {
-        enabled: Boolean(currentSettings.rotationEnabled),
-        loop: 'rotationLoop' in currentSettings ? Boolean(currentSettings.rotationLoop) : true,
-        activeIndex: Number(currentSettings.rotationActiveIndex) || 0,
-        alliances: normalizeRotation(currentSettings.rotationAlliances || [])
-      };
-      $('#settingsHostAlliance') && ($('#settingsHostAlliance').value = currentSettings.hostAlliance || '');
-      updateRotationSummary(currentSettings);
+      try {
+        currentSettings = await saveRegionSettings(currentUser, currentRegion, cleanSettings);
+        rotationDraft = {
+          enabled: Boolean(currentSettings.rotationEnabled),
+          loop: 'rotationLoop' in currentSettings ? Boolean(currentSettings.rotationLoop) : true,
+          activeIndex: Number(currentSettings.rotationActiveIndex) || 0,
+          alliances: normalizeRotation(currentSettings.rotationAlliances || [])
+        };
+      } catch (settingsError) {
+        console.warn('[WKD] Alliance deleted; legacy settings sync skipped:', settingsError);
+      }
     }
 
-    await deleteRegionAlliance(currentUser, currentRegion, tag);
     currentAlliances = currentAlliances.filter(item => normalizeAllianceTag(item.tag || item.id) !== tag);
     if (editingAllianceId === id || normalizeAllianceTag(editingAllianceId) === tag) clearAllianceForm();
-    await refreshAlliances();
+
+    try {
+      await refreshAlliances();
+    } catch (refreshError) {
+      console.warn('[WKD] Alliance refresh skipped after delete:', refreshError);
+      renderAlliances();
+    }
     updateHostAllianceDatalist();
     renderRotationModal();
     setAllianceStatus(t('regionSettings.allianceDeleted', 'Alliance deleted.'), 'success');
   } catch (error) {
-    console.error(error);
-    setAllianceStatus(t('regionSettings.allianceDeleteFailed', 'Could not delete alliance.'), 'error');
+    console.error('[WKD] Alliance delete failed:', error);
+    const detail = trim(error?.code || error?.message || '');
+    const base = t('regionSettings.allianceDeleteFailed', 'Could not delete alliance.');
+    setAllianceStatus(detail ? `${base} (${detail})` : base, 'error');
   }
 }
 

@@ -1,8 +1,8 @@
 {
   "version": 1,
   "source": "cloudflare-d1-public-stats",
-  "generatedAt": "2026-09-03T11:06:03.314Z",
-  "lastFullRebuildDate": "2026-09-03",
+  "generatedAt": "2026-06-27T14:02:36.134Z",
+  "lastFullRebuildDate": "2026-06-27",
   "totalPlayers": 2,
   "totalFarms": 3,
   "totalRows": 5,
@@ -41,12 +41,10 @@
     "t9": 1
   },
   "roles": {
-    "admin": 1,
-    "consul": 1
+    "admin": 2
   },
   "rolesWithFarms": {
-    "admin": 4,
-    "consul": 1
+    "admin": 5
   },
   "countries": {
     "UA": 1,
@@ -57,7 +55,7 @@
     "JP": 1
   },
   "processedChanges": 0,
-  "d1Version": 1783512384689,
-  "d1UpdatedAtMs": 1783512384689,
+  "d1Version": 1782565779251,
+  "d1UpdatedAtMs": 1782565779251,
   "d1Buckets": 64
 }

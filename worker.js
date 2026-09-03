@@ -10,7 +10,7 @@ const REGION_IMPORT_COOLDOWN_DISABLED = true;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-WKD-Region-Table-Secret, X-WKD-Stats-Secret",
   "Access-Control-Max-Age": "86400",
@@ -6067,6 +6067,13 @@ export default {
 
       if (url.pathname === "/api/region-alliances" && request.method === "PUT") {
         return await handleRegionAlliancesPut(request, env);
+      }
+
+      // Preferred delete route uses POST because the public site and the D1 Worker
+      // are on different origins. POST is already supported by CORS everywhere,
+      // while the legacy DELETE route is kept for backwards compatibility.
+      if (url.pathname === "/api/region-alliances/delete" && request.method === "POST") {
+        return await handleRegionAlliancesDelete(request, env);
       }
 
       if (url.pathname === "/api/region-alliances" && request.method === "DELETE") {
